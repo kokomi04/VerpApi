@@ -11,6 +11,7 @@ using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -55,14 +56,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     int customGenCodeId = 0;
                     string outsoureOrderCode = "";
+
+                    CustomGenCodeOutputModel currentConfig = null;
+
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
-                        var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0);
+                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0, null, null, null);
                         if (currentConfig == null)
                         {
                             throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                         }
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, null, null);
                         if (generated == null)
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
@@ -96,7 +100,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
-                        await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+                        await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                     }
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
@@ -159,31 +163,33 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         public async Task<OutsourceStepOrderModel> GetOutsourceStepOrder(long outsourceStepOrderId)
         {
             var outsourceStepOrder = await _manufacturingDBContext.OutsourceOrder.AsNoTracking()
-                .Include(x=>x.OutsourceOrderDetail)
+                .Include(x => x.OutsourceOrderDetail)
                 .ProjectTo<OutsourceStepOrderModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(x => x.OutsourceOrderId == outsourceStepOrderId);
             if (outsourceStepOrder == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
             var requestDatas = (from d in outsourceStepOrder.outsourceOrderDetail
-                                           join rd in _manufacturingDBContext.OutsourceStepRequestData
-                                           on d.ProductionStepLinkDataId equals rd.ProductionStepLinkDataId
-                                           select rd).GroupBy(x => x.OutsourceStepRequestId);
+                                join rd in _manufacturingDBContext.OutsourceStepRequestData
+                                on d.ProductionStepLinkDataId equals rd.ProductionStepLinkDataId
+                                select rd).GroupBy(x => x.OutsourceStepRequestId);
 
             var outsourceOrderDetail = new List<OutsourceStepOrderDetailModel>();
             foreach (var group in requestDatas)
             {
-                var outsourceStepRequestDatas = (await _outsourceStepRequestService.GetOutsourceStepRequestData(group.Key)).OrderByDescending(x=>x.ProductionStepLinkDataRoleTypeId);
+                var outsourceStepRequestDatas = (await _outsourceStepRequestService.GetOutsourceStepRequestData(group.Key)).OrderByDescending(x => x.ProductionStepLinkDataRoleTypeId);
 
                 var percent = decimal.Zero;
                 var lst = new List<OutsourceStepOrderDetailModel>();
-                foreach (var data in outsourceStepRequestDatas) {
+                foreach (var data in outsourceStepRequestDatas)
+                {
                     var detail = outsourceStepOrder.outsourceOrderDetail
                                                    .FirstOrDefault(x => x.ProductionStepLinkDataId == data.ProductionStepLinkDataId);
 
                     if (detail != null)
                         percent = (decimal)(detail.OutsourceOrderQuantity / data.OutsourceStepRequestDataQuantity);
 
-                    lst.Add(new OutsourceStepOrderDetailModel {
+                    lst.Add(new OutsourceStepOrderDetailModel
+                    {
                         OutsourceStepRequestDataQuantity = data.OutsourceStepRequestDataQuantity,
                         OutsourceOrderDetailId = detail == null ? 0 : detail.OutsourceOrderDetailId,
                         OutsourceOrderQuantity = detail == null ? (decimal)(percent * data.OutsourceStepRequestDataQuantity) : detail.OutsourceOrderQuantity,
@@ -198,7 +204,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         ProductionStepLinkDataQuantity = data.ProductionStepLinkDataQuantity,
                         ProductionStepLinkDataRoleTypeId = data.ProductionStepLinkDataRoleTypeId,
                         ProductionStepLinkDataTitle = data.ProductionStepLinkDataTitle,
-                        ProductionStepTitle = data.ProductionStepTitle 
+                        ProductionStepTitle = data.ProductionStepTitle
                     });
                 }
                 outsourceOrderDetail.AddRange(lst.OrderBy(x => x.ProductionStepId));
@@ -208,14 +214,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return outsourceStepOrder;
         }
 
-        public async Task<bool> UpdateOutsourceStepOrder(long outsourceStepOrderId, OutsourceStepOrderModel req) {
+        public async Task<bool> UpdateOutsourceStepOrder(long outsourceStepOrderId, OutsourceStepOrderModel req)
+        {
             var outsourceStepOrder = await _manufacturingDBContext.OutsourceOrder
               .FirstOrDefaultAsync(x => x.OutsourceOrderId == outsourceStepOrderId);
             if (outsourceStepOrder == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
-            try {
+            try
+            {
                 //order
                 _mapper.Map(req, outsourceStepOrder);
                 await _manufacturingDBContext.SaveChangesAsync();
@@ -224,7 +232,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var outsourceStepOrderDetail = await _manufacturingDBContext.OutsourceOrderDetail
                                                         .Where(x => x.OutsourceOrderId == outsourceStepOrder.OutsourceOrderId)
                                                         .ToListAsync();
-                foreach (var detail in outsourceStepOrderDetail) {
+                foreach (var detail in outsourceStepOrderDetail)
+                {
                     var uDetail = req.outsourceOrderDetail.FirstOrDefault(x => x.OutsourceOrderDetailId == detail.OutsourceOrderDetailId);
                     if (uDetail != null)
                         _mapper.Map(uDetail, detail);
@@ -242,21 +251,25 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceStepOrder.OutsourceOrderId, $"Cập nhật đơn hàng gia công công đoạn {outsourceStepOrder.OutsourceOrderCode}", req.JsonSerialize());
                 return true;
-            }catch(Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "UpdateOutsourceStepOrder");
                 throw;
             }
         }
 
-        public async Task<bool> DeleteOutsouceStepOrder(long outsourceStepOrderId) {
+        public async Task<bool> DeleteOutsouceStepOrder(long outsourceStepOrderId)
+        {
             var outsourceStepOrder = await _manufacturingDBContext.OutsourceOrder
               .FirstOrDefaultAsync(x => x.OutsourceOrderId == outsourceStepOrderId);
             if (outsourceStepOrder == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
-            try {
+            try
+            {
                 outsourceStepOrder.IsDeleted = true;
 
                 var outsourceStepOrderDetail = await _manufacturingDBContext.OutsourceOrderDetail
@@ -268,7 +281,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceStepOrder.OutsourceOrderId, $"Loại bỏ đơn hàng gia công công đoạn {outsourceStepOrder.OutsourceOrderCode}", outsourceStepOrder.JsonSerialize());
                 return true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "DeleteOutsouceStepOrder");
                 throw;
