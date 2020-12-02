@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }
         public virtual DbSet<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual DbSet<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
+        public virtual DbSet<OutsourceTrack> OutsourceTrack { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
@@ -178,6 +179,21 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceStepRequestData_ProductionStepLinkData");
+            });
+
+            modelBuilder.Entity<OutsourceTrack>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.OutsourceOrder)
+                    .WithMany(p => p.OutsourceTrack)
+                    .HasForeignKey(d => d.OutsourceOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceTrack_OutsourceOrder");
             });
 
             modelBuilder.Entity<ProductSemi>(entity =>

@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public OutsourceOrder()
         {
             OutsourceOrderDetail = new HashSet<OutsourceOrderDetail>();
+            OutsourceTrack = new HashSet<OutsourceTrack>();
         }
 
         public long OutsourceOrderId { get; set; }
@@ -36,5 +37,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
 
         public virtual ICollection<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
+        public virtual ICollection<OutsourceTrack> OutsourceTrack { get; set; }
     }
 }
