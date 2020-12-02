@@ -464,9 +464,9 @@ namespace VErp.Commons.Library
 
             if (!string.IsNullOrWhiteSpace(number))
             {
-                values.Add(StringTemplateConstants.NUMBER, number);
+                values.Add(StringTemplateConstants.SNUMBER, number);
             }
-            return FormatStyle(template, values);
+            return FormatStyle(template, values)?.Replace("%", "");
         }
 
         public static string FormatStyle(string template, IDictionary<string, object> data)

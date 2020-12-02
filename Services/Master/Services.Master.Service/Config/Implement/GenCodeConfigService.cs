@@ -66,14 +66,16 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var lastValues = (await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeIds.Contains(c.CustomGenCodeId)).AsNoTracking().ToListAsync())
                 .GroupBy(c => c.CustomGenCodeId)
-                .ToDictionary(c => c.Key, c => c.Select(l => new CustomGenCodeBaseValueModel
+                .ToDictionary(c => c.Key, c => c.Select(l =>
                 {
-                    BaseValue = l.BaseValue,
-                    LastValue = l.LastValue,
-                    LastCode = l.LastCode
-                }).ToList()
-
-                );
+                    return new CustomGenCodeBaseValueModel
+                    {
+                        CustomGenCodeId = c.Key,
+                        BaseValue = l.BaseValue,
+                        LastValue = l.LastValue,
+                        LastCode = l.LastCode
+                    };
+                }).ToList());
 
             var pagedData = new List<CustomGenCodeOutputModel>();
             foreach (var item in objList)
@@ -113,20 +115,33 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
             }
 
+            var stringNumber = string.Empty;
+            for (var i = 0; i < obj.CodeLength; i++)
+            {
+                stringNumber += "x";
+
+            }
+
+            var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date, stringNumber);
+
             var lastValues = await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking()
                 .Select(l => new CustomGenCodeBaseValueModel
                 {
+                    CustomGenCodeId = customGenCodeId,
                     BaseValue = l.BaseValue,
                     LastValue = l.LastValue,
-                    LastCode = l.LastCode
+                    LastCode = l.LastCode,
+                    Example = newCode
                 }).ToListAsync();
 
             var lastValueEntity = (await FindBaseValue(customGenCodeId, obj.BaseFormat, fId, code, date)).data;
             var currentLastValue = new CustomGenCodeBaseValueModel()
             {
+                CustomGenCodeId = customGenCodeId,
                 BaseValue = lastValueEntity.BaseValue,
                 LastValue = lastValueEntity.LastValue,
                 LastCode = lastValueEntity.LastCode,
+                Example = newCode
             };
 
             var info = new CustomGenCodeOutputModel()
@@ -376,7 +391,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     {
                         trans.Rollback();
                         throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
-                    }           
+                    }
 
                     var (isExisted, baseValueEntity) = await FindBaseValue(customGenCodeId, config.BaseFormat, fId, code, date);
 

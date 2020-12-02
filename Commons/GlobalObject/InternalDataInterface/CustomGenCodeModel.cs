@@ -35,5 +35,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string BaseValue { get; set; }
         public int LastValue { get; set; }
         public string LastCode { get; set; }
+        public string Example { get; set; }
     }
 }
