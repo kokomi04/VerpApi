@@ -12,6 +12,18 @@ namespace VErp.Infrastructure.ServiceCore.Model
         public int Total { get; set; }
         public IList<T> List { get; set; }
 
+        public object AdditionResult { get; set; }
+
+        public static implicit operator PageData<T>((IList<T> list, int total, object additionResult) result)
+        {
+            return new PageData<T>()
+            {
+                Total = result.total,
+                List = result.list,
+                AdditionResult = result.additionResult
+            };
+        }
+
         public static implicit operator PageData<T>((IList<T> list, int total) result)
         {
             return new PageData<T>()
@@ -24,10 +36,15 @@ namespace VErp.Infrastructure.ServiceCore.Model
 
     public class PageDataTable
     {
-        public int Total { get; set; }
+        public long Total { get; set; }
         public IList<NonCamelCaseDictionary> List { get; set; }
 
-        public static implicit operator PageDataTable((DataTable list, int total) result)
+        //public static implicit operator PageDataTable((DataTable list, int total) result)
+        //{
+        //    return (result.list, result.total);
+        //}
+
+        public static implicit operator PageDataTable((DataTable list, long total) result)
         {
             var lst = new List<NonCamelCaseDictionary>();
 

@@ -20,6 +20,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsMultiRow { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập số lượng cột hiển thị")]
         public int Columns { get; set; }
+        public string ColumnStyles { get; set; }
         public int SortOrder { get; set; }
     }
 

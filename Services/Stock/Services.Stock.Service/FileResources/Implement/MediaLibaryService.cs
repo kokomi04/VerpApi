@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
@@ -65,7 +66,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _logger = logger;
         }
 
-        public async Task<bool> CreateSubdirectory(string root, string subdirectory)
+        public bool CreateSubdirectory(string root, string subdirectory)
         {
             var pPath = GenerateMediaFilePath(root);
             if (!Directory.Exists(GetPhysicalFilePath(pPath)))
@@ -79,12 +80,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<DirectoryStructure> GetDirectoryStructure()
+        public DirectoryStructure GetDirectoryStructure()
         {
             return GetDirectoryStructure(GenerateRootPath());
         }
 
-        public async Task<PageData<VisualFile>> GetVisualFiles(string directory, string keyWord, int page, int size)
+        public PageData<VisualFile> GetVisualFiles(string directory, string keyWord, int page, int size)
         {
             var rootDirectory = GenerateRootPath();
             var ls = new List<VisualFile>();
@@ -152,7 +153,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         public async Task<bool> UploadFiles(string directory, IEnumerable<IFormFile> formFiles)
         {
-
             if (string.IsNullOrWhiteSpace(directory))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
@@ -164,19 +164,19 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> DeleteFiles(IList<string> files)
+        public bool DeleteFiles(IList<string> files)
         {
             foreach (var file in files)
             {
-                await DeleteFile(file);
+                DeleteFile(file);
             }
 
             return true;
         }
 
-        public async Task<bool> DeleteFile(string file)
+        public bool DeleteFile(string filePath)
         {
-            var filePath = GetPhysicalFilePath(GenerateMediaFilePath(file));
+            filePath = GetPhysicalFilePath(GenerateMediaFilePath(filePath));
             if (!File.Exists(filePath))
                 throw new BadRequestException(FileErrorCode.FileNotFound);
 
@@ -184,7 +184,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<(Stream file, string fileName, string contentType)> GetFileStream(string filePath, bool thumb)
+        public (Stream file, string fileName, string contentType) GetFileStream(string filePath, bool thumb)
         {
             filePath = GenerateMediaFilePath(filePath);
 
@@ -204,12 +204,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return result;
         }
 
-        public async Task<bool> DeletedDirectory(string d)
+        public bool DeletedDirectory(string directory)
         {
-            if (string.IsNullOrWhiteSpace(d)) 
+            if (string.IsNullOrWhiteSpace(directory)) 
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
-            var dPath = GetPhysicalFilePath(GenerateMediaFilePath(d));
+            var dPath = GetPhysicalFilePath(GenerateMediaFilePath(directory));
             if (!Directory.Exists(dPath)) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             else if(Directory.GetDirectories(dPath).Length > 0 || Directory.GetFiles(dPath).Length > 0) throw new BadRequestException(MediaLibraryErrorCode.DirectoryNotEmpty);
 
@@ -218,52 +218,37 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> CopyDirectory(string d, string n)
+        public bool CopyDirectory(string pathSource, string pathDest)
         {
-            if (string.IsNullOrWhiteSpace(d))
+            if (string.IsNullOrWhiteSpace(pathDest))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
-            d = GetPhysicalFilePath(GenerateMediaFilePath(d));
-            n = GetPhysicalFilePath(GenerateMediaFilePath(n));
+            pathSource = GetPhysicalFilePath(GenerateMediaFilePath(pathSource));
+            pathDest = GetPhysicalFilePath(GenerateMediaFilePath(pathDest));
 
-            DirectoryInfo source = new DirectoryInfo(d);
-            DirectoryInfo dest = new DirectoryInfo(n + "/" + source.Name);
+            DirectoryInfo source = new DirectoryInfo(pathSource);
+            DirectoryInfo dest = new DirectoryInfo(pathDest + "/" + source.Name);
 
             if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
 
-            CopyDir(source.FullName, dest.FullName);
+            CopyDir(source.Name, source.FullName, dest.FullName);
 
             return true;
         }
 
-        public async Task<bool> MoveDirectory(string d, string n)
+        public bool MoveDirectory(string pathSource, string pathDest)
         {
-            if (string.IsNullOrWhiteSpace(d))
+            if (pathDest.Contains(pathSource) || pathSource.Equals(pathDest))
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Khổng thể di chuyển folder vào chính nó");
+            if (string.IsNullOrWhiteSpace(pathSource))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
-            d = GetPhysicalFilePath(GenerateMediaFilePath(d));
-            n = GetPhysicalFilePath(GenerateMediaFilePath(n));
+            pathSource = GetPhysicalFilePath(GenerateMediaFilePath(pathSource));
+            pathDest = GetPhysicalFilePath(GenerateMediaFilePath(pathDest));
 
-            DirectoryInfo source = new DirectoryInfo(d);
-            DirectoryInfo dest = new DirectoryInfo(n + "/" + source.Name);
-
-            if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
-            if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
-
-            source.MoveTo(dest.FullName);
-
-            return true;
-        }
-
-        public async Task<bool> RenameDirectory(string d, string n)
-        {
-            if (string.IsNullOrWhiteSpace(d) || string.IsNullOrWhiteSpace(n))
-                throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
-            d = GetPhysicalFilePath(GenerateMediaFilePath(d));
-
-            DirectoryInfo source = new DirectoryInfo(d);
-            DirectoryInfo dest = new DirectoryInfo(Path.Combine(source.Parent.FullName,n));
+            DirectoryInfo source = new DirectoryInfo(pathSource);
+            DirectoryInfo dest = new DirectoryInfo(pathDest + "/" + source.Name);
 
             if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
@@ -273,9 +258,26 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> CopyFiles(IList<string> files, string directory)
+        public bool RenameDirectory(string pathSource, string newNameFolder)
         {
-            if (string.IsNullOrWhiteSpace(directory))
+            if (string.IsNullOrWhiteSpace(pathSource) || string.IsNullOrWhiteSpace(newNameFolder))
+                throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
+            pathSource = GetPhysicalFilePath(GenerateMediaFilePath(pathSource));
+
+            DirectoryInfo source = new DirectoryInfo(pathSource);
+            DirectoryInfo dest = new DirectoryInfo(Path.Combine(source.Parent.FullName,newNameFolder));
+
+            if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
+            if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
+
+            source.MoveTo(dest.FullName);
+
+            return true;
+        }
+
+        public bool CopyFiles(IList<string> files, string pathSource)
+        {
+            if (string.IsNullOrWhiteSpace(pathSource))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
             foreach(var f in files)
@@ -283,12 +285,11 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 var s = GetPhysicalFilePath(GenerateMediaFilePath(f));
                 var source = new FileInfo(s);
 
-                var d = GetPhysicalFilePath(GenerateMediaFilePath(Path.Combine(directory, source.Name)));
+                var d = GetPhysicalFilePath(GenerateMediaFilePath(Path.Combine(pathSource, source.Name)));
                 var dest = new FileInfo(d);
                 
 
                 if (!source.Exists) throw new BadRequestException(FileErrorCode.FileNotFound);
-                if (dest.Directory.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
                 if (dest.Exists) throw new BadRequestException(FileErrorCode.FileExists);
 
                 source.CopyTo(dest.FullName);
@@ -297,7 +298,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> MoveFiles(IList<string> files, string directory)
+        public bool MoveFiles(IList<string> files, string directory)
         {
             if (string.IsNullOrWhiteSpace(directory))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
@@ -311,7 +312,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 var dest = new FileInfo(d);
 
                 if (!source.Exists) throw new BadRequestException(FileErrorCode.FileNotFound);
-                if (dest.Directory.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
                 if (dest.Exists) throw new BadRequestException(FileErrorCode.FileExists);
 
                 source.MoveTo(dest.FullName);
@@ -320,15 +320,15 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
         }
 
-        public async Task<bool> RenameFile(string f, string n)
+        public bool RenameFile(string filePath, string newNameFile)
         {
-            if (string.IsNullOrWhiteSpace(f) || string.IsNullOrWhiteSpace(n))
+            if (string.IsNullOrWhiteSpace(filePath) || string.IsNullOrWhiteSpace(newNameFile))
                 throw new BadRequestException(FileErrorCode.FileNotFound);
 
-            f = GetPhysicalFilePath(GenerateMediaFilePath(f));
+            filePath = GetPhysicalFilePath(GenerateMediaFilePath(filePath));
 
-            FileInfo source = new FileInfo(f);
-            FileInfo dest = new FileInfo(Path.Combine(source.Directory.FullName, n));
+            FileInfo source = new FileInfo(filePath);
+            FileInfo dest = new FileInfo(Path.Combine(source.Directory.FullName, newNameFile));
 
             if (!source.Exists) throw new BadRequestException(FileErrorCode.FileNotFound);
             if (dest.Exists) throw new BadRequestException(FileErrorCode.FileExists);
@@ -339,15 +339,15 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
         #region private
-        private void CopyDir(string path, string dest)
+        private void CopyDir(string zipFile,string path, string dest)
         {
-            if (!Directory.Exists(dest)) Directory.CreateDirectory(dest);
-            foreach (string f in Directory.GetFiles(path))
-            {
-                FileInfo file = new FileInfo(f);
-                if (!System.IO.File.Exists(Path.Combine(dest, file.Name))) System.IO.File.Copy(f, Path.Combine(dest, file.Name));
-            }
-            foreach (string d in Directory.GetDirectories(path)) CopyDir(d, Path.Combine(dest, new DirectoryInfo(d).Name));
+            var zipPath = GenerateTempFilePath(zipFile + ".zip");
+            var fileZ = new FileInfo(GetPhysicalFilePath(zipPath));
+            if(fileZ.Exists)
+                File.Delete(GetPhysicalFilePath(zipPath));
+
+            ZipFile.CreateFromDirectory(path, GetPhysicalFilePath(zipPath));
+            ZipFile.ExtractToDirectory(GetPhysicalFilePath(zipPath), dest);
         }
         private (Stream file, string fileName, string contentType) GetFileThumb(FileInfo file)
         {

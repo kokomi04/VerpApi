@@ -36,5 +36,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
 
         Task<VoucherBillInfoModel> GetPackingListInfo(int inputTypeId, long fId);
+
+        Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size);
+
+        Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds);
     }
 }

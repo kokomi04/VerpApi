@@ -63,6 +63,7 @@
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\Infrastructure\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\..\Services.Grpc.Service\Services.Grpc.Service.csproj" />
+    <ProjectReference Include="..\..\Services.Manafacturing.Service\Services.Manafacturing.Service.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Service\Services.PurchaseOrder.Service.csproj" />
     <ProjectReference Include="..\..\Services\Accountancy\Services.Accountancy.Service\Services.Accountancy.Service.csproj" />

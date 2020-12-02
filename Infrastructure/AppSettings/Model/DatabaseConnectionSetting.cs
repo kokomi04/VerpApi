@@ -15,5 +15,6 @@ namespace VErp.Infrastructure.AppSettings.Model
         public string AccountancyDatabase { get; set; }
         public string ReportConfigDatabase { get; set; }
         public string ActivityLogDatabase { get; set; }
+        public string ManufacturingDatabase { get; set; }
     }
 }

@@ -191,6 +191,12 @@ namespace VErp.Commons.Library
             return new DateTime(1970, 1, 1).AddSeconds(unixTime);
         }
 
+        public static DateTime? UnixToDateTime(this long? unixTime)
+        {
+            if (unixTime == 0 || !unixTime.HasValue) return null;
+            return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value);
+        }
+
         public static decimal Eval(string expression)
         {
             try
@@ -691,19 +697,19 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static bool Contains(this object value1, object value2)
+        public static bool StringContains(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().Contains(value2.ToString());
         }
 
-        public static bool StartsWith(this object value1, object value2)
+        public static bool StringStartsWith(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().StartsWith(value2.ToString());
         }
 
-        public static bool EndsWith(this object value1, object value2)
+        public static bool StringEndsWith(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().EndsWith(value2.ToString());
@@ -800,6 +806,35 @@ namespace VErp.Commons.Library
                 dbtype = SqlDbType.Variant;
             }
             return dbtype;
+        }
+
+        public static List<T> ConvertData<T>(this DataTable dt)
+        {
+            List<T> data = new List<T>();
+            foreach (DataRow row in dt.Rows)
+            {
+                T item = GetItem<T>(row);
+                data.Add(item);
+            }
+            return data;
+        }
+
+        private static T GetItem<T>(DataRow dr)
+        {
+            Type temp = typeof(T);
+            T obj = Activator.CreateInstance<T>();
+
+            foreach (DataColumn column in dr.Table.Columns)
+            {
+                foreach (PropertyInfo pro in temp.GetProperties())
+                {
+                    if (pro.Name == column.ColumnName && dr[column.ColumnName] != DBNull.Value)
+                        pro.SetValue(obj, dr[column.ColumnName], null);
+                    else
+                        continue;
+                }
+            }
+            return obj;
         }
 
         public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)
@@ -940,14 +975,34 @@ namespace VErp.Commons.Library
                 {
                     title = prop.Name;
                 }
-                fields.Add(new CategoryFieldNameModel()
+
+                var fileMapping = new CategoryFieldNameModel()
                 {
                     GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
                     RefCategory = null
-                });
+                };
+
+                if (prop.PropertyType.IsClass)
+                {
+
+                    MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
+                    MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
+                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, null);
+
+                    fileMapping.RefCategory = new CategoryNameModel()
+                    {
+                        CategoryCode = prop.PropertyType.Name,
+                        CategoryId = prop.PropertyType.Name.GetHashCode(),
+                        CategoryTitle = title,
+                        Fields = childFields
+                    };
+
+                }
+
+                fields.Add(fileMapping);
             }
 
             return fields;

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
@@ -16,6 +17,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
         Task<IList<ProductModel>> GetListByCodeAndInternalNames(IList<string> productCodes, IList<string> productInternalNames);
         Task<IList<ProductModel>> GetListProducts(IList<int> productIds);
+
+        Task<IList<ProductTypeOutput>> GetAllProductType();
     }
 
 
@@ -168,6 +171,12 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 }
             }
             return await _httpCrossService.Post<IList<ProductModel>>("api/internal/InternalProduct/GetListProductsByIds", productIds);
+        }
+
+        public async Task<IList<ProductTypeOutput>> GetAllProductType()
+        {
+            var lst = await _httpCrossService.Post<PageData<ProductTypeOutput>>($"api/internal/InternalProductType?page={1}&size={int.MaxValue}", new { });
+            return lst.List;
         }
     }
 }
