@@ -331,13 +331,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.ReportType.AddAsync(report);
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-
-                if (data.MenuStyle != null)
-                {
-                    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, string.Empty, report.ReportTypeId);
-                    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, string.Empty, report.ReportTypeId);
-                    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
-                }
+              
 
                 await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data.JsonSerialize());
                 return report.ReportTypeId;

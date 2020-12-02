@@ -19,6 +19,7 @@ using VErp.Commons.GlobalObject;
 using NPOI.OpenXmlFormats.Dml;
 using VErp.Infrastructure.EF.EFExtensions;
 using Verp.Cache.RedisCache;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -47,23 +48,39 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10)
         {
-            var query = from ogc in _masterDbContext.CustomGenCode
+            var query = from ogc in _masterDbContext.CustomGenCode.AsNoTracking()
                         where ogc.IsActived
                         select ogc;
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query
-                        where q.CustomGenCodeName.Contains(keyword) || q.Prefix.Contains(keyword) || q.Suffix.Contains(keyword) || q.Seperator.Contains(keyword)
+                        where q.CustomGenCodeName.Contains(keyword) || q.CodeFormat.Contains(keyword) || q.BaseFormat.Contains(keyword)
                         select q;
             }
 
             var total = await query.CountAsync();
             var objList = size > 0 ? await query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync() : await query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder).ToListAsync();
 
+            var customGenCodeIds = objList.Select(c => c.CustomGenCodeId).ToList();
+
+            var lastValues = (await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeIds.Contains(c.CustomGenCodeId)).AsNoTracking().ToListAsync())
+                .GroupBy(c => c.CustomGenCodeId)
+                .ToDictionary(c => c.Key, c => c.Select(l =>
+                {
+                    return new CustomGenCodeBaseValueModel
+                    {
+                        CustomGenCodeId = c.Key,
+                        BaseValue = l.BaseValue,
+                        LastValue = l.LastValue,
+                        LastCode = l.LastCode
+                    };
+                }).ToList());
+
             var pagedData = new List<CustomGenCodeOutputModel>();
             foreach (var item in objList)
             {
+                lastValues.TryGetValue(item.CustomGenCodeId, out var lastBaseValues);
                 var info = new CustomGenCodeOutputModel()
                 {
                     CustomGenCodeId = item.CustomGenCodeId,
@@ -71,24 +88,25 @@ namespace VErp.Services.Master.Service.Config.Implement
                     CustomGenCodeName = item.CustomGenCodeName,
                     Description = item.Description,
                     CodeLength = item.CodeLength,
-                    Prefix = item.Prefix,
-                    Suffix = item.Suffix,
-                    Seperator = item.Seperator,
-                    LastValue = item.LastValue,
+                    //Prefix = item.Prefix,
+                    //Suffix = item.Suffix,
                     LastCode = item.LastCode,
                     IsActived = item.IsActived,
                     UpdatedUserId = item.UpdatedUserId,
                     CreatedTime = item.CreatedTime != null ? ((DateTime)item.CreatedTime).GetUnix() : 0,
                     UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
                     SortOrder = item.SortOrder,
-                    IsDefault = item.IsDefault
+                    IsDefault = item.IsDefault,
+                    LastValues = lastBaseValues,
+                    BaseFormat = item.BaseFormat,
+                    CodeFormat = item.CodeFormat
                 };
                 pagedData.Add(info);
             }
             return (pagedData, total);
         }
 
-        public async Task<CustomGenCodeOutputModel> GetInfo(int customGenCodeId)
+        public async Task<CustomGenCodeOutputModel> GetInfo(int customGenCodeId, long? fId, string code, long? date)
         {
 
             var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
@@ -96,6 +114,36 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
             }
+
+            var stringNumber = string.Empty;
+            for (var i = 0; i < obj.CodeLength; i++)
+            {
+                stringNumber += "x";
+
+            }
+
+            var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date, stringNumber);
+
+            var lastValues = await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking()
+                .Select(l => new CustomGenCodeBaseValueModel
+                {
+                    CustomGenCodeId = customGenCodeId,
+                    BaseValue = l.BaseValue,
+                    LastValue = l.LastValue,
+                    LastCode = l.LastCode,
+                    Example = newCode
+                }).ToListAsync();
+
+            var lastValueEntity = (await FindBaseValue(customGenCodeId, obj.BaseFormat, fId, code, date)).data;
+            var currentLastValue = new CustomGenCodeBaseValueModel()
+            {
+                CustomGenCodeId = customGenCodeId,
+                BaseValue = lastValueEntity.BaseValue,
+                LastValue = lastValueEntity.LastValue,
+                LastCode = lastValueEntity.LastCode,
+                Example = newCode
+            };
+
             var info = new CustomGenCodeOutputModel()
             {
                 CustomGenCodeId = obj.CustomGenCodeId,
@@ -103,22 +151,23 @@ namespace VErp.Services.Master.Service.Config.Implement
                 CustomGenCodeName = obj.CustomGenCodeName,
                 Description = obj.Description,
                 CodeLength = obj.CodeLength,
-                Prefix = obj.Prefix,
-                Suffix = obj.Suffix,
-                Seperator = obj.Seperator,
-                LastValue = obj.LastValue,
+                //Prefix = obj.Prefix,
+                //Suffix = obj.Suffix,
                 LastCode = obj.LastCode,
                 IsActived = obj.IsActived,
                 UpdatedUserId = obj.UpdatedUserId,
                 CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
                 UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
                 SortOrder = obj.SortOrder,
-                IsDefault = obj.IsDefault
+                IsDefault = obj.IsDefault,
+                LastValues = lastValues,
+                CurrentLastValue = currentLastValue,
+                BaseFormat = obj.BaseFormat,
+                CodeFormat = obj.CodeFormat
             };
             return info;
         }
 
-       
         public async Task<bool> Update(int customGenCodeId, CustomGenCodeInputModel model)
         {
 
@@ -128,20 +177,47 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
             }
+            obj.BaseFormat = model.BaseFormat;
+            obj.CodeFormat = model.CodeFormat;
             obj.ParentId = model.ParentId;
             obj.CustomGenCodeName = model.CustomGenCodeName;
             obj.CodeLength = model.CodeLength;
-            obj.Prefix = model.Prefix;
-            obj.Suffix = model.Suffix;
-            obj.Seperator = model.Seperator;
+            //obj.Prefix = model.Prefix;
+            //obj.Suffix = model.Suffix;
             obj.Description = model.Description;
             obj.UpdatedUserId = _currentContextService.UserId;
             obj.UpdatedTime = DateTime.UtcNow;
 
-            obj.LastValue = model.LastValue;
             obj.SortOrder = model.SortOrder;
 
             obj.IsDefault = model.IsDefault;
+
+
+            if (model.LastValues != null)
+            {
+                var lastValues = await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).ToListAsync();
+
+                foreach (var item in model.LastValues)
+                {
+                    var editted = lastValues.FirstOrDefault(l => l.BaseValue == item.BaseValue);
+                    if (editted != null)
+                    {
+                        item.LastValue = editted.LastValue;
+                    }
+                    else
+                    {
+                        _masterDbContext.CustomGenCodeValue.Add(new CustomGenCodeValue()
+                        {
+                            CustomGenCodeId = customGenCodeId,
+                            BaseValue = item.BaseValue,
+                            LastCode = string.Empty,
+                            LastValue = item.LastValue,
+                            TempCode = "",
+                            TempValue = null
+                        });
+                    }
+                }
+            }
 
             await _masterDbContext.SaveChangesAsync();
 
@@ -160,7 +236,6 @@ namespace VErp.Services.Master.Service.Config.Implement
             return true;
 
         }
-
 
         private async Task UpdateSortOrder()
         {
@@ -185,8 +260,6 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _masterDbContext.SaveChangesAsync();
         }
-
-        
 
         public async Task<bool> Delete(int customGenCodeId)
         {
@@ -223,17 +296,15 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 CustomGenCodeName = model.CustomGenCodeName,
                 CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
-                Prefix = model.Prefix ?? string.Empty,
-                Suffix = model.Suffix ?? string.Empty,
-                Seperator = model.Seperator ?? string.Empty,
+                //Prefix = model.Prefix ?? string.Empty,
+                //Suffix = model.Suffix ?? string.Empty,
                 Description = model.Description,
-                DateFormat = string.Empty,
-                LastValue = model.LastValue,
+                BaseFormat = model.BaseFormat,
+                CodeFormat = model.CodeFormat,
+                //DateFormat = string.Empty,
                 LastCode = string.Empty,
                 IsActived = true,
                 IsDefault = model.IsDefault,
-
-
                 IsDeleted = false,
                 UpdatedUserId = _currentContextService.UserId,
                 ResetDate = DateTime.UtcNow,
@@ -241,6 +312,25 @@ namespace VErp.Services.Master.Service.Config.Implement
                 UpdatedTime = DateTime.UtcNow
             };
             _masterDbContext.CustomGenCode.Add(entity);
+
+            await _masterDbContext.SaveChangesAsync();
+
+            if (model.LastValues != null)
+            {
+                foreach (var item in model.LastValues)
+                {
+                    _masterDbContext.CustomGenCodeValue.Add(new CustomGenCodeValue()
+                    {
+                        CustomGenCodeId = entity.CustomGenCodeId,
+                        BaseValue = item.BaseValue,
+                        LastCode = string.Empty,
+                        LastValue = item.LastValue,
+                        TempCode = "",
+                        TempValue = null
+                    });
+                }
+            }
+
 
             await _masterDbContext.SaveChangesAsync();
 
@@ -261,43 +351,75 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task<CustomCodeModel> GenerateCode(int customGenCodeId, int lastValue, string code = "")
+        private async Task<(bool isFound, CustomGenCodeValue data)> FindBaseValue(int customGenCodeId, string baseFormat, long? fId = null, string code = "", long? date = null)
+        {
+            var baseValue = Utils.FormatStyle(baseFormat, code, fId, date, null);
+            var baseValueEntity = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(c => c.CustomGenCodeId == customGenCodeId && c.BaseValue == baseValue);
+            if (baseValueEntity == null)
+            {
+                baseValueEntity = new CustomGenCodeValue()
+                {
+                    CustomGenCodeId = customGenCodeId,
+                    BaseValue = baseValue,
+                    LastCode = "",
+                    LastValue = 0,
+                    TempCode = "",
+                    TempValue = null
+                };
+                return (false, baseValueEntity);
+            }
+            else
+            {
+                return (true, baseValueEntity);
+            }
+
+
+        }
+
+        public async Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId = null, string code = "", long? date = null)
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeCustomKey(customGenCodeId)))
             {
-                CustomCodeModel result;
+                CustomCodeGeneratedModel result;
 
                 using (var trans = await _masterDbContext.Database.BeginTransactionAsync())
                 {
-                    var config = _masterDbContext.CustomGenCode
-                        .FirstOrDefault(q => q.CustomGenCodeId == customGenCodeId);
+                    var config = await _masterDbContext.CustomGenCode
+                        .FirstOrDefaultAsync(q => q.CustomGenCodeId == customGenCodeId);
 
                     if (config == null)
                     {
                         trans.Rollback();
                         throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
                     }
+
+                    var (isExisted, baseValueEntity) = await FindBaseValue(customGenCodeId, config.BaseFormat, fId, code, date);
+
+                    if (!isExisted)
+                    {
+                        _masterDbContext.CustomGenCodeValue.Add(baseValueEntity);
+                        await _masterDbContext.SaveChangesAsync();
+                    }
+
+
                     string newCode = string.Empty;
                     var newId = 0;
                     var maxId = (int)Math.Pow(10, config.CodeLength);
-                    var seperator = (string.IsNullOrEmpty(config.Seperator) || string.IsNullOrWhiteSpace(config.Seperator)) ? null : config.Seperator;
 
-                    lastValue = lastValue > config.LastValue ? lastValue : config.LastValue;
+                    lastValue = lastValue > baseValueEntity.LastValue ? lastValue : baseValueEntity.LastValue;
 
                     if (lastValue < 1)
                     {
                         newId = 1;
-                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                     }
                     else
                     {
                         newId = lastValue + 1;
-                        var stringNewId = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                        newCode = $"{config.Prefix}{seperator}{stringNewId}".Trim();
                     }
 
-                    newCode = Utils.FormatStyle(newCode, code, null);
+                    var stringNumber = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+                    newCode = Utils.FormatStyle(config.CodeFormat, code, fId, date, stringNumber);
+
 
                     if (!(newId < maxId))
                     {
@@ -310,10 +432,11 @@ namespace VErp.Services.Master.Service.Config.Implement
                     _masterDbContext.SaveChanges();
                     trans.Commit();
 
-                    result = new CustomCodeModel
+                    result = new CustomCodeGeneratedModel
                     {
                         CustomCode = newCode,
                         LastValue = newId,
+                        BaseValue = baseValueEntity.BaseValue,
                         CustomGenCodeId = config.CustomGenCodeId,
                     };
                 }
@@ -322,10 +445,10 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<bool> ConfirmCode(int customGenCodeId)
+        public async Task<bool> ConfirmCode(int customGenCodeId, string baseValue)
         {
 
-            var config = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(m => m.CustomGenCodeId == customGenCodeId);
+            var config = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(m => m.CustomGenCodeId == customGenCodeId && m.BaseValue == baseValue);
 
             if (config == null)
             {
@@ -340,7 +463,6 @@ namespace VErp.Services.Master.Service.Config.Implement
             return true;
 
         }
-
 
     }
 }

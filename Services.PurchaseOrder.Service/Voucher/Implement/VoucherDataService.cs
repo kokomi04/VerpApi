@@ -351,14 +351,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(voucherTypeId, billInfo.FId, 1, data, areaFieldGenCodes);
+                await CreateBillVersion(voucherTypeId, billInfo.FId, 1, data, generateTypeLastValues);
 
                 // After saving action (SQL)
                 await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Add);
 
-                await ConfirmCustomGenCode(areaFieldGenCodes);
+                await ConfirmCustomGenCode(generateTypeLastValues);
 
                 trans.Commit();
 
@@ -983,9 +983,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await DeleteVoucherBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
 
-                var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data, areaFieldGenCodes);
+                await CreateBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data, generateTypeLastValues);
 
                 billInfo.LatestBillVersion++;
 
@@ -994,7 +994,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Update);
 
-                await ConfirmCustomGenCode(areaFieldGenCodes);
+                await ConfirmCustomGenCode(generateTypeLastValues);
 
                 trans.Commit();
 
@@ -1288,7 +1288,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task FillGenerateColumn(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes, Dictionary<string, ValidateVoucherField> fields, IList<NonCamelCaseDictionary> rows)
+        private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, ValidateVoucherField> fields, IList<NonCamelCaseDictionary> rows)
         {
             for (var i = 0; i < rows.Count; i++)
             {
@@ -1302,10 +1302,20 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         (!row.TryGetValue(field.FieldName, out var value) || value.IsNullObject())
                     )
                     {
-                        CustomGenCodeOutputModelOut currentConfig;
+                        var code = rows.FirstOrDefault(r => r.ContainsKey(AccountantConstants.BILL_CODE))?[AccountantConstants.BILL_CODE]?.ToString();
+
+                        var ngayCt = rows.FirstOrDefault(r => r.ContainsKey(AccountantConstants.BILL_DATE))?[AccountantConstants.BILL_DATE]?.ToString();
+
+                        long? ngayCtValue = null;
+                        if (long.TryParse(ngayCt, out var v))
+                        {
+                            ngayCtValue = v;
+                        }
+
+                        CustomGenCodeOutputModel currentConfig;
                         try
                         {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId);
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId, fId, code, ngayCtValue);
 
                             if (currentConfig == null)
                             {
@@ -1321,25 +1331,29 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             throw;
                         }
 
+                        var generateType = $"{currentConfig.CustomGenCodeId}_{currentConfig.CurrentLastValue.BaseValue}";
 
-                        if (!areaFieldGenCodes.ContainsKey(field.VoucherAreaFieldId))
+                        if (!generateTypeLastValues.ContainsKey(generateType))
                         {
-                            areaFieldGenCodes.Add(field.VoucherAreaFieldId, currentConfig);
+                            generateTypeLastValues.Add(generateType, currentConfig.CurrentLastValue);
                         }
 
-                        var genCodeInfo = areaFieldGenCodes[field.VoucherAreaFieldId];
+                        var lastTypeValue = generateTypeLastValues[generateType];
+
 
                         try
                         {
-                            var generated = await _customGenCodeHelperService.GenerateCode(genCodeInfo.CustomGenCodeId, genCodeInfo.LastValue);
+
+                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, lastTypeValue.LastValue, fId, code, ngayCtValue);
                             if (generated == null)
                             {
                                 throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
                             }
 
+
                             value = generated.CustomCode;
-                            genCodeInfo.LastValue = generated.LastValue;
-                            genCodeInfo.LastCode = generated.CustomCode;
+                            lastTypeValue.LastValue = generated.LastValue;
+                            lastTypeValue.LastCode = generated.CustomCode;
                         }
                         catch (BadRequestException badRequest)
                         {
@@ -1363,26 +1377,25 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task ConfirmCustomGenCode(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
+        private async Task ConfirmCustomGenCode(Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
-            var customGenCodeIds = areaFieldGenCodes.Select(a => a.Value.CustomGenCodeId);
-            foreach (var customGenCodeId in customGenCodeIds)
+            foreach (var (_, value) in generateTypeLastValues)
             {
-                await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+                await _customGenCodeHelperService.ConfirmCode(value);
             }
         }
 
-        private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, VoucherBillInfoModel data, Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
+        private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, VoucherBillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
             var fields = (await GetVoucherFields(voucherTypeId)).Where(f => !f.IsReadOnly).ToDictionary(f => f.FieldName, f => f);
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(areaFieldGenCodes, infoFields, new[] { data.Info });
+            await FillGenerateColumn(voucherBill_F_Id, generateTypeLastValues, infoFields, new[] { data.Info });
 
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(areaFieldGenCodes, rowFields, data.Rows);
+            await FillGenerateColumn(voucherBill_F_Id, generateTypeLastValues, rowFields, data.Rows);
 
             var insertColumns = new HashSet<string>();
 
@@ -1881,7 +1894,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 try
                 {
-                    var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+                    var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
                     // Get all fields
                     var voucherFields = _purchaseOrderDBContext.VoucherField
@@ -1916,13 +1929,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         await _purchaseOrderDBContext.SaveChangesAsync();
 
-                        await CreateBillVersion(voucherTypeId, billInfo.FId, 1, bill, areaFieldGenCodes);
+                        await CreateBillVersion(voucherTypeId, billInfo.FId, 1, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
                         await ProcessActionAsync(voucherType.AfterSaveAction, bill, voucherFields, EnumAction.Add);
                     }
 
-                    await ConfirmCustomGenCode(areaFieldGenCodes);
+                    await ConfirmCustomGenCode(generateTypeLastValues);
 
                     trans.Commit();
                 }

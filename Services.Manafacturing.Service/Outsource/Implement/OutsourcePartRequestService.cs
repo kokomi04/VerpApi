@@ -54,13 +54,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 // Get cấu hình sinh mã
                 int customGenCodeId = 0;
-                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0);
+                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0, null, req.OutsourcePartRequestCode, req.OutsourcePartRequestDate);
 
                 if (currentConfig == null)
                 {
                     throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                 }
-                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, req.OutsourcePartRequestCode, req.OutsourcePartRequestDate);
                 if (generated == null)
                 {
                     throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
@@ -87,12 +87,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {order.OutsourcePartRequestId}", order.JsonSerialize());
 
                 if (customGenCodeId > 0)
                 {
-                    await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+                    await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
                 }
 
                 return order.OutsourcePartRequestId;
@@ -150,7 +150,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 //Valid Update and action
                 foreach (var u in details)
                 {
-                        var s = req.OutsourcePartRequestDetail.FirstOrDefault(x => x.OutsourcePartRequestDetailId == u.OutsourcePartRequestDetailId);
+                    var s = req.OutsourcePartRequestDetail.FirstOrDefault(x => x.OutsourcePartRequestDetailId == u.OutsourcePartRequestDetailId);
                     if (s != null)
                         _mapper.Map(s, u);
                     else

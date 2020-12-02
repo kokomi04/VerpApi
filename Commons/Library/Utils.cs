@@ -445,12 +445,28 @@ namespace VErp.Commons.Library
             return value;
         }
 
-        public static string FormatStyle(string template, string code, long? fId)
+        public static string FormatStyle(string template, string code, long? fId, long? date, string number)
         {
-            return FormatStyle(template, new Dictionary<string, object>{
+            var values = new Dictionary<string, object>{
                 { StringTemplateConstants.CODE, code },
                 { StringTemplateConstants.FID, fId },
-            });
+            };
+
+            if (date.HasValue)
+            {
+                var dateTime = date.UnixToDateTime();
+                var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
+                foreach (Match m in dateReg.Matches(template))
+                {
+                    values.Add(m.Value, dateTime.Value.ToString(m.Groups["format"].Value));
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(number))
+            {
+                values.Add(StringTemplateConstants.SNUMBER, number);
+            }
+            return FormatStyle(template, values)?.Replace("%", "");
         }
 
         public static string FormatStyle(string template, IDictionary<string, object> data)

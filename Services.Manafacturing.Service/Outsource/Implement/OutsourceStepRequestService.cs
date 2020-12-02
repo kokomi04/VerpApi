@@ -283,19 +283,19 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             try
             {
                 // Get cấu hình sinh mã
-                int customGenCodeId = 0;
-                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0);
+
+                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0, null, req.OutsourceStepRequestCode, req.OutsourceStepRequestDate);
 
                 if (currentConfig == null)
                 {
                     throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                 }
-                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, req.OutsourceStepRequestCode, req.OutsourceStepRequestDate);
                 if (generated == null)
                 {
                     throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                 }
-                customGenCodeId = currentConfig.CustomGenCodeId;
+
 
                 // Create outsourceStepRequest
                 var outsourceStepRequest = _mapper.Map<OutsourceStepRequest>(req);
@@ -314,8 +314,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _manufacturingDBContext.OutsourceStepRequestData.AddRangeAsync(outsourceStepRequestDatas);
                 await _manufacturingDBContext.SaveChangesAsync();
-                if (customGenCodeId > 0)
-                    await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+
+
+                await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceStepRequest.OutsourceStepRequestId,
