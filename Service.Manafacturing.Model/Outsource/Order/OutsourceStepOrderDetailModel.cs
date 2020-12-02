@@ -5,20 +5,19 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using AutoMapper;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
-    public class OutsourceStepOrderDetailModel: IMapFrom<OutsourceOrderDetail>
+    public class OutsourceStepOrderDetailModel: OutsourceStepRequestDataInfo, IMapFrom<OutsourceOrderDetail>
     {
         public long OutsourceOrderDetailId { get; set; }
         public long OutsourceOrderId { get; set; }
-        public long ProductionStepLinkDataId { get; set; }
         public decimal OutsourceOrderQuantity { get; set; }
         public decimal OutsourceOrderPrice { get; set; }
         public decimal OutsourceOrderTax { get; set; }
-        public EnumProductionStepLinkDataRoleType productionStepLinkDataRoleTypeId { get; set; }
 
-        public void Mapping(Profile profile)
+        public new  void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrderDetail, OutsourceStepOrderDetailModel>()
                 .ForMember(m => m.ProductionStepLinkDataId, v => v.MapFrom(m => m.ObjectId))

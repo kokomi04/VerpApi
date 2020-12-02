@@ -24,4 +24,16 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()));
         }
     }
+
+    public class OutsourceStepOrderSeach
+    {
+        public long OutsourceOrderId { get; set; }
+        public string OutsourceOrderCode { get; set; }
+        public long OutsourceOrderFinishDate { get; set; }
+        public string OutsourceStepRequestCode { get; set; }
+        public long OutsourceStepRequestId { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string OrderCode { get; set; }
+        public string ProductionStepTitle { get; set; }
+    }
 }
