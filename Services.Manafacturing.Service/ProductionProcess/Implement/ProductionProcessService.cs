@@ -885,23 +885,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                //Cập nhật, xóa và tạo mới step
-                var sourceStep = await _manufacturingDBContext.ProductionStep.Where(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId).ToListAsync();
-                foreach (var dest in sourceStep)
-                {
-                    var source = req.ProductionSteps.SingleOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
-                    if (source != null)
-                        _mapper.Map(source, dest);
-                    else dest.IsDeleted = true;
-                }
-
-                var newStep = req.ProductionSteps.AsQueryable().ProjectTo<ProductionStep>(_mapper.ConfigurationProvider)
-                    .Where(x => !sourceStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId))
-                    .ToList();
-
-                await _manufacturingDBContext.ProductionStep.AddRangeAsync(newStep);
-                await _manufacturingDBContext.SaveChangesAsync();
-
                 //Cập nhật, xóa và tạo mới steplinkdata
                 var lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
                                         join r in _manufacturingDBContext.ProductionStepLinkDataRole on s.ProductionStepId equals r.ProductionStepId
@@ -922,6 +905,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .ToList();
 
                 await _manufacturingDBContext.ProductionStepLinkData.AddRangeAsync(newStepLinkData);
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                //Cập nhật, xóa và tạo mới step
+                var sourceStep = await _manufacturingDBContext.ProductionStep.Where(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId).ToListAsync();
+                foreach (var dest in sourceStep)
+                {
+                    var source = req.ProductionSteps.SingleOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
+                    if (source != null)
+                        _mapper.Map(source, dest);
+                    else dest.IsDeleted = true;
+                }
+
+                var newStep = req.ProductionSteps.AsQueryable().ProjectTo<ProductionStep>(_mapper.ConfigurationProvider)
+                    .Where(x => !sourceStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId))
+                    .ToList();
+
+                await _manufacturingDBContext.ProductionStep.AddRangeAsync(newStep);
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 //Cập nhật role steplinkdata trong step
@@ -953,21 +953,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             s.ParentId = p.ProductionStepId;
                     }
                 }
+                await _manufacturingDBContext.SaveChangesAsync();
 
                 //Lưu công đoạn thuộc QTSX trong LSX nào
                 if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
                 {
-                    var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail.Where(x => x.ProductionOrderId == containerId).Select(x => x.ProductionOrderDetailId).ToListAsync();
-                    var lsProductionStepOrderOld = await _manufacturingDBContext.ProductionStepOrder.Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId)).ToListAsync();
+                    var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail.AsNoTracking().Where(x => x.ProductionOrderId == containerId).Select(x => x.ProductionOrderDetailId).ToListAsync();
+                    var lsProductionStepOrderOld = await _manufacturingDBContext.ProductionStepOrder.AsNoTracking().Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId)).ToListAsync();
                     _manufacturingDBContext.ProductionStepOrder.RemoveRange(lsProductionStepOrderOld);
+                    await _manufacturingDBContext.SaveChangesAsync();
 
                     req.ProductionStepOrders.ForEach(x =>
                     {
-                        var step = newStep.FirstOrDefault(x => x.ProductionStepCode.Equals(x.ProductionStepCode));
+                        var step = newStep.FirstOrDefault(y => y.ProductionStepCode.Equals(x.ProductionStepCode));
                         x.ProductionStepId = step.ProductionStepId;
                     });
                     var lsProductionStepOrderNew = _mapper.Map<IList<ProductionStepOrder>>(req.ProductionStepOrders);
                     await _manufacturingDBContext.ProductionStepOrder.AddRangeAsync(lsProductionStepOrderNew);
+                    await _manufacturingDBContext.SaveChangesAsync();
                 }
 
                 await _manufacturingDBContext.SaveChangesAsync();
