@@ -148,11 +148,11 @@ namespace VErp.Infrastructure.ApiCore.Filters
             IQueryable<RolePermission> query;
             if (!isValidateObject)
             {
-                query = _masterContext.RolePermission.Where(p => p.ModuleId == moduleId);
+                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ModuleId == moduleId);
             }
             else
             {
-                query = _masterContext.RolePermission.Where(p => p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId);
+                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId);
             }
 
             var modulePermission = (await query.Select(p => new { p.Permission, p.JsonActionIds })
@@ -205,7 +205,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 context.RouteData.Values.TryGetValue(actionButtonAttr.RouterActionButtonIdKey, out var strActionButtonId);
                 int.TryParse(strActionButtonId?.ToString(), out actionButtonId);
             }
-          
+
             var method = context.HttpContext.Request.Method;
             var methodId = Enum.Parse<EnumMethod>(method, true);
             var action = methodId.GetDefaultAction();
