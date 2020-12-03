@@ -10,5 +10,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
     {
         Task<IList<OutsourceTrackModel>> SearchOutsourceTrackByOutsourceOrder(long outsourceOrderId);
         Task<bool> UpdateOutsourceTrackByOutsourceOrder(long outsourceOrderId, IList<OutsourceTrackModel> req);
+
+        Task<long> CreateOutsourceTrack(OutsourceTrackModel req);
     }
 }

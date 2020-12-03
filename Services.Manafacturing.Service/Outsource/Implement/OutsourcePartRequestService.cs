@@ -85,15 +85,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _manufacturingDBContext.OutsourcePartRequestDetail.AddRangeAsync(orderDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
-                trans.Commit();
-
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {order.OutsourcePartRequestId}", order.JsonSerialize());
 
                 if (customGenCodeId > 0)
                 {
                     await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
                 }
+
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {order.OutsourcePartRequestId}", order.JsonSerialize());
 
                 return order.OutsourcePartRequestId;
             }

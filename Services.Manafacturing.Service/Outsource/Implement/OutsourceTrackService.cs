@@ -17,25 +17,31 @@ using VErp.Services.Manafacturing.Model.Outsource.Track;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 {
-    public class OutsourceTrackService: IOutsourceTrackService
+    public class OutsourceTrackService : IOutsourceTrackService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
-        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public OutsourceTrackService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourceTrackService> logger
-            , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
+        }
+
+        public async Task<long> CreateOutsourceTrack(OutsourceTrackModel req)
+        {
+            var entity = _mapper.Map<OutsourceTrack>(req);
+            await _manufacturingDBContext.OutsourceTrack.AddAsync(entity);
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            return entity.OutsourceTrackId;
         }
 
         public async Task<IList<OutsourceTrackModel>> SearchOutsourceTrackByOutsourceOrder(long outsourceOrderId)
@@ -56,7 +62,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var outsourceTracks = await _manufacturingDBContext.OutsourceTrack
                                             .Where(x => x.OutsourceOrderId == outsourceOrderId)
                                             .ToListAsync();
-                foreach(var track in outsourceTracks)
+                foreach (var track in outsourceTracks)
                 {
                     var rTrack = req.FirstOrDefault(x => x.OutsourceTrackId == track.OutsourceTrackId);
                     if (rTrack != null)
@@ -66,14 +72,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 var newOutsourceTracks = req.AsQueryable()
                                             .ProjectTo<OutsourceTrack>(_mapper.ConfigurationProvider)
-                                            .Where(t => outsourceTracks.Select(x => x.OutsourceTrackId).Contains(t.OutsourceTrackId));
+                                            .Where(t => !outsourceTracks.Select(x => x.OutsourceTrackId).Contains(t.OutsourceTrackId));
                 await _manufacturingDBContext.OutsourceTrack.AddRangeAsync(newOutsourceTracks);
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceTrack, outsourceOrderId, "Cập nhật và tạo mới theo dõi gia công", req.JsonSerialize());
                 return true;
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "UpdateOutsourceTrackByOutsourceOrder");

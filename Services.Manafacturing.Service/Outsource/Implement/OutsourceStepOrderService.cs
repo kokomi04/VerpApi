@@ -19,7 +19,9 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
+using VErp.Services.Manafacturing.Model.Outsource.Track;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
+using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
@@ -32,13 +34,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IOutsourceStepRequestService _outsourceStepRequestService;
+        private readonly IOutsourceTrackService _outsourceTrackService;
 
         public OutsourceStepOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourceStepOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOutsourceStepRequestService outsourceStepRequestService)
+            , IOutsourceStepRequestService outsourceStepRequestService
+            , IOutsourceTrackService outsourceTrackService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -46,6 +50,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _outsourceStepRequestService = outsourceStepRequestService;
+            _outsourceTrackService = outsourceTrackService;
         }
 
         public async Task<long> CreateOutsourceStepOrderPart(OutsourceStepOrderModel req)
@@ -102,6 +107,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     {
                         await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                     }
+
+                    // Tạo lịch sử theo dõi lần đầu
+                    await _outsourceTrackService.CreateOutsourceTrack(new OutsourceTrackModel{
+                        OutsourceTrackDate = DateTime.Now.GetUnix(),
+                        OutsourceTrackDescription = "Tạo đơn hàng",
+                        OutsourceTrackStatusId = EnumOutsourceTrackStatus.Created,
+                        OutsourceTrackTypeId = EnumOutsourceTrackType.All,
+                        OutsourceOrderId = order.OutsourceOrderId
+                    });
+
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
                     await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourceOrderId, $"Thêm mới đơn hàng gia công công đoạn {order.OutsourceOrderCode}", req.JsonSerialize());
