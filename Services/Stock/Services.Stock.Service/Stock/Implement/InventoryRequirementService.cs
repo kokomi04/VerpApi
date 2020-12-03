@@ -26,6 +26,7 @@ using InventoryRequirementEntity = VErp.Infrastructure.EF.StockDB.InventoryRequi
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Commons.Enums.Stock;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
@@ -103,7 +104,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
 
             var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
-           
+
             var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
             if (attachedFiles == null)
             {
@@ -122,21 +123,20 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             try
             {
                 var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
-                int customGenCodeId = 0;
+                CustomGenCodeOutputModel currentConfig = null;
                 if (string.IsNullOrEmpty(req.InventoryRequirementCode))
                 {
-                    CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(objectType, objectType, 0);
+                    currentConfig = await _customGenCodeHelperService.CurrentConfig(objectType, objectType, 0, null, null, req.Date);
                     if (currentConfig == null)
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                     }
-                    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, null, req.Date);
                     if (generated == null)
                     {
                         throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                     }
 
-                    customGenCodeId = currentConfig.CustomGenCodeId;
 
                     req.InventoryRequirementCode = generated.CustomCode;
                 }
@@ -173,10 +173,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 }
                 await _stockDBContext.SaveChangesAsync();
                 trans.Commit();
-                if (customGenCodeId > 0)
-                {
-                    await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
-                }
+                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                 await _activityLogService.CreateLog(objectType, inventoryRequirement.InventoryRequirementId, $"Thêm mới dữ liệu yêu cầu xuất/nhập kho {inventoryRequirement.InventoryRequirementCode}", req.JsonSerialize());
                 return inventoryRequirement.InventoryRequirementId;
             }

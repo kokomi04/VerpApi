@@ -87,10 +87,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long scheduleTurnId)
         {
-            return _manufacturingDBContext.ProductionHandover
+            return await _manufacturingDBContext.ProductionHandover
                 .Where(h => h.ScheduleTurnId == scheduleTurnId)
                 .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
-                .ToList();
+                .ToListAsync();
 
         }
     }

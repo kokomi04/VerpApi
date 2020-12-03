@@ -197,6 +197,12 @@ namespace VErp.Commons.Library
             return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value);
         }
 
+        public static DateTime? UnixToDateTime(this long? unixTime, int? timezoneOffset)
+        {
+            if (unixTime == 0 || !unixTime.HasValue) return null;
+            return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value).AddMinutes(-timezoneOffset ?? 0);
+        }
+
         public static decimal Eval(string expression)
         {
             try
@@ -445,12 +451,27 @@ namespace VErp.Commons.Library
             return value;
         }
 
-        public static string FormatStyle(string template, string code, long? fId)
+        public static string FormatStyle(string template, string code, long? fId, DateTime? dateTime, string number)
         {
-            return FormatStyle(template, new Dictionary<string, object>{
+            var values = new Dictionary<string, object>{
                 { StringTemplateConstants.CODE, code },
                 { StringTemplateConstants.FID, fId },
-            });
+            };
+
+            if (dateTime.HasValue)
+            {
+                var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
+                foreach (Match m in dateReg.Matches(template))
+                {
+                    values.Add(m.Value, dateTime.Value.ToString(m.Groups["format"].Value));
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(number))
+            {
+                values.Add(StringTemplateConstants.SNUMBER, number);
+            }
+            return FormatStyle(template, values)?.Replace("%", "");
         }
 
         public static string FormatStyle(string template, IDictionary<string, object> data)

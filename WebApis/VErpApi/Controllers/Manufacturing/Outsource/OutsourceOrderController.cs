@@ -17,9 +17,9 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
     [ApiController]
     public class OutsourceOrderController : VErpBaseController
     {
-        private readonly IOutsourceOrderService _outsourceOrderService;
+        private readonly IOutsourcePartOrderService _outsourceOrderService;
 
-        public OutsourceOrderController(IOutsourceOrderService outsourceOrderService)
+        public OutsourceOrderController(IOutsourcePartOrderService outsourceOrderService)
         {
             _outsourceOrderService = outsourceOrderService;
         }

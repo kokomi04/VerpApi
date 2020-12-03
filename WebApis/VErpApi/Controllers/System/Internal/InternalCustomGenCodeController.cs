@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -33,23 +34,23 @@ namespace VErpApi.Controllers.System.Internal
 
         [HttpGet]
         [Route("currentConfig")]
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] EnumObjectType targetObjectTypeId, [FromQuery] EnumObjectType configObjectTypeId, [FromQuery] long configObjectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] EnumObjectType targetObjectTypeId, [FromQuery] EnumObjectType configObjectTypeId, [FromQuery] long configObjectId, [FromQuery] long? fId, [FromQuery] string code, [FromQuery] long? date)
         {
-            return await _objectGenCodeService.GetCurrentConfig(targetObjectTypeId, configObjectTypeId, configObjectId);
+            return await _objectGenCodeService.GetCurrentConfig(targetObjectTypeId, configObjectTypeId, configObjectId, fId, code, date);
         }
 
         [HttpGet]
         [Route("generateCode")]
-        public async Task<CustomCodeModel> GenerateCode([FromQuery] int customGenCodeId, [FromQuery] int lastValue)
+        public async Task<CustomCodeGeneratedModel> GenerateCode([FromQuery] int customGenCodeId, [FromQuery] int lastValue, [FromQuery] long? fId, [FromQuery] string code, [FromQuery] long? date)
         {
-            return await _genCodeConfigService.GenerateCode(customGenCodeId, lastValue);
+            return await _genCodeConfigService.GenerateCode(customGenCodeId, lastValue, fId, code, date);
         }
 
         [HttpPut]
-        [Route("confirmCode")]
-        public async Task<bool> ConfirmCode([FromQuery] int customGenCodeId)
+        [Route("{customGenCodeId}/confirmCode")]
+        public async Task<bool> ConfirmCode([FromRoute] int customGenCodeId, [FromQuery] string baseValue)
         {
-            return await _genCodeConfigService.ConfirmCode(customGenCodeId);
+            return await _genCodeConfigService.ConfirmCode(customGenCodeId, baseValue);
         }
     }
 }

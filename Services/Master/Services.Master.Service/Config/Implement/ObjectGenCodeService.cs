@@ -18,6 +18,7 @@ using Verp.Cache.RedisCache;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -60,7 +61,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         }
 
 
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date)
         {
             var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.TargetObjectTypeId == (int)targetObjectTypeId && m.ConfigObjectTypeId == (int)configObjectTypeId && m.ConfigObjectId == configObjectId))?.CustomGenCodeId;
 
@@ -81,25 +82,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình sinh mã cho {targetObjectTypeId.GetEnumDescription()} {(configObjectId > 0 ? (long?)configObjectId : null)}");
             }
 
-            return new CustomGenCodeOutputModel()
-            {
-                CustomGenCodeId = obj.CustomGenCodeId,
-                ParentId = obj.ParentId,
-                CustomGenCodeName = obj.CustomGenCodeName,
-                Description = obj.Description,
-                CodeLength = obj.CodeLength,
-                Prefix = obj.Prefix,
-                Suffix = obj.Suffix,
-                Seperator = obj.Seperator,
-                LastValue = obj.LastValue,
-                LastCode = obj.LastCode,
-                IsActived = obj.IsActived,
-                UpdatedUserId = obj.UpdatedUserId,
-                CreatedTime = obj.CreatedTime != null ? ((DateTime)obj.CreatedTime).GetUnix() : 0,
-                UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
-                SortOrder = obj.SortOrder,
-                IsDefault = obj.IsDefault
-            };
+            return await _genCodeConfigService.GetInfo(obj.CustomGenCodeId, fId, code,date);
         }
 
         //public PageData<ObjectType> GetAllObjectType()
@@ -180,8 +163,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 if (curMapConfig == null)
                 {
                     curMapConfig = new ObjectCustomGenCodeMapping
-                    {                       
-                        CustomGenCodeId = mapConfig.Value,                        
+                    {
+                        CustomGenCodeId = mapConfig.Value,
                         TargetObjectTypeId = (int)targetObjectTypeId,
                         ConfigObjectTypeId = (int)configObjectTypeId,
                         ObjectId = (int)mapConfig.Key,

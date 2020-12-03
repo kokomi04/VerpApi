@@ -264,16 +264,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var roleInput = roles.Where(x => x.ProductionStepId == productionStepId
                     && !inputLinkData.Contains(x.ProductionStepLinkDataId)
                     && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                .FirstOrDefault();
+                .ToList();
+            foreach(var input in roleInput)
+            {
+                var roleOutput = roles.Where(x => x.ProductionStepLinkDataId == input.ProductionStepLinkDataId
+                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                    .FirstOrDefault();
 
-            if (roleInput == null) return;
-
-            var roleOutput = roles.Where(x => x.ProductionStepLinkDataId == roleInput.ProductionStepLinkDataId
-                    && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                .FirstOrDefault();
-
-            result.Add(roleOutput.ProductionStepId);
-            FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
+                result.Add(roleOutput.ProductionStepId);
+                FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
+            }
         }
 
 
@@ -283,19 +283,19 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             try
             {
                 // Get cấu hình sinh mã
-                int customGenCodeId = 0;
-                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0);
+
+                var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0, null, req.OutsourceStepRequestCode, req.OutsourceStepRequestDate);
 
                 if (currentConfig == null)
                 {
                     throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                 }
-                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, req.OutsourceStepRequestCode, req.OutsourceStepRequestDate);
                 if (generated == null)
                 {
                     throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                 }
-                customGenCodeId = currentConfig.CustomGenCodeId;
+
 
                 // Create outsourceStepRequest
                 var outsourceStepRequest = _mapper.Map<OutsourceStepRequest>(req);
@@ -314,8 +314,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _manufacturingDBContext.OutsourceStepRequestData.AddRangeAsync(outsourceStepRequestDatas);
                 await _manufacturingDBContext.SaveChangesAsync();
-                if (customGenCodeId > 0)
-                    await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+
+
+                await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceStepRequest.OutsourceStepRequestId,
@@ -389,7 +390,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<IList<OutsourceStepRequestDataInfo>> GetProductionStepInOutsourceStepRequest(long outsourceStepRequestId)
+        public async Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId)
         {
             var outsourceStepRequest = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
                 .Include(x => x.OutsourceStepRequestData)
