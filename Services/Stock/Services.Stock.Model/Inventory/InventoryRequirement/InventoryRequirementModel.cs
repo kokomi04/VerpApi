@@ -15,7 +15,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public long Date { get; set; }
         public int? DepartmentId { get; set; }
         public int CreatedByUserId { get; set; }
-        public long? ProductionHandoverId { get; set; }
+        public long? ScheduleTurnId { get; set; }
+        public long? ProductionStepId { get; set; }
     }
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementEntity>

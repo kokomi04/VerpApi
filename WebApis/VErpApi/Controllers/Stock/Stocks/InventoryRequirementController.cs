@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using NPOI.XSSF.UserModel;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.Stock;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
@@ -51,7 +52,6 @@ namespace VErpApi.Controllers.Stock.Inventory
         public async Task<long> AddInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromBody] InventoryRequirementInputModel req)
         {
             return await _inventoryRequirementService.AddInventoryRequirement(inventoryType, req);
-
         }
 
         [HttpPut]
@@ -66,6 +66,22 @@ namespace VErpApi.Controllers.Stock.Inventory
         public async Task<bool> DeleteInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
         {
             return await _inventoryRequirementService.DeleteInventoryRequirement(inventoryType, inventoryRequirementId);
+        }
+
+        [HttpPut]
+        [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}/accept")]
+        [VErpAction(EnumAction.Censor)]
+        public async Task<bool> AcceptInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
+        {
+            return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Accepted);
+        }
+
+        [HttpPut]
+        [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}/reject")]
+        [VErpAction(EnumAction.Censor)]
+        public async Task<bool> RejectInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
+        {
+            return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Rejected);
         }
     }
 }
