@@ -24,10 +24,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
-        public long? ProductionHandoverId { get; set; }
         public int? CensorByUserId { get; set; }
         public DateTime? CensorDatetimeUtc { get; set; }
         public int CensorStatus { get; set; }
+        public long? ScheduleTurnId { get; set; }
+        public long? ProductionStepId { get; set; }
 
         public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
         public virtual ICollection<InventoryRequirementFile> InventoryRequirementFile { get; set; }

@@ -27,6 +27,7 @@ using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using System.Data;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
@@ -39,6 +40,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductHelperService _productHelperService;
         private readonly IFileService _fileService;
+        private readonly ICurrentContextService _currentContextService;
 
         public InventoryRequirementService(StockDBContext stockDBContext
             , IActivityLogService activityLogService
@@ -46,7 +48,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
-            , IFileService fileService)
+            , IFileService fileService
+            , ICurrentContextService currentContextService)
         {
             _stockDBContext = stockDBContext;
             _activityLogService = activityLogService;
@@ -55,6 +58,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _productHelperService = productHelperService;
             _fileService = fileService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -146,7 +150,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     if (_stockDBContext.InventoryRequirement.Any(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementCode == req.InventoryRequirementCode))
                         throw new BadRequestException(GeneralCode.InternalError, "Mã yêu cầu đã tồn tại");
                 }
-
+                await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
                 var inventoryRequirement = _mapper.Map<InventoryRequirementEntity>(req);
                 inventoryRequirement.InventoryTypeId = (int)inventoryType;
                 inventoryRequirement.CensorStatus = (int)EnumInventoryRequirementStatus.Waiting;
@@ -203,8 +207,10 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi mã phiếu yêu cầu");
 
-                if (inventoryRequirement.ProductionHandoverId.HasValue)
+                if (inventoryRequirement.ScheduleTurnId.HasValue)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
+                
+                await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), inventoryRequirement.Date);
 
                 _mapper.Map(req, inventoryRequirement);
                 inventoryRequirement.CensorStatus = (int)EnumInventoryRequirementStatus.Waiting;
@@ -281,9 +287,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
                 if (inventoryRequirement == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
 
-                if (inventoryRequirement.ProductionHandoverId.HasValue)
+                if (inventoryRequirement.ScheduleTurnId.HasValue)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
-
+                
+                await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
+                
                 inventoryRequirement.IsDeleted = true;
 
                 // Xóa file
@@ -309,6 +317,59 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 trans.TryRollbackTransaction();
                 _logger.LogError(ex, "DeleteInventoryRequirement");
                 throw;
+            }
+        }
+
+        public async Task<bool> ConfirmInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status)
+        {
+            var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
+
+            var inventoryRequirement = _stockDBContext.InventoryRequirement
+                .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementId == inventoryRequirementId);
+
+            var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
+            if (inventoryRequirement == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
+
+            if(inventoryRequirement.CensorStatus != (int)EnumInventoryRequirementStatus.Waiting)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} không phải là đơn chờ duyệt");
+
+            await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
+
+            inventoryRequirement.CensorStatus = (int)status;
+            inventoryRequirement.CensorByUserId = _currentContextService.UserId;
+            inventoryRequirement.CensorDatetimeUtc = DateTime.UtcNow;
+
+            await _stockDBContext.SaveChangesAsync();
+
+            return true;
+        }
+
+
+        protected async Task ValidateInventoryRequirementConfig(DateTime? billDate, DateTime? oldDate)
+        {
+            if (billDate != null || oldDate != null)
+            {
+
+                var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+                var sqlParams = new List<SqlParameter>
+                {
+                    result
+                };
+
+                if (oldDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
+                }
+
+                if (billDate.HasValue)
+                {
+                    sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
+                }
+
+                await _stockDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
+
+                if (!(result.Value as bool?).GetValueOrDefault())
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
             }
         }
     }
