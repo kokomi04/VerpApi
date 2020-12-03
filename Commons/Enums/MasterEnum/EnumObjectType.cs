@@ -212,5 +212,6 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,
+        OutsourceTrack = 78,
     }
 }

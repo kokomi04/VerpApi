@@ -24,29 +24,34 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
+using VErp.Services.Manafacturing.Model.Outsource.Track;
+using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 {
-    public class OutsourceOrderService : IOutsourceOrderService
+    public class OutsourcePartOrderService : IOutsourcePartOrderService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IOutsourceTrackService _outsourceTrackService;
 
-        public OutsourceOrderService(ManufacturingDBContext manufacturingDB
+        public OutsourcePartOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
-            , ILogger<OutsourceOrderService> logger
+            , ILogger<OutsourcePartOrderService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , IOutsourceTrackService outsourceTrackService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _outsourceTrackService = outsourceTrackService;
         }
 
         public async Task<long> CreateOutsourceOrderPart(OutsourceOrderInfo req)
@@ -102,6 +107,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     {
                         await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                     }
+
+                    // Tạo lịch sử theo dõi lần đầu
+                    await _outsourceTrackService.CreateOutsourceTrack(new OutsourceTrackModel
+                    {
+                        OutsourceTrackDate = DateTime.Now.GetUnix(),
+                        OutsourceTrackDescription = "Tạo đơn hàng",
+                        OutsourceTrackStatusId = EnumOutsourceTrackStatus.Created,
+                        OutsourceTrackTypeId = EnumOutsourceTrackType.All,
+                        OutsourceOrderId = order.OutsourceOrderId
+                    });
+
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
                     await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourceOrderId, $"Thêm mới đơn hàng gia công chi tiết {order.OutsourceOrderId}", req.JsonSerialize());
