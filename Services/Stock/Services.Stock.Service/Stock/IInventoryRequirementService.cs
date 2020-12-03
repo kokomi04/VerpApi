@@ -14,10 +14,10 @@ namespace VErp.Services.Stock.Service.Stock
 {
     public interface IInventoryRequirementService
     {
-        Task<PageData<InventoryRequirementModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
-        Task<InventoryRequirementModel> GetInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId);
-        Task<InventoryRequirementModel> AddInventoryRequirement(EnumInventoryType inventoryType, InventoryRequirementModel req);
-        Task<InventoryRequirementModel> UpdateInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, InventoryRequirementModel req);
+        Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
+        Task<InventoryRequirementOutputModel> GetInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId);
+        Task<long> AddInventoryRequirement(EnumInventoryType inventoryType, InventoryRequirementInputModel req);
+        Task<long> UpdateInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, InventoryRequirementInputModel req);
         Task<bool> DeleteInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId);
     }
 }

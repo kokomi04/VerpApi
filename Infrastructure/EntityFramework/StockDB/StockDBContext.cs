@@ -221,6 +221,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryRequirement>(entity =>
             {
+                entity.Property(e => e.CensorStatus).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -252,6 +254,11 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.InventoryRequirementId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryRequirementDetail_InventoryRequirement");
+
+                entity.HasOne(d => d.ProductUnitConversion)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.ProductUnitConversionId)
+                    .HasConstraintName("FK_InventoryRequirementDetail_ProductUnitConversion");
             });
 
             modelBuilder.Entity<InventoryRequirementFile>(entity =>

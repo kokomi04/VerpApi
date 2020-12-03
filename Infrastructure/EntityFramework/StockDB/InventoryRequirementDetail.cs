@@ -10,8 +10,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public long InventoryRequirementId { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public int ProductUnitConversionId { get; set; }
-        public decimal ProductUnitConversionQuantity { get; set; }
+        public int? ProductUnitConversionId { get; set; }
+        public decimal? ProductUnitConversionQuantity { get; set; }
         public string Pocode { get; set; }
         public string ProductionOrderCode { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -23,5 +23,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual InventoryRequirement InventoryRequirement { get; set; }
+        public virtual ProductUnitConversion ProductUnitConversion { get; set; }
     }
 }

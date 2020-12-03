@@ -8,11 +8,19 @@ using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
 {
-    public class InventoryRequirementFileModel : IMapFrom<InventoryRequirementFile>
+    public class InventoryRequirementFileInputModel : IMapFrom<InventoryRequirementFile>
     {
         public long InventoryRequirementId { get; set; }
         public long FileId { get; set; }
-        public InventoryRequirementFileModel()
+        public InventoryRequirementFileInputModel()
+        {
+        }
+    }
+
+    public class InventoryRequirementFileOutputModel : InventoryRequirementFileInputModel
+    {
+        public FileToDownloadInfo FileToDownloadInfo { get; set; }
+        public InventoryRequirementFileOutputModel()
         {
         }
     }

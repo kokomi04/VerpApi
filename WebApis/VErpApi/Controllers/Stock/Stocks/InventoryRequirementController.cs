@@ -33,14 +33,14 @@ namespace VErpApi.Controllers.Stock.Inventory
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("inventorytype/{inventoryType}/Search")]
-        public async Task<PageData<InventoryRequirementModel>> GetListInventoryRequirements([FromRoute]EnumInventoryType inventoryType, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
+        public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements([FromRoute]EnumInventoryType inventoryType, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
             return await _inventoryRequirementService.GetListInventoryRequirements(inventoryType, keyword, page, size, orderByFieldName, asc, filters).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}")]
-        public async Task<InventoryRequirementModel> GetInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
         {
             return await _inventoryRequirementService.GetInventoryRequirement(inventoryType, inventoryRequirementId);
         }
@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.Stock.Inventory
        
         [HttpPost]
         [Route("inventorytype/{inventoryType}")]
-        public async Task<InventoryRequirementModel> AddInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromBody] InventoryRequirementModel req)
+        public async Task<long> AddInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromBody] InventoryRequirementInputModel req)
         {
             return await _inventoryRequirementService.AddInventoryRequirement(inventoryType, req);
 
@@ -56,7 +56,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPut]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}")]
-        public async Task<InventoryRequirementModel> UpdateInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId, [FromBody] InventoryRequirementModel req)
+        public async Task<long> UpdateInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId, [FromBody] InventoryRequirementInputModel req)
         {
             return await _inventoryRequirementService.UpdateInventoryRequirement(inventoryType, inventoryRequirementId, req);
         }
