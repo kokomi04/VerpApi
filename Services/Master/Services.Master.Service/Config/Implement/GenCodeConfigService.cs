@@ -239,6 +239,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<bool> SetLastValue(int customGenCodeId, CustomGenCodeBaseValueModel model)
         {
+            if (string.IsNullOrWhiteSpace(model.BaseValue)) model.BaseValue = string.Empty;
+
             var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
             if (obj == null)
             {
@@ -402,7 +404,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 baseValueEntity = new CustomGenCodeValue()
                 {
                     CustomGenCodeId = customGenCodeId,
-                    BaseValue = baseValue,
+                    BaseValue = baseValue ?? string.Empty,
                     LastCode = "",
                     LastValue = 0,
                     TempCode = "",
@@ -440,6 +442,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     }
 
                     var (isExisted, baseValueEntity) = await FindBaseValue(customGenCodeId, config.BaseFormat, fId, code, date);
+
+                    if (string.IsNullOrWhiteSpace(baseValueEntity.BaseValue)) baseValueEntity.BaseValue = string.Empty;
 
                     if (!isExisted)
                     {
@@ -493,6 +497,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<bool> ConfirmCode(int customGenCodeId, string baseValue)
         {
+            if (string.IsNullOrWhiteSpace(baseValue)) baseValue = string.Empty;
 
             var config = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(m => m.CustomGenCodeId == customGenCodeId && m.BaseValue == baseValue);
 
