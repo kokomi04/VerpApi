@@ -197,6 +197,12 @@ namespace VErp.Commons.Library
             return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value);
         }
 
+        public static DateTime? UnixToDateTime(this long? unixTime, int? timezoneOffset)
+        {
+            if (unixTime == 0 || !unixTime.HasValue) return null;
+            return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value).AddMinutes(-timezoneOffset ?? 0);
+        }
+
         public static decimal Eval(string expression)
         {
             try
@@ -445,16 +451,15 @@ namespace VErp.Commons.Library
             return value;
         }
 
-        public static string FormatStyle(string template, string code, long? fId, long? date, string number)
+        public static string FormatStyle(string template, string code, long? fId, DateTime? dateTime, string number)
         {
             var values = new Dictionary<string, object>{
                 { StringTemplateConstants.CODE, code },
                 { StringTemplateConstants.FID, fId },
             };
 
-            if (date.HasValue)
+            if (dateTime.HasValue)
             {
-                var dateTime = date.UnixToDateTime();
                 var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
                 foreach (Match m in dateReg.Matches(template))
                 {

@@ -18,6 +18,9 @@ namespace VErp.Services.Master.Service.Config
 
         Task<bool> Update(int customGenCodeId, CustomGenCodeInputModel model);
 
+        Task<bool> SetLastValue(int customGenCodeId, CustomGenCodeBaseValueModel model);
+        Task<bool> DeleteLastValue(int customGenCodeId, string baseValue);
+
         Task<bool> Delete(int customGenCodeId);
 
         Task<int> Create(CustomGenCodeInputModel model);
@@ -25,5 +28,6 @@ namespace VErp.Services.Master.Service.Config
         Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date);
 
         Task<bool> ConfirmCode(int customGenCodeId, string baseValue);
+        
     }
 }

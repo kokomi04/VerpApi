@@ -122,7 +122,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             }
 
-            var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date, stringNumber);
+            var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
 
             var lastValues = await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking()
                 .Select(l => new CustomGenCodeBaseValueModel
@@ -235,6 +235,48 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình sinh mã tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
             return true;
 
+        }
+
+        public async Task<bool> SetLastValue(int customGenCodeId, CustomGenCodeBaseValueModel model)
+        {
+            var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
+            if (obj == null)
+            {
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+            }
+
+            var (isExisted, baseValueEntity) = await FindBaseValue(customGenCodeId, model.BaseValue, null, null, null);
+
+            baseValueEntity.LastValue = model.LastValue;
+            if (!isExisted)
+            {
+                _masterDbContext.CustomGenCodeValue.Add(baseValueEntity);
+            }
+
+            await _masterDbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DeleteLastValue(int customGenCodeId, string baseValue)
+        {
+            var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
+            if (obj == null)
+            {
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+            }
+
+            var baseValueEntity = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(c => c.CustomGenCodeId == customGenCodeId && c.BaseValue == baseValue);
+
+
+            if (baseValueEntity != null)
+            {
+                _masterDbContext.CustomGenCodeValue.Remove(baseValueEntity);
+            }
+
+            await _masterDbContext.SaveChangesAsync();
+
+            return true;
         }
 
         private async Task UpdateSortOrder()
@@ -353,7 +395,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private async Task<(bool isFound, CustomGenCodeValue data)> FindBaseValue(int customGenCodeId, string baseFormat, long? fId = null, string code = "", long? date = null)
         {
-            var baseValue = Utils.FormatStyle(baseFormat, code, fId, date, null);
+            var baseValue = Utils.FormatStyle(baseFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), null);
             var baseValueEntity = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(c => c.CustomGenCodeId == customGenCodeId && c.BaseValue == baseValue);
             if (baseValueEntity == null)
             {
@@ -392,6 +434,10 @@ namespace VErp.Services.Master.Service.Config.Implement
                         trans.Rollback();
                         throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
                     }
+                    if (date == null)
+                    {
+                        date = _currentContextService.GetNowUtc().GetUnix();
+                    }
 
                     var (isExisted, baseValueEntity) = await FindBaseValue(customGenCodeId, config.BaseFormat, fId, code, date);
 
@@ -418,7 +464,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     }
 
                     var stringNumber = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
-                    newCode = Utils.FormatStyle(config.CodeFormat, code, fId, date, stringNumber);
+                    newCode = Utils.FormatStyle(config.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
 
 
                     if (!(newId < maxId))
@@ -463,6 +509,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             return true;
 
         }
+
 
     }
 }

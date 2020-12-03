@@ -46,6 +46,18 @@ namespace VErpApi.Controllers.System
             return await _genCodeConfigService.Update(customGenCodeId, model);
         }
 
+        [HttpPut("{customGenCodeId}/SetLastValue")]
+        public async Task<bool> SetLastValue([FromRoute] int customGenCodeId, [FromBody] CustomGenCodeBaseValueModel model)
+        {
+            return await _genCodeConfigService.SetLastValue(customGenCodeId, model);
+        }
+
+        [HttpDelete("{customGenCodeId}/DeleteLastValue")]
+        public async Task<bool> DeleteLastValue([FromRoute] int customGenCodeId, [FromBody] CustomGenCodeBaseValueModel model)
+        {
+            return await _genCodeConfigService.DeleteLastValue(customGenCodeId, model?.BaseValue);
+        }
+
         [HttpDelete("{customGenCodeId}")]
         public async Task<bool> Delete([FromRoute] int customGenCodeId)
         {
