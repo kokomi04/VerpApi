@@ -398,13 +398,14 @@ namespace VErp.Services.Master.Service.Config.Implement
         private async Task<(bool isFound, CustomGenCodeValue data)> FindBaseValue(int customGenCodeId, string baseFormat, long? fId = null, string code = "", long? date = null)
         {
             var baseValue = Utils.FormatStyle(baseFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), null);
+            baseValue ??= string.Empty;
             var baseValueEntity = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(c => c.CustomGenCodeId == customGenCodeId && c.BaseValue == baseValue);
             if (baseValueEntity == null)
             {
                 baseValueEntity = new CustomGenCodeValue()
                 {
                     CustomGenCodeId = customGenCodeId,
-                    BaseValue = baseValue ?? string.Empty,
+                    BaseValue = baseValue,
                     LastCode = "",
                     LastValue = 0,
                     TempCode = "",
@@ -476,8 +477,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                         config.CodeLength += 1;
                         config.ResetDate = DateTime.UtcNow;
                     }
-                    config.TempValue = newId;
-                    config.TempCode = newCode;
+                    baseValueEntity.TempValue = newId;
+                    baseValueEntity.TempCode = newCode;
 
                     _masterDbContext.SaveChanges();
                     trans.Commit();
