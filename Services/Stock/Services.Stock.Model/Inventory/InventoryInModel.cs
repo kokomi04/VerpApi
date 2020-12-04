@@ -75,6 +75,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Description { get; set; }
 
         public string AccountancyAccountNumberDu { get; set; }
+        public long? InventoryRequirementDetailId { get; set; }
     }
 
     public class InventoryInProductExtendModel : InventoryInProductModel
