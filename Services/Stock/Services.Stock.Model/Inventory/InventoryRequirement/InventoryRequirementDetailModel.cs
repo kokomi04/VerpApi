@@ -15,6 +15,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string Pocode { get; set; }
         public string ProductionOrderCode { get; set; }
         public int? SortOrder { get; set; }
+        public int? StockId { get; set; }
     }
 
     public class InventoryRequirementDetailOutputModel : InventoryRequirementDetailInputModel

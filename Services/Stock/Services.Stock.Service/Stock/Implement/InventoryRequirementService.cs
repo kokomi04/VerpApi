@@ -325,6 +325,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
 
             var inventoryRequirement = _stockDBContext.InventoryRequirement
+                .Include(r => r.InventoryRequirementDetail)
                 .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementId == inventoryRequirementId);
 
             var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
@@ -334,6 +335,10 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} không phải là đơn chờ duyệt");
 
             await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
+
+            // Validate assign stock
+            if(status == EnumInventoryRequirementStatus.Accepted && inventoryRequirement.InventoryRequirementDetail.Any(rd => !rd.StockId.HasValue))
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} chưa chỉ định đủ kho xuất");
 
             inventoryRequirement.CensorStatus = (int)status;
             inventoryRequirement.CensorByUserId = _currentContextService.UserId;
