@@ -10,7 +10,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
         public int UnitId { get; set; }
-        public int StatusId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
