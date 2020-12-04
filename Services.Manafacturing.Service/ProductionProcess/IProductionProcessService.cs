@@ -29,10 +29,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         //ProductionStepRoleClient
         Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model);
         Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId);
-
+        // StepGroup
         Task<long> CreateProductionStepGroup(ProductionStepGroupModel req);
 
         //ProductionStepLinkData
         Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepId);
+        Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId);
     }
 }

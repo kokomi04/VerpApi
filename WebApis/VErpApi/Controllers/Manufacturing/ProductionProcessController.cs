@@ -125,9 +125,16 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("productionStepLinkData/searchByListProductionStepLinkDataId")]
-        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepId)
+        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepLinkDataId)
         {
-            return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepId);
+            return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
+        }
+
+        [HttpPost]
+        [Route("productionStepLinkDataRole/getInOutOfListProductionStep")]
+        public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
+        {
+           return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
         }
     }
 }
