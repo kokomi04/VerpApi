@@ -6,6 +6,7 @@ using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
@@ -36,5 +37,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepId);
         Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId);
         Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId);
+        Task<NonCamelCaseDictionary> GroupProductionStepRelationShip(IList<long> productionStepIds);
+
     }
 }
