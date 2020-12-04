@@ -18,6 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal? ActualQuantity { get; set; }
         public int? AssignStockId { get; set; }
         public int StockName { get; set; }
+        public long ProductionStepId { get; set; }
     }
 
     public class ProductionInventoryRequirementModel : ProductionInventoryRequirementBaseModel, IMapFrom<ProductionInventoryRequirementEntity>
