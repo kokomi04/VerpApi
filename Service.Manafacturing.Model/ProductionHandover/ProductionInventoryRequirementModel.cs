@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal RequirementQuantity { get; set; }
         public decimal? ActualQuantity { get; set; }
         public int? AssignStockId { get; set; }
-        public int StockName { get; set; }
+        public string StockName { get; set; }
         public long ProductionStepId { get; set; }
     }
 
