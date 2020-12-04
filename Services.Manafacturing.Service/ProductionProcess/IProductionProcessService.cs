@@ -35,5 +35,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         //ProductionStepLinkData
         Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepId);
         Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId);
+        Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId);
     }
 }

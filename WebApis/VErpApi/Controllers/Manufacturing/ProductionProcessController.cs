@@ -136,5 +136,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
            return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
         }
+
+        [HttpPost]
+        [Route("productionStepLinkDataRole/validateProductionStepRelationship")]
+        public async Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId)
+        {
+            return await _productionProcessService.ValidateProductionStepRelationship(lsProductionStepId);
+        }
     }
 }
