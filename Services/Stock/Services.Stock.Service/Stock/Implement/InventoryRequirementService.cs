@@ -337,7 +337,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
 
             // Validate assign stock
-            if(status == EnumInventoryRequirementStatus.Accepted && inventoryRequirement.InventoryRequirementDetail.Any(rd => !rd.StockId.HasValue))
+            if(status == EnumInventoryRequirementStatus.Accepted && inventoryRequirement.InventoryRequirementDetail.Any(rd => !rd.AssignStockId.HasValue))
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} chưa chỉ định đủ kho xuất");
 
             inventoryRequirement.CensorStatus = (int)status;
