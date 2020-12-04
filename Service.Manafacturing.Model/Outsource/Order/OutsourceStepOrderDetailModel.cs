@@ -6,15 +6,20 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using AutoMapper;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
+using System.ComponentModel.DataAnnotations;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
     public class OutsourceStepOrderDetailModel: OutsourceStepRequestDataInfo, IMapFrom<OutsourceOrderDetail>
     {
         public long OutsourceOrderDetailId { get; set; }
+        [Required]
         public long OutsourceOrderId { get; set; }
+        [Required]
         public decimal OutsourceOrderQuantity { get; set; }
+        [Required]
         public decimal OutsourceOrderPrice { get; set; }
+        [Required]
         public decimal OutsourceOrderTax { get; set; }
 
         public new  void Mapping(Profile profile)

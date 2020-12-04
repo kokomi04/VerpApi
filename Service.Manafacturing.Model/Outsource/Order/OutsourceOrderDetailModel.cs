@@ -17,10 +17,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         [Range(0.00001, double.MaxValue)]
         public decimal Quantity { get; set; }
         [Required]
-        [Range(0.00001, double.MaxValue)]
         public decimal Price { get; set; }
         [Required]
-        [Range(0.00001, double.MaxValue)]
         public decimal Tax { get; set; }
     }
 

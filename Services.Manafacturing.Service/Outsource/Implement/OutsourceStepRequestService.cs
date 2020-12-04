@@ -153,6 +153,34 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 lst = resultData.ConvertData<OutsourceStepRequestEntity>().AsQueryable().ProjectTo<OutsourceStepRequestSearch>(_mapper.ConfigurationProvider).ToList();
             }
 
+            // Tính toán trạng thái cho các công đoạn
+            var distinctKeys = (from rd in _manufacturingDBContext.OutsourceStepRequestData
+                     join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
+                     join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
+                     where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                     select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
+
+            var outsourceTracks = await (from d in distinctKeys
+                                   join track in _manufacturingDBContext.OutsourceTrack on d.OutsourceOrderId equals track.OutsourceOrderId
+                                   select new { d.OutsourceStepRequestId, track }).ToListAsync();
+
+            foreach (var l in lst)
+            {
+                var track = outsourceTracks.Where(x => x.OutsourceStepRequestId == l.OutsourceStepRequestId).Select(x => x.track).GroupBy(x=>x.OutsourceOrderId);
+
+                var sumTrack = 0;
+                foreach(var t in track)
+                {
+                    var lastTrack =  t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
+                    sumTrack += lastTrack.OutsourceTrackStatusId;
+                }
+                if (sumTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * track.Count()))
+                    l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Processed.GetEnumDescription();
+                else if(sumTrack > 0)
+                    l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Processing.GetEnumDescription();
+                else l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Unprocessed.GetEnumDescription();
+            }
+
             return (lst, total);
         }
 

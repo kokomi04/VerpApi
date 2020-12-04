@@ -101,7 +101,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     _manufacturingDBContext.OutsourceOrderDetail.AddRange(detail);
                     await _manufacturingDBContext.SaveChangesAsync();
 
-                    await UpdateStatusRequestOutsourcePartDetail(detail.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Processing);
 
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
@@ -144,7 +143,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 outsourceOrder.IsDeleted = true;
                 outsourceOrderDetail.ForEach(x => x.IsDeleted = true);
-                await UpdateStatusRequestOutsourcePartDetail(outsourceOrderDetail.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Unprocessed);
 
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
@@ -273,7 +271,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 lsNewDetail.ForEach(x => x.OutsourceOrderId = outsourceOrder.OutsourceOrderId);
                 var temp = _mapper.Map<List<OutsourceOrderDetail>>(lsNewDetail);
                 await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(temp);
-                await UpdateStatusRequestOutsourcePartDetail(temp.Select(x => x.ObjectId).ToList(), EnumOutsourcePartProcessType.Processed);
 
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
@@ -287,15 +284,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 throw;
             }
         }
-
-
-        private async Task UpdateStatusRequestOutsourcePartDetail(List<long> listID, EnumOutsourcePartProcessType status)
-        {
-            var data = await _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => listID.Contains(x.OutsourcePartRequestDetailId)).ToListAsync();
-            foreach (var e in data)
-                e.StatusId = (int)status;
-            await _manufacturingDBContext.SaveChangesAsync();
-
-        }
+        
     }
 }

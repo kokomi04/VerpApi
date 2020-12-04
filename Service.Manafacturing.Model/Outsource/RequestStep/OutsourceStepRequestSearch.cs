@@ -16,6 +16,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public long OutsourceStepRequestFinishDate { get; set; }
         public long OutsourceStepRequestDate { get; set; }
         public string ProductTitle { get; set; }
+        public string ProductionStepInRequestStatus { get; set; }
 
         public void Mapping(Profile profile)
         {
