@@ -1,10 +1,8 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using EFCore.BulkExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -326,14 +324,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         private List<ProductionStepLinkModel> CalcProductionStepLink(List<ProductionStepLinkDataRoleInput> roles, List<ProductionStepLinkDataRoleInput> groupRoles)
         {
-            var linkGroups = roles.Union(groupRoles).GroupBy(r => r.ProductionStepLinkDataId);
+            var roleUnions = roles.Union(groupRoles).ToList();
 
+            return CalcProdictonStepLink(roleUnions);
+        }
+
+        private static List<ProductionStepLinkModel> CalcProdictonStepLink(List<ProductionStepLinkDataRoleInput> roles)
+        {
+            var roleGroups = roles.GroupBy(r => r.ProductionStepLinkDataId);
             var productionStepLinks = new List<ProductionStepLinkModel>();
 
-            foreach (var linkGroup in linkGroups)
+            foreach (var roleGroup in roleGroups)
             {
-                var froms = linkGroup.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).ToList();
-                var tos = linkGroup.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).ToList();
+                var froms = roleGroup.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).ToList();
+                var tos = roleGroup.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).ToList();
                 foreach (var from in froms)
                 {
                     bool bExisted = productionStepLinks.Any(r => r.FromStepId == from.ProductionStepId);
@@ -880,6 +884,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
             ValidProductionStepLinkData(req);
+            ValidProductionStep(req);
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -1012,6 +1017,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
+        private void ValidProductionStep(ProductionProcessModel req){
+            var groupRole = req.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
+            
+            foreach(var group in groupRole)
+            {
+                if (group.Where(x=>x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input).Count() == 0)
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn {group.Key} không có đầu vào");
+                if (group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output).Count() == 0)
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn {group.Key} không có đầu ra");
+            }
+            
+        }
+
         public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepLinkDataId)
         {
             var stepLinkDatas = new List<ProductionStepLinkDataInput>();
@@ -1046,5 +1064,37 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             return stepLinkDatas;
         }
+
+        public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
+        {
+            var lsProductionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Include(x => x.ProductionStepLinkDataRole)
+                .Where(x => lsProductionStepId.Contains(x.ProductionStepId))
+                .ToListAsync();
+
+            var groupByContainerId = lsProductionStep.GroupBy(x => x.ContainerId);
+            if (groupByContainerId.Count() > 1)
+                throw new BadRequestException(ProductionProcessErrorCode.ListProductionStepNotInContainerId);
+
+            var roles = lsProductionStep.SelectMany(x => x.ProductionStepLinkDataRole, (s, d) => new ProductionStepLinkDataRoleModel
+            {
+                ProductionStepId = s.ProductionStepId,
+                ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
+            }).ToList();
+
+            // 2. Lấy danh sách đầu vào, đầu ra của tất cả công đoạn trong 1 nhóm đi gia công công đoạn
+            var childRoles = roles.Where(r => lsProductionStepId.Contains(r.ProductionStepId)).ToList();
+            // 3. Loại bỏ các role đủ 1 cặp IN/OUT
+            var inOutRoles = childRoles
+                .GroupBy(r => r.ProductionStepLinkDataId)
+                .Where(g => g.Count() == 1)
+                .Select(g => g.First())
+                .ToList();
+
+            return inOutRoles;
+        }
+
+
     }
 }
