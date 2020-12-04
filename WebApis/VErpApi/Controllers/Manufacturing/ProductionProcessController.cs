@@ -11,6 +11,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -142,6 +143,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId)
         {
             return await _productionProcessService.ValidateProductionStepRelationship(lsProductionStepId);
+        }
+
+        [HttpPost]
+        [Route("productionStep/groupRelationship")]
+        public async Task<NonCamelCaseDictionary> GroupProductionStepRelationShip([FromBody] IList<long> productionOrderId)
+        {
+            return await _productionProcessService.GroupProductionStepRelationShip(productionOrderId);
         }
     }
 }

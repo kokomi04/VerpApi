@@ -154,28 +154,28 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             // Tính toán trạng thái cho các công đoạn
             var distinctKeys = (from rd in _manufacturingDBContext.OutsourceStepRequestData
-                     join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
-                     join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
-                     where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
-                     select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
+                                join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
+                                join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
+                                where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                                select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
 
             var outsourceTracks = await (from d in distinctKeys
-                                   join track in _manufacturingDBContext.OutsourceTrack on d.OutsourceOrderId equals track.OutsourceOrderId
-                                   select new { d.OutsourceStepRequestId, track }).ToListAsync();
+                                         join track in _manufacturingDBContext.OutsourceTrack on d.OutsourceOrderId equals track.OutsourceOrderId
+                                         select new { d.OutsourceStepRequestId, track }).ToListAsync();
 
             foreach (var l in lst)
             {
-                var track = outsourceTracks.Where(x => x.OutsourceStepRequestId == l.OutsourceStepRequestId).Select(x => x.track).GroupBy(x=>x.OutsourceOrderId);
+                var track = outsourceTracks.Where(x => x.OutsourceStepRequestId == l.OutsourceStepRequestId).Select(x => x.track).GroupBy(x => x.OutsourceOrderId);
 
                 var sumTrack = 0;
-                foreach(var t in track)
+                foreach (var t in track)
                 {
-                    var lastTrack =  t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
+                    var lastTrack = t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
                     sumTrack += lastTrack.OutsourceTrackStatusId;
                 }
                 if (sumTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * track.Count()))
                     l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Processed.GetEnumDescription();
-                else if(sumTrack > 0)
+                else if (sumTrack > 0)
                     l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Processing.GetEnumDescription();
                 else l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Unprocessed.GetEnumDescription();
             }
@@ -292,7 +292,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     && !inputLinkData.Contains(x.ProductionStepLinkDataId)
                     && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                 .ToList();
-            foreach(var input in roleInput)
+            foreach (var input in roleInput)
             {
                 var roleOutput = roles.Where(x => x.ProductionStepLinkDataId == input.ProductionStepLinkDataId
                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
@@ -461,7 +461,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         ProductionStepLinkDataId = x.ProductionStepLinkDataId,
                         ProductionStepLinkDataQuantity = x.Quantity,
                         ProductionStepLinkDataRoleTypeId = x.ProductionStepLinkDataRoleTypeId,
-                        OutsourceStepRequestDataQuantity = outsourceStepRequest.OutsourceStepRequestData.FirstOrDefault(s=>s.ProductionStepLinkDataId == x.ProductionStepLinkDataId).OutsourceStepRequestDataQuantity,
+                        OutsourceStepRequestDataQuantity = outsourceStepRequest.OutsourceStepRequestData.FirstOrDefault(s => s.ProductionStepLinkDataId == x.ProductionStepLinkDataId).OutsourceStepRequestDataQuantity,
                         ProductionStepLinkDataTitle = string.Empty
                     })
                     .ToList();
@@ -478,16 +478,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
 
             var groupbySumQuantityProcessed = await (from order in _manufacturingDBContext.OutsourceOrder.Where(x => x.OutsourceTypeId == (int)EnumContainerType.ProductionOrder)
-             join detail in _manufacturingDBContext.OutsourceOrderDetail on order.OutsourceOrderId equals detail.OutsourceOrderId
-             group new { order, detail } by detail.ObjectId into g
-             select new
-             {
-                 ProductionStepLinkDataId = g.Key,
-                 OutsourceStepRequestQuantityProcessed = g.Sum(x => x.detail.Quantity)
-             }).ToListAsync();
+                                                     join detail in _manufacturingDBContext.OutsourceOrderDetail on order.OutsourceOrderId equals detail.OutsourceOrderId
+                                                     group new { order, detail } by detail.ObjectId into g
+                                                     select new
+                                                     {
+                                                         ProductionStepLinkDataId = g.Key,
+                                                         OutsourceStepRequestQuantityProcessed = g.Sum(x => x.detail.Quantity)
+                                                     }).ToListAsync();
 
             var output = lst.FirstOrDefault(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
-            var outputProcessed = groupbySumQuantityProcessed.FirstOrDefault(x=>x.ProductionStepLinkDataId == output.ProductionStepLinkDataId);
+            var outputProcessed = groupbySumQuantityProcessed.FirstOrDefault(x => x.ProductionStepLinkDataId == output.ProductionStepLinkDataId);
 
             var percent = output.OutsourceStepRequestDataQuantity / output.ProductionStepLinkDataQuantity;
             var percentProcessed = outputProcessed == null ? 0 : outputProcessed.OutsourceStepRequestQuantityProcessed / output.OutsourceStepRequestDataQuantity;
@@ -515,7 +515,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var outsourceStepRequest = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
                 .Include(x => x.OutsourceStepRequestData)
-                .Where(x=>x.ProductionOrderId == productionOrderId)
+                .Where(x => x.ProductionOrderId == productionOrderId)
                 .ProjectTo<OutsourceStepRequestModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
@@ -534,7 +534,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }).ToListAsync();
                 foreach (var request in group)
                 {
-                    var lst =  GetAllProductionStepInOutsourceStepRequest(request.OutsourceStepRequestData, roles)
+                    var lst = GetAllProductionStepInOutsourceStepRequest(request.OutsourceStepRequestData, roles)
                         .Select(productionStepId => new ProductionStepInOutsourceStepRequest
                         {
                             ProductionProcessId = request.ProductionProcessId,
@@ -550,5 +550,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return data;
         }
 
+        
     }
 }
