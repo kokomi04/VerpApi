@@ -21,7 +21,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
-        public int? StockId { get; set; }
+        public int? AssignStockId { get; set; }
 
         public virtual InventoryRequirement InventoryRequirement { get; set; }
         public virtual ProductUnitConversion ProductUnitConversion { get; set; }
