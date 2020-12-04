@@ -453,6 +453,7 @@ namespace VErp.Commons.Library
 
         public static string FormatStyle(string template, string code, long? fId, DateTime? dateTime, string number)
         {
+            if (string.IsNullOrWhiteSpace(template)) return template;
             var values = new Dictionary<string, object>{
                 { StringTemplateConstants.CODE, code },
                 { StringTemplateConstants.FID, fId },
