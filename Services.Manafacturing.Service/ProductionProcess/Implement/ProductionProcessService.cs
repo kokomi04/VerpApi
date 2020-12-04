@@ -1084,10 +1084,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
             }).ToList();
 
-            // 2. Lấy danh sách đầu vào, đầu ra của tất cả công đoạn trong 1 nhóm đi gia công công đoạn
-            var childRoles = roles.Where(r => lsProductionStepId.Contains(r.ProductionStepId)).ToList();
             // 3. Loại bỏ các role đủ 1 cặp IN/OUT
-            var inOutRoles = childRoles
+            var inOutRoles = roles
                 .GroupBy(r => r.ProductionStepLinkDataId)
                 .Where(g => g.Count() == 1)
                 .Select(g => g.First())
@@ -1096,6 +1094,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return inOutRoles;
         }
 
+        public async Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId)
+        {
+            var lsProductionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Include(x => x.ProductionStepLinkDataRole)
+                .Where(x => lsProductionStepId.Contains(x.ProductionStepId))
+                .ToListAsync();
+
+            var groupByContainerId = lsProductionStep.GroupBy(x => x.ContainerId);
+            if (groupByContainerId.Count() > 1)
+                throw new BadRequestException(ProductionProcessErrorCode.ListProductionStepNotInContainerId);
+
+            var roles = lsProductionStep.SelectMany(x=>x.ProductionStepLinkDataRole).ToList();
+
+            var linkDataRoles = roles
+                .GroupBy(r => r.ProductionStepLinkDataId)
+                .Where(g => g.Count() == 2)
+                .ToList();
+
+            return linkDataRoles.Count() == (lsProductionStepId.Count - 1);
+        }
 
     }
 }
