@@ -34,6 +34,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHandoverService.GetProductionHandovers(scheduleTurnId);
         }
 
+        [HttpGet]
+        [Route("productionInventoryRequirement/{scheduleTurnId}")]
+        public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements([FromRoute] long scheduleTurnId)
+        {
+            return await _productionHandoverService.GetProductionInventoryRequirements(scheduleTurnId);
+        }
+
         [HttpPost]
         [Route("{scheduleTurnId}")]
         public async Task<ProductionHandoverModel> CreateProductionHandover([FromRoute] long scheduleTurnId, [FromBody] ProductionHandoverInputModel data)

@@ -93,5 +93,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ToListAsync();
 
         }
+        public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements(long scheduleTurnId)
+        {
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+
+            return resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+                .ToList();
+        }
     }
 }
