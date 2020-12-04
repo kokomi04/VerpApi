@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
     public class ProductionInventoryRequirementModel : ProductionInventoryRequirementBaseModel, IMapFrom<ProductionInventoryRequirementEntity>
     {
-        public int Status { get; set; }
+        public EnumProductionInventoryRequirementStatus Status { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public EnumInventoryType InventoryTypeId { get; set; }
 
