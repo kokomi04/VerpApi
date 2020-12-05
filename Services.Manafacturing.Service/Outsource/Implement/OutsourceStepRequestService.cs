@@ -173,11 +173,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     var lastTrack = t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
                     sumTrack += lastTrack.OutsourceTrackStatusId;
                 }
-                if (sumTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * track.Count()))
+                if (sumTrack == 0) l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Unprocessed.GetEnumDescription();
+                else if (sumTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * track.Count()))
                     l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Processed.GetEnumDescription();
                 else if (sumTrack > 0)
                     l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Processing.GetEnumDescription();
-                else l.ProductionStepInRequestStatus = EnumOutsourcePartProcessType.Unprocessed.GetEnumDescription();
             }
 
             return (lst, total);
@@ -550,6 +550,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return data;
         }
 
-        
+
     }
 }
