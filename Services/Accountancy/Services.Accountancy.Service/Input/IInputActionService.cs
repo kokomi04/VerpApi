@@ -9,7 +9,8 @@ namespace VErp.Services.Accountancy.Service.Input
 {
     public interface IInputActionService
     {
-        Task<IList<InputActionModel>> GetInputActions(int inputTypeId);
+        Task<IList<InputActionModel>> GetInputActionConfigs(int inputTypeId);
+        Task<IList<InputActionUseModel>> GetInputActions(int inputTypeId);
         Task<InputActionModel> AddInputAction(InputActionModel data);
         Task<InputActionModel> UpdateInputAction(int inputActionId, InputActionModel data);
         Task<bool> DeleteInputAction(int inputActionId);

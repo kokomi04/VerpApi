@@ -46,11 +46,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _roleHelperService = roleHelperService;
         }
 
-        public async Task<IList<InputActionModel>> GetInputActions(int inputTypeId)
+        public async Task<IList<InputActionModel>> GetInputActionConfigs(int inputTypeId)
         {
             return await _accountancyDBContext.InputAction
                 .Where(a => a.InputTypeId == inputTypeId)
                 .ProjectTo<InputActionModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
+        public async Task<IList<InputActionUseModel>> GetInputActions(int inputTypeId)
+        {
+            return await _accountancyDBContext.InputAction
+                .Where(a => a.InputTypeId == inputTypeId)
+                .ProjectTo<InputActionUseModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
 

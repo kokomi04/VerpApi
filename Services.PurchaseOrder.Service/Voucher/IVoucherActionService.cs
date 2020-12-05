@@ -9,7 +9,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 {
     public interface IVoucherActionService
     {
-        Task<IList<VoucherActionModel>> GetVoucherActions(int voucherTypeId);
+        Task<IList<VoucherActionModel>> GetVoucherActionConfigs(int voucherTypeId);
+        Task<IList<VoucherActionUseModel>> GetVoucherActions(int voucherTypeId);
         Task<VoucherActionModel> AddVoucherAction(VoucherActionModel data);
         Task<VoucherActionModel> UpdateVoucherAction(int voucherActionId, VoucherActionModel data);
         Task<bool> DeleteVoucherAction(int voucherActionId);
