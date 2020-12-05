@@ -362,10 +362,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<bool> IncludeProductionProcess(int productionOrderId)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
-            if(productionOrder == null )
+            if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy lệnh sản xuất.");
 
-            if(productionOrder.IsDraft)
+            if (productionOrder.IsDraft)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không được tạo quy trình sản xuất cho lệnh nháp.");
 
             // Kiểm tra đã tồn tại quy trình sx gắn với lệnh sx 
@@ -425,7 +425,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     item.Status = (int)EnumProductionStatus.Waiting;
                 }
 
-                foreach(var productionOrderDetail in productionOrderDetails)
+                foreach (var productionOrderDetail in productionOrderDetails)
                 {
                     // Tạo step ứng với quy trình sản xuất
                     var product = products.First(p => p.ProductId == productionOrderDetail.ProductId);
@@ -1018,17 +1018,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        private void ValidProductionStep(ProductionProcessModel req){
+        private void ValidProductionStep(ProductionProcessModel req)
+        {
             var groupRole = req.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
-            
-            foreach(var group in groupRole)
+
+            foreach (var group in groupRole)
             {
-                if (group.Where(x=>x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input).Count() == 0)
+                if (group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input).Count() == 0)
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn {group.Key} không có đầu vào");
                 if (group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output).Count() == 0)
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn {group.Key} không có đầu ra");
             }
-            
+
         }
 
         public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepLinkDataId)
@@ -1105,7 +1106,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (groupByContainerId.Count() > 1)
                 throw new BadRequestException(ProductionProcessErrorCode.ListProductionStepNotInContainerId);
 
-            var roles = lsProductionStep.SelectMany(x=>x.ProductionStepLinkDataRole).ToList();
+            var roles = lsProductionStep.SelectMany(x => x.ProductionStepLinkDataRole).ToList();
 
             var linkDataRoles = roles
                 .GroupBy(r => r.ProductionStepLinkDataId)
@@ -1118,66 +1119,83 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<NonCamelCaseDictionary> GroupProductionStepRelationShip(IList<long> productionStepIds)
         {
             int indexGroup = 1;
-            var groupOutsourceStep = new NonCamelCaseDictionary();
+            var groupRelationship = new NonCamelCaseDictionary();
+
             var lsProductionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                .Include(x => x.ProductionStepLinkDataRole)
                .Where(x => productionStepIds.Contains(x.ProductionStepId))
                .ToListAsync();
 
-            var groupByContainerId = lsProductionStep.GroupBy(x => x.ContainerId);
-            if (groupByContainerId.Count() > 1)
+            if (lsProductionStep.GroupBy(x => x.ContainerId).Count() > 1)
                 throw new BadRequestException(ProductionProcessErrorCode.ListProductionStepNotInContainerId);
 
             var roles = lsProductionStep.SelectMany(x => x.ProductionStepLinkDataRole).ToList();
-
-            var linkDataRoles = roles
+            var groupbyLinkDataRole = roles
                 .GroupBy(r => r.ProductionStepLinkDataId)
                 .Where(g => g.Count() == 2)
                 .ToList();
-            var p = linkDataRoles.SelectMany(x => x.Select(y => y.ProductionStepId)).Distinct();
-            var o = productionStepIds.Where(value => !p.Contains(value));
-            foreach (var productionStepid in o)
+            /*
+             * 1. Lấy ra các công đoạn mà không có cặp linkData InOut
+             * 2. Mỗi công đoạn này sẽ tạo 1 nhóm riêng biệt
+             */
+            var productionStepNotCoupleRole = productionStepIds
+                                                .Where(value => !groupbyLinkDataRole
+                                                                .SelectMany(x => x.Select(y => y.ProductionStepId))
+                                                                .Distinct().Contains(value));
+            foreach (var productionStepid in productionStepNotCoupleRole)
             {
-                var ls = (new List<long>());
+                var ls = new List<long>();
                 ls.Add(productionStepid);
-                groupOutsourceStep.Add($"gc#{indexGroup}", ls);
+                groupRelationship.Add($"gc#{indexGroup}", ls);
                 indexGroup++;
             }
-            var container = new List<IGrouping<long, ProductionStepLinkDataRole>>();
-            for (int i = 0; i < linkDataRoles.Count; i++)
+            /*
+             * Đệ quy để tìm các công đoạn trong cùng 1 nhóm.
+             */
+            var groupbyLinkDataRoleScanned = new List<IGrouping<long, ProductionStepLinkDataRole>>();
+            for (int i = 0; i < groupbyLinkDataRole.Count; i++)
             {
-                var lstId = new List<long>();
-                var role = linkDataRoles[i];
-                if (container.Contains(role)) continue;
-                container.Add(role);
+                var role = groupbyLinkDataRole[i];
+                if (groupbyLinkDataRoleScanned.Contains(role)) 
+                    continue;
+
+                groupbyLinkDataRoleScanned.Add(role);
+                var lsProductionStepIdInGroup = new List<long>();
                 foreach (var linkData in role)
                 {
-                    if (lstId.Contains(linkData.ProductionStepId)) continue;
-                    lstId.Add(linkData.ProductionStepId);
-                    var temp_1 = linkDataRoles.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepId == linkData.ProductionStepId).Count() > 0).ToList();
-                    TraceProductionStepRelationShip(temp_1, container, linkDataRoles, lstId);
+                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepId)) 
+                        continue;
+                    lsProductionStepIdInGroup.Add(linkData.ProductionStepId);
+                    var temp = groupbyLinkDataRole.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepId == linkData.ProductionStepId).Count() > 0).ToList();
+                    TraceProductionStepRelationShip(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRole, lsProductionStepIdInGroup);
                 }
-                groupOutsourceStep.Add($"gc#{indexGroup}", lstId);
+                groupRelationship.Add($"gc#{indexGroup}", lsProductionStepIdInGroup);
                 indexGroup++;
             }
 
-            return groupOutsourceStep;
+            return groupRelationship;
         }
 
-        private static void TraceProductionStepRelationShip(List<IGrouping<long, ProductionStepLinkDataRole>> temp_, List<IGrouping<long, ProductionStepLinkDataRole>> container, List<IGrouping<long, ProductionStepLinkDataRole>> linkDataRoles, List<long> lstId)
+        private static void TraceProductionStepRelationShip(List<IGrouping<long, ProductionStepLinkDataRole>> groupbyLinkDataRole
+            , List<IGrouping<long, ProductionStepLinkDataRole>> groupbyLinkDataRoleScanned
+            , List<IGrouping<long, ProductionStepLinkDataRole>> groupbyLinkDataRoleOrigin
+            , List<long> lsProductionStepIdInGroup)
         {
-            foreach (var role in temp_)
+            foreach (var role in groupbyLinkDataRole)
             {
-                if (container.Contains(role)) continue;
-                container.Add(role);
+                if (groupbyLinkDataRoleScanned.Contains(role)) 
+                    continue;
+                groupbyLinkDataRoleScanned.Add(role);
                 foreach (var linkData in role)
                 {
-                    if (lstId.Contains(linkData.ProductionStepId)) continue;
-                    lstId.Add(linkData.ProductionStepId);
-                    var temp_1 = linkDataRoles.Where(x => x.Where(y => y.ProductionStepId == linkData.ProductionStepId).Count() > 0).ToList();
-                    TraceProductionStepRelationShip(temp_1, container, linkDataRoles, lstId);
+                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepId)) 
+                        continue;
+                    lsProductionStepIdInGroup.Add(linkData.ProductionStepId);
+
+                    var temp = groupbyLinkDataRoleOrigin.Where(x => x.Where(y => y.ProductionStepId == linkData.ProductionStepId).Count() > 0).ToList();
+                    TraceProductionStepRelationShip(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRoleOrigin, lsProductionStepIdInGroup);
                 }
-                linkDataRoles.Remove(role);
+                groupbyLinkDataRoleOrigin.Remove(role);
             }
         }
 
