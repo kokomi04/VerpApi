@@ -51,11 +51,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _roleHelperService = roleHelperService;
         }
 
-        public async Task<IList<VoucherActionModel>> GetVoucherActions(int voucherTypeId)
+        public async Task<IList<VoucherActionModel>> GetVoucherActionConfigs(int voucherTypeId)
         {
             return await _purchaseOrderDBContext.VoucherAction
                 .Where(a => a.VoucherTypeId == voucherTypeId)
                 .ProjectTo<VoucherActionModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
+        public async Task<IList<VoucherActionUseModel>> GetVoucherActions(int voucherTypeId)
+        {
+            return await _purchaseOrderDBContext.VoucherAction
+                .Where(a => a.VoucherTypeId == voucherTypeId)
+                .ProjectTo<VoucherActionUseModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
 
