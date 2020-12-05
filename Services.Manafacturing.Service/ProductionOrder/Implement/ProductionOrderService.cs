@@ -214,7 +214,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
 
-                await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
+                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
                 return data;
