@@ -58,9 +58,11 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestData, v => v.MapFrom(m => m.OutsourceStepRequestData))
+                .ForMember(m => m.ProductionProcessId, v => v.MapFrom(m => m.ProductionStepId))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
+                .ForMember(m => m.ProductionStepId, v => v.MapFrom(m => m.ProductionProcessId))
                 .ForMember(m => m.OutsourceStepRequestData, v => v.Ignore());
 
         }
