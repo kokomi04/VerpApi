@@ -1,10 +1,12 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductBomOutput
+    public class ProductBomOutputBase
     {
         public long? ProductBomId { get; set; }
         public int Level { get; set; }
@@ -21,7 +23,20 @@ namespace VErp.Services.Stock.Model.Product
         public string Description { get; set; }
         public string UnitName { get; set; }
         public bool IsMaterial { get; set; }
-        public string PathProductIds { get; set; }
         public string NumberOrder { get; set; }
+    }
+    public class ProductBomEntity : ProductBomOutputBase
+    {
+        public string PathProductIds { get; set; }
+    }
+
+    public class ProductBomOutput : ProductBomOutputBase, IMapFrom<ProductBomEntity>
+    {
+        public int[] PathProductIds { get; set; }
+        public virtual void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductBomEntity, ProductBomOutput>()
+                .ForMember(m => m.PathProductIds, v => v.Ignore());
+        }
     }
 }
