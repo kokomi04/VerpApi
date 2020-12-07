@@ -71,9 +71,9 @@ namespace VErpApi.Controllers.Stock.Inventory
         [HttpPut]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}/accept")]
         [VErpAction(EnumAction.Censor)]
-        public async Task<bool> AcceptInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
+        public async Task<bool> AcceptInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId, [FromBody] Dictionary<long, int> assignStocks)
         {
-            return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Accepted);
+            return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Accepted, assignStocks);
         }
 
         [HttpPut]

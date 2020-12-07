@@ -21,6 +21,6 @@ namespace VErp.Services.Stock.Service.Stock
         Task<long> UpdateInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, InventoryRequirementInputModel req);
         Task<bool> DeleteInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId);
 
-        Task<bool> ConfirmInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status);
+        Task<bool> ConfirmInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status, Dictionary<long, int> assignStocks = null);
     }
 }
