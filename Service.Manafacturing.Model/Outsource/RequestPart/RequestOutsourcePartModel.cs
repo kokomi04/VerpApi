@@ -6,6 +6,7 @@ using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {
@@ -15,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string OutsourcePartRequestCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
         public long OutsourcePartRequestDate { get; set; }
-        [Required]
+        [Required(ErrorMessage ="Thông tin thời hạn hoàn thành là bắt buộc")]
         public long OutsourcePartRequestFinishDate { get; set; }
 
         public void Mapping(Profile profile)
@@ -34,11 +35,11 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string ProductionOrderCode { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
-        public string Status { get; set; }
         public int ProductOrderDetailQuantity { get; set; }
         public string ProductTitle { get; set; }
         public int ProductId { get; set; }
         public string OrderCode { get; set; }
+        public string OutsourcePartRequestStatus { get; set; }
 
         public IList<RequestOutsourcePartDetailInfo> OutsourcePartRequestDetail { get; set; }
 
