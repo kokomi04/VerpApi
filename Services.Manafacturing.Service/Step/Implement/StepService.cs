@@ -40,7 +40,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
         public async Task<int> CreateStep(StepModel req)
         {
             var entity = _mapper.Map<StepEnity>(req);
-            _manufacturingDBContext.Step.Add(_mapper.Map<StepEnity>(entity));
+            _manufacturingDBContext.Step.Add(entity);
             await _manufacturingDBContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
@@ -49,9 +49,11 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<bool> DeleteStep(int stepId)
         {
-            var destInfo = _manufacturingDBContext.Step.FirstOrDefault(x => x.StepId == stepId);
+            var destInfo = _manufacturingDBContext.Step.Include(x=>x.ProductionStep).FirstOrDefault(x => x.StepId == stepId);
             if (destInfo == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
+            if (destInfo.ProductionStep.Count > 0)
+                throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
 
             destInfo.IsDeleted = true;
             await _manufacturingDBContext.SaveChangesAsync();

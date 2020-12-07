@@ -14,6 +14,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string StepName { get; set; }
         public int SortOrder { get; set; }
         public int StepGroupId { get; set; }
+        public bool IsHide { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
