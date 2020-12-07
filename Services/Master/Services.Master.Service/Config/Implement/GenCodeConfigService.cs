@@ -469,6 +469,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                     }
 
                     var stringNumber = newId < maxId ? newId.ToString(string.Format("D{0}", config.CodeLength)) : newId.ToString(string.Format("D{0}", config.CodeLength + 1));
+
+                    date = date.HasValue ? date : _currentContextService.GetNowUtc().GetUnix();
+
                     newCode = Utils.FormatStyle(config.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
 
 
