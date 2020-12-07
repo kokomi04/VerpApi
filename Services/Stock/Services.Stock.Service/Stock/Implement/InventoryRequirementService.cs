@@ -345,15 +345,12 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
             if (status == EnumInventoryRequirementStatus.Rejected && inventoryRequirement.CensorStatus != (int)EnumInventoryRequirementStatus.Waiting)
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} không phải đơn chờ duyệt");
-
+            
+            // Validate assign stock
             if (status == EnumInventoryRequirementStatus.Accepted && (assignStocks == null || inventoryRequirement.InventoryRequirementDetail.Any(d => !assignStocks.ContainsKey(d.InventoryRequirementDetailId))))
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} cần chỉ định kho chứa khi duyệt");
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} chưa chỉ định đủ kho xuất cho mặt hàng");
 
             await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
-
-            // Validate assign stock
-            if(status == EnumInventoryRequirementStatus.Accepted && inventoryRequirement.InventoryRequirementDetail.Any(rd => !rd.AssignStockId.HasValue))
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} chưa chỉ định đủ kho xuất");
 
             inventoryRequirement.CensorStatus = (int)status;
             inventoryRequirement.CensorByUserId = _currentContextService.UserId;
