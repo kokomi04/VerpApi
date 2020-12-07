@@ -54,8 +54,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
             };
 
             var resultData = await _stockDbContext.ExecuteDataProcedure("asp_GetProductBom", parammeters);
-
-            return resultData.ConvertData<ProductBomOutput>();
+            var result = new List<ProductBomOutput>();
+            foreach (var item in resultData.ConvertData<ProductBomEntity>())
+            {
+                var bom = _mapper.Map<ProductBomOutput>(item);
+                bom.PathProductIds = Array.ConvertAll(item.PathProductIds.Split(','), s => int.Parse(s));
+                result.Add(bom);
+            }
+            return result;
         }
 
         public async Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials)
