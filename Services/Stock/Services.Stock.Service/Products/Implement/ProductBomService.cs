@@ -124,12 +124,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Cập nhật Material
             var oldMaterials = _stockDbContext.ProductMaterial.Where(m => m.RootProductId == productId).ToList();
             var createMaterials = productMaterials
-                .Where(nm => !oldMaterials.Any(om => om.ProductId == nm.ProductId && om.PathProductIds == nm.PathProductIds))
-                .AsQueryable()
-                .ProjectTo<ProductMaterial>(_mapper.ConfigurationProvider)
+                .Where(nm => !oldMaterials.Any(om => om.ProductId == nm.ProductId && om.PathProductIds == string.Join(",", nm.PathProductIds)))
+                .Select(nm => new ProductMaterial
+                {
+                    ProductId = nm.ProductId,
+                    ProductMaterialId = nm.ProductMaterialId,
+                    RootProductId = nm.RootProductId,
+                    PathProductIds = string.Join(",", nm.PathProductIds)
+                })
                 .ToList();
             var deleteMaterials = oldMaterials
-                .Where(om => !productMaterials.Any(nm => nm.ProductId == om.ProductId && nm.PathProductIds == om.PathProductIds))
+                .Where(om => !productMaterials.Any(nm => nm.ProductId == om.ProductId && string.Join(",", nm.PathProductIds) == om.PathProductIds))
                 .ToList();
 
             _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
