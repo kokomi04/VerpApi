@@ -79,7 +79,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 foreach (var data in req.OutsourcePartRequestDetail)
                 {
                     data.OutsourcePartRequestId = order.OutsourcePartRequestId;
-                    data.StatusId = EnumOutsourcePartProcessType.Unprocessed;
                     orderDetails.Add(_mapper.Map<OutsourcePartRequestDetail>(data as RequestOutsourcePartDetailModel));
                 }
 
@@ -117,20 +116,20 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
             var rs = _mapper.Map<RequestOutsourcePartInfo>(extractInfo[0]);
-            rs.Status = GetRequestOutsourcePartStatus(extractInfo);
+            rs.OutsourcePartRequestStatus = GetRequestOutsourcePartStatus(extractInfo);
             rs.OutsourcePartRequestDetail = extractInfo.Where(x => x.OutsourcePartRequestDetailId > 0).ToList();
             return rs;
         }
 
         private string GetRequestOutsourcePartStatus(List<RequestOutsourcePartDetailInfo> req)
         {
-            if (req.Where(x => x.StatusId == EnumOutsourcePartProcessType.Unprocessed).Count() > 0)
-                return EnumOutsourcePartProcessType.Unprocessed.GetEnumDescription();
-            else if (req.Where(x => x.StatusId == EnumOutsourcePartProcessType.Processing).Count() > 0)
-                return EnumOutsourcePartProcessType.Processing.GetEnumDescription();
-            else if (req.Where(x => x.StatusId == EnumOutsourcePartProcessType.Processed).Count() > 0)
-                return EnumOutsourcePartProcessType.Processed.GetEnumDescription();
-            return string.Empty;
+            var sumStatus = req.Sum(x => (int)x.OutsourcePartRequestDetailStatusId);
+            if (sumStatus == ((int)EnumOutsourceRequestStatusType.Unprocessed * req.Count))
+                return EnumOutsourceRequestStatusType.Unprocessed.GetEnumDescription();
+            else if (sumStatus == ((int)EnumOutsourceRequestStatusType.Processed * req.Count))
+                return EnumOutsourceRequestStatusType.Processed.GetEnumDescription();
+            else
+                return EnumOutsourceRequestStatusType.Processing.GetEnumDescription();
         }
 
         public async Task<bool> UpdateOutsourcePartRequest(int OutsourcePartRequestId, RequestOutsourcePartInfo req)
@@ -240,9 +239,26 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var order = await _manufacturingDBContext.OutsourcePartRequest.FirstOrDefaultAsync(x => x.OutsourcePartRequestId == OutsourcePartRequestId);
             if (order == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
-            var details = await _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId).ToListAsync();
+            var details = await _manufacturingDBContext.OutsourcePartRequestDetail
+                .Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId)
+                .ToListAsync();
 
-            details.ForEach(x => x.IsDeleted = true);
+            var lst = (from o in _manufacturingDBContext.OutsourceOrder
+                       join d in _manufacturingDBContext.OutsourceOrderDetail
+                         on o.OutsourceOrderId equals d.OutsourceOrderId
+                       where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourcePart
+                       select d).GroupBy(x => x.ObjectId).Select(x => new
+                       {
+                           ObjectId = x.Key,
+                           QuantityProcessed = x.Sum(x => x.Quantity)
+                       });
+
+            details.ForEach(x => {
+                if (lst.Where(y => y.ObjectId == x.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
+                    throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
+                x.IsDeleted = true;
+            }
+            );
             order.IsDeleted = true;
 
             await _manufacturingDBContext.SaveChangesAsync();

@@ -34,7 +34,7 @@ namespace VErp.Commons.Enums.Manafacturing
             OutsourceStep = 2
         }
 
-        public enum EnumOutsourcePartProcessType
+        public enum EnumOutsourceRequestStatusType
         {
             [Description("Chưa xử lý")]
             Unprocessed = 1,
