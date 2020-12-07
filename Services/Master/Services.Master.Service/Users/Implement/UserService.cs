@@ -873,18 +873,24 @@ namespace VErp.Services.Master.Service.Users.Implement
             var userDepartments = new List<EmployeeDepartmentMapping>();
             foreach (var req in ls)
             {
-                userDepartments.AddRange(req.userInfo.Departments.Select(d => new EmployeeDepartmentMapping()
+                if (req.userInfo?.Departments != null && req.userInfo?.Departments.Count > 0)
                 {
-                    DepartmentId = d.DepartmentId,
-                    UserId = req.userId,
-                    EffectiveDate = d.EffectiveDate.UnixToDateTime(),
-                    ExpirationDate = d.ExpirationDate.UnixToDateTime(),
-                }));
+                    userDepartments.AddRange(req.userInfo.Departments.Select(d => new EmployeeDepartmentMapping()
+                    {
+                        DepartmentId = d.DepartmentId,
+                        UserId = req.userId,
+                        EffectiveDate = d.EffectiveDate.UnixToDateTime(),
+                        ExpirationDate = d.ExpirationDate.UnixToDateTime(),
+                    }));
+                }
             };
 
-            await _organizationContext.EmployeeDepartmentMapping.AddRangeAsync(userDepartments);
+            if (userDepartments.Count > 0)
+            {
+                await _organizationContext.EmployeeDepartmentMapping.AddRangeAsync(userDepartments);
 
-            await _organizationContext.SaveChangesAsync();
+                await _organizationContext.SaveChangesAsync();
+            }
         }
 
 

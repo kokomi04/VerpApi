@@ -2084,7 +2084,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
         {
-            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Package, EnumObjectType.Package, 0);
             var customGenCodeId = config.CustomGenCodeId;
 
             var newPackageCodeResult = await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue);
