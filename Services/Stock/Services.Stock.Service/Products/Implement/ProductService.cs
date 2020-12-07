@@ -80,7 +80,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 return productId;
             }
 
-           
+
         }
 
         public async Task<int> AddProductDefault(ProductDefaultModel req)
@@ -330,7 +330,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && p.ProductName == req.ProductName);
             if (productExisted != null)
-            {             
+            {
                 throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             }
 
@@ -525,7 +525,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             else
             {
-                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Product, EnumObjectType.ProductType, model.ProductTypeId ?? 0);
                 customGenCodeId = config.CustomGenCodeId;
                 int dem = 0;
                 do

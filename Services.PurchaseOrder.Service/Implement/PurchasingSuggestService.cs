@@ -1339,7 +1339,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
             else
             {
-                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PoAssignment, EnumObjectType.PoAssignment, 0);
                 customGenCodeId = config.CustomGenCodeId;
                 int dem = 0;
                 do
