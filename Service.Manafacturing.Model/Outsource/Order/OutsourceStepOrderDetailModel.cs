@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public long OutsourceOrderDetailId { get; set; }
         [Required]
         public long OutsourceOrderId { get; set; }
-        [Required]
+        [Range(0.0000001, double.MaxValue, ErrorMessage ="Số lượng phải lớn hơn 0")]
         public decimal OutsourceOrderQuantity { get; set; }
         [Required]
         public decimal OutsourceOrderPrice { get; set; }
