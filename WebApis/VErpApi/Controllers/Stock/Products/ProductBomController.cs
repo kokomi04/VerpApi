@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -37,6 +40,25 @@ namespace VErpApi.Controllers.Stock.Products
         {
             if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials);
+        }
+
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            return _productBomService.GetCustomerFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
+            return await _productBomService.ImportBomFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }
