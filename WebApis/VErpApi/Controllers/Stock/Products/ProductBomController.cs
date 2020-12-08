@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
@@ -40,6 +42,17 @@ namespace VErpApi.Controllers.Stock.Products
         {
             if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumAction.View)]
+        [Route("exports")]
+        public async Task<IActionResult> Export([FromBody] IList<int> productIds)
+        {
+            if (productIds == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            var (stream, fileName, contentType) = await _productBomService.ExportBom(productIds);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
         [HttpGet]

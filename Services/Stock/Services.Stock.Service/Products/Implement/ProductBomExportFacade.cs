@@ -42,7 +42,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             sheet = xssfwb.CreateSheet();
 
 
-            await WriteTable();
+            var firstProductCode = await WriteTable();
 
             var currentRowTmp = currentRow;
 
@@ -68,48 +68,37 @@ namespace VErp.Services.Stock.Service.Products.Implement
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"product-bom-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fileName = $"product-bom-{firstProductCode.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
             return (stream, fileName, contentType);
         }
 
-        private async Task WriteTable()
+        private async Task<string> WriteTable()
         {
             currentRow = 1;
 
             var fRow = currentRow;
             var sRow = currentRow;
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, 0, 0));
             sheet.EnsureCell(fRow, 0).SetCellValue($"STT");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, 1, 1));
             sheet.EnsureCell(fRow, 1).SetCellValue($"Mã mặt hàng");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, 2, 2));
             sheet.EnsureCell(fRow, 2).SetCellValue($"Tên mặt hàng");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, 3, 3));
             sheet.EnsureCell(fRow, 3).SetCellValue($"ĐVT");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 4, 4));
             sheet.EnsureCell(fRow, 4).SetCellValue($"Quy cách");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, 5, 5));
             sheet.EnsureCell(fRow, 5).SetCellValue($"Mã chi tiết");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, 6, 6));
             sheet.EnsureCell(fRow, 6).SetCellValue($"Tên chi tiết");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, 7, 7));
             sheet.EnsureCell(fRow, 7).SetCellValue($"ĐVT chi tiết");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 8, 8));
             sheet.EnsureCell(fRow, 8).SetCellValue($"Quy cách chi tiết");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 9, 9));
             sheet.EnsureCell(fRow, 9).SetCellValue($"Số lượng");
 
-            sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 10, 10));
             sheet.EnsureCell(fRow, 10).SetCellValue($"Là nguyên liệu");
 
 
@@ -124,11 +113,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             currentRow = sRow + 1;
 
-            await WriteTableDetailData();
+            return await WriteTableDetailData();
         }
 
 
-        private async Task WriteTableDetailData()
+        private async Task<string> WriteTableDetailData()
         {
             var processedProductIds = new HashSet<int>();
             var productBoms = new List<ProductBom>();
@@ -139,7 +128,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 var boms = await _stockDbContext.ProductBom.AsNoTracking().Where(b => processingProductIds.Contains(b.ProductId)).ToListAsync();
                 productBoms.AddRange(boms);
 
-                foreach (var productId in productIds)
+                foreach (var productId in processingProductIds)
                 {
                     processedProductIds.Add(productId);
                 }
@@ -166,6 +155,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
             var stt = 1;
+
+            var firstProductCode = "";
+
+            object currentProduct = null;
             foreach (var item in productBoms)
             {
                 sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
@@ -176,10 +169,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 if (productInfo != null)
                 {
+                    if (string.IsNullOrWhiteSpace(firstProductCode))
+                    {
+                        firstProductCode = productInfo.ProductCode;
+                    }
+
                     sheet.EnsureCell(currentRow, 1).SetCellValue(productInfo.ProductCode);
-                    sheet.EnsureCell(currentRow, 2).SetCellValue(productInfo.ProductName);
-                    sheet.EnsureCell(currentRow, 3).SetCellValue(productInfo.ProductUnitConversionName);
-                    sheet.EnsureCell(currentRow, 4).SetCellValue(productInfo.Specification);
+                    if (currentProduct != productInfo)
+                    {
+                        currentProduct = productInfo;
+                        sheet.EnsureCell(currentRow, 2).SetCellValue(productInfo.ProductName);
+                        sheet.EnsureCell(currentRow, 3).SetCellValue(productInfo.ProductUnitConversionName);
+                        sheet.EnsureCell(currentRow, 4).SetCellValue(productInfo.Specification);
+                    }
                 }
 
                 if (childProductInfo != null)
@@ -190,16 +192,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     sheet.EnsureCell(currentRow, 8).SetCellValue(childProductInfo.Specification);
                 }
 
-                sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Quantity));
+                sheet.EnsureCell(currentRow, 9).SetCellValue(Convert.ToDouble(item.Quantity));
 
                 if (productMaterial.Contains(item.ChildProductId ?? 0))
                 {
-                    sheet.EnsureCell(currentRow, 11).SetCellValue("Có");
+                    sheet.EnsureCell(currentRow, 10).SetCellValue("Có");
+                    sheet.EnsureCell(currentRow, 10).CellStyle.Alignment = HorizontalAlignment.Center;
+                    //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
                 }
 
                 currentRow++;
                 stt++;
             }
+
+            return firstProductCode;
         }
 
 
