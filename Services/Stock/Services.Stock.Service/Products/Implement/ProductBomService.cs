@@ -20,6 +20,14 @@ using Microsoft.Data.SqlClient;
 using VErp.Infrastructure.EF.EFExtensions;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using System.Data;
+using System.IO;
+using VErp.Commons.Library.Model;
+using VErp.Services.Master.Service.Dictionay;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using VErp.Services.Master.Model.Dictionary;
+using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -31,17 +39,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
 
+        private readonly IUnitService _unitService;
+        private readonly IProductService _productService;
+
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductBomService> logger
             , IActivityLogService activityLogService
-            , IMapper mapper)
+            , IMapper mapper
+            , IUnitService unitService
+            , IProductService productService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _unitService = unitService;
+            _productService = productService;
         }
 
         public async Task<IList<ProductBomOutput>> GetBom(int productId)
@@ -68,6 +83,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var product = _stockDbContext.Product.FirstOrDefault(p => p.ProductId == productId);
             if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+
+            await UpdateProductBomDb(productId, productBoms, productMaterials);
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", productBoms.JsonSerialize());
+            return true;
+        }
+
+        public async Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials)
+        {
 
             // Validate data
             // Validate child product id
@@ -147,14 +171,48 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _stockDbContext.ProductMaterial.AddRange(createMaterials);
 
             await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", productBoms.JsonSerialize());
             return true;
         }
+
+        public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds)
+        {
+            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds);
+            return await bomExport.BomExport();
+        }
+
 
         private bool HasChange(ProductBom oldValue, ProductBomInput newValue)
         {
             return oldValue.Quantity != newValue.Quantity
                 || oldValue.Wastage != newValue.Wastage;
+        }
+
+
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = "ProductBom",
+                CategoryTitle = "Bill of Material",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = Utils.GetFieldNameModels<ProductBomImportModel>();
+            result.Fields = fields;
+            return result;
+        }
+
+        public Task<bool> ImportBomFromMapping(ImportExcelMapping mapping, Stream stream)
+        {
+            return new ProductBomImportFacade()
+                .SetService(_stockDbContext)
+                .SetService(_productService)
+                .SetService(_unitService)
+                .SetService(_activityLogService)
+                .SetService(this)
+                .ProcessData(mapping, stream);
         }
     }
 }
