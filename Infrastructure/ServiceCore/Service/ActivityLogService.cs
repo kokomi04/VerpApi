@@ -21,7 +21,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null);
+        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null, bool ignoreBatch = false);
         ActivityLogBatchs BeginBatchLog();
 
     }
@@ -53,8 +53,13 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return logBatchs;
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null)
+        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null, bool ignoreBatch = false)
         {
+            if (ignoreBatch)
+            {
+                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action);
+            }
+
             ActivityLogBatchs batch = null;
             lock (objLock)
             {
@@ -146,11 +151,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 });
             }
 
-            public async Task<bool> Commit()
+            public async Task<bool> CommitAsync()
             {
                 foreach (var log in _logs)
                 {
-                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action);
+                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true);
                 }
                 return true;
             }
@@ -158,7 +163,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             public void Dispose()
             {
                 this._activityLogBatchs.Remove(this);
-                Commit().Wait();
+                //Commit().Wait();
             }
 
             private class ActivityLogEntity

@@ -1007,7 +1007,9 @@ namespace VErp.Commons.Library
                     RefCategory = null
                 };
 
-                if (prop.PropertyType.IsClass)
+                bool isPrimitiveType = prop.PropertyType.IsPrimitive || prop.PropertyType.IsValueType || (prop.PropertyType == typeof(string));
+
+                if (prop.PropertyType.IsClass && !isPrimitiveType)
                 {
 
                     MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));

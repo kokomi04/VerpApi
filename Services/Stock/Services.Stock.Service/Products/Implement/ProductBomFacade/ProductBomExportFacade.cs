@@ -17,7 +17,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 
-namespace VErp.Services.Stock.Service.Products.Implement
+namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 {
     public class ProductBomExportFacade
     {

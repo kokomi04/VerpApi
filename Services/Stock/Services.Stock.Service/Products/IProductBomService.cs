@@ -13,7 +13,10 @@ namespace VErp.Services.Stock.Service.Products
         Task<IList<ProductBomOutput>> GetBom(int productId);
         Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds);
 
+        Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials);
+
         Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials);
+
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportBomFromMapping(ImportExcelMapping importExcelMapping, Stream stream);
     }
