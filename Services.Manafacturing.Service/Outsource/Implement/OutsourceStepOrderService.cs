@@ -260,6 +260,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .Where(x => x.OutsourceOrderDetailId <= 0 && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
                     .ProjectTo<OutsourceOrderDetail>(_mapper.ConfigurationProvider)
                     .ToList();
+                newOutsourceStepOrderDetail.ForEach(x => x.OutsourceOrderId = outsourceStepOrder.OutsourceOrderId);
+
                 await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(newOutsourceStepOrderDetail);
                 await _manufacturingDBContext.SaveChangesAsync();
 
