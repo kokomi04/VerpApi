@@ -51,6 +51,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public IList<ProductionStepLinkDataRoleModel> roles { get; set; }
         public string OrderCode { get; set; }
         public string ProductTitle { get; set; }
+        public string OutsourceStepRequestStatus { get; set; }
 
         public new  void Mapping(Profile profile)
         {

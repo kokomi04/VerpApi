@@ -55,7 +55,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ToListAsync();
 
             var data = outsourceStepRequest.GroupBy(x => x.ProductionOrderId);
-            var lsProductionStepId = new List<long>();
+            var kVReqestAndStep = new Dictionary<long, IList<long>>();
 
             foreach (var group in data)
             {
@@ -70,13 +70,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }).ToListAsync();
 
                 foreach (var request in group)
-                    lsProductionStepId.AddRange(GetAllProductionStepInOutsourceStepRequest(request.OutsourceStepRequestData, roles));
+                {
+                    kVReqestAndStep.Add(request.OutsourceStepRequestId, GetAllProductionStepInOutsourceStepRequest(request.OutsourceStepRequestData, roles));
+                }
             }
 
             var total = 0;
             var lst = new List<OutsourceStepRequestSearch>();
 
-            if (lsProductionStepId.Count > 0)
+            if (kVReqestAndStep.Count > 0)
             {
                 var sql = new StringBuilder(@"SELECT * FROM vOutsourceStepRequestExtractInfo v ");
                 var totalSql = new StringBuilder(@"SELECT COUNT(v.OutsourceStepRequestId) Total FROM vOutsourceStepRequestExtractInfo v ");
@@ -103,18 +105,28 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     }
                 }
 
-                whereFilterProductionStep.Append(" v.ProductionStepId IN ( ");
-                for (int i = 0; i < lsProductionStepId.Count; i++)
+                for (int i = 0; i < kVReqestAndStep.Keys.Count; i++)
                 {
-                    var number = lsProductionStepId[i];
-                    string pName = $"@ProductionStepId{i + 1}";
+                    var outsourceStepRequestId = kVReqestAndStep.Keys.ToList()[i];
+                    var pRequestName = $"@OutsourceStepRequestId_{i + 1}";
+                    if (i != 0)
+                        whereFilterProductionStep.Append(" OR ");
+                    whereFilterProductionStep.Append($"( v.OutsourceStepRequestId = {pRequestName} AND  v.ProductionStepId IN ( ");
+                    parammeters.Add(new SqlParameter(pRequestName, outsourceStepRequestId));
 
-                    if (i == lsProductionStepId.Count - 1)
-                        whereFilterProductionStep.Append($"{pName} ) ");
-                    else
-                        whereFilterProductionStep.Append($"{pName}, ");
+                    var lsProductionStepId = kVReqestAndStep[outsourceStepRequestId];
+                    for (int j = 0; j < lsProductionStepId.Count; j++)
+                    {
+                        var number = lsProductionStepId[j];
+                        string pName = $"@ProductionStepId_{i + 1}_{j + 1}";
 
-                    parammeters.Add(new SqlParameter(pName, number));
+                        if (j == lsProductionStepId.Count - 1)
+                            whereFilterProductionStep.Append($"{pName} ) )");
+                        else
+                            whereFilterProductionStep.Append($"{pName}, ");
+                        parammeters.Add(new SqlParameter(pName, number));
+                    }
+
                 }
 
                 if (whereFilterProductionStep.Length > 0)
@@ -173,11 +185,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     var lastTrack = t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
                     sumTrack += lastTrack.OutsourceTrackStatusId;
                 }
-                if (sumTrack == 0) l.ProductionStepInRequestStatus = EnumOutsourceRequestStatusType.Unprocessed.GetEnumDescription();
+                if (sumTrack == 0) l.ProductionStepInRequestStatusId = EnumOutsourceRequestStatusType.Unprocessed;
                 else if (sumTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * track.Count()))
-                    l.ProductionStepInRequestStatus = EnumOutsourceRequestStatusType.Processed.GetEnumDescription();
+                    l.ProductionStepInRequestStatusId = EnumOutsourceRequestStatusType.Processed;
                 else if (sumTrack > 0)
-                    l.ProductionStepInRequestStatus = EnumOutsourceRequestStatusType.Processing.GetEnumDescription();
+                    l.ProductionStepInRequestStatusId = EnumOutsourceRequestStatusType.Processing;
             }
 
             return (lst, total);
@@ -402,6 +414,22 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var outsourceStepRequestDataOld = await _manufacturingDBContext.OutsourceStepRequestData
                     .Where(d => d.OutsourceStepRequestId == outsourceStepRequestId)
                     .ToListAsync();
+
+                var lst = (from o in _manufacturingDBContext.OutsourceOrder
+                           join d in _manufacturingDBContext.OutsourceOrderDetail
+                             on o.OutsourceOrderId equals d.OutsourceOrderId
+                           where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                           select d).GroupBy(x => x.ObjectId).Select(x => new
+                           {
+                               ObjectId = x.Key,
+                               QuantityProcessed = x.Sum(x => x.Quantity)
+                           });
+
+                outsourceStepRequestDataOld.ForEach(x =>
+                {
+                    if (lst.Where(y => y.ObjectId == x.ProductionStepLinkDataId && y.QuantityProcessed > 0).Count() != 0)
+                        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {outsourceStepRequest.OutsourceStepRequestCode}");
+                });
 
                 _manufacturingDBContext.OutsourceStepRequestData.RemoveRange(outsourceStepRequestDataOld);
                 await _manufacturingDBContext.SaveChangesAsync();

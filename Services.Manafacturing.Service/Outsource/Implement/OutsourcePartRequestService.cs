@@ -253,12 +253,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                            QuantityProcessed = x.Sum(x => x.Quantity)
                        });
 
-            details.ForEach(x => {
+            details.ForEach(x =>
+            {
                 if (lst.Where(y => y.ObjectId == x.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
                     throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
                 x.IsDeleted = true;
-            }
-            );
+            });
             order.IsDeleted = true;
 
             await _manufacturingDBContext.SaveChangesAsync();
