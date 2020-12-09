@@ -160,12 +160,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 SortOrder = c.SortOrder
             });
 
+            lstQuery = lstQuery.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder);
 
-            var lst = size > 0
-                ? await lstQuery.OrderBy(t => t.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync()
-                : await lstQuery.ToListAsync();
-
-            return (lst, total);
+            if (size > 0)
+            {
+                lstQuery = lstQuery.Skip((page - 1) * size).Take(size);
+            }
+        
+            return (await lstQuery.ToListAsync(), total);
         }
 
         public async Task<bool> UpdateProductType(int productTypeId, ProductTypeInput req)
