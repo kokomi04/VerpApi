@@ -7,6 +7,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     {
         public ProductionAssignment()
         {
+            ProductionHandoverProductionAssignment = new HashSet<ProductionHandover>();
+            ProductionHandoverProductionAssignmentNavigation = new HashSet<ProductionHandover>();
             ProductionScheduleTurnShift = new HashSet<ProductionScheduleTurnShift>();
         }
 
@@ -17,6 +19,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionStepLinkDataId { get; set; }
 
         public virtual ProductionStep ProductionStep { get; set; }
+        public virtual ICollection<ProductionHandover> ProductionHandoverProductionAssignment { get; set; }
+        public virtual ICollection<ProductionHandover> ProductionHandoverProductionAssignmentNavigation { get; set; }
         public virtual ICollection<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
     }
 }
