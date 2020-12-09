@@ -234,6 +234,18 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             modelBuilder.Entity<ProductionHandover>(entity =>
             {
                 entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.ProductionAssignment)
+                    .WithMany(p => p.ProductionHandoverProductionAssignment)
+                    .HasForeignKey(d => new { d.FromProductionStepId, d.ScheduleTurnId, d.FromDepartmentId })
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionHandover_ProductionAssignmentFrom");
+
+                entity.HasOne(d => d.ProductionAssignmentNavigation)
+                    .WithMany(p => p.ProductionHandoverProductionAssignmentNavigation)
+                    .HasForeignKey(d => new { d.ToProductionStepId, d.ScheduleTurnId, d.ToDepartmentId })
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionHandover_ProductionAssignmentTo");
             });
 
             modelBuilder.Entity<ProductionOrder>(entity =>
