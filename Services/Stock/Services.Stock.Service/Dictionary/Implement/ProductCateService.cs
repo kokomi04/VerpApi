@@ -162,10 +162,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 IsDefault = c.IsDefault
             });
 
+            lst = lst.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder);
+
             if (size > 0)
             {
-                lst = lst.OrderBy(c => c.SortOrder).Skip((page - 1) * size).Take(size);
-            }
+                lst = lst.Skip((page - 1) * size).Take(size);
+            }           
 
             return (await lst.ToListAsync(), total);
         }
