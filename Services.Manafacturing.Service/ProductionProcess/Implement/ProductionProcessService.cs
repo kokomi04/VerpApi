@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -976,7 +977,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var lsProductionStepOrderNew = _mapper.Map<IList<ProductionStepOrder>>(req.ProductionStepOrders);
                     await _manufacturingDBContext.ProductionStepOrder.AddRangeAsync(lsProductionStepOrderNew);
                     await _manufacturingDBContext.SaveChangesAsync();
+
+                    
                 }
+
+                //Truy vết cac linkData có đi gia công 
+                if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
+                {
+                    // Gia công chi tiết
+                    var productionStepLinkDataOutsources = await FoundProductionStepLinkDataOutsourcePart(containerId);
+                    foreach (var productionStepLinkData in newStepLinkData)
+                    {
+                        var s = productionStepLinkDataOutsources.FirstOrDefault(x => x.ProductionStepLinkDataId == productionStepLinkData.ProductionStepLinkDataId);
+                        if (s != null)
+                            productionStepLinkData.OutsourceQuantity = s.OutsourceQuantity;
+                    }
+                    //Gia công công đoạn
+
+                }
+                    
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -1156,14 +1175,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             for (int i = 0; i < groupbyLinkDataRole.Count; i++)
             {
                 var role = groupbyLinkDataRole[i];
-                if (groupbyLinkDataRoleScanned.Contains(role)) 
+                if (groupbyLinkDataRoleScanned.Contains(role))
                     continue;
 
                 groupbyLinkDataRoleScanned.Add(role);
                 var lsProductionStepIdInGroup = new List<long>();
                 foreach (var linkData in role)
                 {
-                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepId)) 
+                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepId))
                         continue;
                     lsProductionStepIdInGroup.Add(linkData.ProductionStepId);
                     var temp = groupbyLinkDataRole.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepId == linkData.ProductionStepId).Count() > 0).ToList();
@@ -1183,12 +1202,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             foreach (var role in groupbyLinkDataRole)
             {
-                if (groupbyLinkDataRoleScanned.Contains(role)) 
+                if (groupbyLinkDataRoleScanned.Contains(role))
                     continue;
                 groupbyLinkDataRoleScanned.Add(role);
                 foreach (var linkData in role)
                 {
-                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepId)) 
+                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepId))
                         continue;
                     lsProductionStepIdInGroup.Add(linkData.ProductionStepId);
 
@@ -1198,6 +1217,152 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 groupbyLinkDataRoleOrigin.Remove(role);
             }
         }
+
+        #region Truy vết LinkData gia công chi tiết
+        private async Task<IList<ProductionStepLinkDataInfo>> FoundProductionStepLinkDataOutsourcePart(long productionOrderId)
+        {
+            var productionOrderDetail = await _manufacturingDBContext.ProductionOrderDetail
+                .AsNoTracking()
+                .Include(x => x.ProductionStepOrder)
+                .Where(x => x.ProductionOrderId == productionOrderId)
+                .ToListAsync();
+            var listOutsourcePartRequest = await _manufacturingDBContext.OutsourcePartRequest
+                .AsNoTracking()
+                .Include(x => x.OutsourcePartRequestDetail)
+                .Where(x => productionOrderDetail
+                            .Select(p => p.ProductionOrderDetailId)
+                            .Contains(x.ProductionOrderDetailId)
+                 )
+                .ToListAsync();
+
+            var productionStepLinkDatas = new List<ProductionStepLinkDataInfo>();
+            foreach (var request in listOutsourcePartRequest)
+            {
+                var listSelectProductionStepId = productionOrderDetail
+                    .Where(x => x.ProductionOrderDetailId == request.ProductionOrderDetailId)
+                    .SelectMany(x => x.ProductionStepOrder.Select(t => t.ProductionStepId))
+                    .Distinct();
+                var listProductionStep = await _manufacturingDBContext.ProductionStep
+                    .AsNoTracking()
+                    .Where(x => listSelectProductionStepId.Contains(x.ProductionStepId))
+                    .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
+                    .ToListAsync();
+
+                foreach (var detailRequest in request.OutsourcePartRequestDetail)
+                {
+                    var pathProductId = Array.ConvertAll(detailRequest.PathProductIdInBom.Split(','), s => long.Parse(s));
+                    var productionSteps = listProductionStep
+                                            .Where(x => x.ProductionStepLinkDatas.Any(x => x.ObjectId == detailRequest.ProductId
+                                                        && x.ObjectTypeId == ProductionStepLinkDataObjectType.Product
+                                                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                                            )
+                                            .ToList();
+                    var dicProductionStep = new Dictionary<long, List<ProductionStepLinkDataInfo>>();
+                    foreach (var productionStep in productionSteps)
+                    {
+                        var index = 0;
+                        var linkDataOutputs = productionStep.ProductionStepLinkDatas
+                                                            .Where(x => x.ObjectId == detailRequest.ProductId
+                                                                    && x.ObjectTypeId == ProductionStepLinkDataObjectType.Product
+                                                                    && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                                                            .ToList();
+                        foreach (var linkDataOutput in linkDataOutputs)
+                        {
+                            if (CheckLinkDataPosterior(listProductionStep, linkDataOutput, pathProductId, ref index))
+                            {
+
+                                if (!dicProductionStep.ContainsKey(productionStep.ProductionStepId))
+                                {
+                                    var temp = new List<ProductionStepLinkDataInfo>();
+                                    temp.Add(linkDataOutput);
+                                    dicProductionStep.Add(productionStep.ProductionStepId, temp);
+                                }
+                                else
+                                {
+                                    dicProductionStep[productionStep.ProductionStepId].Add(linkDataOutput);
+                                }
+
+                            }
+                        }
+
+                    }
+                    var totalQuantityOrigin = dicProductionStep.Values.SelectMany(x => x).Sum(x => x.Quantity);
+                    var percent = (detailRequest.Quantity / totalQuantityOrigin) / dicProductionStep.Values.SelectMany(x => x).Count();
+                    foreach (var dic in dicProductionStep)
+                    {
+                        dic.Value.ForEach(x =>
+                        {
+                            x.OutsourceQuantity = x.Quantity * percent;
+                        });
+                        productionStepLinkDatas.AddRange(dic.Value);
+
+                        var productionStep = productionSteps.FirstOrDefault(x => x.ProductionStepId == dic.Key);
+                        var linkDataInputs = productionStep.ProductionStepLinkDatas
+                                                        .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
+                                                        .ToList();
+                        var localPercent = percent * dic.Value.Count;
+                        FoundLinkDataOutPutPrevious(listProductionStep, linkDataInputs, productionStepLinkDatas, localPercent);
+                    }
+                }
+            }
+
+            return productionStepLinkDatas;
+        }
+
+        private void FoundLinkDataOutPutPrevious(IList<ProductionStepInfo> listProductionStep, IList<ProductionStepLinkDataInfo> linkDataInputs, List<ProductionStepLinkDataInfo> productionStepLinkDatas, decimal percent)
+        {
+            foreach (var linkDataInput in linkDataInputs)
+            {
+                if (productionStepLinkDatas.Any(x => x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId))
+                {
+                    productionStepLinkDatas.ForEach(x =>
+                    {
+                        if(x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId)
+                        {
+                            x.OutsourceQuantity += x.Quantity * percent;
+                        }
+                    });
+                }
+                else
+                {
+                    linkDataInput.OutsourceQuantity = linkDataInput.Quantity * percent;
+                    productionStepLinkDatas.Add(linkDataInput);
+                }
+
+                var productionStep = listProductionStep
+                                             .Where(x => x.ProductionStepLinkDatas.Any(x => x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId
+                                                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                                             )
+                                             .FirstOrDefault();
+                if (productionStep == null) return;
+
+                var linkDataInputNexts = productionStep.ProductionStepLinkDatas
+                                                            .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
+                                                            .ToList();
+                FoundLinkDataOutPutPrevious(listProductionStep, linkDataInputNexts, productionStepLinkDatas, percent);
+            }
+        }
+
+        private bool CheckLinkDataPosterior(IList<ProductionStepInfo> listProductionStep, ProductionStepLinkDataInfo linkDataOutput, long[] pathProductId, ref int index)
+        {
+            if (pathProductId.Contains(linkDataOutput.ObjectId))
+                index++;
+            if (index == pathProductId.Length)
+                return true;
+            var productionStep = listProductionStep
+                                    .Where(x => x.ProductionStepLinkDatas.Any(x => x.ProductionStepLinkDataId == linkDataOutput.ProductionStepLinkDataId
+                                                && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
+                                    )
+                                    .FirstOrDefault();
+            var linkDataOutputAfter = productionStep.ProductionStepLinkDatas
+                                                        .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                                                        .FirstOrDefault(); ;
+            if (linkDataOutputAfter == null)
+                return false;
+
+            return CheckLinkDataPosterior(listProductionStep, linkDataOutputAfter, pathProductId, ref index);
+        }
+        #endregion
 
     }
 }

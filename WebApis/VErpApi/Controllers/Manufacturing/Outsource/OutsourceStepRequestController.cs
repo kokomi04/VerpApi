@@ -7,6 +7,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.Outsource;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
@@ -76,6 +77,5 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             return await _outsourceStepRequestService.GetProductionStepInOutsourceStepRequest(productionOrderId);
         }
 
-        
     }
 }
