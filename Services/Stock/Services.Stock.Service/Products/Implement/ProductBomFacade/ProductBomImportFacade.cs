@@ -289,6 +289,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục mặt hàng hoặc danh mục mặc định cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
                     }
 
+
+                    if (type == null)
+                    {
+                        type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                    }                    
+
                     _units.TryGetValue(p.Value.UnitName, out var unit);
                     if (unit == null)
                     {
