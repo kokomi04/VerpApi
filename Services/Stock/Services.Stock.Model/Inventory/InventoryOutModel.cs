@@ -29,6 +29,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public IList<InventoryOutProductModel> OutProducts { set; get; }
         public string AccountancyAccountNumber { get; set; }
+        public int? DepartmentId { get; set; }
     }
 
     public class InventoryOutProductModel
