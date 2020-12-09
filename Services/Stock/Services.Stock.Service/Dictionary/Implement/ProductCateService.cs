@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productCate);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Thêm mới danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
 
@@ -113,7 +113,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productCate);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Xóa danh mục sản phẩm {productCate.ProductCateName}", productCate.JsonSerialize());
 
@@ -195,7 +195,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productCate);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Cập nhật danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
 
@@ -212,7 +212,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return GeneralCode.Success;
         }
 
-        private async Task UpdateSortOrder()
+        private async Task UpdateSortOrder(ProductCate currentProductCate)
         {
             var lst = await _stockContext.ProductCate.OrderBy(c => c.SortOrder).ToListAsync();
 
@@ -227,6 +227,10 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 if (info != null)
                 {
                     info.SortOrder = ++idx;
+                    if (currentProductCate.IsDefault && currentProductCate.ProductCateId != info.ProductCateId)
+                    {
+                        info.IsDefault = false;
+                    }
                 }
 
                 foreach (var child in lst.Where(c => c.ParentProductCateId == info?.ProductCateId).Reverse())

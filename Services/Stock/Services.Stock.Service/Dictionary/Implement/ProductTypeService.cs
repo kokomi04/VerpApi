@@ -66,6 +66,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 ProductTypeName = req.ProductTypeName,
                 IdentityCode = req.IdentityCode ?? "",
                 ParentProductTypeId = req.ParentProductTypeId,
+                IsDefault = req.IsDefault,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
@@ -76,7 +77,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productType);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Thêm mới loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
 
@@ -106,7 +107,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productType);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Xóa loại sản phẩm {productType.ProductTypeName}", productType.JsonSerialize());
 
@@ -121,6 +122,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                     ProductTypeId = c.ProductTypeId,
                     IdentityCode = c.IdentityCode,
                     ParentProductTypeId = c.ParentProductTypeId,
+                    IsDefault = c.IsDefault,
                     ProductTypeName = c.ProductTypeName,
                     SortOrder = c.SortOrder
                 })
@@ -153,6 +155,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 ParentProductTypeId = c.ParentProductTypeId,
                 ProductTypeId = c.ProductTypeId,
                 IdentityCode = c.IdentityCode,
+                IsDefault = c.IsDefault,
                 ProductTypeName = c.ProductTypeName,
                 SortOrder = c.SortOrder
             });
@@ -183,13 +186,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             productType.ProductTypeName = req.ProductTypeName;
             productType.IdentityCode = req.IdentityCode;
             productType.ParentProductTypeId = req.ParentProductTypeId;
+            productType.IsDefault = req.IsDefault;
             productType.UpdatedDatetimeUtc = DateTime.UtcNow;
             productType.SortOrder = req.SortOrder;
 
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productType);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Cập nhật loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
 
@@ -206,7 +210,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return GeneralCode.Success;
         }
 
-        private async Task UpdateSortOrder()
+        private async Task UpdateSortOrder(ProductType currentProductType)
         {
             var lst = await _stockContext.ProductType.OrderBy(c => c.SortOrder).ToListAsync();
             var st = new Stack<ProductType>();
@@ -218,6 +222,10 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 if (info != null)
                 {
                     info.SortOrder = ++idx;
+                    if (currentProductType.IsDefault && info.ProductTypeId != currentProductType.ProductTypeId)
+                    {
+                        info.IsDefault = false;
+                    }
                 }
 
                 foreach (var child in lst.Where(c => c.ParentProductTypeId == info?.ProductTypeId).Reverse())
