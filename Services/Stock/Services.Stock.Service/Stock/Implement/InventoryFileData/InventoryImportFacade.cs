@@ -571,8 +571,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private ProductModel CreateProductModel(OpeningBalanceModel p)
         {
             _productTypes.TryGetValue(p.CatePrefixCode.NormalizeAsInternalName(), out var productType);
+            if (productType == null) throw new BadRequestException(GeneralCode.InvalidParams, "Chưa nhập loại mã mặt hàng. Vui lòng kiểm tra lại");
 
-            _productCates.TryGetValue(p.CateName.NormalizeAsInternalName(), out var productCate);
+             _productCates.TryGetValue(p.CateName.NormalizeAsInternalName(), out var productCate);
+            if (productCate == null) throw new BadRequestException(GeneralCode.InvalidParams, "Chưa nhập danh mục mặt hàng. Vui lòng kiểm tra lại");
 
             return new ProductModel()
             {

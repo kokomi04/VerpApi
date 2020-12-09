@@ -315,6 +315,36 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
+        public async Task<Dictionary<int, RemainStock[]>> GetRemainStockByProducts(int[] productIds)
+        {
+
+            var remainStocks = _stockContext.StockProduct.Where(sp => productIds.Contains(sp.ProductId))
+                .GroupBy(sp => new { sp.ProductId, sp.StockId })
+                .Select(g => new
+                {
+                    g.Key.ProductId,
+                    g.Key.StockId,
+                    PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
+                })
+                .Where(s => s.PrimaryQuantityRemaining > 0)
+                .Join(_stockContext.Stock, rs => rs.StockId, s => s.StockId, (rs, s) => new
+                {
+                    rs.StockId,
+                    rs.ProductId,
+                    rs.PrimaryQuantityRemaining,
+                    s.StockName
+                })
+                .ToList()
+                .GroupBy(s => s.ProductId)
+                .ToDictionary(g => g.Key, g => g.Select(s => new RemainStock
+                {
+                    StockId = s.StockId,
+                    PrimaryQuantityRemaining = s.PrimaryQuantityRemaining,
+                    StockName = s.StockName
+                }).ToArray());
+            return remainStocks;
+        }
+
         public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size)
         {
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
