@@ -219,5 +219,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         InventoryOutputRequirement = 81,
         OutsourceTrack = 78,
+        [Description("Khai báo vật tư tiêu hao")]
+        ProductionConsumMaterial = 82,
     }
 }
