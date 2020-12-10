@@ -19,6 +19,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data);
         Task<bool> DeleteProductionSchedule(long[] productionScheduleIds);
 
-        Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status);
+        Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status, bool isManual);
     }
 }

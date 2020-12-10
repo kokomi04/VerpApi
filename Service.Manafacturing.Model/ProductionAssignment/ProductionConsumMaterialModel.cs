@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {
     public class ProductionConsumMaterialModel : IMapFrom<ProductionConsumMaterial>
     {
-        public long? ProductionConsumMaterialDetailId { get; set; }
+        public long? ProductionConsumMaterialId { get; set; }
         public long? FromDate { get; set; }
         public long? ToDate { get; set; }
         public Dictionary<int, Dictionary<long,ProductionConsumMaterialDetailModel>> Details { get; set; }
