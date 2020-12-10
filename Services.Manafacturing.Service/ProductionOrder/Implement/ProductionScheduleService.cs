@@ -363,20 +363,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status)
+        public async Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status, bool isManual)
         {
             var productionSchedules = _manufacturingDBContext.ProductionSchedule.Where(s => s.ScheduleTurnId == scheduleTurnId).ToList();
             if (productionSchedules.Count == 0)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
-
-            if (productionSchedules.Any(s => s.ProductionScheduleStatus > (int)status))
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
+            if (isManual)
+            {
+                if (productionSchedules.Any(s => s.ProductionScheduleStatus > (int)status))
+                    throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
+            }
             try
             {
                 foreach (var schedule in productionSchedules)
                 {
-                    schedule.ProductionScheduleStatus = (int)status;
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, schedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { schedule, status }.JsonSerialize());
+                    if(schedule.ProductionScheduleStatus != (int)status)
+                    {
+                        schedule.ProductionScheduleStatus = (int)status;
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, schedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { schedule, status, isManual }.JsonSerialize());
+                    }
                 }
                 _manufacturingDBContext.SaveChanges();
                 return true;

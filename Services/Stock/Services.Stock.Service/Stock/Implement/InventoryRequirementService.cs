@@ -28,6 +28,7 @@ using VErp.Services.Stock.Model.FileResources;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using System.Data;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
@@ -41,6 +42,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IFileService _fileService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IProductionScheduleHelperService _productionScheduleHelperService;
 
         public InventoryRequirementService(StockDBContext stockDBContext
             , IActivityLogService activityLogService
@@ -49,7 +51,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
             , IFileService fileService
-            , ICurrentContextService currentContextService)
+            , ICurrentContextService currentContextService
+            , IProductionScheduleHelperService productionScheduleHelperService)
         {
             _stockDBContext = stockDBContext;
             _activityLogService = activityLogService;
@@ -59,6 +62,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _productHelperService = productHelperService;
             _fileService = fileService;
             _currentContextService = currentContextService;
+            _productionScheduleHelperService = productionScheduleHelperService;
         }
 
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -183,7 +187,15 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await _stockDBContext.SaveChangesAsync();
                 trans.Commit();
                 await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+
+                // Nếu là phiếu yêu cầu xuất kho từ lệnh sản xuất => update trạng thái cho lịch
+                if(req.ScheduleTurnId.HasValue && inventoryType == EnumInventoryType.Output)
+                {
+                    await _productionScheduleHelperService.UpdateProductionScheduleStatus(req.ScheduleTurnId.Value, EnumScheduleStatus.Processing);
+                }
+
                 await _activityLogService.CreateLog(objectType, inventoryRequirement.InventoryRequirementId, $"Thêm mới dữ liệu yêu cầu xuất/nhập kho {inventoryRequirement.InventoryRequirementCode}", req.JsonSerialize());
+                
                 return inventoryRequirement.InventoryRequirementId;
             }
             catch (Exception ex)
