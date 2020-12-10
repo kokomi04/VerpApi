@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 
 namespace VErp.Services.Manafacturing.Service.Outsource
 {
@@ -16,5 +17,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId);
         Task<IList<OutsourceStepRequestModel>> GetAllOutsourceStepRequest();
         Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepInOutsourceStepRequest(long productionOrderId);
+        Task<IList<ProductionStepInfo>> GeneralOutsourceStepOfProductionOrder(long productionOrderId);
     }
 }

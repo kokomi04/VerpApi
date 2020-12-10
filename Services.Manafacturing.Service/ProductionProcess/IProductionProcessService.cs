@@ -38,6 +38,5 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId);
         Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId);
         Task<NonCamelCaseDictionary> GroupProductionStepRelationShip(IList<long> productionStepIds);
-
     }
 }
