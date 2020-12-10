@@ -42,6 +42,7 @@ using VErp.Services.Stock.Service.Products;
 using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using System.Data;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -63,6 +64,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IProductionScheduleHelperService _productionScheduleHelperService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -77,6 +79,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICurrentContextService currentContextService
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , IProductionScheduleHelperService productionScheduleHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -93,6 +96,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _currentContextService = currentContextService;
             _productService = productService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _productionScheduleHelperService = productionScheduleHelperService;
         }
 
 
@@ -1172,6 +1176,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
+                        // update trạng thái cho lịch sản xuất
+                        var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
+                        var scheduleTurnIds = (from req in _stockDbContext.InventoryRequirement
+                                               join rd in _stockDbContext.InventoryRequirementDetail on req.InventoryRequirementId equals rd.InventoryRequirementId
+                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && req.ScheduleTurnId.HasValue
+                                               select req.ScheduleTurnId.Value).Distinct().ToList();
+                        foreach (var scheduleTurnId in scheduleTurnIds)
+                        {
+                            await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Finished);
+                        }
+
                         trans.Commit();
 
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
@@ -1321,6 +1336,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
+
+                        // update trạng thái cho lịch sản xuất
+                        var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
+                        var scheduleTurnIds = (from r in _stockDbContext.InventoryRequirement
+                                               join rd in _stockDbContext.InventoryRequirementDetail on r.InventoryRequirementId equals rd.InventoryRequirementId
+                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && r.ScheduleTurnId.HasValue
+                                               select r.ScheduleTurnId.Value).Distinct().ToList();
+                        foreach (var scheduleTurnId in scheduleTurnIds)
+                        {
+                            await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Processing);
+                        }
 
                         trans.Commit();
 

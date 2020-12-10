@@ -21,6 +21,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
+using VErp.Services.Manafacturing.Model.ProductionHandover;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -363,25 +364,76 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status, bool isManual)
+        public async Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status)
         {
-            var productionSchedules = _manufacturingDBContext.ProductionSchedule.Where(s => s.ScheduleTurnId == scheduleTurnId).ToList();
+            var productionSchedules = _manufacturingDBContext.ProductionSchedule
+                .Include(s => s.ProductionOrderDetail)
+                .Where(s => s.ScheduleTurnId == scheduleTurnId).ToList();
             if (productionSchedules.Count == 0)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
-            if (isManual)
-            {
-                if (productionSchedules.Any(s => s.ProductionScheduleStatus > (int)status))
-                    throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
-            }
             try
             {
-                foreach (var schedule in productionSchedules)
+                if (status == EnumScheduleStatus.Finished)
                 {
-                    if(schedule.ProductionScheduleStatus != (int)status)
+                    // Check nhận đủ số lượng đầu ra
+                    var parammeters = new SqlParameter[]
                     {
-                        schedule.ProductionScheduleStatus = (int)status;
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, schedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { schedule, status, isManual }.JsonSerialize());
+                    new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+                    };
+                    var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+
+                    var inputInventories = resultData.ConvertData<ProductionInventoryRequirementEntity>();
+
+                    foreach (var schedule in productionSchedules)
+                    {
+                        var quantity = inputInventories
+                            .Where(i => i.ProductId == schedule.ProductionOrderDetail.ProductId && i.Status != (int)EnumHandoverStatus.Reject)
+                            .Sum(i => i.ActualQuantity.GetValueOrDefault());
+
+                        if(quantity == schedule.ProductionScheduleQuantity)
+                        {
+                            schedule.ProductionScheduleStatus = (int)status;
+                            await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, schedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { schedule, status, isManual = false }.JsonSerialize());
+                        }
                     }
+
+                }
+                else
+                {
+                    foreach (var schedule in productionSchedules)
+                    {
+                        if (schedule.ProductionScheduleStatus < (int)status)
+                        {
+                            schedule.ProductionScheduleStatus = (int)status;
+                            await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, schedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { schedule, status, isManual = false }.JsonSerialize());
+                        }
+                    }
+                }
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductScheduleStatus");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateManualProductionScheduleStatus(long productionScheduleId, EnumScheduleStatus status)
+        {
+            var productionSchedule = _manufacturingDBContext.ProductionSchedule.FirstOrDefault(s => s.ProductionScheduleId == productionScheduleId);
+            if (productionSchedule == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
+
+            if (productionSchedule.ProductionScheduleStatus > (int)status)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
+
+            try
+            {
+                if (productionSchedule.ProductionScheduleStatus != (int)status)
+                {
+                    productionSchedule.ProductionScheduleStatus = (int)status;
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionSchedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { productionSchedule, status, isManual = true }.JsonSerialize());
                 }
                 _manufacturingDBContext.SaveChanges();
                 return true;
