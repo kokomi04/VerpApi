@@ -64,7 +64,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     foreach (var item in group.Value)
                     {
-                        var detail = _mapper.Map<ProductionConsumMaterialDetail>(item);
+                        var detail = _mapper.Map<ProductionConsumMaterialDetail>(item.Value);
                         detail.ObjectId = item.Key;
                         detail.ObjectTypeId = group.Key;
                         detail.ProductionConsumMaterialId = consumMaterial.ProductionConsumMaterialId;
@@ -149,7 +149,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     foreach (var item in group.Value)
                     {
-                        var detail = _mapper.Map<ProductionConsumMaterialDetail>(item);
+                        var detail = _mapper.Map<ProductionConsumMaterialDetail>(item.Value);
                         detail.ObjectId = item.Key;
                         detail.ObjectTypeId = group.Key;
                         detail.ProductionConsumMaterialId = consumMaterial.ProductionConsumMaterialId;
