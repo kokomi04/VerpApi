@@ -10,8 +10,8 @@ namespace VErp.Commons.Enums.Manafacturing
         [Description("Đợi bàn giao")]
         Waiting = 0,
         [Description("Đã duyệt")]
-        Accept = 1,
+        Accepted = 1,
         [Description("Từ chối")]
-        Reject = 2
+        Rejected = 2
     }
 }
