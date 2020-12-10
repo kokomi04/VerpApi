@@ -24,6 +24,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<OutsourceTrack> OutsourceTrack { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
+        public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
+        public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
@@ -229,6 +231,30 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductionAssignment_ProductionStep");
+            });
+
+            modelBuilder.Entity<ProductionConsumMaterial>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.ProductionAssignment)
+                    .WithMany(p => p.ProductionConsumMaterial)
+                    .HasForeignKey(d => new { d.ProductionStepId, d.ScheduleTurnId, d.DepartmentId })
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductionConsumMaterial_ProductionAssignment");
+            });
+
+            modelBuilder.Entity<ProductionConsumMaterialDetail>(entity =>
+            {
+                entity.HasOne(d => d.ProductionConsumMaterial)
+                    .WithMany(p => p.ProductionConsumMaterialDetail)
+                    .HasForeignKey(d => d.ProductionConsumMaterialId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionConsumMaterialDetail_ProductionConsumMaterial");
             });
 
             modelBuilder.Entity<ProductionHandover>(entity =>
