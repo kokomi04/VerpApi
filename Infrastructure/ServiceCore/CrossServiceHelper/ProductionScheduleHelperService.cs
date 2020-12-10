@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status)
         {
-            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionSchedule/{scheduleTurnId}/status/{status}?isManual=true", null);
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionSchedule/{scheduleTurnId}/status/{status}", null);
         }
     }
 }
