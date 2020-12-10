@@ -1176,6 +1176,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
+                        trans.Commit();
+
                         // update trạng thái cho lịch sản xuất
                         var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
                         var scheduleTurnIds = (from req in _stockDbContext.InventoryRequirement
@@ -1186,8 +1188,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Finished);
                         }
-
-                        trans.Commit();
 
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
                         await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
@@ -1337,6 +1337,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
+                        trans.Commit();
+
                         // update trạng thái cho lịch sản xuất
                         var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
                         var scheduleTurnIds = (from r in _stockDbContext.InventoryRequirement
@@ -1347,8 +1349,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Processing);
                         }
-
-                        trans.Commit();
 
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
                         await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());

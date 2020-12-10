@@ -52,14 +52,14 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{scheduleTurnId}/{productionHandoverId}/accept")]
         public async Task<ProductionHandoverModel> AcceptProductionHandover([FromRoute] long scheduleTurnId, [FromRoute] long productionHandoverId)
         {
-            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Accept);
+            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Accepted);
         }
 
         [HttpPut]
         [Route("{scheduleTurnId}/{productionHandoverId}/reject")]
         public async Task<ProductionHandoverModel> RejectProductionHandover([FromRoute] long scheduleTurnId, [FromRoute] long productionHandoverId)
         {
-            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Reject);
+            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Rejected);
         }
     }
 }

@@ -387,7 +387,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     foreach (var schedule in productionSchedules)
                     {
                         var quantity = inputInventories
-                            .Where(i => i.ProductId == schedule.ProductionOrderDetail.ProductId && i.Status != (int)EnumHandoverStatus.Reject)
+                            .Where(i => i.ProductId == schedule.ProductionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
                             .Sum(i => i.ActualQuantity.GetValueOrDefault());
 
                         if(quantity == schedule.ProductionScheduleQuantity)
