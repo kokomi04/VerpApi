@@ -154,7 +154,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     var s = req.OutsourcePartRequestDetail.FirstOrDefault(x => x.OutsourcePartRequestDetailId == u.OutsourcePartRequestDetailId);
                     if (s != null)
                     {
-                        await UpdateProductionStepLinkDataRelative(order.ProductionOrderDetailId, u.PathProductIdInBom,u.ProductId, s.Quantity, u.Quantity);
+                        await UpdateProductionStepLinkDataRelative(order.ProductionOrderDetailId, u.PathProductIdInBom, u.ProductId, s.Quantity, u.Quantity);
                         _mapper.Map(s, u);
 
                     }
@@ -243,40 +243,55 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> DeletedOutsourcePartRequest(int OutsourcePartRequestId)
         {
-            var order = await _manufacturingDBContext.OutsourcePartRequest.FirstOrDefaultAsync(x => x.OutsourcePartRequestId == OutsourcePartRequestId);
-            if (order == null)
-                throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
-            var details = await _manufacturingDBContext.OutsourcePartRequestDetail
-                .Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId)
-                .ToListAsync();
-
-            var lst = (from o in _manufacturingDBContext.OutsourceOrder
-                       join d in _manufacturingDBContext.OutsourceOrderDetail
-                         on o.OutsourceOrderId equals d.OutsourceOrderId
-                       where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourcePart
-                       select d).GroupBy(x => x.ObjectId).Select(x => new
-                       {
-                           ObjectId = x.Key,
-                           QuantityProcessed = x.Sum(x => x.Quantity)
-                       });
-
-            details.ForEach(x =>
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
             {
-                if (lst.Where(y => y.ObjectId == x.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
-                    throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
-                x.IsDeleted = true;
-            });
-            order.IsDeleted = true;
+                var order = await _manufacturingDBContext.OutsourcePartRequest.FirstOrDefaultAsync(x => x.OutsourcePartRequestId == OutsourcePartRequestId);
+                if (order == null)
+                    throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
+                var details = await _manufacturingDBContext.OutsourcePartRequestDetail
+                    .Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId)
+                    .ToListAsync();
 
-            await _manufacturingDBContext.SaveChangesAsync();
-            return true;
+                var lst = (from o in _manufacturingDBContext.OutsourceOrder
+                           join d in _manufacturingDBContext.OutsourceOrderDetail
+                             on o.OutsourceOrderId equals d.OutsourceOrderId
+                           where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourcePart
+                           select d).GroupBy(x => x.ObjectId).Select(x => new
+                           {
+                               ObjectId = x.Key,
+                               QuantityProcessed = x.Sum(x => x.Quantity)
+                           });
+                foreach(var detail in details)
+                {
+                    if (lst.Where(y => y.ObjectId == detail.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
+                        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
+                    await UpdateProductionStepLinkDataRelative(order.ProductionOrderDetailId, detail.PathProductIdInBom, detail.ProductId, 0, detail.Quantity);
+                    detail.IsDeleted = true;
+                };
+                order.IsDeleted = true;
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "DeletedOutsourcePartRequest");
+                throw;
+            }
+
+
         }
 
         private async Task<bool> UpdateProductionStepLinkDataRelative(long productionOrderDetailId, string pathProductiIdBom, long productId, decimal newQuantity, decimal oldQuantity = 0)
         {
             var listProductionStep = await _manufacturingDBContext.ProductionStepOrder.AsNoTracking()
                                             .Where(x => x.ProductionOrderDetailId == productionOrderDetailId)
-                                            .Select(x=>x.ProductionStep)
+                                            .Select(x => x.ProductionStep)
                                             .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
                                             .ToListAsync();
             var pathProductId = Array.ConvertAll(pathProductiIdBom.Split(','), s => long.Parse(s));
@@ -341,7 +356,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var productionLinkDataModel = await _manufacturingDBContext.ProductionStepLinkData
                 .Where(x => productionStepLinkDatas.Select(x => x.ProductionStepLinkDataId).Contains(x.ProductionStepLinkDataId))
                 .ToListAsync();
-            foreach(var model in productionLinkDataModel)
+            foreach (var model in productionLinkDataModel)
             {
                 var dto = productionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == model.ProductionStepLinkDataId);
                 if (dto != null)
