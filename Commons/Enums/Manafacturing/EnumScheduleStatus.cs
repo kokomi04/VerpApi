@@ -13,7 +13,6 @@ namespace VErp.Commons.Enums.Manafacturing
         Processing = 2,
         [Description("Hoàn thành")]
         Finished = 3,
-
         [Description("Chậm tiến độ")]
         OverDeadline = 4
     }
