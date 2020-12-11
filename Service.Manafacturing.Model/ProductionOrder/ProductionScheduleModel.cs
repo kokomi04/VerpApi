@@ -58,4 +58,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         }
     }
 
+    public class ProductionScheduleStatusModel 
+    {
+        public EnumScheduleStatus ProductionScheduleStatus { get; set; }
+    }
+
 }
