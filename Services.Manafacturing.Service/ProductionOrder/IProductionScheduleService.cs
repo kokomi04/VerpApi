@@ -14,6 +14,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<IList<ProductionPlanningOrderModel>> GetProductionPlanningOrders();
         Task<IList<ProductionPlanningOrderDetailModel>> GetProductionPlanningOrderDetail(int productionOrderId);
         Task<IList<ProductionScheduleModel>> GetProductionSchedules(long scheduleTurnId);
+        Task<IList<ProductionScheduleModel>> GetProductionSchedulesByProductionOrderDetail(long productionOrderDetailId);
         Task<PageData<ProductionScheduleModel>> GetProductionSchedules(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<List<ProductionScheduleInputModel>> UpdateProductionSchedule(List<ProductionScheduleInputModel> data);
         Task<List<ProductionScheduleInputModel>> CreateProductionSchedule(List<ProductionScheduleInputModel> data);
