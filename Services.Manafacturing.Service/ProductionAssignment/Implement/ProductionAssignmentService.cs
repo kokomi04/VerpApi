@@ -82,8 +82,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                            s.ProductionOrderDetailId,
                                            s.ProductionScheduleQuantity,
                                            od.ProductId,
-                                           ProductionOrderQuantity = od.Quantity + od.ReserveQuantity 
+                                           ProductionOrderQuantity = od.Quantity + od.ReserveQuantity
                                        }).ToList();
+
+            var previousScheduleQuantities = (from s in _manufacturingDBContext.ProductionSchedule
+                                              join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                                              where s.ProductionOrderDetailId == productionSchedules[0].ProductionOrderDetailId && s.ScheduleTurnId < scheduleTurnId
+                                              select new
+                                              {
+                                                  ProductionOrderQuantity = od.Quantity + od.ReserveQuantity,
+                                                  s.ProductionScheduleQuantity
+                                              }).ToList();
+
+            var isFinal = previousScheduleQuantities.Sum(s => s.ProductionScheduleQuantity) + productionSchedules[0].ProductionScheduleQuantity >= productionSchedules[0].ProductionOrderQuantity;
 
             var productionOrderDetailIds = productionSchedules.Select(s => s.ProductionOrderDetailId).ToList();
 
@@ -98,7 +109,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             var linkDatas = step.ProductionStepLinkDataRole
                 .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
                 .ToDictionary(r => r.ProductionStepLinkDataId,
-                r => r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.Value);
+                r =>
+                {
+                    if(isFinal)
+                    {
+                        return r.ProductionStepLinkData.Quantity - previousScheduleQuantities.Sum(s => Math.Round(r.ProductionStepLinkData.Quantity * s.ProductionScheduleQuantity / s.ProductionOrderQuantity.Value, 5));
+                    }
+                    else
+                    {
+                        return Math.Round(r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.Value,5);
+                    }
+                    
+                });
 
             if (data.Any(d => d.AssignmentQuantity <= 0))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
