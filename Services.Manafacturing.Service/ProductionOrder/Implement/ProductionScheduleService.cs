@@ -107,6 +107,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ToList();
         }
 
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedulesByProductionOrderDetail(long productionOrderDetailId)
+        {
+            var sql = "SELECT * FROM vProductionSchedule v WHERE v.ProductionOrderDetailId = @ProductionOrderDetailId";
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ProductionOrderDetailId", productionOrderDetailId)
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters);
+            return resultData.ConvertData<ProductionScheduleEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionScheduleModel>(_mapper.ConfigurationProvider)
+                .ToList();
+        }
+
+
         public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules(string keyword, long fromDate, long toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
