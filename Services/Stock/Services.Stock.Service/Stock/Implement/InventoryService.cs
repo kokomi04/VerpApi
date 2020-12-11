@@ -1036,9 +1036,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
+                        var inventoryDetails = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
+                        foreach(var item in inventoryDetails)
+                        {
+                            item.IsDeleted = true;
+                        }
+
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
+
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
 
                         return true;
                     }

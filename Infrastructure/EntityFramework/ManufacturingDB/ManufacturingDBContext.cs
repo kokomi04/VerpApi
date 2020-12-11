@@ -137,6 +137,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.OutsourcePartRequest)
+                    .WithMany(p => p.OutsourcePartRequestDetail)
+                    .HasForeignKey(d => d.OutsourcePartRequestId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourcePartRequestDetail_OutsourcePartRequest");
             });
 
             modelBuilder.Entity<OutsourceStepRequest>(entity =>
@@ -396,6 +402,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.OutsourceQuantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ProductionStepLinkDataCode).HasMaxLength(50);
 

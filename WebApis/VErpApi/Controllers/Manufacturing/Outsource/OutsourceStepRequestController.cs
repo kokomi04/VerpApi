@@ -7,6 +7,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.Outsource;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
@@ -69,6 +70,12 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _outsourceStepRequestService.GetAllOutsourceStepRequest();
         }
+
+        /// <summary>
+        /// Lấy toàn bộ thông tin các công đoạn có YCGC
+        /// </summary>
+        /// <param name="productionOrderId">Mã ID lệnh sản xuất</param>
+        /// <returns></returns>
         [HttpGet]
         [Route("listProductionStepOutsourced")]
         public async Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepInOutsourceStepRequest([FromQuery]long productionOrderId)
@@ -76,6 +83,5 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             return await _outsourceStepRequestService.GetProductionStepInOutsourceStepRequest(productionOrderId);
         }
 
-        
     }
 }

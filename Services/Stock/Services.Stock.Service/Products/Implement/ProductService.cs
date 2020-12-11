@@ -178,10 +178,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductCateInvalid, $"Danh mục mặt hàng không đúng");
             }
 
-            if (!await _stockContext.ProductType.AnyAsync(c => c.ProductTypeId == req.ProductTypeId))
-            {
-                throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại sinh mã mặt hàng không đúng");
-            }
+            //if (!await _stockContext.ProductType.AnyAsync(c => c.ProductTypeId == req.ProductTypeId))
+            //{
+            //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại sinh mã mặt hàng không đúng");
+            //}
 
             var productInfo = new Product()
             {
@@ -914,8 +914,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Lấy thông tin field
             var fields = typeof(Product).GetProperties(BindingFlags.Public);
 
-            var productTypes = _stockContext.ProductType.Select(t => new { t.ProductTypeId, t.IdentityCode }).ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), t.ProductTypeId }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductTypeId);
-            var productCates = _stockContext.ProductCate.Select(c => new { c.ProductCateId, c.ProductCateName }).ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), c.ProductCateId }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCateId);
+            var productTypes = _stockContext.ProductType.ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), ProductType = t }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductType);
+            var productCates = _stockContext.ProductCate.ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), ProductCate = c }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCate);
             var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToDictionary(c => c.Name.NormalizeAsInternalName(), c => c.BarcodeConfigId);
             var units = _masterDBContext.Unit.Select(u => new { u.UnitId, u.UnitName }).ToList().Select(u => new { UnitName = u.UnitName.NormalizeAsInternalName(), u.UnitId }).GroupBy(u => u.UnitName).ToDictionary(u => u.Key, u => u.First().UnitId);
             var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
@@ -997,7 +997,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         });
                     }
                 }
-                if (!productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName.NormalizeAsInternalName() == row.ProductCate.NormalizeAsInternalName()))
+                if (!string.IsNullOrWhiteSpace(row.ProductCate) && !productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName.NormalizeAsInternalName() == row.ProductCate.NormalizeAsInternalName()))
                 {
                     includeProductCates.Add(new ProductCate
                     {
@@ -1006,7 +1006,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     });
                 }
 
-                if (!productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode.NormalizeAsInternalName() == row.ProductTypeCode.NormalizeAsInternalName()))
+                if (!string.IsNullOrWhiteSpace(row.ProductTypeCode) && !productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode.NormalizeAsInternalName() == row.ProductTypeCode.NormalizeAsInternalName()))
                 {
                     includeProductTypes.Add(new ProductType
                     {
@@ -1029,11 +1029,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             foreach (var productCate in includeProductCates)
             {
-                productCates.Add(productCate.ProductCateName.NormalizeAsInternalName(), productCate.ProductCateId);
+                productCates.Add(productCate.ProductCateName.NormalizeAsInternalName(), productCate);
             }
             foreach (var productType in includeProductTypes)
             {
-                productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType.ProductTypeId);
+                productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType);
             }
 
             // Validate unique product code
@@ -1078,8 +1078,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
+                var defaultTypeId = productTypes.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductTypeId;
+                var defaultCateId = productCates.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductCateId;
+
                 foreach (var row in data)
                 {
+                    var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
+                    var cateName = row.ProductCate.NormalizeAsInternalName();
+
                     var productInfo = new Product()
                     {
                         ProductCode = row.ProductCode,
@@ -1088,8 +1094,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         IsCanBuy = row.IsCanBuy ?? true,
                         IsCanSell = row.IsCanSell ?? true,
                         MainImageFileId = null,
-                        ProductTypeId = productTypes[row.ProductTypeCode.NormalizeAsInternalName()],
-                        ProductCateId = productCates[row.ProductCate.NormalizeAsInternalName()],
+                        ProductTypeId = productTypes.ContainsKey(typeCode) ? productTypes[typeCode].ProductTypeId : defaultTypeId,
+                        ProductCateId = productCates.ContainsKey(cateName) ? productCates[cateName].ProductCateId : (defaultCateId ?? 0),
                         BarcodeConfigId = row.BarcodeConfigId,
                         BarcodeStandardId = null,
                         Barcode = row.Barcode,

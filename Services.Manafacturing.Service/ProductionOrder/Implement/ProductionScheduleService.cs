@@ -315,6 +315,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     entity.ProductionScheduleQuantity = item.ProductionScheduleQuantity;
                     entity.StartDate = item.StartDate.UnixToDateTime().Value;
                     entity.EndDate = item.EndDate.UnixToDateTime().Value;
+                    entity.ProductionScheduleStatus = (int)item.ProductionScheduleStatus;
                     await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, entity.ProductionScheduleId, $"Cập nhật lịch sản xuất", data.JsonSerialize());
                 }
                 _manufacturingDBContext.SaveChanges();

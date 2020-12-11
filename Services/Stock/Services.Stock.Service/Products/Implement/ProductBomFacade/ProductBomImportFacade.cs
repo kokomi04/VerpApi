@@ -277,17 +277,43 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
                 .Select(p =>
                 {
+                    ProductType type = null;
 
-                    _productTypes.TryGetValue(p.Value.ProductTypeCode.NormalizeAsInternalName(), out var type);
-                    _productCates.TryGetValue(p.Value.ProductCateName.NormalizeAsInternalName(), out var cate);
-                    if (cate == null)
+                    if (string.IsNullOrWhiteSpace(p.Value.ProductTypeCode.NormalizeAsInternalName()))
+                    {
+                        type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                    }
+                    else
+                    {
+                        _productTypes.TryGetValue(p.Value.ProductTypeCode.NormalizeAsInternalName(), out type);
+
+                        if (type == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy loại mã mặt hàng {p.Value.ProductTypeCode} cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                        }
+                    }
+
+
+                    ProductCate cate = null;
+                    if (string.IsNullOrWhiteSpace(p.Value.ProductCateName.NormalizeAsInternalName()))
                     {
                         cate = _productCates.FirstOrDefault(c => c.Value.IsDefault).Value;
+                        if (cate == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục mặc định cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+
+                        }
                     }
-                    if (cate == null)
+                    else
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục mặt hàng hoặc danh mục mặc định cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                        _productCates.TryGetValue(p.Value.ProductCateName.NormalizeAsInternalName(), out cate);
+
+                        if (cate == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục {p.Value.ProductCateName} mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                        }
                     }
+
 
                     _units.TryGetValue(p.Value.UnitName, out var unit);
                     if (unit == null)

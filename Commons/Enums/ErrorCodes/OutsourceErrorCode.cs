@@ -18,5 +18,7 @@ namespace VErp.Commons.Enums.ErrorCodes
         OutsoureOrderCodeAlreadyExisted = 4,
         [Description("Không tìm thấy yêu cầu gia công chi tiết")]
         NotFoundOutsourOrderDetail = 5,
+        [Description("Đã tồn tại công đoạn có yêu cầu gia công")]
+        EarlyExistsProductionStepHadOutsourceRequest = 6,
     }
 }
