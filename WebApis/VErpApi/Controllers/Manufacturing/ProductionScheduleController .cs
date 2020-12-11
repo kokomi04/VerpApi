@@ -58,8 +58,8 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
-        [Route("{productionScheduleId}/status/{status}")]
-        public async Task<bool> UpdateManualProductionScheduleStatus([FromRoute] long productionScheduleId, [FromRoute] EnumScheduleStatus status)
+        [Route("{productionScheduleId}/status")]
+        public async Task<bool> UpdateManualProductionScheduleStatus([FromRoute] long productionScheduleId, [FromBody] ProductionScheduleStatusModel status)
         {
             return await _productionScheduleService.UpdateManualProductionScheduleStatus(productionScheduleId, status);
         }

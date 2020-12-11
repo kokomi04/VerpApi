@@ -10,6 +10,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionOrder;
 
 namespace VErpApi.Controllers.Manufacturing.Internal
@@ -26,7 +27,7 @@ namespace VErpApi.Controllers.Manufacturing.Internal
 
         [HttpPut]
         [Route("{scheduleTurnId}/status/{status}")]
-        public async Task<bool> UpdateProductionScheduleStatus([FromRoute] long scheduleTurnId, [FromRoute] EnumScheduleStatus status)
+        public async Task<bool> UpdateProductionScheduleStatus([FromRoute] long scheduleTurnId, [FromBody] ProductionScheduleStatusModel status)
         {
             return await _productionScheduleService.UpdateProductionScheduleStatus(scheduleTurnId, status);
         }

@@ -364,7 +364,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, EnumScheduleStatus status)
+        public async Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, ProductionScheduleStatusModel status)
         {
             var productionSchedules = _manufacturingDBContext.ProductionSchedule
                 .Include(s => s.ProductionOrderDetail)
@@ -373,7 +373,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
             try
             {
-                if (status == EnumScheduleStatus.Finished)
+                if (status.ProductionScheduleStatus == EnumScheduleStatus.Finished)
                 {
                     // Check nhận đủ số lượng đầu ra
                     var parammeters = new SqlParameter[]
@@ -392,7 +392,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                         if(quantity == schedule.ProductionScheduleQuantity)
                         {
-                            schedule.ProductionScheduleStatus = (int)status;
+                            schedule.ProductionScheduleStatus = (int)status.ProductionScheduleStatus;
                             await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, schedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { schedule, status, isManual = false }.JsonSerialize());
                         }
                     }
@@ -402,9 +402,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     foreach (var schedule in productionSchedules)
                     {
-                        if (schedule.ProductionScheduleStatus < (int)status)
+                        if (schedule.ProductionScheduleStatus < (int)status.ProductionScheduleStatus)
                         {
-                            schedule.ProductionScheduleStatus = (int)status;
+                            schedule.ProductionScheduleStatus = (int)status.ProductionScheduleStatus;
                             await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, schedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { schedule, status, isManual = false }.JsonSerialize());
                         }
                     }
@@ -419,20 +419,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> UpdateManualProductionScheduleStatus(long productionScheduleId, EnumScheduleStatus status)
+        public async Task<bool> UpdateManualProductionScheduleStatus(long productionScheduleId, ProductionScheduleStatusModel status)
         {
             var productionSchedule = _manufacturingDBContext.ProductionSchedule.FirstOrDefault(s => s.ProductionScheduleId == productionScheduleId);
             if (productionSchedule == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lịch sản xuất không tồn tại");
 
-            if (productionSchedule.ProductionScheduleStatus > (int)status)
+            if (productionSchedule.ProductionScheduleStatus > (int)status.ProductionScheduleStatus)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
 
             try
             {
-                if (productionSchedule.ProductionScheduleStatus != (int)status)
+                if (productionSchedule.ProductionScheduleStatus != (int)status.ProductionScheduleStatus)
                 {
-                    productionSchedule.ProductionScheduleStatus = (int)status;
+                    productionSchedule.ProductionScheduleStatus = (int)status.ProductionScheduleStatus;
                     await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionSchedule.ProductionScheduleId, $"Cập nhật trạng thái lịch sản xuất ", new { productionSchedule, status, isManual = true }.JsonSerialize());
                 }
                 _manufacturingDBContext.SaveChanges();
