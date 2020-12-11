@@ -340,6 +340,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
                     .FirstOrDefault();
 
+                if (roleOutput == null) continue;
+
                 result.Add(roleOutput.ProductionStepId);
                 FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
             }
