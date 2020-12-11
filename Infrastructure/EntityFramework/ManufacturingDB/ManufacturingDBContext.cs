@@ -341,6 +341,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.Workload)
+                    .HasColumnType("decimal(18, 5)")
+                    .HasComment("khoi luong cong viec");
+
                 entity.HasOne(d => d.Step)
                     .WithMany(p => p.ProductionStep)
                     .HasForeignKey(d => d.StepId)

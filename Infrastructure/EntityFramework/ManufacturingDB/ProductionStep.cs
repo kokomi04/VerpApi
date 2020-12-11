@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long? ParentId { get; set; }
         public int ContainerTypeId { get; set; }
         public long ContainerId { get; set; }
+        public decimal? Workload { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
