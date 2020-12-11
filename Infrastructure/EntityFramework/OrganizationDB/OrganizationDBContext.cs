@@ -170,6 +170,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
 
+                entity.Property(e => e.WorkingHoursPerDay).HasColumnType("decimal(4, 2)");
+
                 entity.HasOne(d => d.Parent)
                     .WithMany(p => p.InverseParent)
                     .HasForeignKey(d => d.ParentId)
