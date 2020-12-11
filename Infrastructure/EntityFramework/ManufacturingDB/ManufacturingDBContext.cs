@@ -39,6 +39,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<Step> Step { get; set; }
+        public virtual DbSet<StepDetail> StepDetail { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -384,6 +385,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.Workload)
+                    .HasColumnType("decimal(18, 5)")
+                    .HasComment("khoi luong cong viec");
+
                 entity.HasOne(d => d.Step)
                     .WithMany(p => p.ProductionStep)
                     .HasForeignKey(d => d.StepId)
@@ -464,11 +469,30 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.UnitId).HasComment("Đơn vị tính năng xuất (/h)");
+
                 entity.HasOne(d => d.StepGroup)
                     .WithMany(p => p.Step)
                     .HasForeignKey(d => d.StepGroupId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Step_StepGroup");
+            });
+
+            modelBuilder.Entity<StepDetail>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.HasOne(d => d.Step)
+                    .WithMany(p => p.StepDetail)
+                    .HasForeignKey(d => d.StepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StepDetail_Step");
             });
 
             modelBuilder.Entity<StepGroup>(entity =>

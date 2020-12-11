@@ -13,6 +13,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -47,6 +48,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] long? scheduleTurnId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
         {
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, scheduleTurnId, page, size, orderByFieldName, asc);
+        }
+
+        [HttpPost]
+        [Route("worlkload")]
+        public async Task<bool> SetProductionStepWorldload([FromBody] IList<ProductionStepWorkload> productionStepWorldload)
+        {
+            return await _productionAssignmentService.SetProductionStepWorldload(productionStepWorldload);
         }
 
     }

@@ -19,6 +19,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public string ParentCode { get; set; }
         public EnumProductionProcess.EnumContainerType ContainerTypeId { get; set; }
         public long ContainerId { get; set; }
+        public decimal? Workload { get; set; }
         public int SortOrder { get; set; }
         public bool? IsGroup { get; set; }
         public decimal? CoordinateX { get; set; }
