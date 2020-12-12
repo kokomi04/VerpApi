@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string TransportToCompany { get; set; }
         public string TransportToAddress { get; set; }
         public string TransportToPhone { get; set; }
-        public string OutsoureRequired { get; set; }
+        public string OutsourceRequired { get; set; }
         public string Note { get; set; }
         public decimal FreightCost { get; set; }
         public decimal OtherCost { get; set; }
