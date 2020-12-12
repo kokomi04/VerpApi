@@ -51,7 +51,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("worlkload")]
+        [Route("workload")]
         public async Task<bool> SetProductionStepWorldload([FromBody] IList<ProductionStepWorkload> productionStepWorldload)
         {
             return await _productionAssignmentService.SetProductionStepWorldload(productionStepWorldload);
