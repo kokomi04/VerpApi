@@ -1994,7 +1994,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageOptionId = null,
                     SortOrder = details.SortOrder,
                     Description = details.Description,
-                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
+                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                    InventoryRequirementDetailId = details.InventoryRequirementDetailId
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting += primaryQualtity;
