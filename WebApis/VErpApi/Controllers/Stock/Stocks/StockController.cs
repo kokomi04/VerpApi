@@ -179,6 +179,13 @@ namespace VErpApi.Controllers.Stock.Stocks
             return await _stockProductService.StockProductPackageDetails(stockId, productId, page, size);
         }
 
+        [HttpPost]
+        [Route("RemainStock")]
+        public async Task<Dictionary<int, RemainStock[]>> GetRemainStockByProducts([FromBody] int[] productIds)
+        {
+            return await _stockProductService.GetRemainStockByProducts(productIds);
+        }
+
         /// <summary>
         /// Lấy danh sách kiện theo vị trí trong kho
         /// </summary>

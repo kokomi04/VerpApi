@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 {
@@ -16,6 +17,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public long OutsourceStepRequestFinishDate { get; set; }
         public long OutsourceStepRequestDate { get; set; }
         public string ProductTitle { get; set; }
+        public EnumOutsourceRequestStatusType ProductionStepInRequestStatusId { get; set; }
 
         public void Mapping(Profile profile)
         {

@@ -11,6 +11,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -125,9 +126,30 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("productionStepLinkData/searchByListProductionStepLinkDataId")]
-        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepId)
+        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepLinkDataId)
         {
-            return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepId);
+            return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
+        }
+
+        [HttpPost]
+        [Route("productionStepLinkDataRole/getInOutOfListProductionStep")]
+        public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
+        {
+           return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
+        }
+
+        [HttpPost]
+        [Route("productionStepLinkDataRole/validateProductionStepRelationship")]
+        public async Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId)
+        {
+            return await _productionProcessService.ValidateProductionStepRelationship(lsProductionStepId);
+        }
+
+        [HttpPost]
+        [Route("productionStep/groupRelationship")]
+        public async Task<NonCamelCaseDictionary> GroupProductionStepRelationShip([FromBody] IList<long> productionOrderId)
+        {
+            return await _productionProcessService.GroupProductionStepRelationShip(productionOrderId);
         }
     }
 }

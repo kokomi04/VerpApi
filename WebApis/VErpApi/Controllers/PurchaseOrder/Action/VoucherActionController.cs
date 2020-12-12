@@ -30,6 +30,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Action
         [Route("voucherType/{voucherTypeId}")]
         public async Task<IList<VoucherActionModel>> GetList(int voucherTypeId)
         {
+            return await _voucherActionService.GetVoucherActionConfigs(voucherTypeId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("voucherType/{voucherTypeId}/use")]
+        public async Task<IList<VoucherActionUseModel>> GetListUse(int voucherTypeId)
+        {
             return await _voucherActionService.GetVoucherActions(voucherTypeId).ConfigureAwait(true);
         }
 

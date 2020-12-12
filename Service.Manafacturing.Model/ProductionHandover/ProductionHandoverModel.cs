@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public EnumHandoverStatus Status { get; set; }
         public int CreatedByUserId { get; set; }
 
-        public void Mapping(Profile profile)
+        public override void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionHandoverEntity, ProductionHandoverModel>()
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.ProductionStepLinkDataObjectType)m.ObjectTypeId))
@@ -30,13 +30,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal HandoverQuantity { get; set; }
         public long ObjectId { get; set; }
         public EnumProductionProcess.ProductionStepLinkDataObjectType ObjectTypeId { get; set; }
-        public int? FromDepartmentId { get; set; }
-        public long? FromProductionStepId { get; set; }
-        public int? ToDepartmentId { get; set; }
-        public long? ToProductionStepId { get; set; }
+        public int FromDepartmentId { get; set; }
+        public long FromProductionStepId { get; set; }
+        public int ToDepartmentId { get; set; }
+        public long ToProductionStepId { get; set; }
         public long? HandoverDatetime { get; set; }
 
-        public void Mapping(Profile profile)
+        public virtual void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionHandoverInputModel, ProductionHandoverEntity>()
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId))

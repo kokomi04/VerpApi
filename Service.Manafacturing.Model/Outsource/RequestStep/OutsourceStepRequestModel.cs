@@ -17,8 +17,12 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         [Required]
         public long ProductionOrderId { get; set; }
         [Required]
+        public long ProductionProcessId { get; set; }
+        [Required]
         public long OutsourceStepRequestFinishDate { get; set; }
         public long OutsourceStepRequestDate { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string ProductionProcessTitle { get; set; }
 
         public IList<OutsourceStepRequestDataModel> OutsourceStepRequestData { get; set; }
 
@@ -28,11 +32,16 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestData, v => v.MapFrom(m => m.OutsourceStepRequestData))
+                .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrder.ProductionOrderCode))
+                .ForMember(m => m.ProductionProcessTitle, v => v.MapFrom(m => m.ProductionStep.Title))
+                .ForMember(m => m.ProductionProcessId, v => v.MapFrom(m => m.ProductionStepId))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
+                .ForMember(m => m.ProductionStepId, v => v.MapFrom(m => m.ProductionProcessId))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
+                .ForMember(m => m.ProductionStep, v => v.Ignore())
+                .ForMember(m => m.ProductionOrder, v => v.Ignore())
                 .ForMember(m => m.OutsourceStepRequestData, v => v.Ignore());
-
         }
     }
 
@@ -42,6 +51,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public IList<ProductionStepLinkDataRoleModel> roles { get; set; }
         public string OrderCode { get; set; }
         public string ProductTitle { get; set; }
+        public string OutsourceStepRequestStatus { get; set; }
 
         public new  void Mapping(Profile profile)
         {
@@ -49,11 +59,15 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestData, v => v.MapFrom(m => m.OutsourceStepRequestData))
+                .ForMember(m => m.ProductionProcessId, v => v.MapFrom(m => m.ProductionStepId))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
+                .ForMember(m => m.ProductionStepId, v => v.MapFrom(m => m.ProductionProcessId))
                 .ForMember(m => m.OutsourceStepRequestData, v => v.Ignore());
 
         }
     }
+
+
 }

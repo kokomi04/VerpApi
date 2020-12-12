@@ -38,6 +38,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? PrimaryQuantityRemaning { get; set; }
         public decimal? ProductUnitConversionQuantityRemaning { get; set; }
         public string AccountancyAccountNumberDu { get; set; }
+        public long? InventoryRequirementDetailId { get; set; }
 
         public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }

@@ -24,6 +24,7 @@ using VErp.Services.Master.Service.Config;
 using Verp.Cache.RedisCache;
 using NPOI.SS.Formula.Functions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -516,9 +517,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        private async Task<int> GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
+        private async Task<CustomGenCodeBaseValueModel> GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
         {
-            int customGenCodeId = 0;
             model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
 
             PurchasingSuggest existedItem = null;
@@ -526,27 +526,29 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode && r.PurchasingSuggestId != purchasingSuggestId);
                 if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
+                return null;
             }
             else
             {
-                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0);
-                customGenCodeId = config.CustomGenCodeId;
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingSuggest, EnumObjectType.PurchasingSuggest, 0, purchasingSuggestId, model.PurchasingSuggestCode, model.Date);
+                if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã cho Đề nghị mua hàng");
+
                 int dem = 0;
                 do
                 {
-                    model.PurchasingSuggestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
+                    model.PurchasingSuggestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, purchasingSuggestId, model.PurchasingSuggestCode, model.Date))?.CustomCode;
                     existedItem = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(r => r.PurchasingSuggestCode == model.PurchasingSuggestCode && r.PurchasingSuggestId != purchasingSuggestId);
                     dem++;
                 } while (existedItem != null && dem < 10);
+                return config.CurrentLastValue;
             }
-            return customGenCodeId;
         }
 
-        private async Task<bool> ConfirmPurchasingSuggestCode(int customGenCodeId)
+        private async Task<bool> ConfirmPurchasingSuggestCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
         {
-            if (customGenCodeId <= 0) return true;
+            if (customGenCodeBaseValue == null) return true;
 
-            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
         }
 
 
@@ -1326,9 +1328,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        private async Task<int> GeneratePoAssignmentCode(long? poAssignmentId, PoAssignment model)
+        private async Task<CustomGenCodeBaseValueModel> GeneratePoAssignmentCode(long? poAssignmentId, PoAssignment model)
         {
-            int customGenCodeId = 0;
+
             model.PoAssignmentCode = (model.PoAssignmentCode ?? "").Trim();
 
             PoAssignment existedItem = null;
@@ -1336,27 +1338,31 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 existedItem = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentCode == model.PoAssignmentCode && r.PoAssignmentId != poAssignmentId);
                 if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
+                return null;
             }
             else
             {
-                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PoAssignment, EnumObjectType.PoAssignment, 0);
-                customGenCodeId = config.CustomGenCodeId;
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PoAssignment, EnumObjectType.PoAssignment, 0, poAssignmentId, model.PoAssignmentCode, model.Date.GetUnix());
+
+                if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã cho phân công mua hàng");
+
                 int dem = 0;
                 do
                 {
-                    model.PoAssignmentCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
+                    model.PoAssignmentCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, poAssignmentId, model.PoAssignmentCode, model.Date.GetUnix()))?.CustomCode;
                     existedItem = await _purchaseOrderDBContext.PoAssignment.FirstOrDefaultAsync(r => r.PoAssignmentCode == model.PoAssignmentCode && r.PoAssignmentId != poAssignmentId);
                     dem++;
                 } while (existedItem != null && dem < 10);
+
+                return config.CurrentLastValue;
             }
-            return customGenCodeId;
         }
 
-        private async Task<bool> ConfirmPoAssignmentCode(int customGenCodeId)
+        private async Task<bool> ConfirmPoAssignmentCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
         {
-            if (customGenCodeId <= 0) return true;
+            if (customGenCodeBaseValue == null) return true;
 
-            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
         }
 
         public async Task<bool> PoAssignmentUserConfirm(long poAssignmentId)

@@ -8,12 +8,15 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public Step()
         {
             ProductionStep = new HashSet<ProductionStep>();
+            StepDetail = new HashSet<StepDetail>();
         }
 
         public int StepId { get; set; }
         public string StepName { get; set; }
         public int SortOrder { get; set; }
         public int StepGroupId { get; set; }
+        public int UnitId { get; set; }
+        public bool IsHide { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -24,5 +27,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public virtual StepGroup StepGroup { get; set; }
         public virtual ICollection<ProductionStep> ProductionStep { get; set; }
+        public virtual ICollection<StepDetail> StepDetail { get; set; }
     }
 }

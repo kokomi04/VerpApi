@@ -34,6 +34,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHandoverService.GetProductionHandovers(scheduleTurnId);
         }
 
+        [HttpGet]
+        [Route("productionInventoryRequirement/{scheduleTurnId}")]
+        public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements([FromRoute] long scheduleTurnId)
+        {
+            return await _productionHandoverService.GetProductionInventoryRequirements(scheduleTurnId);
+        }
+
         [HttpPost]
         [Route("{scheduleTurnId}")]
         public async Task<ProductionHandoverModel> CreateProductionHandover([FromRoute] long scheduleTurnId, [FromBody] ProductionHandoverInputModel data)
@@ -45,14 +52,14 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{scheduleTurnId}/{productionHandoverId}/accept")]
         public async Task<ProductionHandoverModel> AcceptProductionHandover([FromRoute] long scheduleTurnId, [FromRoute] long productionHandoverId)
         {
-            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Accept);
+            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Accepted);
         }
 
         [HttpPut]
         [Route("{scheduleTurnId}/{productionHandoverId}/reject")]
         public async Task<ProductionHandoverModel> RejectProductionHandover([FromRoute] long scheduleTurnId, [FromRoute] long productionHandoverId)
         {
-            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Reject);
+            return await _productionHandoverService.ConfirmProductionHandover(scheduleTurnId, productionHandoverId, EnumHandoverStatus.Rejected);
         }
     }
 }

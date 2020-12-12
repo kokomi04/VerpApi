@@ -35,6 +35,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionScheduleService.GetProductionSchedules(scheduleTurnId);
         }
 
+        [HttpGet]
+        [Route("productionOrderDetail/{productionOrderDetailId}")]
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedulesByProductionOrderDetail([FromRoute] long productionOrderDetailId)
+        {
+            return await _productionScheduleService.GetProductionSchedulesByProductionOrderDetail(productionOrderDetailId);
+        }
+
         [HttpPost]
         [VErpAction(EnumAction.View)]
         [Route("Search")]
@@ -55,6 +62,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<List<ProductionScheduleInputModel>> UpdateProductionSchedule([FromBody] List<ProductionScheduleInputModel> data)
         {
             return await _productionScheduleService.UpdateProductionSchedule(data);
+        }
+
+        [HttpPut]
+        [Route("{productionScheduleId}/status")]
+        public async Task<bool> UpdateManualProductionScheduleStatus([FromRoute] long productionScheduleId, [FromBody] ProductionScheduleStatusModel status)
+        {
+            return await _productionScheduleService.UpdateManualProductionScheduleStatus(productionScheduleId, status);
         }
 
         [HttpDelete]

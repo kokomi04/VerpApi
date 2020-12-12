@@ -30,6 +30,7 @@ using Microsoft.AspNetCore.DataProtection;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Master.Service.Category;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Accountancy.Service.Category
 {
@@ -94,7 +95,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
                 .ToList();
 
-            await FillGenerateColumn(categoryFields, data);
+            await FillGenerateColumn(null, category.CategoryCode, categoryFields, data);
 
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
@@ -164,6 +165,9 @@ namespace VErp.Services.Accountancy.Service.Category
             dataTable.Rows.Add(dataRow);
 
             var id = await _accountancyContext.InsertDataTable(dataTable);
+
+            await _customGenCodeHelperService.ConfirmCode(CustomGenCodeBaseValue);
+
             await _activityLogService.CreateLog(EnumObjectType.Category, id, $"Thêm mới dữ liệu danh mục {id}", data.JsonSerialize());
             return (int)id;
         }
@@ -280,11 +284,17 @@ namespace VErp.Services.Accountancy.Service.Category
             dataTable.Rows.Add(dataRow);
 
             int numberChange = await _accountancyContext.UpdateCategoryData(dataTable, fId);
+
+            await _customGenCodeHelperService.ConfirmCode(CustomGenCodeBaseValue);
+
             await _activityLogService.CreateLog(EnumObjectType.Category, fId, $"Cập nhật dữ liệu danh mục {fId}", data.JsonSerialize());
             return numberChange;
         }
 
-        private async Task FillGenerateColumn(ICollection<CategoryField> fields, Dictionary<string, string> data)
+
+        private CustomGenCodeBaseValueModel CustomGenCodeBaseValue = null;
+
+        private async Task FillGenerateColumn(long? fId, string code, ICollection<CategoryField> fields, Dictionary<string, string> data)
         {
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
             {
@@ -292,21 +302,31 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     try
                     {
-                        CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId);
+                        var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
+
+                        long? ngayCtValue = null;
+                        if (long.TryParse(ngayCt, out var v))
+                        {
+                            ngayCtValue = v;
+                        }
+
+                        var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId, fId, code, ngayCtValue);
 
                         if (currentConfig == null)
                         {
                             throw new BadRequestException(GeneralCode.ItemNotFound, "Thiết định cấu hình sinh mã null " + field.Title);
                         }
 
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                        var generatedCode = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, fId, code, ngayCtValue);
 
-                        if (generated == null)
+                        if (generatedCode == null)
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
                         }
+                        
+                        CustomGenCodeBaseValue = currentConfig.CurrentLastValue;
 
-                        value = generated.CustomCode;
+                        value = generatedCode.CustomCode;
 
                         if (!data.ContainsKey(field.CategoryFieldName))
                         {

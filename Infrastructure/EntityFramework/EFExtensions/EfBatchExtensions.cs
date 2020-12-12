@@ -39,5 +39,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return await query.BatchUpdateAsync(updateExpression, cancellationToken);
         }
 
+
     }
 }

@@ -23,6 +23,7 @@ using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
@@ -72,7 +73,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (data.Any(a => a.ScheduleTurnId != scheduleTurnId || a.ProductionStepId != productionStepId))
                 new BadRequestException(GeneralCode.InvalidParams, "Thông tin lượt kế hoạch hoặc công đoạn sản xuất giữa các tổ không khớp");
 
-
             if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
             var productionSchedules = (from s in _manufacturingDBContext.ProductionSchedule
@@ -82,30 +82,46 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                        {
                                            s.ProductionOrderDetailId,
                                            s.ProductionScheduleQuantity,
-                                           od.ProductId
+                                           od.ProductId,
+                                           ProductionOrderQuantity = od.Quantity + od.ReserveQuantity
                                        }).ToList();
+
+            var previousScheduleQuantities = (from s in _manufacturingDBContext.ProductionSchedule
+                                              join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                                              where s.ProductionOrderDetailId == productionSchedules[0].ProductionOrderDetailId && s.ScheduleTurnId < scheduleTurnId
+                                              select new
+                                              {
+                                                  ProductionOrderQuantity = od.Quantity + od.ReserveQuantity,
+                                                  s.ProductionScheduleQuantity
+                                              }).ToList();
+
+            var isFinal = previousScheduleQuantities.Sum(s => s.ProductionScheduleQuantity) + productionSchedules[0].ProductionScheduleQuantity >= productionSchedules[0].ProductionOrderQuantity;
 
             var productionOrderDetailIds = productionSchedules.Select(s => s.ProductionOrderDetailId).ToList();
 
             if (productionOrderDetailIds.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
 
-            if (!_manufacturingDBContext.ProductionStepOrder.Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
+            if (!_manufacturingDBContext.ProductionStepOrder
+                .Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại trong quy trình sản xuất");
             }
 
-            var quantityMap = productionSchedules.GroupBy(s => s.ProductId).ToDictionary(g => g.Key, g => g.Sum(v => v.ProductionScheduleQuantity));
-
             var linkDatas = step.ProductionStepLinkDataRole
-                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output)
-                .Select(r => new
+                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                .ToDictionary(r => r.ProductionStepLinkDataId,
+                r =>
                 {
-                    r.ProductionStepLinkData.ObjectTypeId,
-                    r.ProductionStepLinkData.ObjectId,
-                    Quantity = r.ProductionStepLinkData.Quantity * quantityMap[r.ProductionStepLinkData.ProductId]
-                })
-                .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
-                .ToDictionary(g => g.Key, g => g.Sum(v => v.Quantity));
+                    if(isFinal)
+                    {
+                        return r.ProductionStepLinkData.Quantity - previousScheduleQuantities.Sum(s => Math.Round(r.ProductionStepLinkData.Quantity * s.ProductionScheduleQuantity / s.ProductionOrderQuantity.Value, 5));
+                    }
+                    else
+                    {
+                        return Math.Round(r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.Value,5);
+                    }
+                    
+                });
 
             if (data.Any(d => d.AssignmentQuantity <= 0))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
@@ -116,7 +132,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 foreach (var assignment in data)
                 {
-                    var sourceData = linkDatas[new { ObjectTypeId = (int)assignment.ObjectTypeId, assignment.ObjectId }];
+                    var sourceData = linkDatas[assignment.ProductionStepLinkDataId];
                     totalAssignmentQuantity += assignment.AssignmentQuantity * linkData.Value / sourceData;
                 }
 
@@ -139,7 +155,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
                 else
                 {
-                    if (entity.AssignmentQuantity != item.AssignmentQuantity || entity.ObjectId != item.ObjectId || entity.ObjectTypeId != (int)item.ObjectTypeId)
+                    if (entity.AssignmentQuantity != item.AssignmentQuantity || entity.ProductionStepLinkDataId != item.ProductionStepLinkDataId)
                     {
                         updateAssignments.Add((entity, item));
                     }
@@ -168,8 +184,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Cập nhật phân công
                 foreach (var tuple in updateAssignments)
                 {
-                    tuple.Entity.ObjectId = tuple.Model.ObjectId;
-                    tuple.Entity.ObjectTypeId = (int)tuple.Model.ObjectTypeId;
+                    tuple.Entity.ProductionStepLinkDataId = (int)tuple.Model.ProductionStepLinkDataId;
                     tuple.Entity.AssignmentQuantity = tuple.Model.AssignmentQuantity;
                 }
                 _manufacturingDBContext.SaveChanges();
@@ -184,7 +199,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw;
             }
         }
-
 
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? scheduleTurnId, int page, int size, string orderByFieldName, bool asc)
         {
@@ -233,6 +247,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 ProductionScheduleStatus = (EnumScheduleStatus)d.ProductionScheduleStatus,
                 ProductionScheduleQuantity = d.ProductionScheduleQuantity
             }).ToList(), total);
-        }       
+        }
+
+        public async Task<bool> SetProductionStepWorldload(IList<ProductionStepWorkload> productionStepWorldload)
+        {
+            var productionSteps = await _manufacturingDBContext.ProductionStep
+                .Where(y => productionStepWorldload.Select(x => x.ProductionStepId).Contains(y.ProductionStepId))
+                .ToListAsync();
+
+            foreach(var productionStep in productionSteps)
+            {
+                var w = productionStepWorldload.FirstOrDefault(x => x.ProductionStepId == productionStep.ProductionStepId);
+                if (w != null)
+                    _mapper.Map(w, productionStep);
+            }
+
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
+        }
     }
 }

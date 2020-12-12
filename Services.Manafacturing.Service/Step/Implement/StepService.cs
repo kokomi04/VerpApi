@@ -11,6 +11,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -19,7 +20,7 @@ using StepEnity = VErp.Infrastructure.EF.ManufacturingDB.Step;
 
 namespace VErp.Services.Manafacturing.Service.Step.Implement
 {
-    public class StepService: IStepService
+    public class StepService : IStepService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -39,24 +40,60 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<int> CreateStep(StepModel req)
         {
-            var entity = _mapper.Map<StepEnity>(req);
-            _manufacturingDBContext.Step.Add(_mapper.Map<StepEnity>(entity));
-            await _manufacturingDBContext.SaveChangesAsync();
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = _mapper.Map<StepEnity>(req);
+                await _manufacturingDBContext.Step.AddAsync(entity);
+                await _manufacturingDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
-            return entity.StepGroupId;
+                req.StepDetail.ForEach(x => { x.StepId = entity.StepId; });
+                var detail = _mapper.Map<IList<StepDetail>>(req.StepDetail);
+                await _manufacturingDBContext.AddAsync(detail);
+
+                await _manufacturingDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
+                return entity.StepGroupId;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "CreateStep");
+                throw;
+            }
+
         }
 
         public async Task<bool> DeleteStep(int stepId)
         {
-            var destInfo = _manufacturingDBContext.Step.FirstOrDefault(x => x.StepId == stepId);
-            if (destInfo == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var step = _manufacturingDBContext.Step.Include(x => x.ProductionStep).FirstOrDefault(x => x.StepId == stepId);
+                var stepDetail = await _manufacturingDBContext.StepDetail.Where(x => x.StepId == step.StepId).ToListAsync();
+                if (step == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
+                if (step.ProductionStep.Count > 0)
+                    throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
 
-            destInfo.IsDeleted = true;
-            await _manufacturingDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Step, destInfo.StepId, $"Xóa danh mục công đoạn '{destInfo.StepName}'", destInfo.JsonSerialize());
-            return true;
+                step.IsDeleted = true;
+                stepDetail.ForEach(x => { x.IsDeleted = true; });
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Xóa danh mục công đoạn '{step.StepName}'", step.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "DeleteStep");
+                throw;
+            }
+
         }
 
         public async Task<PageData<StepModel>> GetListStep(string keyWord, int page, int size)
@@ -67,7 +104,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 query = query.Where(x => x.StepName.Contains(keyWord));
 
             var total = await query.CountAsync();
-
             var data = query.ProjectTo<StepModel>(_mapper.ConfigurationProvider)
                             .Skip((page - 1) * size).Take(size).ToList();
             return (data, total);
@@ -75,15 +111,38 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<bool> UpdateStep(int stepId, StepModel req)
         {
-            var destInfo = _manufacturingDBContext.Step.FirstOrDefault(x => x.StepId == stepId);
-            if (destInfo == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var step = _manufacturingDBContext.Step.FirstOrDefault(x => x.StepId == stepId);
+                var stepDetail = await _manufacturingDBContext.StepDetail.Where(x => x.StepId == step.StepId).ToListAsync();
+                if (step == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            _mapper.Map(req, destInfo);
+                _mapper.Map(req, step);
+                foreach (var detail in stepDetail)
+                {
+                    var m = req.StepDetail.FirstOrDefault(x => x.StepDetailId == detail.StepDetailId);
+                    if (m != null)
+                        _mapper.Map(m, detail);
+                    else detail.IsDeleted = true;
+                }
 
-            await _manufacturingDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Step, destInfo.StepId, $"Cập nhật danh mục công đoạn '{destInfo.StepName}'", destInfo.JsonSerialize());
-            return true;
+                var newStepDetail = _mapper.Map<List<StepDetail>>(req.StepDetail.Where(n => !stepDetail.Select(x => x.StepDetailId).Contains(n.StepId)).ToList());
+                newStepDetail.ForEach(x => { x.StepId = step.StepId; });
+                await _manufacturingDBContext.StepDetail.AddRangeAsync(newStepDetail);
+
+                await _manufacturingDBContext.SaveChangesAsync();
+                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Cập nhật danh mục công đoạn '{step.StepName}'", step.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "UpdateStep");
+                throw;
+            }
+
         }
     }
 }

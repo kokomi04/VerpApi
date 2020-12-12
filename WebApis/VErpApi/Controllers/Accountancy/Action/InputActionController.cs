@@ -32,6 +32,13 @@ namespace VErpApi.Controllers.Accountancy.Action
         [Route("InputType/{inputTypeId}")]
         public async Task<IList<InputActionModel>> GetList(int inputTypeId)
         {
+            return await _inputActionService.GetInputActionConfigs(inputTypeId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("InputType/{inputTypeId}/use")]
+        public async Task<IList<InputActionUseModel>> GetListUse(int inputTypeId)
+        {
             return await _inputActionService.GetInputActions(inputTypeId).ConfigureAwait(true);
         }
 

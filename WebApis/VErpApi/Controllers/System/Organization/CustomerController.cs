@@ -124,18 +124,7 @@ namespace VErpApi.Controllers.System
         {
             return await _customerService.DeleteCustomer(customerId);
         }
-
-        /// <summary>
-        /// Sinh mã đối tác
-        /// </summary>     
-        /// <returns></returns>
-        [HttpPost]
-        [Route("GenerateCustomerCode")]
-        public async Task<CustomCodeModel> GenerateCustomerCode()
-        {
-            var currentConfig = await _objectGenCodeService.GetCurrentConfig(EnumObjectType.Customer, EnumObjectType.Customer, 0);
-            return await _genCodeConfigService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
-        }
+       
 
         /// <summary>
         /// Upload file dữ liệu khách hàng

@@ -13,5 +13,9 @@ namespace VErp.Services.Manafacturing.Model.Step
         public string StepName { get; set; }
         public int SortOrder { get; set; }
         public int StepGroupId { get; set; }
+        public bool IsHide { get; set; }
+        public int UnitId { get; set; }
+
+        public List<StepDetailModel> StepDetail { get; set; }
     }
 }

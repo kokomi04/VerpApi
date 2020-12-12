@@ -22,6 +22,7 @@ using VErp.Services.Manafacturing.Model.ProductionOrder;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -146,7 +147,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Distinct()
                     .Count();
 
-                if(countDetailId == 0)
+                if (countDetailId == 0)
                 {
                     productOrder.ProcessStatus = EnumProcessStatus.Waiting;
                 }
@@ -169,21 +170,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                int customGenCodeId = 0;
+                CustomGenCodeOutputModel currentConfig = null;
                 if (string.IsNullOrEmpty(data.ProductionOrderCode))
                 {
-                    CustomGenCodeOutputModelOut currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0);
+                    currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0, null, data.ProductionOrderCode, data.ProductionDate);
                     if (currentConfig == null)
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                     }
-                    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.LastValue);
+                    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderCode, data.ProductionDate);
                     if (generated == null)
                     {
                         throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
                     }
 
-                    customGenCodeId = currentConfig.CustomGenCodeId;
 
                     data.ProductionOrderCode = generated.CustomCode;
                 }
@@ -213,10 +213,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
-                if (customGenCodeId > 0)
-                {
-                    await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
-                }
+
+                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
                 return data;
             }
@@ -296,7 +295,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _manufacturingDBContext.ProductionStepOrder.RemoveRange(stepOrders);
                 await _manufacturingDBContext.SaveChangesAsync();
                 // Xóa step
-                foreach(var item in steps)
+                foreach (var item in steps)
                 {
                     item.IsDeleted = true;
                 }
@@ -311,7 +310,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.IsDeleted = true;
                 }
-              
+
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
@@ -402,7 +401,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId)
         {
-            
+
             if (productionOrderDetailId.HasValue)
             {
                 var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderDetailId = @ProductionOrderDetailId";

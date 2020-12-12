@@ -107,7 +107,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("")]
         public async Task<int> AddProduct([FromBody] ProductModel product)
         {
-            return await UpdateOrAddProduct(null, product);
+            return await _productService.AddProduct(product);
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}")]
         public async Task<bool> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
-            return (await UpdateOrAddProduct(productId, product)) > 0;
+            return await _productService.UpdateProduct(productId, product);
         }
 
         /// <summary>
@@ -170,45 +170,6 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
-        }
-
-        private async Task<int> UpdateOrAddProduct(int? productId, ProductModel product)
-        {
-            // var lastValue = 0;
-            var isGenCode = false;
-            int customGenCodeId = 0;
-            if (string.IsNullOrWhiteSpace(product?.ProductCode) && product.ProductTypeId.HasValue)
-            {
-                var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
-
-                var productTypeConfig = await _objectGenCodeService.GetCurrentConfig(EnumObjectType.Product, EnumObjectType.ProductType, product.ProductTypeId.Value);
-                customGenCodeId = productTypeConfig.CustomGenCodeId;
-
-                var code = await _genCodeConfigService.GenerateCode(productTypeConfig.CustomGenCodeId, productTypeConfig.LastValue, productTypeInfo.IdentityCode).ConfigureAwait(true);
-
-                product.ProductCode = code.CustomCode;
-                // lastValue = code.Data.LastValue;
-                isGenCode = true;
-
-            }
-
-            int r;
-            if (!productId.HasValue)
-            {
-                r = await _productService.AddProduct(product).ConfigureAwait(true);
-            }
-            else
-            {
-                await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
-                r = productId.Value;
-            }
-
-            if (isGenCode)
-            {
-                await _genCodeConfigService.ConfirmCode(customGenCodeId);
-            }
-
-            return r;
         }
     }
 }

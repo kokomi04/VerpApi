@@ -71,6 +71,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentId = data.ParentId,
                 Description = data.Description,
                 IsActived = data.IsActived,
+                IsProduction = data.IsProduction,
+                WorkingHoursPerDay = data.WorkingHoursPerDay,
                 IsDeleted = false,
                 UpdatedTime = DateTime.UtcNow,
                 CreatedTime = DateTime.UtcNow,
@@ -123,6 +125,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentId = department.ParentId,
                 ParentName = department.Parent?.DepartmentName ?? null,
                 IsActived = department.IsActived,
+                IsProduction = department.IsProduction,
+                WorkingHoursPerDay = department.WorkingHoursPerDay
             };
         }
 
@@ -147,7 +151,9 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 Description = d.Description,
                 IsActived = d.IsActived,
                 ParentId = d.ParentId,
-                ParentName = d.Parent == null ? null : d.Parent.DepartmentName
+                ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
+                IsProduction = d.IsProduction,
+                WorkingHoursPerDay = d.WorkingHoursPerDay
             }).ToListAsync();
 
             var total = await query.CountAsync();
@@ -210,6 +216,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.IsActived = data.IsActived;
             department.UpdatedTime = DateTime.UtcNow;
             department.UpdatedUserId = updatedUserId;
+            department.IsProduction = data.IsProduction;
+            department.WorkingHoursPerDay = data.WorkingHoursPerDay;
             await _organizationContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.Department, departmentId, $"Cập nhật bộ phận {department.DepartmentName}", data.JsonSerialize());
             return true;

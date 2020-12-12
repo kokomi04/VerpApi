@@ -212,5 +212,14 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,
+        [Description("Yêu cầu nhập kho")]
+        [GenCodeObject]
+        InventoryInputRequirement = 80,
+        [Description("Yêu cầu xuất kho")]
+        [GenCodeObject]
+        InventoryOutputRequirement = 81,
+        OutsourceTrack = 78,
+        [Description("Khai báo vật tư tiêu hao")]
+        ProductionConsumMaterial = 82,
     }
 }

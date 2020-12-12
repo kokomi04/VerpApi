@@ -15,13 +15,13 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     {
         public long OutsourcePartRequestDetailId { get; set; }
         public long OutsourcePartRequestId { get; set; }
-        [Required]
+        [Required(ErrorMessage = "Mã chi tiết là bắt buộc")]
         public int ProductPartId { get; set; }
-        [Required]
-        [Range(0.00001, double.MaxValue)]
+        [Required(ErrorMessage = "Vị trí của chi tiết trong BOM là bắt buộc")]
+        public string PathProductIdInBom { get; set; }
+        [Required(ErrorMessage ="Giá trị số lượng là bắt buộc")]
+        [Range(0.00001, double.MaxValue, ErrorMessage ="Số lượng phải lớn hơn 0")]
         public decimal Quantity { get; set; }
-        public int UnitId { get; set; }
-        public EnumOutsourcePartProcessType StatusId { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -49,7 +49,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public decimal ProductOrderDetailQuantity { get; set; }
         public string ProductTitle { get; set; }
         public decimal QuantityProcessed { get; set; }
-
+        public EnumOutsourceRequestStatusType OutsourcePartRequestDetailStatusId { get; set; }
     }
 
 

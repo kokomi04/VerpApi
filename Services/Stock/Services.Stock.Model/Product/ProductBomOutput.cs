@@ -1,10 +1,13 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductBomOutput
+    public class ProductBomOutputBase
     {
         public long? ProductBomId { get; set; }
         public int Level { get; set; }
@@ -21,7 +24,83 @@ namespace VErp.Services.Stock.Model.Product
         public string Description { get; set; }
         public string UnitName { get; set; }
         public bool IsMaterial { get; set; }
+        public string NumberOrder { get; set; }        
+    }
+
+   
+    public class ProductBomEntity : ProductBomOutputBase
+    {
         public string PathProductIds { get; set; }
-        public string NumberOrder { get; set; }
+    }
+
+    public class ProductBomOutput : ProductBomOutputBase, IMapFrom<ProductBomEntity>
+    {
+        public int[] PathProductIds { get; set; }
+        public virtual void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductBomEntity, ProductBomOutput>()
+                .ForMember(m => m.PathProductIds, v => v.Ignore());
+        }
+    }
+
+
+
+
+    public class ProductBomImportModel
+    {
+        const string MainProductGroup = "Mặt hàng chính";
+        const string ChildProductGroup = "Chi tiết";
+
+        [Display(Name = "Mã mặt hàng", GroupName = MainProductGroup)]
+        [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng chính")]
+        public string ProductCode { get; set; }
+
+        [Display(Name = "Tên mặt hàng (Nếu có)", GroupName = MainProductGroup)]
+        public string ProductName { get; set; }
+
+        [Display(Name = "Đơn vị mặt hàng (Nếu có)", GroupName = MainProductGroup)]
+        public string UnitName { get; set; }
+
+        [Display(Name = "Định danh loại mã mặt hàng (Nếu có)", GroupName = MainProductGroup)]
+        public string ProductTypeCode { get; set; }
+
+        [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = MainProductGroup)]
+        public string Specification { get; set; }
+
+
+
+        [Display(Name = "Danh mục mặt hàng (Nếu có)", GroupName = MainProductGroup)]
+        public string ProductCateName { get; set; }
+
+        [Display(Name = "Mã chi tiết", GroupName = ChildProductGroup)]
+        [Required(ErrorMessage = "Vui lòng nhập mã chi tiết")]
+        public string ChildProductCode { get; set; }
+
+        [Display(Name = "Tên chi tiết", GroupName = ChildProductGroup)]
+        public string ChildProductName { get; set; }
+
+        [Display(Name = "Đơn vị chi tiết", GroupName = ChildProductGroup)]
+        public string ChildUnitName { get; set; }
+
+        [Display(Name = "Định danh loại mặt hàng của chi tiết (Nếu có)", GroupName = ChildProductGroup)]
+        public string ChildProductTypeCode { get; set; }
+        [Display(Name = "Danh mục chi tiết (Nếu có)", GroupName = ChildProductGroup)]
+        public string ChildProductCateName { get; set; }
+
+        [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = ChildProductGroup)]
+        public string ChildSpecification { get; set; }
+
+
+
+        [Display(Name = "Số lượng")]
+        [Required(ErrorMessage = "Vui lòng nhập số lượng")]
+        public decimal? Quantity { get; set; }
+
+        [Display(Name = "Tỷ lệ hao hụt (Mặc định = 1)")]
+        public decimal? Wastage { get; set; }
+
+        [Display(Name = "Đánh dấu là nguyên liệu đầu vào (Có, Không)")]
+        public bool IsMaterial { get; set; }
+
     }
 }

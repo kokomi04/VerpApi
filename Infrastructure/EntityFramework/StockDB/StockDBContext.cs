@@ -22,6 +22,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<InventoryDetailChange> InventoryDetailChange { get; set; }
         public virtual DbSet<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
         public virtual DbSet<InventoryFile> InventoryFile { get; set; }
+        public virtual DbSet<InventoryRequirement> InventoryRequirement { get; set; }
+        public virtual DbSet<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
+        public virtual DbSet<InventoryRequirementFile> InventoryRequirementFile { get; set; }
         public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Package> Package { get; set; }
         public virtual DbSet<PackageOperation> PackageOperation { get; set; }
@@ -214,6 +217,60 @@ namespace VErp.Infrastructure.EF.StockDB
             modelBuilder.Entity<InventoryFile>(entity =>
             {
                 entity.HasKey(e => new { e.InventoryId, e.FileId });
+            });
+
+            modelBuilder.Entity<InventoryRequirement>(entity =>
+            {
+                entity.Property(e => e.CensorStatus).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.Content).HasMaxLength(512);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.InventoryRequirementCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<InventoryRequirementDetail>(entity =>
+            {
+                entity.Property(e => e.Pocode)
+                    .HasColumnName("POCode")
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.InventoryRequirement)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.InventoryRequirementId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryRequirementDetail_InventoryRequirement");
+
+                entity.HasOne(d => d.ProductUnitConversion)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.ProductUnitConversionId)
+                    .HasConstraintName("FK_InventoryRequirementDetail_ProductUnitConversion");
+            });
+
+            modelBuilder.Entity<InventoryRequirementFile>(entity =>
+            {
+                entity.HasKey(e => new { e.InventoryRequirementId, e.FileId })
+                    .HasName("PK_InventoryFile_copy1");
+
+                entity.HasOne(d => d.InventoryRequirement)
+                    .WithMany(p => p.InventoryRequirementFile)
+                    .HasForeignKey(d => d.InventoryRequirementId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryRequirementFile_InventoryRequirement");
             });
 
             modelBuilder.Entity<Location>(entity =>
