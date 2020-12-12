@@ -170,6 +170,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectId = dataLinks[r.ProductionStepLinkDataId].ObjectId,
                         ObjectTypeId = dataLinks[r.ProductionStepLinkDataId].ObjectTypeId,
                         Quantity = dataLinks[r.ProductionStepLinkDataId].Quantity,
+                        OutsourceQuantity = dataLinks[r.ProductionStepLinkDataId].OutsourceQuantity,
                         SortOrder = dataLinks[r.ProductionStepLinkDataId].SortOrder,
                         ProductId = dataLinks[r.ProductionStepLinkDataId].ProductId,
                         ProductionStepId = r.ProductionStepId,
