@@ -120,15 +120,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     {
                         return Math.Round(r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.Value,5);
                     }
-                    
                 });
 
             if (data.Any(d => d.AssignmentQuantity <= 0))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
 
+            // Lấy thông tin outsource
+            var outSource = step.ProductionStepLinkDataRole
+                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input && r.ProductionStepLinkData.OutsourceQuantity.HasValue)
+                .FirstOrDefault();
+
             foreach (var linkData in linkDatas)
             {
                 decimal totalAssignmentQuantity = 0;
+
+                if(outSource != null)
+                {
+                    totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.Value / outSource.ProductionStepLinkData.Quantity;
+                }
 
                 foreach (var assignment in data)
                 {
