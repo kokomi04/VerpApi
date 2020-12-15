@@ -2057,8 +2057,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                 case EnumInventoryType.Output:
                     {
-                        stockProductInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                        stockProductInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+                        stockProductInfo.PrimaryQuantityRemaining = stockProductInfo.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
+                        stockProductInfo.ProductUnitConversionRemaining = stockProductInfo.ProductUnitConversionRemaining.SubDecimal(detail.ProductUnitConversionQuantity);
                         break;
                     }
                 default:
@@ -2177,11 +2177,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!inventory.IsApproved)
                 {
-                    fromPackageInfo.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                    fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
+                    fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
+                    fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
 
-                    stockProductInfo.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                    stockProductInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
+                    stockProductInfo.PrimaryQuantityWaiting = stockProductInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
+                    stockProductInfo.ProductUnitConversionWaitting = stockProductInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
                 }
                 else
                 {
