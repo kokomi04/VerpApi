@@ -48,7 +48,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<long> CreateOutsourcePartRequest(RequestOutsourcePartInfo req)
+        public async Task<long> CreateOutsourcePartRequest(OutsourcePartRequestInfo req)
         {
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -69,7 +69,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 customGenCodeId = currentConfig.CustomGenCodeId;
 
                 // Create order
-                var order = _mapper.Map<OutsourcePartRequest>(req as RequestOutsourcePartModel);
+                var order = _mapper.Map<OutsourcePartRequest>(req as OutsourcePartRequestModel );
                 order.OutsourcePartRequestCode = generated.CustomCode;
 
                 _manufacturingDBContext.OutsourcePartRequest.Add(order);
@@ -106,7 +106,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<RequestOutsourcePartInfo> GetOutsourcePartRequestExtraInfo(int OutsourcePartRequestId = 0)
+        public async Task<OutsourcePartRequestInfo> GetOutsourcePartRequestExtraInfo(int OutsourcePartRequestId = 0)
         {
             var sql = new StringBuilder("SELECT * FROM vOutsourcePartRequestExtractInfo v WHERE v.OutsourcePartRequestId = @OutsourcePartRequestId");
 
@@ -114,17 +114,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             parammeters.Add(new SqlParameter("@OutsourcePartRequestId", OutsourcePartRequestId));
 
             var extractInfo = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                    .ConvertData<RequestOutsourcePartDetailInfo>();
+                    .ConvertData<OutsourcePartRequestDetailInfo>();
             if (extractInfo.Count == 0)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
-            var rs = _mapper.Map<RequestOutsourcePartInfo>(extractInfo[0]);
-            rs.OutsourcePartRequestStatus = GetRequestOutsourcePartStatus(extractInfo);
+            var rs = _mapper.Map<OutsourcePartRequestInfo>(extractInfo[0]);
+            rs.OutsourcePartRequestStatus = GetOutsourcePartRequestStatus(extractInfo);
             rs.OutsourcePartRequestDetail = extractInfo.Where(x => x.OutsourcePartRequestDetailId > 0).ToList();
             return rs;
         }
 
-        private string GetRequestOutsourcePartStatus(List<RequestOutsourcePartDetailInfo> req)
+        private string GetOutsourcePartRequestStatus(List<OutsourcePartRequestDetailInfo> req)
         {
             var sumStatus = req.Sum(x => (int)x.OutsourcePartRequestDetailStatusId);
             if (sumStatus == ((int)EnumOutsourceRequestStatusType.Unprocessed * req.Count))
@@ -135,7 +135,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 return EnumOutsourceRequestStatusType.Processing.GetEnumDescription();
         }
 
-        public async Task<bool> UpdateOutsourcePartRequest(int OutsourcePartRequestId, RequestOutsourcePartInfo req)
+        public async Task<bool> UpdateOutsourcePartRequest(int OutsourcePartRequestId, OutsourcePartRequestInfo req)
         {
             var order = await _manufacturingDBContext.OutsourcePartRequest.FirstOrDefaultAsync(x => x.OutsourcePartRequestId == OutsourcePartRequestId);
             if (order == null)
@@ -182,7 +182,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<RequestOutsourcePartDetailInfo>> GetListOutsourcePartRequest(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<OutsourcePartRequestDetailInfo>> GetListOutsourcePartRequest(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -236,7 +236,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
-            var lst = resultData.ConvertData<RequestOutsourcePartDetailInfo>().ToList();
+            var lst = resultData.ConvertData<OutsourcePartRequestDetailInfo>().ToList();
 
             return (lst, total);
         }
@@ -262,7 +262,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                ObjectId = x.Key,
                                QuantityProcessed = x.Sum(x => x.Quantity)
                            });
-                foreach(var detail in details)
+                foreach (var detail in details)
                 {
                     if (lst.Where(y => y.ObjectId == detail.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
                         throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
@@ -285,6 +285,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
 
 
+        }
+
+        public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId)
+        {
+            var data = await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
+                                .Include(x => x.ProductionOrderDetail)
+                                .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionOrderId)
+                                .ProjectTo<OutsourcePartRequestOutput>(_mapper.ConfigurationProvider)
+                                .ToListAsync();
+            return data;
         }
 
         private async Task<bool> UpdateProductionStepLinkDataRelative(long productionOrderDetailId, string pathProductiIdBom, long productId, decimal newQuantity, decimal oldQuantity = 0)
