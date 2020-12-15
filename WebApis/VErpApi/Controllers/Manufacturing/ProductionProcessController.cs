@@ -131,6 +131,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
         }
 
+        /// <summary>
+        /// Lấy danh sách InOut của 1 nhóm các công đoạn
+        /// </summary>
+        /// <param name="lsProductionStepId"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("productionStepLinkDataRole/getInOutOfListProductionStep")]
         public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
@@ -138,6 +143,11 @@ namespace VErpApi.Controllers.Manufacturing
            return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
         }
 
+        /// <summary>
+        /// Kiểm tra nhóm công đoạn mối quan hệ với nhau hay không
+        /// </summary>
+        /// <param name="lsProductionStepId">Danh sách mã công đoạn</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("productionStepLinkDataRole/validateProductionStepRelationship")]
         public async Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId)
@@ -145,6 +155,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.ValidateProductionStepRelationship(lsProductionStepId);
         }
 
+        /// <summary>
+        /// Gom nhóm các công đoạn có mối qua hệ với nhau
+        /// </summary>
+        /// <param name="productionOrderId">Mã lệnh sản xuất</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("productionStep/groupRelationship")]
         public async Task<NonCamelCaseDictionary> GroupProductionStepRelationShip([FromBody] IList<long> productionOrderId)

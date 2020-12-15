@@ -4,7 +4,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -980,7 +979,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.ProductionStepOrder.AddRangeAsync(lsProductionStepOrderNew);
                     await _manufacturingDBContext.SaveChangesAsync();
 
-                    
+
                 }
 
                 //Truy vết cac linkData có đi gia công 
@@ -998,7 +997,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     //Gia công công đoạn
                     await FoundProductionStepLinkDataOutsourceStep(containerId, newStepLinkData);
                 }
-                    
+
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -1037,6 +1036,102 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {group.First().ObjectTitle} không thể là đầu vào của 2 công đoạn");
                 if (outStep.Count > 1)
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {group.First().ObjectTitle} không thể là đầu ra của 2 công đoạn");
+            }
+
+            /*
+             * Kiểm tra và báo sự xuất hiện của 2 mặt hàng trên cùng 1 nhánh
+             */
+            var groupbyLinkDataRole = req.ProductionStepLinkDataRoles
+                .GroupBy(r => r.ProductionStepLinkDataCode)
+                .Where(g => g.Count() == 2)
+                .ToList();
+
+            var groupbyLinkDataRoleScanned = new List<IGrouping<string, ProductionStepLinkDataRoleInput>>();
+            for (int i = 0; i < groupbyLinkDataRole.Count; i++)
+            {
+                var role = groupbyLinkDataRole[i];
+                if (groupbyLinkDataRoleScanned.Contains(role))
+                    continue;
+
+                groupbyLinkDataRoleScanned.Add(role);
+                var lsProductionStepIdInGroup = new List<string>();
+                foreach (var linkData in role)
+                {
+                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepCode))
+                        continue;
+                    lsProductionStepIdInGroup.Add(linkData.ProductionStepCode);
+                    var temp = groupbyLinkDataRole.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepCode == linkData.ProductionStepCode).Count() > 0).ToList();
+                    TraceProductionStepRelationShip(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRole, lsProductionStepIdInGroup);
+                }
+
+                var productionStepLinkData = from l in req.ProductionStepLinkDatas
+                                             join r in req.ProductionStepLinkDataRoles
+                                                on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
+                                             where lsProductionStepIdInGroup.Contains(r.ProductionStepCode) && l.ObjectTypeId == ProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                                             select l;
+                var productionLinkDataDuplicate = productionStepLinkData
+                                                .GroupBy(x => x.ObjectId)
+                                                .Where(x => x.Count() > 1)
+                                                .SelectMany(x => x)
+                                                .ToList();
+                if (productionLinkDataDuplicate.Count > 0)
+                {
+                    foreach (var linkData in productionLinkDataDuplicate)
+                    {
+                        var currentRole = req.ProductionStepLinkDataRoles
+                                       .Where(x => x.ProductionStepLinkDataCode == linkData.ProductionStepLinkDataCode
+                                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
+                                       .ToList();
+                        NewMethod(req, currentRole, linkData);
+                    }
+                }
+            }
+        }
+
+        private static void NewMethod(ProductionProcessModel req, IList<ProductionStepLinkDataRoleInput> currentRole, ProductionStepLinkDataInput linkData)
+        {
+            foreach (var c in currentRole)
+            {
+                var productionStepCode = c.ProductionStepCode;
+                var OutputInStep = from l in req.ProductionStepLinkDatas
+                                   join r in req.ProductionStepLinkDataRoles
+                                      on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
+                                   where r.ProductionStepCode == productionStepCode && l.ObjectTypeId == ProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                                   select l;
+                if (OutputInStep.Select(x => x.ObjectId).Contains(linkData.ObjectId))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Xuất hiện nhiều chi tiết `{linkData.ObjectTitle}` là Output của các công đoạn có quan hệ với nhau");
+
+                foreach (var output in OutputInStep)
+                {
+                    var nextRole = req.ProductionStepLinkDataRoles
+                                       .Where(x => x.ProductionStepLinkDataCode == output.ProductionStepLinkDataCode
+                                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
+                                       .ToList();
+                    NewMethod(req, nextRole, linkData);
+                }
+            }
+        }
+
+        private static void TraceProductionStepRelationShip(List<IGrouping<string, ProductionStepLinkDataRoleInput>> groupbyLinkDataRole
+            , List<IGrouping<string, ProductionStepLinkDataRoleInput>> groupbyLinkDataRoleScanned
+            , List<IGrouping<string, ProductionStepLinkDataRoleInput>> groupbyLinkDataRoleOrigin
+            , List<string> lsProductionStepIdInGroup)
+        {
+            foreach (var role in groupbyLinkDataRole)
+            {
+                if (groupbyLinkDataRoleScanned.Contains(role))
+                    continue;
+                groupbyLinkDataRoleScanned.Add(role);
+                foreach (var linkData in role)
+                {
+                    if (lsProductionStepIdInGroup.Contains(linkData.ProductionStepCode))
+                        continue;
+                    lsProductionStepIdInGroup.Add(linkData.ProductionStepCode);
+
+                    var temp = groupbyLinkDataRoleOrigin.Where(x => x.Where(y => y.ProductionStepId == linkData.ProductionStepId).Count() > 0).ToList();
+                    TraceProductionStepRelationShip(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRoleOrigin, lsProductionStepIdInGroup);
+                }
+                groupbyLinkDataRoleOrigin.Remove(role);
             }
         }
 
@@ -1137,6 +1232,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             return linkDataRoles.Count() == (lsProductionStepId.Count - 1);
         }
+
 
         public async Task<NonCamelCaseDictionary> GroupProductionStepRelationShip(IList<long> productionStepIds)
         {
@@ -1320,7 +1416,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     productionStepLinkDatas.ForEach(x =>
                     {
-                        if(x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId)
+                        if (x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId)
                         {
                             x.OutsourceQuantity += x.Quantity * percent;
                         }
