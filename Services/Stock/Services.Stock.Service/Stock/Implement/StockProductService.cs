@@ -1377,10 +1377,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductName = p.ProductName,
                     UnitId = p.UnitId,
                     UnitName = u.UnitName,
-                    //PrimaryQualtityBefore = b == null ? 0 : b.Total,
-                    //PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
-                    //PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
-                    //PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total),
+                    SumPrimaryQuantityBefore = b == null ? 0 : b.Total,
+                    SumPrimaryQuantityInput = a == null ? 0 : a.TotalInput,
+                    SumPrimaryQuantityOutput = a == null ? 0 : a.TotalOutput,
+                    SumPrimaryQuantityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total),
                     ProductAltSummaryList = productAltSummaryData.Where(q => q.ProductId == p.ProductId).ToList()
                 }
             ).ToList();

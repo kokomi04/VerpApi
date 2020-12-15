@@ -13,8 +13,11 @@ namespace VErp.Services.Stock.Model.Stock
 
         public string UnitName { get; set; }
 
-       
-               
+        public decimal SumPrimaryQuantityBefore { get; set; }
+        public decimal SumPrimaryQuantityInput { get; set; }
+        public decimal SumPrimaryQuantityOutput { get; set; }
+        public decimal SumPrimaryQuantityAfter { get; set; }
+
         public long PakageIdNotExport { set; get; }
         public string PakageCodeNotExport { set; get; }
 
