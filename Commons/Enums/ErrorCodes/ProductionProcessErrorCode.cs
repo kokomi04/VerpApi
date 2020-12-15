@@ -21,5 +21,6 @@ namespace VErp.Commons.Enums.ErrorCodes
         [Description("Các công đoạn không nằm trong cùng 1 quy trình sản xuất")]
         ListProductionStepNotInContainerId = 7,
         ValidateProductionStep = 8,
+        ValidateOutsourcePartRequest = 9,
     }
 }
