@@ -331,6 +331,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
 
             }
+            if (productionSteps.Count == 0) return true;
+
             var totalQuantityOrigin = dicProductionStep.Values.SelectMany(x => x).Sum(x => x.Quantity);
             var oldPercent = (oldQuantity / totalQuantityOrigin) / dicProductionStep.Values.SelectMany(x => x).Count();
             var newPercent = (newQuantity / totalQuantityOrigin) / dicProductionStep.Values.SelectMany(x => x).Count();
