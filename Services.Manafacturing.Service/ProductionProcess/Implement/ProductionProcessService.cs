@@ -18,6 +18,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
@@ -171,7 +172,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         Quantity = dataLinks[r.ProductionStepLinkDataId].Quantity,
                         OutsourceQuantity = dataLinks[r.ProductionStepLinkDataId].OutsourceQuantity,
                         SortOrder = dataLinks[r.ProductionStepLinkDataId].SortOrder,
-                        ProductId = dataLinks[r.ProductionStepLinkDataId].ProductId,
                         ProductionStepId = r.ProductionStepId,
                         ProductionStepLinkDataRoleTypeId = r.ProductionStepLinkDataRoleTypeId
                     }).ToList();
@@ -886,8 +886,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
-            ValidProductionStepLinkData(req);
-            ValidProductionStep(req);
+            await ValidProductionStepLinkData(req);
+            await ValidProductionStep(req);
+            await ValidOutsourcePartRequestInProductionProcess(req);
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -982,23 +983,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 }
 
-                //Truy vết cac linkData có đi gia công 
-                if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
-                {
-                    // Gia công chi tiết
-                    var productionStepLinkDataOutsources = await FoundProductionStepLinkDataOutsourcePart(containerId);
-                    foreach (var productionStepLinkData in newStepLinkData)
-                    {
-                        productionStepLinkData.OutsourceQuantity = 0;
-                        var s = productionStepLinkDataOutsources.FirstOrDefault(x => x.ProductionStepLinkDataId == productionStepLinkData.ProductionStepLinkDataId);
-                        if (s != null)
-                            productionStepLinkData.OutsourceQuantity = s.OutsourceQuantity;
-                    }
-                    //Gia công công đoạn
-                    await FoundProductionStepLinkDataOutsourceStep(containerId, newStepLinkData);
-                }
-
-
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
@@ -1015,8 +999,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
         #endregion
+        private async Task ValidOutsourcePartRequestInProductionProcess(ProductionProcessModel req)
+        {
+            if (req.ContainerTypeId == EnumContainerType.ProductionOrder)
+            {
+                var outsourceLinkData = req.ProductionStepLinkDatas.Where(x => x.OutsourcePartRequestDetailId.HasValue).ToList();
+                var sumQuantityUsage = outsourceLinkData.GroupBy(x => x.OutsourcePartRequestDetailId)
+                                        .Select(x => new
+                                        {
+                                            OutsourcePartRequestDetailId = x.Key,
+                                            QuantityUsage = x.Sum(x => x.Quantity)
+                                        });
+                var outsourcePartRequestDetails = (await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
+                                .Include(x => x.ProductionOrderDetail)
+                                .Where(x => x.ProductionOrderDetail.ProductionOrderId == req.ContainerId)
+                                .ProjectTo<OutsourcePartRequestOutput>(_mapper.ConfigurationProvider)
+                                .ToListAsync()).SelectMany(x => x.OutsourcePartRequestDetail);
+                foreach(var rqDetail in outsourcePartRequestDetails)
+                {
+                    var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == rqDetail.OutsourcePartRequestDetailId);
+                    if (usage == null || usage.QuantityUsage != rqDetail.Quantity)
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateOutsourcePartRequest, "Không đồng bộ về mặt dữ liệu giữa YCGC chi tiết và QTSX");
+                }
 
-        private void ValidProductionStepLinkData(ProductionProcessModel req)
+            }
+        }
+
+        private async Task ValidProductionStepLinkData(ProductionProcessModel req)
         {
             var lsInputStep = req.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
             var lsOutputStep = req.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
@@ -1061,7 +1070,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         continue;
                     lsProductionStepIdInGroup.Add(linkData.ProductionStepCode);
                     var temp = groupbyLinkDataRole.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepCode == linkData.ProductionStepCode).Count() > 0).ToList();
-                    TraceProductionStepRelationShip(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRole, lsProductionStepIdInGroup);
+                    TraceProductionStepRelationship(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRole, lsProductionStepIdInGroup);
                 }
 
                 var productionStepLinkData = from l in req.ProductionStepLinkDatas
@@ -1082,13 +1091,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                        .Where(x => x.ProductionStepLinkDataCode == linkData.ProductionStepLinkDataCode
                                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                                        .ToList();
-                        NewMethod(req, currentRole, linkData);
+                        SeekingLinkDataInRelationship(req, currentRole, linkData);
                     }
                 }
             }
         }
 
-        private static void NewMethod(ProductionProcessModel req, IList<ProductionStepLinkDataRoleInput> currentRole, ProductionStepLinkDataInput linkData)
+        private void SeekingLinkDataInRelationship(ProductionProcessModel req, IList<ProductionStepLinkDataRoleInput> currentRole, ProductionStepLinkDataInput linkData)
         {
             foreach (var c in currentRole)
             {
@@ -1107,12 +1116,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                        .Where(x => x.ProductionStepLinkDataCode == output.ProductionStepLinkDataCode
                                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                                        .ToList();
-                    NewMethod(req, nextRole, linkData);
+                    SeekingLinkDataInRelationship(req, nextRole, linkData);
                 }
             }
         }
 
-        private static void TraceProductionStepRelationShip(List<IGrouping<string, ProductionStepLinkDataRoleInput>> groupbyLinkDataRole
+        private void TraceProductionStepRelationship(List<IGrouping<string, ProductionStepLinkDataRoleInput>> groupbyLinkDataRole
             , List<IGrouping<string, ProductionStepLinkDataRoleInput>> groupbyLinkDataRoleScanned
             , List<IGrouping<string, ProductionStepLinkDataRoleInput>> groupbyLinkDataRoleOrigin
             , List<string> lsProductionStepIdInGroup)
@@ -1129,13 +1138,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     lsProductionStepIdInGroup.Add(linkData.ProductionStepCode);
 
                     var temp = groupbyLinkDataRoleOrigin.Where(x => x.Where(y => y.ProductionStepId == linkData.ProductionStepId).Count() > 0).ToList();
-                    TraceProductionStepRelationShip(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRoleOrigin, lsProductionStepIdInGroup);
+                    TraceProductionStepRelationship(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRoleOrigin, lsProductionStepIdInGroup);
                 }
                 groupbyLinkDataRoleOrigin.Remove(role);
             }
         }
 
-        private void ValidProductionStep(ProductionProcessModel req)
+        private async Task ValidProductionStep(ProductionProcessModel req)
         {
             var groupRole = req.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
 

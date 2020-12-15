@@ -257,6 +257,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionConsumMaterialDetail>(entity =>
             {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
                 entity.HasOne(d => d.ProductionConsumMaterial)
                     .WithMany(p => p.ProductionConsumMaterialDetail)
                     .HasForeignKey(d => d.ProductionConsumMaterialId)

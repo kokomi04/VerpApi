@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public decimal Quantity { get; set; }
         public decimal OutsourceQuantity { get; set; }
         public int SortOrder { get; set; }
-        public int ProductId { get; set; }
+        public long? OutsourcePartRequestDetailId { get; set; }
     }
 
     public class ProductionStepLinkDataInput : ProductionStepLinkDataModel
