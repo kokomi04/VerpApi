@@ -137,8 +137,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             sql.Append("WHERE ");
             sql.Append(whereCondition);
 
-            orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "ProductionOrderDetailId" : orderByFieldName;
-            sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}");
+            orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "StartDate" : orderByFieldName;
+            sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}, ScheduleTurnId");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
 
