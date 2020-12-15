@@ -10,7 +10,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {
-    public class RequestOutsourcePartModel: IMapFrom<OutsourcePartRequest>
+    public class OutsourcePartRequestModel : IMapFrom<OutsourcePartRequest>
     {
         public long OutsourcePartRequestId { get; set; }
         public string OutsourcePartRequestCode { get; set; }
@@ -21,7 +21,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OutsourcePartRequest, RequestOutsourcePartModel>()
+            profile.CreateMap<OutsourcePartRequest, OutsourcePartRequestModel >()
                 .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.GetUnix()))
                 .ReverseMap()
@@ -30,7 +30,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         }
     }
 
-    public class RequestOutsourcePartInfo: RequestOutsourcePartModel, IMapFrom<RequestOutsourcePartDetailInfo>
+    public class OutsourcePartRequestInfo: OutsourcePartRequestModel , IMapFrom<OutsourcePartRequestDetailInfo>
     {
         public string ProductionOrderCode { get; set; }
         public string ProductCode { get; set; }
@@ -41,10 +41,10 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string OrderCode { get; set; }
         public string OutsourcePartRequestStatus { get; set; }
 
-        public IList<RequestOutsourcePartDetailInfo> OutsourcePartRequestDetail { get; set; }
+        public IList<OutsourcePartRequestDetailInfo> OutsourcePartRequestDetail { get; set; }
 
         public new void Mapping(Profile profile) {
-            profile.CreateMap<RequestOutsourcePartDetailInfo, RequestOutsourcePartInfo>()
+            profile.CreateMap<OutsourcePartRequestDetailInfo, OutsourcePartRequestInfo>()
                 .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.OutsourcePartRequestDate))
                 .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate))
                 .ForMember(m => m.OutsourcePartRequestId, v => v.MapFrom(m => m.OutsourcePartRequestId))

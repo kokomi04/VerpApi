@@ -32,7 +32,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         }
     }
 
-    public class RequestOutsourcePartDetailInfo: RequestOutsourcePartDetailModel
+    public class OutsourcePartRequestDetailInfo: RequestOutsourcePartDetailModel
     {
         public string OutsourcePartRequestCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
