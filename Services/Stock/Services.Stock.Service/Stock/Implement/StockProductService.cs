@@ -1072,8 +1072,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 else
                 {
-                    totalByTimes[item.ProductUnitConversionId] -= item.ProductUnitConversionQuantity;
-                    totalPrimary -= item.PrimaryQuantity;
+                    totalByTimes[item.ProductUnitConversionId] = totalByTimes[item.ProductUnitConversionId].SubDecimal(item.ProductUnitConversionQuantity);
+                    totalPrimary = totalPrimary.SubDecimal(item.PrimaryQuantity);
                 }
 
                 resultData.Details.Add(new StockProductDetailsModel

@@ -20,6 +20,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     {
         public async Task<IList<CensoredInventoryInputProducts>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req)
         {
+            await ValidateInventoryCode(inventoryId, req.InventoryCode);
+
             var data = await CensoredInventoryInputUpdateGetAffected(inventoryId, fromDate, toDate, req);
             return data.Products.ToList();
 
@@ -30,6 +32,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.Inventory.StockId)))
             {
+                await ValidateInventoryCode(inventoryId, req.Inventory.InventoryCode);
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try

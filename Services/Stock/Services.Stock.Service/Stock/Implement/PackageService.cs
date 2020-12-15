@@ -158,8 +158,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageTypeId = (int)EnumPackageType.Custom
                 });
 
-                packageInfo.PrimaryQuantityRemaining -= qualtityInPrimaryUnit;
-                packageInfo.ProductUnitConversionRemaining -= package.ProductUnitConversionQuantity;
+                packageInfo.PrimaryQuantityRemaining = packageInfo.PrimaryQuantityRemaining.SubDecimal(qualtityInPrimaryUnit);
+                packageInfo.ProductUnitConversionRemaining = packageInfo.ProductUnitConversionRemaining.SubDecimal(package.ProductUnitConversionQuantity);
 
             }
 
