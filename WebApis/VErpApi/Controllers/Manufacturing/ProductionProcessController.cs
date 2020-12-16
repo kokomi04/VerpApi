@@ -166,5 +166,16 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionProcessService.GroupProductionStepRelationShip(productionOrderId);
         }
+        /// <summary>
+        /// Sét khối lượng công việc cho công đoạn
+        /// </summary>
+        /// <param name="productionStepWorkload"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productionStep/workload")]
+        public async Task<bool> SetProductionStepWorkload([FromBody] IList<ProductionStepWorkload> productionStepWorkload)
+        {
+            return await _productionProcessService.SetProductionStepWorkload(productionStepWorkload);
+        }
     }
 }

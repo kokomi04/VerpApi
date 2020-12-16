@@ -258,21 +258,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }).ToList(), total);
         }
 
-        public async Task<bool> SetProductionStepWorldload(IList<ProductionStepWorkload> productionStepWorldload)
-        {
-            var productionSteps = await _manufacturingDBContext.ProductionStep
-                .Where(y => productionStepWorldload.Select(x => x.ProductionStepId).Contains(y.ProductionStepId))
-                .ToListAsync();
-
-            foreach(var productionStep in productionSteps)
-            {
-                var w = productionStepWorldload.FirstOrDefault(x => x.ProductionStepId == productionStep.ProductionStepId);
-                if (w != null)
-                    _mapper.Map(w, productionStep);
-            }
-
-            await _manufacturingDBContext.SaveChangesAsync();
-            return true;
-        }
+       
     }
 }
