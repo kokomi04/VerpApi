@@ -469,7 +469,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             IsGroup = steps.Any(s => s.ParentId == step.ProductionStepId),
                             CoordinateX = step.CoordinateX,
                             CoordinateY = step.CoordinateY,
-                            SortOrder = step.SortOrder
+                            SortOrder = step.SortOrder,
+                            Workload = step.Workload * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault()
                         };
                         if (step.ParentId.HasValue)
                         {
@@ -1562,6 +1563,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 result.Add(roleOutput.ProductionStepId);
                 FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
             }
+        }
+
+        public async Task<bool> SetProductionStepWorkload(IList<ProductionStepWorkload> productionStepWorkload)
+        {
+            var productionSteps = await _manufacturingDBContext.ProductionStep
+                .Where(y => productionStepWorkload.Select(x => x.ProductionStepId).Contains(y.ProductionStepId))
+                .ToListAsync();
+
+            foreach (var productionStep in productionSteps)
+            {
+                var w = productionStepWorkload.FirstOrDefault(x => x.ProductionStepId == productionStep.ProductionStepId);
+                if (w != null)
+                    _mapper.Map(w, productionStep);
+            }
+
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
         }
     }
 }

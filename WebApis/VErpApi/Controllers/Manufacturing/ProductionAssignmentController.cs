@@ -50,12 +50,7 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, scheduleTurnId, page, size, orderByFieldName, asc);
         }
 
-        [HttpPost]
-        [Route("workload")]
-        public async Task<bool> SetProductionStepWorldload([FromBody] IList<ProductionStepWorkload> productionStepWorldload)
-        {
-            return await _productionAssignmentService.SetProductionStepWorldload(productionStepWorldload);
-        }
+        
 
     }
 }

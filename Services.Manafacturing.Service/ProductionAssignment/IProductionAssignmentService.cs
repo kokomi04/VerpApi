@@ -16,6 +16,5 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? scheduleTurnId, int page, int size, string orderByFieldName, bool asc);
 
-        Task<bool> SetProductionStepWorldload(IList<ProductionStepWorkload> productionStepWorldload);
     }
 }
