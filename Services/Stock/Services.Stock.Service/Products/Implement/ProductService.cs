@@ -623,10 +623,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null)
         {
+            var productInternalName = productName.NormalizeAsInternalName();
+
             var products = _stockContext.Product.AsQueryable();
             products = products.InternalFilter(filters);
+            if (!string.IsNullOrWhiteSpace(productName))
+            {
+                products = products.Where(p => p.ProductInternalName == productInternalName);
+            }
+
             var query = (
               from p in products
               join pe in _stockContext.ProductExtraInfo on p.ProductId equals pe.ProductId

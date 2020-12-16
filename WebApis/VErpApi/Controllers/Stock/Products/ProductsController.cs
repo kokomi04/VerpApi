@@ -62,10 +62,11 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
-            return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
+            return await _productService.GetList(keyword, productName, productTypeIds, productCateIds, page, size);
         }
+
 
         [HttpGet]
         [Route("fields")]
