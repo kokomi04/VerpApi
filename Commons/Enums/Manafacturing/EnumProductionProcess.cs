@@ -20,18 +20,29 @@ namespace VErp.Commons.Enums.Manafacturing
             Output = 2,
         }
 
-        public enum ProductionStepLinkDataObjectType
+        public enum EnumProductionStepLinkDataObjectType
         {
+            [Description("Sản phẩm")]
             Product = 1,
+            [Description("Bán thành phẩm")]
             ProductSemi = 2
         }
 
-        public enum EnumOutsourceOrderType
+        public enum EnumOutsourceType
         {
             [Description("Gia công chi tiết")]
             OutsourcePart = 1,
             [Description("Gia công công đoạn")]
             OutsourceStep = 2
+        }
+
+        public enum EnumProductionStepLinkDataType
+        {
+            None = 0,
+            [Description("LinkData gia công chi tiết")]
+            StepLinkDataOutsourcePart = 1,
+            [Description("LinkData gia công công đoạn")]
+            StepLinkDataOutsourceStep = 2,
         }
 
         public enum EnumOutsourceRequestStatusType

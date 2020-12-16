@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public long ProductionStepLinkDataId { get; set; }
         public string ProductionStepLinkDataCode { get; set; }
+        public int ProductionStepLinkDataTypeId { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
@@ -25,7 +26,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
-        public long? OutsourcePartRequestDetailId { get; set; }
+        public long? OutsourceRequestDetailId { get; set; }
 
         public virtual ICollection<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }

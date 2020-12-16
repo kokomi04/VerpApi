@@ -89,7 +89,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     }
 
                     var order = _mapper.Map<OutsourceOrder>(req as OutsourceOrderModel);
-                    order.OutsourceTypeId = (int)EnumOutsourceOrderType.OutsourcePart;
+                    order.OutsourceTypeId = (int)EnumOutsourceType.OutsourcePart;
                     order.OutsourceOrderCode = string.IsNullOrWhiteSpace(order.OutsourceOrderCode) ? outsoureOrderCode : order.OutsourceOrderCode;
 
                     _manufacturingDBContext.OutsourceOrder.Add(order);

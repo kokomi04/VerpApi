@@ -414,6 +414,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ProductionStepLinkDataCode).HasMaxLength(50);
 
+                entity.Property(e => e.ProductionStepLinkDataTypeId).HasComment("1-GC chi tiet, 2-GC cong doan, 0-default");
+
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");

@@ -256,7 +256,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var lst = (from o in _manufacturingDBContext.OutsourceOrder
                            join d in _manufacturingDBContext.OutsourceOrderDetail
                              on o.OutsourceOrderId equals d.OutsourceOrderId
-                           where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourcePart
+                           where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourcePart
                            select d).GroupBy(x => x.ObjectId).Select(x => new
                            {
                                ObjectId = x.Key,
@@ -307,7 +307,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var pathProductId = Array.ConvertAll(pathProductiIdBom.Split(','), s => long.Parse(s));
             var productionSteps = listProductionStep
                                     .Where(x => x.ProductionStepLinkDatas.Any(x => x.ObjectId == productId
-                                                && x.ObjectTypeId == ProductionStepLinkDataObjectType.Product
+                                                && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product
                                                 && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
                                     )
                                     .ToList();
@@ -318,7 +318,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var index = 0;
                 var linkDataOutputs = productionStep.ProductionStepLinkDatas
                                                     .Where(x => x.ObjectId == productId
-                                                            && x.ObjectTypeId == ProductionStepLinkDataObjectType.Product
+                                                            && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product
                                                             && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
                                                     .ToList();
                 foreach (var linkDataOutput in linkDataOutputs)

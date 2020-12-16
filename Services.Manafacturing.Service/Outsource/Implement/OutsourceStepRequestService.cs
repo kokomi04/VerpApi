@@ -168,7 +168,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var distinctKeys = (from rd in _manufacturingDBContext.OutsourceStepRequestData
                                 join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
                                 join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
-                                where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                                where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
                                 select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
 
             var outsourceTracks = await (from d in distinctKeys
@@ -264,7 +264,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var distinctKeys = (from rd in _manufacturingDBContext.OutsourceStepRequestData
                                 join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
                                 join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
-                                where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                                where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
                                 select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
 
             var outsourceTracks = await (from d in distinctKeys
@@ -500,7 +500,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var lst = (from o in _manufacturingDBContext.OutsourceOrder
                            join d in _manufacturingDBContext.OutsourceOrderDetail
                              on o.OutsourceOrderId equals d.OutsourceOrderId
-                           where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                           where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
                            select d).GroupBy(x => x.ObjectId).Select(x => new
                            {
                                ObjectId = x.Key,
