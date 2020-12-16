@@ -1003,8 +1003,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             if (req.ContainerTypeId == EnumContainerType.ProductionOrder)
             {
-                var outsourceLinkData = req.ProductionStepLinkDatas.Where(x => x.OutsourcePartRequestDetailId.HasValue).ToList();
-                var sumQuantityUsage = outsourceLinkData.GroupBy(x => x.OutsourcePartRequestDetailId)
+                var outsourceLinkData = req.ProductionStepLinkDatas.Where(x => x.OutsourceRequestDetailId.HasValue).ToList();
+                var sumQuantityUsage = outsourceLinkData.GroupBy(x => x.OutsourceRequestDetailId)
                                         .Select(x => new
                                         {
                                             OutsourcePartRequestDetailId = x.Key,
@@ -1076,7 +1076,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var productionStepLinkData = from l in req.ProductionStepLinkDatas
                                              join r in req.ProductionStepLinkDataRoles
                                                 on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
-                                             where lsProductionStepIdInGroup.Contains(r.ProductionStepCode) && l.ObjectTypeId == ProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                                             where lsProductionStepIdInGroup.Contains(r.ProductionStepCode) && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
                                              select l;
                 var productionLinkDataDuplicate = productionStepLinkData
                                                 .GroupBy(x => x.ObjectId)
@@ -1105,7 +1105,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var OutputInStep = from l in req.ProductionStepLinkDatas
                                    join r in req.ProductionStepLinkDataRoles
                                       on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
-                                   where r.ProductionStepCode == productionStepCode && l.ObjectTypeId == ProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                                   where r.ProductionStepCode == productionStepCode && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
                                    select l;
                 if (OutputInStep.Select(x => x.ObjectId).Contains(linkData.ObjectId))
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Xuất hiện nhiều chi tiết `{linkData.ObjectTitle}` là Output của các công đoạn có quan hệ với nhau");
@@ -1361,7 +1361,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var pathProductId = Array.ConvertAll(detailRequest.PathProductIdInBom.Split(','), s => long.Parse(s));
                     var productionSteps = listProductionStep
                                             .Where(x => x.ProductionStepLinkDatas.Any(x => x.ObjectId == detailRequest.ProductId
-                                                        && x.ObjectTypeId == ProductionStepLinkDataObjectType.Product
+                                                        && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product
                                                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
                                             )
                                             .ToList();
@@ -1371,7 +1371,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         var index = 0;
                         var linkDataOutputs = productionStep.ProductionStepLinkDatas
                                                             .Where(x => x.ObjectId == detailRequest.ProductId
-                                                                    && x.ObjectTypeId == ProductionStepLinkDataObjectType.Product
+                                                                    && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product
                                                                     && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
                                                             .ToList();
                         foreach (var linkDataOutput in linkDataOutputs)
