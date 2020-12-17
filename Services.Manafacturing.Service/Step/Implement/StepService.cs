@@ -47,8 +47,9 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 await _manufacturingDBContext.Step.AddAsync(entity);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                req.StepDetail.ForEach(x => { x.StepId = entity.StepId; });
-                var detail = _mapper.Map<IList<StepDetail>>(req.StepDetail);
+                var detail = _mapper.Map<List<StepDetail>>(req.StepDetail);
+                detail.ForEach(x => { x.StepId = entity.StepId; });
+
                 await _manufacturingDBContext.StepDetail.AddRangeAsync(detail);
 
                 await _manufacturingDBContext.SaveChangesAsync();
@@ -129,7 +130,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                     else detail.IsDeleted = true;
                 }
 
-                var newStepDetail = _mapper.Map<List<StepDetail>>(req.StepDetail.Where(n => !stepDetail.Select(x => x.StepDetailId).Contains(n.StepId)).ToList());
+                var newStepDetail = _mapper.Map<List<StepDetail>>(req.StepDetail.Where(n => !stepDetail.Select(x => x.StepDetailId).Contains(n.StepDetailId)).ToList());
                 newStepDetail.ForEach(x => { x.StepId = step.StepId; });
                 await _manufacturingDBContext.StepDetail.AddRangeAsync(newStepDetail);
 
