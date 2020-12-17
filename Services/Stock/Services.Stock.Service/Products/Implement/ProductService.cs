@@ -71,7 +71,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<int> AddProduct(ProductModel req)
         {
-            var customGenCodeId = await GenerateProductCode(null, req);
+            var customGenCode = await GenerateProductCode(null, req);
 
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
 
-                await ConfirmProductCode(customGenCodeId);
+                await ConfirmProductCode(customGenCode);
 
                 return productId;
             }
@@ -92,12 +92,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 req.ProductCode = (req.ProductCode ?? "").Trim();
-                var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
+                var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode);//|| p.ProductName == req.ProductName
                 if (productExisted != null)
                 {
-                    if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
-                        throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
-                    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
+                    //if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
+                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
+                    //throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
                 }
                 var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
@@ -165,12 +165,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(validate, req.ProductCode + " " + req.ProductName + " " + validate.GetEnumDescription());
             }
 
-            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode);//|| p.ProductName == req.ProductName
             if (productExisted != null)
             {
-                if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
+                //if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
                     throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
+                //throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
             }
 
             if (!await _stockContext.ProductCate.AnyAsync(c => c.ProductCateId == req.ProductCateId))
@@ -332,13 +332,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && p.ProductName == req.ProductName);
-            if (productExisted != null)
-            {
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
-            }
-
-            var customGenCodeId = await GenerateProductCode(productId, req);
+            //var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && p.ProductName == req.ProductName);
+            //if (productExisted != null)
+            //{
+            //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
+            //}
 
             long? oldMainImageFileId = 0L;
 
@@ -346,6 +344,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 try
                 {
+                    var customGenCode = await GenerateProductCode(productId, req);
+
                     //Getdata
                     var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
                     if (productInfo == null)
@@ -495,7 +495,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
 
-                    await ConfirmProductCode(customGenCodeId);
+                    await ConfirmProductCode(customGenCode);
                 }
                 catch (Exception)
                 {
@@ -1064,23 +1064,23 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập tên sản phẩm có mã: {string.Join(",", emptyNameProducts)}");
             }
 
-            var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
+            //var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
             // Validate unique product name
-            var dupNames = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            var dupNameCodes = data.Where(r => dupCodes.Contains(r.ProductName.NormalizeAsInternalName())).Select(r => r.ProductCode).ToList();
-            var dupNameProducts = _stockContext.Product
-                .Where(p => productNames.Contains(p.ProductInternalName)).ToList();
+            //var dupNames = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+            //var dupNameCodes = data.Where(r => dupCodes.Contains(r.ProductName.NormalizeAsInternalName())).Select(r => r.ProductCode).ToList();
+            //var dupNameProducts = _stockContext.Product
+             //   .Where(p => productNames.Contains(p.ProductInternalName)).ToList();
 
-            dupNames.AddRange(dupNameProducts.Select(p => p.ProductInternalName).ToList());
-            dupNameCodes.AddRange(dupNameProducts.Select(p => p.ProductCode).ToList());
+            //dupNames.AddRange(dupNameProducts.Select(p => p.ProductInternalName).ToList());
+            //dupNameCodes.AddRange(dupNameProducts.Select(p => p.ProductCode).ToList());
 
-            dupNames = dupNames.Distinct().ToList();
-            dupNameCodes = dupNameCodes.Distinct().ToList();
+            //dupNames = dupNames.Distinct().ToList();
+            //dupNameCodes = dupNameCodes.Distinct().ToList();
 
-            if (dupNameProducts.Count > 0)
-            {
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNames)} của các mã {string.Join(",", dupNameCodes)} đã tồn tại");
-            }
+            //if (dupNameProducts.Count > 0)
+            //{
+            //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNames)} của các mã {string.Join(",", dupNameCodes)} đã tồn tại");
+            //}
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
