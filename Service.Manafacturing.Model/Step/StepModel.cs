@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
@@ -17,5 +18,13 @@ namespace VErp.Services.Manafacturing.Model.Step
         public int UnitId { get; set; }
 
         public List<StepDetailModel> StepDetail { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<StepEnity, StepModel>()
+                .ForMember(m => m.StepDetail, v => v.MapFrom(m => m.StepDetail))
+                .ReverseMap()
+                .ForMember(m => m.StepDetail, v => v.Ignore());
+        }
     }
 }
