@@ -82,7 +82,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     data.OutsourcePartRequestId = order.OutsourcePartRequestId;
                     var entity = _mapper.Map<OutsourcePartRequestDetail>(data as RequestOutsourcePartDetailModel);
                     orderDetails.Add(entity);
-                    await UpdateProductionStepLinkDataRelative(order.ProductionOrderDetailId, entity.PathProductIdInBom, entity.ProductId, entity.Quantity);
                 }
 
                 await _manufacturingDBContext.OutsourcePartRequestDetail.AddRangeAsync(orderDetails);
@@ -153,11 +152,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     var s = req.OutsourcePartRequestDetail.FirstOrDefault(x => x.OutsourcePartRequestDetailId == u.OutsourcePartRequestDetailId);
                     if (s != null)
-                    {
-                        await UpdateProductionStepLinkDataRelative(order.ProductionOrderDetailId, u.PathProductIdInBom, u.ProductId, s.Quantity, u.Quantity);
                         _mapper.Map(s, u);
-
-                    }
                     else
                         u.IsDeleted = true;
                 }
@@ -266,7 +261,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     if (lst.Where(y => y.ObjectId == detail.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
                         throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
-                    await UpdateProductionStepLinkDataRelative(order.ProductionOrderDetailId, detail.PathProductIdInBom, detail.ProductId, 0, detail.Quantity);
                     detail.IsDeleted = true;
                 };
                 order.IsDeleted = true;
@@ -296,145 +290,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                 .ToListAsync();
             return data;
         }
-
-        private async Task<bool> UpdateProductionStepLinkDataRelative(long productionOrderDetailId, string pathProductiIdBom, long productId, decimal newQuantity, decimal oldQuantity = 0)
-        {
-            var listProductionStep = await _manufacturingDBContext.ProductionStepOrder.AsNoTracking()
-                                            .Where(x => x.ProductionOrderDetailId == productionOrderDetailId)
-                                            .Select(x => x.ProductionStep)
-                                            .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
-                                            .ToListAsync();
-            var pathProductId = Array.ConvertAll(pathProductiIdBom.Split(','), s => long.Parse(s));
-            var productionSteps = listProductionStep
-                                    .Where(x => x.ProductionStepLinkDatas.Any(x => x.ObjectId == productId
-                                                && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product
-                                                && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                                    )
-                                    .ToList();
-            var dicProductionStep = new Dictionary<long, List<ProductionStepLinkDataInfo>>();
-            var productionStepLinkDatas = new List<ProductionStepLinkDataInfo>();
-            foreach (var productionStep in productionSteps)
-            {
-                var index = 0;
-                var linkDataOutputs = productionStep.ProductionStepLinkDatas
-                                                    .Where(x => x.ObjectId == productId
-                                                            && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product
-                                                            && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                                                    .ToList();
-                foreach (var linkDataOutput in linkDataOutputs)
-                {
-                    if (CheckLinkDataPosterior(listProductionStep, linkDataOutput, pathProductId, ref index))
-                    {
-
-                        if (!dicProductionStep.ContainsKey(productionStep.ProductionStepId))
-                        {
-                            var temp = new List<ProductionStepLinkDataInfo>();
-                            temp.Add(linkDataOutput);
-                            dicProductionStep.Add(productionStep.ProductionStepId, temp);
-                        }
-                        else
-                        {
-                            dicProductionStep[productionStep.ProductionStepId].Add(linkDataOutput);
-                        }
-
-                    }
-                }
-
-            }
-            if (productionSteps.Count == 0) return true;
-
-            var totalQuantityOrigin = dicProductionStep.Values.SelectMany(x => x).Sum(x => x.Quantity);
-            var oldPercent = (oldQuantity / totalQuantityOrigin) / dicProductionStep.Values.SelectMany(x => x).Count();
-            var newPercent = (newQuantity / totalQuantityOrigin) / dicProductionStep.Values.SelectMany(x => x).Count();
-            foreach (var dic in dicProductionStep)
-            {
-                dic.Value.ForEach(x =>
-                {
-                    var oldValue = x.Quantity * oldPercent;
-                    var newValue = x.Quantity * newPercent;
-                    x.OutsourceQuantity += (newValue - oldValue);
-                });
-                productionStepLinkDatas.AddRange(dic.Value);
-
-                var productionStep = productionSteps.FirstOrDefault(x => x.ProductionStepId == dic.Key);
-                var linkDataInputs = productionStep.ProductionStepLinkDatas
-                                                .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                                                .ToList();
-                var localOldPercent = oldPercent * dic.Value.Count;
-                var localNewPercent = newPercent * dic.Value.Count;
-                FoundLinkDataOutPutPrevious(listProductionStep, linkDataInputs, productionStepLinkDatas, localNewPercent, localOldPercent);
-            }
-
-            var productionLinkDataModel = await _manufacturingDBContext.ProductionStepLinkData
-                .Where(x => productionStepLinkDatas.Select(x => x.ProductionStepLinkDataId).Contains(x.ProductionStepLinkDataId))
-                .ToListAsync();
-            foreach (var model in productionLinkDataModel)
-            {
-                var dto = productionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == model.ProductionStepLinkDataId);
-                if (dto != null)
-                    _mapper.Map(dto, model);
-            }
-
-            await _manufacturingDBContext.SaveChangesAsync();
-            return true;
-        }
-
-        private void FoundLinkDataOutPutPrevious(IList<ProductionStepInfo> listProductionStep, IList<ProductionStepLinkDataInfo> linkDataInputs, List<ProductionStepLinkDataInfo> productionStepLinkDatas, decimal newPercent, decimal oldPercent = 0)
-        {
-            foreach (var linkDataInput in linkDataInputs)
-            {
-                if (productionStepLinkDatas.Any(x => x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId))
-                {
-                    productionStepLinkDatas.ForEach(x =>
-                    {
-                        if (x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId)
-                        {
-                            var oldValue = linkDataInput.Quantity * oldPercent;
-                            var newValue = linkDataInput.Quantity * newPercent;
-                            x.OutsourceQuantity += (newValue - oldValue);
-                        }
-                    });
-                }
-                else
-                {
-                    var oldValue = linkDataInput.Quantity * oldPercent;
-                    var newValue = linkDataInput.Quantity * newPercent;
-                    linkDataInput.OutsourceQuantity += (newValue - oldValue);
-                    productionStepLinkDatas.Add(linkDataInput);
-                }
-
-                var productionStep = listProductionStep
-                                             .Where(x => x.ProductionStepLinkDatas.Any(x => x.ProductionStepLinkDataId == linkDataInput.ProductionStepLinkDataId
-                                                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                                             )
-                                             .FirstOrDefault();
-                if (productionStep == null) return;
-
-                var linkDataInputNexts = productionStep.ProductionStepLinkDatas
-                                                            .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                                                            .ToList();
-                FoundLinkDataOutPutPrevious(listProductionStep, linkDataInputNexts, productionStepLinkDatas, newPercent, oldPercent);
-            }
-        }
-
-        private bool CheckLinkDataPosterior(IList<ProductionStepInfo> listProductionStep, ProductionStepLinkDataInfo linkDataOutput, long[] pathProductId, ref int index)
-        {
-            if (pathProductId.Contains(linkDataOutput.ObjectId))
-                index++;
-            if (index == pathProductId.Length)
-                return true;
-            var productionStep = listProductionStep
-                                    .Where(x => x.ProductionStepLinkDatas.Any(x => x.ProductionStepLinkDataId == linkDataOutput.ProductionStepLinkDataId
-                                                && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                                    )
-                                    .FirstOrDefault();
-            var linkDataOutputAfter = productionStep.ProductionStepLinkDatas
-                                                        .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                                                        .FirstOrDefault(); ;
-            if (linkDataOutputAfter == null)
-                return false;
-
-            return CheckLinkDataPosterior(listProductionStep, linkDataOutputAfter, pathProductId, ref index);
-        }
+       
     }
 }
