@@ -42,7 +42,6 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data);
         }
 
-
         [HttpGet]
         [Route("Departments/{departmentId}")]
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] long? scheduleTurnId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
@@ -50,7 +49,25 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, scheduleTurnId, page, size, orderByFieldName, asc);
         }
 
-        
+        [HttpGet]
+        [Route("productivity/{productionStepId}")]
+        public async Task<IDictionary<int, decimal>> GetProductivityDepartments([FromRoute] long productionStepId)
+        {
+            return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
+        }
 
+        [HttpGet]
+        [Route("{scheduleTurnId}/capacity/{productionStepId}")]
+        public async Task<IDictionary<int, ProductionCapacityModel>> GetCapacityDepartments([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId)
+        {
+            return await _productionAssignmentService.GetCapacityDepartments(scheduleTurnId, productionStepId);
+        }
+
+        [HttpGet]
+        [Route("capacity")]
+        public async Task<IDictionary<int, Dictionary<long, decimal>>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionAssignmentService.GetCapacity(startDate, endDate);
+        }
     }
 }
