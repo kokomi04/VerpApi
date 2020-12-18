@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {
     public class ProductionCapacityModel
     {
-        public decimal OtherWorkload { get; set; }
+        public decimal OtherCapacity { get; set; }
         public decimal ScheduleStepWorkload { get; set; }
     }
 

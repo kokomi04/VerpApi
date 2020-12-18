@@ -118,7 +118,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("default")]
-        public async Task<int> AddProductDefault([FromBody] ProductDefaultModel product)
+        public async Task<ProductDefaultModel> AddProductDefault([FromBody] ProductDefaultModel product)
         {
             return await _productService.AddProductDefault(product);
         }
