@@ -85,7 +85,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<int> AddProductDefault(ProductDefaultModel req)
+        public async Task<ProductDefaultModel> AddProductDefault(ProductDefaultModel req)
         {
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -154,7 +154,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
                 await ConfirmProductCode(customGenCode);
-                return productInfo.ProductId;
+                req.ProductCode = productInfo.ProductCode;
+                req.ProductId = productInfo.ProductId;
+                return req;
             }
         }
 

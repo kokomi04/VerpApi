@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int DepartmentId { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public long ProductionStepLinkDataId { get; set; }
+        public decimal Productivity { get; set; }
 
         public virtual ProductionStep ProductionStep { get; set; }
         public virtual ICollection<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
