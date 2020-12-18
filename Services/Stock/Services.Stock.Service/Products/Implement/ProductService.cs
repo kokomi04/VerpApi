@@ -83,22 +83,22 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 return productId;
             }
-
-
         }
 
         public async Task<int> AddProductDefault(ProductDefaultModel req)
         {
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
-                req.ProductCode = (req.ProductCode ?? "").Trim();
-                var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode);//|| p.ProductName == req.ProductName
-                if (productExisted != null)
+                if(!req.ProductTypeId.HasValue)
                 {
-                    //if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
-                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
-                    //throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
+                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không được phép để trống");
                 }
+                if(!_stockContext.ProductType.Any(p => p.ProductTypeId == req.ProductTypeId))
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không tồn tại");
+                }
+                var customGenCode = await GenerateProductCode(null, req);
+
                 var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Danh mục mặt hàng mặc định không tồn tại");
@@ -111,6 +111,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     ProductCode = req.ProductCode,
                     ProductName = req.ProductName ?? req.ProductCode,
+                    ProductTypeId = req.ProductTypeId,
                     ProductInternalName = req.ProductName.NormalizeAsInternalName(),
                     IsCanBuy = false,
                     IsCanSell = false,
@@ -152,6 +153,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
+                await ConfirmProductCode(customGenCode);
                 return productInfo.ProductId;
             }
         }
@@ -516,7 +518,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        private async Task<CustomGenCodeBaseValueModel> GenerateProductCode(int? productId, ProductModel model)
+        private async Task<CustomGenCodeBaseValueModel> GenerateProductCode(int? productId, ProductGenCodeModel model)
         {
             int customGenCodeId = 0;
             model.ProductCode = (model.ProductCode ?? "").Trim();
@@ -545,7 +547,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 } while (existedItem != null && dem < 10);
                 return config.CurrentLastValue;
             }
-
         }
 
         private async Task<bool> ConfirmProductCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
