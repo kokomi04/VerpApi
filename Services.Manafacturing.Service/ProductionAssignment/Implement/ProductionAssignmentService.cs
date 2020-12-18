@@ -294,7 +294,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (departmentIds.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thiết lập tổ sản xuất");
 
-            var scheduleDays = scheduleTime.EndDate.Subtract(scheduleTime.StartDate).TotalDays;
+            var scheduleDays = scheduleTime.EndDate.Subtract(scheduleTime.StartDate).TotalDays + 1;
 
             var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
                 .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= scheduleTime.EndDate && s.EndDate >= scheduleTime.StartDate)
@@ -418,7 +418,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                     var startMax = scheduleTime.StartDate > allScheduleTurns[assignment.ScheduleTurnId].StartDate ? scheduleTime.StartDate : allScheduleTurns[assignment.ScheduleTurnId].StartDate;
                     var endMin = scheduleTime.EndDate < allScheduleTurns[assignment.ScheduleTurnId].EndDate ? scheduleTime.EndDate : allScheduleTurns[assignment.ScheduleTurnId].EndDate;
-                    var matchDays = endMin.Subtract(startMax).TotalDays;
+                    var matchDays = endMin.Subtract(startMax).TotalDays + 1;
 
                     var workload = (workloadMap[assignment.ProductionStepId]
                         * allScheduleTurns[assignment.ScheduleTurnId].ProductionScheduleQuantity
@@ -439,7 +439,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             DateTime startDateTime = startDate.UnixToDateTime().GetValueOrDefault();
             DateTime endDateTime = endDate.UnixToDateTime().GetValueOrDefault();
 
-            var scheduleDays = endDateTime.Subtract(startDateTime).TotalDays;
+            var scheduleDays = endDateTime.Subtract(startDateTime).TotalDays + 1;
 
             var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
                 .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= endDateTime && s.EndDate >= startDateTime)
@@ -555,7 +555,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                     var startMax = startDateTime > allScheduleTurns[assignment.ScheduleTurnId].StartDate ? startDateTime : allScheduleTurns[assignment.ScheduleTurnId].StartDate;
                     var endMin = endDateTime < allScheduleTurns[assignment.ScheduleTurnId].EndDate ? endDateTime : allScheduleTurns[assignment.ScheduleTurnId].EndDate;
-                    var matchDays = endMin.Subtract(startMax).TotalDays;
+                    var matchDays = endMin.Subtract(startMax).TotalDays + 1;
 
                     var workload = (workloadMap[assignment.ProductionStepId]
                         * allScheduleTurns[assignment.ScheduleTurnId].ProductionScheduleQuantity
