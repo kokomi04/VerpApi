@@ -297,7 +297,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             var scheduleDays = scheduleTime.EndDate.Subtract(scheduleTime.StartDate).TotalDays;
 
             var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
-                .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate < scheduleTime.EndDate && s.EndDate > scheduleTime.StartDate)
+                .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= scheduleTime.EndDate && s.EndDate >= scheduleTime.StartDate)
                 .Join(_manufacturingDBContext.ProductionOrderDetail, s => s.ProductionOrderDetailId, od => od.ProductionOrderDetailId, (s, od) => new
                 {
                     s.ScheduleTurnId,
@@ -442,7 +442,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             var scheduleDays = endDateTime.Subtract(startDateTime).TotalDays;
 
             var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
-                .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate < endDateTime && s.EndDate > startDateTime)
+                .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= endDateTime && s.EndDate >= startDateTime)
                 .Join(_manufacturingDBContext.ProductionOrderDetail, s => s.ProductionOrderDetailId, od => od.ProductionOrderDetailId, (s, od) => new
                 {
                     s.ScheduleTurnId,
