@@ -373,10 +373,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .Where(s => productionStepIds.Contains(s.ProductionStepId))
                 .ToDictionary(s => s.ProductionStepId, s => s.Workload.GetValueOrDefault());
 
+
+            if (workloadMap.Count < productionStepIds.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất chưa thiết lập khối lượng công việc");
+
             var handovers = _manufacturingDBContext.ProductionHandover
-                .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId) && departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
-                .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
-                .ToList();
+            .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId) && departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
+            .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
+            .ToList();
 
             var capacityDepartments = departmentIds.ToDictionary(d => d, d => new ProductionCapacityModel
             {
@@ -511,6 +514,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             var workloadMap = _manufacturingDBContext.ProductionStep
                 .Where(s => productionStepIds.Contains(s.ProductionStepId))
                 .ToDictionary(s => s.ProductionStepId, s => s.Workload.GetValueOrDefault());
+
+            if (workloadMap.Count < productionStepIds.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất chưa thiết lập khối lượng công việc");
 
             var handovers = _manufacturingDBContext.ProductionHandover
                 .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId) && departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
