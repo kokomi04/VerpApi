@@ -757,12 +757,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
-            if (oldPercent == decimal.Zero)
-                await CreateLinkDataAndRoleOutsourceStep(outsourceStepRequestDatas, productionStepLinkDataEntity);
-            else if (newPercent == decimal.Zero)
-                await DeleteLinkDataAndRoleOutsourceStep(outsourceStepRequestId);
-            else
-                await UpdateLinkDataAndRoleOutsourceStep(outsourceStepRequestId, productionStepLinkDataEntity);
+            //if (oldPercent == decimal.Zero)
+            //    await CreateLinkDataAndRoleOutsourceStep(outsourceStepRequestDatas, productionStepLinkDataEntity);
+            //else if (newPercent == decimal.Zero)
+            //    await DeleteLinkDataAndRoleOutsourceStep(outsourceStepRequestId);
+            //else
+            //    await UpdateLinkDataAndRoleOutsourceStep(outsourceStepRequestId, productionStepLinkDataEntity);
             return true;
         }
 
