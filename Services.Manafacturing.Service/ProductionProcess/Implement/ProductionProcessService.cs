@@ -1024,7 +1024,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             if (req.ContainerTypeId == EnumContainerType.ProductionOrder)
             {
-                var outsourceLinkData = req.ProductionStepLinkDatas.Where(x => x.OutsourceRequestDetailId.HasValue).ToList();
+                var outsourceLinkData = req.ProductionStepLinkDatas.Where(x => x.ProductionStepLinkDataTypeId == EnumProductionStepLinkDataType.StepLinkDataOutsourcePart).ToList();
                 var sumQuantityUsage = outsourceLinkData.GroupBy(x => x.OutsourceRequestDetailId)
                                         .Select(x => new
                                         {
