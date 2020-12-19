@@ -183,6 +183,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
             }
 
+            // Validate vật tư tiêu hao
+            if (_manufacturingDBContext.ProductionConsumMaterial
+                .Any(m => m.ScheduleTurnId == scheduleTurnId && m.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(m.DepartmentId)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
+            }
+
+            // Validate tổ đã thực hiện sản xuất
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+
+            var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
+                .ToList();
+
+            if (inputInventorys
+                .Any(r => r.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
+                || _manufacturingDBContext.ProductionHandover
+                .Any(h => h.ScheduleTurnId == scheduleTurnId
+                && (h.FromProductionStepId == productionStepId || h.ToProductionStepId == productionStepId)
+                && (deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId))
+                && h.Status != (int)EnumHandoverStatus.Rejected))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
+            }
+
             try
             {
                 // Xóa phân công
