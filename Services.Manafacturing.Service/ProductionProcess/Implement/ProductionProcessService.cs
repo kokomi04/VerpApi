@@ -911,13 +911,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var source = req.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId);
                     if (source != null)
                     {
-                        if (source.Quantity < source.OutsourceQuantity)
+                        if (containerTypeId == EnumContainerType.ProductionOrder && source.Quantity < source.OutsourceQuantity)
                             throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {source.ObjectTitle} có số lượng nhỏ hơn số đã gia công");
                         _mapper.Map(source, dest);
                     }
                     else
                     {
-                        if (dest.OutsourceQuantity.HasValue || dest.OutsourceQuantity.Value > 0)
+                        if (containerTypeId ==  EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0))
                             throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Có sự khác biệt giữa quy trình sản xuất và YCGC công đoạn");
                         dest.IsDeleted = true;
                     }
@@ -940,7 +940,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     else
                     {
                         var os = productionStepOutsourced.FirstOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
-                        if (os != null)
+                        if (containerTypeId == EnumContainerType.ProductionOrder &&  os != null)
                             throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"QTSX không khớp với YCGC công đoạn {os.OutsourceStepRequestCode}");
                         dest.IsDeleted = true;
                     }
