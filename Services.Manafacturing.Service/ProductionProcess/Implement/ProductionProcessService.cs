@@ -954,8 +954,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 //Cập nhật role steplinkdata trong step
-                newStep.AddRange(sourceStep.Where(x => !x.IsDeleted).AsEnumerable());
-                newStepLinkData.AddRange(sourceStepLinkData.Where(x => !x.IsDeleted).AsEnumerable());
+                newStep.AddRange(sourceStep.Where(x => !x.IsDeleted).ToList());
+                newStepLinkData.AddRange(sourceStepLinkData.Where(x => !x.IsDeleted).ToList());
 
                 var roles = from r in req.ProductionStepLinkDataRoles
                             join s in newStep on r.ProductionStepCode equals s.ProductionStepCode
