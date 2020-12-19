@@ -201,16 +201,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
                 .ToList();
 
-            if (inputInventorys
-                .Any(r => r.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
-                || _manufacturingDBContext.ProductionHandover
-                .Any(h => h.ScheduleTurnId == scheduleTurnId
+            var handovers = _manufacturingDBContext.ProductionHandover
+                .Where(h => h.ScheduleTurnId == scheduleTurnId
                 && (h.FromProductionStepId == productionStepId || h.ToProductionStepId == productionStepId)
-                && (deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId))
-                && h.Status != (int)EnumHandoverStatus.Rejected))
+                && h.Status != (int)EnumHandoverStatus.Rejected)
+                .ToList();
+
+            // Validate xóa tổ đã tham gia sản xuất
+            if (inputInventorys.Any(r => r.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
+                || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
             }
+
+            // Validate sửa tổ đã tham gia sản xuất
+            //foreach (var tuple in updateAssignments)
+            //{
+                
+
+            //}
 
             try
             {
@@ -323,8 +332,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (departmentIds.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thiết lập tổ sản xuất");
 
-            var scheduleDays = scheduleTime.EndDate.Subtract(scheduleTime.StartDate).TotalDays + 1;
-
             var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
                 .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= scheduleTime.EndDate && s.EndDate >= scheduleTime.StartDate)
                 .Join(_manufacturingDBContext.ProductionOrderDetail, s => s.ProductionOrderDetailId, od => od.ProductionOrderDetailId, (s, od) => new
@@ -412,19 +419,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var capacityDepartments = departmentIds.ToDictionary(d => d, d => (decimal)0);
 
-            foreach (var item in scheduleTurnIds)
+            foreach (var turnId in scheduleTurnIds)
             {
-                var scheduleAssignments = otherAssignments.Where(a => a.ScheduleTurnId == item).ToList();
+                var scheduleAssignments = otherAssignments.Where(a => a.ScheduleTurnId == turnId).ToList();
                 if (scheduleAssignments.Count == 0) continue;
                 var parammeters = new SqlParameter[]
                 {
-                    new SqlParameter("@ScheduleTurnId", item)
+                    new SqlParameter("@ScheduleTurnId", turnId)
                 };
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
 
                 var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList();
+
+                var scheduleDays = allScheduleTurns[turnId].EndDate.Subtract(allScheduleTurns[turnId].StartDate).TotalDays + 1;
 
                 foreach (var assignment in scheduleAssignments)
                 {
@@ -463,8 +472,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         {
             DateTime startDateTime = startDate.UnixToDateTime().GetValueOrDefault();
             DateTime endDateTime = endDate.UnixToDateTime().GetValueOrDefault();
-
-            var scheduleDays = endDateTime.Subtract(startDateTime).TotalDays + 1;
 
             var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
                 .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= endDateTime && s.EndDate >= startDateTime)
@@ -562,6 +569,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList();
+
+                var scheduleDays = allScheduleTurns[scheduleTurnId].EndDate.Subtract(allScheduleTurns[scheduleTurnId].StartDate).TotalDays + 1;
 
                 foreach (var assignment in scheduleAssignments)
                 {
