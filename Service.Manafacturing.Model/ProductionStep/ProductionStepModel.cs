@@ -30,6 +30,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepModel>()
                 .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title))
+                .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
                 .ReverseMap()
                 .ForMember(m => m.Step, v => v.Ignore());
         }
@@ -43,6 +44,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
             profile.CreateMap<ProductionStepEnity, ProductionStepInfo>()
                 .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))
                 .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title))
+                .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
                 .ReverseMap()
                 .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore())
                 .ForMember(m => m.Step, v => v.Ignore());
