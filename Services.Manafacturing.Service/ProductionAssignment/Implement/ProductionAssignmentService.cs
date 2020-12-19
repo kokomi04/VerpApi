@@ -261,7 +261,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }).ToList(), total);
         }
 
-        public async Task<IDictionary<int, ProductionCapacityModel>> GetCapacityDepartments(long scheduleTurnId, long productionStepId)
+        public async Task<IDictionary<int, decimal>> GetCapacityDepartments(long scheduleTurnId, long productionStepId)
         {
             var scheduleTime = (from s in _manufacturingDBContext.ProductionSchedule
                                 join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
@@ -381,11 +381,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
             .ToList();
 
-            var capacityDepartments = departmentIds.ToDictionary(d => d, d => new ProductionCapacityModel
-            {
-                OtherCapacity = 0,
-                ScheduleStepWorkload = (workloadMap[productionStepId] * allScheduleTurns[scheduleTurnId].ProductionScheduleQuantity) / allScheduleTurns[scheduleTurnId].ProductionOrderQuantity
-            });
+            var capacityDepartments = departmentIds.ToDictionary(d => d, d => (decimal)0);
 
             foreach (var item in scheduleTurnIds)
             {
@@ -428,7 +424,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         * assignment.Productivity
                         * totalAssignQuantity);
 
-                    capacityDepartments[assignment.DepartmentId].OtherCapacity += workload;
+                    capacityDepartments[assignment.DepartmentId] += workload;
                 }
             }
             return capacityDepartments;
