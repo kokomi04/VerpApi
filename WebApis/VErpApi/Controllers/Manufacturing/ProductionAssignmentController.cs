@@ -65,7 +65,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("capacity")]
-        public async Task<IDictionary<int, Dictionary<long, decimal>>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
         {
             return await _productionAssignmentService.GetCapacity(startDate, endDate);
         }
