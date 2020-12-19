@@ -468,7 +468,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             return capacityDepartments;
         }
 
-        public async Task<IDictionary<int, Dictionary<long, decimal>>> GetCapacity(long startDate, long endDate)
+        public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate)
         {
             DateTime startDateTime = startDate.UnixToDateTime().GetValueOrDefault();
             DateTime endDateTime = endDate.UnixToDateTime().GetValueOrDefault();
@@ -602,7 +602,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     capacityDepartments[assignment.DepartmentId][scheduleTurnId] += workload;
                 }
             }
-            return capacityDepartments;
+
+            var capacityDepartmentArray = capacityDepartments
+                                            .SelectMany(x =>x.Value.Select(y => new CapacityDepartmentChartsModel
+                                            {
+                                                DepartmentId = x.Key,
+                                                ScheduleTurnId = y.Key,
+                                                Capacity = y.Value
+                                            })).ToList();
+
+            return capacityDepartmentArray;
         }
 
         public async Task<IDictionary<int, decimal>> GetProductivityDepartments(long productionStepId)

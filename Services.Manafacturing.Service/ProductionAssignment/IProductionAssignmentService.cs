@@ -18,6 +18,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<IDictionary<int, decimal>> GetProductivityDepartments(long productionStepId);
         Task<IDictionary<int, decimal>> GetCapacityDepartments(long scheduleTurnId, long productionStepId);
-        Task<IDictionary<int, Dictionary<long, decimal>>> GetCapacity(long startDate, long endDate);
+        Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate);
     }
 }
