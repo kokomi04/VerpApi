@@ -272,6 +272,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         if (obj.NewPrimaryQuantity >= 0)
                         {
+
                             //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
 
                             bool isSuccess = false;
@@ -284,7 +285,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             //}
                             //else
                             {
-                                (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity);
+                                if (obj.OldPrimaryQuantity.SubDecimal(obj.NewPrimaryQuantity) == 0)
+                                {
+                                    (isSuccess, pucQuantity) = (true, obj.OldProductUnitConversionQuantity);
+                                }
+                                else
+                                {
+                                    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity);
+                                }
                             }
 
                             if (isSuccess)
@@ -360,7 +368,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     //}
                                     //else
                                     {
-                                        (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity);
+                                        if (c.NewTransferPrimaryQuantity.SubDecimal(c.OldTransferPrimaryQuantity) == 0)
+                                        {
+                                            (isSuccess, pucQuantity) = (true, c.OldTransferProductUnitConversionQuantity);
+                                        }
+                                        else
+                                        {
+                                            (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity);
+                                        }
                                     }
 
 
