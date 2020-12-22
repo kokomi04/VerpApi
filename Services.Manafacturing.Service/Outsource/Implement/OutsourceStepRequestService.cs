@@ -751,9 +751,18 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 if (!linkData.OutsourceQuantity.HasValue)
                     linkData.OutsourceQuantity = decimal.Zero;
+                if (!linkData.ExportOutsourceQuantity.HasValue)
+                    linkData.ExportOutsourceQuantity = decimal.Zero;
                 var oldValue = linkData.Quantity * oldPercent;
                 var newValue = linkData.Quantity * newPercent;
-                linkData.OutsourceQuantity += (newValue - oldValue);
+
+                var roleType = outsourceStepRequestDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == linkData.ProductionStepLinkDataId)?.ProductionStepLinkDataRoleTypeId;
+                if (roleType != null && roleType == (int)EnumProductionStepLinkDataRoleType.Input)
+                {
+                    linkData.ExportOutsourceQuantity += (newValue - oldValue);
+                }
+                else
+                    linkData.OutsourceQuantity += (newValue - oldValue);
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
