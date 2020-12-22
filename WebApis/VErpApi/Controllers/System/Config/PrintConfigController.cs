@@ -20,6 +20,7 @@ using VErp.Services.Accountancy.Service.Input;
 using VErp.Services.Accountancy.Model.Input;
 using Microsoft.AspNetCore.Authorization;
 using VErp.Services.Master.Model.Config;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.System
 {
@@ -85,6 +86,12 @@ namespace VErpApi.Controllers.System
             var r = await _printConfigService.GeneratePrintTemplate(printConfigId, fileId, templateModel);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
+        }
+        [HttpGet]
+        [Route("suggestionField")]
+        public async Task<IList<EntityField>> GetSuggestionField([FromQuery]int moduleTypeId)
+        {
+            return await _printConfigService.GetSuggestionField(moduleTypeId);
         }
     }
 }
