@@ -92,6 +92,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionScheduleService.GetProductionPlanningOrderDetail(productionOrderId);
         }
 
+        [HttpPost]
+        [Route("searchScheduleTurn")]
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedulesByScheduleTurnArray([FromBody]long[] scheduleTurnIds)
+        {
+            return await _productionScheduleService.GetProductionSchedulesByScheduleTurnArray(scheduleTurnIds);
+        }
+
 
     }
 }
