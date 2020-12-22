@@ -410,6 +410,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.ExportOutsourceQuantity).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.OutsourceQuantity).HasColumnType("decimal(18, 5)");

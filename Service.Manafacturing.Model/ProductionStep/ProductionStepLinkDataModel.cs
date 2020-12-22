@@ -17,6 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
         public decimal OutsourceQuantity { get; set; }
+        public decimal ExportOutsourceQuantity { get; set; }
         public int SortOrder { get; set; }
         public long? OutsourceRequestDetailId { get; set; }
         public EnumProductionStepLinkDataType ProductionStepLinkDataTypeId { get; set; }
@@ -44,6 +45,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.SortOrder, v => v.MapFrom(m => m.ProductionStepLinkData.SortOrder))
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ObjectTypeId))
                 .ForMember(m => m.OutsourceQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourceQuantity))
+                .ForMember(m => m.ExportOutsourceQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.ExportOutsourceQuantity))
                 .ForMember(m => m.ProductionStepLinkDataCode, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataCode))
                 .ForMember(m => m.OutsourceRequestDetailId, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourceRequestDetailId))
                 .ForMember(m => m.ProductionStepLinkDataTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataTypeId))
