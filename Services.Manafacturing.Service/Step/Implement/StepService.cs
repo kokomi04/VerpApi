@@ -106,8 +106,16 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 query = query.Where(x => x.StepName.Contains(keyWord));
 
             var total = await query.CountAsync();
-            var data = query.OrderBy(x => x.IsHide).ThenBy(x => x.SortOrder).ProjectTo<StepModel>(_mapper.ConfigurationProvider)
-                            .Skip((page - 1) * size).Take(size).ToList();
+
+            query = query.OrderBy(x => x.IsHide).ThenBy(x => x.SortOrder);
+
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+
+            var data = await query.ProjectTo<StepModel>(_mapper.ConfigurationProvider)
+                            .ToListAsync();
             return (data, total);
         }
 

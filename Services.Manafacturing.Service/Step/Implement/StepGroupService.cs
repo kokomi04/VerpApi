@@ -48,10 +48,10 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<bool> DeleteStepGroup(int stepGroupId)
         {
-            var groupStep = _manufacturingDBContext.StepGroup.Include(x=>x.Step).FirstOrDefault(x => x.StepGroupId == stepGroupId);
+            var groupStep = _manufacturingDBContext.StepGroup.Include(x => x.Step).FirstOrDefault(x => x.StepGroupId == stepGroupId);
             if (groupStep == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
-            if(groupStep.Step.Count > 0 )
+            if (groupStep.Step.Count > 0)
                 throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa nhóm!. Đang tồn tại công đoạn trong nhóm");
 
             groupStep.IsDeleted = true;
@@ -70,8 +70,13 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
             var total = await query.CountAsync();
 
-            var data = query.ProjectTo<StepGroupModel>(_mapper.ConfigurationProvider)
-                            .Skip((page - 1) * size).Take(size).ToList();
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+
+            var data = await query.ProjectTo<StepGroupModel>(_mapper.ConfigurationProvider)
+                            .ToListAsync();
             return (data, total);
         }
 
