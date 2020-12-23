@@ -30,9 +30,9 @@ namespace VErpApi.Controllers.Manufacturing
             return await _reportService.GetSteps(startDate, endDate);
         }
 
-        [HttpGet]
-        [Route("steps")]
-        public async Task<IList<StepProgressModel>> CreateStep([FromQuery] long startDate, [FromQuery] long endDate, [FromBody] int[] stepIds)
+        [HttpPost]
+        [Route("ProductionProgress")]
+        public async Task<IList<StepProgressModel>> GetProductionProgressReport([FromQuery] long startDate, [FromQuery] long endDate, [FromBody] int[] stepIds)
         {
             return await _reportService.GetProductionProgressReport(startDate, endDate, stepIds);
         }
