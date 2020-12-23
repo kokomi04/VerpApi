@@ -65,7 +65,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
                                    join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
                                    join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
-                                   join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderId equals sh.ProductionOrderDetailId
+                                   join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
                                    where stepIds.Contains(ps.StepId.Value) && sh.StartDate <= endDateTime && sh.EndDate >= startDateTime
                                    select new
                                    {
