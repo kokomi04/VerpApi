@@ -50,7 +50,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                join ps in _manufacturingDBContext.ProductionStep on s.StepId equals ps.StepId
                                join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
                                join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
-                               join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderId equals sh.ProductionOrderDetailId
+                               join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
                                where sh.StartDate <= endDateTime && sh.EndDate >= startDateTime
                                select s).Distinct().ProjectTo<StepModel>(_mapper.ConfigurationProvider).ToListAsync();
 

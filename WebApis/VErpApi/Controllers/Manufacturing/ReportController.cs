@@ -36,5 +36,7 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _reportService.GetProductionProgressReport(startDate, endDate, stepIds);
         }
+
+
     }
 }
