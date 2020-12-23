@@ -9,11 +9,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
-using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
@@ -204,6 +205,29 @@ namespace VErp.Services.Master.Service.Config.Implement
             var resultData = await _masterDBContext.ExecuteDataProcedure("asp_PrintConfig_SuggestionField", parammeters);
             return resultData.ConvertData<EntityField>()
                 .ToList();
+        }
+
+        public async Task<IList<EntityField>> GetSuggestionField(Assembly assembly)
+        {
+            var classTypes = assembly.GetTypes()
+                .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttributes().Any(a=>a is PrintSuggestionConfigAttribute))
+                .ToArray();
+            var fields = new List<EntityField>();
+            foreach(var type in classTypes)
+            {
+                foreach (var prop in type.GetProperties())
+                {
+                    EntityField field = new EntityField
+                    {
+                        FieldName = prop.Name,
+                        Title = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name,
+                        Group = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.GroupName
+                    };
+                    fields.Add(field);
+                }
+            }
+
+            return fields;
         }
     }
 }

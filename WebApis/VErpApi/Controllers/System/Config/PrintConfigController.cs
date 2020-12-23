@@ -21,6 +21,11 @@ using VErp.Services.Accountancy.Model.Input;
 using Microsoft.AspNetCore.Authorization;
 using VErp.Services.Master.Model.Config;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Services.Accountancy.Model;
+using System.Reflection;
+using Verp.Services.PurchaseOrder.Model;
+using VErp.Services.Stock.Model;
+using VErp.Services.Manafacturing.Model;
 
 namespace VErpApi.Controllers.System
 {
@@ -30,6 +35,14 @@ namespace VErpApi.Controllers.System
     {
         private readonly IPrintConfigService _printConfigService;
         private readonly IFileService _fileService;
+
+        private readonly Dictionary<EnumModuleType, Assembly> AssemblyModuleModel = new Dictionary<EnumModuleType, Assembly>()
+        {
+            { EnumModuleType.Accountant,    AccountancyModelAssembly.Assembly },
+            { EnumModuleType.PurchaseOrder,PurchaseOrderModelAssembly.Assembly },
+            { EnumModuleType.Stock, StockModelAssembly.Assembly },
+            { EnumModuleType.Manufacturing, ManufacturingModelAssembly.Assembly }
+        };
 
         public PrintConfigController(IPrintConfigService printConfigService, IFileService fileService)
         {
@@ -57,7 +70,7 @@ namespace VErpApi.Controllers.System
         {
             return await _printConfigService.UpdatePrintConfig(printConfigId, data);
         }
-    
+
         [HttpPost]
         [Route("")]
         public async Task<int> AddPrintConfig([FromBody] PrintConfigModel data)
@@ -89,9 +102,12 @@ namespace VErpApi.Controllers.System
         }
         [HttpGet]
         [Route("suggestionField")]
-        public async Task<IList<EntityField>> GetSuggestionField([FromQuery]int moduleTypeId)
+        public async Task<IList<EntityField>> GetSuggestionField([FromQuery] int moduleTypeId)
         {
-            return await _printConfigService.GetSuggestionField(moduleTypeId);
+            var fields = await _printConfigService.GetSuggestionField(moduleTypeId);
+            if (fields.Count == 0 && AssemblyModuleModel.ContainsKey((EnumModuleType)moduleTypeId))
+                fields = await _printConfigService.GetSuggestionField(AssemblyModuleModel[(EnumModuleType)moduleTypeId]);
+            return fields;
         }
     }
 }
