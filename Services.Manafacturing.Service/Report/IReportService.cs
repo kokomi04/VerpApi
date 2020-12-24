@@ -10,7 +10,8 @@ namespace VErp.Services.Manafacturing.Service.Report
 {
     public interface IReportService
     {
-        Task<IList<StepModel>> GetSteps(long startDate, long endDate);
-        Task<IList<StepProgressModel>> GetProductionProgressReport(long startDate, long endDate, int[] stepIds);
+        Task<IList<StepModel>> GetSteps(long fromDate, long toDate);
+        Task<IList<StepProgressModel>> GetProductionProgressReport(long fromDate, long toDate, int[] stepIds);
+        Task<IList<ProductionScheduleReportModel>> GetProductionScheduleReport(long fromDate, long toDate);
     }
 }
