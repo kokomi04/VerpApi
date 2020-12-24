@@ -69,7 +69,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _physicalFileService = physicalFileService;
             _serviceProvider = serviceProvider;
         }
-        
+
 
         private DbContext GetDbContext(EnumModuleType moduleType)
         {
@@ -663,7 +663,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            string orderBy = reportInfo?.OrderBy;
+            string orderBy = (reportInfo?.OrderBy ?? "");
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName) && !orderBy.Contains(orderByFieldName))
             {
