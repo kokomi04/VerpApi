@@ -22,6 +22,8 @@ using StepEnity = VErp.Infrastructure.EF.ManufacturingDB.Step;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.Report;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
+
 namespace VErp.Services.Manafacturing.Service.Report.Implement
 {
     public class ReportService : IReportService
@@ -42,31 +44,31 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             _mapper = mapper;
         }
 
-        public async Task<IList<StepModel>> GetSteps(long startDate, long endDate)
+        public async Task<IList<StepModel>> GetSteps(long fromDate, long toDate)
         {
-            var startDateTime = startDate.UnixToDateTime();
-            var endDateTime = endDate.UnixToDateTime();
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
             var steps = await (from s in _manufacturingDBContext.Step
                                join ps in _manufacturingDBContext.ProductionStep on s.StepId equals ps.StepId
                                join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
                                join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
                                join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
-                               where sh.StartDate <= endDateTime && sh.EndDate >= startDateTime
+                               where sh.StartDate <= toDateTime && sh.EndDate >= fromDateTime
                                select s).Distinct().ProjectTo<StepModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             return steps;
         }
 
-        public async Task<IList<StepProgressModel>> GetProductionProgressReport(long startDate, long endDate, int[] stepIds)
+        public async Task<IList<StepProgressModel>> GetProductionProgressReport(long fromDate, long toDate, int[] stepIds)
         {
-            var startDateTime = startDate.UnixToDateTime();
-            var endDateTime = endDate.UnixToDateTime();
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
 
             var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
                                    join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
                                    join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
                                    join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
-                                   where stepIds.Contains(ps.StepId.Value) && sh.StartDate <= endDateTime && sh.EndDate >= startDateTime
+                                   where stepIds.Contains(ps.StepId.Value) && sh.StartDate <= toDateTime && sh.EndDate >= fromDateTime
                                    select new
                                    {
                                        StepId = ps.StepId.Value,
@@ -91,11 +93,14 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             d.ObjectTypeId,
                             d.ObjectId,
                             d.Quantity
-                        }).ToList();
+                        })
+                        .ToList()
+                        .GroupBy(d => d.ProductionStepId)
+                        .ToDictionary(g => g.Key, g => g.ToList()); ;
 
             var scheduleTurnIds = productionSteps.Select(ps => ps.ScheduleTurnId).Distinct().ToList();
             var handovers = _manufacturingDBContext.ProductionHandover
-            .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId) && productionStepIds.Contains(h.FromProductionStepId))
+            .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId))
             .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
             .ToList();
 
@@ -127,7 +132,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 foreach (var productionStepProgressModel in stepProgress.GroupBy(s => s.ProductionStepId))
                 {
                     var productionStepId = productionStepProgressModel.Key;
-                    var stepData = data.Where(d => d.ProductionStepId == productionStepId).ToList();
+                    var stepData = data[productionStepId];
 
                     foreach (var stepScheduleProgress in productionStepProgressModel.GroupBy(s => s.ScheduleTurnId))
                     {
@@ -219,6 +224,139 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             }
 
             return report;
+        }
+        public async Task<IList<ProductionScheduleReportModel>> GetProductionScheduleReport(long fromDate, long toDate)
+        {
+            var parammeters = new List<SqlParameter>();
+
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+            if (!fromDateTime.HasValue || !toDateTime.HasValue)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
+
+            parammeters.Add(new SqlParameter("@FromDate", fromDateTime.Value));
+            parammeters.Add(new SqlParameter("@ToDate", toDateTime.Value));
+
+            var sql = new StringBuilder("SELECT * FROM vProductionSchedule v WHERE v.StartDate <= @ToDate AND v.EndDate >= @FromDate");
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData
+                .ConvertData<ProductionScheduleEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionScheduleReportModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            var scheduleTurnIds = lst.Select(s => s.ScheduleTurnId.Value).Distinct().ToList();
+
+            var handovers = _manufacturingDBContext.ProductionHandover
+                .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId))
+                .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
+                .ToList();
+
+            var reqInventorys = new Dictionary<long, List<ProductionInventoryRequirementEntity>>();
+
+            foreach (var scheduleTurnId in scheduleTurnIds)
+            {
+                var invParammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+                };
+
+                var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", invParammeters);
+
+                reqInventorys.Add(scheduleTurnId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                    .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Output && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+                    .ToList());
+            }
+
+            var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
+                                   join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                   join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
+                                   join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
+                                   join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
+                                   where scheduleTurnIds.Contains(sh.ScheduleTurnId)
+                                   select new
+                                   {
+                                       s.StepName,
+                                       ps.ProductionStepId,
+                                       sh.ScheduleTurnId,
+                                   })
+                                   .ToList();
+
+            var productionStepIds = productionSteps.Select(ps => ps.ProductionStepId).Distinct().ToList();
+            var scheduleProductionSteps = productionSteps.GroupBy(d => d.ScheduleTurnId).ToDictionary(g => g.Key, g => g.ToList());
+
+            var outputData = (from r in _manufacturingDBContext.ProductionStepLinkDataRole
+                              join d in _manufacturingDBContext.ProductionStepLinkData on r.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                              where productionStepIds.Contains(r.ProductionStepId) && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
+                              select new
+                              {
+                                  r.ProductionStepId,
+                                  d.ObjectTypeId,
+                                  d.ObjectId,
+                                  d.Quantity
+                              })
+                              .ToList()
+                              .GroupBy(d => d.ProductionStepId)
+                              .ToDictionary(g => g.Key, g => g.ToList());
+
+            foreach (var schedule in lst)
+            {
+                var scheduleTurnId = schedule.ScheduleTurnId.Value;
+                schedule.CompletedQuantity = reqInventorys[scheduleTurnId]
+                    .Where(i => i.ProductId == schedule.ProductId)
+                    .Sum(i => i.ActualQuantity)
+                    .GetValueOrDefault();
+
+                var stepTitle = new StringBuilder();
+
+                var previousSchedule = lst
+                           .Where(s => s.ProductionOrderDetailId == schedule.ProductionOrderDetailId && s.ScheduleTurnId < scheduleTurnId)
+                           .GroupBy(s => s.ScheduleTurnId)
+                           .Select(g => g.First().ProductionScheduleQuantity)
+                           .ToList();
+                var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity < schedule.TotalQuantity;
+
+                foreach (var productionStep in scheduleProductionSteps[scheduleTurnId])
+                {
+                    var outputStepData = outputData[productionStep.ProductionStepId];
+
+                    var output = outputStepData
+                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                            .Select(g => new
+                            {
+                                g.Key.ObjectId,
+                                g.Key.ObjectTypeId,
+                                TotalQuantity = isFinish
+                                ? Math.Round(g.Sum(d => d.Quantity) * schedule.ProductionScheduleQuantity / schedule.TotalQuantity, 5)
+                                : schedule.TotalQuantity - previousSchedule.Sum(p => Math.Round(g.Sum(d => d.Quantity) * p / schedule.TotalQuantity, 5))
+                            }).ToList();
+
+                    var stepOutputHandovers = handovers
+                        .Where(h => h.ScheduleTurnId == scheduleTurnId && h.FromProductionStepId == productionStep.ProductionStepId)
+                        .ToList();
+
+                    var stepOutputInventory = reqInventorys[scheduleTurnId]
+                        .Where(i => i.ProductionStepId == productionStep.ProductionStepId)
+                        .ToList();
+
+                    if (output.Any(o =>
+                    {
+                        var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == o.ObjectId && h.ObjectTypeId == (int)o.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                        if (o.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                        {
+                            receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)o.ObjectId).Sum(i => i.ActualQuantity).GetValueOrDefault();
+                        }
+                        return receivedQuantity < o.TotalQuantity;
+                    }))
+                    {
+                        stepTitle.Append(productionStep.StepName);
+                        stepTitle.Append("-");
+                    }
+                }
+                schedule.UnfinishedStepTitle = stepTitle.ToString().Trim('-');
+            }
+            return lst;
         }
     }
 }
