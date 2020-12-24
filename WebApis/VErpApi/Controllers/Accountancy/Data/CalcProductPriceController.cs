@@ -26,14 +26,23 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             _calcProductPriceService = calcProductPriceService;
         }
-       
+
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumAction.Update)]
         [GlobalApi]
-        [Route("GetCalcProductPriceTable")]
-        public async Task<CalcProductPriceGetTableOutput> GetCalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
+        [Route("CalcProductPriceTable")]
+        public async Task<CalcProductPriceGetTableOutput> CalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
         {
-            return await _calcProductPriceService.GetCalcProductPriceTable(req).ConfigureAwait(true);
+            return await _calcProductPriceService.CalcProductPriceTable(req).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumAction.Update)]
+        [GlobalApi]
+        [Route("CalcProductOutputPrice")]
+        public async Task<CalcProductOutputPriceModel> CalcProductOutputPrice([FromBody] CalcProductOutputPriceInput req)
+        {
+            return await _calcProductPriceService.CalcProductOutputPrice(req).ConfigureAwait(true);
         }
 
         [HttpPost]
