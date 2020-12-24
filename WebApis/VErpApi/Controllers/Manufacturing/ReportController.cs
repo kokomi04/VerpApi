@@ -43,5 +43,7 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _reportService.GetProductionScheduleReport(fromDate, toDate);
         }
+
+
     }
 }
