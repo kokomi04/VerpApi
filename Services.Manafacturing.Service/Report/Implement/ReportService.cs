@@ -188,8 +188,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             .Where(h => h.ScheduleTurnId == scheduleTurnId && h.FromProductionStepId == productionStepId)
                             .ToList();
 
-                        var stepInputInventory = reqInventorys[scheduleTurnId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
-                        var stepOutputInventory = reqInventorys[scheduleTurnId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
+                        var stepInputInventory = reqInventorys[scheduleTurnId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
+                        var stepOutputInventory = reqInventorys[scheduleTurnId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
 
 
 
@@ -264,8 +264,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
                 var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", invParammeters);
 
-                reqInventorys.Add(scheduleTurnId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
-                    .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Output && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+                reqInventorys.Add(scheduleTurnId, invData.ConvertData<ProductionInventoryRequirementEntity>()
+                    .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList());
             }
 
@@ -358,5 +358,12 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             }
             return lst;
         }
+
+
+        public async Task<IList<ProcessingScheduleListModel>> GetProcessingScheduleList()
+        {
+            return null;
+        }
+
     }
 }
