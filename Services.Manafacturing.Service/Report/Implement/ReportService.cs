@@ -402,7 +402,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                          }).ToList());
             foreach (var item in lst)
             {
-                item.Steps = steps[item.ScheduleTurnId];
+                if (steps.ContainsKey(item.ScheduleTurnId))
+                    item.Steps = steps[item.ScheduleTurnId];
             }
 
             return lst;
