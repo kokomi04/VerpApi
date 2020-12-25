@@ -220,7 +220,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             if (objectApi == null) return (false, null, null, actionButtonId);
 
 
-            if (context.RouteData.Values.ContainsKey(objectApi.RouterDataKey) && action != EnumAction.View)
+            if (context.RouteData.Values.ContainsKey(objectApi.RouterDataKey))
             {
                 long.TryParse(context.RouteData.Values[objectApi.RouterDataKey].ToString(), out var objectId);
 
