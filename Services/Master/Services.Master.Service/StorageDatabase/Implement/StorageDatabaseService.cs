@@ -1,4 +1,5 @@
-﻿using Elasticsearch.Net;
+﻿using ActivityLogDB;
+using Elasticsearch.Net;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,6 +31,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
     public class StorageDatabaseService : IStorageDatabaseService
     {
         private readonly MasterDBContext _masterContext;
+        private readonly ActivityLogDBContext _activityLogDBContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger<StorageDatabaseService> _logger;
         private readonly IActivityLogService _activityLogService;
@@ -38,6 +40,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         private readonly ISubSystemService _manageVErpModuleService;
 
         public StorageDatabaseService(MasterDBContext masterDBContext,
+            ActivityLogDBContext activityLogDBContext,
             IOptions<AppSetting> appSetting,
             IActivityLogService activityLogService,
             ILogger<StorageDatabaseService> logger,
@@ -45,10 +48,11 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             IPhysicalFileService physicalFileService,
             ISubSystemService manageVErpModuleService)
         {
-            _activityLogService = activityLogService;
-            _appSetting = appSetting.Value;
             _masterContext = masterDBContext;
-            _logger = logger;
+            _activityLogDBContext = activityLogDBContext;
+            _appSetting = appSetting.Value;
+            _activityLogService = activityLogService;
+
             _currentContextService = currentContextService;
             _physicalFileService = physicalFileService;
             _manageVErpModuleService = manageVErpModuleService;
@@ -62,19 +66,17 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             foreach (var storage in backupStorage.storages)
             {
 
-                string outDirectory = GenerateOutDirectory(backupPoint,storage.ModuleTypeId.GetStringValue());
+                string outDirectory = GenerateOutDirectory(backupPoint, storage.ModuleTypeId.GetStringValue());
                 var dbs = _manageVErpModuleService.GetDbByModuleTypeId(storage.ModuleTypeId);
                 foreach (string db in dbs)
                 {
                     string filePath = $"{outDirectory}/{db.ToLower()}.bak";
-#if !DEBUG
                     var sqlDB = $@"BACKUP DATABASE {db} TO DISK='{GetPhysicalFilePath(filePath)}'";
-                    await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
+                    await _activityLogDBContext.Database.ExecuteSqlRawAsync(sqlDB);
                     if (!System.IO.File.Exists(GetPhysicalFilePath(filePath)))
                     {
                         throw new BadRequestException(BackupErrorCode.NotFoundFileAfterBackup);
                     }
-#endif
                 }
 
                 string fileZip = $"{storage.ModuleTypeId.GetStringValue()}.zip";
@@ -170,17 +172,35 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             if (fileInfo == null)
                 throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thông tin file backup");
             var dbs = _manageVErpModuleService.GetDbByModuleTypeId((EnumModuleType)backup.ModuleTypeId);
-            foreach(string db in dbs)
+            foreach (string db in dbs)
             {
                 string outDirectory = Path.GetDirectoryName(fileInfo.FilePath);
                 string filePath = GetPhysicalFilePath($"{outDirectory}/{db}.bak");
-#if !DEBUG
-                string sqlDB = $@"RESTORE DATABASE {db}  
-                                    FROM DISK = '{filePath}'";
-                await _masterContext.Database.ExecuteSqlRawAsync(sqlDB);
-#endif
+
                 await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
-                $"Restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+               $"Started restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+
+                DbContext dbContext = _activityLogDBContext;              
+
+                try
+                {
+                    await dbContext.Database.ExecuteSqlRawAsync($"Alter Database {db} SET SINGLE_USER With ROLLBACK AFTER 300");
+                    dbContext.Database.SetCommandTimeout(new TimeSpan(1, 0, 0));
+                    await dbContext.Database.ExecuteSqlRawAsync($"RESTORE DATABASE {db} FROM DISK = '{filePath}' WITH REPLACE");
+                }
+                catch (Exception)
+                {
+                    await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
+                        $"Fail to restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+                    throw;
+                }
+                finally
+                {
+                    await dbContext.Database.ExecuteSqlRawAsync($"Alter Database {db}  SET MULTI_USER");
+                }
+
+                await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
+                $"Successed restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
             }
         }
 
