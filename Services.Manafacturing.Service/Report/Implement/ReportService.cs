@@ -383,8 +383,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             var steps = (from s in _manufacturingDBContext.Step
                          join ps in _manufacturingDBContext.ProductionStep on s.StepId equals ps.StepId
-                         join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
-                         join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
+                         join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
+                         join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
                          join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
                          where scheduleTurnIds.Contains(sh.ScheduleTurnId)
                          select new
@@ -424,40 +424,79 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             var previousSchedule = _manufacturingDBContext.ProductionSchedule
                            .Where(s => s.ProductionOrderDetailId == schedule.ProductionOrderDetailId && s.ScheduleTurnId < scheduleTurnId)
                            .GroupBy(s => s.ScheduleTurnId)
-                           .Select(g => g.First().ProductionScheduleQuantity)
+                           .Select(g => g.Max(s => s.ProductionScheduleQuantity))
                            .ToList();
 
             var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity < schedule.OrderQuantity;
 
-            var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
-                                   join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
-                                   join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
-                                   join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
-                                   join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
-                                   where sh.ScheduleTurnId == scheduleTurnId && stepIds.Contains(s.StepId)
-                                   select new
-                                   {
-                                       s.StepId,
-                                       s.StepName,
-                                       ps.ProductionStepId,
-                                   })
+            var allProductionSteps = (from ps in _manufacturingDBContext.ProductionStep
+                                      join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                      join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
+                                      join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
+                                      join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
+                                      where sh.ScheduleTurnId == scheduleTurnId
+                                      select new
+                                      {
+                                          s.StepId,
+                                          s.StepName,
+                                          ps.ProductionStepId,
+                                      })
                                    .ToList();
-            var productionStepIds = productionSteps.Select(s => s.ProductionStepId).ToList();
 
-            var outputData = (from r in _manufacturingDBContext.ProductionStepLinkDataRole
-                              join d in _manufacturingDBContext.ProductionStepLinkData on r.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
-                              where productionStepIds.Contains(r.ProductionStepId) && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
-                              select new
-                              {
-                                  r.ProductionStepId,
-                                  d.ObjectTypeId,
-                                  d.ObjectId,
-                                  d.Quantity,
-                                  d.ProductionStepLinkDataId
-                              })
-                              .ToList()
-                              .GroupBy(d => d.ProductionStepId)
-                              .ToDictionary(g => g.Key, g => g.ToList());
+            // Sắp xếp step theo thứ tự thực hiện
+            var allProductionStepIds = allProductionSteps.Select(ps => ps.ProductionStepId).ToList();
+            var allDataRole = (from r in _manufacturingDBContext.ProductionStepLinkDataRole
+                               join d in _manufacturingDBContext.ProductionStepLinkData on r.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                               where allProductionStepIds.Contains(r.ProductionStepId)
+                               select new
+                               {
+                                   r.ProductionStepId,
+                                   d.ObjectTypeId,
+                                   d.ObjectId,
+                                   d.Quantity,
+                                   d.ProductionStepLinkDataId,
+                                   r.ProductionStepLinkDataRoleTypeId
+                               })
+                              .ToList();
+
+            var productionStepIds = new List<long>();
+            var sortDataRole = allDataRole.ToList();
+            while (allProductionStepIds.Count > 0)
+            {
+                // Lấy ra những công đoạn chỉ nhận từ kho
+                var firstStepIds = allProductionStepIds.Where(s =>
+                {
+                    // Danh sách đầu vào
+                    var inputLinkIds = sortDataRole
+                    .Where(r => r.ProductionStepId == s && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                    .Select(r => r.ProductionStepLinkDataId)
+                    .ToList();
+                    // Nếu tất cả đầu vào là từ kho
+                    return !sortDataRole.Any(r => inputLinkIds.Contains(r.ProductionStepLinkDataId)
+                    && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
+                    && r.ProductionStepId != s);
+                }).ToList();
+
+                if (firstStepIds.Count <= 0) throw new BadRequestException(GeneralCode.InternalError, "Quy trình tồn tại vòng lặp");
+
+                productionStepIds.AddRange(firstStepIds);
+                allProductionStepIds.RemoveAll(s => firstStepIds.Contains(s));
+                sortDataRole.RemoveAll(r => firstStepIds.Contains(r.ProductionStepId));
+            }
+
+            var outputData = allDataRole
+                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                .Select(r => new
+                {
+                    r.ProductionStepId,
+                    r.ObjectTypeId,
+                    r.ObjectId,
+                    r.Quantity,
+                    r.ProductionStepLinkDataId
+                })
+                .ToList()
+                .GroupBy(d => d.ProductionStepId)
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             var handovers = _manufacturingDBContext.ProductionHandover
                 .Where(h => h.ScheduleTurnId == scheduleTurnId)
@@ -479,8 +518,12 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             var result = new List<StepReportModel>();
 
-            foreach (var productionStep in productionSteps)
+
+            foreach (var productionStepId in productionStepIds)
             {
+                var productionStep = allProductionSteps.First(s => s.ProductionStepId == productionStepId);
+                if (!stepIds.Contains(productionStep.StepId)) continue;
+
                 var stepReport = new StepReportModel
                 {
                     StepId = productionStep.StepId,
@@ -488,7 +531,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     StepProgressPercent = 0
                 };
 
-                var outputStepData = outputData[productionStep.ProductionStepId];
+                var outputStepData = outputData[productionStepId];
 
                 var outputs = outputStepData
                         .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
@@ -502,11 +545,11 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         }).ToList();
 
                 var stepOutputHandovers = handovers
-                    .Where(h => h.ScheduleTurnId == scheduleTurnId && h.FromProductionStepId == productionStep.ProductionStepId)
+                    .Where(h => h.ScheduleTurnId == scheduleTurnId && h.FromProductionStepId == productionStepId)
                     .ToList();
 
                 var stepOutputInventory = reqInventorys
-                    .Where(i => i.ProductionStepId == productionStep.ProductionStepId)
+                    .Where(i => i.ProductionStepId == productionStepId)
                     .ToList();
 
                 foreach (var output in outputs)
@@ -520,7 +563,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     if (stepProgressPercent > stepReport.StepProgressPercent) stepReport.StepProgressPercent = stepProgressPercent;
                 }
 
-                var stepAssignments = assignments.Where(a => a.ProductionStepId == productionStep.ProductionStepId).ToList();
+                var stepAssignments = assignments.Where(a => a.ProductionStepId == productionStepId).ToList();
                 foreach (var stepAssignment in stepAssignments)
                 {
                     var departmentProgress = new DepartmentProgress
@@ -529,7 +572,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         DepartmentProgressPercent = 0
                     };
 
-                    var totalQuantityAssign = outputData[productionStep.ProductionStepId].FirstOrDefault(d => d.ProductionStepLinkDataId == stepAssignment.ProductionStepLinkDataId)?.Quantity ?? 0;
+                    var totalQuantityAssign = outputData[productionStepId].FirstOrDefault(d => d.ProductionStepLinkDataId == stepAssignment.ProductionStepLinkDataId)?.Quantity ?? 0;
                     totalQuantityAssign = !isFinish
                         ? Math.Round(totalQuantityAssign * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5)
                         : totalQuantityAssign - previousSchedule.Sum(p => Math.Round(p * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5));
@@ -552,5 +595,6 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             return result;
         }
+
     }
 }
