@@ -352,7 +352,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversion = productUnitConversionInfo ?? null,
                         SortOrder = details.SortOrder,
                         Description = details.Description,
-                        AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
+                        AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                        InventoryRequirementDetailId = details.InventoryRequirementDetailId
                     });
                 }
                 #endregion
