@@ -149,7 +149,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             .GroupBy(s => s.ScheduleTurnId)
                             .Select(g => g.First().ProductionScheduleQuantity)
                             .ToList();
-                        var isFinish = previousSchedule.Sum(p => p) + productionScheduleQuantity < orderQuantity;
+                        var isFinish = previousSchedule.Sum(p => p) + productionScheduleQuantity >= orderQuantity;
 
                         var stepScheduleProgressModel = new StepScheduleProgressModel
                         {
@@ -166,7 +166,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
                                 TotalQuantity = g.Sum(d => !isFinish
                                 ? Math.Round(d.Quantity * productionScheduleQuantity / orderQuantity, 5)
-                                : orderQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
+                                : d.Quantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
                             }).ToList();
 
                         stepScheduleProgressModel.OutputData = stepData
@@ -178,7 +178,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
                                 TotalQuantity = g.Sum(d => !isFinish
                                 ? Math.Round(d.Quantity * productionScheduleQuantity / orderQuantity, 5)
-                                : orderQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
+                                : d.Quantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
                             }).ToList();
 
                         var stepInputHandovers = handovers
@@ -316,7 +316,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                            .GroupBy(s => s.ScheduleTurnId)
                            .Select(g => g.First().ProductionScheduleQuantity)
                            .ToList();
-                var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity < schedule.TotalQuantity;
+                var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity >= schedule.TotalQuantity;
 
                 foreach (var productionStep in scheduleProductionSteps[scheduleTurnId])
                 {
@@ -330,7 +330,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 g.Key.ObjectTypeId,
                                 TotalQuantity = g.Sum(d => !isFinish
                                 ? Math.Round(d.Quantity * schedule.ProductionScheduleQuantity / schedule.TotalQuantity, 5)
-                                : (schedule.TotalQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / schedule.TotalQuantity, 5))))
+                                : (d.Quantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / schedule.TotalQuantity, 5))))
                             }).ToList();
 
                     var stepOutputHandovers = handovers
@@ -399,7 +399,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                          {
                              StepId = s.StepId,
                              StepName = s.StepName
-                         }).ToList());
+                         }).Distinct().ToList());
             foreach (var item in lst)
             {
                 if (steps.ContainsKey(item.ScheduleTurnId))
@@ -428,7 +428,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                            .Select(g => g.Max(s => s.ProductionScheduleQuantity))
                            .ToList();
 
-            var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity < schedule.OrderQuantity;
+            var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity >= schedule.OrderQuantity;
 
             var allProductionSteps = (from ps in _manufacturingDBContext.ProductionStep
                                       join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
@@ -542,7 +542,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             g.Key.ObjectTypeId,
                             TotalQuantity = g.Sum(d => !isFinish
                            ? Math.Round(d.Quantity * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5)
-                           : (schedule.OrderQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / schedule.OrderQuantity, 5))))
+                           : (d.Quantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / schedule.OrderQuantity, 5))))
                         }).ToList();
 
                 var stepOutputHandovers = handovers
@@ -573,10 +573,12 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         DepartmentProgressPercent = 0
                     };
 
-                    var totalQuantityAssign = outputData[productionStepId].FirstOrDefault(d => d.ProductionStepLinkDataId == stepAssignment.ProductionStepLinkDataId)?.Quantity ?? 0;
+                    var totalQuantityAssign = outputData[productionStepId]
+                        .FirstOrDefault(d => d.ProductionStepLinkDataId == stepAssignment.ProductionStepLinkDataId).Quantity;
+
                     totalQuantityAssign = !isFinish
                         ? Math.Round(totalQuantityAssign * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5)
-                        : totalQuantityAssign - previousSchedule.Sum(p => Math.Round(p * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5));
+                        : (totalQuantityAssign - previousSchedule.Sum(p => Math.Round(totalQuantityAssign * p / schedule.OrderQuantity, 5)));
 
                     foreach (var output in outputs)
                     {
@@ -585,7 +587,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         {
                             receivedQuantity += stepOutputInventory.Where(i => i.DepartmentId == stepAssignment.DepartmentId && i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity).GetValueOrDefault();
                         }
-                        var departmentProgressPercent = Math.Round((receivedQuantity * 100 * stepAssignment.AssignmentQuantity) / (totalQuantityAssign * output.TotalQuantity), 2);
+                        var departmentProgressPercent = Math.Round((receivedQuantity * 100 * totalQuantityAssign) / (stepAssignment.AssignmentQuantity * output.TotalQuantity), 2);
                         if (departmentProgressPercent > departmentProgress.DepartmentProgressPercent) departmentProgress.DepartmentProgressPercent = departmentProgressPercent;
                     }
 
