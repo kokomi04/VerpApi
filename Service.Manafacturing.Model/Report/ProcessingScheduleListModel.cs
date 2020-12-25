@@ -7,10 +7,11 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Commons.Enums.MasterEnum;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.Step;
+using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.Report
 {
-    public class ProcessingScheduleListModel
+    public class ProcessingScheduleListModel : IMapFrom<ProcessingScheduleListEntity>
     {
         public long ProductionScheduleId { get; set; }
         public long ScheduleTurnId { get; set; }
@@ -19,11 +20,50 @@ namespace VErp.Services.Manafacturing.Model.Report
         public long StartDate { get; set; }
         public long EndDate { get; set; }
 
-        public IList<StepModel> Steps { get; set; }
+        public IList<StepListModel> Steps { get; set; }
 
         public ProcessingScheduleListModel()
         {
-            Steps = new List<StepModel>();
+            Steps = new List<StepListModel>();
         }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProcessingScheduleListEntity, ProcessingScheduleListModel>()
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()));
+        }
+    }
+
+    public class StepReportModel : StepListModel
+    {
+        public decimal StepProgressPercent { get; set; }
+        public IList<DepartmentProgress> DepartmentProgress { get; set; }
+
+        public StepReportModel()
+        {
+            DepartmentProgress = new List<DepartmentProgress>();
+        }
+    }
+
+    public class DepartmentProgress
+    {
+        public decimal DepartmentProgressPercent { get; set; }
+        public int DepartmentId { get; set; }
+    }
+
+    public class StepListModel
+    {
+        public string StepName { get; set; }
+        public int StepId { get; set; }
+    }
+
+    public class ProcessingScheduleListEntity
+    {
+        public long ProductionScheduleId { get; set; }
+        public long ScheduleTurnId { get; set; }
+        public string ProductTitle { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
     }
 }
