@@ -50,8 +50,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             var toDateTime = toDate.UnixToDateTime();
             var steps = await (from s in _manufacturingDBContext.Step
                                join ps in _manufacturingDBContext.ProductionStep on s.StepId equals ps.StepId
-                               join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
-                               join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
+                               join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
+                               join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
                                join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
                                where sh.StartDate <= toDateTime && sh.EndDate >= fromDateTime
                                select s).Distinct().ProjectTo<StepModel>(_mapper.ConfigurationProvider).ToListAsync();
@@ -65,8 +65,9 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             var toDateTime = toDate.UnixToDateTime();
 
             var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
-                                   join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
-                                   join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
+                                   join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
+                                   join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
+                                   join po in _manufacturingDBContext.ProductionOrder on pod.ProductionOrderId equals po.ProductionOrderId
                                    join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
                                    where stepIds.Contains(ps.StepId.Value) && sh.StartDate <= toDateTime && sh.EndDate >= fromDateTime
                                    select new
@@ -163,9 +164,9 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             {
                                 ObjectId = g.Key.ObjectId,
                                 ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
-                                TotalQuantity = isFinish
-                                ? Math.Round(g.Sum(d => d.Quantity) * productionScheduleQuantity / orderQuantity, 5)
-                                : orderQuantity - previousSchedule.Sum(p => Math.Round(g.Sum(d => d.Quantity) * p / orderQuantity, 5))
+                                TotalQuantity = g.Sum(d => !isFinish
+                                ? Math.Round(d.Quantity * productionScheduleQuantity / orderQuantity, 5)
+                                : orderQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
                             }).ToList();
 
                         stepScheduleProgressModel.OutputData = stepData
@@ -175,9 +176,9 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             {
                                 ObjectId = g.Key.ObjectId,
                                 ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
-                                TotalQuantity = isFinish
-                                ? Math.Round(g.Sum(d => d.Quantity) * productionScheduleQuantity / orderQuantity, 5)
-                                : orderQuantity - previousSchedule.Sum(p => Math.Round(g.Sum(d => d.Quantity) * p / orderQuantity, 5))
+                                TotalQuantity = g.Sum(d => !isFinish
+                                ? Math.Round(d.Quantity * productionScheduleQuantity / orderQuantity, 5)
+                                : orderQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
                             }).ToList();
 
                         var stepInputHandovers = handovers
@@ -271,8 +272,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
                                    join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
-                                   join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
-                                   join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
+                                   join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
+                                   join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
                                    join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
                                    where scheduleTurnIds.Contains(sh.ScheduleTurnId)
                                    select new
@@ -327,9 +328,9 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             {
                                 g.Key.ObjectId,
                                 g.Key.ObjectTypeId,
-                                TotalQuantity = isFinish
-                                ? Math.Round(g.Sum(d => d.Quantity) * schedule.ProductionScheduleQuantity / schedule.TotalQuantity, 5)
-                                : schedule.TotalQuantity - previousSchedule.Sum(p => Math.Round(g.Sum(d => d.Quantity) * p / schedule.TotalQuantity, 5))
+                                TotalQuantity = g.Sum(d => !isFinish
+                                ? Math.Round(d.Quantity * schedule.ProductionScheduleQuantity / schedule.TotalQuantity, 5)
+                                : (schedule.TotalQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / schedule.TotalQuantity, 5))))
                             }).ToList();
 
                     var stepOutputHandovers = handovers
@@ -362,8 +363,194 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
         public async Task<IList<ProcessingScheduleListModel>> GetProcessingScheduleList()
         {
-            return null;
-        }
+            var sql = @$"SELECT 
+                    v.ProductionScheduleId,
+                    v.ScheduleTurnId,
+                    v.ProductTitle,
+                    v.StartDate,
+                    v.EndDate  
+                FROM vProductionSchedule v 
+                WHERE v.ProductionScheduleStatus = {(int)EnumScheduleStatus.Processing} OR v.ProductionScheduleStatus = {(int)EnumScheduleStatus.OverDeadline}";
 
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql, Array.Empty<SqlParameter>());
+            var lst = resultData
+                .ConvertData<ProcessingScheduleListEntity>()
+                .AsQueryable()
+                .ProjectTo<ProcessingScheduleListModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            var scheduleTurnIds = lst.Select(s => s.ScheduleTurnId).Distinct().ToList();
+
+            var steps = (from s in _manufacturingDBContext.Step
+                         join ps in _manufacturingDBContext.ProductionStep on s.StepId equals ps.StepId
+                         join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerTypeId, ps.ContainerId } equals new { ContainerTypeId = (int)EnumContainerType.ProductionOrder, ContainerId = po.ProductionOrderId }
+                         join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
+                         join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
+                         where scheduleTurnIds.Contains(sh.ScheduleTurnId)
+                         select new
+                         {
+                             s.StepId,
+                             s.StepName,
+                             sh.ScheduleTurnId
+                         })
+                         .ToList()
+                         .GroupBy(s => s.ScheduleTurnId)
+                         .ToDictionary(g => g.Key, g => g.Select(s => new StepListModel
+                         {
+                             StepId = s.StepId,
+                             StepName = s.StepName
+                         }).ToList());
+            foreach (var item in lst)
+            {
+                item.Steps = steps[item.ScheduleTurnId];
+            }
+
+            return lst;
+        }
+        public async Task<IList<StepReportModel>> GetProcessingStepReport(long scheduleTurnId, int[] stepIds)
+        {
+            var schedule = (from sh in _manufacturingDBContext.ProductionSchedule
+                            join pod in _manufacturingDBContext.ProductionOrderDetail on sh.ProductionOrderDetailId equals pod.ProductionOrderDetailId
+                            where sh.ScheduleTurnId == scheduleTurnId
+                            select new
+                            {
+                                OrderQuantity = pod.Quantity.GetValueOrDefault() + pod.ReserveQuantity.GetValueOrDefault(),
+                                sh.ProductionScheduleQuantity,
+                                pod.ProductionOrderDetailId
+                            }).FirstOrDefault();
+
+            if (schedule == null) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
+
+            var previousSchedule = _manufacturingDBContext.ProductionSchedule
+                           .Where(s => s.ProductionOrderDetailId == schedule.ProductionOrderDetailId && s.ScheduleTurnId < scheduleTurnId)
+                           .GroupBy(s => s.ScheduleTurnId)
+                           .Select(g => g.First().ProductionScheduleQuantity)
+                           .ToList();
+
+            var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity < schedule.OrderQuantity;
+
+            var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
+                                   join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                   join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
+                                   join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
+                                   join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
+                                   where sh.ScheduleTurnId == scheduleTurnId && stepIds.Contains(s.StepId)
+                                   select new
+                                   {
+                                       s.StepId,
+                                       s.StepName,
+                                       ps.ProductionStepId,
+                                   })
+                                   .ToList();
+            var productionStepIds = productionSteps.Select(s => s.ProductionStepId).ToList();
+
+            var outputData = (from r in _manufacturingDBContext.ProductionStepLinkDataRole
+                              join d in _manufacturingDBContext.ProductionStepLinkData on r.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                              where productionStepIds.Contains(r.ProductionStepId) && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
+                              select new
+                              {
+                                  r.ProductionStepId,
+                                  d.ObjectTypeId,
+                                  d.ObjectId,
+                                  d.Quantity,
+                                  d.ProductionStepLinkDataId
+                              })
+                              .ToList()
+                              .GroupBy(d => d.ProductionStepId)
+                              .ToDictionary(g => g.Key, g => g.ToList());
+
+            var handovers = _manufacturingDBContext.ProductionHandover
+                .Where(h => h.ScheduleTurnId == scheduleTurnId)
+                .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
+                .ToList();
+
+            var invParammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+            var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", invParammeters);
+            var reqInventorys = invData.ConvertData<ProductionInventoryRequirementEntity>()
+                    .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+                    .ToList();
+
+            var assignments = _manufacturingDBContext.ProductionAssignment
+                .Where(a => a.ScheduleTurnId == scheduleTurnId)
+                .ToList();
+
+            var result = new List<StepReportModel>();
+
+            foreach (var productionStep in productionSteps)
+            {
+                var stepReport = new StepReportModel
+                {
+                    StepId = productionStep.StepId,
+                    StepName = productionStep.StepName,
+                    StepProgressPercent = 0
+                };
+
+                var outputStepData = outputData[productionStep.ProductionStepId];
+
+                var outputs = outputStepData
+                        .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                        .Select(g => new
+                        {
+                            g.Key.ObjectId,
+                            g.Key.ObjectTypeId,
+                            TotalQuantity = g.Sum(d => !isFinish
+                           ? Math.Round(d.Quantity * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5)
+                           : (schedule.OrderQuantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / schedule.OrderQuantity, 5))))
+                        }).ToList();
+
+                var stepOutputHandovers = handovers
+                    .Where(h => h.ScheduleTurnId == scheduleTurnId && h.FromProductionStepId == productionStep.ProductionStepId)
+                    .ToList();
+
+                var stepOutputInventory = reqInventorys
+                    .Where(i => i.ProductionStepId == productionStep.ProductionStepId)
+                    .ToList();
+
+                foreach (var output in outputs)
+                {
+                    var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                    if (output.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                    {
+                        receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity).GetValueOrDefault();
+                    }
+                    var stepProgressPercent = Math.Round(receivedQuantity * 100 / output.TotalQuantity, 2);
+                    if (stepProgressPercent > stepReport.StepProgressPercent) stepReport.StepProgressPercent = stepProgressPercent;
+                }
+
+                var stepAssignments = assignments.Where(a => a.ProductionStepId == productionStep.ProductionStepId).ToList();
+                foreach (var stepAssignment in stepAssignments)
+                {
+                    var departmentProgress = new DepartmentProgress
+                    {
+                        DepartmentId = stepAssignment.DepartmentId,
+                        DepartmentProgressPercent = 0
+                    };
+
+                    var totalQuantityAssign = outputData[productionStep.ProductionStepId].FirstOrDefault(d => d.ProductionStepLinkDataId == stepAssignment.ProductionStepLinkDataId)?.Quantity ?? 0;
+                    totalQuantityAssign = !isFinish
+                        ? Math.Round(totalQuantityAssign * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5)
+                        : totalQuantityAssign - previousSchedule.Sum(p => Math.Round(p * schedule.ProductionScheduleQuantity / schedule.OrderQuantity, 5));
+
+                    foreach (var output in outputs)
+                    {
+                        var receivedQuantity = stepOutputHandovers.Where(h => h.FromDepartmentId == stepAssignment.DepartmentId && h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                        if (output.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                        {
+                            receivedQuantity += stepOutputInventory.Where(i => i.DepartmentId == stepAssignment.DepartmentId && i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity).GetValueOrDefault();
+                        }
+                        var departmentProgressPercent = Math.Round((receivedQuantity * 100 * stepAssignment.AssignmentQuantity) / (totalQuantityAssign * output.TotalQuantity), 2);
+                        if (departmentProgressPercent > departmentProgress.DepartmentProgressPercent) departmentProgress.DepartmentProgressPercent = departmentProgressPercent;
+                    }
+
+                    stepReport.DepartmentProgress.Add(departmentProgress);
+                }
+                result.Add(stepReport);
+            }
+
+            return result;
+        }
     }
 }

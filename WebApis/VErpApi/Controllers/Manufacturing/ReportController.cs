@@ -44,6 +44,18 @@ namespace VErpApi.Controllers.Manufacturing
             return await _reportService.GetProductionScheduleReport(fromDate, toDate);
         }
 
+        [HttpGet]
+        [Route("ProcessingScheduleList")]
+        public async Task<IList<ProcessingScheduleListModel>> GetProcessingScheduleList()
+        {
+            return await _reportService.GetProcessingScheduleList();
+        }
 
+        [HttpPost]
+        [Route("ProductionProgress/{scheduleTurnId}")]
+        public async Task<IList<StepReportModel>> GetProcessingStepReport([FromRoute] long scheduleTurnId, [FromBody] int[] stepIds)
+        {
+            return await _reportService.GetProcessingStepReport(scheduleTurnId, stepIds);
+        }
     }
 }
