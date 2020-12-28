@@ -318,6 +318,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                            .ToList();
                 var isFinish = previousSchedule.Sum(p => p) + schedule.ProductionScheduleQuantity >= schedule.TotalQuantity;
 
+                if (!scheduleProductionSteps.ContainsKey(scheduleTurnId)) continue;
+
                 foreach (var productionStep in scheduleProductionSteps[scheduleTurnId])
                 {
                     var outputStepData = outputData[productionStep.ProductionStepId];
