@@ -12,5 +12,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<long> CreateConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, ProductionConsumMaterialModel model);
         Task<bool> UpdateConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, long productionConsumMaterialId, ProductionConsumMaterialModel model);
         Task<bool> DeleteConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, long productionConsumMaterialId);
+        Task<bool> DeleteMaterial(int departmentId, long scheduleTurnId, long productionStepId, int objectTypeId, long objectId);
     }
 }

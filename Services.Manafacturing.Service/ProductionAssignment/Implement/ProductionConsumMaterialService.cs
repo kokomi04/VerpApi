@@ -176,7 +176,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         public async Task<bool> DeleteConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, long productionConsumMaterialId)
         {
 
-            var consumMaterial = await _manufacturingDBContext.ProductionConsumMaterial.FirstOrDefaultAsync(s => s.ProductionConsumMaterialId == productionConsumMaterialId);
+            var consumMaterial = await _manufacturingDBContext.ProductionConsumMaterial
+                .FirstOrDefaultAsync(s => s.ProductionConsumMaterialId == productionConsumMaterialId);
             if (consumMaterial == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy khai báo tiêu hao trong hệ thống");
@@ -209,6 +210,36 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                      }.JsonSerialize());
                 return true;
             }
+        }
+
+        public async Task<bool> DeleteMaterial(int departmentId, long scheduleTurnId, long productionStepId, int objectTypeId, long objectId)
+        {
+            var consumMaterialDetails = (from sd in _manufacturingDBContext.ProductionConsumMaterialDetail
+                                         join s in _manufacturingDBContext.ProductionConsumMaterial
+                                         on sd.ProductionConsumMaterialId equals s.ProductionConsumMaterialId
+                                         where s.DepartmentId == departmentId
+                                         && s.ScheduleTurnId == scheduleTurnId
+                                         && s.ProductionStepId == productionStepId
+                                         && sd.ObjectTypeId == objectTypeId
+                                         && sd.ObjectId == objectId
+                                         select sd).ToList();
+
+            foreach (var consumMaterialDetail in consumMaterialDetails)
+            {
+                consumMaterialDetail.IsDeleted = true;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionConsumMaterial, objectId, $"Xóa khai báo vật tư tiêu hao",
+                    new
+                    {
+                        departmentId,
+                        scheduleTurnId,
+                        productionStepId,
+                        objectTypeId,
+                        objectId
+                    }.JsonSerialize());
+            }
+
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
         }
     }
 }
