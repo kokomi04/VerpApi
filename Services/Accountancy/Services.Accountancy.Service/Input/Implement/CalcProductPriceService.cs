@@ -90,6 +90,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     req.AllocationRate.ToDecimalKeyValueSqlParameter("@AllocationRate"),
                     req.DirectMaterialFee.ToDecimalKeyValueSqlParameter("@DirectMaterialFee"),
                     req.DirectLaborFee.ToDecimalKeyValueSqlParameter("@DirectLaborFee"),
+                    req.DirectGeneralFee.ToDecimalKeyValueSqlParameter("@DirectGeneralFee"),
                     req.OtherFee.ToDecimalKeyValueSqlParameter("@OtherFee"),
                     req.CustomPrice.ToDecimalKeyValueSqlParameter("@CustomPrice"),
 
