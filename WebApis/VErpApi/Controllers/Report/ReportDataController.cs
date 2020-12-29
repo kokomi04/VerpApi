@@ -6,12 +6,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErpApi.Controllers.Report
 {
     [Route("api/reports/accoutancy")]
+    [ObjectDataApi(EnumObjectType.ReportType, "reportId")]
     public class ReportDataController : VErpBaseController
     {
         private readonly IDataReportService _accountancyReportService;
