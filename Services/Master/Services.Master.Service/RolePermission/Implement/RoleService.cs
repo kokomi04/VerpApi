@@ -92,15 +92,15 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 parentInfo = _masterContext.Role.FirstOrDefault(r => r.RoleId == role.ParentRoleId);
                 if (parentInfo == null) throw new BadRequestException(RoleErrorCode.ParentRoleNotFound);
             }
-            var modules = _masterContext.Module.ToList();
+            var modules = roleTypeId == EnumRoleType.Administrator ? _masterContext.Module.ToList() : null;
 
-            var categories = await _categoryHelperService.GetDynamicCates();
+            var categories = roleTypeId == EnumRoleType.Administrator ? await _categoryHelperService.GetDynamicCates() : null;
 
-            var inputTypes = await _inputTypeHelperService.GetInputTypeSimpleList();
+            var inputTypes = roleTypeId == EnumRoleType.Administrator ? await _inputTypeHelperService.GetInputTypeSimpleList() : null;
 
-            var voucherTypes = await _voucherTypeHelperService.GetVoucherTypeSimpleList();
+            var voucherTypes = roleTypeId == EnumRoleType.Administrator ? await _voucherTypeHelperService.GetVoucherTypeSimpleList() : null;
 
-            var stocks = await _stockHelperService.GetAllStock();
+            var stocks = roleTypeId == EnumRoleType.Administrator ? await _stockHelperService.GetAllStock() : null;
 
             using (var trans = _masterContext.Database.BeginTransaction())
             {
@@ -113,99 +113,102 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 UpdateRoleChildren(roleInfo.RootPath);
 
-                var lstPermissions = new List<RolePermissionEntity>();
-
-                foreach (var m in modules)
+                if (roleTypeId == EnumRoleType.Administrator)
                 {
+                    var lstPermissions = new List<RolePermissionEntity>();
 
-                    switch (m.ModuleId)
+                    foreach (var m in modules)
                     {
-                        case (int)EnumModule.CategoryData:
-                            foreach (var c in categories)
-                            {
-                                var permission = new RolePermissionEntity
+
+                        switch (m.ModuleId)
+                        {
+                            case (int)EnumModule.CategoryData:
+                                foreach (var c in categories)
+                                {
+                                    var permission = new RolePermissionEntity
+                                    {
+                                        CreatedDatetimeUtc = DateTime.UtcNow,
+                                        ModuleId = m.ModuleId,
+                                        RoleId = roleInfo.RoleId,
+                                        Permission = int.MaxValue,
+                                        ObjectTypeId = (int)EnumObjectType.Category,
+                                        ObjectId = c.CategoryId
+                                    };
+                                    lstPermissions.Add(permission);
+                                }
+                                break;
+
+                            case (int)EnumModule.Input:
+
+                                foreach (var c in inputTypes)
+                                {
+                                    var actionIds = c.ActionObjects?.Select(a => a.InputActionId)?.ToList();
+
+                                    var permission = new RolePermissionEntity
+                                    {
+                                        CreatedDatetimeUtc = DateTime.UtcNow,
+                                        ModuleId = m.ModuleId,
+                                        RoleId = roleInfo.RoleId,
+                                        Permission = int.MaxValue,
+                                        ObjectTypeId = (int)EnumObjectType.InputType,
+                                        ObjectId = c.InputTypeId,
+                                        JsonActionIds = actionIds.JsonSerialize()
+                                    };
+                                    lstPermissions.Add(permission);
+                                }
+                                break;
+
+                            case (int)EnumModule.SalesBill:
+                                foreach (var c in voucherTypes)
+                                {
+                                    var actionIds = c.ActionObjects?.Select(a => a.VoucherActionId)?.ToList();
+
+                                    var permission = new RolePermissionEntity
+                                    {
+                                        CreatedDatetimeUtc = DateTime.UtcNow,
+                                        ModuleId = m.ModuleId,
+                                        RoleId = roleInfo.RoleId,
+                                        Permission = int.MaxValue,
+                                        ObjectTypeId = (int)EnumObjectType.VoucherType,
+                                        ObjectId = c.VoucherTypeId,
+                                        JsonActionIds = actionIds.JsonSerialize()
+                                    };
+                                    lstPermissions.Add(permission);
+                                }
+                                break;
+                            default:
+
+                                var modulePermission = new RolePermissionEntity
                                 {
                                     CreatedDatetimeUtc = DateTime.UtcNow,
                                     ModuleId = m.ModuleId,
                                     RoleId = roleInfo.RoleId,
                                     Permission = int.MaxValue,
-                                    ObjectTypeId = (int)EnumObjectType.Category,
-                                    ObjectId = c.CategoryId
+                                    ObjectTypeId = 0,
+                                    ObjectId = 0,
+                                    JsonActionIds = null
                                 };
-                                lstPermissions.Add(permission);
-                            }
-                            break;
-
-                        case (int)EnumModule.Input:
-
-                            foreach (var c in inputTypes)
-                            {
-                                var actionIds = c.ActionObjects?.Select(a => a.InputActionId)?.ToList();
-
-                                var permission = new RolePermissionEntity
-                                {
-                                    CreatedDatetimeUtc = DateTime.UtcNow,
-                                    ModuleId = m.ModuleId,
-                                    RoleId = roleInfo.RoleId,
-                                    Permission = int.MaxValue,
-                                    ObjectTypeId = (int)EnumObjectType.InputType,
-                                    ObjectId = c.InputTypeId,
-                                    JsonActionIds = actionIds.JsonSerialize()
-                                };
-                                lstPermissions.Add(permission);
-                            }
-                            break;
-
-                        case (int)EnumModule.SalesBill:
-                            foreach (var c in voucherTypes)
-                            {
-                                var actionIds = c.ActionObjects?.Select(a => a.VoucherActionId)?.ToList();
-
-                                var permission = new RolePermissionEntity
-                                {
-                                    CreatedDatetimeUtc = DateTime.UtcNow,
-                                    ModuleId = m.ModuleId,
-                                    RoleId = roleInfo.RoleId,
-                                    Permission = int.MaxValue,
-                                    ObjectTypeId = (int)EnumObjectType.VoucherType,
-                                    ObjectId = c.VoucherTypeId,
-                                    JsonActionIds = actionIds.JsonSerialize()
-                                };
-                                lstPermissions.Add(permission);
-                            }
-                            break;
-                        default:
-
-                            var modulePermission = new RolePermissionEntity
-                            {
-                                CreatedDatetimeUtc = DateTime.UtcNow,
-                                ModuleId = m.ModuleId,
-                                RoleId = roleInfo.RoleId,
-                                Permission = int.MaxValue,
-                                ObjectTypeId = 0,
-                                ObjectId = 0,
-                                JsonActionIds = null
-                            };
-                            lstPermissions.Add(modulePermission);
-                            break;
+                                lstPermissions.Add(modulePermission);
+                                break;
+                        }
                     }
-                }
 
-                await _masterContext.RolePermission.AddRangeAsync(lstPermissions);
+                    await _masterContext.RolePermission.AddRangeAsync(lstPermissions);
 
-                var objectPermission = new List<RoleDataPermission>();
-                foreach (var stock in stocks)
-                {
-                    objectPermission.Add(new RoleDataPermission()
+                    var objectPermission = new List<RoleDataPermission>();
+                    foreach (var stock in stocks)
                     {
-                        RoleId = roleInfo.RoleId,
-                        ObjectTypeId = (int)EnumObjectType.Stock,
-                        ObjectId = stock.StockId
-                    });
-                }
-                await _masterContext.RoleDataPermission.AddRangeAsync(objectPermission);
+                        objectPermission.Add(new RoleDataPermission()
+                        {
+                            RoleId = roleInfo.RoleId,
+                            ObjectTypeId = (int)EnumObjectType.Stock,
+                            ObjectId = stock.StockId
+                        });
+                    }
+                    await _masterContext.RoleDataPermission.AddRangeAsync(objectPermission);
 
-                await _masterContext.SaveChangesAsync();
+                    await _masterContext.SaveChangesAsync();
+                }
 
                 trans.Commit();
             }
