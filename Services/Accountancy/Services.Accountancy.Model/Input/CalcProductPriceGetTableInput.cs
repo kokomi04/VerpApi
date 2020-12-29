@@ -23,6 +23,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public NonCamelCaseDictionary<decimal> CustomPrice { get; set; }
         public NonCamelCaseDictionary<decimal> DirectMaterialFee { get; set; }
         public NonCamelCaseDictionary<decimal> DirectLaborFee { get; set; }
+        public NonCamelCaseDictionary<decimal> DirectGeneralFee { get; set; }
         public NonCamelCaseDictionary<decimal> OtherFee { get; set; }
 
         public EnumCalcProductPriceAllocationType IndirectMaterialFeeAllocationTypeId { get; set; }
