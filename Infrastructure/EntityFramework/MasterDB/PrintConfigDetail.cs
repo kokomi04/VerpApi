@@ -3,17 +3,10 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.MasterDB
 {
-    public partial class PrintConfig
+    public partial class PrintConfigDetail
     {
-        public PrintConfig()
-        {
-            PrintConfigDetail = new HashSet<PrintConfigDetail>();
-        }
-
+        public int PrintConfigDetailId { get; set; }
         public int PrintConfigId { get; set; }
-        public int? ActiveForId { get; set; }
-        public string PrintConfigName { get; set; }
-        public string Title { get; set; }
         public string BodyTable { get; set; }
         public string GenerateCode { get; set; }
         public int? PaperSize { get; set; }
@@ -32,8 +25,9 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
-        public int ModuleTypeId { get; set; }
+        public string TemplateFilePath { get; set; }
+        public bool IsOrigin { get; set; }
 
-        public virtual ICollection<PrintConfigDetail> PrintConfigDetail { get; set; }
+        public virtual PrintConfig PrintConfig { get; set; }
     }
 }

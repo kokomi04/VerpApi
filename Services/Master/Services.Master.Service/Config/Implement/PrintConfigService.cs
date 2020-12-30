@@ -60,13 +60,13 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             var printConfig = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
-                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
             if (printConfig == null)
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             }
-            return printConfig;
+            return _mapper.Map<PrintConfigModel>(printConfig);
         }
 
         public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId, int activeForId)
@@ -79,10 +79,10 @@ namespace VErp.Services.Master.Service.Config.Implement
                 query = query.Where(p => p.ActiveForId == activeForId);
             }
             var lst = await query.OrderBy(p => p.Title)
-                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return lst;
+            return lst.AsQueryable().ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider).ToList();
         }
 
         public async Task<int> AddPrintConfig(PrintConfigModel data)
@@ -97,19 +97,28 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(InputErrorCode.PrintConfigNameAlreadyExisted);
             }
 
+            var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
-                PrintConfig config = _mapper.Map<PrintConfig>(data);
+                var configExtract = _mapper.Map<PrintConfigExtract>(data);
+                var config = _mapper.Map<PrintConfig>(configExtract);
                 await _masterDBContext.PrintConfig.AddAsync(config);
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", data.JsonSerialize());
+                var configDetail = _mapper.Map<PrintConfigDetail>(data as PrintConfigDetailModel);
+                configDetail.PrintConfigId = config.PrintConfigId;
+                configDetail.IsOrigin = true;
+                await _masterDBContext.PrintConfigDetail.AddAsync(configDetail);
+                await _masterDBContext.SaveChangesAsync();
 
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", data.JsonSerialize());
                 return config.PrintConfigId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Create");
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "AddPrintConfig");
                 throw;
             }
         }
@@ -117,7 +126,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data)
         {
             //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.ActiveForId));
-            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            var config = await _masterDBContext.PrintConfig.Include(x=>x.PrintConfigDetail).FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
@@ -126,34 +135,36 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNameAlreadyExisted);
             }
+
+            var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
-                config.ActiveForId = data.ActiveForId;
-                config.PrintConfigName = data.PrintConfigName;
-                config.Title = data.Title;
-                config.BodyTable = data.BodyTable;
-                config.GenerateCode = data.GenerateCode;
-                config.PaperSize = data.PaperSize;
-                config.Layout = data.Layout;
-                config.HeadTable = data.HeadTable;
-                config.FootTable = data.FootTable;
-                config.StickyFootTable = data.StickyFootTable;
-                config.StickyHeadTable = data.StickyHeadTable;
-                config.HasTable = data.HasTable;
-                config.Background = data.Background;
-                config.TemplateFileId = data.TemplateFileId;
-                config.GenerateToString = data.GenerateToString;
-                config.ModuleTypeId = data.ModuleTypeId;
-
+                var configExtract = _mapper.Map<PrintConfigExtract>(data);
+                _mapper.Map(configExtract, config);
                 await _masterDBContext.SaveChangesAsync();
 
+                if (config.PrintConfigDetail.Count > 1)
+                {
+                    var detail = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => !p.IsOrigin);
+                    _mapper.Map(data, detail);
+                }
+                else
+                {
+                    var detail = _mapper.Map<PrintConfigDetail>(data);
+                    detail.PrintConfigId = config.PrintConfigId;
+                    detail.IsOrigin = false;
+                    await _masterDBContext.PrintConfigDetail.AddAsync(detail);
+                }
+                await _masterDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Cập nhật cấu hình phiếu in chứng từ {config.PrintConfigName}", data.JsonSerialize());
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Update");
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "UpdatePrintConfig");
                 throw;
             }
         }
@@ -162,15 +173,28 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
-            {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var details = await _masterDBContext.PrintConfigDetail.Where(p => p.PrintConfigId == printConfigId).ToListAsync();
+            
+            var trans = await _masterDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                config.IsDeleted = true;
+                details.ForEach(x => x.IsDeleted = true);
+
+                await _masterDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
+                return true;
             }
-
-            config.IsDeleted = true;
-            await _masterDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
-            return true;
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "DeletePrintConfig");
+                throw;
+            }
         }
 
         public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, int fileId, PrintTemplateInput templateModel)
@@ -187,7 +211,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             try
             {
-                var newFile  = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
+                var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
                 return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
             }
             catch (Exception ex)
@@ -210,10 +234,10 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<IList<EntityField>> GetSuggestionField(Assembly assembly)
         {
             var classTypes = assembly.GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttributes().Any(a=>a is PrintSuggestionConfigAttribute))
+                .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttributes().Any(a => a is PrintSuggestionConfigAttribute))
                 .ToArray();
             var fields = new List<EntityField>();
-            foreach(var type in classTypes)
+            foreach (var type in classTypes)
             {
                 foreach (var prop in type.GetProperties())
                 {
