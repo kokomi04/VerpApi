@@ -130,6 +130,17 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
         public async Task<bool> RestoreForBackupPoint(long backupPoint)
         {
+            var backupPointRestore = new BackupStorageInput
+            {
+                Title = "System/Backup before restore",
+                storages = Enum.GetValues(typeof(EnumModuleType)).OfType<EnumModuleType>().Select(x => new SubSystemInfo
+                {
+                    ModuleTypeId = x,
+                    Title = x.GetEnumDescription()
+                }).ToList(),
+            };
+            await BackupStorage(backupPointRestore);
+
             var backups = _masterContext.BackupStorage.Where(x => x.BackupPoint == backupPoint).ToList();
             if (backups.Count < 0)
             {
@@ -156,6 +167,13 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             {
                 throw new BadRequestException(BackupErrorCode.NotFoundBackupForDatabase);
             }
+            var backupPointRestore = new BackupStorageInput
+            {
+                Title = $"System/Backup {((EnumModuleType)backup.ModuleTypeId).GetEnumDescription()} before restore",
+                storages = new List<SubSystemInfo> { new SubSystemInfo { ModuleTypeId = (EnumModuleType)backup.ModuleTypeId } },
+            };
+
+            await BackupStorage(backupPointRestore);
             await RestoreDatabase(backup);
 
             backup.RestoreDate = DateTime.UtcNow;
@@ -180,7 +198,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
                $"Started restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
 
-                DbContext dbContext = _activityLogDBContext;              
+                DbContext dbContext = _activityLogDBContext;
 
                 try
                 {
