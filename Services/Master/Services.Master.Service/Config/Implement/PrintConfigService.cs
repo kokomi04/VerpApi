@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.GlobalObject.InternalDataInterface;
@@ -35,6 +37,26 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly AppSetting _appSetting;
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly IPhysicalFileService _physicalFileService;
+
+        private static readonly Dictionary<string, EnumFileType> FileExtensionTypes = new Dictionary<string, EnumFileType>()
+        {
+
+            { ".doc" , EnumFileType.Document },
+            { ".pdf" , EnumFileType.Document },
+            { ".docx", EnumFileType.Document },
+            { ".xls", EnumFileType.Document },
+            { ".xlsx" , EnumFileType.Document },
+            { ".csv" , EnumFileType.Document },
+        };
+
+        private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
+        {
+            { ".doc" , "application/msword" },
+            { ".pdf" , "application/pdf" },
+            { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+        };
+
+        private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(t => t.Key, t => t.Select(v => v.Key).ToArray());
 
         public PrintConfigService(MasterDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -60,13 +82,13 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             var printConfig = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
-                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
             if (printConfig == null)
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             }
-            return printConfig;
+            return _mapper.Map<PrintConfigModel>(printConfig);
         }
 
         public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId, int activeForId)
@@ -79,10 +101,10 @@ namespace VErp.Services.Master.Service.Config.Implement
                 query = query.Where(p => p.ActiveForId == activeForId);
             }
             var lst = await query.OrderBy(p => p.Title)
-                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return lst;
+            return lst.AsQueryable().ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider).ToList();
         }
 
         public async Task<int> AddPrintConfig(PrintConfigModel data)
@@ -97,19 +119,28 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(InputErrorCode.PrintConfigNameAlreadyExisted);
             }
 
+            var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
-                PrintConfig config = _mapper.Map<PrintConfig>(data);
+                var configExtract = _mapper.Map<PrintConfigExtract>(data);
+                var config = _mapper.Map<PrintConfig>(configExtract);
                 await _masterDBContext.PrintConfig.AddAsync(config);
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", data.JsonSerialize());
+                var configDetail = _mapper.Map<PrintConfigDetail>(data as PrintConfigDetailModel);
+                configDetail.PrintConfigId = config.PrintConfigId;
+                configDetail.IsOrigin = true;
+                await _masterDBContext.PrintConfigDetail.AddAsync(configDetail);
+                await _masterDBContext.SaveChangesAsync();
 
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", data.JsonSerialize());
                 return config.PrintConfigId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Create");
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "AddPrintConfig");
                 throw;
             }
         }
@@ -126,34 +157,42 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNameAlreadyExisted);
             }
+
+            var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
-                config.ActiveForId = data.ActiveForId;
-                config.PrintConfigName = data.PrintConfigName;
-                config.Title = data.Title;
-                config.BodyTable = data.BodyTable;
-                config.GenerateCode = data.GenerateCode;
-                config.PaperSize = data.PaperSize;
-                config.Layout = data.Layout;
-                config.HeadTable = data.HeadTable;
-                config.FootTable = data.FootTable;
-                config.StickyFootTable = data.StickyFootTable;
-                config.StickyHeadTable = data.StickyHeadTable;
-                config.HasTable = data.HasTable;
-                config.Background = data.Background;
-                config.TemplateFileId = data.TemplateFileId;
-                config.GenerateToString = data.GenerateToString;
-                config.ModuleTypeId = data.ModuleTypeId;
-
+                var configExtract = _mapper.Map<PrintConfigExtract>(data);
+                _mapper.Map(configExtract, config);
                 await _masterDBContext.SaveChangesAsync();
 
+                var details = await _masterDBContext.PrintConfigDetail.Where(x => x.PrintConfigId == config.PrintConfigId).ToListAsync();
+
+                var detailOrigin = details.FirstOrDefault(p => p.IsOrigin);
+                if (!detailOrigin.TemplateFileId.HasValue)
+                    detailOrigin.TemplateFileId = data.TemplateFileId;
+
+                if (details.Any(x => !x.IsOrigin))
+                {
+                    var detailModify = details.FirstOrDefault(p => !p.IsOrigin);
+                    _mapper.Map(data, detailModify);
+                }
+                else
+                {
+                    var detail = _mapper.Map<PrintConfigDetail>(data);
+                    detail.PrintConfigId = config.PrintConfigId;
+                    detail.IsOrigin = false;
+                    await _masterDBContext.PrintConfigDetail.AddAsync(detail);
+                }
+                await _masterDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Cập nhật cấu hình phiếu in chứng từ {config.PrintConfigName}", data.JsonSerialize());
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Update");
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "UpdatePrintConfig");
                 throw;
             }
         }
@@ -162,15 +201,34 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
-            {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var details = await _masterDBContext.PrintConfigDetail.Where(p => p.PrintConfigId == printConfigId).ToListAsync();
+
+            var trans = await _masterDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                config.IsDeleted = true;
+                for (int i = 0; i < details.Count; i++)
+                {
+                    var detail = details[i];
+                    detail.IsDeleted = true;
+                    if (detail.TemplateFileId != null && detail.TemplateFileId.HasValue)
+                        await _physicalFileService.DeleteFile(detail.TemplateFileId.Value);
+                }
+
+                await _masterDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
+                return true;
             }
-
-            config.IsDeleted = true;
-            await _masterDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
-            return true;
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "DeletePrintConfig");
+                throw;
+            }
         }
 
         public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, int fileId, PrintTemplateInput templateModel)
@@ -187,7 +245,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             try
             {
-                var newFile  = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
+                var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
                 return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
             }
             catch (Exception ex)
@@ -210,10 +268,10 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<IList<EntityField>> GetSuggestionField(Assembly assembly)
         {
             var classTypes = assembly.GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttributes().Any(a=>a is PrintSuggestionConfigAttribute))
+                .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttributes().Any(a => a is PrintSuggestionConfigAttribute))
                 .ToArray();
             var fields = new List<EntityField>();
-            foreach(var type in classTypes)
+            foreach (var type in classTypes)
             {
                 foreach (var prop in type.GetProperties())
                 {
@@ -229,6 +287,147 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             return fields;
         }
+
+        public async Task<bool> RollbackPrintConfigOnlyTemplate(long printConfigId)
+        {
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            if (config == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var detailOrigin = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && p.IsOrigin);
+            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
+            if (detailModify != null)
+                detailModify.TemplateFileId = detailOrigin.TemplateFileId;
+
+            await _masterDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RollbackPrintConfigWithoutTemplate(long printConfigId)
+        {
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            if (config == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var detailOrigin = await _masterDBContext.PrintConfigDetail.ProjectTo<PrintConfigDetailModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && p.IsOrigin);
+            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
+            var fileIdNote = detailModify.TemplateFileId;
+            if (detailModify != null)
+            {
+                _mapper.Map(detailOrigin, detailModify);
+                detailModify.TemplateFileId = fileIdNote;
+                detailModify.IsOrigin = false;
+            }
+
+            await _masterDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RollbackPrintConfig(long printConfigId)
+        {
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            if (config == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
+            detailModify.IsDeleted = true;
+
+            await _masterDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
+        {
+            var ext = Path.GetExtension(file.FileName).ToLower();
+
+            if (!FileTypeExtensions.ContainsKey(fileTypeId))
+            {
+                throw new BadRequestException(FileErrorCode.InvalidFileType);
+            }
+
+            if (!FileTypeExtensions[fileTypeId].Contains(ext))
+            {
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension);
+            }
+
+            return await Upload(objectTypeId, fileName, file);
+        }
+
+        private async Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
+        {
+            var (validate, fileTypeId) = ValidateUploadFile(file);
+            if (!validate.IsSuccess())
+            {
+                throw new BadRequestException(validate);
+            }
+
+            string filePath = GenerateTempFilePath(file.FileName);
+
+            using (var stream = File.Create(GetPhysicalFilePath(filePath)))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                fileName = file.FileName;
+            }
+
+            var fileId = await _physicalFileService.SaveSimpleFileInfo(EnumObjectType.PrintConfig, new SimpleFileInfo
+            {
+                FileName = fileName,
+                FilePath = filePath,
+                FileTypeId = (int)fileTypeId,
+                ContentType = file.ContentType,
+                FileLength = file.Length
+            });
+
+            return fileId;
+        }
+
+
+        private string GenerateTempFilePath(string uploadFileName)
+        {
+            var relativeFolder = $"/_document_template_/{Guid.NewGuid().ToString()}";
+            var relativeFilePath = relativeFolder + "/" + uploadFileName;
+
+            var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
+            if (!Directory.Exists(obsoluteFolder))
+                Directory.CreateDirectory(obsoluteFolder);
+
+            return relativeFilePath;
+        }
+
+        private string GetPhysicalFilePath(string filePath)
+        {
+            return filePath.GetPhysicalFilePath(_appSetting); 
+        }
+
+        private (Enum, EnumFileType?) ValidateUploadFile(IFormFile uploadFile)
+        {
+            if (uploadFile == null || string.IsNullOrWhiteSpace(uploadFile.FileName) || uploadFile.Length == 0)
+            {
+                return (FileErrorCode.InvalidFile, null);
+            }
+            if (uploadFile.Length > _appSetting.Configuration.FileUploadMaxLength)
+            {
+                return (FileErrorCode.FileSizeExceededLimit, null);
+            }
+
+            var ext = Path.GetExtension(uploadFile.FileName).ToLower();
+
+            if (!FileExtensionTypes.ContainsKey(ext))
+            {
+                return (FileErrorCode.InvalidFileType, null);
+            }
+
+            //if (!ValidFileExtensions.Values.Any(v => v.Contains(ext))
+            //{
+            //    return FileErrorCode.InvalidFileExtension;
+            //}
+
+            return (GeneralCode.Success, FileExtensionTypes[ext]);
+        }
+
     }
 }
 

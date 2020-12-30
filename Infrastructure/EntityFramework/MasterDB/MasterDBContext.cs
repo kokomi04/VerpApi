@@ -37,6 +37,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<PrintConfig> PrintConfig { get; set; }
+        public virtual DbSet<PrintConfigDetail> PrintConfigDetail { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -431,6 +432,15 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<PrintConfigDetail>(entity =>
+            {
+                entity.HasOne(d => d.PrintConfig)
+                    .WithMany(p => p.PrintConfigDetail)
+                    .HasForeignKey(d => d.PrintConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PrintConfigDetail_PrintConfig");
             });
 
             modelBuilder.Entity<Role>(entity =>
