@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Services.Master.Model.Config;
 
@@ -17,5 +20,9 @@ namespace VErp.Services.Master.Service.Config
         Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, int fileId, PrintTemplateInput templateModel);
         Task<IList<EntityField>> GetSuggestionField(int moduleTypeId);
         Task<IList<EntityField>> GetSuggestionField(Assembly assembly);
+        Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
+        Task<bool> RollbackPrintConfig(long printConfigId);
+        Task<bool> RollbackPrintConfigOnlyTemplate(long printConfigId);
+        Task<bool> RollbackPrintConfigWithoutTemplate(long printConfigId);
     }
 }

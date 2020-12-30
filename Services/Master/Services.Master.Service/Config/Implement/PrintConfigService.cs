@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.GlobalObject.InternalDataInterface;
@@ -35,6 +37,26 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly AppSetting _appSetting;
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly IPhysicalFileService _physicalFileService;
+
+        private static readonly Dictionary<string, EnumFileType> FileExtensionTypes = new Dictionary<string, EnumFileType>()
+        {
+
+            { ".doc" , EnumFileType.Document },
+            { ".pdf" , EnumFileType.Document },
+            { ".docx", EnumFileType.Document },
+            { ".xls", EnumFileType.Document },
+            { ".xlsx" , EnumFileType.Document },
+            { ".csv" , EnumFileType.Document },
+        };
+
+        private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
+        {
+            { ".doc" , "application/msword" },
+            { ".pdf" , "application/pdf" },
+            { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+        };
+
+        private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(t => t.Key, t => t.Select(v => v.Key).ToArray());
 
         public PrintConfigService(MasterDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -126,7 +148,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data)
         {
             //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.ActiveForId));
-            var config = await _masterDBContext.PrintConfig.Include(x=>x.PrintConfigDetail).FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
@@ -143,10 +165,16 @@ namespace VErp.Services.Master.Service.Config.Implement
                 _mapper.Map(configExtract, config);
                 await _masterDBContext.SaveChangesAsync();
 
-                if (config.PrintConfigDetail.Count > 1)
+                var details = await _masterDBContext.PrintConfigDetail.Where(x => x.PrintConfigId == config.PrintConfigId).ToListAsync();
+
+                var detailOrigin = details.FirstOrDefault(p => p.IsOrigin);
+                if (!detailOrigin.TemplateFileId.HasValue)
+                    detailOrigin.TemplateFileId = data.TemplateFileId;
+
+                if (details.Any(x => !x.IsOrigin))
                 {
-                    var detail = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => !p.IsOrigin);
-                    _mapper.Map(data, detail);
+                    var detailModify = details.FirstOrDefault(p => !p.IsOrigin);
+                    _mapper.Map(data, detailModify);
                 }
                 else
                 {
@@ -176,12 +204,18 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
             var details = await _masterDBContext.PrintConfigDetail.Where(p => p.PrintConfigId == printConfigId).ToListAsync();
-            
+
             var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
                 config.IsDeleted = true;
-                details.ForEach(x => x.IsDeleted = true);
+                for (int i = 0; i < details.Count; i++)
+                {
+                    var detail = details[i];
+                    detail.IsDeleted = true;
+                    if (detail.TemplateFileId != null && detail.TemplateFileId.HasValue)
+                        await _physicalFileService.DeleteFile(detail.TemplateFileId.Value);
+                }
 
                 await _masterDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
@@ -253,6 +287,147 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             return fields;
         }
+
+        public async Task<bool> RollbackPrintConfigOnlyTemplate(long printConfigId)
+        {
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            if (config == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var detailOrigin = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && p.IsOrigin);
+            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
+            if (detailModify != null)
+                detailModify.TemplateFileId = detailOrigin.TemplateFileId;
+
+            await _masterDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RollbackPrintConfigWithoutTemplate(long printConfigId)
+        {
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            if (config == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var detailOrigin = await _masterDBContext.PrintConfigDetail.ProjectTo<PrintConfigDetailModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && p.IsOrigin);
+            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
+            var fileIdNote = detailModify.TemplateFileId;
+            if (detailModify != null)
+            {
+                _mapper.Map(detailOrigin, detailModify);
+                detailModify.TemplateFileId = fileIdNote;
+                detailModify.IsOrigin = false;
+            }
+
+            await _masterDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RollbackPrintConfig(long printConfigId)
+        {
+            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
+            if (config == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
+            detailModify.IsDeleted = true;
+
+            await _masterDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
+        {
+            var ext = Path.GetExtension(file.FileName).ToLower();
+
+            if (!FileTypeExtensions.ContainsKey(fileTypeId))
+            {
+                throw new BadRequestException(FileErrorCode.InvalidFileType);
+            }
+
+            if (!FileTypeExtensions[fileTypeId].Contains(ext))
+            {
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension);
+            }
+
+            return await Upload(objectTypeId, fileName, file);
+        }
+
+        private async Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
+        {
+            var (validate, fileTypeId) = ValidateUploadFile(file);
+            if (!validate.IsSuccess())
+            {
+                throw new BadRequestException(validate);
+            }
+
+            string filePath = GenerateTempFilePath(file.FileName);
+
+            using (var stream = File.Create(GetPhysicalFilePath(filePath)))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                fileName = file.FileName;
+            }
+
+            var fileId = await _physicalFileService.SaveSimpleFileInfo(EnumObjectType.PrintConfig, new SimpleFileInfo
+            {
+                FileName = fileName,
+                FilePath = filePath,
+                FileTypeId = (int)fileTypeId,
+                ContentType = file.ContentType,
+                FileLength = file.Length
+            });
+
+            return fileId;
+        }
+
+
+        private string GenerateTempFilePath(string uploadFileName)
+        {
+            var relativeFolder = $"/_document_template_/{Guid.NewGuid().ToString()}";
+            var relativeFilePath = relativeFolder + "/" + uploadFileName;
+
+            var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
+            if (!Directory.Exists(obsoluteFolder))
+                Directory.CreateDirectory(obsoluteFolder);
+
+            return relativeFilePath;
+        }
+
+        private string GetPhysicalFilePath(string filePath)
+        {
+            return filePath.GetPhysicalFilePath(_appSetting); 
+        }
+
+        private (Enum, EnumFileType?) ValidateUploadFile(IFormFile uploadFile)
+        {
+            if (uploadFile == null || string.IsNullOrWhiteSpace(uploadFile.FileName) || uploadFile.Length == 0)
+            {
+                return (FileErrorCode.InvalidFile, null);
+            }
+            if (uploadFile.Length > _appSetting.Configuration.FileUploadMaxLength)
+            {
+                return (FileErrorCode.FileSizeExceededLimit, null);
+            }
+
+            var ext = Path.GetExtension(uploadFile.FileName).ToLower();
+
+            if (!FileExtensionTypes.ContainsKey(ext))
+            {
+                return (FileErrorCode.InvalidFileType, null);
+            }
+
+            //if (!ValidFileExtensions.Values.Any(v => v.Contains(ext))
+            //{
+            //    return FileErrorCode.InvalidFileExtension;
+            //}
+
+            return (GeneralCode.Success, FileExtensionTypes[ext]);
+        }
+
     }
 }
 

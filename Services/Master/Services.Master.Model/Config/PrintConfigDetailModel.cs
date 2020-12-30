@@ -21,7 +21,6 @@ namespace VErp.Services.Master.Model.Config
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
-        public string TemplateFilePath { get; set; }
         public bool IsOrigin { get; set; }
     }
 

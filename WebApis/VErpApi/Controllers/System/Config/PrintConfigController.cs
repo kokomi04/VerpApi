@@ -34,7 +34,6 @@ namespace VErpApi.Controllers.System
     public class PrintConfigController : VErpBaseController
     {
         private readonly IPrintConfigService _printConfigService;
-        private readonly IFileService _fileService;
 
         private readonly Dictionary<EnumModuleType, Assembly> AssemblyModuleModel = new Dictionary<EnumModuleType, Assembly>()
         {
@@ -44,10 +43,9 @@ namespace VErpApi.Controllers.System
             { EnumModuleType.Manufacturing, ManufacturingModelAssembly.Assembly }
         };
 
-        public PrintConfigController(IPrintConfigService printConfigService, IFileService fileService)
+        public PrintConfigController(IPrintConfigService printConfigService)
         {
             _printConfigService = printConfigService;
-            _fileService = fileService;
         }
 
         [HttpGet]
@@ -89,7 +87,7 @@ namespace VErpApi.Controllers.System
         [Route("printTemplate")]
         public async Task<long> UploadPrintTemplate(IFormFile file)
         {
-            return await _fileService.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
+            return await _printConfigService.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
         }
 
         [HttpPost]
@@ -108,6 +106,25 @@ namespace VErpApi.Controllers.System
             if (fields.Count == 0 && AssemblyModuleModel.ContainsKey((EnumModuleType)moduleTypeId))
                 fields = await _printConfigService.GetSuggestionField(AssemblyModuleModel[(EnumModuleType)moduleTypeId]);
             return fields;
+        }
+
+        [HttpPut]
+        [Route("rollback")]
+        public async Task<bool> RollbackAllPrintConfig([FromQuery] long printConfigId)
+        {
+            return await _printConfigService.RollbackPrintConfig(printConfigId);
+        }
+        [HttpPut]
+        [Route("rollback/onlyTemplate")]
+        public async Task<bool> RollbackTemplatePrintConfig([FromQuery] long printConfigId)
+        {
+            return await _printConfigService.RollbackPrintConfigOnlyTemplate(printConfigId);
+        }
+        [HttpPut]
+        [Route("rollback/withoutTemplate")]
+        public async Task<bool> RollbackPrintConfigWithoutTemplate([FromQuery] long printConfigId)
+        {
+            return await _printConfigService.RollbackPrintConfigWithoutTemplate(printConfigId);
         }
     }
 }
