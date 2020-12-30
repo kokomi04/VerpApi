@@ -7,28 +7,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.OutsideMapping;
+using VErp.Services.Master.Model.OutsideMapping;
 
-namespace VErp.Services.Accountancy.Service.Input.Implement
+namespace VErp.Services.Master.Service.Config.Implement
 {
     public class OutsideImportMappingService : IOutsideImportMappingService
     {
-        private AccountancyDBContext _accountancyDBContext;
+        private MasterDBContext _masterDBContext;
         private IMapper _mapper;
-        public OutsideImportMappingService(AccountancyDBContext accountancyDBContext, IMapper mapper)
+        public OutsideImportMappingService(MasterDBContext masterDBContext, IMapper mapper)
         {
-            _accountancyDBContext = accountancyDBContext;
+            _masterDBContext = masterDBContext;
             _mapper = mapper;
         }
 
         public async Task<PageData<OutsideMappingModelList>> GetList(string keyword, int page, int size)
         {
-            var query = _accountancyDBContext.OutsideImportMappingFunction.AsQueryable();
+            var query = _masterDBContext.OutsideImportMappingFunction.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(q => q.FunctionName.Contains(keyword) || q.MappingFunctionKey.Contains(keyword) || q.Description.Contains(keyword));
@@ -50,16 +52,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<int> CreateImportMapping(OutsideMappingModel model)
         {
-            var existedFunction = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == model.MappingFunctionKey);
+            var existedFunction = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == model.MappingFunctionKey);
             if (existedFunction != null) throw new BadRequestException(GeneralCode.InvalidParams, "Định danh chức năng đã tồn tại");
 
-            using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
+            using (var trans = await _masterDBContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     var functionInfo = _mapper.Map<OutsideImportMappingFunction>(model);
-                    await _accountancyDBContext.AddAsync(functionInfo);
-                    await _accountancyDBContext.SaveChangesAsync();
+                    await _masterDBContext.AddAsync(functionInfo);
+                    await _masterDBContext.SaveChangesAsync();
 
                     var mappings = new List<OutsideImportMapping>();
                     foreach (var mapping in model.FieldMappings)
@@ -70,8 +72,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         mappings.Add(mappingField);
                     }
 
-                    await _accountancyDBContext.OutsideImportMapping.AddRangeAsync(mappings);
-                    await _accountancyDBContext.SaveChangesAsync();
+                    await _masterDBContext.OutsideImportMapping.AddRangeAsync(mappings);
+                    await _masterDBContext.SaveChangesAsync();
 
                     await trans.CommitAsync();
 
@@ -88,14 +90,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<OutsideMappingModel> GetImportMappingInfo(int outsideImportMappingFunctionId)
         {
-            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
+            var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
 
             return await GetInfo(functionInfo);
         }
 
         public async Task<OutsideMappingModel> GetImportMappingInfo(string mappingFunctionKey)
         {
-            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
+            var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
 
             return await GetInfo(functionInfo);
         }
@@ -106,7 +108,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var data = _mapper.Map<OutsideMappingModel>(functionInfo);
 
-            var mappings = await _accountancyDBContext.OutsideImportMapping.Where(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId).ToListAsync();
+            var mappings = await _masterDBContext.OutsideImportMapping.Where(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId).ToListAsync();
 
             data.FieldMappings = new List<OutsiteMappingModel>();
             foreach (var mapping in mappings)
@@ -120,21 +122,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> UpdateImportMapping(int outsideImportMappingFunctionId, OutsideMappingModel model)
         {
-            var existedFunction = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId != outsideImportMappingFunctionId && f.MappingFunctionKey == model.MappingFunctionKey);
+            var existedFunction = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId != outsideImportMappingFunctionId && f.MappingFunctionKey == model.MappingFunctionKey);
             if (existedFunction != null) throw new BadRequestException(GeneralCode.InvalidParams, "Định danh chức năng đã tồn tại");
 
-            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
+            var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
 
             if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
 
-            using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
+            using (var trans = await _masterDBContext.Database.BeginTransactionAsync())
             {
                 try
                 {
 
                     _mapper.Map(model, functionInfo);
 
-                    var oldMappings = await _accountancyDBContext.OutsideImportMapping.Where(m => m.OutsideImportMappingFunctionId == outsideImportMappingFunctionId).ToListAsync();
+                    var oldMappings = await _masterDBContext.OutsideImportMapping.Where(m => m.OutsideImportMappingFunctionId == outsideImportMappingFunctionId).ToListAsync();
                     foreach (var mapping in oldMappings)
                     {
                         mapping.IsDeleted = true;
@@ -147,8 +149,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         mappingField.OutsideImportMappingFunctionId = functionInfo.OutsideImportMappingFunctionId;
                         mappings.Add(mappingField);
                     }
-                    await _accountancyDBContext.OutsideImportMapping.AddRangeAsync(mappings);
-                    await _accountancyDBContext.SaveChangesAsync();
+                    await _masterDBContext.OutsideImportMapping.AddRangeAsync(mappings);
+                    await _masterDBContext.SaveChangesAsync();
 
                     await trans.CommitAsync();
 
@@ -164,23 +166,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeleteImportMapping(int outsideImportMappingFunctionId)
         {
-            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
+            var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
 
             if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
 
-            using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
+            using (var trans = await _masterDBContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     functionInfo.IsDeleted = true;
 
-                    var oldMappings = await _accountancyDBContext.OutsideImportMapping.Where(m => m.OutsideImportMappingFunctionId == outsideImportMappingFunctionId).ToListAsync();
+                    var oldMappings = await _masterDBContext.OutsideImportMapping.Where(m => m.OutsideImportMappingFunctionId == outsideImportMappingFunctionId).ToListAsync();
                     foreach (var mapping in oldMappings)
                     {
                         mapping.IsDeleted = true;
                     }
 
-                    await _accountancyDBContext.SaveChangesAsync();
+                    await _masterDBContext.SaveChangesAsync();
 
                     await trans.CommitAsync();
 
@@ -197,43 +199,44 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<OutsideImportMappingObjectModel> MappingObjectInfo(string mappingFunctionKey, string objectId)
         {
-            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
+            var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
             if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
 
-            var mappingObject = await _accountancyDBContext.OutsideImportMappingObject.FirstOrDefaultAsync(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId && m.SourceId == objectId);
+            var mappingObject = await _masterDBContext.OutsideImportMappingObject.FirstOrDefaultAsync(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId && m.SourceId == objectId);
 
             if (mappingObject == null) return null;
 
             return new OutsideImportMappingObjectModel()
             {
                 OutsideImportMappingFunctionId = mappingObject.OutsideImportMappingFunctionId,
+                ObjectTypeId = (EnumObjectType)functionInfo.ObjectTypeId,
                 InputTypeId = functionInfo.InputTypeId,
                 SourceId = mappingObject.SourceId,
                 InputBillFId = mappingObject.InputBillFId
             };
         }
 
-        public async Task<bool> MappingObjectCreate(string mappingFunctionKey, string objectId, long inputBillFId)
+        public async Task<bool> MappingObjectCreate(string mappingFunctionKey, string objectId, EnumObjectType billObjectTypeId, long billFId)
         {
-            var functionInfo = await _accountancyDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
+            var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
             if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
 
-            await _accountancyDBContext.OutsideImportMappingObject.AddAsync(new OutsideImportMappingObject()
+            await _masterDBContext.OutsideImportMappingObject.AddAsync(new OutsideImportMappingObject()
             {
                 OutsideImportMappingFunctionId = functionInfo.OutsideImportMappingFunctionId,
-                SourceId = objectId,
-                InputBillFId = inputBillFId
+                SourceId = objectId,                
+                InputBillFId = billFId
             });
 
-            await _accountancyDBContext.SaveChangesAsync();
+            await _masterDBContext.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> MappingObjectDelete(long inputBillFId)
+        public async Task<bool> MappingObjectDelete(EnumObjectType billObjectTypeId, long billFId)
         {
-            var data = _accountancyDBContext.OutsideImportMappingObject.Where(m => m.InputBillFId == inputBillFId);
-            _accountancyDBContext.OutsideImportMappingObject.RemoveRange(data);
-            await _accountancyDBContext.SaveChangesAsync();
+            var data = _masterDBContext.OutsideImportMappingObject.Where(m => m.BillObjectTypeId == (int)billObjectTypeId && m.InputBillFId == billFId);
+            _masterDBContext.OutsideImportMappingObject.RemoveRange(data);
+            await _masterDBContext.SaveChangesAsync();
             return true;
         }
     }

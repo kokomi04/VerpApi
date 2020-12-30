@@ -30,7 +30,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IOutsideImportMappingService _outsideImportMappingService;
 
         public CalcProductPriceService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -39,7 +38,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
-            , IOutsideImportMappingService outsideImportMappingService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -48,7 +46,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
-            _outsideImportMappingService = outsideImportMappingService;
         }
 
         public async Task<CalcProductPriceGetTableOutput> CalcProductPriceTable(CalcProductPriceGetTableInput req)
