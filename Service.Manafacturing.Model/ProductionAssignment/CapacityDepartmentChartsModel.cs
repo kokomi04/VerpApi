@@ -10,4 +10,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long ScheduleTurnId { get; set; }
         public decimal Capacity { get; set; }
     }
+
+    public class CapacityDepartmentDetailModel
+    {
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
+        public decimal Capacity { get; set; }
+    }
 }
