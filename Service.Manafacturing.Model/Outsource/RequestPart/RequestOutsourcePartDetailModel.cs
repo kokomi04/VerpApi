@@ -44,6 +44,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string UnitName { get; set; }
         public string ProductPartName { get; set; }
         public string ProductPartCode { get; set; }
+        public string ProductPartTitle { get; set; }
         public string OrderCode { get; set; }
         public int ProductId { get; set; }
         public decimal ProductOrderDetailQuantity { get; set; }

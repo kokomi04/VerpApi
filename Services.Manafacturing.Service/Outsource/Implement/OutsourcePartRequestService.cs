@@ -105,12 +105,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<OutsourcePartRequestInfo> GetOutsourcePartRequestExtraInfo(int OutsourcePartRequestId = 0)
+        public async Task<OutsourcePartRequestInfo> GetOutsourcePartRequestExtraInfo(int outsourcePartRequestId = 0)
         {
             var sql = new StringBuilder("SELECT * FROM vOutsourcePartRequestExtractInfo v WHERE v.OutsourcePartRequestId = @OutsourcePartRequestId");
 
             var parammeters = new List<SqlParameter>();
-            parammeters.Add(new SqlParameter("@OutsourcePartRequestId", OutsourcePartRequestId));
+            parammeters.Add(new SqlParameter("@OutsourcePartRequestId", outsourcePartRequestId));
 
             var extractInfo = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
                     .ConvertData<OutsourcePartRequestDetailInfo>();
@@ -234,6 +234,39 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var lst = resultData.ConvertData<OutsourcePartRequestDetailInfo>().ToList();
 
             return (lst, total);
+        }
+
+        public async Task<IList<OutsourcePartRequestDetailInfo>> GetRequestDetailByArrayRequestId(long[] outsourcePartRequestIds)
+        {
+            var parammeters = new List<SqlParameter>();
+            var whereCondition = new StringBuilder();
+
+            var sql = new StringBuilder("SELECT * FROM vOutsourcePartRequestExtractInfo v ");
+
+            for (int i = 0; i < outsourcePartRequestIds.Length; i++)
+            {
+                var value = outsourcePartRequestIds[i];
+                var keyParameter = $"@OutsourcePartRequestId_{i + 1}";
+
+                if ((i + 1) == outsourcePartRequestIds.Length)
+                    whereCondition.Append($"{keyParameter} )");
+                else
+                    whereCondition.Append($"{keyParameter}, ");
+                parammeters.Add(new SqlParameter(keyParameter, value));
+            }
+
+            if (whereCondition.Length > 0)
+            {
+                sql.Append("WHERE v.OutsourcePartRequestId IN (  ");
+                sql.Append(whereCondition);
+            }
+
+            sql.Append($" ORDER BY v.OutsourcePartRequestId");
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData.ConvertData<OutsourcePartRequestDetailInfo>().ToList();
+
+            return lst;
         }
 
         public async Task<bool> DeletedOutsourcePartRequest(int OutsourcePartRequestId)
