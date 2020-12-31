@@ -24,7 +24,7 @@ namespace VErpApi.Controllers.System.Internal
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("")]
         public async Task<PageData<DepartmentModel>> Get([FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
         {

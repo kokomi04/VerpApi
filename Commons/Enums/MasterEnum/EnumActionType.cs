@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VErp.Commons.Enums.MasterEnum
 {
-    public enum EnumAction
+    public enum EnumActionType
     {
         View = 1,
         Add = 2,

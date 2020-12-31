@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.System.Category
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [GlobalApi]
         [Route("{categoryId}/categoryrows/Search")]
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows([FromRoute] int categoryId, [FromBody] CategoryFilterModel request)

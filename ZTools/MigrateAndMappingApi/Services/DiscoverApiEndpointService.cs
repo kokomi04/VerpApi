@@ -45,7 +45,7 @@ namespace MigrateAndMappingApi.Services
                 var endpoint = new ApiEndpoint()
                 {
                     MethodId = (int)EnumMethod.Get,
-                    ActionId = (int)EnumAction.View,
+                    ActionId = (int)EnumActionType.View,
                     ServiceId = serviceId
                 };
 

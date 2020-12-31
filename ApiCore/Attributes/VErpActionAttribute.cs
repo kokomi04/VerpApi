@@ -9,8 +9,8 @@ namespace VErp.Infrastructure.ApiCore.Attributes
 {
     public class VErpActionAttribute : ActionFilterAttribute
     {
-        public EnumAction Action { get; set; }
-        public VErpActionAttribute(EnumAction action)
+        public EnumActionType Action { get; set; }
+        public VErpActionAttribute(EnumActionType action)
         {
             Action = action;
         }

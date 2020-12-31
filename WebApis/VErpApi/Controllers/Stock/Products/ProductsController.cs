@@ -93,7 +93,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("GetByIds")]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
         {
             return (await _productService.GetListByIds(productIds)).ToList();

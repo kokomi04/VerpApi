@@ -28,7 +28,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.Update)]
+        [VErpAction(EnumActionType.Update)]
         [GlobalApi]
         [Route("CalcProductPriceTable")]
         public async Task<CalcProductPriceGetTableOutput> CalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
@@ -37,7 +37,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.Update)]
+        [VErpAction(EnumActionType.Update)]
         [GlobalApi]
         [Route("CalcProductOutputPrice")]
         public async Task<CalcProductOutputPriceModel> CalcProductOutputPrice([FromBody] CalcProductOutputPriceInput req)
@@ -46,7 +46,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [GlobalApi]
         [Route("GetWeightedAverageProductPrice")]
         public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice([FromBody] CalcProductPriceWeightedAverageInput req)

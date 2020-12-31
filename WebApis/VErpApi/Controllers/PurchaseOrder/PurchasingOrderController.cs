@@ -154,7 +154,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/Check")]
-        [VErpAction(EnumAction.Check)]
+        [VErpAction(EnumActionType.Check)]
         public async Task<bool> Checked([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
@@ -169,7 +169,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/RejectCheck")]
-        [VErpAction(EnumAction.Check)]
+        [VErpAction(EnumActionType.Check)]
         public async Task<bool> RejectCheck([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
@@ -184,7 +184,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/Approve")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Approve([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
@@ -199,7 +199,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/Reject")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Reject([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService

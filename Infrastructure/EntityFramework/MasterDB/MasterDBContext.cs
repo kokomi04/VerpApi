@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public virtual DbSet<Action> Action { get; set; }
+        public virtual DbSet<ActionType> ActionType { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BackupStorage> BackupStorage { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
@@ -40,6 +41,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
         public virtual DbSet<PrintConfig> PrintConfig { get; set; }
+        public virtual DbSet<PrintConfigDetail> PrintConfigDetail { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -58,6 +60,19 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionName)
                     .IsRequired()
                     .HasMaxLength(16);
+            });
+
+            modelBuilder.Entity<ActionType>(entity =>
+            {
+                entity.Property(e => e.ActionTypeId).ValueGeneratedNever();
+
+                entity.Property(e => e.ActionTitle)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.ActionTypeName)
+                    .IsRequired()
+                    .HasMaxLength(64);
             });
 
             modelBuilder.Entity<ApiEndpoint>(entity =>
@@ -483,6 +498,15 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<PrintConfigDetail>(entity =>
+            {
+                entity.HasOne(d => d.PrintConfig)
+                    .WithMany(p => p.PrintConfigDetail)
+                    .HasForeignKey(d => d.PrintConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PrintConfigDetail_PrintConfig");
             });
 
             modelBuilder.Entity<Role>(entity =>

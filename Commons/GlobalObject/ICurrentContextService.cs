@@ -8,7 +8,7 @@ namespace VErp.Commons.GlobalObject
     {
         int UserId { get; }
         int SubsidiaryId { get; }
-        EnumAction Action { get; }
+        EnumActionType Action { get; }
         IList<int> StockIds { get; }
         RoleInfo RoleInfo { get; }
         int? TimeZoneOffset { get; }

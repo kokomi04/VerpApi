@@ -56,21 +56,21 @@ namespace VErp.Commons.Library
             return $"{service}{route}{method}".ToGuid();
         }
 
-        public static EnumAction GetDefaultAction(this EnumMethod method)
+        public static EnumActionType GetDefaultAction(this EnumMethod method)
         {
             switch (method)
             {
                 case EnumMethod.Get:
-                    return EnumAction.View;
+                    return EnumActionType.View;
                 case EnumMethod.Post:
-                    return EnumAction.Add;
+                    return EnumActionType.Add;
                 case EnumMethod.Put:
-                    return EnumAction.Update;
+                    return EnumActionType.Update;
                 case EnumMethod.Delete:
-                    return EnumAction.Delete;
+                    return EnumActionType.Delete;
             }
 
-            return EnumAction.View;
+            return EnumActionType.View;
         }
 
         public static string GetObjectJsonDiff(string existing, object modified)

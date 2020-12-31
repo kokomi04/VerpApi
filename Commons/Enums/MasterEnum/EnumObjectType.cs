@@ -116,7 +116,7 @@ namespace VErp.Commons.Enums.MasterEnum
 
         //AccountingAccount = 33,
 
-       
+
 
         [Description("Loại CTGS")]
         InputType = 34,
@@ -160,7 +160,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Thông số hệ thống")]
         SystemParameter = 48,
 
-        //AccountantConfig = 49,
+
+        [Description("Chứng từ bán hàng")]
+        VoucherBill = 49,
 
         [Description("Cấu hình in")]
         PrintConfig = 50,
@@ -226,5 +228,8 @@ namespace VErp.Commons.Enums.MasterEnum
         OutsourceTrack = 78,
         [Description("Khai báo vật tư tiêu hao")]
         ProductionConsumMaterial = 82,
+
+        [Description("Action")]
+        ActionType = 100
     }
 }
