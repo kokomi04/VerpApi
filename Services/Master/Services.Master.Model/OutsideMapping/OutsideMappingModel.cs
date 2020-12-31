@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Services.Accountancy.Model.OutsideMapping
+namespace VErp.Services.Master.Model.OutsideMapping
 {
     public class OutsideMappingModelBase
     {

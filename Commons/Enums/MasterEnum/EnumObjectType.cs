@@ -116,6 +116,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         //AccountingAccount = 33,
 
+       
+
         [Description("Loại CTGS")]
         InputType = 34,
 
@@ -130,6 +132,9 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Trường dữ liệu vùng CTGS")]
         InputAreaField = 38,
+
+        [Description("Chứng từ ghi sổ")]
+        InputBill = 39,
 
         [Description("Công ty")]
         Subsidiary = 41,

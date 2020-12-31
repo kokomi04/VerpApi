@@ -4,16 +4,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.OutsideMapping;
-using VErp.Services.Accountancy.Service.Input;
+using VErp.Services.Master.Model.OutsideMapping;
+using VErp.Services.Master.Service.Config;
 
-namespace VErpApi.Controllers.Accountancy.Config
+namespace VErpApi.Controllers.System
 {
 
-    [Route("api/accountancy/config/outsideImportMappings")]
+    [Route("api/system/config/outsideImportMappings")]
 
     public class OutsideImportMappingsController : VErpBaseController
     {
@@ -61,5 +62,13 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _outsideMappingService.DeleteImportMapping(outsideImportMappingFunctionId);
         }
 
+
+        [HttpGet]
+        [GlobalApi]
+        [Route("MappingObjectInfo")]
+        public async Task<OutsideImportMappingObjectModel> MappingObjectInfo([FromQuery] string mappingFunctionKey, [FromQuery] string objectId)
+        {
+            return await _outsideMappingService.MappingObjectInfo(mappingFunctionKey, objectId).ConfigureAwait(true);
+        }
     }
 }

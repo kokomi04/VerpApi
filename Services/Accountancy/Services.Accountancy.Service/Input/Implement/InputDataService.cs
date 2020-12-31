@@ -43,8 +43,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IOutsideImportMappingService _outsideImportMappingService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -52,8 +52,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
-            , IOutsideImportMappingService outsideImportMappingService
             , ICategoryHelperService httpCategoryHelperService
+            , IOutsideMappingHelperService outsideMappingHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -62,8 +62,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
-            _outsideImportMappingService = outsideImportMappingService;
             _httpCategoryHelperService = httpCategoryHelperService;
+            _outsideMappingHelperService = outsideMappingHelperService;
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -322,16 +322,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-        public async Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId)
-        {
-            var mappingInfo = await _outsideImportMappingService.MappingObjectInfo(mappingFunctionKey, objectId);
-            if (mappingInfo == null)
-            {
-                return null;
-            }
-            return await GetBillInfoRows(mappingInfo.InputTypeId, mappingInfo.InputBillFId, "", false, 1, int.MaxValue);
-
-        }
 
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
@@ -402,7 +392,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
                 {
-                    await _outsideImportMappingService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, billInfo.FId);
+                    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, EnumObjectType.InputBill, billInfo.FId);
                 }
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
@@ -1316,7 +1306,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumAction.Delete);
 
-                await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
+                await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Xóa chứng từ {inputTypeInfo.Title}", new { inputTypeId, inputBill_F_Id }.JsonSerialize());
