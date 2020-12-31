@@ -38,6 +38,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
         public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
+        public virtual DbSet<ProductionStepWorkInfo> ProductionStepWorkInfo { get; set; }
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepDetail> StepDetail { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
@@ -469,6 +470,18 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasName("PK_StepClientData");
 
                 entity.Property(e => e.ContainerTypeId).HasComment("1-SP 2-LSX");
+            });
+
+            modelBuilder.Entity<ProductionStepWorkInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductionStepId, e.ScheduleTurnId })
+                    .HasName("PK_ProductionAssignment_copy1");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.ProductionStepWorkInfo)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductionStepWorkInfo_ProductionStep");
             });
 
             modelBuilder.Entity<Step>(entity =>

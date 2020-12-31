@@ -37,9 +37,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionStepId}/{scheduleTurnId}")]
-        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentModel[] data)
+        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentInputModel data)
         {
-            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data);
+            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data.ProductionAssignments, data.ProductionStepWorkInfo);
         }
 
         [HttpGet]
@@ -58,9 +58,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{scheduleTurnId}/capacity/{productionStepId}")]
-        public async Task<IDictionary<int, decimal>> GetCapacityDepartments([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId)
+        public async Task<IDictionary<int, List<CapacityDepartmentDetailModel>>> GetCapacityDepartments([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
         {
-            return await _productionAssignmentService.GetCapacityDepartments(scheduleTurnId, productionStepId);
+            return await _productionAssignmentService.GetCapacityDepartments(scheduleTurnId, productionStepId, startDate, endDate);
         }
 
         [HttpGet]
@@ -68,6 +68,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
         {
             return await _productionAssignmentService.GetCapacity(startDate, endDate);
+        }
+
+        [HttpGet]
+        [Route("{scheduleTurnId}/WorkInfo")]
+        public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo([FromRoute] long scheduleTurnId)
+        {
+            return await _productionAssignmentService.GetListProductionStepWorkInfo(scheduleTurnId);
         }
     }
 }

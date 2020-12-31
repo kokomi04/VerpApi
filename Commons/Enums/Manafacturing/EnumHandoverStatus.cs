@@ -14,4 +14,12 @@ namespace VErp.Commons.Enums.Manafacturing
         [Description("Từ chối")]
         Rejected = 2
     }
+
+    public enum EnumHandoverTypeStatus : int
+    {
+        [Description("Sản xuất đẩy")]
+        Push = 1,
+        [Description("Tùy chọn")]
+        Custom = 2,
+    }
 }
