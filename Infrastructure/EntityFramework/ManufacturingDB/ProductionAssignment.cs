@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public decimal Productivity { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
 
         public virtual ProductionStep ProductionStep { get; set; }
         public virtual ICollection<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
