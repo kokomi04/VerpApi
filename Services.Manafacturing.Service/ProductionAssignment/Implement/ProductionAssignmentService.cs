@@ -163,7 +163,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
                 else
                 {
-                    if (entity.AssignmentQuantity != item.AssignmentQuantity || entity.ProductionStepLinkDataId != item.ProductionStepLinkDataId)
+                    if (entity.AssignmentQuantity != item.AssignmentQuantity 
+                        || entity.ProductionStepLinkDataId != item.ProductionStepLinkDataId
+                        || entity.StartDate.GetUnix() != item.StartDate
+                        || entity.EndDate.GetUnix() != item.EndDate)
                     {
                         updateAssignments.Add((entity, item));
                     }
@@ -241,13 +244,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     _manufacturingDBContext.ProductionAssignment.RemoveRange(oldProductionAssignments);
                 }
                 // Thêm mới phân công
-                var newEntities = newAssignments.AsQueryable().ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider).ToList();
+                var newEntities = newAssignments.AsQueryable()
+                    .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
+                    .ToList();
                 _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
                 // Cập nhật phân công
                 foreach (var tuple in updateAssignments)
                 {
-                    tuple.Entity.ProductionStepLinkDataId = (int)tuple.Model.ProductionStepLinkDataId;
-                    tuple.Entity.AssignmentQuantity = tuple.Model.AssignmentQuantity;
+                    _mapper.Map(tuple.Model, tuple.Entity);
                 }
                 _manufacturingDBContext.SaveChanges();
 
@@ -519,7 +523,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToList();
             departmentIds.AddRange(includeAssignments);
 
-            if (departmentIds.Count == 0)
+            if (departmentIds.Count == 0) 
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thiết lập tổ sản xuất");
 
             var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityDepartmentDetailModel>());
@@ -540,6 +544,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                         a.Productivity,
                                         a.StartDate,
                                         a.EndDate,
+                                        a.UpdatedDatetimeUtc,
                                         TotalQuantity = d.Quantity
                                     }).ToList();
 
@@ -571,10 +576,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     StartDate = otherAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.EndDate.GetUnix(),
+                    UpdatedDatetimeUtc = otherAssignment.UpdatedDatetimeUtc.GetUnix(),
                     Capacity = (workloadMap[otherAssignment.ProductionStepId]
-                    * otherAssignment.AssignmentQuantity)
-                    / (otherAssignment.TotalQuantity
-                    * otherAssignment.Productivity)
+                * otherAssignment.AssignmentQuantity)
+                / (otherAssignment.TotalQuantity
+                * otherAssignment.Productivity)
                 };
                 capacityDepartments[otherAssignment.DepartmentId].Add(capacityDepartment);
             }
