@@ -163,7 +163,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
                 else
                 {
-                    if (entity.AssignmentQuantity != item.AssignmentQuantity 
+                    if (entity.AssignmentQuantity != item.AssignmentQuantity
                         || entity.ProductionStepLinkDataId != item.ProductionStepLinkDataId
                         || entity.StartDate.GetUnix() != item.StartDate
                         || entity.EndDate.GetUnix() != item.EndDate)
@@ -523,7 +523,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToList();
             departmentIds.AddRange(includeAssignments);
 
-            if (departmentIds.Count == 0) 
+            if (departmentIds.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thiết lập tổ sản xuất");
 
             var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityDepartmentDetailModel>());
@@ -565,9 +565,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                      where zeroWorkloadIds.Contains(ps.ProductionStepId)
                                      join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
                                      join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
-                                     select s.StepName + " / " + po.ProductionOrderCode).ToList();
-
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại công đoạn sản xuất chưa thiết lập khối lượng công việc: {string.Join(',', zeroWorkloads)} ");
+                                     select new
+                                     {
+                                         s.StepName,
+                                         s.UnitId,
+                                         po.ProductionOrderCode,
+                                         ps.ProductionStepId,
+                                         po.ProductionOrderId
+                                     }).ToList();
+                throw new BadRequestException(GeneralCode.InvalidParams,
+                    $"Tồn tại công đoạn sản xuất chưa thiết lập khối lượng công việc: {string.Join(',', zeroWorkloads.Select(w => w.StepName + " / " + w.ProductionOrderCode).ToList())}",
+                    new Dictionary<string, object> { { "zeroWorkloads", zeroWorkloads } });
             }
 
             foreach (var otherAssignment in otherAssignments)
