@@ -37,17 +37,17 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             var total = await query.CountAsync();
-            IList<OutsideMappingModelList> pagedData = null;
+            IList<OutsideImportMappingFunction> pagedData = null;
             if (size > 0)
             {
-                pagedData = await query.OrderBy(q => q.FunctionName).Skip((page - 1) * size).Take(size).ProjectTo<OutsideMappingModelList>(_mapper.ConfigurationProvider).ToListAsync();
+                pagedData = await query.OrderBy(q => q.FunctionName).Skip((page - 1) * size).Take(size).ToListAsync();
             }
             else
             {
-                pagedData = await query.OrderBy(q => q.FunctionName).ProjectTo<OutsideMappingModelList>(_mapper.ConfigurationProvider).ToListAsync();
+                pagedData = await query.OrderBy(q => q.FunctionName).ToListAsync();
             }
 
-            return (pagedData, total);
+            return (_mapper.Map<IList<OutsideMappingModelList>>(pagedData), total);
         }
 
         public async Task<int> CreateImportMapping(OutsideMappingModel model)
@@ -224,7 +224,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _masterDBContext.OutsideImportMappingObject.AddAsync(new OutsideImportMappingObject()
             {
                 OutsideImportMappingFunctionId = functionInfo.OutsideImportMappingFunctionId,
-                SourceId = objectId,                
+                SourceId = objectId,
                 InputBillFId = billFId
             });
 
