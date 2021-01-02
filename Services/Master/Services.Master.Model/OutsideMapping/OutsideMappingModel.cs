@@ -50,7 +50,7 @@ namespace VErp.Services.Master.Model.OutsideMapping
                 .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (int)f.ObjectTypeId))
                 .ReverseMap()
                 .ForMember(s => s.FieldMappings, d => d.Ignore())
-                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => ((EnumObjectType?)f.ObjectTypeId) ?? EnumObjectType.InputBill));
+                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (EnumObjectType)f.ObjectTypeId));
         }
 
     }
