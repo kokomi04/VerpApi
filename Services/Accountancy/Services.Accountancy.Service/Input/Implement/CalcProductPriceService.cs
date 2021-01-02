@@ -68,7 +68,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 req.IsByLsx = true;
             }
-            if (!req.StockId.HasValue)
+            if (req.StockId > 0)
             {
                 req.IsByStock = true;
             }
