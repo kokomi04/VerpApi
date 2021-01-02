@@ -891,12 +891,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
-            await ValidProductionStepLinkData(req);
-            await ValidProductionStep(req);
-            await ValidOutsourcePartRequestInProductionProcess(req);
-
             var productionStepOutsourced = await _outsourceStepRequestService.GetProductionStepInOutsourceStepRequest(containerTypeId == EnumContainerType.ProductionOrder ? containerId : 0);
-
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -911,14 +906,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var source = req.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId);
                     if (source != null)
                     {
-                        if (containerTypeId == EnumContainerType.ProductionOrder && source.Quantity < source.OutsourceQuantity)
-                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Chi tiết {source.ObjectTitle} có số lượng nhỏ hơn số đã gia công");
                         _mapper.Map(source, dest);
                     }
                     else
                     {
-                        if (containerTypeId ==  EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0))
-                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Có sự khác biệt giữa quy trình sản xuất và YCGC công đoạn");
+                        if (containerTypeId == EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0 || dest.ExportOutsourceQuantity.GetValueOrDefault() > 0))
+                        {
+                            var outsourceStepRequest = await _manufacturingDBContext.OutsourceStepRequest.Include(x => x.OutsourceStepRequestData)
+                                .Where(x => x.OutsourceStepRequestData.Any(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId))
+                                .FirstOrDefaultAsync();
+                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Không thể xóa chi tiết nằm trong YCGC công đoạn \"{outsourceStepRequest.OutsourceStepRequestCode}\"");
+                        }
                         dest.IsDeleted = true;
                     }
                 }
@@ -941,7 +939,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         var os = productionStepOutsourced.FirstOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
                         if (containerTypeId == EnumContainerType.ProductionOrder &&  os != null)
-                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"QTSX không khớp với YCGC công đoạn {os.OutsourceStepRequestCode}");
+                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Không thể xóa công đoạn nằm trong YCGC công đoạn {os.OutsourceStepRequestCode}");
                         dest.IsDeleted = true;
                     }
                 }
@@ -1221,6 +1219,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             var lsProductionStep = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Include(x => x.ProductionStepLinkDataRole)
+                .ThenInclude(x=>x.ProductionStepLinkData)
                 .Where(x => lsProductionStepId.Contains(x.ProductionStepId))
                 .ToListAsync();
 
@@ -1228,7 +1227,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (groupByContainerId.Count() > 1)
                 throw new BadRequestException(ProductionProcessErrorCode.ListProductionStepNotInContainerId);
 
-            var roles = lsProductionStep.SelectMany(x => x.ProductionStepLinkDataRole, (s, d) => new ProductionStepLinkDataRoleModel
+            var roles = lsProductionStep.SelectMany(x => x.ProductionStepLinkDataRole.Where(x=>x.ProductionStepLinkData.ProductionStepLinkDataTypeId == (int)EnumProductionStepLinkDataType.None), (s, d) => new ProductionStepLinkDataRoleModel
             {
                 ProductionStepId = s.ProductionStepId,
                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
