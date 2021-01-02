@@ -45,24 +45,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             var lsWarning = new List<ProductionProcessWarningMessage>();
 
-            var warningProductionStep = ValidateProductionStep(productionProcess);
-            var warningProductionLinkData = ValidateProductionStepLinkData(productionProcess);
+            var warningProductionStep = await ValidateProductionStep(productionProcess);
+            var warningProductionLinkData = await ValidateProductionStepLinkData(productionProcess);
 
-            lsWarning.AddRange(await warningProductionStep);
-            lsWarning.AddRange(await warningProductionLinkData);
+            lsWarning.AddRange(warningProductionStep);
+            lsWarning.AddRange(warningProductionLinkData);
 
             if (containerTypeId == EnumContainerType.ProductionOrder)
             {
-                var warningOutsourcePartRequest = ValidateOutsourcePartRequest(productionProcess);
-                var warningOutsourceStepRequest = ValidateOutsourceStepRequest(productionProcess);
-                lsWarning.AddRange(await warningOutsourcePartRequest);
-                lsWarning.AddRange(await warningOutsourceStepRequest);
+                var warningOutsourcePartRequest = await ValidateOutsourcePartRequest(productionProcess);
+                var warningOutsourceStepRequest = await ValidateOutsourceStepRequest(productionProcess);
+                lsWarning.AddRange(warningOutsourcePartRequest);
+                lsWarning.AddRange(warningOutsourceStepRequest);
             }
 
             return lsWarning;
         }
 
-        private async Task<IList<ProductionProcessWarningMessage>> ValidateOutsourceStepRequest(ProductionProcessModel productionProcess)
+        public async Task<IList<ProductionProcessWarningMessage>> ValidateOutsourceStepRequest(ProductionProcessModel productionProcess)
         {
             IList<ProductionProcessWarningMessage> lsWarning = new List<ProductionProcessWarningMessage>();
 
@@ -70,28 +70,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(x => x.ProductionOrderId == productionProcess.ContainerId)
                 .ProjectTo<OutsourceStepRequestModel>(_mapper.ConfigurationProvider)
                 .ToListAsync())
-                .ToDictionary(x=>x.OutsourceStepRequestId, x=>x);
+                .ToDictionary(x => x.OutsourceStepRequestId, x => x);
 
-            var dicOutsourceStep = new Dictionary<long, IList<long>>();
+            var dicOutsourceStep = new Dictionary<long, IList<string>>();
             foreach (var stepRequest in outsourceStepRequest)
-                dicOutsourceStep.Add(stepRequest.Key,FoundProductionStepInOutsourceStepRequest(stepRequest.Value.OutsourceStepRequestData, productionProcess.ProductionStepLinkDataRoles));
+                dicOutsourceStep.Add(stepRequest.Key, FoundProductionStepInOutsourceStepRequest(stepRequest.Value.OutsourceStepRequestData, productionProcess.ProductionStepLinkDataRoles));
 
             var productionStepIds = dicOutsourceStep.SelectMany(x => x.Value);
             var productionStepLinkDataIds = productionProcess.ProductionStepLinkDataRoles
-                                            .Where(x => productionStepIds.Contains(x.ProductionStepId))
-                                            .GroupBy(x=>x.ProductionStepLinkDataCode)
-                                            .ToDictionary(x=>x.Key, x => new {
-                                                x.First().ProductionStepLinkDataCode ,
-                                                x.First().ProductionStepId,
+                                            .Where(x => productionStepIds.Contains(x.ProductionStepCode))
+                                            .GroupBy(x => x.ProductionStepLinkDataCode)
+                                            .ToDictionary(x => x.Key, x => new
+                                            {
+                                                x.First().ProductionStepLinkDataCode,
+                                                x.First().ProductionStepCode,
                                                 x.First().ProductionStepLinkDataId,
                                             });
 
             foreach (var linkData in productionProcess.ProductionStepLinkDatas)
             {
-                if (productionStepLinkDataIds.ContainsKey(linkData.ProductionStepLinkDataCode) 
+                if (productionStepLinkDataIds.ContainsKey(linkData.ProductionStepLinkDataCode)
                     && (linkData.OutsourceQuantity > linkData.Quantity || linkData.ExportOutsourceQuantity > linkData.Quantity))
                 {
-                    var stepRequest = outsourceStepRequest[dicOutsourceStep.FirstOrDefault(x=>x.Value.Contains(productionStepLinkDataIds[linkData.ProductionStepLinkDataCode].ProductionStepId)).Key];
+                    var stepRequest = outsourceStepRequest[dicOutsourceStep.FirstOrDefault(x => x.Value.Contains(productionStepLinkDataIds[linkData.ProductionStepLinkDataCode].ProductionStepCode)).Key];
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
                         Message = $"YCGC {stepRequest.OutsourceStepRequestCode}-Chi tiết \"{linkData.ObjectTitle}\" có số lượng gia công vượt quá so với QTSX.",
@@ -106,7 +107,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return lsWarning;
         }
 
-        private async Task<IList<ProductionProcessWarningMessage>> ValidateOutsourcePartRequest(ProductionProcessModel productionProcess)
+        public async Task<IList<ProductionProcessWarningMessage>> ValidateOutsourcePartRequest(ProductionProcessModel productionProcess)
         {
             IList<ProductionProcessWarningMessage> lsWarning = new List<ProductionProcessWarningMessage>();
 
@@ -365,7 +366,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        private IList<long> FoundProductionStepInOutsourceStepRequest(IList<OutsourceStepRequestDataModel> outsourceStepRequestDatas, List<ProductionStepLinkDataRoleInput> roles)
+        private IList<string> FoundProductionStepInOutsourceStepRequest(IList<OutsourceStepRequestDataModel> outsourceStepRequestDatas, List<ProductionStepLinkDataRoleInput> roles)
         {
             var outputData = outsourceStepRequestDatas
                 .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
@@ -377,31 +378,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Select(x => x.ProductionStepLinkDataId)
                 .ToList();
 
-            var productionStepStartId = roles.Where(x => inputData.Contains(x.ProductionStepLinkDataId)
+            var productionStepStartCode = roles.Where(x => inputData.Contains(x.ProductionStepLinkDataId)
                    && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                .Select(x => x.ProductionStepId)
+                .Select(x => x.ProductionStepCode)
                 .Distinct()
                 .ToList();
-            var productionStepEndId = roles.Where(x => outputData.Contains(x.ProductionStepLinkDataId)
+            var productionStepEndCode = roles.Where(x => outputData.Contains(x.ProductionStepLinkDataId)
                      && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                .Select(x => x.ProductionStepId)
+                .Select(x => x.ProductionStepCode)
                 .Distinct()
                 .ToList();
 
-            var lsProductionStepId = new List<long>();
-            foreach (var id in productionStepEndId)
-                FindTraceProductionStep(inputData, roles, productionStepStartId, lsProductionStepId, id);
+            var lsProductionStepCCode = new List<string>();
+            foreach (var id in productionStepEndCode)
+                FindTraceProductionStep(inputData, roles, productionStepStartCode, lsProductionStepCCode, id);
 
-            return lsProductionStepId
-                    .Union(productionStepEndId)
-                    .Union(productionStepStartId)
+            return lsProductionStepCCode
+                    .Union(productionStepEndCode)
+                    .Union(productionStepStartCode)
                     .Distinct()
                     .ToList();
         }
 
-        private void FindTraceProductionStep(List<long> inputLinkData, List<ProductionStepLinkDataRoleInput> roles, List<long> productionStepStartId, List<long> result, long productionStepId)
+        private void FindTraceProductionStep(List<long> inputLinkData, List<ProductionStepLinkDataRoleInput> roles, List<string> productionStepStartId, List<string> result, string productionStepCode)
         {
-            var roleInput = roles.Where(x => x.ProductionStepId == productionStepId
+            var roleInput = roles.Where(x => x.ProductionStepCode == productionStepCode
                     && !inputLinkData.Contains(x.ProductionStepLinkDataId)
                     && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                 .ToList();
@@ -413,8 +414,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 if (roleOutput == null) continue;
 
-                result.Add(roleOutput.ProductionStepId);
-                FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
+                result.Add(roleOutput.ProductionStepCode);
+                FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepCode);
             }
         }
     }
