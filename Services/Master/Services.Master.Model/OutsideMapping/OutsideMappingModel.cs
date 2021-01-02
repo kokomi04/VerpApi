@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
 
@@ -9,6 +10,7 @@ namespace VErp.Services.Master.Model.OutsideMapping
 {
     public class OutsideMappingModelBase
     {
+        public EnumObjectType ObjectTypeId { get; set; }
         public int InputTypeId { get; set; }
         public string MappingFunctionKey { get; set; }
         public string FunctionName { get; set; }
