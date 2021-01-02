@@ -37,6 +37,11 @@ namespace VErp.Commons.Enums.MasterEnum
 
         //[Description("Phiếu xuất/nhập kho")]
         //Inventory = 12,
+        [Description("Phiếu YC nhập kho")]
+        RequestInventoryInput = 300,
+
+        [Description("Phiếu YC xuất kho")]
+        RequestInventoryOutput = 301,
 
         [Description("Phiếu nhập kho")]
         InventoryInput = 30,
