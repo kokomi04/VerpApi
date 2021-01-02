@@ -22,7 +22,7 @@ namespace VErp.Services.Master.Model.OutsideMapping
     }
     public class OutsideMappingModelList : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
     {
-        public int OutsideImportMappingFunctionId { get; set; }      
+        public int OutsideImportMappingFunctionId { get; set; }
 
         public virtual void Mapping(Profile profile)
         {
@@ -35,7 +35,7 @@ namespace VErp.Services.Master.Model.OutsideMapping
     }
 
     public class OutsideMappingModel : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
-    {       
+    {
         public OutsideMappingModel()
         {
             FieldMappings = new List<OutsiteMappingModel>();
@@ -47,8 +47,10 @@ namespace VErp.Services.Master.Model.OutsideMapping
             profile.CreateMap<OutsideMappingModel, OutsideImportMappingFunction>()
                 .ForMember(d => d.OutsideImportMapping, s => s.Ignore())
                 .ForMember(d => d.OutsideImportMappingObject, s => s.Ignore())
+                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (int)f.ObjectTypeId))
                 .ReverseMap()
-                .ForMember(s => s.FieldMappings, d => d.Ignore());
+                .ForMember(s => s.FieldMappings, d => d.Ignore())
+                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => ((EnumObjectType?)f.ObjectTypeId) ?? EnumObjectType.InputBill));
         }
 
     }
