@@ -10,5 +10,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
     public interface IValidateProductionProcessService
     {
         Task<IList<ProductionProcessWarningMessage>> ValidateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel productionProcess);
+        Task<IList<ProductionProcessWarningMessage>> ValidateOutsourceStepRequest(ProductionProcessModel productionProcess);
+        Task<IList<ProductionProcessWarningMessage>> ValidateOutsourcePartRequest(ProductionProcessModel productionProcess);
     }
 }

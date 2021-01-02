@@ -55,6 +55,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<long> CreateOutsourceStepOrderPart(OutsourceStepOrderModel req)
         {
+
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
                 try
