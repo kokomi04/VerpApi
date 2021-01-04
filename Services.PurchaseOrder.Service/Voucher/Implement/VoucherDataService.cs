@@ -333,7 +333,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumAction.Add);
+                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumActionType.Add);
 
                 if (result.Code != 0)
                 {
@@ -356,7 +356,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await CreateBillVersion(voucherTypeId, billInfo.FId, 1, data, generateTypeLastValues);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Add);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumActionType.Add);
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -522,7 +522,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, VoucherBillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, VoucherBillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -970,7 +970,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumAction.Update);
+                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumActionType.Update);
                 if (result.Code != 0)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
@@ -992,7 +992,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Update);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumActionType.Update);
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -1261,7 +1261,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumAction.Delete);
+                await ProcessActionAsync(voucherTypeInfo.BeforeSaveAction, data, voucherFields, EnumActionType.Delete);
 
                 await DeleteVoucherBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1272,7 +1272,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Delete);
+                await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumActionType.Delete);
 
                 //await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
 
@@ -1915,7 +1915,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(voucherType.BeforeSaveAction, bill, voucherFields, EnumAction.Add);
+                        await ProcessActionAsync(voucherType.BeforeSaveAction, bill, voucherFields, EnumActionType.Add);
 
                         var billInfo = new VoucherBill()
                         {
@@ -1932,7 +1932,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         await CreateBillVersion(voucherTypeId, billInfo.FId, 1, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(voucherType.AfterSaveAction, bill, voucherFields, EnumAction.Add);
+                        await ProcessActionAsync(voucherType.AfterSaveAction, bill, voucherFields, EnumActionType.Add);
                     }
 
                     await ConfirmCustomGenCode(generateTypeLastValues);

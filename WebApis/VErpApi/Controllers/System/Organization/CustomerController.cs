@@ -68,7 +68,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("GetByIds")]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         public async Task<IList<CustomerListOutput>> GetListByIds([FromBody] IList<int> customerIds)
         {
             return (await _customerService.GetListByIds(customerIds)).ToList();

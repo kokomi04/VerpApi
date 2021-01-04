@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("exports")]
         public async Task<IActionResult> Export([FromBody] IList<int> productIds)
         {

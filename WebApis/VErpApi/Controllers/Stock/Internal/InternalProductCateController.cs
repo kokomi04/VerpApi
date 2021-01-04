@@ -33,7 +33,7 @@ namespace VErpApi.Controllers.Stock.Internal
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("")]
         public async Task<PageData<ProductCateOutput>> Search([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {

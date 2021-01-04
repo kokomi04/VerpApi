@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("Search")]
         public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules([FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {

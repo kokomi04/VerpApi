@@ -78,8 +78,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
-                entity.Property(e => e.Filters).HasMaxLength(512);
-
                 entity.Property(e => e.InputStyleJson).HasMaxLength(512);
 
                 entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");

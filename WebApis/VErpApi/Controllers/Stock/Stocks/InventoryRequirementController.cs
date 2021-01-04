@@ -32,7 +32,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("inventorytype/{inventoryType}/Search")]
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements([FromRoute]EnumInventoryType inventoryType, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
@@ -70,7 +70,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPut]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}/accept")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> AcceptInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId, [FromBody] Dictionary<long, int> assignStocks)
         {
             return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Accepted, assignStocks);
@@ -78,7 +78,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPut]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}/reject")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> RejectInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
         {
             return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Rejected);

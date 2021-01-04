@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public virtual DbSet<Action> Action { get; set; }
+        public virtual DbSet<ActionType> ActionType { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BackupStorage> BackupStorage { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
@@ -59,6 +60,19 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionName)
                     .IsRequired()
                     .HasMaxLength(16);
+            });
+
+            modelBuilder.Entity<ActionType>(entity =>
+            {
+                entity.Property(e => e.ActionTypeId).ValueGeneratedNever();
+
+                entity.Property(e => e.ActionTitle)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.ActionTypeName)
+                    .IsRequired()
+                    .HasMaxLength(64);
             });
 
             modelBuilder.Entity<ApiEndpoint>(entity =>

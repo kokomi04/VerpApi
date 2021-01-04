@@ -31,7 +31,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("{voucherTypeId}/Search")]
         public async Task<PageDataTable> GetVoucherBills([FromRoute] int voucherTypeId, [FromBody] VoucherTypeBillsRequestModel request)
         {
@@ -125,7 +125,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         }
         
         [HttpPost("OrderDetails")]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         public async Task<IList<NonCamelCaseDictionary>> OrderDetailByPurchasingRequest([FromBody] IList<long> orderDetailIds)
         {
             return await _voucherDataService.OrderDetails(orderDetailIds);

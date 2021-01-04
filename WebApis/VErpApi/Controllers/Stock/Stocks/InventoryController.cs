@@ -167,7 +167,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryInput/{inventoryId}")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApproveInventoryInput([FromRoute] long inventoryId)
         {
             return await _inventoryService.ApproveInventoryInput(inventoryId);
@@ -181,7 +181,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryOutput/{inventoryId}")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApproveInventoryOutput([FromRoute] long inventoryId)
         {
             return await _inventoryService.ApproveInventoryOutput(inventoryId);
@@ -272,7 +272,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         }
 
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [HttpPost]
         [Route("{inventoryId}/InputGetAffectedPackages")]
         public async Task<IList<CensoredInventoryInputProducts>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] InventoryInModel req)
@@ -282,7 +282,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPut]
         [Route("{inventoryId}/ApprovedInputDataUpdate")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApprovedInputDataUpdate([FromRoute] long inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] ApprovedInputDataSubmitModel req)
         {
             return await _inventoryService.ApprovedInputDataUpdate(inventoryId, fromDate, toDate, req);

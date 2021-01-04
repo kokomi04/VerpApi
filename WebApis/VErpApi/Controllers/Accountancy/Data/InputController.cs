@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("{inputTypeId}/Search")]
         public async Task<PageDataTable> GetBills([FromRoute] int inputTypeId, [FromBody] InputTypeBillsRequestModel request)
         {
