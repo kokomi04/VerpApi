@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
+        public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
@@ -395,6 +396,14 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ModuleGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ObjectPrintConfigMapping>(entity =>
+            {
+                entity.HasKey(e => new { e.PrintConfigId, e.ObjectTypeId, e.ObjectId })
+                    .HasName("PK_ObjectPrintConfigMapping_1");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>
