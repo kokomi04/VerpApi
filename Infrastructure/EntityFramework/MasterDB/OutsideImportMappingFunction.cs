@@ -12,6 +12,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public int OutsideImportMappingFunctionId { get; set; }
+        public int? SourceObjectTypeId { get; set; }
+        public int? SourceInputTypeId { get; set; }
         public int ObjectTypeId { get; set; }
         public int InputTypeId { get; set; }
         public string MappingFunctionKey { get; set; }

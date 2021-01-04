@@ -10,6 +10,8 @@ namespace VErp.Services.Master.Model.OutsideMapping
 {
     public class OutsideMappingModelBase
     {
+        public EnumObjectType? SourceObjectTypeId { get; set; }
+        public int? SourceInputTypeId { get; set; }
         public EnumObjectType ObjectTypeId { get; set; }
         public int InputTypeId { get; set; }
         public string MappingFunctionKey { get; set; }
@@ -48,9 +50,11 @@ namespace VErp.Services.Master.Model.OutsideMapping
                 .ForMember(d => d.OutsideImportMapping, s => s.Ignore())
                 .ForMember(d => d.OutsideImportMappingObject, s => s.Ignore())
                 .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (int)f.ObjectTypeId))
+                .ForMember(d => d.SourceObjectTypeId, s => s.MapFrom(f => (int?)f.SourceObjectTypeId))
                 .ReverseMap()
                 .ForMember(s => s.FieldMappings, d => d.Ignore())
-                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (EnumObjectType)f.ObjectTypeId));
+                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (EnumObjectType)f.ObjectTypeId))
+                .ForMember(d => d.SourceObjectTypeId, s => s.MapFrom(f => (EnumObjectType?)f.SourceObjectTypeId));
         }
 
     }
