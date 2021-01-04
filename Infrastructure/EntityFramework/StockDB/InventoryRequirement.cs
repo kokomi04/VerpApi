@@ -29,6 +29,12 @@ namespace VErp.Infrastructure.EF.StockDB
         public int CensorStatus { get; set; }
         public long? ScheduleTurnId { get; set; }
         public long? ProductionStepId { get; set; }
+        public string Shipper { get; set; }
+        public int? CustomerId { get; set; }
+        public string BillForm { get; set; }
+        public string BillCode { get; set; }
+        public string BillSerial { get; set; }
+        public DateTime? BillDate { get; set; }
 
         public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
         public virtual ICollection<InventoryRequirementFile> InventoryRequirementFile { get; set; }
