@@ -48,18 +48,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<InputActionModel>> GetInputActionConfigs(int inputTypeId)
         {
-            return await _accountancyDBContext.InputAction
+            var lst = await _accountancyDBContext.InputAction
                 .Where(a => a.InputTypeId == inputTypeId)
-                .ProjectTo<InputActionModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+            return _mapper.Map<IList<InputActionModel>>(lst);
         }
 
         public async Task<IList<InputActionUseModel>> GetInputActions(int inputTypeId)
         {
-            return await _accountancyDBContext.InputAction
-                .Where(a => a.InputTypeId == inputTypeId)
-                .ProjectTo<InputActionUseModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var lst = await _accountancyDBContext.InputAction
+                 .Where(a => a.InputTypeId == inputTypeId)
+                 .ToListAsync();
+            return _mapper.Map<IList<InputActionUseModel>>(lst);
         }
 
         public async Task<InputActionModel> AddInputAction(InputActionModel data)
@@ -162,28 +162,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             return result;
-        }
-
-        private DataTable ConvertToDataTable(BillInfoModel data, IList<InputField> fields)
-        {
-            var dataTable = new DataTable();
-            foreach (var field in fields)
-            {
-                dataTable.Columns.Add(field.FieldName, ((EnumDataType)field.DataTypeId).GetColumnDataType());
-            }
-            foreach (var row in data.Rows)
-            {
-                var dataRow = dataTable.NewRow();
-                foreach (var field in fields)
-                {
-                    row.TryGetValue(field.FieldName, out var celValue);
-                    if (celValue == null) data.Info.TryGetValue(field.FieldName, out celValue);
-                    var value = ((EnumDataType)field.DataTypeId).GetSqlValue(celValue);
-                    dataRow[field.FieldName] = value;
-                }
-                dataTable.Rows.Add(dataRow);
-            }
-            return dataTable;
         }
     }
 }

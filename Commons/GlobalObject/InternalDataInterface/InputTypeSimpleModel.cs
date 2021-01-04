@@ -32,6 +32,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [MaxLength(256, ErrorMessage = "Tên chức năng quá dài")]
         public string Title { get; set; }
         public int SortOrder { get; set; }
+        public EnumActionType? ActionTypeId { get; set; }
     }
 
     public class InputAreaFieldSimpleModel

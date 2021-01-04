@@ -12,7 +12,7 @@ namespace VErp.Services.Accountancy.Model.Input
 {
     public class InputActionSimpleProjectMappingModel : InputActionSimpleModel, IMapFrom<InputAction>
     {
-       
+
     }
     public class InputActionUseModel : InputActionSimpleProjectMappingModel
     {
@@ -29,5 +29,12 @@ namespace VErp.Services.Accountancy.Model.Input
     public class InputActionModel : InputActionUseModel
     {
         public string SqlAction { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<InputAction, InputActionModel>()
+                .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (EnumActionType?)m.ActionTypeId))
+                .ReverseMap()
+                .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (int?)m.ActionTypeId));
+        }
     }
 }

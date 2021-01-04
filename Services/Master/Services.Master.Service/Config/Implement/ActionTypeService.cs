@@ -45,7 +45,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             for (var i = 0; i < 32; i++)
             {
                 var actionTypeId = (int)Math.Pow(2, i);
-                if (actionTypeId == 0 && !existedActionTypeIds.Contains(actionTypeId))
+                if (newActionTypeId == 0 && !existedActionTypeIds.Contains(actionTypeId))
                 {
                     newActionTypeId = actionTypeId;
                     break;
