@@ -221,6 +221,16 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryRequirement>(entity =>
             {
+                entity.Property(e => e.BillCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.BillForm).HasMaxLength(128);
+
+                entity.Property(e => e.BillSerial)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.CensorStatus).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Content).HasMaxLength(512);
@@ -230,6 +240,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.InventoryRequirementCode)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.Shipper).HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
@@ -243,11 +255,17 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductionOrderCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
+
+                entity.Property(e => e.UnitPrice)
+                    .HasColumnType("decimal(18, 4)")
+                    .HasDefaultValueSql("((0))");
 
                 entity.HasOne(d => d.InventoryRequirement)
                     .WithMany(p => p.InventoryRequirementDetail)
