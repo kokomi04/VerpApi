@@ -29,5 +29,12 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
     public class VoucherActionModel : VoucherActionUseModel
     {
         public string SqlAction { get; set; }
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<VoucherAction, VoucherActionModel>()
+                .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (EnumActionType?)m.ActionTypeId))
+                .ReverseMap()
+                .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (int?)m.ActionTypeId));
+        }
     }
 }
