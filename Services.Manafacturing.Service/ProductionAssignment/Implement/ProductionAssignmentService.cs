@@ -53,6 +53,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long scheduleTurnId)
         {
             return await _manufacturingDBContext.ProductionAssignment
+                .Include(a => a.ProductionAssignmentDetail)
                 .Where(a => a.ScheduleTurnId == scheduleTurnId)
                 .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -315,176 +316,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }).ToList(), total);
         }
 
-        //public async Task<IDictionary<int, decimal>> GetCapacityDepartments(long scheduleTurnId, long productionStepId)
-        //{
-        //    var scheduleTime = (from s in _manufacturingDBContext.ProductionSchedule
-        //                        join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
-        //                        where s.ScheduleTurnId == scheduleTurnId
-        //                        select new
-        //                        {
-        //                            s.StartDate,
-        //                            s.EndDate
-        //                        }).FirstOrDefault();
-
-        //    if (scheduleTime == null)
-        //        throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
-
-        //    var productionStep = _manufacturingDBContext.ProductionStep.Where(s => s.ProductionStepId == productionStepId).FirstOrDefault();
-
-        //    if (productionStep == null)
-        //        throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
-
-        //    List<int> departmentIds = (from sd in _manufacturingDBContext.StepDetail
-        //                               join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
-        //                               where ps.ProductionStepId == productionStepId
-        //                               select sd.DepartmentId).ToList();
-
-        //    var includeAssignments = _manufacturingDBContext.ProductionAssignment
-        //        .Where(a => a.ProductionStepId == productionStepId && a.ScheduleTurnId == scheduleTurnId && !departmentIds.Contains(a.DepartmentId))
-        //        .Select(a => a.DepartmentId)
-        //        .ToList();
-        //    departmentIds.AddRange(includeAssignments);
-
-        //    if (departmentIds.Count == 0)
-        //        throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thiết lập tổ sản xuất");
-
-        //    var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
-        //        .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= scheduleTime.EndDate && s.EndDate >= scheduleTime.StartDate)
-        //        .Join(_manufacturingDBContext.ProductionOrderDetail, s => s.ProductionOrderDetailId, od => od.ProductionOrderDetailId, (s, od) => new
-        //        {
-        //            s.ScheduleTurnId,
-        //            s.ProductionScheduleQuantity,
-        //            ProductionOrderQuantity = od.Quantity.GetValueOrDefault() + od.ReserveQuantity.GetValueOrDefault(),
-        //            s.StartDate,
-        //            s.EndDate
-        //        })
-        //        .Select(s => new
-        //        {
-        //            s.ScheduleTurnId,
-        //            s.ProductionScheduleQuantity,
-        //            s.ProductionOrderQuantity,
-        //            s.StartDate,
-        //            s.EndDate
-        //        })
-        //        .ToList()
-        //        .GroupBy(s => s.ScheduleTurnId)
-        //        .ToDictionary(g => g.Key, g => g.First());
-
-        //    var scheduleTurnIds = allScheduleTurns.Select(s => s.Key).ToList();
-        //    var otherAssignments = (from a in _manufacturingDBContext.ProductionAssignment
-        //                            where scheduleTurnIds.Contains(a.ScheduleTurnId) && departmentIds.Contains(a.DepartmentId) && (a.ProductionStepId != productionStepId || a.ScheduleTurnId != scheduleTurnId)
-        //                            join d in _manufacturingDBContext.ProductionStepLinkData
-        //                            on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
-        //                            join r in _manufacturingDBContext.ProductionStepLinkDataRole
-        //                            on new { a.ProductionStepId, ProductionStepLinkDataRoleTypeId = (int)EnumProductionStepLinkDataRoleType.Output } equals new { r.ProductionStepId, r.ProductionStepLinkDataRoleTypeId }
-        //                            join td in _manufacturingDBContext.ProductionStepLinkData
-        //                            on new { r.ProductionStepLinkDataId, d.ObjectTypeId, d.ObjectId } equals new { td.ProductionStepLinkDataId, td.ObjectTypeId, td.ObjectId }
-        //                            select new
-        //                            {
-        //                                a.ProductionStepId,
-        //                                a.DepartmentId,
-        //                                a.AssignmentQuantity,
-        //                                a.ScheduleTurnId,
-        //                                a.Productivity,
-        //                                d.ObjectId,
-        //                                d.ObjectTypeId,
-        //                                d.Quantity,
-        //                                TotalQuantity = td.Quantity
-        //                            }).GroupBy(a => new
-        //                            {
-        //                                a.ProductionStepId,
-        //                                a.DepartmentId,
-        //                                a.AssignmentQuantity,
-        //                                a.ScheduleTurnId,
-        //                                a.Productivity,
-        //                                a.ObjectId,
-        //                                a.ObjectTypeId,
-        //                                a.Quantity,
-        //                            })
-        //                            .Select(g => new
-        //                            {
-        //                                g.Key.ProductionStepId,
-        //                                g.Key.DepartmentId,
-        //                                g.Key.AssignmentQuantity,
-        //                                g.Key.ScheduleTurnId,
-        //                                g.Key.Productivity,
-        //                                g.Key.ObjectId,
-        //                                g.Key.ObjectTypeId,
-        //                                g.Key.Quantity,
-        //                                TotalQuantity = g.Sum(a => a.TotalQuantity)
-        //                            })
-        //                            .ToList();
-
-        //    var productionStepIds = otherAssignments.Select(a => a.ProductionStepId).Distinct().ToList();
-        //    if (!productionStepIds.Contains(productionStepId))
-        //    {
-        //        productionStepIds.Add(productionStepId);
-        //    }
-
-        //    var workloadMap = _manufacturingDBContext.ProductionStep
-        //        .Where(s => productionStepIds.Contains(s.ProductionStepId))
-        //        .ToDictionary(s => s.ProductionStepId, s => s.Workload.GetValueOrDefault());
-
-
-        //    if (workloadMap.Count < productionStepIds.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất chưa thiết lập khối lượng công việc");
-
-        //    var handovers = _manufacturingDBContext.ProductionHandover
-        //    .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId) && departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
-        //    .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
-        //    .ToList();
-
-        //    var capacityDepartments = departmentIds.ToDictionary(d => d, d => (decimal)0);
-
-        //    foreach (var turnId in scheduleTurnIds)
-        //    {
-        //        var scheduleAssignments = otherAssignments.Where(a => a.ScheduleTurnId == turnId).ToList();
-        //        if (scheduleAssignments.Count == 0) continue;
-        //        var parammeters = new SqlParameter[]
-        //        {
-        //            new SqlParameter("@ScheduleTurnId", turnId)
-        //        };
-        //        var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
-
-        //        var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
-        //            .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
-        //            .ToList();
-
-        //        var scheduleDays = allScheduleTurns[turnId].EndDate.Subtract(allScheduleTurns[turnId].StartDate).TotalDays + 1;
-
-        //        foreach (var assignment in scheduleAssignments)
-        //        {
-        //            var totalAssignQuantity = assignment.AssignmentQuantity * assignment.TotalQuantity / assignment.Quantity;
-
-        //            var handoverQuantity = handovers
-        //                .Where(h => h.FromDepartmentId == assignment.DepartmentId && h.FromProductionStepId == assignment.ProductionStepId && h.ObjectId == assignment.ObjectId && h.ObjectTypeId == h.ObjectTypeId)
-        //                .Sum(h => h.HandoverQuantity);
-
-        //            var inputInventoryQuantity = inputInventorys
-        //                .Where(h => h.DepartmentId == assignment.DepartmentId && h.ProductionStepId == assignment.ProductionStepId && h.ProductId == assignment.ObjectId)
-        //                .Sum(h => h.ActualQuantity)
-        //                .GetValueOrDefault();
-
-        //            if (totalAssignQuantity <= handoverQuantity + inputInventoryQuantity) continue;
-
-        //            var startMax = scheduleTime.StartDate > allScheduleTurns[assignment.ScheduleTurnId].StartDate ? scheduleTime.StartDate : allScheduleTurns[assignment.ScheduleTurnId].StartDate;
-        //            var endMin = scheduleTime.EndDate < allScheduleTurns[assignment.ScheduleTurnId].EndDate ? scheduleTime.EndDate : allScheduleTurns[assignment.ScheduleTurnId].EndDate;
-        //            var matchDays = endMin.Subtract(startMax).TotalDays + 1;
-
-        //            var workload = (workloadMap[assignment.ProductionStepId]
-        //                * allScheduleTurns[assignment.ScheduleTurnId].ProductionScheduleQuantity
-        //                * Convert.ToDecimal(matchDays / scheduleDays)
-        //                * (totalAssignQuantity - handoverQuantity - inputInventoryQuantity))
-        //                / (allScheduleTurns[assignment.ScheduleTurnId].ProductionOrderQuantity
-        //                * assignment.Productivity
-        //                * totalAssignQuantity);
-
-        //            capacityDepartments[assignment.DepartmentId] += workload;
-        //        }
-        //    }
-        //    return capacityDepartments;
-        //}
-
-        public async Task<IDictionary<int, List<CapacityDepartmentDetailModel>>> GetCapacityDepartments(long scheduleTurnId, long productionStepId, long startDate, long endDate)
+        public async Task<IDictionary<int, List<CapacityModel>>> GetCapacityDepartments(long scheduleTurnId, long productionStepId, long startDate, long endDate)
         {
             var startDateTime = startDate.UnixToDateTime();
             var endDateTime = endDate.UnixToDateTime();
@@ -526,7 +358,137 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (departmentIds.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thiết lập tổ sản xuất");
 
-            var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityDepartmentDetailModel>());
+            var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityModel>());
+
+            var otherAssignments = (from a in _manufacturingDBContext.ProductionAssignment
+                                    where departmentIds.Contains(a.DepartmentId)
+                                    && (a.ProductionStepId != productionStepId || a.ScheduleTurnId != scheduleTurnId)
+                                    && a.StartDate <= endDateTime
+                                    && a.EndDate >= startDateTime
+                                    join d in _manufacturingDBContext.ProductionStepLinkData
+                                    on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                                    join ad in _manufacturingDBContext.ProductionAssignmentDetail
+                                    on new { a.ScheduleTurnId, a.ProductionStepId, a.DepartmentId } equals new { ad.ScheduleTurnId, ad.ProductionStepId, ad.DepartmentId }
+                                    select new
+                                    {
+                                        ProductionAssignment = a,
+                                        TotalQuantity = d.Quantity,
+                                        ad.QuantityPerDay,
+                                        ad.WorkDate
+                                    })
+                                    .ToList()
+                                    .GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity })
+                                    .Select(g => new
+                                    {
+                                        g.Key.ProductionAssignment,
+                                        g.Key.TotalQuantity,
+                                        ProductionAssignmentDetail = g.Select(ad => new
+                                        {
+                                            ad.WorkDate,
+                                            ad.QuantityPerDay
+                                        }).ToList()
+                                    });
+
+            var productionStepIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionStepId).Distinct().ToList();
+            if (!productionStepIds.Contains(productionStepId))
+            {
+                productionStepIds.Add(productionStepId);
+            }
+
+            var workloadMap = _manufacturingDBContext.ProductionStep
+                .Where(s => productionStepIds.Contains(s.ProductionStepId))
+                .ToDictionary(s => s.ProductionStepId, s => s.Workload.GetValueOrDefault());
+
+            var zeroWorkloadIds = workloadMap.Where(w => w.Value == 0).Select(w => w.Key).ToList();
+            if (zeroWorkloadIds.Count > 0)
+            {
+                var zeroWorkloads = (from ps in _manufacturingDBContext.ProductionStep
+                                     where zeroWorkloadIds.Contains(ps.ProductionStepId)
+                                     join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                     join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
+                                     select new
+                                     {
+                                         s.StepName,
+                                         s.UnitId,
+                                         po.ProductionOrderCode,
+                                         ps.ProductionStepId,
+                                         po.ProductionOrderId
+                                     }).ToList();
+                throw new BadRequestException(GeneralCode.InvalidParams,
+                    $"Tồn tại công đoạn sản xuất chưa thiết lập khối lượng công việc: {string.Join(',', zeroWorkloads.Select(w => w.StepName + " / " + w.ProductionOrderCode).ToList())}",
+                    new Dictionary<string, object> { { "zeroWorkloads", zeroWorkloads } });
+            }
+
+            foreach (var otherAssignment in otherAssignments)
+            {
+                var capacityDepartment = new CapacityModel
+                {
+                    StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
+                    EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
+                    UpdatedDatetimeUtc = otherAssignment.ProductionAssignment.UpdatedDatetimeUtc.GetUnix(),
+                    Capacity = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                                * otherAssignment.ProductionAssignment.AssignmentQuantity)
+                                / (otherAssignment.TotalQuantity
+                                * otherAssignment.ProductionAssignment.Productivity),
+                    CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
+                    {
+                        WorkDate = ad.WorkDate.GetUnix(),
+                        CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                                            * ad.QuantityPerDay)
+                                            / (otherAssignment.TotalQuantity
+                                            * otherAssignment.ProductionAssignment.Productivity)
+
+                    }).ToList()
+                };
+                capacityDepartments[otherAssignment.ProductionAssignment.DepartmentId].Add(capacityDepartment);
+            }
+
+            return capacityDepartments;
+        }
+
+        public async Task<IDictionary<int, List<CapacityModel>>> GetCapacityTimeLine(long scheduleTurnId, long productionStepId, long startDate, long endDate)
+        {
+            var startDateTime = startDate.UnixToDateTime();
+            var endDateTime = endDate.UnixToDateTime();
+
+            var scheduleTime = (from s in _manufacturingDBContext.ProductionSchedule
+                                join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                                where s.ScheduleTurnId == scheduleTurnId
+                                select new
+                                {
+                                    s.StartDate,
+                                    s.EndDate
+                                }).FirstOrDefault();
+
+            if (scheduleTime == null)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
+
+            if (startDateTime < scheduleTime.StartDate || endDateTime > scheduleTime.EndDate || startDateTime > endDateTime)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian sản xuất công đoạn không hợp lệ");
+
+            var productionStep = _manufacturingDBContext.ProductionStep
+                .Where(s => s.ProductionStepId == productionStepId).FirstOrDefault();
+
+            if (productionStep == null)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
+
+            List<int> departmentIds = (from sd in _manufacturingDBContext.StepDetail
+                                       join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
+                                       where ps.ProductionStepId == productionStepId
+                                       select sd.DepartmentId).ToList();
+
+            var includeAssignments = _manufacturingDBContext.ProductionAssignment
+                .Where(a => a.ProductionStepId == productionStepId
+                && a.ScheduleTurnId == scheduleTurnId
+                && !departmentIds.Contains(a.DepartmentId))
+                .Select(a => a.DepartmentId)
+                .ToList();
+            departmentIds.AddRange(includeAssignments);
+
+            if (departmentIds.Count == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thiết lập tổ sản xuất");
+
+            var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityModel>());
 
             var otherAssignments = (from a in _manufacturingDBContext.ProductionAssignment
                                     where departmentIds.Contains(a.DepartmentId)
@@ -580,7 +542,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var otherAssignment in otherAssignments)
             {
-                var capacityDepartment = new CapacityDepartmentDetailModel
+                var capacityDepartment = new CapacityModel
                 {
                     StartDate = otherAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.EndDate.GetUnix(),
@@ -595,6 +557,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             return capacityDepartments;
         }
+
+
 
         public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate)
         {

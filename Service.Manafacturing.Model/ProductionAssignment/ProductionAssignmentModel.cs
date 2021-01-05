@@ -23,6 +23,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long EndDate { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
 
+        public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
+
+        public ProductionAssignmentModel()
+        {
+            ProductionAssignmentDetail = new List<ProductionAssignmentDetailModel>();
+        }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionAssignmentEntity, ProductionAssignmentModel>()
@@ -33,6 +40,20 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.UnixToDateTime()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
                 .ForMember(s => s.UpdatedDatetimeUtc, d => d.Ignore());
+        }
+    }
+
+    public class ProductionAssignmentDetailModel : IMapFrom<ProductionAssignmentDetail>
+    {
+        public long WorkDate { get; set; }
+        public decimal? QuantityPerDay { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
+                .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.GetUnix()))
+                .ReverseMap()
+                .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()));
         }
     }
 
