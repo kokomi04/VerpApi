@@ -18,7 +18,7 @@ namespace VErpApi.Controllers.System
 {
 
     [Route("api/internal/[controller]")]
-    public class InternalOutsideImportMappingsController : VErpBaseController
+    public class InternalOutsideImportMappingsController : CrossServiceBaseController
     {
 
         private readonly IOutsideImportMappingService _outsideMappingService;
