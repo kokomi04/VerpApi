@@ -248,6 +248,10 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryRequirementDetail>(entity =>
             {
+                entity.Property(e => e.OrderCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.Pocode)
                     .HasColumnName("POCode")
                     .HasMaxLength(64)

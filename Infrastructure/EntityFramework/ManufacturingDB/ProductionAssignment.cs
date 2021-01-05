@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     {
         public ProductionAssignment()
         {
+            ProductionAssignmentDetail = new HashSet<ProductionAssignmentDetail>();
             ProductionConsumMaterial = new HashSet<ProductionConsumMaterial>();
             ProductionHandoverProductionAssignment = new HashSet<ProductionHandover>();
             ProductionHandoverProductionAssignmentNavigation = new HashSet<ProductionHandover>();
@@ -24,6 +25,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
 
         public virtual ProductionStep ProductionStep { get; set; }
+        public virtual ICollection<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual ICollection<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual ICollection<ProductionHandover> ProductionHandoverProductionAssignment { get; set; }
         public virtual ICollection<ProductionHandover> ProductionHandoverProductionAssignmentNavigation { get; set; }

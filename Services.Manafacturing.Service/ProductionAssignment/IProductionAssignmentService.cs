@@ -17,10 +17,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? scheduleTurnId, int page, int size, string orderByFieldName, bool asc);
 
         Task<IDictionary<int, decimal>> GetProductivityDepartments(long productionStepId);
-        Task<IDictionary<int, List<CapacityDepartmentDetailModel>>> GetCapacityDepartments(long scheduleTurnId, long productionStepId, long startDate, long endDate);
+        Task<IDictionary<int, List<CapacityModel>>> GetCapacityDepartments(long scheduleTurnId, long productionStepId, long startDate, long endDate);
         Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate);
 
 
         Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long scheduleTurnId);
+        Task<IDictionary<int, List<CapacityModel>>> GetCapacityTimeLine(long scheduleTurnId, long productionStepId, long startDate, long endDate);
     }
 }

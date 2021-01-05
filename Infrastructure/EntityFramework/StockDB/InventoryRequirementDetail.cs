@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? AssignStockId { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal? ProductUnitConversionPrice { get; set; }
+        public string OrderCode { get; set; }
 
         public virtual InventoryRequirement InventoryRequirement { get; set; }
         public virtual ProductUnitConversion ProductUnitConversion { get; set; }

@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<OutsourceTrack> OutsourceTrack { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
+        public virtual DbSet<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
@@ -241,6 +242,20 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductionAssignment_ProductionStep");
+            });
+
+            modelBuilder.Entity<ProductionAssignmentDetail>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductionStepId, e.ScheduleTurnId, e.DepartmentId, e.WorkDate })
+                    .HasName("PK_ProductionAssignment_copy2");
+
+                entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.ProductionAssignment)
+                    .WithMany(p => p.ProductionAssignmentDetail)
+                    .HasForeignKey(d => new { d.ProductionStepId, d.ScheduleTurnId, d.DepartmentId })
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionAssignmentDetail_ProductionAssignment");
             });
 
             modelBuilder.Entity<ProductionConsumMaterial>(entity =>
