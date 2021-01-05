@@ -78,8 +78,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             _physicalFileService = physicalFileService;
         }
 
-        public async Task<PrintConfigModel> GetPrintConfig(int printConfigId)
+        public async Task<PrintConfigModel> GetPrintConfig(int printConfigId, bool isOrigin)
         {
+            if (isOrigin && !_currentContextService.IsDeveloper)
+                throw new BadRequestException(GeneralCode.GeneralError, "Không có quyền truy cập vào phiếu in gốc");
+
             var printConfig = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
                 .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
@@ -88,18 +91,20 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             }
+
+            if (_currentContextService.IsDeveloper)
+            {
+                printConfig.PrintConfigDetailModel = printConfig.PrintConfigDetailModel.Where(x => x.IsOrigin == isOrigin).ToList();
+            }
+
             return _mapper.Map<PrintConfigModel>(printConfig);
         }
 
-        public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId, int activeForId)
+        public async Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId)
         {
             var query = _masterDBContext.PrintConfig.AsQueryable()
                 .Where(p => p.ModuleTypeId == moduleTypeId);
 
-            if (activeForId > 0)
-            {
-                query = query.Where(p => p.ActiveForId == activeForId);
-            }
             var lst = await query.OrderBy(p => p.Title)
                 .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -129,7 +134,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                 var configDetail = _mapper.Map<PrintConfigDetail>(data as PrintConfigDetailModel);
                 configDetail.PrintConfigId = config.PrintConfigId;
-                configDetail.IsOrigin = true;
+                configDetail.IsOrigin = _currentContextService.IsDeveloper;
                 await _masterDBContext.PrintConfigDetail.AddAsync(configDetail);
                 await _masterDBContext.SaveChangesAsync();
 
@@ -165,24 +170,29 @@ namespace VErp.Services.Master.Service.Config.Implement
                 _mapper.Map(configExtract, config);
                 await _masterDBContext.SaveChangesAsync();
 
-                var details = await _masterDBContext.PrintConfigDetail.Where(x => x.PrintConfigId == config.PrintConfigId).ToListAsync();
-
-                var detailOrigin = details.FirstOrDefault(p => p.IsOrigin);
-                if (!detailOrigin.TemplateFileId.HasValue)
-                    detailOrigin.TemplateFileId = data.TemplateFileId;
-
-                if (details.Any(x => !x.IsOrigin))
+                PrintConfigDetail detail;
+                if (_currentContextService.IsDeveloper)
                 {
-                    var detailModify = details.FirstOrDefault(p => !p.IsOrigin);
-                    _mapper.Map(data, detailModify);
+                    detail = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(x => x.PrintConfigId == config.PrintConfigId && x.IsOrigin == data.IsOrigin);
+                    _mapper.Map(data, detail);
                 }
                 else
                 {
-                    var detail = _mapper.Map<PrintConfigDetail>(data);
-                    detail.PrintConfigId = config.PrintConfigId;
-                    detail.IsOrigin = false;
-                    await _masterDBContext.PrintConfigDetail.AddAsync(detail);
+                    detail = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(x => x.PrintConfigId == config.PrintConfigId && !x.IsOrigin);
+                    data.IsOrigin = false;
                 }
+
+                if (detail != null)
+                {
+                    _mapper.Map(data, detail);
+                }
+                else
+                {
+                    var detailEnity = _mapper.Map<PrintConfigDetail>(data);
+                    detailEnity.PrintConfigId = config.PrintConfigId;
+                    await _masterDBContext.PrintConfigDetail.AddAsync(detailEnity);
+                }
+
                 await _masterDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
@@ -265,12 +275,12 @@ namespace VErp.Services.Master.Service.Config.Implement
                 .ToList();
         }
 
-        public async Task<IList<EntityField>> GetSuggestionField(Assembly assembly)
+        public Task<IList<EntityField>> GetSuggestionField(Assembly assembly)
         {
             var classTypes = assembly.GetTypes()
                 .Where(t => t.IsClass && !t.IsAbstract && t.GetCustomAttributes().Any(a => a is PrintSuggestionConfigAttribute))
                 .ToArray();
-            var fields = new List<EntityField>();
+            IList<EntityField> fields = new List<EntityField>();
             foreach (var type in classTypes)
             {
                 foreach (var prop in type.GetProperties())
@@ -285,42 +295,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 }
             }
 
-            return fields;
-        }
-
-        public async Task<bool> RollbackPrintConfigOnlyTemplate(long printConfigId)
-        {
-            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
-            if (config == null)
-                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
-
-            var detailOrigin = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && p.IsOrigin);
-            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
-            if (detailModify != null)
-                detailModify.TemplateFileId = detailOrigin.TemplateFileId;
-
-            await _masterDBContext.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> RollbackPrintConfigWithoutTemplate(long printConfigId)
-        {
-            var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
-            if (config == null)
-                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
-
-            var detailOrigin = await _masterDBContext.PrintConfigDetail.ProjectTo<PrintConfigDetailModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && p.IsOrigin);
-            var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
-            var fileIdNote = detailModify.TemplateFileId;
-            if (detailModify != null)
-            {
-                _mapper.Map(detailOrigin, detailModify);
-                detailModify.TemplateFileId = fileIdNote;
-                detailModify.IsOrigin = false;
-            }
-
-            await _masterDBContext.SaveChangesAsync();
-            return true;
+            return Task.FromResult(fields);
         }
 
         public async Task<bool> RollbackPrintConfig(long printConfigId)
@@ -328,6 +303,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
             if (config == null)
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+            var detailOrigin = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && p.IsOrigin);
+
+            if (detailOrigin == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound, "Không có bản phiếu in gốc");
+
             var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
             detailModify.IsDeleted = true;
 
@@ -399,7 +379,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private string GetPhysicalFilePath(string filePath)
         {
-            return filePath.GetPhysicalFilePath(_appSetting); 
+            return filePath.GetPhysicalFilePath(_appSetting);
         }
 
         private (Enum, EnumFileType?) ValidateUploadFile(IFormFile uploadFile)

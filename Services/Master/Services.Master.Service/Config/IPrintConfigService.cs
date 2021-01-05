@@ -12,8 +12,8 @@ namespace VErp.Services.Master.Service.Config
 {
     public interface IPrintConfigService
     {
-        Task<PrintConfigModel> GetPrintConfig(int printConfigId);
-        Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId ,int activeForId);
+        Task<PrintConfigModel> GetPrintConfig(int printConfigId, bool isOrigin);
+        Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId);
         Task<int> AddPrintConfig(PrintConfigModel data);
         Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data);
         Task<bool> DeletePrintConfig(int printConfigId);
@@ -22,7 +22,5 @@ namespace VErp.Services.Master.Service.Config
         Task<IList<EntityField>> GetSuggestionField(Assembly assembly);
         Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
         Task<bool> RollbackPrintConfig(long printConfigId);
-        Task<bool> RollbackPrintConfigOnlyTemplate(long printConfigId);
-        Task<bool> RollbackPrintConfigWithoutTemplate(long printConfigId);
     }
 }
