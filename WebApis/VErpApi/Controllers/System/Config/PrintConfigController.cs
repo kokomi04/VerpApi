@@ -50,16 +50,16 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<ICollection<PrintConfigModel>> Get([FromQuery] int moduleTypeId, [FromQuery] int activeForId)
+        public async Task<ICollection<PrintConfigModel>> Get([FromQuery] int moduleTypeId)
         {
-            return await _printConfigService.GetPrintConfigs(moduleTypeId, activeForId);
+            return await _printConfigService.GetPrintConfigs(moduleTypeId);
         }
 
         [HttpGet]
         [Route("{printConfigId}")]
-        public async Task<PrintConfigModel> GetPrintConfig([FromRoute] int printConfigId)
+        public async Task<PrintConfigModel> GetPrintConfig([FromRoute] int printConfigId, [FromQuery] bool isOrigin = false)
         {
-            return await _printConfigService.GetPrintConfig(printConfigId);
+            return await _printConfigService.GetPrintConfig(printConfigId, isOrigin);
         }
 
         [HttpPut]
@@ -114,17 +114,6 @@ namespace VErpApi.Controllers.System
         {
             return await _printConfigService.RollbackPrintConfig(printConfigId);
         }
-        [HttpPut]
-        [Route("rollback/onlyTemplate")]
-        public async Task<bool> RollbackTemplatePrintConfig([FromQuery] long printConfigId)
-        {
-            return await _printConfigService.RollbackPrintConfigOnlyTemplate(printConfigId);
-        }
-        [HttpPut]
-        [Route("rollback/withoutTemplate")]
-        public async Task<bool> RollbackPrintConfigWithoutTemplate([FromQuery] long printConfigId)
-        {
-            return await _printConfigService.RollbackPrintConfigWithoutTemplate(printConfigId);
-        }
+        
     }
 }

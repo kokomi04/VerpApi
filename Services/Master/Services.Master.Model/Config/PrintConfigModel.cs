@@ -10,7 +10,6 @@ namespace VErp.Services.Master.Model.Config
 {
     public class PrintConfigModel : PrintConfigDetailModel, IMapFrom<PrintConfigExtract>
     {
-        public int? ActiveForId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên cấu hình")]
         public string PrintConfigName { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề phiếu in")]
@@ -32,6 +31,7 @@ namespace VErp.Services.Master.Model.Config
                 .ForMember(m => m.Background, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().Background))
                 .ForMember(m => m.TemplateFileId, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().TemplateFileId))
                 .ForMember(m => m.GenerateToString, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().GenerateToString))
+                .ForMember(m => m.IsOrigin, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? false : m.PrintConfigDetailModel.Last().IsOrigin))
                 .ReverseMap()
                 .ForMember(m => m.PrintConfigDetailModel, v => v.Ignore());
         }
@@ -40,7 +40,6 @@ namespace VErp.Services.Master.Model.Config
     public class PrintConfigExtract : IMapFrom<PrintConfig>
     {
         public int PrintConfigId { get; set; }
-        public int? ActiveForId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên cấu hình")]
         public string PrintConfigName { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề phiếu in")]

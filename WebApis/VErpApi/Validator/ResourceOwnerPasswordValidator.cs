@@ -19,13 +19,17 @@ namespace VErp.WebApis.VErpApi.Validator
     public class ResourceOwnerPasswordValidator : IResourceOwnerPasswordValidator
     {
         private readonly UnAuthorizeMasterDBContext _masterDB;
+        private readonly UnAuthorizeOrganizationContext _organizationDBContext;
         private readonly AppSetting _appSetting;
 
         private const int MAX_FAIL_ACCESS = 5;
-        public ResourceOwnerPasswordValidator(UnAuthorizeMasterDBContext masterDB, IOptionsSnapshot<AppSetting> appSetting)
+        public ResourceOwnerPasswordValidator(UnAuthorizeMasterDBContext masterDB
+            , IOptionsSnapshot<AppSetting> appSetting
+            , UnAuthorizeOrganizationContext organizationDBContext)
         {
             _masterDB = masterDB;
             _appSetting = appSetting?.Value;
+            _organizationDBContext = organizationDBContext;
         }
 
         public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
@@ -47,6 +51,13 @@ namespace VErp.WebApis.VErpApi.Validator
             if (!int.TryParse(strSubId, out subsidiaryId))
             {
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Thông tin công ty không hợp lệ");
+                return;
+            }
+
+            var subdiaryInfo = _organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == subsidiaryId);
+            if (subdiaryInfo == null)
+            {
+                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, "Thông tin công ty không tồn tại");
                 return;
             }
 
@@ -82,6 +93,7 @@ namespace VErp.WebApis.VErpApi.Validator
                 new Claim(UserClaimConstants.UserId, user.UserId+""),
                 new Claim(UserClaimConstants.ClientId, context.Request.ClientId),
                 new Claim(UserClaimConstants.SubsidiaryId, subsidiaryId+""),
+                new Claim(UserClaimConstants.Developer, _appSetting.Developer?.IsDeveloper(context.UserName, subdiaryInfo.SubsidiaryCode) == true? "1" :"0"),
             };
 
             await MaxFailedAccessAttempts(user, true);
