@@ -7,6 +7,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Commons.Library;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
+using System.Linq;
 
 namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {
@@ -41,6 +42,23 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
                 .ForMember(s => s.UpdatedDatetimeUtc, d => d.Ignore());
         }
+
+        public bool IsChange(ProductionAssignmentEntity entity)
+        {
+            var isChange = entity.AssignmentQuantity != AssignmentQuantity
+                        || entity.ProductionStepLinkDataId != ProductionStepLinkDataId
+                        || entity.StartDate.GetUnix() != StartDate
+                        || entity.EndDate.GetUnix() != EndDate
+                        || entity.ProductionAssignmentDetail.Count != ProductionAssignmentDetail.Count;
+            if (!isChange)
+            {
+                isChange = entity.ProductionAssignmentDetail
+                    .Any(ad => !ProductionAssignmentDetail
+                    .Any(oad => oad.WorkDate == ad.WorkDate.GetUnix() && oad.QuantityPerDay == ad.QuantityPerDay));
+            }
+            return isChange;
+        }
+
     }
 
     public class ProductionAssignmentDetailModel : IMapFrom<ProductionAssignmentDetail>

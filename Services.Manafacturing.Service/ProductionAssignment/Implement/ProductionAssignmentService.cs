@@ -150,8 +150,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
             var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
-                    .Where(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId)
-                    .ToList();
+                .Include(a => a.ProductionAssignmentDetail)
+                .Where(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId)
+                .ToList();
 
             var updateAssignments = new List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)>();
             var newAssignments = new List<ProductionAssignmentModel>();
@@ -164,10 +165,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
                 else
                 {
-                    if (entity.AssignmentQuantity != item.AssignmentQuantity
-                        || entity.ProductionStepLinkDataId != item.ProductionStepLinkDataId
-                        || entity.StartDate.GetUnix() != item.StartDate
-                        || entity.EndDate.GetUnix() != item.EndDate)
+                    if (item.IsChange(entity))
                     {
                         updateAssignments.Add((entity, item));
                     }
@@ -242,6 +240,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Xóa phân công
                 if (oldProductionAssignments.Count > 0)
                 {
+                    foreach(var oldProductionAssignment in oldProductionAssignments)
+                    {
+                        oldProductionAssignment.ProductionAssignmentDetail.Clear();
+                    }
+                    _manufacturingDBContext.SaveChanges();
                     _manufacturingDBContext.ProductionAssignment.RemoveRange(oldProductionAssignments);
                 }
                 // Thêm mới phân công
@@ -252,6 +255,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Cập nhật phân công
                 foreach (var tuple in updateAssignments)
                 {
+                    tuple.Entity.ProductionAssignmentDetail.Clear();
                     _mapper.Map(tuple.Model, tuple.Entity);
                 }
                 _manufacturingDBContext.SaveChanges();
