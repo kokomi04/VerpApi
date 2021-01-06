@@ -216,7 +216,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
                 //}
 
-                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, inputType.InputTypeId, new List<int>());
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, inputType.InputTypeId);
                 return inputType.InputTypeId;
             }
             catch (Exception ex)

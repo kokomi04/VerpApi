@@ -40,16 +40,9 @@ namespace VErpApi.Controllers.System.Internal
         public async Task<bool> GrantPermissionForAllRoles([FromBody] GrantPermissionRequestModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _roleService.GrantPermissionForAllRoles(data.ModuleId, data.ObjectTypeId, data.ObjectId, data.ActionIds);
+            return await _roleService.GrantPermissionForAllRoles(data.ModuleId, data.ObjectTypeId, data.ObjectId);
         }
 
-        [Route("GrantActionPermissionForAllRoles")]
-        [HttpPost]
-        public async Task<bool> GrantActionPermissionForAllRoles([FromBody] GrantActionPermissionRequestModel data)
-        {
-            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _roleService.GrantActionPermissionForAllRoles(data.ModuleId, data.ObjectTypeId, data.ObjectId, data.ActionId);
-        }
     }
 
     public class GrantDataRequestModel
@@ -67,9 +60,7 @@ namespace VErpApi.Controllers.System.Internal
 
     public class GrantPermissionRequestModel : GrantPermissionRequestBaseModel
     {
-#pragma warning disable CA2227 // Collection properties should be read only
-        public IList<int> ActionIds { get; set; }
-#pragma warning restore CA2227 // Collection properties should be read only
+
     }
 
     public class GrantActionPermissionRequestModel : GrantPermissionRequestBaseModel
