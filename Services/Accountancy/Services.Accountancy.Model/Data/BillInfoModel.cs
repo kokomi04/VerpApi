@@ -5,18 +5,7 @@ using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Accountancy.Model.Data
 {
-    public class BillInfoModel
-    {
-        public NonCamelCaseDictionary Info { get; set; }
-        public IList<NonCamelCaseDictionary> Rows { get; set; }
-        public OutsideImportMappingData OutsideImportMappingData { get; set; }
-    }
 
-    public class OutsideImportMappingData
-    {
-        public string MappingFunctionKey { get; set; }
-        public string ObjectId { get; set; }
-    }
 
     public class ImportBillExelMapping
     {

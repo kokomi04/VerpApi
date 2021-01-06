@@ -15,6 +15,7 @@ using VErp.Services.PurchaseOrder.Model.Voucher;
 using VErp.Services.PurchaseOrder.Service.Voucher;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.PurchaseOrder.Data
 {
@@ -49,7 +50,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpGet]
         [Route("{voucherTypeId}/{fId}/info")]
-        public async Task<VoucherBillInfoModel> GetVoucherBillInfo([FromRoute] int voucherTypeId, [FromRoute] long fId)
+        public async Task<BillInfoModel> GetVoucherBillInfo([FromRoute] int voucherTypeId, [FromRoute] long fId)
         {
             return await _voucherDataService.GetVoucherBillInfo(voucherTypeId, fId).ConfigureAwait(true);
         }
@@ -57,7 +58,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpPost]
         [Route("{voucherTypeId}")]
-        public async Task<long> CreateVoucherBill([FromRoute] int voucherTypeId, [FromBody] VoucherBillInfoModel data)
+        public async Task<long> CreateVoucherBill([FromRoute] int voucherTypeId, [FromBody] BillInfoModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
@@ -66,7 +67,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpPut]
         [Route("{voucherTypeId}/{fId}")]
-        public async Task<bool> UpdateVoucherBill([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromBody] VoucherBillInfoModel data)
+        public async Task<bool> UpdateVoucherBill([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromBody] BillInfoModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
@@ -109,7 +110,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpGet]
         [Route("{voucherTypeId}/{fId}/info/pkl/{voucherTypeBKLId}")]
-        public async Task<VoucherBillInfoModel> GetPackingListInfo([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int voucherTypeBKLId)
+        public async Task<BillInfoModel> GetPackingListInfo([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromRoute] int voucherTypeBKLId)
         {
             if (voucherTypeId == 0) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _voucherDataService.GetPackingListInfo(voucherTypeBKLId, fId);

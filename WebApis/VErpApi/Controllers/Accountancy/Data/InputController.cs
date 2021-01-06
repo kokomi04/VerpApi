@@ -16,6 +16,7 @@ using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
