@@ -33,6 +33,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     public class OutsourcePartRequestInfo: OutsourcePartRequestModel , IMapFrom<OutsourcePartRequestDetailInfo>
     {
         public string ProductionOrderCode { get; set; }
+        public long ProductionOrderId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public int ProductOrderDetailQuantity { get; set; }
@@ -50,6 +51,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
                 .ForMember(m => m.OutsourcePartRequestId, v => v.MapFrom(m => m.OutsourcePartRequestId))
                 .ForMember(m => m.OutsourcePartRequestCode, v => v.MapFrom(m => m.OutsourcePartRequestCode))
                 .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrderCode))
+                .ForMember(m => m.ProductionOrderId, v => v.MapFrom(m => m.ProductionOrderId))
                 .ForMember(m => m.ProductionOrderDetailId, v => v.MapFrom(m => m.ProductionOrderDetailId))
                 .ForMember(m => m.ProductCode, v => v.MapFrom(m => m.ProductCode))
                 .ForMember(m => m.ProductName, v => v.MapFrom(m => m.ProductName))

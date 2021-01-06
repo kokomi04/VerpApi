@@ -11,10 +11,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource
     public interface IOutsourcePartRequestService
     {
         Task<PageData<OutsourcePartRequestDetailInfo>> GetListOutsourcePartRequest(string keyWord, int page, int size, Clause filters = null);
-        Task<OutsourcePartRequestInfo> GetOutsourcePartRequestExtraInfo(int requestOutsourcePartId = 0);
+        Task<OutsourcePartRequestInfo> GetOutsourcePartRequestExtraInfo(int outsourcePartRequestId = 0);
         Task<long> CreateOutsourcePartRequest(OutsourcePartRequestInfo req);
-        Task<bool> UpdateOutsourcePartRequest(int requestOutsourcePartId, OutsourcePartRequestInfo req);
-        Task<bool> DeletedOutsourcePartRequest(int requestOutsourcePart);
+        Task<bool> UpdateOutsourcePartRequest(int outsourcePartRequestId, OutsourcePartRequestInfo req);
+        Task<bool> DeletedOutsourcePartRequest(int outsourcePartRequestId);
         Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId);
         Task<IList<OutsourcePartRequestDetailInfo>> GetRequestDetailByArrayRequestId(long[] outsourcePartRequestIds);
 

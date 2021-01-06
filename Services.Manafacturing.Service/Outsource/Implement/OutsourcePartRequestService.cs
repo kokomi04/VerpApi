@@ -113,7 +113,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             parammeters.Add(new SqlParameter("@OutsourcePartRequestId", outsourcePartRequestId));
 
             var extractInfo = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                    .ConvertData<OutsourcePartRequestDetailInfo>();
+                .ConvertData<OutsourcePartRequestDetailExtractInfo>()
+                .AsQueryable()
+                .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)
+                .ToList();
+
             if (extractInfo.Count == 0)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
@@ -179,9 +183,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<PageData<OutsourcePartRequestDetailInfo>> GetListOutsourcePartRequest(string keyword, int page, int size, Clause filters = null)
         {
-            keyword = (keyword ?? "").Trim();
+            keyword = (keyword ?? "").Trim().ToLower();
+
             var parammeters = new List<SqlParameter>();
             var whereCondition = new StringBuilder();
+
             if (!string.IsNullOrEmpty(keyword))
             {
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
@@ -231,7 +237,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
-            var lst = resultData.ConvertData<OutsourcePartRequestDetailInfo>().ToList();
+            var lst = resultData.ConvertData<OutsourcePartRequestDetailExtractInfo>()
+                .AsQueryable()
+                .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)
+                .ToList();
 
             return (lst, total);
         }
@@ -264,7 +273,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             sql.Append($" ORDER BY v.OutsourcePartRequestId");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
-            var lst = resultData.ConvertData<OutsourcePartRequestDetailInfo>().ToList();
+            var lst = resultData.ConvertData<OutsourcePartRequestDetailExtractInfo>()
+                .AsQueryable()
+                .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)
+                .ToList();
 
             return lst;
         }
