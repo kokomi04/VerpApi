@@ -141,9 +141,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                             case (int)EnumModule.Input:
 
                                 foreach (var c in inputTypes)
-                                {
-                                    var actionIds = c.ActionObjects?.Select(a => a.ActionButtonId)?.ToList();
-
+                                {                                 
                                     var permission = new RolePermissionEntity
                                     {
                                         CreatedDatetimeUtc = DateTime.UtcNow,
@@ -151,8 +149,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                         RoleId = roleInfo.RoleId,
                                         Permission = int.MaxValue,
                                         ObjectTypeId = (int)EnumObjectType.InputType,
-                                        ObjectId = c.InputTypeId,
-                                        JsonActionIds = actionIds.JsonSerialize()
+                                        ObjectId = c.InputTypeId,                                      
                                     };
                                     lstPermissions.Add(permission);
                                 }
@@ -160,9 +157,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                             case (int)EnumModule.SalesBill:
                                 foreach (var c in voucherTypes)
-                                {
-                                    var actionIds = c.ActionObjects?.Select(a => a.ActionButtonId)?.ToList();
-
+                                {                                  
                                     var permission = new RolePermissionEntity
                                     {
                                         CreatedDatetimeUtc = DateTime.UtcNow,
@@ -170,8 +165,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                         RoleId = roleInfo.RoleId,
                                         Permission = int.MaxValue,
                                         ObjectTypeId = (int)EnumObjectType.VoucherType,
-                                        ObjectId = c.VoucherTypeId,
-                                        JsonActionIds = actionIds.JsonSerialize()
+                                        ObjectId = c.VoucherTypeId,                                      
                                     };
                                     lstPermissions.Add(permission);
                                 }
@@ -185,8 +179,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                     RoleId = roleInfo.RoleId,
                                     Permission = int.MaxValue,
                                     ObjectTypeId = 0,
-                                    ObjectId = 0,
-                                    JsonActionIds = null
+                                    ObjectId = 0
                                 };
                                 lstPermissions.Add(modulePermission);
                                 break;
@@ -412,7 +405,6 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                         Permission = p.Permission,
                         ObjectTypeId = p.ObjectTypeId,
                         ObjectId = p.ObjectId,
-                        JsonActionIds = p.ActionIds.JsonSerialize(),
                         CreatedDatetimeUtc = DateTime.UtcNow
                     }).ToList();
 
@@ -451,8 +443,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                     p.ModuleId,
                     p.ObjectTypeId,
                     p.ObjectId,
-                    p.Permission,
-                    p.JsonActionIds
+                    p.Permission
                 }).ToListAsync();
 
             return lst.Select(p => new RolePermissionModel()
@@ -461,8 +452,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 ModuleId = p.ModuleId,
                 ObjectTypeId = p.ObjectTypeId,
                 ObjectId = p.ObjectId,
-                Permission = p.Permission,
-                ActionIds = p.JsonActionIds.JsonDeserialize<List<int>>()
+                Permission = p.Permission
             }).ToList();
         }
 
@@ -521,7 +511,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             return true;
         }
 
-        public async Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId, IList<int> actionIds)
+        public async Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId)
         {
             var existedRoleIds = (await _masterContext.RolePermission.Where(o => o.ModuleId == (int)moduleId && o.ObjectTypeId == (int)objectTypeId && o.ObjectId == objectId).ToListAsync())
                 .Select(o => o.RoleId)
@@ -540,8 +530,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                         ObjectTypeId = (int)objectTypeId,
                         ObjectId = objectId,
                         RoleId = role.RoleId,
-                        Permission = int.MaxValue,
-                        JsonActionIds = actionIds.JsonSerialize()
+                        Permission = int.MaxValue
                     });
                 }
             }
@@ -550,29 +539,6 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
             return true;
         }
-
-
-        public async Task<bool> GrantActionPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId, int actionId)
-        {
-            var data = await _masterContext.RolePermission.Where(o => o.ModuleId == (int)moduleId && o.ObjectTypeId == (int)objectTypeId && o.ObjectId == objectId).ToListAsync();
-            foreach (var item in data)
-            {
-                var actionIds = item.JsonActionIds.JsonDeserialize<List<int>>();
-                if (actionIds == null)
-                {
-                    actionIds = new List<int>() { actionId };
-                }
-                else
-                {
-                    actionIds.Add(actionId);
-                }
-                item.JsonActionIds = actionIds.JsonSerialize();
-            }
-
-            await _masterContext.SaveChangesAsync();
-            return true;
-        }
-
 
         public async Task<IList<CategoryPermissionModel>> GetCategoryPermissions()
         {
