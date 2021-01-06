@@ -42,6 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IHttpCrossService _httpCrossService;
         private readonly IRoleHelperService _roleHelperService;
+        private readonly IActionButtonHelperService _actionButtonHelperService;
 
         public VoucherConfigService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
@@ -53,6 +54,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , ICurrentContextService currentContextService
             , IHttpCrossService httpCrossService
             , IRoleHelperService roleHelperService
+            , IActionButtonHelperService actionButtonHelperService
             )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -64,6 +66,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _currentContextService = currentContextService;
             _httpCrossService = httpCrossService;
             _roleHelperService = roleHelperService;
+            _actionButtonHelperService = actionButtonHelperService;
         }
 
         #region InputType
@@ -130,9 +133,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList()
         {
             var voucherTypes = await _purchaseOrderDBContext.VoucherType.ProjectTo<VoucherTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
-            var actions = (await _purchaseOrderDBContext.VoucherAction.ProjectTo<VoucherActionSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync())
-                .GroupBy(a => a.VoucherTypeId)
-                .ToDictionary(a => a.Key, a => a.ToList());
+
+            var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.VoucherType, null)).OrderBy(t => t.SortOrder).ToList()
+                 .GroupBy(a => a.ObjectId)
+                 .ToDictionary(a => a.Key, a => a.ToList());
+
 
             var areaFields = await (
                 from a in _purchaseOrderDBContext.VoucherArea
@@ -167,10 +172,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 if (actions.TryGetValue(item.VoucherTypeId, out var _actions))
                 {
-                    item.ActionObjects = _actions.Cast<VoucherActionSimpleModel>().ToList();
+                    item.ActionObjects = _actions.Cast<ActionButtonSimpleModel>().ToList();
                 }
 
-                if(typeFields.TryGetValue(item.VoucherTypeId, out var _fields))
+                if (typeFields.TryGetValue(item.VoucherTypeId, out var _fields))
                 {
                     item.AreaFields = _fields;
                 }
@@ -382,6 +387,16 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@VoucherTypeId",voucherTypeId ),
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
+
+
+            try
+            {
+                await _actionButtonHelperService.DeleteActionButtonsByType(EnumObjectType.VoucherType, voucherTypeId, voucherType.Title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"DeleteActionButtonsByType ({voucherTypeId})");
+            }
 
             await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Xóa chứng từ {voucherType.Title}", voucherType.JsonSerialize());
             return true;
@@ -902,7 +917,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (data.FormTypeId == EnumFormType.Generate || data.FormTypeId == EnumFormType.DynamicControl)
             {
                 data.DataTypeId = EnumDataType.Text;
-                if(data.FormTypeId == EnumFormType.DynamicControl)
+                if (data.FormTypeId == EnumFormType.DynamicControl)
                 {
                     data.DataSize = -1;
                 }

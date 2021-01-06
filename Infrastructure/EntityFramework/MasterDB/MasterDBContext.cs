@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public virtual DbSet<Action> Action { get; set; }
+        public virtual DbSet<ActionButton> ActionButton { get; set; }
         public virtual DbSet<ActionType> ActionType { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BackupStorage> BackupStorage { get; set; }
@@ -60,6 +61,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionName)
                     .IsRequired()
                     .HasMaxLength(16);
+            });
+
+            modelBuilder.Entity<ActionButton>(entity =>
+            {
+                entity.Property(e => e.ActionButtonCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
             });
 
             modelBuilder.Entity<ActionType>(entity =>
@@ -469,6 +481,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.ObjectIdFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((39))");
 
                 entity.Property(e => e.SourceDetailsPropertyName).HasMaxLength(128);
             });

@@ -5,18 +5,18 @@ using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class VoucherBillInfoModel
-    {
-        public NonCamelCaseDictionary Info { get; set; }
-        public IList<NonCamelCaseDictionary> Rows { get; set; }
-        public OutsideImportMappingData OutsideImportMappingData { get; set; }
-    }
+    //public class VoucherBillInfoModel
+    //{
+    //    public NonCamelCaseDictionary Info { get; set; }
+    //    public IList<NonCamelCaseDictionary> Rows { get; set; }
+    //    public OutsideImportMappingData OutsideImportMappingData { get; set; }
+    //}
 
-    public class OutsideImportMappingData
-    {
-        public string MappingFunctionKey { get; set; }
-        public string ObjectId { get; set; }
-    }
+    //public class OutsideImportMappingData
+    //{
+    //    public string MappingFunctionKey { get; set; }
+    //    public string ObjectId { get; set; }
+    //}
 
     public class ImportBillExelMapping
     {

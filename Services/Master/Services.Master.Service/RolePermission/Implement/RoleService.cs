@@ -142,7 +142,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                                 foreach (var c in inputTypes)
                                 {
-                                    var actionIds = c.ActionObjects?.Select(a => a.InputActionId)?.ToList();
+                                    var actionIds = c.ActionObjects?.Select(a => a.ActionButtonId)?.ToList();
 
                                     var permission = new RolePermissionEntity
                                     {
@@ -161,7 +161,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                             case (int)EnumModule.SalesBill:
                                 foreach (var c in voucherTypes)
                                 {
-                                    var actionIds = c.ActionObjects?.Select(a => a.VoucherActionId)?.ToList();
+                                    var actionIds = c.ActionObjects?.Select(a => a.ActionButtonId)?.ToList();
 
                                     var permission = new RolePermissionEntity
                                     {

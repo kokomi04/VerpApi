@@ -17,5 +17,4 @@ namespace VErp.Infrastructure.ApiCore.Attributes
         }
     }
 
-    public interface 
 }

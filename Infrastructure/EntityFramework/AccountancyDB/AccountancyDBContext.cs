@@ -15,7 +15,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
-        public virtual DbSet<InputAction> InputAction { get; set; }
+        //public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }

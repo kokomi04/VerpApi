@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
@@ -19,11 +20,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<PageDataTable> GetVoucherBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
-        Task<VoucherBillInfoModel> GetVoucherBillInfo(int inputTypeId, long fId);
+        Task<BillInfoModel> GetVoucherBillInfo(int inputTypeId, long fId);
 
-        Task<long> CreateVoucherBill(int inputTypeId, VoucherBillInfoModel data);
+        Task<long> CreateVoucherBill(int inputTypeId, BillInfoModel data);
 
-        Task<bool> UpdateVoucherBill(int inputTypeId, long inputValueBillId, VoucherBillInfoModel data);
+        Task<bool> UpdateVoucherBill(int inputTypeId, long inputValueBillId, BillInfoModel data);
 
         Task<bool> DeleteVoucherBill(int inputTypeId, long inputValueBillId);
 
@@ -35,7 +36,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
 
-        Task<VoucherBillInfoModel> GetPackingListInfo(int inputTypeId, long fId);
+        Task<BillInfoModel> GetPackingListInfo(int inputTypeId, long fId);
 
         Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size);
 

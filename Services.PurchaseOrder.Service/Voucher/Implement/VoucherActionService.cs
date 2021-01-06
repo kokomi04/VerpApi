@@ -8,133 +8,58 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
-using Verp.Cache.RedisCache;
-using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.PurchaseOrder.Model.Voucher;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
-    public class VoucherActionService : IVoucherActionService
+    public class VoucherActionService : ActionButtonHelperServiceAbstract, IVoucherActionService
     {
-        private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly IRoleHelperService _roleHelperService;
+        private readonly IActionButtonHelperService _actionButtonHelperService;
+
         public VoucherActionService(PurchaseOrderDBContext purchaseOrderDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<VoucherActionService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , IRoleHelperService roleHelperService
-            )
+            , IActionButtonHelperService actionButtonHelperService
+            ) : base(actionButtonHelperService, EnumObjectType.VoucherType)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
-            _roleHelperService = roleHelperService;
+            _actionButtonHelperService = actionButtonHelperService;
         }
 
-        public async Task<IList<VoucherActionModel>> GetVoucherActionConfigs(int voucherTypeId)
+        protected override async Task<string> GetObjectTitle(int objectId)
         {
-            var lst = await _purchaseOrderDBContext.VoucherAction
-                .Where(a => a.VoucherTypeId == voucherTypeId)
-                .ToListAsync();
-            return _mapper.Map<IList<VoucherActionModel>>(lst);
+            var info = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(v => v.VoucherTypeId == objectId);
+            if (info == null) throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            return info.Title;
         }
 
-        public async Task<IList<VoucherActionUseModel>> GetVoucherActions(int voucherTypeId)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
         {
-            var lst = await _purchaseOrderDBContext.VoucherAction
-                .Where(a => a.VoucherTypeId == voucherTypeId)
-                .ToListAsync();
-            return _mapper.Map<IList<VoucherActionUseModel>>(lst);
-        }
+            var voucherTypeId = objectId;
+            var voucherActionId = inputActionId;
+            var voucherBillId = billId;
 
-        public async Task<VoucherActionModel> AddVoucherAction(VoucherActionModel data)
-        {
-            if (!_purchaseOrderDBContext.VoucherType.Any(v => v.VoucherTypeId == data.VoucherTypeId)) throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
-            if (_purchaseOrderDBContext.VoucherAction.Any(v => v.VoucherActionCode == data.VoucherActionCode)) throw new BadRequestException(VoucherErrorCode.VoucherActionCodeAlreadyExisted);
-            var action = _mapper.Map<VoucherAction>(data);
-            try
-            {
-                await _purchaseOrderDBContext.VoucherAction.AddAsync(action);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.VoucherAction, action.VoucherActionId, $"Thêm chức năng {action.Title}", data.JsonSerialize());
-
-                await _roleHelperService.GrantActionPermissionForAllRoles(EnumModule.SalesBill, EnumObjectType.VoucherType, data.VoucherTypeId, action.VoucherActionId);
-
-                return _mapper.Map<VoucherActionModel>(action);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Create");
-                throw;
-            }
-        }
-
-        public async Task<VoucherActionModel> UpdateVoucherAction(int voucherActionId, VoucherActionModel data)
-        {
-            if (!_purchaseOrderDBContext.VoucherType.Any(v => v.VoucherTypeId == data.VoucherTypeId)) throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
-            if (_purchaseOrderDBContext.VoucherAction.Any(v => v.VoucherActionId != voucherActionId && v.VoucherActionCode == data.VoucherActionCode)) throw new BadRequestException(VoucherErrorCode.VoucherActionCodeAlreadyExisted);
-            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
-            if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
-            try
-            {
-                _mapper.Map(data, action);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.VoucherAction, action.VoucherActionId, $"Cập nhật chức năng {action.Title}", data.JsonSerialize());
-                return _mapper.Map<VoucherActionModel>(action);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                throw;
-            }
-        }
-
-        public async Task<bool> DeleteVoucherAction(int voucherActionId)
-        {
-            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherActionId == voucherActionId);
-            if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
-            try
-            {
-                action.IsDeleted = true;
-                await _purchaseOrderDBContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.VoucherAction, action.VoucherActionId, $"Xóa chức năng {action.Title}", action.JsonSerialize());
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Delete");
-                throw;
-            }
-        }
-
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction(int voucherTypeId, int voucherActionId, long voucherBillId, VoucherBillInfoModel data)
-        {
             List<NonCamelCaseDictionary> result = null;
-            var action = _purchaseOrderDBContext.VoucherAction.FirstOrDefault(a => a.VoucherTypeId == voucherTypeId && a.VoucherActionId == voucherActionId);
+            var action = await _actionButtonHelperService.ActionButtonInfo(inputActionId, EnumObjectType.VoucherType, voucherTypeId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
-            if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == action.VoucherTypeId && b.FId == voucherBillId))
+
+            if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == action.ObjectId && b.FId == voucherBillId))
                 throw new BadRequestException(VoucherErrorCode.VoucherValueBillNotFound);
             var fields = _purchaseOrderDBContext.VoucherField
                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
@@ -149,7 +74,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
                     messageParam,
-                    new SqlParameter("@VoucherTypeId", action.VoucherTypeId),
+                    new SqlParameter("@VoucherTypeId", voucherTypeId),
                     new SqlParameter("@VoucherBill_F_Id", voucherBillId),
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
                 };
@@ -166,6 +91,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             return result;
         }
+
+
     }
 }
 

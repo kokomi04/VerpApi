@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Data;

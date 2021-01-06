@@ -233,7 +233,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (data, total);
         }
 
-        public async Task<VoucherBillInfoModel> GetVoucherBillInfo(int voucherTypeId, long fId)
+        public async Task<BillInfoModel> GetVoucherBillInfo(int voucherTypeId, long fId)
         {
             var singleFields = (await (
                from af in _purchaseOrderDBContext.VoucherAreaField
@@ -249,7 +249,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             )
             .ToHashSet();
 
-            var result = new VoucherBillInfoModel();
+            var result = new BillInfoModel();
 
             var dataSql = @$"
 
@@ -291,7 +291,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return result;
         }
 
-        public async Task<long> CreateVoucherBill(int voucherTypeId, VoucherBillInfoModel data)
+        public async Task<long> CreateVoucherBill(int voucherTypeId, BillInfoModel data)
         {
             await ValidateSaleVoucherConfig(data?.Info, null);
 
@@ -522,7 +522,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, VoucherBillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -892,7 +892,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        public async Task<bool> UpdateVoucherBill(int voucherTypeId, long voucherValueBillId, VoucherBillInfoModel data)
+        public async Task<bool> UpdateVoucherBill(int voucherTypeId, long voucherValueBillId, BillInfoModel data)
         {
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
             if (voucherTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
@@ -1218,7 +1218,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 var voucherAreaFields = new List<ValidateVoucherField>();
 
                 // Get current data
-                VoucherBillInfoModel data = new VoucherBillInfoModel();
+                BillInfoModel data = new BillInfoModel();
                 // Lấy thông tin field
                 voucherAreaFields = await GetVoucherFields(voucherTypeId);
 
@@ -1385,7 +1385,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, VoucherBillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
             var fields = (await GetVoucherFields(voucherTypeId)).Where(f => !f.IsReadOnly).ToDictionary(f => f.FieldName, f => f);
 
@@ -1730,7 +1730,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 Data = r,
                 Index = i + mapping.FromRow
             }).Where(r => r.Data[columnKey.Column] != null && !string.IsNullOrEmpty(r.Data[columnKey.Column].ToString())).GroupBy(r => r.Data[columnKey.Column]);
-            List<VoucherBillInfoModel> bills = new List<VoucherBillInfoModel>();
+            List<BillInfoModel> bills = new List<BillInfoModel>();
 
             // Validate unique single field
             foreach (var field in fields.Where(f => f.IsUnique))
@@ -1876,7 +1876,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     }
                     rows.Add(mapRow);
                 }
-                var billInfo = new VoucherBillInfoModel
+                var billInfo = new BillInfoModel
                 {
                     Info = info,
                     Rows = rows.Count > 0 ? rows.ToArray() : new NonCamelCaseDictionary[]
@@ -2159,7 +2159,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
         }
 
-        public async Task<VoucherBillInfoModel> GetPackingListInfo(int voucherTypeId, long voucherBill_BHXKId)
+        public async Task<BillInfoModel> GetPackingListInfo(int voucherTypeId, long voucherBill_BHXKId)
         {
             var singleFields = (await (
                from af in _purchaseOrderDBContext.VoucherAreaField
@@ -2175,7 +2175,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             )
             .ToHashSet();
 
-            var result = new VoucherBillInfoModel();
+            var result = new BillInfoModel();
 
             var dataSql = @$"
 
