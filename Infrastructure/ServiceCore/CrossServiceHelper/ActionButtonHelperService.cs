@@ -124,7 +124,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 objectTypeId = (int)objectTypeId,
                 objectId
             };
-            return await _httpCrossService.Get<IList<ActionButtonSimpleModel>>($"api/internal/InternalActionButton/ByTypes", queries);
+            return await _httpCrossService.Get<IList<ActionButtonSimpleModel>>($"api/internal/InternalActionButton/SimpleList", queries);
         }
 
         public async Task<ActionButtonModel> AddActionButton(ActionButtonModel data)

@@ -15,7 +15,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string ObjectTitle { get; set; }
 
     }
-    public class ActionButtonSimpleModel: ActionButtonIdentity
+    public class ActionButtonSimpleModel : ActionButtonIdentity
     {
         public string ActionButtonCode { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên chức năng")]
@@ -26,13 +26,13 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string IconName { get; set; }
         public string Style { get; set; }
         public string JsVisible { get; set; }
-        public EnumActionType? ActionTypeId { get; set; }
+        public int ActionTypeId { get; set; }
 
-     
+
     }
 
-    public class ActionButtonModel: ActionButtonSimpleModel
-    {    
+    public class ActionButtonModel : ActionButtonSimpleModel
+    {
         public string SqlAction { get; set; }
     }
 

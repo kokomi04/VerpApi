@@ -31,8 +31,8 @@ namespace VErpApi.Controllers.System.Config
 
         [HttpGet]
         [GlobalApi]
-        [Route("ByTypes")]
-        public async Task<IList<ActionButtonSimpleModel>> ByTypes([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
+        [Route("SimpleList")]
+        public async Task<IList<ActionButtonSimpleModel>> SimpleList([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
         {
             return await _actionButtonService.GetActionButtons(objectTypeId, objectId).ConfigureAwait(true);
         }

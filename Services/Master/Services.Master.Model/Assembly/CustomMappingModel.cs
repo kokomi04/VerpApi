@@ -15,10 +15,14 @@ namespace VErp.Services.Master.Model
         {
             profile.CreateMap<ActionButton, ActionButtonModel>()
                 .ForMember(d => d.ObjectTypeId, s => s.MapFrom(m => (EnumObjectType?)m.ObjectTypeId))
-                .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (EnumActionType?)m.ActionTypeId))
                 .ReverseMap()
-                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(m => (int)m.ObjectTypeId))
-                .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (int?)m.ActionTypeId));
+                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(m => (int)m.ObjectTypeId));
+
+            profile.CreateMap<ActionButton, ActionButtonSimpleModel>()
+               .ForMember(d => d.ObjectTypeId, s => s.MapFrom(m => (EnumObjectType?)m.ObjectTypeId))
+               .ReverseMap()
+               .ForMember(d => d.ObjectTypeId, s => s.MapFrom(m => (int)m.ObjectTypeId));
+            
         }
     }
 }

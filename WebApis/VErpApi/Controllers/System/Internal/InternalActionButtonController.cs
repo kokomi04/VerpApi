@@ -35,6 +35,13 @@ namespace VErpApi.Controllers.System.Internal
         }
 
         [HttpGet]
+        [Route("SimpleList")]
+        public async Task<IList<ActionButtonSimpleModel>> SimpleList([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
+        {
+            return await _actionButtonService.GetActionButtons(objectTypeId, objectId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
         [Route("{actionButtonId}")]
         public async Task<ActionButtonModel> ActionButtonInfo([FromRoute] int actionButtonId, [FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
         {

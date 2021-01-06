@@ -88,7 +88,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             data.ActionButtonId = actionButtonId;
             if (_masterDBContext.ActionButton.Any(v => v.ActionButtonId != actionButtonId && v.ObjectTypeId == (int)data.ObjectTypeId && v.ObjectId == data.ObjectId && v.ActionButtonCode == data.ActionButtonCode)) throw new BadRequestException(InputErrorCode.InputActionCodeAlreadyExisted);
-            var info = await _masterDBContext.ActionButton.FirstOrDefaultAsync(v => v.ActionButtonId != actionButtonId && v.ObjectTypeId == (int)data.ObjectTypeId && v.ObjectId == data.ObjectId);
+            var info = await _masterDBContext.ActionButton.FirstOrDefaultAsync(v => v.ActionButtonId == actionButtonId && v.ObjectTypeId == (int)data.ObjectTypeId && v.ObjectId == data.ObjectId);
             if (info == null)
             {
                 if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound);
@@ -113,7 +113,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<ActionButtonModel> ActionButtonInfo(int actionButtonId, EnumObjectType objectTypeId, int objectId)
         {
-            var info = await _masterDBContext.ActionButton.FirstOrDefaultAsync(v => v.ActionButtonId != actionButtonId && v.ObjectTypeId == (int)objectTypeId && v.ObjectId == objectId);
+            var info = await _masterDBContext.ActionButton.FirstOrDefaultAsync(v => v.ActionButtonId == actionButtonId && v.ObjectTypeId == (int)objectTypeId && v.ObjectId == objectId);
             if (info == null)
             {
                 if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound);
@@ -149,7 +149,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<bool> DeleteActionButton(int actionButtonId, ActionButtonIdentity data)
         {
             data.ActionButtonId = actionButtonId;
-            var info = await _masterDBContext.ActionButton.FirstOrDefaultAsync(v => v.ActionButtonId != actionButtonId && v.ObjectTypeId == (int)data.ObjectTypeId && v.ObjectId == data.ObjectId);
+            var info = await _masterDBContext.ActionButton.FirstOrDefaultAsync(v => v.ActionButtonId == actionButtonId && v.ObjectTypeId == (int)data.ObjectTypeId && v.ObjectId == data.ObjectId);
             if (info == null)
             {
                 if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound);
