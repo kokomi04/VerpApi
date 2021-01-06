@@ -225,6 +225,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 OutsideImportMappingFunctionId = functionInfo.OutsideImportMappingFunctionId,
                 SourceId = objectId,
+                BillObjectTypeId = (int)billObjectTypeId,
                 InputBillFId = billFId
             });
 

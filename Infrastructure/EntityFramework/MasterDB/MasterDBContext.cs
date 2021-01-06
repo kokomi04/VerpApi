@@ -164,6 +164,9 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<CategoryField>(entity =>
             {
+                entity.HasIndex(e => e.CategoryId)
+                    .HasName("IDX_CategoryId");
+
                 entity.Property(e => e.CategoryFieldName)
                     .IsRequired()
                     .HasMaxLength(45)
@@ -504,6 +507,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.SourceId).HasMaxLength(128);
 
                 entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.BillObjectTypeId).HasDefaultValueSql("((39))");
 
                 entity.HasOne(d => d.OutsideImportMappingFunction)
                     .WithMany(p => p.OutsideImportMappingObject)
