@@ -9,7 +9,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public decimal Capacity { get; set; }
-        public long UpdatedDatetimeUtc { get; set; }
+        public long CreatedDatetimeUtc { get; set; }
 
         public virtual ICollection<CapacityDetailModel> CapacityDetail { get; set; }
 

@@ -429,7 +429,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
-                    UpdatedDatetimeUtc = otherAssignment.ProductionAssignment.UpdatedDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = otherAssignment.ProductionAssignment.CreatedDatetimeUtc.GetUnix(),
                     Capacity = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
                                 * otherAssignment.ProductionAssignment.AssignmentQuantity)
                                 / (otherAssignment.TotalQuantity
@@ -510,7 +510,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                         a.Productivity,
                                         a.StartDate,
                                         a.EndDate,
-                                        a.UpdatedDatetimeUtc,
+                                        a.CreatedDatetimeUtc,
                                         TotalQuantity = d.Quantity
                                     }).ToList();
 
@@ -550,7 +550,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     StartDate = otherAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.EndDate.GetUnix(),
-                    UpdatedDatetimeUtc = otherAssignment.UpdatedDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = otherAssignment.CreatedDatetimeUtc.GetUnix(),
                     Capacity = (workloadMap[otherAssignment.ProductionStepId]
                 * otherAssignment.AssignmentQuantity)
                 / (otherAssignment.TotalQuantity

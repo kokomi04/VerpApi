@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal Productivity { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
-        public long UpdatedDatetimeUtc { get; set; }
+        public long CreatedDatetimeUtc { get; set; }
 
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
@@ -36,11 +36,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
             profile.CreateMap<ProductionAssignmentEntity, ProductionAssignmentModel>()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.GetUnix()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.GetUnix()))
-                .ForMember(s => s.UpdatedDatetimeUtc, d => d.MapFrom(m => m.UpdatedDatetimeUtc.GetUnix()))
+                .ForMember(s => s.CreatedDatetimeUtc, d => d.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ReverseMap()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.UnixToDateTime()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
-                .ForMember(s => s.UpdatedDatetimeUtc, d => d.Ignore());
+                .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore());
         }
 
         public bool IsChange(ProductionAssignmentEntity entity)
