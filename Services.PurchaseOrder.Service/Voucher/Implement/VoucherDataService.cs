@@ -42,6 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IHttpCrossService _httpCrossService;
+        private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         public VoucherDataService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<VoucherConfigService> logger
@@ -50,6 +51,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
             , IHttpCrossService httpCrossService
+            , IOutsideMappingHelperService outsideMappingHelperService
             )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -59,6 +61,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _httpCrossService = httpCrossService;
+            _outsideMappingHelperService = outsideMappingHelperService;
         }
 
         public async Task<PageDataTable> GetVoucherBills(int voucherTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -357,6 +360,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 // After saving action (SQL)
                 await ProcessActionAsync(voucherTypeInfo.AfterSaveAction, data, voucherFields, EnumAction.Add);
+
+
+                if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
+                {
+                    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, EnumObjectType.VoucherBill, billInfo.FId);
+                }
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -1278,6 +1287,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, billInfo.FId, $"Xóa chứng từ {voucherTypeInfo.Title}", new { voucherTypeId, voucherBill_F_Id }.JsonSerialize());
+
+                await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.VoucherBill, billInfo.FId);
+
                 return true;
             }
             catch (Exception ex)

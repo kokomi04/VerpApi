@@ -165,6 +165,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Thông số hệ thống")]
         SystemParameter = 48,
 
+        VoucherBill = 49,
+
         //AccountantConfig = 49,
 
         [Description("Cấu hình in")]

@@ -245,6 +245,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InputTypeId = m.InputTypeId,
                             SourceId = m.SourceId,
                             InputBillFId = m.InputBillFId,
+                            BillObjectTypeId = (EnumObjectType)m.BillObjectTypeId
+                            
                         }).ToList()
                 });
 

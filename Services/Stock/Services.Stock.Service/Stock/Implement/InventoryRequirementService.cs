@@ -41,6 +41,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IFileService _fileService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IOutsideMappingHelperService _outsideMappingHelperService;
 
         public InventoryRequirementService(StockDBContext stockDBContext
             , IActivityLogService activityLogService
@@ -49,7 +50,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
             , IFileService fileService
-            , ICurrentContextService currentContextService)
+            , ICurrentContextService currentContextService
+            , IOutsideMappingHelperService outsideMappingHelperService
+            )
         {
             _stockDBContext = stockDBContext;
             _activityLogService = activityLogService;
@@ -59,6 +62,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _productHelperService = productHelperService;
             _fileService = fileService;
             _currentContextService = currentContextService;
+            _outsideMappingHelperService = outsideMappingHelperService;
         }
 
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -182,9 +186,18 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 }
                 await _stockDBContext.SaveChangesAsync();
                 trans.Commit();
+
+               
+
                 await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                 await _activityLogService.CreateLog(objectType, inventoryRequirement.InventoryRequirementId, $"Thêm mới dữ liệu yêu cầu xuất/nhập kho {inventoryRequirement.InventoryRequirementCode}", req.JsonSerialize());
-                
+
+                if (!string.IsNullOrWhiteSpace(req?.OutsideImportMappingData?.MappingFunctionKey))
+                {
+                    await _outsideMappingHelperService.MappingObjectCreate(req.OutsideImportMappingData.MappingFunctionKey, req.OutsideImportMappingData.ObjectId, objectType, inventoryRequirement.InventoryRequirementId);
+                }
+
+
                 return inventoryRequirement.InventoryRequirementId;
             }
             catch (Exception ex)
@@ -320,6 +333,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(objectType, inventoryRequirement.InventoryRequirementId, $"Xóa dữ liệu yêu cầu xuất/nhập kho {inventoryRequirement.InventoryRequirementCode}", inventoryRequirement.JsonSerialize());
+
+                await _outsideMappingHelperService.MappingObjectDelete(objectType, inventoryRequirementId);
+
                 return true;
             }
             catch (Exception ex)

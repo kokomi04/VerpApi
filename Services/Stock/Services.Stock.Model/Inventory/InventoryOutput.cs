@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Model.Stock;
@@ -64,5 +65,6 @@ namespace VErp.Services.Stock.Model.Inventory
         public int InputTypeId { get; set; }
         public string SourceId { get; set; }
         public long InputBillFId { get; set; }
+        public EnumObjectType BillObjectTypeId { get; set; }
     }
 }

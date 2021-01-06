@@ -52,6 +52,14 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.InventoryRequirementFile, opt => opt.Ignore())
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.UnixToDateTime()));
         }
+
+        public OutsideImportMappingData OutsideImportMappingData { get; set; }
+    }
+
+    public class OutsideImportMappingData
+    {
+        public string MappingFunctionKey { get; set; }
+        public string ObjectId { get; set; }
     }
 
     public class InventoryRequirementOutputModel : InventoryRequirementListModel
