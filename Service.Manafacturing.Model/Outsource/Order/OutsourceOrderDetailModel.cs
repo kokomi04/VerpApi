@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -22,7 +23,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal Tax { get; set; }
     }
 
-    public class OutsourceOrderDetailInfo: OutsourceOrderDetailModel
+    public class OutsourceOrderDetailInfo: OutsourceOrderDetailModel, IMapFrom<OutsourcePartOrderDetailInfo>
     {
         public string ProductPartCode { get; set; }
         public string ProductPartName { get; set; }
@@ -31,5 +32,22 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal QuantityProcessed{ get; set; }
         public string OutsourcePartRequestCode { get; set; }
         public long OutsourcePartRequestFinishDate { get; set; }
+
+        public new void Mapping(Profile profile)
+        {
+            profile.CreateMap<OutsourcePartOrderDetailInfo, OutsourceOrderDetailInfo>()
+                .ForMember(m => m.OutsourceOrderDetailId, v => v.MapFrom(m => m.OutsourceOrderDetailId))
+                .ForMember(m => m.OutsourceOrderId, v => v.MapFrom(m => m.OutsourceOrderId))
+                .ForMember(m => m.ObjectId, v => v.MapFrom(m => m.ObjectId))
+                .ForMember(m => m.Price, v => v.MapFrom(m => m.Price))
+                .ForMember(m => m.Tax, v => v.MapFrom(m => m.Tax))
+                .ForMember(m => m.ProductPartName, v => v.MapFrom(m => m.ProductPartName))
+                .ForMember(m => m.ProductPartCode, v => v.MapFrom(m => m.ProductPartCode))
+                .ForMember(m => m.OutsourcePartRequestCode, v => v.MapFrom(m => m.OutsourcePartRequestCode))
+                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate))
+                .ForMember(m => m.UnitName, v => v.MapFrom(m => m.UnitName))
+                .ForMember(m => m.Quantity, v => v.MapFrom(m => m.Quantity))
+                .ReverseMap();
+        }
     }
 }
