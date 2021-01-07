@@ -144,18 +144,6 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         /// <summary>
-        /// Kiểm tra nhóm công đoạn mối quan hệ với nhau hay không
-        /// </summary>
-        /// <param name="lsProductionStepId">Danh sách mã công đoạn</param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("productionStepLinkDataRole/validateProductionStepRelationship")]
-        public async Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId)
-        {
-            return await _productionProcessService.ValidateProductionStepRelationship(lsProductionStepId);
-        }
-
-        /// <summary>
         /// Gom nhóm các công đoạn có mối qua hệ với nhau
         /// </summary>
         /// <param name="productionOrderId">Mã lệnh sản xuất</param>

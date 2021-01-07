@@ -41,6 +41,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _mapper = mapper;
             _outsourcePartRequestService = outsourcePartRequestService;
         }
+
         public async Task<IList<ProductionProcessWarningMessage>> ValidateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel productionProcess)
         {
             var lsWarning = new List<ProductionProcessWarningMessage>();
@@ -126,37 +127,38 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionProcess.ContainerId)
                             .Select(x => x.OutsourcePartRequestId)
                             .ToArrayAsync());
-            var outsourcePartRequestDetails = await _outsourcePartRequestService.GetRequestDetailByArrayRequestId(outsourcePartRequestIds);
-
-            foreach (var rqDetail in outsourcePartRequestDetails)
+            if (outsourcePartRequestIds.Length > 0)
             {
-                var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == rqDetail.OutsourcePartRequestDetailId);
-
-                if (usage == null)
+                var outsourcePartRequestDetails = await _outsourcePartRequestService.GetRequestDetailByArrayRequestId(outsourcePartRequestIds);
+                foreach (var rqDetail in outsourcePartRequestDetails)
                 {
-                    lsWarning.Add(new ProductionProcessWarningMessage
-                    {
-                        Message = $"YCGC {rqDetail.OutsourcePartRequestCode}-Chi tiết \"{rqDetail.ProductPartTitle}\" của SP \"{rqDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
-                        ObjectId = rqDetail.OutsourcePartRequestId,
-                        ObjectCode = rqDetail.OutsourcePartRequestCode,
-                        GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
-                    });
+                    var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == rqDetail.OutsourcePartRequestDetailId);
 
-                }
-                else if (usage.QuantityUsage != rqDetail.Quantity)
-                {
-                    lsWarning.Add(new ProductionProcessWarningMessage
+                    if (usage == null)
                     {
-                        Message = $"YCGC {rqDetail.OutsourcePartRequestCode}-Số lượng của chi tiết \"{rqDetail.ProductPartTitle}\" của SP \"{rqDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
-                        ObjectId = rqDetail.OutsourcePartRequestId,
-                        ObjectCode = rqDetail.OutsourcePartRequestCode,
-                        GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
-                    });
+                        lsWarning.Add(new ProductionProcessWarningMessage
+                        {
+                            Message = $"YCGC {rqDetail.OutsourcePartRequestCode}-Chi tiết \"{rqDetail.ProductPartTitle}\" của SP \"{rqDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
+                            ObjectId = rqDetail.OutsourcePartRequestId,
+                            ObjectCode = rqDetail.OutsourcePartRequestCode,
+                            GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                        });
+
+                    }
+                    else if (usage.QuantityUsage != rqDetail.Quantity)
+                    {
+                        lsWarning.Add(new ProductionProcessWarningMessage
+                        {
+                            Message = $"YCGC {rqDetail.OutsourcePartRequestCode}-Số lượng của chi tiết \"{rqDetail.ProductPartTitle}\" của SP \"{rqDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
+                            ObjectId = rqDetail.OutsourcePartRequestId,
+                            ObjectCode = rqDetail.OutsourcePartRequestCode,
+                            GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                        });
+                    }
                 }
             }
-
             return lsWarning;
         }
 
