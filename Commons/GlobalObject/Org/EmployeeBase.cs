@@ -14,5 +14,6 @@ namespace VErp.Commons.GlobalObject.Org
         public string Address { get; set; }
         public EnumGender? GenderId { get; set; }
         public long? AvatarFileId { get; set; }
+        public bool? IsDeveloper { get; set; }
     }
 }
