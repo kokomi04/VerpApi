@@ -441,11 +441,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                 * otherAssignment.ProductionAssignment.AssignmentQuantity)
                                 / (otherAssignment.TotalQuantity
                                 * otherAssignment.ProductionAssignment.Productivity),
-                    StepName = otherAssignment.StepName,
-                    ProductionOrderCode = otherAssignment.ProductionOrderCode,
                     CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
                     {
                         WorkDate = ad.WorkDate.GetUnix(),
+                        StepName = otherAssignment.StepName,
+                        ProductionOrderCode = otherAssignment.ProductionOrderCode,
                         CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
                                             * ad.QuantityPerDay.Value)
                                             / (otherAssignment.TotalQuantity
