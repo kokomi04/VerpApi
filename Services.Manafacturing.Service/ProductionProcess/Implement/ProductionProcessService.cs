@@ -401,7 +401,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 productionOrderDetails.RemoveAll(od => hasProcessDetailIds.Contains(od.ProductionOrderDetailId));
             }
 
-            var productIds = productionOrderDetails.Select(od => (long)od.ProductId).ToList();
+            var productIds = productionOrderDetails.Select(od => (long)od.ProductId).Distinct().ToList();
 
             //var productOrderMap = productionOrderDetails.ToDictionary(p => (long)p.ProductId, p => p.ProductionOrderDetailId);
 
