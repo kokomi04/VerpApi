@@ -51,8 +51,6 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<ObjectPrintConfig> GetObjectPrintConfigMapping(EnumObjectType objectTypeId, int objectId)
         {
             var maps = await _masterDbContext.ObjectPrintConfigMapping.Where(x => x.ObjectTypeId == (int)objectTypeId && x.ObjectId == objectId).ToArrayAsync();
-            if (maps.Length == 0)
-                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình phiếu in");
 
             return new ObjectPrintConfig
             {
