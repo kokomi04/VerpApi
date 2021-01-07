@@ -64,13 +64,6 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{scheduleTurnId}/capacityTimeline/{productionStepId}")]
-        public async Task<IDictionary<int, List<CapacityModel>>> GetCapacityTimeLine([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
-        {
-            return await _productionAssignmentService.GetCapacityTimeLine(scheduleTurnId, productionStepId, startDate, endDate);
-        }
-
-        [HttpGet]
         [Route("capacity")]
         public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
         {

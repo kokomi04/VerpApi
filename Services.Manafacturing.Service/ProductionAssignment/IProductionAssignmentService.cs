@@ -22,6 +22,5 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
 
         Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long scheduleTurnId);
-        Task<IDictionary<int, List<CapacityModel>>> GetCapacityTimeLine(long scheduleTurnId, long productionStepId, long startDate, long endDate);
     }
 }
