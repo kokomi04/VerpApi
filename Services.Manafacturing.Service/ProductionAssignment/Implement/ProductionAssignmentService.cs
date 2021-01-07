@@ -369,6 +369,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                     && (a.ProductionStepId != productionStepId || a.ScheduleTurnId != scheduleTurnId)
                                     && a.StartDate <= endDateTime
                                     && a.EndDate >= startDateTime
+                                    join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
+                                    join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                    join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                                     join d in _manufacturingDBContext.ProductionStepLinkData
                                     on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
                                     join ad in _manufacturingDBContext.ProductionAssignmentDetail
@@ -377,15 +380,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                     {
                                         ProductionAssignment = a,
                                         TotalQuantity = d.Quantity,
+                                        s.StepName,
+                                        po.ProductionOrderCode,
                                         ad.QuantityPerDay,
                                         ad.WorkDate
                                     })
                                     .ToList()
-                                    .GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity })
+                                    .GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.ProductionOrderCode })
                                     .Select(g => new
                                     {
                                         g.Key.ProductionAssignment,
                                         g.Key.TotalQuantity,
+                                        g.Key.StepName,
+                                        g.Key.ProductionOrderCode,
                                         ProductionAssignmentDetail = g.Select(ad => new
                                         {
                                             ad.WorkDate,
@@ -430,17 +437,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
                     CreatedDatetimeUtc = otherAssignment.ProductionAssignment.CreatedDatetimeUtc.GetUnix(),
-                    Capacity = Math.Round((workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                    Capacity = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
                                 * otherAssignment.ProductionAssignment.AssignmentQuantity)
                                 / (otherAssignment.TotalQuantity
-                                * otherAssignment.ProductionAssignment.Productivity), 5),
+                                * otherAssignment.ProductionAssignment.Productivity),
+                    StepName = otherAssignment.StepName,
+                    ProductionOrderCode = otherAssignment.ProductionOrderCode,
                     CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
                     {
                         WorkDate = ad.WorkDate.GetUnix(),
-                        CapacityPerDay = Math.Round((workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                        CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
                                             * ad.QuantityPerDay.Value)
                                             / (otherAssignment.TotalQuantity
-                                            * otherAssignment.ProductionAssignment.Productivity),5)
+                                            * otherAssignment.ProductionAssignment.Productivity)
 
                     }).ToList()
                 };
