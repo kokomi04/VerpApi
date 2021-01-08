@@ -8,6 +8,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionStepId { get; set; }
         public long ScheduleTurnId { get; set; }
         public int HandoverType { get; set; }
+        public decimal? MinHour { get; set; }
+        public decimal? MaxHour { get; set; }
 
         public virtual ProductionStep ProductionStep { get; set; }
     }
