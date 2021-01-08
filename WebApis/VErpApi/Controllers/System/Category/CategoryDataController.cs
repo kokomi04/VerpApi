@@ -57,6 +57,16 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryDataService.GetCategoryRow(categoryId, categoryRowId);
         }
 
+
+        [GlobalApi]
+        [HttpGet]
+        [Route("byCode/{categoryCode}/row/{categoryRowId}")]
+        public async Task<NonCamelCaseDictionary> GetCategoryRow([FromRoute] string categoryCode, [FromRoute] int categoryRowId)
+        {
+            return await _categoryDataService.GetCategoryRow(categoryCode, categoryRowId);
+        }
+
+
         [HttpPost]
         [Route("{categoryId}/categoryrows")]
         public async Task<int> GetCategoryRow([FromRoute] int categoryId, [FromBody] Dictionary<string, string> data)
