@@ -59,7 +59,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToListAsync();
         }
 
-        public async Task<bool> UpdateProductionAssignment(long productionStepId, long scheduleTurnId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info)
+        public async Task<bool> UpdateProductionAssignment(long productionStepId, long scheduleTurnId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable)
         {
             // Validate
             var step = _manufacturingDBContext.ProductionStep
@@ -83,8 +83,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                            s.ProductionOrderDetailId,
                                            s.ProductionScheduleQuantity,
                                            od.ProductId,
-                                           ProductionOrderQuantity = od.Quantity + od.ReserveQuantity
+                                           ProductionOrderQuantity = od.Quantity + od.ReserveQuantity,
+                                           s.StartDate,
+                                           s.EndDate
                                        }).ToList();
+
+            if (productionSchedules.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
 
             var previousScheduleQuantities = (from s in _manufacturingDBContext.ProductionSchedule
                                               join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
@@ -221,6 +225,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             try
             {
+                // Thêm thông tin thời gian biểu làm việc
+                var startDate = productionSchedules[0].StartDate;
+                var endDate = productionSchedules[0].EndDate;
+
+                var startDateUnix = startDate.GetUnix();
+                var endDateUnix = endDate.GetUnix();
+
+                var departmentIds = data.Select(a => a.DepartmentId).ToList();
+
+                var oldTimeTable = _manufacturingDBContext.DepartmentTimeTable.Where(t => departmentIds.Contains(t.DepartmentId) && t.WorkDate >= startDate && t.WorkDate <= endDate).ToList();
+                _manufacturingDBContext.DepartmentTimeTable.RemoveRange(oldTimeTable);
+
+                foreach (var item in timeTable)
+                {
+                    var entity = _mapper.Map<DepartmentTimeTable>(item);
+                    _manufacturingDBContext.DepartmentTimeTable.Add(entity);
+                }
+
                 // Thêm thông tin công việc
                 var productionStepWorkInfo = _manufacturingDBContext.ProductionStepWorkInfo
                     .FirstOrDefault(w => w.ProductionStepId == productionStepId && w.ScheduleTurnId == scheduleTurnId);
@@ -236,11 +258,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     _mapper.Map(info, productionStepWorkInfo);
                 }
 
-
                 // Xóa phân công
                 if (oldProductionAssignments.Count > 0)
                 {
-                    foreach(var oldProductionAssignment in oldProductionAssignments)
+                    foreach (var oldProductionAssignment in oldProductionAssignments)
                     {
                         oldProductionAssignment.ProductionAssignmentDetail.Clear();
                     }
@@ -622,6 +643,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             return await _manufacturingDBContext.ProductionStepWorkInfo
                 .Where(w => w.ScheduleTurnId == scheduleTurnId)
                 .ProjectTo<ProductionStepWorkInfoOutputModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
+        public async Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate)
+        {
+            DateTime startDateTime = startDate.UnixToDateTime().GetValueOrDefault();
+            DateTime endDateTime = endDate.UnixToDateTime().GetValueOrDefault();
+
+            return await _manufacturingDBContext.DepartmentTimeTable
+                .Where(t => departmentIds.Contains(t.DepartmentId) && t.WorkDate >= startDateTime && t.WorkDate <= endDateTime)
+                .ProjectTo<DepartmentTimeTableModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
     }
