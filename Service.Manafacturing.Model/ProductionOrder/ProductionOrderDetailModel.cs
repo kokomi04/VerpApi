@@ -38,6 +38,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal? OrderedQuantity { get; set; }
         public string PartnerId { get; set; }
         public string ProductTitle { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
         public string OrderCode { get; set; }
         public int? ProductId { get; set; }
         public string PartnerTitle { get; set; }
