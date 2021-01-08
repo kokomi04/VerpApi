@@ -35,4 +35,8 @@ CreatedDatetimeUtc, UpdatedByUserId, UpdatedDatetimeUtc, IsDeleted, DeletedDatet
 SELECT PrintConfigId, BodyTable, GenerateCode, PaperSize, Layout, HeadTable, FootTable, StickyFootTable, StickyHeadTable, CreatedByUserId,
 CreatedDatetimeUtc, UpdatedByUserId, UpdatedDatetimeUtc, IsDeleted, DeletedDatetimeUtc, HasTable, Background, GenerateToString, TemplateFileId, 1   
 	FROM PrintConfig where IsDeleted = 0 
-	
+INSERT INTO PrintConfigDetail (PrintConfigId, BodyTable, GenerateCode, PaperSize, Layout, HeadTable, FootTable, StickyFootTable, StickyHeadTable, CreatedByUserId,
+CreatedDatetimeUtc, UpdatedByUserId, UpdatedDatetimeUtc, IsDeleted, DeletedDatetimeUtc, HasTable, Background, GenerateToString, TemplateFileId, IsOrigin)
+SELECT PrintConfigId, BodyTable, GenerateCode, PaperSize, Layout, HeadTable, FootTable, StickyFootTable, StickyHeadTable, CreatedByUserId,
+CreatedDatetimeUtc, UpdatedByUserId, UpdatedDatetimeUtc, IsDeleted, DeletedDatetimeUtc, HasTable, Background, GenerateToString, TemplateFileId, 0   
+	FROM PrintConfig where IsDeleted = 0 

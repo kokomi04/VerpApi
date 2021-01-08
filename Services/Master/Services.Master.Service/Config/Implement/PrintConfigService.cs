@@ -92,10 +92,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             }
 
-            if (_currentContextService.IsDeveloper)
-            {
-                printConfig.PrintConfigDetailModel = printConfig.PrintConfigDetailModel.Where(x => x.IsOrigin == isOrigin).ToList();
-            }
+            printConfig.PrintConfigDetailModel = printConfig.PrintConfigDetailModel.Where(x => x.IsOrigin == isOrigin).ToList();
 
             return _mapper.Map<PrintConfigModel>(printConfig);
         }
@@ -132,9 +129,17 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _masterDBContext.PrintConfig.AddAsync(config);
                 await _masterDBContext.SaveChangesAsync();
 
+                if (_currentContextService.IsDeveloper)
+                {
+                    var configOrigin = _mapper.Map<PrintConfigDetail>(data as PrintConfigDetailModel);
+                    configOrigin.PrintConfigId = config.PrintConfigId;
+                    configOrigin.IsOrigin = true;
+                    await _masterDBContext.PrintConfigDetail.AddAsync(configOrigin);
+                }
+
                 var configDetail = _mapper.Map<PrintConfigDetail>(data as PrintConfigDetailModel);
                 configDetail.PrintConfigId = config.PrintConfigId;
-                configDetail.IsOrigin = _currentContextService.IsDeveloper;
+                configDetail.IsOrigin = false;
                 await _masterDBContext.PrintConfigDetail.AddAsync(configDetail);
                 await _masterDBContext.SaveChangesAsync();
 
