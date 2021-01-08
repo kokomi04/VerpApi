@@ -171,7 +171,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 var step = productionProcess.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.Key);
                 if (step == null)
+                {
+                    lsWarning.Add(new ProductionProcessWarningMessage
+                    {
+                        Message = $"Công đoạn \"{step.Title}\" không có đầu vào và đầu ra",
+                        ObjectCode = step.ProductionStepCode,
+                        ObjectId = step.ProductionStepId,
+                        GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep
+                    });
                     continue;
+                }
+                    
                 if (group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input).Count() == 0)
                 {
                     lsWarning.Add(new ProductionProcessWarningMessage
@@ -256,6 +267,30 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
                     });
                 }
+            }
+
+            /*
+             * Kiểm tra bán thành phẩm
+             */
+            var productionStepLinkDataCodes = productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepLinkDataCode)
+                .Where(x => x.Count() == 1 && x.First().ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                .Select(x => x.Key)
+                .ToArray();
+
+            var productionStepLinkDatas = productionProcess.ProductionStepLinkDatas
+                .Where(x => productionStepLinkDataCodes.Contains(x.ProductionStepLinkDataCode)
+                    && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                .ToList();
+            foreach (var linkData in productionStepLinkDatas)
+            {
+                lsWarning.Add(new ProductionProcessWarningMessage
+                {
+                    Message = $"Bán thành phẩm \"{linkData.ObjectTitle}\" không thể nhập về kho.",
+                    ObjectCode = linkData.ProductionStepLinkDataCode,
+                    ObjectId = linkData.ProductionStepLinkDataId,
+                    GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
+                    WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                });
             }
 
             /*
