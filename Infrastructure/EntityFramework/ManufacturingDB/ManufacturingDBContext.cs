@@ -492,6 +492,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepId, e.ScheduleTurnId })
                     .HasName("PK_ProductionAssignment_copy1");
 
+                entity.Property(e => e.MaxHour).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.MinHour).HasColumnType("decimal(18, 5)");
+
                 entity.HasOne(d => d.ProductionStep)
                     .WithMany(p => p.ProductionStepWorkInfo)
                     .HasForeignKey(d => d.ProductionStepId)
