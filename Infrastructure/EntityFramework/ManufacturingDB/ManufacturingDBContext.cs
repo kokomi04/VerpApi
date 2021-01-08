@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
         }
 
+        public virtual DbSet<DepartmentTimeTable> DepartmentTimeTable { get; set; }
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual DbSet<OutsourcePartRequest> OutsourcePartRequest { get; set; }
@@ -49,6 +50,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<DepartmentTimeTable>(entity =>
+            {
+                entity.HasKey(e => new { e.DepartmentId, e.WorkDate })
+                    .HasName("PK_ProductionAssignment_copy2_copy1");
+
+                entity.Property(e => e.HourPerDay).HasColumnType("decimal(18, 5)");
+            });
+
             modelBuilder.Entity<OutsourceOrder>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");

@@ -79,5 +79,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     {
         public ProductionAssignmentModel[] ProductionAssignments { get; set; }
         public ProductionStepWorkInfoInputModel ProductionStepWorkInfo { get; set; }
+
+        public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
     }
 }

@@ -39,7 +39,14 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productionStepId}/{scheduleTurnId}")]
         public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentInputModel data)
         {
-            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data.ProductionAssignments, data.ProductionStepWorkInfo);
+            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data.ProductionAssignments, data.ProductionStepWorkInfo, data.DepartmentTimeTable);
+        }
+
+        [HttpPost]
+        [Route("DepartmentTimeTable")]
+        public async Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable([FromBody] int[] departmentIds, [FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionAssignmentService.GetDepartmentTimeTable(departmentIds, startDate, endDate);
         }
 
         [HttpGet]
