@@ -54,5 +54,13 @@ namespace VErp.Commons.Enums.Manafacturing
             [Description("Đã xử lý")]
             Processed = 3
         }
+
+        public enum EnumProductionStepLinkType
+        {
+            [Description("Bàn giao công đoạn")]
+            Handover = 1,
+            [Description("Trung gian qua kho")]
+            Intermediate = 2
+        }
     }
 }
