@@ -21,6 +21,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public int SortOrder { get; set; }
         public long? OutsourceRequestDetailId { get; set; }
         public EnumProductionStepLinkDataType ProductionStepLinkDataTypeId { get; set; }
+        public EnumProductionStepLinkType ProductionStepLinkTypeId { get; set; }
     }
 
     public class ProductionStepLinkDataInput : ProductionStepLinkDataModel
