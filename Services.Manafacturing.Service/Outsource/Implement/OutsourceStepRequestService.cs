@@ -599,22 +599,24 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var roles = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                .Include(s => s.ProductionStepLinkDataRole)
                .Where(x => x.ContainerId == productionOrderId && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
-               .SelectMany(x => x.ProductionStepLinkDataRole, (s, d) => new ProductionStepLinkDataRoleModel
+               .SelectMany(x => x.ProductionStepLinkDataRole, (s, d) => new ProductionStepLinkDataRoleInput
                {
                    ProductionStepId = s.ProductionStepId,
                    ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                    ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
+                   ProductionStepCode = s.ProductionStepCode,
                }).ToListAsync();
 
             foreach (var request in outsourceStepRequest)
             {
-                var lst = FoundProductionStepInOutsourceStepRequest(request.OutsourceStepRequestData, roles)
+                var lst = FoundProductionStepInOutsourceStepRequest(request.OutsourceStepRequestData, roles.Cast<ProductionStepLinkDataRoleModel>().ToList())
                     .Select(productionStepId => new ProductionStepInOutsourceStepRequest
                     {
                         ProductionProcessId = request.ProductionProcessId,
                         ProductionStepId = productionStepId,
                         OutsourceStepRequestCode = request.OutsourceStepRequestCode,
-                        OutsourceStepRequestId = request.OutsourceStepRequestId
+                        OutsourceStepRequestId = request.OutsourceStepRequestId,
+                        ProductionStepCode = roles.FirstOrDefault(x=>x.ProductionStepId == productionStepId)?.ProductionStepCode
                     });
                 data.AddRange(lst);
             }
