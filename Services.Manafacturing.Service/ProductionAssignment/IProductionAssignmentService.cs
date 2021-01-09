@@ -16,8 +16,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? scheduleTurnId, int page, int size, string orderByFieldName, bool asc);
 
-        Task<IDictionary<int, decimal>> GetProductivityDepartments(long productionStepId);
-        Task<IDictionary<int, List<CapacityModel>>> GetCapacityDepartments(long scheduleTurnId, long productionStepId, long startDate, long endDate);
+        Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments(long productionStepId);
+        Task<CapacityOutputModel> GetCapacityDepartments(long scheduleTurnId, long productionStepId, long startDate, long endDate);
         Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate);
 
         Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate);

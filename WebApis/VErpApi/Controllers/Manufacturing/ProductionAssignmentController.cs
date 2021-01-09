@@ -58,14 +58,14 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("productivity/{productionStepId}")]
-        public async Task<IDictionary<int, decimal>> GetProductivityDepartments([FromRoute] long productionStepId)
+        public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
         {
             return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
         }
 
         [HttpGet]
         [Route("{scheduleTurnId}/capacity/{productionStepId}")]
-        public async Task<IDictionary<int, List<CapacityModel>>> GetCapacityDepartments([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
+        public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
         {
             return await _productionAssignmentService.GetCapacityDepartments(scheduleTurnId, productionStepId, startDate, endDate);
         }
