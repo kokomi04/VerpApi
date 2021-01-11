@@ -66,7 +66,6 @@ INSERT INTO dbo.RolePermission
 	ObjectTypeId,
 	ObjectId,
     Permission,
-	JsonActionIds,
     CreatedDatetimeUtc
 )
 SELECT  r.RoleId,
@@ -74,7 +73,6 @@ SELECT  r.RoleId,
 		@CategoryDataObjectTypeId,
 		m.CategoryId,
 		2147483647,
-		NULL,
 		GETDATE()
 	FROM
 	tmp AS m,
@@ -90,14 +88,11 @@ SELECT  r.RoleId,
 
 ;WITH tmp AS (
 	SELECT 
-	t.InputTypeId, 
-	replace(replace (t.Actions, '{"InputActionId":',''),'}','') ActionIds
+	t.InputTypeId	
 
 	FROM
 	(
-		SELECT t.InputTypeId, 
-		(SELECT InputActionId FROM AccountancyDB.dbo.InputAction a WHERE  t.InputTypeId = a.InputTypeId AND a.IsDeleted = 0 FOR JSON PATH) Actions
-
+		SELECT t.InputTypeId
 		FROM AccountancyDB.dbo.InputType t 
 		WHERE t.IsDeleted = 0		
 	) t
@@ -110,7 +105,6 @@ INSERT INTO dbo.RolePermission
 	ObjectTypeId,
 	ObjectId,
     Permission,
-	JsonActionIds,
     CreatedDatetimeUtc
 )
 SELECT  r.RoleId,
@@ -118,7 +112,6 @@ SELECT  r.RoleId,
 		@InputTypeObjectTypeId,
 		m.InputTypeId,
 		2147483647,
-		m.ActionIds,
 		GETDATE()
 	FROM
 	tmp AS m,
@@ -133,14 +126,11 @@ SELECT  r.RoleId,
 	
 ;WITH tmp AS (
 	SELECT 
-	t.VoucherTypeId, 
-	replace(replace (t.Actions, '{"VoucherActionId":',''),'}','') ActionIds
+	t.VoucherTypeId
 
 	FROM
 	(
-		SELECT t.VoucherTypeId, 
-		(SELECT VoucherActionId FROM PurchaseOrderDB.dbo.VoucherAction a WHERE  t.VoucherTypeId = a.VoucherTypeId AND a.IsDeleted = 0 FOR JSON PATH) Actions
-
+		SELECT t.VoucherTypeId
 		FROM PurchaseOrderDB.dbo.VoucherType t 
 		WHERE t.IsDeleted = 0		
 	) t
@@ -153,7 +143,6 @@ INSERT INTO dbo.RolePermission
 	ObjectTypeId,
 	ObjectId,
     Permission,
-	JsonActionIds,
     CreatedDatetimeUtc
 )
 SELECT  r.RoleId,
@@ -161,7 +150,6 @@ SELECT  r.RoleId,
 		@SalesBillObjectTypeId,
 		m.VoucherTypeId,
 		2147483647,
-		m.ActionIds,
 		GETDATE()
 	FROM
 	tmp AS m,
@@ -188,7 +176,6 @@ INSERT INTO dbo.RolePermission
 	ObjectTypeId,
 	ObjectId,
     Permission,
-	JsonActionIds,
     CreatedDatetimeUtc
 )
 SELECT  r.RoleId,
@@ -196,7 +183,6 @@ SELECT  r.RoleId,
 		@ReportTypeObjectTypeId,
 		m.ReportTypeId,
 		2147483647,
-		NULL,
 		GETDATE()
 	FROM
 	tmp AS m,
