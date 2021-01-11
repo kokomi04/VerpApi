@@ -917,7 +917,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<int> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
 
@@ -1055,9 +1055,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .Select(p => p.ProductCode)
                 .ToList());
             dupCodes = dupCodes.Distinct().ToList();
-            if (dupCodes.Count > 0)
+
+            if (dupCodes.Count > 0 && !mapping.IgnoreDuplicate)
             {
                 throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", dupCodes)} đã tồn tại");
+            }
+            else
+            {
+                data = data.Where(x => !dupCodes.Contains(x.ProductCode)).ToList();
             }
 
             // Validate required product name
@@ -1198,7 +1203,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 _stockContext.SaveChanges();
                 trans.Commit();
-                return data.Count;
+                return data.Count > 0;
             }
             catch (Exception ex)
             {
@@ -1208,22 +1213,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         }
 
-        public List<EntityField> GetFields(Type type)
+        public CategoryNameModel GetFieldMappings()
         {
-            var fields = new List<EntityField>();
-
-            foreach (var prop in type.GetProperties())
+            var result = new CategoryNameModel()
             {
-                EntityField field = new EntityField
-                {
-                    FieldName = prop.Name,
-                    Title = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name,
-                    Group = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.GroupName
-                };
-                fields.Add(field);
-            }
+                CategoryId = 1,
+                CategoryCode = "Product",
+                CategoryTitle = "Mặt hàng",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
 
-            return fields;
+            var fields = Utils.GetFieldNameModels<ProductImportModel>();
+            result.Fields = fields;
+            return result;
         }
 
         private Enum ValidateProduct(ProductModel req)

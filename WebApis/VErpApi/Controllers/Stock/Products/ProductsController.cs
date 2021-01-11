@@ -70,14 +70,14 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpGet]
         [Route("fields")]
-        public List<EntityField> GetFields()
+        public CategoryNameModel GetFieldMappings()
         {
-            return _productService.GetFields(typeof(ProductImportModel));
+            return _productService.GetFieldMappings();
         }
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<int> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {

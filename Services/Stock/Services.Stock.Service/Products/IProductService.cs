@@ -26,7 +26,7 @@ namespace VErp.Services.Stock.Service.Products
         Task<bool> DeleteProduct(int productId);
 
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
-        List<EntityField> GetFields(Type type);
-        Task<int> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
+        CategoryNameModel GetFieldMappings();
+        Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
     }
 }
