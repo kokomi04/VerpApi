@@ -38,6 +38,13 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
+        [Route("ProductionOrderStepProgress")]
+        public async Task<ProductionOrderStepModel> GetProductionOrderStepProgress([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _reportService.GetProductionOrderStepProgress(fromDate, toDate);
+        }
+
+        [HttpGet]
         [Route("ProductionSchedule")]
         public async Task<IList<ProductionScheduleReportModel>> GetProductionScheduleReport([FromQuery] long fromDate, [FromQuery] long toDate)
         {

@@ -79,6 +79,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                        OrderQuantity = pod.Quantity.GetValueOrDefault() + pod.ReserveQuantity.GetValueOrDefault(),
                                        sh.ProductionScheduleQuantity,
                                        sh.ProductionOrderDetailId,
+                                       sh.ProductionScheduleId,
                                        sh.ScheduleTurnId,
                                    }).ToList();
 
@@ -226,6 +227,195 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             return report;
         }
+
+
+        public async Task<ProductionOrderStepModel> GetProductionOrderStepProgress(long fromDate, long toDate)
+        {
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+            var report = new ProductionOrderStepModel();
+
+            var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
+                                   join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
+                                   join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
+                                   join po in _manufacturingDBContext.ProductionOrder on pod.ProductionOrderId equals po.ProductionOrderId
+                                   join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
+                                   join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                   where sh.StartDate <= toDateTime && sh.EndDate >= fromDateTime
+                                   select new
+                                   {
+                                       StepId = ps.StepId.Value,
+                                       s.StepName,
+                                       ps.ProductionStepId,
+                                       po.ProductionOrderCode,
+                                       pod.ProductId,
+                                       OrderQuantity = pod.Quantity.GetValueOrDefault() + pod.ReserveQuantity.GetValueOrDefault(),
+                                       sh.ProductionScheduleQuantity,
+                                       sh.ProductionOrderDetailId,
+                                       sh.ProductionScheduleId,
+                                       sh.ScheduleTurnId,
+                                   }).ToList();
+
+            if (productionSteps.Count == 0) return report;
+
+            var productionStepIds = productionSteps.Select(ps => ps.ProductionStepId).Distinct().ToList();
+
+            var data = (from r in _manufacturingDBContext.ProductionStepLinkDataRole
+                        join d in _manufacturingDBContext.ProductionStepLinkData on r.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                        where productionStepIds.Contains(r.ProductionStepId)
+                        select new
+                        {
+                            r.ProductionStepId,
+                            r.ProductionStepLinkDataRoleTypeId,
+                            d.ObjectTypeId,
+                            d.ObjectId,
+                            d.Quantity
+                        })
+                        .ToList()
+                        .GroupBy(d => d.ProductionStepId)
+                        .ToDictionary(g => g.Key, g => g.ToList()); ;
+
+            var scheduleTurnIds = productionSteps.Select(ps => ps.ScheduleTurnId).Distinct().ToList();
+            var handovers = _manufacturingDBContext.ProductionHandover
+            .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId))
+            .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
+            .ToList();
+
+            var reqInventorys = new Dictionary<long, List<ProductionInventoryRequirementEntity>>();
+
+            foreach (var scheduleTurnId in scheduleTurnIds)
+            {
+                var parammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+                };
+
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+
+                reqInventorys.Add(scheduleTurnId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                    .Where(r => r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+                    .ToList());
+            }
+
+            var productionScheduleIds = productionSteps.Select(ps => ps.ProductionScheduleId).Distinct().ToList();
+
+            var scheduleSql = $"SELECT * FROM vProductionSchedule v WHERE v.ProductionScheduleId IN ({string.Join(',', productionScheduleIds)})";
+            var scheduleData = await _manufacturingDBContext.QueryDataTable(scheduleSql.ToString(), Array.Empty<SqlParameter>());
+            report.ProductionSchedules = scheduleData
+                .ConvertData<ProductionScheduleEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionScheduleInfoModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            foreach (var stepProgress in productionSteps.GroupBy(ps => ps.StepId))
+            {
+                report.Steps.Add(new StepInfoModel
+                {
+                    StepId = stepProgress.Key,
+                    StepName = stepProgress.First().StepName
+                });
+
+                var productionOrderStepItem = productionScheduleIds.ToDictionary(id => id, id => new List<ProductionOrderStepProgressModel>());
+                report.ProductionOrderStepProgress.Add(stepProgress.Key, productionOrderStepItem);
+
+                foreach (var productionStepProgressModel in stepProgress.GroupBy(s => s.ProductionStepId))
+                {
+                    var productionStepId = productionStepProgressModel.Key;
+                    var stepData = data[productionStepId];
+
+                    foreach (var stepScheduleProgress in productionStepProgressModel.GroupBy(s => s.ScheduleTurnId))
+                    {
+                        var scheduleTurnId = stepScheduleProgress.Key;
+                        var productionOrderDetailId = stepScheduleProgress.First().ProductionOrderDetailId;
+                        var productionScheduleQuantity = stepScheduleProgress.First().ProductionScheduleQuantity;
+                        var orderQuantity = stepScheduleProgress.First().OrderQuantity;
+
+                        var previousSchedule = productionStepProgressModel
+                            .Where(s => s.ProductionOrderDetailId == productionOrderDetailId
+                            && s.ScheduleTurnId < scheduleTurnId)
+                            .GroupBy(s => s.ScheduleTurnId)
+                            .Select(g => g.First().ProductionScheduleQuantity)
+                            .ToList();
+
+                        var isFinish = previousSchedule.Sum(p => p) + productionScheduleQuantity >= orderQuantity;
+
+                        var inputData = stepData
+                            .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                            .Select(g => new StepScheduleProgressDataModel
+                            {
+                                ObjectId = g.Key.ObjectId,
+                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                TotalQuantity = g.Sum(d => !isFinish
+                                ? Math.Round(d.Quantity * productionScheduleQuantity / orderQuantity, 5)
+                                : d.Quantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
+                            }).ToList();
+
+                        var outputData = stepData
+                            .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                            .Select(g => new StepScheduleProgressDataModel
+                            {
+                                ObjectId = g.Key.ObjectId,
+                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                TotalQuantity = g.Sum(d => !isFinish
+                                ? Math.Round(d.Quantity * productionScheduleQuantity / orderQuantity, 5)
+                                : d.Quantity - previousSchedule.Sum(p => Math.Round(d.Quantity * p / orderQuantity, 5)))
+                            }).ToList();
+
+                        var stepInputHandovers = handovers
+                            .Where(h => h.ScheduleTurnId == scheduleTurnId && h.ToProductionStepId == productionStepId)
+                            .ToList();
+
+                        var stepOutputHandovers = handovers
+                            .Where(h => h.ScheduleTurnId == scheduleTurnId && h.FromProductionStepId == productionStepId)
+                            .ToList();
+
+                        var stepInputInventory = reqInventorys[scheduleTurnId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
+                        var stepOutputInventory = reqInventorys[scheduleTurnId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
+
+                        foreach (var input in inputData)
+                        {
+                            var receivedQuantity = stepInputHandovers.Where(h => h.ObjectId == input.ObjectId && h.ObjectTypeId == (int)input.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                            if (input.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                            {
+                                receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity).GetValueOrDefault();
+                            }
+                            input.ReceivedQuantity = receivedQuantity;
+                        }
+
+                        decimal progressPercent = 0;
+
+                        foreach (var output in outputData)
+                        {
+                            var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                            if (output.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                            {
+                                receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity).GetValueOrDefault();
+                            }
+                            output.ReceivedQuantity = receivedQuantity;
+
+                            if (output.ReceivedQuantity * 100 / output.TotalQuantity > progressPercent)
+                                progressPercent = Math.Round(output.ReceivedQuantity * 100 / output.TotalQuantity, 2);
+                        }
+
+                        foreach (var item in stepScheduleProgress)
+                        {
+                            report.ProductionOrderStepProgress[stepProgress.Key][item.ProductionScheduleId].Add(new ProductionOrderStepProgressModel
+                            {
+                                InputData = inputData,
+                                OutputData = outputData,
+                                ProgressPercent = progressPercent
+                            });
+                        }
+                    }
+                }
+            }
+
+            return report;
+        }
+
+
         public async Task<IList<ProductionScheduleReportModel>> GetProductionScheduleReport(long fromDate, long toDate)
         {
             var parammeters = new List<SqlParameter>();

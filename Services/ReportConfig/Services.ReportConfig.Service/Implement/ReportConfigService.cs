@@ -72,7 +72,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 .ProjectTo<ReportTypeViewFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            if (isConfig)
+            if (!isConfig)
             {
                 var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
 
@@ -80,7 +80,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     if (!string.IsNullOrEmpty(field.ExtraFilter))
                     {
-                        field.ExtraFilter = protector.Unprotect(field.ExtraFilter);
+                        field.ExtraFilter = protector.Protect(field.ExtraFilter);
                     }
                 }
             }
@@ -252,12 +252,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             // }
 
             var fields = fieldModels.Select(f => _mapper.Map<ReportTypeViewField>(f)).ToList();
-            var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+            //var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
 
             foreach (var f in fields)
             {
                 f.ReportTypeViewId = ReportTypeViewId;
-                if (!string.IsNullOrEmpty(f.ExtraFilter)) f.ExtraFilter = protector.Protect(f.ExtraFilter);
+                //if (!string.IsNullOrEmpty(f.ExtraFilter)) f.ExtraFilter = protector.Protect(f.ExtraFilter);
             }
 
             await _reportConfigContext.ReportTypeViewField.AddRangeAsync(fields);
