@@ -42,17 +42,12 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
 
             { ".doc" , EnumFileType.Document },
-            { ".pdf" , EnumFileType.Document },
             { ".docx", EnumFileType.Document },
-            { ".xls", EnumFileType.Document },
-            { ".xlsx" , EnumFileType.Document },
-            { ".csv" , EnumFileType.Document },
         };
 
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
         {
             { ".doc" , "application/msword" },
-            { ".pdf" , "application/pdf" },
             { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
         };
 
@@ -87,13 +82,13 @@ namespace VErp.Services.Master.Service.Config.Implement
                 .Where(p => p.PrintConfigId == printConfigId)
                 .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
+
             if (printConfig == null)
             {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             }
 
             printConfig.PrintConfigDetailModel = printConfig.PrintConfigDetailModel.Where(x => x.IsOrigin == isOrigin).ToList();
-
             return _mapper.Map<PrintConfigModel>(printConfig);
         }
 
@@ -109,7 +104,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             return lst.AsQueryable().ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider).ToList();
         }
 
-        public async Task<int> AddPrintConfig(PrintConfigModel data)
+        public async Task<int> AddPrintConfig(PrintConfigModel data, IFormFile file)
         {
             //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.ActiveForId));
             //if (!_accountancyDBContext.InputType.Any(i => i.InputTypeId == data.ActiveForId))
@@ -124,6 +119,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (file != null)
+                {
+                    var fileInfo = await Upload(EnumObjectType.PrintConfig, EnumFileType.Document, file);
+                    data.TemplateFileName = fileInfo.FileName;
+                    data.TemplateFilePath = fileInfo.FilePath;
+                    data.ContentType = fileInfo.ContentType;
+                }
+
                 var configExtract = _mapper.Map<PrintConfigExtract>(data);
                 var config = _mapper.Map<PrintConfig>(configExtract);
                 await _masterDBContext.PrintConfig.AddAsync(config);
@@ -134,6 +137,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     var configOrigin = _mapper.Map<PrintConfigDetail>(data as PrintConfigDetailModel);
                     configOrigin.PrintConfigId = config.PrintConfigId;
                     configOrigin.IsOrigin = true;
+
                     await _masterDBContext.PrintConfigDetail.AddAsync(configOrigin);
                 }
 
@@ -155,7 +159,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data)
+        public async Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data, IFormFile file)
         {
             //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(data.ActiveForId));
             var config = await _masterDBContext.PrintConfig.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId);
@@ -171,26 +175,30 @@ namespace VErp.Services.Master.Service.Config.Implement
             var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (file != null)
+                {
+                    var fileInfo = await Upload(EnumObjectType.PrintConfig, EnumFileType.Document, file);
+                    data.TemplateFilePath = fileInfo.FilePath;
+                    data.TemplateFileName = fileInfo.FileName;
+                    data.ContentType = fileInfo.ContentType;
+                }
+
                 var configExtract = _mapper.Map<PrintConfigExtract>(data);
                 _mapper.Map(configExtract, config);
                 await _masterDBContext.SaveChangesAsync();
 
                 PrintConfigDetail detail;
                 if (_currentContextService.IsDeveloper)
-                {
                     detail = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(x => x.PrintConfigId == config.PrintConfigId && x.IsOrigin == data.IsOrigin);
-                    _mapper.Map(data, detail);
-                }
                 else
                 {
                     detail = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(x => x.PrintConfigId == config.PrintConfigId && !x.IsOrigin);
                     data.IsOrigin = false;
                 }
 
+
                 if (detail != null)
-                {
                     _mapper.Map(data, detail);
-                }
                 else
                 {
                     var detailEnity = _mapper.Map<PrintConfigDetail>(data);
@@ -246,22 +254,28 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, int fileId, PrintTemplateInput templateModel)
+        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, PrintTemplateInput templateModel)
         {
             var printConfig = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
+                .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
+                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
 
             if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
-            var fileInfo = await _physicalFileService.GetSimpleFileInfo(printConfig.TemplateFileId.Value);
-
-            if (fileInfo == null) throw new BadRequestException(FileErrorCode.FileNotFound);
+            if (string.IsNullOrWhiteSpace(printConfig.TemplateFilePath)) throw new BadRequestException(FileErrorCode.FileNotFound);
 
             try
             {
+                var fileInfo = new SimpleFileInfo
+                {
+                    ContentType = printConfig.ContentType,
+                    FileName = printConfig.TemplateFileName,
+                    FilePath = printConfig.TemplateFilePath
+                };
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
-                return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
+                return (File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
             }
             catch (Exception ex)
             {
@@ -320,7 +334,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             return true;
         }
 
-        public async Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file)
+        private async Task<SimpleFileInfo> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, IFormFile file)
         {
             var ext = Path.GetExtension(file.FileName).ToLower();
 
@@ -334,10 +348,10 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(FileErrorCode.InvalidFileExtension);
             }
 
-            return await Upload(objectTypeId, fileName, file);
+            return await Upload(objectTypeId, file);
         }
 
-        private async Task<long> Upload(EnumObjectType objectTypeId, string fileName, IFormFile file)
+        private async Task<SimpleFileInfo> Upload(EnumObjectType objectTypeId, IFormFile file)
         {
             var (validate, fileTypeId) = ValidateUploadFile(file);
             if (!validate.IsSuccess())
@@ -352,21 +366,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await file.CopyToAsync(stream);
             }
 
-            if (string.IsNullOrWhiteSpace(fileName))
+            return new SimpleFileInfo
             {
-                fileName = file.FileName;
-            }
-
-            var fileId = await _physicalFileService.SaveSimpleFileInfo(EnumObjectType.PrintConfig, new SimpleFileInfo
-            {
-                FileName = fileName,
+                FileName = file.FileName,
                 FilePath = filePath,
                 FileTypeId = (int)fileTypeId,
                 ContentType = file.ContentType,
                 FileLength = file.Length
-            });
-
-            return fileId;
+            };
         }
 
 
@@ -413,6 +420,23 @@ namespace VErp.Services.Master.Service.Config.Implement
             return (GeneralCode.Success, FileExtensionTypes[ext]);
         }
 
+        public async Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId)
+        {
+            var printConfig = await _masterDBContext.PrintConfig
+                .Where(p => p.PrintConfigId == printConfigId)
+                .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
+                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+
+            if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+            if (string.IsNullOrWhiteSpace(printConfig.TemplateFilePath))
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound, "Chưa có file template cấu hình phiếu in");
+
+            if (!File.Exists(GetPhysicalFilePath(printConfig.TemplateFilePath)))
+                throw new BadRequestException(FileErrorCode.FileNotFound);
+
+            return (File.OpenRead(GetPhysicalFilePath(printConfig.TemplateFilePath)), printConfig.ContentType, printConfig.TemplateFileName);
+        }
     }
 }
 

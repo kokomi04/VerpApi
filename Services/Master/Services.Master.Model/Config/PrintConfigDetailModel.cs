@@ -20,6 +20,9 @@ namespace VErp.Services.Master.Model.Config
         public bool? HasTable { get; set; }
         public string Background { get; set; }
         public long? TemplateFileId { get; set; }
+        public string TemplateFilePath { get; set; }
+        public string TemplateFileName { get; set; }
+        public string ContentType { get; set; }
         public string GenerateToString { get; set; }
         public bool IsOrigin { get; set; }
     }

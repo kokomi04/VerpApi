@@ -26,6 +26,9 @@ namespace VErp.Infrastructure.EF.MasterDB
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
         public bool IsOrigin { get; set; }
+        public string TemplateFilePath { get; set; }
+        public string TemplateFileName { get; set; }
+        public string ContentType { get; set; }
 
         public virtual PrintConfig PrintConfig { get; set; }
     }

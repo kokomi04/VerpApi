@@ -436,6 +436,10 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<PrintConfigDetail>(entity =>
             {
+                entity.Property(e => e.ContentType).HasMaxLength(128);
+
+                entity.Property(e => e.TemplateFileName).HasMaxLength(128);
+
                 entity.HasOne(d => d.PrintConfig)
                     .WithMany(p => p.PrintConfigDetail)
                     .HasForeignKey(d => d.PrintConfigId)

@@ -30,6 +30,8 @@ namespace VErp.Services.Master.Model.Config
                 .ForMember(m => m.HasTable, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().HasTable))
                 .ForMember(m => m.Background, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().Background))
                 .ForMember(m => m.TemplateFileId, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().TemplateFileId))
+                .ForMember(m => m.TemplateFilePath, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().TemplateFilePath))
+                .ForMember(m => m.TemplateFileName, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().TemplateFileName))
                 .ForMember(m => m.GenerateToString, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? null : m.PrintConfigDetailModel.Last().GenerateToString))
                 .ForMember(m => m.IsOrigin, v => v.MapFrom(m => m.PrintConfigDetailModel.Count == 0 ? false : m.PrintConfigDetailModel.Last().IsOrigin))
                 .ReverseMap()

@@ -14,13 +14,13 @@ namespace VErp.Services.Master.Service.Config
     {
         Task<PrintConfigModel> GetPrintConfig(int printConfigId, bool isOrigin);
         Task<ICollection<PrintConfigModel>> GetPrintConfigs(int moduleTypeId);
-        Task<int> AddPrintConfig(PrintConfigModel data);
-        Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data);
+        Task<int> AddPrintConfig(PrintConfigModel data, IFormFile file);
+        Task<bool> UpdatePrintConfig(int printConfigId, PrintConfigModel data, IFormFile file);
         Task<bool> DeletePrintConfig(int printConfigId);
-        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, int fileId, PrintTemplateInput templateModel);
+        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, PrintTemplateInput templateModel);
         Task<IList<EntityField>> GetSuggestionField(int moduleTypeId);
         Task<IList<EntityField>> GetSuggestionField(Assembly assembly);
-        Task<long> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, string fileName, IFormFile file);
+        Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId);
         Task<bool> RollbackPrintConfig(long printConfigId);
     }
 }

@@ -64,16 +64,16 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("{printConfigId}")]
-        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromBody] PrintConfigModel data)
+        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromBody] PrintConfigModel data,[FromForm] IFormFile file)
         {
-            return await _printConfigService.UpdatePrintConfig(printConfigId, data);
+            return await _printConfigService.UpdatePrintConfig(printConfigId, data, file);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<int> AddPrintConfig([FromBody] PrintConfigModel data)
+        public async Task<int> AddPrintConfig([FromBody] PrintConfigModel data, [FromForm] IFormFile file)
         {
-            return await _printConfigService.AddPrintConfig(data);
+            return await _printConfigService.AddPrintConfig(data, file);
         }
 
         [HttpDelete]
@@ -83,21 +83,24 @@ namespace VErpApi.Controllers.System
             return await _printConfigService.DeletePrintConfig(printConfigId);
         }
 
-        [HttpPost]
-        [Route("printTemplate")]
-        public async Task<long> UploadPrintTemplate(IFormFile file)
+        [HttpGet]
+        [Route("{printConfigId}/getPrintTemplate")]
+        public async Task<IActionResult> GetPrintConfigTemplateFile([FromRoute] int printConfigId)
         {
-            return await _printConfigService.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
-        }
-
-        [HttpPost]
-        [Route("{printConfigId}/generatePrintTemplate/{fileId}")]
-        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromRoute] int fileId, PrintTemplateInput templateModel)
-        {
-            var r = await _printConfigService.GeneratePrintTemplate(printConfigId, fileId, templateModel);
+            var r = await _printConfigService.GetPrintConfigTemplateFile(printConfigId);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }
+
+        [HttpPost]
+        [Route("{printConfigId}/generatePrintTemplate")]
+        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, PrintTemplateInput templateModel)
+        {
+            var r = await _printConfigService.GeneratePrintTemplate(printConfigId, templateModel);
+
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
+        }
+
         [HttpGet]
         [Route("suggestionField")]
         public async Task<IList<EntityField>> GetSuggestionField([FromQuery] int moduleTypeId)
