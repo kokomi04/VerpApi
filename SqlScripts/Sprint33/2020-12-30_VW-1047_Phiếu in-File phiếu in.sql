@@ -27,6 +27,8 @@ CREATE TABLE [dbo].[PrintConfigDetail](
 	[TemplateFileId] [bigint] NULL,
 	[GenerateToString] [nvarchar](max) NULL,
 	[TemplateFilePath] [nvarchar](max) NULL,
+	[TemplateFileName] [nvarchar](128) NULL,
+	[ContentType] [nvarchar](128) NULL,
 	[IsOrigin] [bit] NOT NULL,
 	CONSTRAINT FK_PrintConfigDetail_PrintConfig FOREIGN KEY (PrintConfigId) REFERENCES PrintConfig(PrintConfigId))
 
