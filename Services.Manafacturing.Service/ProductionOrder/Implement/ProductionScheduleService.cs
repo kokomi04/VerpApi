@@ -167,8 +167,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             sql.Append("WHERE ");
             sql.Append(whereCondition);
 
-            orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "ProductionOrderDetailId" : orderByFieldName;
-            sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}");
+            orderByFieldName = string.IsNullOrEmpty(orderByFieldName) ? "StartDate" : orderByFieldName;
+            sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}, ScheduleTurnId");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
 
@@ -459,6 +459,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError(ex, "UpdateProductScheduleStatus");
                 throw;
             }
+        }
+
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedulesByScheduleTurnArray(long[] scheduleTurnIds)
+        {
+            var sql = new StringBuilder("SELECT * FROM vProductionSchedule v WHERE v.ScheduleTurnId IN ( ");
+            var parammeters = new List<SqlParameter>();
+            var whereCondition = new StringBuilder();
+
+            for (int i = 0; i < scheduleTurnIds.Length; i++)
+            {
+                var scheduleTurnId = scheduleTurnIds[i];
+                var parameterName = $"@ScheduleTurnId_{i + 1}";
+
+                if (i == scheduleTurnIds.Length - 1)
+                    whereCondition.Append($"{parameterName} )");
+                else
+                    whereCondition.Append($"{parameterName}, ");
+                parammeters.Add(new SqlParameter(parameterName, scheduleTurnId));
+            }
+
+            if (whereCondition.Length > 0)
+                sql.Append(whereCondition);
+            else return new List<ProductionScheduleModel>();
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters);
+            return resultData.ConvertData<ProductionScheduleEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionScheduleModel>(_mapper.ConfigurationProvider)
+                .ToList();
         }
     }
 }

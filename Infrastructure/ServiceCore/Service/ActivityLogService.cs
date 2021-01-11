@@ -21,7 +21,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null, bool ignoreBatch = false);
+        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false);
         ActivityLogBatchs BeginBatchLog();
 
     }
@@ -53,7 +53,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return logBatchs;
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null, bool ignoreBatch = false)
+        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false)
         {
             if (ignoreBatch)
             {
@@ -79,7 +79,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public async Task<bool> CreateLogRequest(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null)
+        public async Task<bool> CreateLogRequest(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null)
         {
             try
             {
@@ -139,7 +139,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 _activityLogBatchs.Add(this);
             }
 
-            internal void AddLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumAction? action = null)
+            internal void AddLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null)
             {
                 _logs.Add(new ActivityLogEntity()
                 {
@@ -172,7 +172,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 public long ObjectId { get; set; }
                 public string Message { get; set; }
                 public string JsonData { get; set; }
-                public EnumAction? Action { get; set; }
+                public EnumActionType? Action { get; set; }
             }
 
         }

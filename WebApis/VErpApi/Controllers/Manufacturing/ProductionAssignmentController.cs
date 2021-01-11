@@ -37,11 +37,17 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionStepId}/{scheduleTurnId}")]
-        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentModel[] data)
+        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentInputModel data)
         {
-            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data);
+            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data.ProductionAssignments, data.ProductionStepWorkInfo, data.DepartmentTimeTable);
         }
 
+        [HttpPost]
+        [Route("DepartmentTimeTable")]
+        public async Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable([FromBody] int[] departmentIds, [FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionAssignmentService.GetDepartmentTimeTable(departmentIds, startDate, endDate);
+        }
 
         [HttpGet]
         [Route("Departments/{departmentId}")]
@@ -50,12 +56,32 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, scheduleTurnId, page, size, orderByFieldName, asc);
         }
 
-        [HttpPost]
-        [Route("workload")]
-        public async Task<bool> SetProductionStepWorldload([FromBody] IList<ProductionStepWorkload> productionStepWorldload)
+        [HttpGet]
+        [Route("productivity/{productionStepId}")]
+        public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
         {
-            return await _productionAssignmentService.SetProductionStepWorldload(productionStepWorldload);
+            return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
         }
 
+        [HttpGet]
+        [Route("{scheduleTurnId}/capacity/{productionStepId}")]
+        public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionAssignmentService.GetCapacityDepartments(scheduleTurnId, productionStepId, startDate, endDate);
+        }
+
+        [HttpGet]
+        [Route("capacity")]
+        public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionAssignmentService.GetCapacity(startDate, endDate);
+        }
+
+        [HttpGet]
+        [Route("{scheduleTurnId}/WorkInfo")]
+        public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo([FromRoute] long scheduleTurnId)
+        {
+            return await _productionAssignmentService.GetListProductionStepWorkInfo(scheduleTurnId);
+        }
     }
 }

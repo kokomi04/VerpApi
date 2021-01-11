@@ -2,13 +2,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Services.Accountancy.Model.OutsideMapping
+namespace VErp.Services.Master.Model.OutsideMapping
 {
     public class OutsideMappingModelBase
     {
+        public EnumObjectType? SourceObjectTypeId { get; set; }
+        public int? SourceInputTypeId { get; set; }
+        public EnumObjectType ObjectTypeId { get; set; }
         public int InputTypeId { get; set; }
         public string MappingFunctionKey { get; set; }
         public string FunctionName { get; set; }
@@ -20,7 +24,7 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
     }
     public class OutsideMappingModelList : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
     {
-        public int OutsideImportMappingFunctionId { get; set; }      
+        public int OutsideImportMappingFunctionId { get; set; }
 
         public virtual void Mapping(Profile profile)
         {
@@ -33,7 +37,7 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
     }
 
     public class OutsideMappingModel : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
-    {       
+    {
         public OutsideMappingModel()
         {
             FieldMappings = new List<OutsiteMappingModel>();
@@ -45,8 +49,12 @@ namespace VErp.Services.Accountancy.Model.OutsideMapping
             profile.CreateMap<OutsideMappingModel, OutsideImportMappingFunction>()
                 .ForMember(d => d.OutsideImportMapping, s => s.Ignore())
                 .ForMember(d => d.OutsideImportMappingObject, s => s.Ignore())
+                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (int)f.ObjectTypeId))
+                .ForMember(d => d.SourceObjectTypeId, s => s.MapFrom(f => (int?)f.SourceObjectTypeId))
                 .ReverseMap()
-                .ForMember(s => s.FieldMappings, d => d.Ignore());
+                .ForMember(s => s.FieldMappings, d => d.Ignore())
+                .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (EnumObjectType)f.ObjectTypeId))
+                .ForMember(d => d.SourceObjectTypeId, s => s.MapFrom(f => (EnumObjectType?)f.SourceObjectTypeId));
         }
 
     }

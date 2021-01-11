@@ -12,7 +12,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
     public interface IOutsourcePartOrderService
     {
         Task<long> CreateOutsourceOrderPart(OutsourceOrderInfo req);
-        Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart(string keyword, int page, int size, Clause filters = null);
+        Task<PageData<OutsourcePartOrderDetailInfo>> GetListOutsourceOrderPart(string keyword, int page, int size, Clause filters = null);
         Task<bool> UpdateOutsourceOrderPart(long outsourceOrderId,OutsourceOrderInfo req);
         Task<bool> DeleteOutsourceOrderPart(long outsourceOrderId);
         Task<OutsourceOrderInfo> GetOutsourceOrderPart(long outsourceOrderId);

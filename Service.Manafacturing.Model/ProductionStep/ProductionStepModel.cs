@@ -10,7 +10,7 @@ using ProductionStepEnity = VErp.Infrastructure.EF.ManufacturingDB.ProductionSte
 
 namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
-    public class ProductionStepModel: IMapFrom<ProductionStepEnity>
+    public class ProductionStepModel : IMapFrom<ProductionStepEnity>
     {
         public long ProductionStepId { get; set; }
         public int? StepId { get; set; }
@@ -25,24 +25,29 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public decimal? CoordinateX { get; set; }
         public decimal? CoordinateY { get; set; }
         public string ProductionStepCode { get; set; }
+        public int UnitId { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepModel>()
                 .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title))
-                .ReverseMap();
+                .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
+                .ReverseMap()
+                .ForMember(m => m.Step, v => v.Ignore());
         }
     }
 
-    public class ProductionStepInfo: ProductionStepModel
+    public class ProductionStepInfo : ProductionStepModel
     {
-        public List<ProductionStepLinkDataInfo > ProductionStepLinkDatas { get; set; }
+        public List<ProductionStepLinkDataInfo> ProductionStepLinkDatas { get; set; }
         public new void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepInfo>()
                 .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))
-                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue? s.Step.StepName: s.Title))
+                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title))
+                .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
                 .ReverseMap()
-                .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore());
+                .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore())
+                .ForMember(m => m.Step, v => v.Ignore());
         }
     }
 

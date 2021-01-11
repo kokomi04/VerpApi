@@ -168,7 +168,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                             }
                             else
                             {
-                                queryData.Add(k, v.ToString());
+                                if (v != null)
+                                    queryData.Add(k, v.ToString());
                             }
                         }
                     }
@@ -208,7 +209,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             var dicQueries = new Dictionary<string, object>();
             if (!queries.IsNullObject())
             {
-                var props = queries.GetType().GetProperties();                
+                var props = queries.GetType().GetProperties();
                 foreach (var prop in props)
                 {
                     dicQueries.Add(prop.Name, prop.GetValue(queries));

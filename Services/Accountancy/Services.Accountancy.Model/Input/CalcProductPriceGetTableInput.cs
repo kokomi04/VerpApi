@@ -8,15 +8,24 @@ namespace VErp.Services.Accountancy.Model.Input
 {
     public class CalcProductPriceGetTableInput
     {
+        public int? ProductId { get; set; }
+        public string OrderCode { get; set; }
+        public string MaLsx { get; set; }
+        public int? StockId { get; set; }
+
         public long FromDate { get; set; }
         public long ToDate { get; set; }
-        public IList<string> GroupColumns { get; set; }
+        public bool IsByLsx { get; set; }
+        public bool IsByOrder { get; set; }
+        public bool IsByStock { get; set; }
+
         public NonCamelCaseDictionary<decimal> AllocationRate { get; set; }
         public NonCamelCaseDictionary<decimal> CustomPrice { get; set; }
         public NonCamelCaseDictionary<decimal> DirectMaterialFee { get; set; }
         public NonCamelCaseDictionary<decimal> DirectLaborFee { get; set; }
+        public NonCamelCaseDictionary<decimal> DirectGeneralFee { get; set; }
         public NonCamelCaseDictionary<decimal> OtherFee { get; set; }
-        
+
         public EnumCalcProductPriceAllocationType IndirectMaterialFeeAllocationTypeId { get; set; }
         public decimal? IndirectMaterialFeeSumCustom { get; set; }
 

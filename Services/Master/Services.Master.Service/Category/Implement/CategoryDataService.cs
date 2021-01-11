@@ -589,6 +589,21 @@ namespace VErp.Services.Accountancy.Service.Category
             return await GetCategoryRowInfo(category, fields, fId);
         }
 
+        public async Task<NonCamelCaseDictionary> GetCategoryRow(string categoryCode, int fId)
+        {
+            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+
+            var fields = (from f in _accountancyContext.CategoryField
+                          join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          select f).ToList();
+            return await GetCategoryRowInfo(category, fields, fId);
+        }
+
         private async Task<NonCamelCaseDictionary> GetCategoryRowInfo(CategoryEntity category, List<CategoryField> categoryFields, long fId)
         {
             var tableName = $"v{category.CategoryCode}";

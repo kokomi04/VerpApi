@@ -62,21 +62,22 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
         {
-            return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
+            return await _productService.GetList(keyword, productName, productTypeIds, productCateIds, page, size);
         }
+
 
         [HttpGet]
         [Route("fields")]
-        public List<EntityField> GetFields()
+        public CategoryNameModel GetFieldMappings()
         {
-            return _productService.GetFields(typeof(ProductImportModel));
+            return _productService.GetFieldMappings();
         }
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<int> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
@@ -92,7 +93,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("GetByIds")]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
         {
             return (await _productService.GetListByIds(productIds)).ToList();
@@ -117,7 +118,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("default")]
-        public async Task<int> AddProductDefault([FromBody] ProductDefaultModel product)
+        public async Task<ProductDefaultModel> AddProductDefault([FromBody] ProductDefaultModel product)
         {
             return await _productService.AddProductDefault(product);
         }

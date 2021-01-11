@@ -51,7 +51,7 @@ namespace VErpApi.Controllers.System
 
         [Route("censor")]
         [HttpPost]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<User> TestAction()
         {
             await Task.CompletedTask;

@@ -17,6 +17,12 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public int CreatedByUserId { get; set; }
         public long? ScheduleTurnId { get; set; }
         public long? ProductionStepId { get; set; }
+        public string Shipper { get; set; }
+        public int? CustomerId { get; set; }
+        public string BillForm { get; set; }
+        public string BillCode { get; set; }
+        public string BillSerial { get; set; }
+        public long BillDate { get; set; }
     }
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementEntity>
@@ -30,6 +36,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
             profile.CreateMap<InventoryRequirementEntity, InventoryRequirementListModel>()
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))
                 .ForMember(dest => dest.CensorDatetimeUtc, opt => opt.MapFrom(source => source.CensorDatetimeUtc.GetUnix()))
+                .ForMember(dest => dest.BillDate, opt => opt.MapFrom(source => source.BillDate.GetUnix()))
                 .ForMember(dest => dest.CensorStatus, opt => opt.MapFrom(source => (EnumInventoryRequirementStatus)source.CensorStatus));
         }
     }
@@ -50,8 +57,17 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
             profile.CreateMap<InventoryRequirementInputModel, InventoryRequirementEntity>()
                 .ForMember(dest => dest.InventoryRequirementDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.InventoryRequirementFile, opt => opt.Ignore())
-                .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.UnixToDateTime()));
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.UnixToDateTime()))
+                .ForMember(dest => dest.BillDate, opt => opt.MapFrom(source => source.BillDate.UnixToDateTime()));
         }
+
+        public OutsideImportMappingData OutsideImportMappingData { get; set; }
+    }
+
+    public class OutsideImportMappingData
+    {
+        public string MappingFunctionKey { get; set; }
+        public string ObjectId { get; set; }
     }
 
     public class InventoryRequirementOutputModel : InventoryRequirementListModel
@@ -70,6 +86,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
             profile.CreateMap<InventoryRequirementEntity, InventoryRequirementOutputModel>()
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))
                 .ForMember(dest => dest.CensorDatetimeUtc, opt => opt.MapFrom(source => source.CensorDatetimeUtc.GetUnix()))
+                .ForMember(dest => dest.BillDate, opt => opt.MapFrom(source => source.BillDate.GetUnix()))
                 .ForMember(dest => dest.CensorStatus, opt => opt.MapFrom(source => (EnumInventoryRequirementStatus)source.CensorStatus));
         }
     }

@@ -6,6 +6,7 @@ using VErp.Services.Stock.Service.FileResources;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.BusinessInfo;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ApiCore.Attributes;
 
 namespace VErpApi.Controllers.System
 {
@@ -32,6 +33,7 @@ namespace VErpApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [GlobalApi]
         [Route("")]
         public async Task<BusinessInfoModel> GetBusinessInfo()
         {

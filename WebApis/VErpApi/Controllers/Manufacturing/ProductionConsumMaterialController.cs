@@ -60,5 +60,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionConsumMaterialService.DeleteConsumMaterial(departmentId, scheduleTurnId, productionStepId, productionConsumMaterialId);
         }
 
+        [HttpDelete]
+        [Route("Material")]
+        public async Task<bool> DeleteMaterial([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        , [FromQuery] int objectTypeId, [FromQuery] long objectId)
+        {
+            return await _productionConsumMaterialService.DeleteMaterial(departmentId, scheduleTurnId, productionStepId, objectTypeId, objectId);
+        }
     }
 }

@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.Stock.Files
 
         [GlobalApi]
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("GetFilesUrls")]
         public async Task<IList<FileToDownloadInfo>> GetFilesUrls([FromBody] IList<long> fileIds, [FromQuery] EnumThumbnailSize? thumb)
         {
@@ -57,7 +57,7 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpPost]
         [Route("GetThumbnails")]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         public async Task<IList<FileThumbnailInfo>> GetThumbnails([FromBody] GetThumbnailsInput req)
         {
             return await _fileService.GetThumbnails(req?.FileIds, req.ThumbnailSize).ConfigureAwait(true);

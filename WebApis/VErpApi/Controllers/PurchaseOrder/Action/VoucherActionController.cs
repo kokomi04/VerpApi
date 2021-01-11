@@ -27,46 +27,47 @@ namespace VErpApi.Controllers.PurchaseOrder.Action
         }
 
         [HttpGet]
-        [Route("voucherType/{voucherTypeId}")]
-        public async Task<IList<VoucherActionModel>> GetList(int voucherTypeId)
+        [Route("{inputTypeId}")]
+        public async Task<IList<ActionButtonModel>> GetList([FromRoute] int inputTypeId)
         {
-            return await _voucherActionService.GetVoucherActionConfigs(voucherTypeId).ConfigureAwait(true);
+            return await _voucherActionService.GetActionButtonConfigs(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("voucherType/{voucherTypeId}/use")]
-        public async Task<IList<VoucherActionUseModel>> GetListUse(int voucherTypeId)
+        [Route("{inputTypeId}/use")]
+        public async Task<IList<ActionButtonSimpleModel>> GetListUse([FromRoute] int inputTypeId)
         {
-            return await _voucherActionService.GetVoucherActions(voucherTypeId).ConfigureAwait(true);
+            return await _voucherActionService.GetActionButtons(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpPost]
-        public async Task<VoucherActionModel> VoucherTypeGroupCreate([FromBody] VoucherActionModel model)
+        [Route("{inputTypeId}")]
+        public async Task<ActionButtonModel> InputTypeGroupCreate([FromRoute] int inputTypeId, [FromBody] ActionButtonModel model)
         {
-            return await _voucherActionService.AddVoucherAction(model).ConfigureAwait(true);
+            return await _voucherActionService.AddActionButton(inputTypeId, model).ConfigureAwait(true);
         }
 
         [HttpPut]
-        [Route("{voucherActionId}")]
-        public async Task<VoucherActionModel> UpdateVoucherAction([FromRoute] int voucherActionId, [FromBody] VoucherActionModel model)
+        [Route("{inputTypeId}/{actionButtonId}")]
+        public async Task<ActionButtonModel> UpdateInputAction([FromRoute] int inputTypeId, [FromRoute] int actionButtonId, [FromBody] ActionButtonModel model)
         {
-            return await _voucherActionService.UpdateVoucherAction(voucherActionId, model).ConfigureAwait(true);
+            return await _voucherActionService.UpdateActionButton(inputTypeId, actionButtonId, model).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("{voucherActionId}")]
-        public async Task<bool> DeleteVoucherAction([FromRoute] int voucherActionId)
+        [Route("{inputTypeId}/{actionButtonId}")]
+        public async Task<bool> DeleteInputAction([FromRoute] int inputTypeId, [FromRoute] int actionButtonId)
         {
-            return await _voucherActionService.DeleteVoucherAction(voucherActionId).ConfigureAwait(true);
+            return await _voucherActionService.DeleteActionButton(inputTypeId, actionButtonId).ConfigureAwait(true);
         }
 
         [HttpPost]
-        [Route("ExecVoucherAction/{voucherTypeId}/{voucherActionId}/{voucherBillId}")]
+        [Route("{voucherTypeId}/{voucherBillId}/Exec/{voucherActionId}")]
         [ObjectDataApi(EnumObjectType.VoucherType, "voucherTypeId")]
         [ActionButtonDataApi("voucherActionId")]
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherTypeId, [FromRoute] int voucherActionId, [FromRoute] long voucherBillId, [FromBody] VoucherBillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherTypeId, [FromRoute] int voucherActionId, [FromRoute] long voucherBillId, [FromBody] BillInfoModel data)
         {
-            return await _voucherActionService.ExecVoucherAction(voucherTypeId, voucherActionId, voucherBillId, data).ConfigureAwait(true);
+            return await _voucherActionService.ExecActionButton(voucherTypeId, voucherActionId, voucherBillId, data).ConfigureAwait(true);
         }
     }
 }

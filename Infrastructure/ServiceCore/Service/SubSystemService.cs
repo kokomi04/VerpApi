@@ -19,7 +19,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private static readonly Dictionary<EnumModuleType, string[]> SubSystemWithDB = new Dictionary<EnumModuleType, string[]>()
         {
             {EnumModuleType.Master, new[] { "MasterDB", "ActivityLogDB" } },
-            {EnumModuleType.Accountant, new[] { "AccountancyDB", "ReportConfigDB" } },
+            {EnumModuleType.Accountant, new[] { "AccountancyDB" } },
             {EnumModuleType.Organization, new[] { "OrganizationDB" } },
             {EnumModuleType.PurchaseOrder, new[] { "PurchaseOrderDB" } },
             {EnumModuleType.Stock, new[] { "StockDB" } },

@@ -23,6 +23,7 @@ namespace VErp.Services.Stock.Model.Product
         public decimal Wastage { get; set; }
         public string Description { get; set; }
         public string UnitName { get; set; }
+        public int UnitId { get; set; }
         public bool IsMaterial { get; set; }
         public string NumberOrder { get; set; }        
     }

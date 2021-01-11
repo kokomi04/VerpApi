@@ -43,6 +43,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;
+        private readonly IActionButtonHelperService _actionButtonHelperService;
 
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -54,6 +55,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IRoleHelperService roleHelperService
+            , IActionButtonHelperService actionButtonHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -65,6 +67,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _roleHelperService = roleHelperService;
+            _actionButtonHelperService = actionButtonHelperService;
         }
 
         #region InputType
@@ -132,8 +135,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputTypes = await _accountancyDBContext.InputType.ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
-            var actions = (await _accountancyDBContext.InputAction.ProjectTo<InputActionSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync())
-                .GroupBy(a => a.InputTypeId)
+            var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.InputType, null)).OrderBy(t => t.SortOrder).ToList()
+                .GroupBy(a => a.ObjectId)
                 .ToDictionary(a => a.Key, a => a.ToList());
 
             var areaFields = await (
@@ -169,7 +172,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 if (actions.TryGetValue(item.InputTypeId, out var _actions))
                 {
-                    item.ActionObjects = _actions.Cast<InputActionSimpleModel>().ToList();
+                    item.ActionObjects = _actions.Cast<ActionButtonSimpleModel>().ToList();
                 }
 
                 if (typeFields.TryGetValue(item.InputTypeId, out var _fields))
@@ -213,7 +216,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
                 //}
 
-                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, inputType.InputTypeId, new List<int>());
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Input, EnumObjectType.InputType, inputType.InputTypeId);
                 return inputType.InputTypeId;
             }
             catch (Exception ex)
@@ -399,7 +402,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
 
-
+            try
+            {
+                await _actionButtonHelperService.DeleteActionButtonsByType(EnumObjectType.InputType, inputTypeId, inputType.Title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"DeleteActionButtonsByType ({inputTypeId})");
+            }
             await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType.JsonSerialize());
             return true;
         }

@@ -224,7 +224,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
                 inventoryInfo.UpdatedByUserId = _currentContextService.UserId;
 
-                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Xóa phiếu {inventoryInfo.InventoryCode} do không tồn tại mặt hàng nào", req.JsonSerialize(), EnumAction.Delete);
+                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Xóa phiếu {inventoryInfo.InventoryCode} do không tồn tại mặt hàng nào", req.JsonSerialize(), EnumActionType.Delete);
             }
 
 

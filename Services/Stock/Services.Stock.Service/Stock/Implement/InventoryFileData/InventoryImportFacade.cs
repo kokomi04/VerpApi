@@ -30,7 +30,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private Dictionary<string, Unit> _units = null;
 
         private Dictionary<string, Product> _productsByCode = null;
-        private Dictionary<string, Product> _productsByName = null;
+        private Dictionary<string, List<Product>> _productsByName = null;
 
         private IList<OpeningBalanceModel> _excelModel = null;
         private InventoryOpeningBalanceModel _model = null;
@@ -128,11 +128,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 if (item.Qty1 <= 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {item.ProductCode} {item.ProductName} không đúng!");
 
-                var productObj = _productsByCode[item.ProductCode.NormalizeAsInternalName()];
-                if (productObj == null)
-                {
-                    productObj = _productsByName[item.ProductName.NormalizeAsInternalName()];
-                }
+                var productObj = GetProduct(item);
 
                 ProductUnitConversion productUnitConversionObj = null;
 
@@ -261,11 +257,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 if (item.Qty1 <= 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {item.ProductCode} {item.ProductName} không đúng!");
 
-                var productObj = _productsByCode[item.ProductCode.NormalizeAsInternalName()];
-                if (productObj == null)
-                {
-                    productObj = _productsByName[item.ProductName.NormalizeAsInternalName()];
-                }
+                var productObj = GetProduct(item);
 
                 ProductUnitConversion productUnitConversionObj = null;
 
@@ -392,6 +384,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             }
 
             return inventoryOutList;
+        }
+
+        private Product GetProduct(OpeningBalanceModel item)
+        {
+            var productObj = _productsByCode[item.ProductCode.NormalizeAsInternalName()];
+            if (productObj == null)
+            {
+                var productbyNames = _productsByName[item.ProductName.NormalizeAsInternalName()];
+
+                if (productbyNames.Count > 1)
+                {
+                    productbyNames = productbyNames.Where(p => p.ProductName == item.ProductName).ToList();
+                    if (productbyNames.Count != 1)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều hơn 1 mặt hàng có tên {item.ProductCode} {item.ProductName} trong hệ thống!");
+                    }
+                    else
+                    {
+                        productObj = productbyNames.First();
+                    }
+                }
+            }
+
+            if (productObj == null)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName} trong hệ thống!");
+            return productObj;
         }
 
         private async Task AddMissingProductCates()
@@ -546,7 +564,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 _productUnitsByProduct[productInfo.ProductId].AddRange(newPus);
             }
 
-            _productsByName = products.GroupBy(c => c.ProductName.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.First());
+            _productsByName = products.GroupBy(c => c.ProductName.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.ToList());
 
         }
 
@@ -573,7 +591,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             _productTypes.TryGetValue(p.CatePrefixCode.NormalizeAsInternalName(), out var productType);
             if (productType == null) throw new BadRequestException(GeneralCode.InvalidParams, "Chưa nhập loại mã mặt hàng. Vui lòng kiểm tra lại");
 
-             _productCates.TryGetValue(p.CateName.NormalizeAsInternalName(), out var productCate);
+            _productCates.TryGetValue(p.CateName.NormalizeAsInternalName(), out var productCate);
             if (productCate == null) throw new BadRequestException(GeneralCode.InvalidParams, "Chưa nhập danh mục mặt hàng. Vui lòng kiểm tra lại");
 
             return new ProductModel()
@@ -592,7 +610,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 UnitId = 0,
                 EstimatePrice = null,
 
-                
+
                 Height = p.Height,
                 Long = p.Long,
                 Width = p.Width,

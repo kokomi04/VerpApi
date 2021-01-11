@@ -89,7 +89,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     }
 
                     var order = _mapper.Map<OutsourceOrder>(req as OutsourceOrderModel);
-                    order.OutsourceTypeId = (int)EnumOutsourceOrderType.OutsourcePart;
+                    order.OutsourceTypeId = (int)EnumOutsourceType.OutsourcePart;
                     order.OutsourceOrderCode = string.IsNullOrWhiteSpace(order.OutsourceOrderCode) ? outsoureOrderCode : order.OutsourceOrderCode;
 
                     _manufacturingDBContext.OutsourceOrder.Add(order);
@@ -157,7 +157,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<OutsourcePartOrderDetailInfo>> GetListOutsourceOrderPart(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -184,8 +184,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
             }
 
-            var sql = new StringBuilder("SELECT * FROM vOutsourceOrderExtractInfo v ");
-            var totalSql = new StringBuilder("SELECT COUNT(v.OutsourceOrderDetailId) Total FROM vOutsourceOrderExtractInfo v ");
+            var sql = new StringBuilder("SELECT * FROM vOutsourcePartOrderDetailExtractInfo v ");
+            var totalSql = new StringBuilder("SELECT COUNT(v.OutsourceOrderDetailId) Total FROM vOutsourcePartOrderDetailExtractInfo v ");
             if (whereCondition.Length > 0)
             {
                 totalSql.Append("WHERE ");
@@ -212,14 +212,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
-            var lst = resultData.ConvertData<OutsourceOrderPartDetailOutput>().ToList();
+            var lst = resultData.ConvertData<OutsourcePartOrderDetailExtractInfo>().AsQueryable().ProjectTo<OutsourcePartOrderDetailInfo>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
         }
 
         public async Task<OutsourceOrderInfo> GetOutsourceOrderPart(long outsourceOrderId)
         {
-            var outsourceOrder = await _manufacturingDBContext.OutsourceOrder.ProjectTo<OutsourceOrderInfo>(_mapper.ConfigurationProvider).SingleOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
+            var outsourceOrder = await _manufacturingDBContext.OutsourceOrder
+                .ProjectTo<OutsourceOrderInfo>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
+
             if (outsourceOrder == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
 
@@ -232,7 +235,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             };
 
             var data = (await GetListOutsourceOrderPart(string.Empty, 1, 9999, filter)).List;
-            outsourceOrder.OutsourceOrderDetail.Clear();
             foreach (var item in data)
             {
                 var outsourceOrderDetail = _mapper.Map<OutsourceOrderDetailInfo>(item);

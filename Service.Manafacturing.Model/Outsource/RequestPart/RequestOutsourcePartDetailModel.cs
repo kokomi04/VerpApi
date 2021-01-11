@@ -32,25 +32,4 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         }
     }
 
-    public class RequestOutsourcePartDetailInfo: RequestOutsourcePartDetailModel
-    {
-        public string OutsourcePartRequestCode { get; set; }
-        public long ProductionOrderDetailId { get; set; }
-        public long OutsourcePartRequestDate { get; set; }
-        public long OutsourcePartRequestFinishDate { get; set; }
-        public string ProductionOrderCode { get; set; }
-        public string ProductCode { get; set; }
-        public string ProductName { get; set; }
-        public string UnitName { get; set; }
-        public string ProductPartName { get; set; }
-        public string ProductPartCode { get; set; }
-        public string OrderCode { get; set; }
-        public int ProductId { get; set; }
-        public decimal ProductOrderDetailQuantity { get; set; }
-        public string ProductTitle { get; set; }
-        public decimal QuantityProcessed { get; set; }
-        public EnumOutsourceRequestStatusType OutsourcePartRequestDetailStatusId { get; set; }
-    }
-
-
 }

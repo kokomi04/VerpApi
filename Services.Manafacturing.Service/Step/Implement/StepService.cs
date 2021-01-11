@@ -47,14 +47,16 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 await _manufacturingDBContext.Step.AddAsync(entity);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                req.StepDetail.ForEach(x => { x.StepId = entity.StepId; });
-                var detail = _mapper.Map<IList<StepDetail>>(req.StepDetail);
-                await _manufacturingDBContext.AddAsync(detail);
+                var detail = _mapper.Map<List<StepDetail>>(req.StepDetail);
+                detail.ForEach(x => { x.StepId = entity.StepId; });
+
+                await _manufacturingDBContext.StepDetail.AddRangeAsync(detail);
 
                 await _manufacturingDBContext.SaveChangesAsync();
-                await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
+                await trans.CommitAsync();
+
                 return entity.StepGroupId;
             }
             catch (Exception ex)
@@ -83,8 +85,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Xóa danh mục công đoạn '{step.StepName}'", step.JsonSerialize());
+                await trans.CommitAsync();
                 return true;
             }
             catch (Exception ex)
@@ -104,8 +106,16 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 query = query.Where(x => x.StepName.Contains(keyWord));
 
             var total = await query.CountAsync();
-            var data = query.ProjectTo<StepModel>(_mapper.ConfigurationProvider)
-                            .Skip((page - 1) * size).Take(size).ToList();
+
+            query = query.OrderBy(x => x.IsHide).ThenBy(x => x.SortOrder);
+
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+
+            var data = await query.ProjectTo<StepModel>(_mapper.ConfigurationProvider)
+                            .ToListAsync();
             return (data, total);
         }
 
@@ -128,12 +138,15 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                     else detail.IsDeleted = true;
                 }
 
-                var newStepDetail = _mapper.Map<List<StepDetail>>(req.StepDetail.Where(n => !stepDetail.Select(x => x.StepDetailId).Contains(n.StepId)).ToList());
+                var newStepDetail = _mapper.Map<List<StepDetail>>(req.StepDetail.Where(n => !stepDetail.Select(x => x.StepDetailId).Contains(n.StepDetailId)).ToList());
                 newStepDetail.ForEach(x => { x.StepId = step.StepId; });
                 await _manufacturingDBContext.StepDetail.AddRangeAsync(newStepDetail);
 
                 await _manufacturingDBContext.SaveChangesAsync();
+
                 await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Cập nhật danh mục công đoạn '{step.StepName}'", step.JsonSerialize());
+                await trans.CommitAsync();
+
                 return true;
             }
             catch (Exception ex)

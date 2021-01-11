@@ -22,5 +22,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 
         Task<bool> UpdateProductionScheduleStatus(long scheduleTurnId, ProductionScheduleStatusModel status);
         Task<bool> UpdateManualProductionScheduleStatus(long productionScheduleId, ProductionScheduleStatusModel status);
+        Task<IList<ProductionScheduleModel>> GetProductionSchedulesByScheduleTurnArray(long[] scheduleTurnIds);
     }
 }

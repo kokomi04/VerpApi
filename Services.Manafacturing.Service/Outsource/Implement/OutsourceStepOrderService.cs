@@ -55,6 +55,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<long> CreateOutsourceStepOrderPart(OutsourceStepOrderModel req)
         {
+
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
                 try
@@ -91,7 +92,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     }
 
                     var order = _mapper.Map<OutsourceOrder>(req as OutsourceOrderModel);
-                    order.OutsourceTypeId = (int)EnumOutsourceOrderType.OutsourceStep;
+                    order.OutsourceTypeId = (int)EnumOutsourceType.OutsourceStep;
                     order.OutsourceOrderCode = string.IsNullOrWhiteSpace(order.OutsourceOrderCode) ? outsoureOrderCode : order.OutsourceOrderCode;
 
                     _manufacturingDBContext.OutsourceOrder.Add(order);
@@ -137,7 +138,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                        join d in _manufacturingDBContext.OutsourceOrderDetail on o.OutsourceOrderId equals d.OutsourceOrderId
                                        join rd in _manufacturingDBContext.OutsourceStepRequestData on d.ObjectId equals rd.ProductionStepLinkDataId
                                        join r in _manufacturingDBContext.OutsourceStepRequest on rd.OutsourceStepRequestId equals r.OutsourceStepRequestId
-                                       where o.OutsourceTypeId == (int)EnumOutsourceOrderType.OutsourceStep
+                                       where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
                                        group new { o, r, rd, d } by new { o.OutsourceOrderId, o.OutsourceOrderCode, r.OutsourceStepRequestId, r.OutsourceStepRequestCode, o.OutsourceOrderFinishDate } into g
                                        select new OutsourceStepOrderSeach
                                        {

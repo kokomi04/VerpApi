@@ -20,19 +20,9 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int SortOrder { get; set; }
         public int? VoucherTypeGroupId { get; set; }
 
-        public IList<VoucherActionSimpleModel> ActionObjects { get; set; }
+        public IList<ActionButtonSimpleModel> ActionObjects { get; set; }
 
         public IList<VoucherAreaFieldSimpleModel> AreaFields { get; set; }
-    }
-
-    public class VoucherActionSimpleModel
-    {
-        public int VoucherTypeId { get; set; }
-        public int VoucherActionId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập tên chức năng")]
-        [MaxLength(256, ErrorMessage = "Tên chức năng quá dài")]
-        public string Title { get; set; }
-        public int SortOrder { get; set; }
     }
 
     public class VoucherAreaFieldSimpleModel

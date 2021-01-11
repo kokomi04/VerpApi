@@ -5,6 +5,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class PrintConfig
     {
+        public PrintConfig()
+        {
+            PrintConfigDetail = new HashSet<PrintConfigDetail>();
+        }
+
         public int PrintConfigId { get; set; }
         public int? ActiveForId { get; set; }
         public string PrintConfigName { get; set; }
@@ -28,5 +33,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public long? TemplateFileId { get; set; }
         public string GenerateToString { get; set; }
         public int ModuleTypeId { get; set; }
+
+        public virtual ICollection<PrintConfigDetail> PrintConfigDetail { get; set; }
     }
 }

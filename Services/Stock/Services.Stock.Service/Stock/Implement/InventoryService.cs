@@ -245,6 +245,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InputTypeId = m.InputTypeId,
                             SourceId = m.SourceId,
                             InputBillFId = m.InputBillFId,
+                            BillObjectTypeId = (EnumObjectType)m.BillObjectTypeId
+                            
                         }).ToList()
                 });
 
@@ -352,7 +354,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversion = productUnitConversionInfo ?? null,
                         SortOrder = details.SortOrder,
                         Description = details.Description,
-                        AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
+                        AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                        InventoryRequirementDetailId = details.InventoryRequirementDetailId
                     });
                 }
                 #endregion
@@ -430,6 +433,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
             var inventoryExport = new InventoryExportFacade();
+            inventoryExport.SetCurrentContext(_currentContextService);
             inventoryExport.SetInventoryService(this);
             inventoryExport.SetOrganizationHelperService(_organizationHelperService);
             inventoryExport.SetProductHelperService(_productHelperService);

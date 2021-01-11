@@ -128,7 +128,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     UserName = userInfo?.UserName,
                     FullName = userInfo?.FullName,
                     AvatarFileId = userInfo?.AvatarFileId,
-                    ActionId = (EnumAction?)item.ActionId,
+                    ActionId = (EnumActionType?)item.ActionId,
                     Message = item.Message,
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     MessageTypeId = (EnumMessageType)item.MessageTypeId,

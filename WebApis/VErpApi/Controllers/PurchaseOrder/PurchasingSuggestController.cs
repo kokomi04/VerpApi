@@ -140,7 +140,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingSuggestId}/Approve")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Approve([FromRoute] long purchasingSuggestId)
         {
             return await _purchasingSuggestService.Approve(purchasingSuggestId).ConfigureAwait(true);
@@ -153,7 +153,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingSuggestId}/Reject")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Reject([FromRoute] long purchasingSuggestId)
         {
             return await _purchasingSuggestService.Reject(purchasingSuggestId).ConfigureAwait(true);

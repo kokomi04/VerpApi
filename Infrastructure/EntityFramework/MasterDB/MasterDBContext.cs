@@ -16,6 +16,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public virtual DbSet<Action> Action { get; set; }
+        public virtual DbSet<ActionButton> ActionButton { get; set; }
+        public virtual DbSet<ActionType> ActionType { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BackupStorage> BackupStorage { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
@@ -34,9 +36,14 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
+        public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
+        public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
+        public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
+        public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
         public virtual DbSet<PrintConfig> PrintConfig { get; set; }
+        public virtual DbSet<PrintConfigDetail> PrintConfigDetail { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -55,6 +62,30 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionName)
                     .IsRequired()
                     .HasMaxLength(16);
+            });
+
+            modelBuilder.Entity<ActionButton>(entity =>
+            {
+                entity.Property(e => e.ActionButtonCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ActionType>(entity =>
+            {
+                entity.Property(e => e.ActionTypeId).ValueGeneratedNever();
+
+                entity.Property(e => e.ActionTitle)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.ActionTypeName)
+                    .IsRequired()
+                    .HasMaxLength(64);
             });
 
             modelBuilder.Entity<ApiEndpoint>(entity =>
@@ -133,6 +164,9 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<CategoryField>(entity =>
             {
+                entity.HasIndex(e => e.CategoryId)
+                    .HasName("IDX_CategoryId");
+
                 entity.Property(e => e.CategoryFieldName)
                     .IsRequired()
                     .HasMaxLength(45)
@@ -379,6 +413,14 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
+            modelBuilder.Entity<ObjectPrintConfigMapping>(entity =>
+            {
+                entity.HasKey(e => new { e.PrintConfigId, e.ObjectTypeId, e.ObjectId })
+                    .HasName("PK_ObjectPrintConfigMapping_1");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<OutSideDataConfig>(entity =>
             {
                 entity.HasKey(e => e.CategoryId)
@@ -422,6 +464,59 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
             });
 
+            modelBuilder.Entity<OutsideImportMapping>(entity =>
+            {
+                entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.SourceFieldName).HasMaxLength(128);
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMapping)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .HasConstraintName("FK_AccountancyOutsiteMapping_AccountancyOutsiteMappingFunction");
+            });
+
+            modelBuilder.Entity<OutsideImportMappingFunction>(entity =>
+            {
+                entity.HasIndex(e => e.FunctionName)
+                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                    .IsUnique();
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.DestinationDetailsPropertyName).HasMaxLength(128);
+
+                entity.Property(e => e.FunctionName).HasMaxLength(128);
+
+                entity.Property(e => e.MappingFunctionKey)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ObjectIdFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((39))");
+
+                entity.Property(e => e.SourceDetailsPropertyName).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<OutsideImportMappingObject>(entity =>
+            {
+                entity.HasKey(e => new { e.OutsideImportMappingFunctionId, e.SourceId, e.InputBillFId })
+                    .HasName("PK_AccountancyOutsiteMappingObject");
+
+                entity.Property(e => e.SourceId).HasMaxLength(128);
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.BillObjectTypeId).HasDefaultValueSql("((39))");
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMappingObject)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_AccountancyOutsiteMappingObject_AccountancyOutsiteMappingFunction");
+            });
+
             modelBuilder.Entity<PrintConfig>(entity =>
             {
                 entity.Property(e => e.PrintConfigName)
@@ -431,6 +526,19 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<PrintConfigDetail>(entity =>
+            {
+                entity.Property(e => e.ContentType).HasMaxLength(128);
+
+                entity.Property(e => e.TemplateFileName).HasMaxLength(128);
+
+                entity.HasOne(d => d.PrintConfig)
+                    .WithMany(p => p.PrintConfigDetail)
+                    .HasForeignKey(d => d.PrintConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PrintConfigDetail_PrintConfig");
             });
 
             modelBuilder.Entity<Role>(entity =>
@@ -474,8 +582,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.HasKey(e => new { e.RoleId, e.ModuleId, e.ObjectTypeId, e.ObjectId });
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
-
-                entity.Property(e => e.JsonActionIds).HasMaxLength(512);
+               
 
                 entity.HasOne(d => d.Module)
                     .WithMany(p => p.RolePermission)

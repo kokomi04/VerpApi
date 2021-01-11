@@ -1,4 +1,4 @@
-﻿    using ImageMagick;
+﻿using ImageMagick;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -71,84 +71,109 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var pPath = GenerateMediaFilePath(root);
             if (!Directory.Exists(GetPhysicalFilePath(pPath)))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory, $"Directory '{pPath}' not exists.");
+            var sPath = Path.Combine(pPath, RemoveDotsInRelativePath(subdirectory));
+            try
+            {
+                if (!Directory.Exists(GetPhysicalFilePath(sPath)))
+                    Directory.CreateDirectory(GetPhysicalFilePath(sPath));
 
-            var sPath = Path.Combine(pPath, subdirectory);
-
-            if (!Directory.Exists(GetPhysicalFilePath(sPath)))
-                Directory.CreateDirectory(GetPhysicalFilePath(sPath));
-
-            return true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateSubdirectory");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể tạo thư mục");
+            }
         }
 
         public DirectoryStructure GetDirectoryStructure()
         {
-            return GetDirectoryStructure(GenerateRootPath());
+            try
+            {
+                return GetDirectoryStructure(GenerateRootPath());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetDirectoryStructure");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể lấy danh sách thư mục");
+            }
         }
 
         public PageData<VisualFile> GetVisualFiles(string directory, string keyWord, int page, int size)
         {
-            var rootDirectory = GenerateRootPath();
-            var ls = new List<VisualFile>();
-
-            if (string.IsNullOrWhiteSpace(directory))
+            try
             {
-                var files = Directory.EnumerateFiles(GetPhysicalFilePath(rootDirectory), "*", SearchOption.AllDirectories).ToList();
+                var rootDirectory = GenerateRootPath();
+                var ls = new List<VisualFile>();
 
-                foreach (var f in files)
+                if (string.IsNullOrWhiteSpace(directory))
                 {
-                    var info = new FileInfo(f);
-                    ls.Add(new VisualFile
+                    var files = Directory.EnumerateFiles(GetPhysicalFilePath(rootDirectory), "*", SearchOption.AllDirectories).ToList();
+
+                    foreach (var f in files)
                     {
-                        file = info.Name,
-                        path = f.Replace("\\", "/").Replace(GetPhysicalFilePath(rootDirectory), "").TrimStart('/').TrimEnd('/'),
-                        ext = info.Extension,
-                        size = info.Length,
-                        time = info.LastWriteTime.GetUnix()
-                    });
+                        var info = new FileInfo(f);
+                        ls.Add(new VisualFile
+                        {
+                            file = info.Name,
+                            path = f.Replace("\\", "/").Replace(GetPhysicalFilePath(rootDirectory), "").TrimStart('/').TrimEnd('/'),
+                            ext = info.Extension,
+                            size = info.Length,
+                            time = info.LastWriteTime.GetUnix()
+                        });
+                    }
                 }
-            }
-            else
-            {
-                var dr = new DirectoryInfo(GetPhysicalFilePath(rootDirectory + "/" + directory));
-                var files = dr.GetFiles().ToList();
-
-                ls = files.Select(f => new VisualFile
+                else
                 {
-                    file = f.Name,
-                    path = $"{directory}/{f.Name}",
-                    ext = f.Extension,
-                    size = f.Length,
-                    time = f.LastWriteTime.GetUnix()
-                }).ToList();
-            }
+                    var dr = new DirectoryInfo(GetPhysicalFilePath(rootDirectory + "/" + directory));
+                    var files = dr.GetFiles().ToList();
 
-            if (!string.IsNullOrWhiteSpace(keyWord))
+                    ls = files.Select(f => new VisualFile
+                    {
+                        file = f.Name,
+                        path = $"{directory}/{f.Name}",
+                        ext = f.Extension,
+                        size = f.Length,
+                        time = f.LastWriteTime.GetUnix()
+                    }).ToList();
+                }
+
+                if (!string.IsNullOrWhiteSpace(keyWord))
+                {
+                    ls = ls.Where(x => x.file.Contains(keyWord, StringComparison.CurrentCultureIgnoreCase)).ToList();
+                }
+
+                var total = ls.Count;
+                return (ls.Skip((page - 1) * size)
+                        .Take(size).ToList(), total);
+            }
+            catch (Exception ex)
             {
-                ls = ls.Where(x => x.file.Contains(keyWord, StringComparison.CurrentCultureIgnoreCase)).ToList();
+                _logger.LogError(ex, "GetVisualFiles");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể lấy danh sách file");
             }
-
-            var total = ls.Count;
-            return (ls.Skip((page - 1) * size)
-                    .Take(size).ToList(), total);
         }
 
         public async Task<bool> UploadFile(string directory, IFormFile file)
         {
-
             var (validate, fileTypeId) = ValidateUploadFile(file);
             if (!validate.IsSuccess())
-            {
                 throw new BadRequestException(validate);
-            }
-
-            string filePath = GenerateMediaFilePath($"{directory}/{file.FileName}");
-
-            using (var stream = File.Create(GetPhysicalFilePath(filePath)))
+            try
             {
-                await file.CopyToAsync(stream);
-            }
+                string filePath = GenerateMediaFilePath($"{directory}/{file.FileName}");
 
-            return true;
+                using (var stream = File.Create(GetPhysicalFilePath(filePath)))
+                {
+                    await file.CopyToAsync(stream);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UploadFile");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể upload file");
+            }
         }
 
         public async Task<bool> UploadFiles(string directory, IEnumerable<IFormFile> formFiles)
@@ -180,8 +205,17 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             if (!File.Exists(filePath))
                 throw new BadRequestException(FileErrorCode.FileNotFound);
 
-            File.Delete(filePath);
-            return true;
+            try
+            {
+                File.Delete(filePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteFile");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể xóa file");
+            }
+
         }
 
         public (Stream file, string fileName, string contentType) GetFileStream(string filePath, bool thumb)
@@ -206,23 +240,30 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         public bool DeletedDirectory(string directory)
         {
-            if (string.IsNullOrWhiteSpace(directory)) 
+            if (string.IsNullOrWhiteSpace(directory))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
             var dPath = GetPhysicalFilePath(GenerateMediaFilePath(directory));
             if (!Directory.Exists(dPath)) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
-            else if(Directory.GetDirectories(dPath).Length > 0 || Directory.GetFiles(dPath).Length > 0) throw new BadRequestException(MediaLibraryErrorCode.DirectoryNotEmpty);
+            else if (Directory.GetDirectories(dPath).Length > 0 || Directory.GetFiles(dPath).Length > 0) throw new BadRequestException(MediaLibraryErrorCode.DirectoryNotEmpty);
 
-            Directory.Delete(dPath);
+            try
+            {
+                Directory.Delete(dPath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeletedDirectory");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể xóa thư mục");
+            }
 
-            return true;
         }
 
         public bool CopyDirectory(string pathSource, string pathDest)
         {
             if (string.IsNullOrWhiteSpace(pathDest))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
-
             pathSource = GetPhysicalFilePath(GenerateMediaFilePath(pathSource));
             pathDest = GetPhysicalFilePath(GenerateMediaFilePath(pathDest));
 
@@ -232,9 +273,17 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
 
-            CopyDir(source.Name, source.FullName, dest.FullName);
+            try
+            {
+                CopyDir(source.Name, source.FullName, dest.FullName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CopyDirectory");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể copy thư mục");
+            }
 
-            return true;
         }
 
         public bool MoveDirectory(string pathSource, string pathDest)
@@ -252,10 +301,16 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
-
-            source.MoveTo(dest.FullName);
-
-            return true;
+            try
+            {
+                source.MoveTo(dest.FullName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "MoveDirectory");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể di chuyển thư mục");
+            }
         }
 
         public bool RenameDirectory(string pathSource, string newNameFolder)
@@ -265,14 +320,21 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             pathSource = GetPhysicalFilePath(GenerateMediaFilePath(pathSource));
 
             DirectoryInfo source = new DirectoryInfo(pathSource);
-            DirectoryInfo dest = new DirectoryInfo(Path.Combine(source.Parent.FullName,newNameFolder));
+            DirectoryInfo dest = new DirectoryInfo(Path.Combine(source.Parent.FullName,RemoveDotsInRelativePath(newNameFolder)));
 
             if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);
+            try
+            {
+                source.MoveTo(dest.FullName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "RenameDirectory");
+                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể đổi tên thư mục");
+            }
 
-            source.MoveTo(dest.FullName);
-
-            return true;
         }
 
         public bool CopyFiles(IList<string> files, string pathSource)
@@ -280,14 +342,14 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             if (string.IsNullOrWhiteSpace(pathSource))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
-            foreach(var f in files)
+            foreach (var f in files)
             {
                 var s = GetPhysicalFilePath(GenerateMediaFilePath(f));
                 var source = new FileInfo(s);
 
                 var d = GetPhysicalFilePath(GenerateMediaFilePath(Path.Combine(pathSource, source.Name)));
                 var dest = new FileInfo(d);
-                
+
 
                 if (!source.Exists) throw new BadRequestException(FileErrorCode.FileNotFound);
                 if (dest.Exists) throw new BadRequestException(FileErrorCode.FileExists);
@@ -339,11 +401,11 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
         #region private
-        private void CopyDir(string zipFile,string path, string dest)
+        private void CopyDir(string zipFile, string path, string dest)
         {
             var zipPath = GenerateTempFilePath(zipFile + ".zip");
             var fileZ = new FileInfo(GetPhysicalFilePath(zipPath));
-            if(fileZ.Exists)
+            if (fileZ.Exists)
                 File.Delete(GetPhysicalFilePath(zipPath));
 
             ZipFile.CreateFromDirectory(path, GetPhysicalFilePath(zipPath));
@@ -461,13 +523,10 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return (GeneralCode.Success, FileExtensionTypes[ext]);
         }
 
-        
-
-
-
-
-
-
+        private string RemoveDotsInRelativePath(string path)
+        {
+            return path.Replace("..", "").TrimEnd('/').TrimStart('/');
+        }
         #endregion
     }
 }
