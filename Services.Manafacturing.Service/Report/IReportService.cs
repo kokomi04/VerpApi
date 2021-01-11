@@ -12,6 +12,7 @@ namespace VErp.Services.Manafacturing.Service.Report
     {
         Task<IList<StepModel>> GetSteps(long fromDate, long toDate);
         Task<IList<StepProgressModel>> GetProductionProgressReport(long fromDate, long toDate, int[] stepIds);
+        Task<ProductionOrderStepModel> GetProductionOrderStepProgress(long fromDate, long toDate);
         Task<IList<ProductionScheduleReportModel>> GetProductionScheduleReport(long fromDate, long toDate);
         Task<IList<ProcessingScheduleListModel>> GetProcessingScheduleList();
         Task<IList<StepReportModel>> GetProcessingStepReport(long scheduleTurnId, int[] stepIds);
