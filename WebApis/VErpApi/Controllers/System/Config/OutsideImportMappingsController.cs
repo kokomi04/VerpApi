@@ -26,6 +26,7 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet("")]
+        [GlobalApi]
         public async Task<PageData<OutsideMappingModelList>> GetList([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _outsideMappingService.GetList(keyword, page, size);
