@@ -187,20 +187,23 @@ namespace VErp.Commons.Library
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-            if (unixTime == 0) return null;
-            return new DateTime(1970, 1, 1).AddSeconds(unixTime);
+            return UnixToDateTime((long?)unixTime, null);
         }
 
         public static DateTime? UnixToDateTime(this long? unixTime)
         {
-            if (unixTime == 0 || !unixTime.HasValue) return null;
-            return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value);
+            return UnixToDateTime(unixTime, null);
         }
 
         public static DateTime? UnixToDateTime(this long? unixTime, int? timezoneOffset)
         {
             if (unixTime == 0 || !unixTime.HasValue) return null;
             return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value).AddMinutes(-timezoneOffset ?? 0);
+        }
+
+        public static DateTime UnixToDateTime(this long unixTime, int? timezoneOffset)
+        {
+            return UnixToDateTime((long?)unixTime, timezoneOffset).Value;
         }
 
         public static decimal Eval(string expression)

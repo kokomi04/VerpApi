@@ -19,6 +19,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
     public class InventoryExportFacade
     {
+        private ICurrentContextService _currentContextService;
         private IInventoryService _inventoryService;
         private IOrganizationHelperService _organizationHelperService;
         private IStockHelperService _stockHelperService;
@@ -32,6 +33,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private ISheet sheet = null;
         private int currentRow = 0;
         private int maxColumnIndex = 15;
+
+        public InventoryExportFacade SetCurrentContext(ICurrentContextService currentContextService)
+        {
+            _currentContextService = currentContextService;
+            return this;
+        }
 
         public InventoryExportFacade SetInventoryService(IInventoryService inventoryService)
         {
@@ -60,7 +67,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
             inventoryInfo = await _inventoryService.InventoryInfo(inventoryId, mappingFunctionKeys);
-                      
+
             inventoryTypeId = (EnumInventoryType)inventoryInfo.InventoryTypeId;
 
             if (inventoryInfo.CustomerId > 0)
@@ -124,7 +131,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 .SetCellValue(inventoryTypeId == EnumInventoryType.Input ? "PHIẾU NHẬP KHO" : "PHIẾU XUẤT KHO");
 
             sheet.AddMergedRegion(new CellRangeAddress(6, 6, 0, maxColumnIndex));
-            var date = inventoryInfo.Date.UnixToDateTime().Value;
+            var date = inventoryInfo.Date.UnixToDateTime(_currentContextService.TimeZoneOffset);
             sheet.SetCellStyle(6, 0, hAlign: HorizontalAlignment.Center, isItalic: true).SetCellValue($"Ngày {date.Day} tháng {date.Month} năm {date.Year}");
 
             sheet.AddMergedRegion(new CellRangeAddress(7, 7, 0, maxColumnIndex));
@@ -197,7 +204,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             sheet.SetCellStyle(4, 12, isItalic: true).SetCellValue($"Ngày hóa đơn:");
 
             sheet.AddMergedRegion(new CellRangeAddress(4, 4, 14, 15));
-            sheet.SetCellStyle(4, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillDate?.UnixToDateTime()?.ToString("dd/MM/yyyy")}");
+            sheet.SetCellStyle(4, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillDate?.UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd/MM/yyyy")}");
 
             currentRow = 12;
         }

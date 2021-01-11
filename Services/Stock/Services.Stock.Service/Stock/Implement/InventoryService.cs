@@ -433,6 +433,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
             var inventoryExport = new InventoryExportFacade();
+            inventoryExport.SetCurrentContext(_currentContextService);
             inventoryExport.SetInventoryService(this);
             inventoryExport.SetOrganizationHelperService(_organizationHelperService);
             inventoryExport.SetProductHelperService(_productHelperService);
