@@ -320,12 +320,19 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
+                entity.Property(e => e.OrderCode).HasMaxLength(64);
+
                 entity.Property(e => e.PackageCode)
                     .IsRequired()
                     .HasMaxLength(128)
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.Pocode)
+                    .HasColumnName("POCode")
+                    .HasMaxLength(64)
+                    .HasComment("Purchasing Order Code");
 
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
@@ -334,6 +341,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(64);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 

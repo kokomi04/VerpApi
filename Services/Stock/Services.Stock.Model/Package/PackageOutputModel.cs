@@ -30,7 +30,16 @@ namespace VErp.Services.Stock.Model.Package
         public long? Date { get; set; }
         public long? ExpiryTime { get; set; }
         public string Description { get; set; }
-        public int PrimaryUnitId { get; set; }        
+        public int PrimaryUnitId { get; set; }
+
+        public string OrderCode { get; set; }
+
+        /// <summary>
+        /// Purchase order code 
+        /// </summary>
+        public string POCode { get; set; }
+
+        public string ProductionOrderCode { get; set; }
 
         [Obsolete]
         public decimal PrimaryQuantity { get { return PrimaryQuantityRemaining; } }
