@@ -8,35 +8,35 @@ namespace VErp.Services.Master.Model.Users
 {
     public class UserImportModel
     {
-        [Display(Name = "Mã Nhân viên")]
+        [Display(Name = "Mã Nhân viên", GroupName = "TT cơ bản")]
         public string EmployeeCode { get; set; }
 
-        [Display(Name = "Họ và tên")]
+        [Display(Name = "Họ và tên", GroupName = "TT cơ bản")]
         [Required(ErrorMessage = "Vui lòng nhập họ tên")]
         public string FullName { get; set; }
 
-        [Display(Name = "Email")]
+        [Display(Name = "Email", GroupName = "TT cơ bản")]
         public string Email { get; set; }
 
-        [Display(Name = "Số điện thoại")]
+        [Display(Name = "Số điện thoại", GroupName = "TT cơ bản")]
         public string Phone { get; set; }
 
-        [Display(Name = "Địa chỉ")]
+        [Display(Name = "Địa chỉ", GroupName = "TT cơ bản")]
         public string Address { get; set; }
 
-        [Display(Name = "Giới tính")]
+        [Display(Name = "Giới tính", GroupName = "TT cơ bản")]
         public EnumGender? GenderId { get; set; }
 
-        [Display(Name = "Tên đăng nhập")]
+        [Display(Name = "Tên đăng nhập", GroupName = "TT cơ bản")]
         public string UserName { get; set; }
 
-        [Display(Name = "Mật khẩu")]
+        [Display(Name = "Mật khẩu", GroupName = "TT cơ bản")]
         public string Password { get; set; }
 
-        [Display(Name = "Trạng thái")]
+        [Display(Name = "Trạng thái", GroupName = "TT cơ bản")]
         public EnumUserStatus UserStatusId { get; set; }
 
-        [Display(Name = "Nhóm quyền")]
+        [Display(Name = "Nhóm quyền", GroupName = "TT cơ bản")]
         public int? RoleId { get; set; }
 
         //1

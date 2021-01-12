@@ -17,9 +17,9 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
     [ApiController]
     public class OutsourceOrderController : VErpBaseController
     {
-        private readonly IOutsourceOrderService _outsourceOrderService;
+        private readonly IOutsourcePartOrderService _outsourceOrderService;
 
-        public OutsourceOrderController(IOutsourceOrderService outsourceOrderService)
+        public OutsourceOrderController(IOutsourcePartOrderService outsourceOrderService)
         {
             _outsourceOrderService = outsourceOrderService;
         }
@@ -33,7 +33,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("part/search")]
-        public async Task<PageData<OutsourceOrderPartDetailOutput>> GetListOutsourceOrderPart([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
+        public async Task<PageData<OutsourcePartOrderDetailInfo>> GetListOutsourceOrderPart([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
             return await _outsourceOrderService.GetListOutsourceOrderPart(keyword, page, size, filters);
         }

@@ -552,15 +552,16 @@ namespace VErp.Services.Master.Service.Category
         public async Task<List<CategoryFieldReferModel>> GetCategoryFieldsByCodes(string[] categoryCodes)
         {
 
-            List<CategoryFieldReferModel> lst = await (from f in _masterContext.CategoryField
-                                                       join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                                                       where categoryCodes.Contains(c.CategoryCode)
-                                                       select new CategoryFieldReferModel
-                                                       {
-                                                           CategoryCode = c.CategoryCode,
-                                                           CategoryFieldName = f.CategoryFieldName,
-                                                           Title = f.Title
-                                                       }).ToListAsync();
+            var lst = await (
+                from f in _masterContext.CategoryField
+                join c in _masterContext.Category on f.CategoryId equals c.CategoryId
+                where categoryCodes.Contains(c.CategoryCode)
+                select new CategoryFieldReferModel
+                {
+                    CategoryCode = c.CategoryCode,
+                    CategoryFieldName = f.CategoryFieldName,
+                    Title = f.Title
+                }).ToListAsync();
 
             return lst;
         }

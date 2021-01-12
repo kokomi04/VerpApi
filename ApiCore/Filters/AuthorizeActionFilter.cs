@@ -104,7 +104,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var apiEndpointId = Utils.HashApiEndpointId(_appSetting.ServiceId, route, methodId);
 
-            var apiInfo = await _masterContext.ApiEndpoint.FirstOrDefaultAsync(a => a.ApiEndpointId == apiEndpointId);
+            var apiInfo = await _masterContext.ApiEndpoint.AsNoTracking().FirstOrDefaultAsync(a => a.ApiEndpointId == apiEndpointId);
 
             if (apiInfo == null)
             {
@@ -143,8 +143,16 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var (isValidateObject, objectTypeId, objectId, actionButtonId) = GetValidateObjectData(context);
 
-            IList<int> lstPermission;
-            IList<int> lstActionIds;
+            if (actionButtonId > 0 && objectTypeId.HasValue && objectId.HasValue)
+            {
+                var actionInfo = await _masterContext.ActionButton.FirstOrDefaultAsync(a => a.ActionButtonId == actionButtonId && a.ObjectTypeId == (int)objectTypeId.Value && a.ObjectId == (int)objectId.Value);
+                if (actionInfo != null)
+                {
+                    apiInfo.ActionId = actionInfo.ActionTypeId ?? 1;
+                }
+            }
+
+
             IQueryable<RolePermission> query;
             if (!isValidateObject)
             {
@@ -155,33 +163,17 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId);
             }
 
-            var modulePermission = (await query.Select(p => new { p.Permission, p.JsonActionIds })
-                .ToListAsync())
-                .Select(p => new { p.Permission, ActionIds = p.JsonActionIds.JsonDeserialize<List<int>>() });
+            var lstPermission = await query.Select(p => p.Permission).ToListAsync();
 
-            lstPermission = modulePermission.Select(p => p.Permission).ToList();
-            lstActionIds = modulePermission.Where(p => p.ActionIds != null).SelectMany(p => p.ActionIds).ToList();
 
-            if (actionButtonId == 0)
+            var permission = 0;
+            if (lstPermission.Count > 0)
+                permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
+
+            if ((permission & apiInfo.ActionId) == apiInfo.ActionId)
             {
-                var permission = 0;
-                if (lstPermission.Count > 0)
-                    permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
-
-                if ((permission & apiInfo.ActionId) == apiInfo.ActionId)
-                {
-                    await next();
-                    return;
-                }
-            }
-            else
-            {
-                if (lstActionIds != null && lstActionIds.Contains(actionButtonId))
-                {
-                    await next();
-                    return;
-                }
-
+                await next();
+                return;
             }
 
 
@@ -199,6 +191,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
         private (bool isValidateObject, EnumObjectType? objectTypeId, long? objectId, int actionButtonId) GetValidateObjectData(ActionExecutingContext context)
         {
             int actionButtonId = 0;
+
             var actionButtonAttr = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is ActionButtonDataApiAttribute)?.Filter as ActionButtonDataApiAttribute;
             if (actionButtonAttr != null)
             {
@@ -220,7 +213,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             if (objectApi == null) return (false, null, null, actionButtonId);
 
 
-            if (context.RouteData.Values.ContainsKey(objectApi.RouterDataKey) && action != EnumAction.View)
+            if (context.RouteData.Values.ContainsKey(objectApi.RouterDataKey))// && action != EnumAction.View)
             {
                 long.TryParse(context.RouteData.Values[objectApi.RouterDataKey].ToString(), out var objectId);
 

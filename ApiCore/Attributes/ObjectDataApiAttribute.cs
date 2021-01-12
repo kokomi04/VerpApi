@@ -16,4 +16,5 @@ namespace VErp.Infrastructure.ApiCore.Attributes
             RouterDataKey = routerDataKey;
         }
     }
+
 }

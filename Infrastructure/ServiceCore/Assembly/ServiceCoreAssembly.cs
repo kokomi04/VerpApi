@@ -29,6 +29,7 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddScoped<IInputTypeHelperService, InputTypeHelperService>();
             services.AddScoped<IVoucherTypeHelperService, VoucherTypeHelperService>();
             services.AddScoped<IRoleHelperService, RoleHelperService>();
+            services.AddScoped<IOutsideMappingHelperService, OutsideMappingHelperService>();
             
 
             services.AddScoped<ICategoryHelperService, CategoryHelperService>();

@@ -28,8 +28,7 @@ namespace VErp.Services.Master.Service.RolePermission
 
         Task<bool> GrantDataForAllRoles(EnumObjectType objectTypeId, long objectId);
 
-        Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId, IList<int> actionIds);
-
-        Task<bool> GrantActionPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId, int actionId);
+        Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId);
+        
     }
 }

@@ -64,7 +64,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private int _userId = 0;
         private string _userName = "";
         private int _subsidiaryId = 0;
-        private EnumAction? _action;
+        private EnumActionType? _action;
         private int? _timeZoneOffset = null;
         private IList<int> _stockIds;
         //private IList<int> _roleIds;
@@ -100,7 +100,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
 
             var userId = 0;
-            var action = EnumAction.View;
+            var action = EnumActionType.View;
             var subsidiaryId = 0;
             if (headers.TryGetValue(Headers.UserId, out var strUserId))
             {
@@ -109,7 +109,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             if (headers.TryGetValue(Headers.Action, out var strAction))
             {
-                action = (EnumAction)int.Parse(strAction);
+                action = (EnumActionType)int.Parse(strAction);
             }
 
             if (headers.TryGetValue(Headers.SubsidiaryId, out var strSubsidiaryId))
@@ -205,7 +205,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return timeZoneOffset;
             }
         }
-        public EnumAction Action
+        public EnumActionType Action
         {
             get
             {
@@ -219,7 +219,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 if (_httpContextAccessor.HttpContext.Items.ContainsKey(HttpContextActionConstants.Action))
                 {
 
-                    _action = (EnumAction)_httpContextAccessor.HttpContext.Items[HttpContextActionConstants.Action];
+                    _action = (EnumActionType)_httpContextAccessor.HttpContext.Items[HttpContextActionConstants.Action];
                 }
                 else
                 {
@@ -331,7 +331,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
+        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
@@ -348,7 +348,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public int UserId { get; } = 0;
         public int SubsidiaryId { get; private set; } = 0;
-        public EnumAction Action { get; }
+        public EnumActionType Action { get; }
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
         public int? TimeZoneOffset { get; }

@@ -42,6 +42,7 @@ using VErp.Services.Stock.Service.Products;
 using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using System.Data;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -63,6 +64,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IProductionScheduleHelperService _productionScheduleHelperService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -77,6 +79,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICurrentContextService currentContextService
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , IProductionScheduleHelperService productionScheduleHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -93,6 +96,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _currentContextService = currentContextService;
             _productService = productService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _productionScheduleHelperService = productionScheduleHelperService;
         }
 
 
@@ -241,6 +245,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InputTypeId = m.InputTypeId,
                             SourceId = m.SourceId,
                             InputBillFId = m.InputBillFId,
+                            BillObjectTypeId = (EnumObjectType)m.BillObjectTypeId
+                            
                         }).ToList()
                 });
 
@@ -348,7 +354,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         ProductUnitConversion = productUnitConversionInfo ?? null,
                         SortOrder = details.SortOrder,
                         Description = details.Description,
-                        AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
+                        AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                        InventoryRequirementDetailId = details.InventoryRequirementDetailId
                     });
                 }
                 #endregion
@@ -426,6 +433,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
         {
             var inventoryExport = new InventoryExportFacade();
+            inventoryExport.SetCurrentContext(_currentContextService);
             inventoryExport.SetInventoryService(this);
             inventoryExport.SetOrganizationHelperService(_organizationHelperService);
             inventoryExport.SetProductHelperService(_productHelperService);
@@ -522,6 +530,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+
         private async Task<long> AddInventoryInputDB(InventoryInModel req)
         {
             if (req == null || req.InProducts.Count == 0)
@@ -535,10 +544,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                if (await _stockDbContext.Inventory.AnyAsync(q => q.InventoryCode == req.InventoryCode))
-                {
-                    throw new BadRequestException(InventoryErrorCode.InventoryCodeAlreadyExisted);
-                }
+                await ValidateInventoryCode(null, req.InventoryCode);
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
@@ -561,6 +567,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = issuedDate,
                     CustomerId = req.CustomerId,
                     Department = req.Department,
+                    DepartmentId = req.DepartmentId,
                     StockKeeperUserId = req.StockKeeperUserId,
                     BillForm = req.BillForm,
                     BillCode = req.BillCode,
@@ -608,6 +615,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+        private async Task ValidateInventoryCode(long? inventoryId, string inventoryCode)
+        {
+            inventoryId = inventoryId ?? 0;
+            if (await _stockDbContext.Inventory.AnyAsync(q => q.InventoryId != inventoryId && q.InventoryCode == inventoryCode))
+            {
+                throw new BadRequestException(InventoryErrorCode.InventoryCodeAlreadyExisted);
+            }
+        }
+
 
         /// <summary>
         /// Thêm mới phiếu xuất kho
@@ -639,10 +655,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                if (_stockDbContext.Inventory.Any(q => q.InventoryCode == req.InventoryCode))
-                {
-                    throw new BadRequestException(InventoryErrorCode.InventoryCodeAlreadyExisted);
-                }
+                await ValidateInventoryCode(null, req.InventoryCode);
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
@@ -658,6 +671,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Date = issuedDate,
                     CustomerId = req.CustomerId,
                     Department = req.Department,
+                    DepartmentId = req.DepartmentId,
                     StockKeeperUserId = req.StockKeeperUserId,
                     BillForm = req.BillForm,
                     BillCode = req.BillCode,
@@ -730,6 +744,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
                 var validate = await ValidateInventoryIn(false, req);
+
+                await ValidateInventoryCode(inventoryId, req.InventoryCode);
 
                 if (!validate.Code.IsSuccess())
                 {
@@ -868,6 +884,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
                 var issuedDate = req.Date.UnixToDateTime().Value;
+                await ValidateInventoryCode(inventoryId, req.InventoryCode);
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
@@ -1030,9 +1047,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
                         inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
+                        var inventoryDetails = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
+                        foreach (var item in inventoryDetails)
+                        {
+                            item.IsDeleted = true;
+                        }
+
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
+
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
 
                         return true;
                     }
@@ -1171,6 +1195,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
                         trans.Commit();
+
+                        // update trạng thái cho lịch sản xuất
+                        var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
+                        var scheduleTurnIds = (from req in _stockDbContext.InventoryRequirement
+                                               join rd in _stockDbContext.InventoryRequirementDetail on req.InventoryRequirementId equals rd.InventoryRequirementId
+                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && req.ScheduleTurnId.HasValue
+                                               select req.ScheduleTurnId.Value).Distinct().ToList();
+                        foreach (var scheduleTurnId in scheduleTurnIds)
+                        {
+                            await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Finished);
+                        }
 
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
                         await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
@@ -1321,6 +1356,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
                         trans.Commit();
+
+                        // update trạng thái cho lịch sản xuất
+                        var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
+                        var scheduleTurnIds = (from r in _stockDbContext.InventoryRequirement
+                                               join rd in _stockDbContext.InventoryRequirementDetail on r.InventoryRequirementId equals rd.InventoryRequirementId
+                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && r.ScheduleTurnId.HasValue
+                                               select r.ScheduleTurnId.Value).Distinct().ToList();
+                        foreach (var scheduleTurnId in scheduleTurnIds)
+                        {
+                            await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Processing);
+                        }
 
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
                         await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
@@ -1832,7 +1878,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageOptionId = (int)details.PackageOptionId,
                     SortOrder = details.SortOrder,
                     Description = details.Description,
-                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
+                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                    InventoryRequirementDetailId = details.InventoryRequirementDetailId
                 });
             }
             return inventoryDetailList;
@@ -1958,7 +2005,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageOptionId = null,
                     SortOrder = details.SortOrder,
                     Description = details.Description,
-                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu
+                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                    InventoryRequirementDetailId = details.InventoryRequirementDetailId
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting += primaryQualtity;
@@ -2013,8 +2061,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                 case EnumInventoryType.Output:
                     {
-                        stockProductInfo.PrimaryQuantityRemaining -= detail.PrimaryQuantity;
-                        stockProductInfo.ProductUnitConversionRemaining -= detail.ProductUnitConversionQuantity;
+                        stockProductInfo.PrimaryQuantityRemaining = stockProductInfo.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
+                        stockProductInfo.ProductUnitConversionRemaining = stockProductInfo.ProductUnitConversionRemaining.SubDecimal(detail.ProductUnitConversionQuantity);
                         break;
                     }
                 default:
@@ -2084,10 +2132,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
         {
-            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Package, EnumObjectType.Package, 0);
-            var customGenCodeId = config.CustomGenCodeId;
+            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Package, EnumObjectType.Package, 0, null, null, date.GetUnix());
 
-            var newPackageCodeResult = await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue);
+            var newPackageCodeResult = await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, null, null, date.GetUnix());
 
             var newPackage = new Package()
             {
@@ -2112,7 +2159,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.Package.AddAsync(newPackage);
             await _stockDbContext.SaveChangesAsync();
 
-            await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+            await _customGenCodeHelperService.ConfirmCode(config.CurrentLastValue);
 
             return newPackage;
         }
@@ -2134,11 +2181,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!inventory.IsApproved)
                 {
-                    fromPackageInfo.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                    fromPackageInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
+                    fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
+                    fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
 
-                    stockProductInfo.PrimaryQuantityWaiting -= detail.PrimaryQuantity;
-                    stockProductInfo.ProductUnitConversionWaitting -= detail.ProductUnitConversionQuantity;
+                    stockProductInfo.PrimaryQuantityWaiting = stockProductInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
+                    stockProductInfo.ProductUnitConversionWaitting = stockProductInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
                 }
                 else
                 {

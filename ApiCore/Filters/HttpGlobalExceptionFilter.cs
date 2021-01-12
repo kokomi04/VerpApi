@@ -4,14 +4,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Text;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
@@ -20,18 +23,22 @@ namespace VErp.Infrastructure.ApiCore.Filters
     {
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<HttpGlobalExceptionFilter> _logger;
+        private readonly AppSetting _appSetting;
 
-        public HttpGlobalExceptionFilter(IWebHostEnvironment env, ILogger<HttpGlobalExceptionFilter> logger)
+        public HttpGlobalExceptionFilter(IWebHostEnvironment env
+            , ILogger<HttpGlobalExceptionFilter> logger
+            , IOptions<AppSetting> appSetting)
         {
             _env = env;
             _logger = logger;
+            _appSetting = appSetting.Value;
         }
 
         public void OnException(ExceptionContext context)
         {
             _logger.LogError(context.Exception, context.Exception.Message);
 
-            var (response, statusCode) = Handler(context.Exception);
+            var (response, statusCode) = Handler(context.Exception, _appSetting);
 
             if (!_env.IsProduction())
             {
@@ -57,12 +64,18 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     context.Result = new InternalServerErrorObjectResult(response);
                 }
             }
-           
+
             context.HttpContext.Response.StatusCode = (int)statusCode;
             context.ExceptionHandled = true;
         }
 
-        public static (ApiErrorResponse<Exception> response, HttpStatusCode statusCode) Handler(Exception exception)
+        public static string RemoveAbsolutePathResource(AppSetting appSetting, string message)
+        {
+            var absolutePath = Path.GetFullPath(appSetting.Configuration.FileUploadFolder);
+            return message.Replace(absolutePath, string.Empty);
+        }
+
+        public static (ApiErrorResponse<Exception> response, HttpStatusCode statusCode) Handler(Exception exception, AppSetting appSetting)
         {
             ApiErrorResponse<Exception> response;
             HttpStatusCode statusCode;
@@ -72,16 +85,16 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 response = new ApiErrorResponse<Exception>
                 {
                     Code = badRequest.Code.GetErrorCodeString(),
-                    Message = badRequest.Message
+                    Message = RemoveAbsolutePathResource(appSetting, badRequest.Message)
                 };
                 statusCode = HttpStatusCode.BadRequest;
-            }           
+            }
             else if (exception is VerpException)
             {
                 response = new ApiErrorResponse<Exception>
                 {
                     Code = GeneralCode.InternalError.GetErrorCodeString(),
-                    Message = exception.Message
+                    Message = RemoveAbsolutePathResource(appSetting, exception.Message)
                 };
 
                 statusCode = HttpStatusCode.BadRequest;
@@ -104,7 +117,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     response = new ApiErrorResponse<Exception>
                     {
                         Code = GeneralCode.InternalError.GetErrorCodeString(),
-                        Message = exception.Message
+                        Message = RemoveAbsolutePathResource(appSetting, exception.Message)
                     };
 
                     statusCode = HttpStatusCode.InternalServerError;

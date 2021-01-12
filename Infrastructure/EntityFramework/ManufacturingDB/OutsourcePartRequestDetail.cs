@@ -8,9 +8,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long OutsourcePartRequestDetailId { get; set; }
         public long OutsourcePartRequestId { get; set; }
         public int ProductId { get; set; }
+        public string PathProductIdInBom { get; set; }
         public decimal Quantity { get; set; }
-        public int UnitId { get; set; }
-        public int StatusId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
@@ -18,5 +17,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+
+        public virtual OutsourcePartRequest OutsourcePartRequest { get; set; }
     }
 }

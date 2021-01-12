@@ -42,6 +42,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IFileService _fileService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly ICurrentContextService _currentContextService;
+
         public ProductService(
             StockDBContext stockContext
             , MasterDBContext masterDBContext
@@ -52,6 +54,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IFileService fileService
             , IAsyncRunnerService asyncRunner
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , ICurrentContextService currentContextService
             )
         {
             _masterDBContext = masterDBContext;
@@ -63,11 +66,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _fileService = fileService;
             _asyncRunner = asyncRunner;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<int> AddProduct(ProductModel req)
         {
-            var customGenCodeId = await GenerateProductCode(null, req);
+            var customGenCode = await GenerateProductCode(null, req);
 
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -75,26 +79,26 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
 
-                await ConfirmProductCode(customGenCodeId);
+                await ConfirmProductCode(customGenCode);
 
                 return productId;
             }
-
-
         }
 
-        public async Task<int> AddProductDefault(ProductDefaultModel req)
+        public async Task<ProductDefaultModel> AddProductDefault(ProductDefaultModel req)
         {
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
-                req.ProductCode = (req.ProductCode ?? "").Trim();
-                var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
-                if (productExisted != null)
+                if(!req.ProductTypeId.HasValue)
                 {
-                    if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
-                        throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
-                    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
+                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không được phép để trống");
                 }
+                if(!_stockContext.ProductType.Any(p => p.ProductTypeId == req.ProductTypeId))
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không tồn tại");
+                }
+                var customGenCode = await GenerateProductCode(null, req);
+
                 var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Danh mục mặt hàng mặc định không tồn tại");
@@ -107,6 +111,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     ProductCode = req.ProductCode,
                     ProductName = req.ProductName ?? req.ProductCode,
+                    ProductTypeId = req.ProductTypeId,
                     ProductInternalName = req.ProductName.NormalizeAsInternalName(),
                     IsCanBuy = false,
                     IsCanSell = false,
@@ -148,7 +153,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới sản phẩm {req.ProductName}", req.JsonSerialize());
-                return productInfo.ProductId;
+                await ConfirmProductCode(customGenCode);
+                req.ProductCode = productInfo.ProductCode;
+                req.ProductId = productInfo.ProductId;
+                return req;
             }
         }
 
@@ -161,12 +169,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(validate, req.ProductCode + " " + req.ProductName + " " + validate.GetEnumDescription());
             }
 
-            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode || p.ProductName == req.ProductName);
+            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode);//|| p.ProductName == req.ProductName
             if (productExisted != null)
             {
-                if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
+                //if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
                     throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
+                //throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
             }
 
             if (!await _stockContext.ProductCate.AnyAsync(c => c.ProductCateId == req.ProductCateId))
@@ -174,10 +182,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductCateInvalid, $"Danh mục mặt hàng không đúng");
             }
 
-            if (!await _stockContext.ProductType.AnyAsync(c => c.ProductTypeId == req.ProductTypeId))
-            {
-                throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại sinh mã mặt hàng không đúng");
-            }
+            //if (!await _stockContext.ProductType.AnyAsync(c => c.ProductTypeId == req.ProductTypeId))
+            //{
+            //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại sinh mã mặt hàng không đúng");
+            //}
 
             var productInfo = new Product()
             {
@@ -328,13 +336,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             req.ProductCode = (req.ProductCode ?? "").Trim();
 
-            var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && p.ProductName == req.ProductName);
-            if (productExisted != null)
-            {
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
-            }
-
-            var customGenCodeId = await GenerateProductCode(productId, req);
+            //var productExisted = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId != productId && p.ProductName == req.ProductName);
+            //if (productExisted != null)
+            //{
+            //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
+            //}
 
             long? oldMainImageFileId = 0L;
 
@@ -342,6 +348,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 try
                 {
+                    var customGenCode = await GenerateProductCode(productId, req);
+
                     //Getdata
                     var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
                     if (productInfo == null)
@@ -491,7 +499,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật sản phẩm {productInfo.ProductName}", req.JsonSerialize());
 
-                    await ConfirmProductCode(customGenCodeId);
+                    await ConfirmProductCode(customGenCode);
                 }
                 catch (Exception)
                 {
@@ -512,7 +520,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        private async Task<int> GenerateProductCode(int? productId, ProductModel model)
+        private async Task<CustomGenCodeBaseValueModel> GenerateProductCode(int? productId, ProductGenCodeModel model)
         {
             int customGenCodeId = 0;
             model.ProductCode = (model.ProductCode ?? "").Trim();
@@ -522,27 +530,32 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 existedItem = await _stockContext.Product.FirstOrDefaultAsync(r => r.ProductCode == model.ProductCode && r.ProductId != productId);
                 if (existedItem != null) throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted);
+                return null;
             }
             else
             {
-                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Product, EnumObjectType.ProductType, model.ProductTypeId ?? 0);
+                var productTypeInfo = await _stockContext.ProductType.FirstOrDefaultAsync(t => t.ProductTypeId == model.ProductTypeId);
+
+                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Product, EnumObjectType.ProductType, model.ProductTypeId ?? 0, productId, productTypeInfo?.IdentityCode, _currentContextService.GetNowUtc().GetUnix());
+                if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã cho loại " + (productTypeInfo?.ProductTypeName));
+
                 customGenCodeId = config.CustomGenCodeId;
                 int dem = 0;
                 do
                 {
-                    model.ProductCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.LastValue))?.CustomCode;
+                    model.ProductCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, productId, productTypeInfo?.IdentityCode, _currentContextService.GetNowUtc().GetUnix()))?.CustomCode;
                     existedItem = await _stockContext.Product.FirstOrDefaultAsync(r => r.ProductCode == model.ProductCode && r.ProductId != productId);
                     dem++;
                 } while (existedItem != null && dem < 10);
+                return config.CurrentLastValue;
             }
-            return customGenCodeId;
         }
 
-        private async Task<bool> ConfirmProductCode(int customGenCodeId)
+        private async Task<bool> ConfirmProductCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
         {
-            if (customGenCodeId <= 0) return true;
+            if (customGenCodeBaseValue.IsNullObject()) return true;
 
-            return await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+            return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
         }
 
         public async Task<bool> DeleteProduct(int productId)
@@ -613,10 +626,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null)
         {
+            var productInternalName = productName.NormalizeAsInternalName();
+
             var products = _stockContext.Product.AsQueryable();
             products = products.InternalFilter(filters);
+            if (!string.IsNullOrWhiteSpace(productName))
+            {
+                products = products.Where(p => p.ProductInternalName == productInternalName);
+            }
+
             var query = (
               from p in products
               join pe in _stockContext.ProductExtraInfo on p.ProductId equals pe.ProductId
@@ -897,15 +917,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<int> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
 
             // Lấy thông tin field
             var fields = typeof(Product).GetProperties(BindingFlags.Public);
 
-            var productTypes = _stockContext.ProductType.Select(t => new { t.ProductTypeId, t.IdentityCode }).ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), t.ProductTypeId }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductTypeId);
-            var productCates = _stockContext.ProductCate.Select(c => new { c.ProductCateId, c.ProductCateName }).ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), c.ProductCateId }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCateId);
+            var productTypes = _stockContext.ProductType.ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), ProductType = t }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductType);
+            var productCates = _stockContext.ProductCate.ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), ProductCate = c }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCate);
             var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToDictionary(c => c.Name.NormalizeAsInternalName(), c => c.BarcodeConfigId);
             var units = _masterDBContext.Unit.Select(u => new { u.UnitId, u.UnitName }).ToList().Select(u => new { UnitName = u.UnitName.NormalizeAsInternalName(), u.UnitId }).GroupBy(u => u.UnitName).ToDictionary(u => u.Key, u => u.First().UnitId);
             var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
@@ -987,7 +1007,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         });
                     }
                 }
-                if (!productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName.NormalizeAsInternalName() == row.ProductCate.NormalizeAsInternalName()))
+                if (!string.IsNullOrWhiteSpace(row.ProductCate) && !productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName.NormalizeAsInternalName() == row.ProductCate.NormalizeAsInternalName()))
                 {
                     includeProductCates.Add(new ProductCate
                     {
@@ -996,7 +1016,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     });
                 }
 
-                if (!productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode.NormalizeAsInternalName() == row.ProductTypeCode.NormalizeAsInternalName()))
+                if (!string.IsNullOrWhiteSpace(row.ProductTypeCode) && !productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode.NormalizeAsInternalName() == row.ProductTypeCode.NormalizeAsInternalName()))
                 {
                     includeProductTypes.Add(new ProductType
                     {
@@ -1019,11 +1039,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             foreach (var productCate in includeProductCates)
             {
-                productCates.Add(productCate.ProductCateName.NormalizeAsInternalName(), productCate.ProductCateId);
+                productCates.Add(productCate.ProductCateName.NormalizeAsInternalName(), productCate);
             }
             foreach (var productType in includeProductTypes)
             {
-                productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType.ProductTypeId);
+                productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType);
             }
 
             // Validate unique product code
@@ -1035,9 +1055,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .Select(p => p.ProductCode)
                 .ToList());
             dupCodes = dupCodes.Distinct().ToList();
-            if (dupCodes.Count > 0)
+
+            if (dupCodes.Count > 0 && !mapping.IgnoreDuplicate)
             {
                 throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", dupCodes)} đã tồn tại");
+            }
+            else
+            {
+                data = data.Where(x => !dupCodes.Contains(x.ProductCode)).ToList();
             }
 
             // Validate required product name
@@ -1047,29 +1072,35 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập tên sản phẩm có mã: {string.Join(",", emptyNameProducts)}");
             }
 
-            var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
+            //var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
             // Validate unique product name
-            var dupNames = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            var dupNameCodes = data.Where(r => dupCodes.Contains(r.ProductName.NormalizeAsInternalName())).Select(r => r.ProductCode).ToList();
-            var dupNameProducts = _stockContext.Product
-                .Where(p => productNames.Contains(p.ProductInternalName)).ToList();
+            //var dupNames = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+            //var dupNameCodes = data.Where(r => dupCodes.Contains(r.ProductName.NormalizeAsInternalName())).Select(r => r.ProductCode).ToList();
+            //var dupNameProducts = _stockContext.Product
+             //   .Where(p => productNames.Contains(p.ProductInternalName)).ToList();
 
-            dupNames.AddRange(dupNameProducts.Select(p => p.ProductInternalName).ToList());
-            dupNameCodes.AddRange(dupNameProducts.Select(p => p.ProductCode).ToList());
+            //dupNames.AddRange(dupNameProducts.Select(p => p.ProductInternalName).ToList());
+            //dupNameCodes.AddRange(dupNameProducts.Select(p => p.ProductCode).ToList());
 
-            dupNames = dupNames.Distinct().ToList();
-            dupNameCodes = dupNameCodes.Distinct().ToList();
+            //dupNames = dupNames.Distinct().ToList();
+            //dupNameCodes = dupNameCodes.Distinct().ToList();
 
-            if (dupNameProducts.Count > 0)
-            {
-                throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNames)} của các mã {string.Join(",", dupNameCodes)} đã tồn tại");
-            }
+            //if (dupNameProducts.Count > 0)
+            //{
+            //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNames)} của các mã {string.Join(",", dupNameCodes)} đã tồn tại");
+            //}
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
+                var defaultTypeId = productTypes.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductTypeId;
+                var defaultCateId = productCates.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductCateId;
+
                 foreach (var row in data)
                 {
+                    var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
+                    var cateName = row.ProductCate.NormalizeAsInternalName();
+
                     var productInfo = new Product()
                     {
                         ProductCode = row.ProductCode,
@@ -1078,8 +1109,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         IsCanBuy = row.IsCanBuy ?? true,
                         IsCanSell = row.IsCanSell ?? true,
                         MainImageFileId = null,
-                        ProductTypeId = productTypes[row.ProductTypeCode.NormalizeAsInternalName()],
-                        ProductCateId = productCates[row.ProductCate.NormalizeAsInternalName()],
+                        ProductTypeId = productTypes.ContainsKey(typeCode) ? productTypes[typeCode].ProductTypeId : defaultTypeId,
+                        ProductCateId = productCates.ContainsKey(cateName) ? productCates[cateName].ProductCateId : (defaultCateId ?? 0),
                         BarcodeConfigId = row.BarcodeConfigId,
                         BarcodeStandardId = null,
                         Barcode = row.Barcode,
@@ -1172,7 +1203,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 _stockContext.SaveChanges();
                 trans.Commit();
-                return data.Count;
+                return data.Count > 0;
             }
             catch (Exception ex)
             {
@@ -1182,22 +1213,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         }
 
-        public List<EntityField> GetFields(Type type)
+        public CategoryNameModel GetFieldMappings()
         {
-            var fields = new List<EntityField>();
-
-            foreach (var prop in type.GetProperties())
+            var result = new CategoryNameModel()
             {
-                EntityField field = new EntityField
-                {
-                    FieldName = prop.Name,
-                    Title = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name,
-                    Group = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>().FirstOrDefault()?.GroupName
-                };
-                fields.Add(field);
-            }
+                CategoryId = 1,
+                CategoryCode = "Product",
+                CategoryTitle = "Mặt hàng",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
 
-            return fields;
+            var fields = Utils.GetFieldNameModels<ProductImportModel>();
+            result.Fields = fields;
+            return result;
         }
 
         private Enum ValidateProduct(ProductModel req)

@@ -29,39 +29,47 @@ namespace VErpApi.Controllers.Accountancy.Action
         }
 
         [HttpGet]
-        [Route("InputType/{inputTypeId}")]
-        public async Task<IList<InputActionModel>> GetList(int inputTypeId)
+        [Route("{inputTypeId}")]
+        public async Task<IList<ActionButtonModel>> GetList([FromRoute] int inputTypeId)
         {
-            return await _inputActionService.GetInputActions(inputTypeId).ConfigureAwait(true);
+            return await _inputActionService.GetActionButtonConfigs(inputTypeId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("{inputTypeId}/use")]
+        public async Task<IList<ActionButtonSimpleModel>> GetListUse([FromRoute] int inputTypeId)
+        {
+            return await _inputActionService.GetActionButtons(inputTypeId).ConfigureAwait(true);
         }
 
         [HttpPost]
-        public async Task<InputActionModel> InputTypeGroupCreate([FromBody] InputActionModel model)
+        [Route("{inputTypeId}")]
+        public async Task<ActionButtonModel> InputTypeGroupCreate([FromRoute] int inputTypeId, [FromBody] ActionButtonModel model)
         {
-            return await _inputActionService.AddInputAction(model).ConfigureAwait(true);
+            return await _inputActionService.AddActionButton(inputTypeId, model).ConfigureAwait(true);
         }
 
         [HttpPut]
-        [Route("{inputActionId}")]
-        public async Task<InputActionModel> UpdateInputAction([FromRoute] int inputActionId, [FromBody] InputActionModel model)
+        [Route("{inputTypeId}/{actionButtonId}")]
+        public async Task<ActionButtonModel> UpdateInputAction([FromRoute] int inputTypeId, [FromRoute] int actionButtonId, [FromBody] ActionButtonModel model)
         {
-            return await _inputActionService.UpdateInputAction(inputActionId, model).ConfigureAwait(true);
+            return await _inputActionService.UpdateActionButton(inputTypeId, actionButtonId, model).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("{inputActionId}")]
-        public async Task<bool> DeleteInputAction([FromRoute] int inputActionId)
+        [Route("{inputTypeId}/{actionButtonId}")]
+        public async Task<bool> DeleteInputAction([FromRoute] int inputTypeId, [FromRoute] int actionButtonId)
         {
-            return await _inputActionService.DeleteInputAction(inputActionId).ConfigureAwait(true);
+            return await _inputActionService.DeleteActionButton(inputTypeId, actionButtonId).ConfigureAwait(true);
         }
 
         [HttpPost]
-        [Route("ExecInputAction/{inputTypeId}/{inputActionId}/{inputBillId}")]
+        [Route("{inputTypeId}/{inputBillId}/Exec/{inputActionId}")]
         [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
         [ActionButtonDataApi("inputActionId")]
         public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputTypeId, [FromRoute] int inputActionId, [FromRoute] long inputBillId, [FromBody] BillInfoModel data)
         {
-            return await _inputActionService.ExecInputAction(inputTypeId, inputActionId, inputBillId, data).ConfigureAwait(true);
+            return await _inputActionService.ExecActionButton(inputTypeId, inputActionId, inputBillId, data).ConfigureAwait(true);
         }
     }
 }

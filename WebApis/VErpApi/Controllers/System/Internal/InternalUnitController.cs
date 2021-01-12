@@ -22,7 +22,7 @@ namespace VErpApi.Controllers.System.Internal
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("")]
         public async Task<PageData<UnitOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] EnumUnitStatus? unitStatusId, [FromQuery] int page, [FromQuery] int size)
         {

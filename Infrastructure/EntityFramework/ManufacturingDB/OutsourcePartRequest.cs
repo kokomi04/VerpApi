@@ -5,6 +5,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class OutsourcePartRequest
     {
+        public OutsourcePartRequest()
+        {
+            OutsourcePartRequestDetail = new HashSet<OutsourcePartRequestDetail>();
+        }
+
         public long OutsourcePartRequestId { get; set; }
         public string OutsourcePartRequestCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
@@ -18,5 +23,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
+        public virtual ICollection<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }
     }
 }

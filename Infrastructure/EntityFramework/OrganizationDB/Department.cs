@@ -22,6 +22,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int UpdatedUserId { get; set; }
         public DateTime CreatedTime { get; set; }
         public DateTime UpdatedTime { get; set; }
+        public bool IsProduction { get; set; }
+        public decimal? WorkingHoursPerDay { get; set; }
 
         public virtual Department Parent { get; set; }
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }

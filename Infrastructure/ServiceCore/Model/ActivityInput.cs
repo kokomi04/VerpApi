@@ -9,7 +9,7 @@ namespace VErp.Infrastructure.ServiceCore.Model
     public class ActivityInput
     {
         public int UserId { get; set; }
-        public EnumAction ActionId { get; set; }
+        public EnumActionType ActionId { get; set; }
         public EnumObjectType ObjectTypeId { get; set; }
         public EnumMessageType MessageTypeId { get; set; }
         public long ObjectId { get; set; }

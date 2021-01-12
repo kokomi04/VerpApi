@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.System.Category
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [GlobalApi]
         [Route("{categoryId}/categoryrows/Search")]
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows([FromRoute] int categoryId, [FromBody] CategoryFilterModel request)
@@ -56,6 +56,16 @@ namespace VErpApi.Controllers.System.Category
         {
             return await _categoryDataService.GetCategoryRow(categoryId, categoryRowId);
         }
+
+
+        [GlobalApi]
+        [HttpGet]
+        [Route("byCode/{categoryCode}/row/{categoryRowId}")]
+        public async Task<NonCamelCaseDictionary> GetCategoryRow([FromRoute] string categoryCode, [FromRoute] int categoryRowId)
+        {
+            return await _categoryDataService.GetCategoryRow(categoryCode, categoryRowId);
+        }
+
 
         [HttpPost]
         [Route("{categoryId}/categoryrows")]

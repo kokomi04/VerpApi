@@ -15,6 +15,8 @@ namespace VErp.Services.Master.Service.Category
 
         Task<NonCamelCaseDictionary> GetCategoryRow(int categoryId, int fId);
 
+        Task<NonCamelCaseDictionary> GetCategoryRow(string categoryCode, int fId);
+
         Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data);
 
         Task<int> UpdateCategoryRow(int categoryId, int fId, Dictionary<string, string> data);

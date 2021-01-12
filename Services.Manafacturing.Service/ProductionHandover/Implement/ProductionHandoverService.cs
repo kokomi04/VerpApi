@@ -50,7 +50,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         {
             var productionHandover = _manufacturingDBContext.ProductionHandover.FirstOrDefault(ho => ho.ScheduleTurnId == scheduleTurnId && ho.ProductionHandoverId == productionHandoverId);
             if (productionHandover == null) throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
-            if (!productionHandover.FromProductionStepId.HasValue) throw new BadRequestException(GeneralCode.InvalidParams, "Không được xác nhận yêu cầu xuất kho");
             if (productionHandover.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
             try
             {
@@ -70,6 +69,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         {
             try
             {
+                if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.FromProductionStepId && a.DepartmentId == data.FromDepartmentId && a.ScheduleTurnId == scheduleTurnId))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phân công công việc cho tổ bàn giao");
+                if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.ToProductionStepId && a.DepartmentId == data.ToDepartmentId && a.ScheduleTurnId == scheduleTurnId))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phân công công việc cho tổ được bàn giao");
                 var productionHandover = _mapper.Map<ProductionHandoverEntity>(data);
                 productionHandover.Status = (int)EnumHandoverStatus.Waiting;
                 productionHandover.ScheduleTurnId = scheduleTurnId;
@@ -87,11 +90,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long scheduleTurnId)
         {
-            return _manufacturingDBContext.ProductionHandover
+            return await _manufacturingDBContext.ProductionHandover
                 .Where(h => h.ScheduleTurnId == scheduleTurnId)
                 .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
-                .ToList();
+                .ToListAsync();
 
+        }
+        public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements(long scheduleTurnId)
+        {
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+            };
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+
+            return resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+                .ToList();
         }
     }
 }

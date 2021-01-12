@@ -238,7 +238,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 // _logger.LogError(exception, exception?.Message);
 
-                var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception);
+                var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception, AppSetting);
 
                 if (!env.IsProduction())
                 {

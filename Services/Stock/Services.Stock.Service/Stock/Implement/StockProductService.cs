@@ -315,6 +315,36 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
+        public async Task<Dictionary<int, RemainStock[]>> GetRemainStockByProducts(int[] productIds)
+        {
+
+            var remainStocks = _stockContext.StockProduct.Where(sp => productIds.Contains(sp.ProductId))
+                .GroupBy(sp => new { sp.ProductId, sp.StockId })
+                .Select(g => new
+                {
+                    g.Key.ProductId,
+                    g.Key.StockId,
+                    PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
+                })
+                .Where(s => s.PrimaryQuantityRemaining > 0)
+                .Join(_stockContext.Stock, rs => rs.StockId, s => s.StockId, (rs, s) => new
+                {
+                    rs.StockId,
+                    rs.ProductId,
+                    rs.PrimaryQuantityRemaining,
+                    s.StockName
+                })
+                .ToList()
+                .GroupBy(s => s.ProductId)
+                .ToDictionary(g => g.Key, g => g.Select(s => new RemainStock
+                {
+                    StockId = s.StockId,
+                    PrimaryQuantityRemaining = s.PrimaryQuantityRemaining,
+                    StockName = s.StockName
+                }).ToArray());
+            return remainStocks;
+        }
+
         public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size)
         {
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -1042,8 +1072,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 else
                 {
-                    totalByTimes[item.ProductUnitConversionId] -= item.ProductUnitConversionQuantity;
-                    totalPrimary -= item.PrimaryQuantity;
+                    totalByTimes[item.ProductUnitConversionId] = totalByTimes[item.ProductUnitConversionId].SubDecimal(item.ProductUnitConversionQuantity);
+                    totalPrimary = totalPrimary.SubDecimal(item.PrimaryQuantity);
                 }
 
                 resultData.Details.Add(new StockProductDetailsModel
@@ -1198,11 +1228,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                  join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                  join p in productQuery on d.ProductId equals p.ProductId
                  where iv.IsApproved && iv.Date < fromDate
-                 group new { d.ProductUnitConversionQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
+                 group new { d.ProductUnitConversionQuantity, d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
                  select new
                  {
                      g.Key.ProductId,
                      g.Key.ProductUnitConversionId,
+                     Primary_Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
                      Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
                  }
             ).Where(b => b.Total < -Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER || b.Total > Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER)
@@ -1213,11 +1244,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                    join d in _stockContext.InventoryDetail on iv.InventoryId equals d.InventoryId
                    join p in productQuery on d.ProductId equals p.ProductId
                    where iv.IsApproved && iv.Date >= fromDate && iv.Date <= toDate
-                   group new { d.ProductUnitConversionQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
+                   group new { d.ProductUnitConversionQuantity, d.PrimaryQuantity, iv.InventoryTypeId } by new { d.ProductId, d.ProductUnitConversionId } into g
                    select new
                    {
                        g.Key.ProductId,
                        g.Key.ProductUnitConversionId,
+
+                       Primary_TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : 0),
+                       Primary_TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Output ? d.PrimaryQuantity : 0),
+                       Primary_Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
+
                        TotalInput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : 0),
                        TotalOutput = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Output ? d.ProductUnitConversionQuantity : 0),
                        Total = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
@@ -1309,6 +1345,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                  select new ProductAltSummary
                  {
                      ProductId = p.ProductId,
+
+                     PrimaryQuantityBefore = b == null ? 0 : b.Primary_Total,
+                     PrimaryQuantityInput = a == null ? 0 : a.Primary_TotalInput,
+                     PrimaryQuantityOutput = a == null ? 0 : a.Primary_TotalOutput,
+                     PrimaryQuantityAfter = (b == null ? 0 : b.Primary_Total) + (a == null ? 0 : a.Primary_Total),
+
+
                      ProductUnitConversionId = p.ProductUnitConversionId,
                      UnitId = c.SecondaryUnitId,
                      ProductUnitCoversionName = c.ProductUnitConversionName,
@@ -1334,10 +1377,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductName = p.ProductName,
                     UnitId = p.UnitId,
                     UnitName = u.UnitName,
-                    PrimaryQualtityBefore = b == null ? 0 : b.Total,
-                    PrimaryQualtityInput = a == null ? 0 : a.TotalInput,
-                    PrimaryQualtityOutput = a == null ? 0 : a.TotalOutput,
-                    PrimaryQualtityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total),
+                    SumPrimaryQuantityBefore = b == null ? 0 : b.Total,
+                    SumPrimaryQuantityInput = a == null ? 0 : a.TotalInput,
+                    SumPrimaryQuantityOutput = a == null ? 0 : a.TotalOutput,
+                    SumPrimaryQuantityAfter = (b == null ? 0 : b.Total) + (a == null ? 0 : a.Total),
                     ProductAltSummaryList = productAltSummaryData.Where(q => q.ProductId == p.ProductId).ToList()
                 }
             ).ToList();

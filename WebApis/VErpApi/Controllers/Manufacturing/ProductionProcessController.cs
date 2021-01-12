@@ -11,6 +11,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -125,9 +126,44 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("productionStepLinkData/searchByListProductionStepLinkDataId")]
-        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepId)
+        public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepLinkDataId)
         {
-            return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepId);
+            return await _productionProcessService.GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
+        }
+
+        /// <summary>
+        /// Lấy danh sách InOut của 1 nhóm các công đoạn
+        /// </summary>
+        /// <param name="lsProductionStepId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productionStepLinkDataRole/getInOutOfListProductionStep")]
+        public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
+        {
+           return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
+        }
+
+        /// <summary>
+        /// Gom nhóm các công đoạn có mối qua hệ với nhau
+        /// </summary>
+        /// <param name="productionOrderId">Mã lệnh sản xuất</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productionStep/groupRelationship")]
+        public async Task<NonCamelCaseDictionary> GroupProductionStepRelationShip([FromBody] IList<long> productionOrderId)
+        {
+            return await _productionProcessService.GroupProductionStepRelationShip(productionOrderId);
+        }
+        /// <summary>
+        /// Sét khối lượng công việc cho công đoạn
+        /// </summary>
+        /// <param name="productionStepWorkload"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("productionStep/workload")]
+        public async Task<bool> SetProductionStepWorkload([FromBody] IList<ProductionStepWorkload> productionStepWorkload)
+        {
+            return await _productionProcessService.SetProductionStepWorkload(productionStepWorkload);
         }
     }
 }

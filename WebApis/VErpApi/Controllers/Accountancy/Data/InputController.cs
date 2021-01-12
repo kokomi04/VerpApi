@@ -16,6 +16,7 @@ using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -35,22 +36,14 @@ namespace VErpApi.Controllers.Accountancy.Data
 
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("{inputTypeId}/Search")]
         public async Task<PageDataTable> GetBills([FromRoute] int inputTypeId, [FromBody] InputTypeBillsRequestModel request)
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
             return await _inputDataService.GetBills(inputTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
-        }
-
-        [HttpGet]
-        [GlobalApi]
-        [Route("GetBillInfoByMappingObject")]
-        public async Task<PageDataTable> GetBillInfoByMappingObject([FromQuery] string mappingFunctionKey, [FromQuery] string objectId)
-        {
-            return await _inputDataService.GetBillInfoByMappingObject(mappingFunctionKey, objectId).ConfigureAwait(true);
-        }
+        }      
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}")]

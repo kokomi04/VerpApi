@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.StockDB;
 using System.Collections.Generic;
+using VErp.Commons.Library;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -49,7 +50,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     else
                     {
-                        beforeBalance -= newDetail.PrimaryQuantity;
+                        beforeBalance = beforeBalance.SubDecimal(newDetail.PrimaryQuantity);
                     }
 
                     newDetail.PrimaryQuantityRemaning = beforeBalance;
@@ -88,7 +89,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     else
                     {
-                        beforePu -= newDetail.ProductUnitConversionQuantity;
+                        beforePu = beforePu.SubDecimal(newDetail.ProductUnitConversionQuantity);
                     }
 
                     newDetail.ProductUnitConversionQuantityRemaning = beforePu;

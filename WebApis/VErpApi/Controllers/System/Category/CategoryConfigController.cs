@@ -116,7 +116,7 @@ namespace VErpApi.Controllers.System.Category
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("categoryfields")]
         public async Task<List<CategoryFieldModel>> GetCategoryFields([FromBody] IList<int> categoryIds)
         {

@@ -13,11 +13,11 @@ namespace VErp.Services.Stock.Model.Stock
 
         public string UnitName { get; set; }
 
-        public decimal PrimaryQualtityBefore { get; set; }
-        public decimal PrimaryQualtityInput { get; set; }
-        public decimal PrimaryQualtityOutput { get; set; }
-        public decimal PrimaryQualtityAfter { get; set; }
-               
+        public decimal SumPrimaryQuantityBefore { get; set; }
+        public decimal SumPrimaryQuantityInput { get; set; }
+        public decimal SumPrimaryQuantityOutput { get; set; }
+        public decimal SumPrimaryQuantityAfter { get; set; }
+
         public long PakageIdNotExport { set; get; }
         public string PakageCodeNotExport { set; get; }
 
@@ -29,11 +29,16 @@ namespace VErp.Services.Stock.Model.Stock
     public class ProductAltSummary
     {
         public int ProductId { get; set; }
-
-        public int? ProductUnitConversionId { get; set; }
+        
 
         public int UnitId { get; set; }
+        public decimal PrimaryQuantityBefore { get; set; }
+        public decimal PrimaryQuantityInput { get; set; }
+        public decimal PrimaryQuantityOutput { get; set; }
+        public decimal PrimaryQuantityAfter { get; set; }
 
+
+        public int? ProductUnitConversionId { get; set; }
         public string ProductUnitCoversionName { get; set; }
 
         public string ConversionDescription { get; set; }

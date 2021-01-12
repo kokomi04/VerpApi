@@ -69,7 +69,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _physicalFileService = physicalFileService;
             _serviceProvider = serviceProvider;
         }
-        
+
 
         private DbContext GetDbContext(EnumModuleType moduleType)
         {
@@ -459,15 +459,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             string orderBy = reportInfo?.OrderBy;
 
-            if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
-            {
-                orderBy = reportInfo.OrderBy;
-            }
-
-            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+            if (!string.IsNullOrWhiteSpace(orderByFieldName) && !orderBy.Contains(orderByFieldName))
             {
                 if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
-                orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+                orderBy += $"{orderByFieldName}" + (asc ? "" : " DESC");
+            }
+
+            if (string.IsNullOrWhiteSpace(orderBy))
+            {
+                orderBy = "1";
             }
 
             if (!string.IsNullOrWhiteSpace(orderBy))
@@ -504,11 +504,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 }
 
-            }
-
-            if (!asc)
-            {
-                data.Reverse();
             }
 
             var pagedData = data.Skip((page - 1) * size).Take(size).ToList();
@@ -668,17 +663,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            string orderBy = "";
+            string orderBy = (reportInfo?.OrderBy ?? "");
 
-            if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
-            {
-                orderBy = reportInfo.OrderBy;
-            }
-
-            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+            if (!string.IsNullOrWhiteSpace(orderByFieldName) && !orderBy.Contains(orderByFieldName))
             {
                 if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
-                orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+                orderBy += $"{orderByFieldName}" + (asc ? "" : " DESC");
             }
 
             if (string.IsNullOrWhiteSpace(orderBy))

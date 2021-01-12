@@ -15,5 +15,7 @@ namespace VErp.Services.Organization.Model.Department
         public int? ParentId { get; set; }
         public string ParentName { get; set; }
         public bool IsActived { get; set; }
+        public bool IsProduction { get; set; }
+        public decimal? WorkingHoursPerDay { get; set; }
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -18,9 +19,10 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         //Task<bool> MapObjectCustomGenCode(EnumObjectType objectTypeId, Dictionary<int, int> data);
         Task<bool> MapObjectCustomGenCode(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes);
 
-        Task<CustomGenCodeOutputModelOut> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId);
-        Task<CustomCodeModelOutput> GenerateCode(int customGenCodeId, int lastValue);
-        Task<bool> ConfirmCode(int customGenCodeId);
+        Task<CustomGenCodeOutputModel> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date);
+        Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date);
+        //Task<bool> ConfirmCode(int? customGenCodeId, string baseValue);
+        Task<bool> ConfirmCode(CustomGenCodeBaseValueModel lastBaseValue);
     }
 
     public class CustomGenCodeHelperService : ICustomGenCodeHelperService
@@ -53,7 +55,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Post<bool>($"api/internal/InternalCustomGenCode/multiconfigs?targetObjectTypeId={(int)targetObjectTypeId}&configObjectTypeId={(int)configObjectTypeId}", objectCustomGenCodes);
         }
 
-        public async Task<CustomGenCodeOutputModelOut> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId)
+        public async Task<CustomGenCodeOutputModel> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date)
         {
             //if (_appSetting.GrpcInternal?.Address?.Contains("https") == true)
             //{
@@ -81,10 +83,21 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             //        UpdatedUserId = responses.UpdatedUserId
             //    };
             //}
-            return await _httpCrossService.Get<CustomGenCodeOutputModelOut>($"api/internal/InternalCustomGenCode/currentConfig?targetObjectTypeId={(int)targetObjectTypeId}&configObjectTypeId={(int)configObjectTypeId}&configObjectId={configObjectId}");
+
+            var queries = new
+            {
+                targetObjectTypeId,
+                configObjectTypeId,
+                configObjectId,
+                fId,
+                code,
+                date
+            };
+
+            return await _httpCrossService.Get<CustomGenCodeOutputModel>($"api/internal/InternalCustomGenCode/currentConfig", queries);
         }
 
-        public async Task<CustomCodeModelOutput> GenerateCode(int customGenCodeId, int lastValue)
+        public async Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date)
         {
             //if(_appSetting.GrpcInternal?.Address?.Contains("https") == true)
             //{
@@ -101,12 +114,21 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             //        CustomGenCodeId = responses.CustomGenCodeId
             //    };
             //}
-            return await _httpCrossService.Get<CustomCodeModelOutput>($"api/internal/InternalCustomGenCode/generateCode?customGenCodeId={customGenCodeId}&lastValue={lastValue}");
+
+            var queries = new
+            {
+                customGenCodeId,
+                lastValue,
+                fId,
+                code,
+                date
+            };
+            return await _httpCrossService.Get<CustomCodeGeneratedModel>($"api/internal/InternalCustomGenCode/generateCode", queries);
         }
 
-        public async Task<bool> ConfirmCode(int customGenCodeId)
+        public async Task<bool> ConfirmCode(int? customGenCodeId, string baseValue)
         {
-            if (customGenCodeId <= 0) return true;
+            if (!customGenCodeId.HasValue || customGenCodeId <= 0) return true;
             //if(_appSetting.GrpcInternal?.Address?.Contains("https") == true)
             //{
             //    return (await _customGenCodeClient.ConfirmCodeAsync(new ConfirmCodeRequest
@@ -115,8 +137,12 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             //        ObjectTypeId = (int)objectTypeId
             //    })).IsSuccess;
             //}
-            return await _httpCrossService.Put<bool>($"api/internal/InternalCustomGenCode/confirmCode?customGenCodeId={customGenCodeId}", null);
+            return await _httpCrossService.Put<bool>($"api/internal/InternalCustomGenCode/{customGenCodeId}/confirmCode?baseValue={baseValue}", null);
         }
 
+        public async Task<bool> ConfirmCode(CustomGenCodeBaseValueModel lastBaseValue)
+        {
+            return await ConfirmCode(lastBaseValue?.CustomGenCodeId, lastBaseValue?.BaseValue);
+        }
     }
 }

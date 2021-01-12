@@ -22,5 +22,10 @@ namespace VErp.Commons.Enums.AccountantEnum
         /// TCPB Tổng giá bán
         /// </summary>
         TotalSellPrice = 3,
+
+        /// <summary>
+        /// TCPB Khác
+        /// </summary>
+        Other = 4
     }
 }

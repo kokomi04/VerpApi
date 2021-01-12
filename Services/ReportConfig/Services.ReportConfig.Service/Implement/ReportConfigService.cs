@@ -72,7 +72,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 .ProjectTo<ReportTypeViewFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            if (isConfig)
+            if (!isConfig)
             {
                 var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
 
@@ -80,7 +80,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     if (!string.IsNullOrEmpty(field.ExtraFilter))
                     {
-                        field.ExtraFilter = protector.Unprotect(field.ExtraFilter);
+                        field.ExtraFilter = protector.Protect(field.ExtraFilter);
                     }
                 }
             }
@@ -252,12 +252,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             // }
 
             var fields = fieldModels.Select(f => _mapper.Map<ReportTypeViewField>(f)).ToList();
-            var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+            //var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
 
             foreach (var f in fields)
             {
                 f.ReportTypeViewId = ReportTypeViewId;
-                if (!string.IsNullOrEmpty(f.ExtraFilter)) f.ExtraFilter = protector.Protect(f.ExtraFilter);
+                //if (!string.IsNullOrEmpty(f.ExtraFilter)) f.ExtraFilter = protector.Protect(f.ExtraFilter);
             }
 
             await _reportConfigContext.ReportTypeViewField.AddRangeAsync(fields);
@@ -331,13 +331,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.ReportType.AddAsync(report);
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-
-                if (data.MenuStyle != null)
-                {
-                    var url = Utils.FormatStyle(data.MenuStyle.UrlFormat, string.Empty, report.ReportTypeId);
-                    var param = Utils.FormatStyle(data.MenuStyle.ParamFormat, string.Empty, report.ReportTypeId);
-                    await _menuHelperService.CreateMenu(data.MenuStyle.ParentId, false, data.MenuStyle.ModuleId, data.MenuStyle.MenuName, url, param, data.MenuStyle.Icon, data.MenuStyle.SortOrder, data.MenuStyle.IsDisabled);
-                }
+              
 
                 await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data.JsonSerialize());
                 return report.ReportTypeId;

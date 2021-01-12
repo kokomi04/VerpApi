@@ -188,6 +188,8 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 throw new BadRequestException(UserErrorCode.UserNotFound);
             }
+
+            var sb = await _organizationContext.Subsidiary.FirstOrDefaultAsync(e => e.SubsidiaryId == ur.SubsidiaryId);
             var user = new UserInfoOutput
             {
                 UserId = ur.UserId,
@@ -201,6 +203,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 GenderId = (EnumGender?)em.GenderId,
                 Phone = em.Phone,
                 AvatarFileId = em.AvatarFileId,
+                IsDeveloper = _appSetting.Developer?.IsDeveloper(ur.UserName, sb.SubsidiaryCode)
             };
 
             await EnrichDepartments(new[] { user });
@@ -659,7 +662,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                             departmentByNames.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
                         }
 
-                        if (departmentId == 0) throw new BadRequestException(GeneralCode.ItemNotFound, $"Bộ phậm {value} không tồn tại");
+                        if (departmentId == 0) throw new BadRequestException(GeneralCode.ItemNotFound, $"Bộ phận {value} không tồn tại");
 
                         if (!userDepartment.ContainsKey(entity))
                         {
@@ -692,7 +695,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                 foreach (var prop in props.Where(p => p.Name.StartsWith(departmentProp)))
                 {
-                    var number = prop.Name.Substring(0, departmentProp.Length);
+                    var number = prop.Name.Substring(departmentProp.Length);
 
                     var departnemtImportModel = (UserImportDepartmentModel)prop.GetValue(userModel);
 

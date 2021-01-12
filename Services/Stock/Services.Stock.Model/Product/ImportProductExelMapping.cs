@@ -46,7 +46,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Định lượng", GroupName = "Thông tin bổ sung")]
         public decimal Quantitative { get; set; }
         [Display(Name = "Đơn vị Định lượng(g/m2, g/m3)", GroupName = "Thông tin bổ sung")]
-        public EnumQuantitativeUnitType QuantitativeUnitTypeId { get; set; }
+        public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
 
         [Display(Name = "Dài (mm)", GroupName = "Thông tin bổ sung")]
         public decimal Long { get; set; }

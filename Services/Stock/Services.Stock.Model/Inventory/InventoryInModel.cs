@@ -28,7 +28,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string BillSerial { set; get; }
         public long? BillDate { set; get; }
         public string AccountancyAccountNumber { get; set; }
-
+        public int? DepartmentId { get; set; }
         /// <summary>
         /// Id file đính kèm
         /// </summary>
@@ -75,6 +75,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Description { get; set; }
 
         public string AccountancyAccountNumberDu { get; set; }
+        public long? InventoryRequirementDetailId { get; set; }
     }
 
     public class InventoryInProductExtendModel : InventoryInProductModel

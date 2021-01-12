@@ -1,11 +1,13 @@
 DECLARE @CategoryDataModuleId INT = 702;
 DECLARE @InputTypeModuleId INT = 802;
 DECLARE @SalesBillModuleId INT = 902;
+DECLARE @ReportViewModuleId INT = 605
 
 DECLARE @CategoryDataObjectTypeId INT = 32;
 DECLARE @InputTypeObjectTypeId INT = 34;
 DECLARE @SalesBillObjectTypeId INT = 53;
 
+DECLARE @ReportTypeObjectTypeId INT = 45;
 
 DECLARE @StockObjectTypeId INT = 9
 
@@ -64,7 +66,6 @@ INSERT INTO dbo.RolePermission
 	ObjectTypeId,
 	ObjectId,
     Permission,
-	JsonActionIds,
     CreatedDatetimeUtc
 )
 SELECT  r.RoleId,
@@ -72,7 +73,6 @@ SELECT  r.RoleId,
 		@CategoryDataObjectTypeId,
 		m.CategoryId,
 		2147483647,
-		NULL,
 		GETDATE()
 	FROM
 	tmp AS m,
@@ -88,14 +88,11 @@ SELECT  r.RoleId,
 
 ;WITH tmp AS (
 	SELECT 
-	t.InputTypeId, 
-	replace(replace (t.Actions, '{"InputActionId":',''),'}','') ActionIds
+	t.InputTypeId	
 
 	FROM
 	(
-		SELECT t.InputTypeId, 
-		(SELECT InputActionId FROM AccountancyDB.dbo.InputAction a WHERE  t.InputTypeId = a.InputTypeId AND a.IsDeleted = 0 FOR JSON PATH) Actions
-
+		SELECT t.InputTypeId
 		FROM AccountancyDB.dbo.InputType t 
 		WHERE t.IsDeleted = 0		
 	) t
@@ -108,7 +105,6 @@ INSERT INTO dbo.RolePermission
 	ObjectTypeId,
 	ObjectId,
     Permission,
-	JsonActionIds,
     CreatedDatetimeUtc
 )
 SELECT  r.RoleId,
@@ -116,7 +112,6 @@ SELECT  r.RoleId,
 		@InputTypeObjectTypeId,
 		m.InputTypeId,
 		2147483647,
-		m.ActionIds,
 		GETDATE()
 	FROM
 	tmp AS m,
@@ -131,14 +126,11 @@ SELECT  r.RoleId,
 	
 ;WITH tmp AS (
 	SELECT 
-	t.VoucherTypeId, 
-	replace(replace (t.Actions, '{"VoucherActionId":',''),'}','') ActionIds
+	t.VoucherTypeId
 
 	FROM
 	(
-		SELECT t.VoucherTypeId, 
-		(SELECT VoucherActionId FROM PurchaseOrderDB.dbo.VoucherAction a WHERE  t.VoucherTypeId = a.VoucherTypeId AND a.IsDeleted = 0 FOR JSON PATH) Actions
-
+		SELECT t.VoucherTypeId
 		FROM PurchaseOrderDB.dbo.VoucherType t 
 		WHERE t.IsDeleted = 0		
 	) t
@@ -151,7 +143,6 @@ INSERT INTO dbo.RolePermission
 	ObjectTypeId,
 	ObjectId,
     Permission,
-	JsonActionIds,
     CreatedDatetimeUtc
 )
 SELECT  r.RoleId,
@@ -159,7 +150,6 @@ SELECT  r.RoleId,
 		@SalesBillObjectTypeId,
 		m.VoucherTypeId,
 		2147483647,
-		m.ActionIds,
 		GETDATE()
 	FROM
 	tmp AS m,
@@ -170,4 +160,36 @@ SELECT  r.RoleId,
 	(
 		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @SalesBillModuleId AND p.ObjectTypeId = @SalesBillObjectTypeId AND p.ObjectId = m.VoucherTypeId
 	)
-	
+
+
+;WITH tmp AS (
+	SELECT t.ReportTypeId
+		
+		FROM [ReportConfigDB].dbo.ReportType t 
+		WHERE t.IsDeleted = 0
+)
+
+INSERT INTO dbo.RolePermission
+(
+    RoleId,
+    ModuleId,
+	ObjectTypeId,
+	ObjectId,
+    Permission,
+    CreatedDatetimeUtc
+)
+SELECT  r.RoleId,
+		@ReportViewModuleId,
+		@ReportTypeObjectTypeId,
+		m.ReportTypeId,
+		2147483647,
+		GETDATE()
+	FROM
+	tmp AS m,
+	dbo.[Role] AS r
+	WHERE 
+	(r.RoleTypeId = 1 OR r.IsEditable = 0)
+	AND NOT EXISTS
+	(
+		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @ReportViewModuleId AND p.ObjectTypeId = @ReportTypeObjectTypeId AND p.ObjectId = m.ReportTypeId
+	)

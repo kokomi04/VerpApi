@@ -10,5 +10,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public int InputTypeId { get; set; }
         public string SourceId { get; set; }
         public long InputBillFId { get; set; }
+        public int? BillObjectTypeId { get; set; }
     }
 }

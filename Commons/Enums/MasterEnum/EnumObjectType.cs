@@ -37,6 +37,11 @@ namespace VErp.Commons.Enums.MasterEnum
 
         //[Description("Phiếu xuất/nhập kho")]
         //Inventory = 12,
+        [Description("Phiếu YC nhập kho")]
+        RequestInventoryInput = 300,
+
+        [Description("Phiếu YC xuất kho")]
+        RequestInventoryOutput = 301,
 
         [Description("Phiếu nhập kho")]
         InventoryInput = 30,
@@ -116,6 +121,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         //AccountingAccount = 33,
 
+
+
         [Description("Loại CTGS")]
         InputType = 34,
 
@@ -130,6 +137,9 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Trường dữ liệu vùng CTGS")]
         InputAreaField = 38,
+
+        [Description("Chứng từ ghi sổ")]
+        InputBill = 39,
 
         [Description("Công ty")]
         Subsidiary = 41,
@@ -155,7 +165,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Thông số hệ thống")]
         SystemParameter = 48,
 
-        //AccountantConfig = 49,
+
+        [Description("Chứng từ bán hàng")]
+        VoucherBill = 49,
 
         [Description("Cấu hình in")]
         PrintConfig = 50,
@@ -212,5 +224,20 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,
+        [Description("Yêu cầu nhập kho")]
+        [GenCodeObject]
+        InventoryInputRequirement = 80,
+        [Description("Yêu cầu xuất kho")]
+        [GenCodeObject]
+        InventoryOutputRequirement = 81,
+        OutsourceTrack = 78,
+        [Description("Khai báo vật tư tiêu hao")]
+        ProductionConsumMaterial = 82,
+
+        [Description("Action")]
+        ActionType = 100,
+
+        [Description("ActionButton")]
+        ActionButton = 101
     }
 }

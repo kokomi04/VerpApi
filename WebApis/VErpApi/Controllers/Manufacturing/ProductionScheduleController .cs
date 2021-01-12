@@ -35,8 +35,15 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionScheduleService.GetProductionSchedules(scheduleTurnId);
         }
 
+        [HttpGet]
+        [Route("productionOrderDetail/{productionOrderDetailId}")]
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedulesByProductionOrderDetail([FromRoute] long productionOrderDetailId)
+        {
+            return await _productionScheduleService.GetProductionSchedulesByProductionOrderDetail(productionOrderDetailId);
+        }
+
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("Search")]
         public async Task<PageData<ProductionScheduleModel>> GetProductionSchedules([FromQuery] string keyword, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
@@ -55,6 +62,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<List<ProductionScheduleInputModel>> UpdateProductionSchedule([FromBody] List<ProductionScheduleInputModel> data)
         {
             return await _productionScheduleService.UpdateProductionSchedule(data);
+        }
+
+        [HttpPut]
+        [Route("{productionScheduleId}/status")]
+        public async Task<bool> UpdateManualProductionScheduleStatus([FromRoute] long productionScheduleId, [FromBody] ProductionScheduleStatusModel status)
+        {
+            return await _productionScheduleService.UpdateManualProductionScheduleStatus(productionScheduleId, status);
         }
 
         [HttpDelete]
@@ -76,6 +90,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<IList<ProductionPlanningOrderDetailModel>> GetProductionPlanningOrderDetail([FromRoute]int productionOrderId)
         {
             return await _productionScheduleService.GetProductionPlanningOrderDetail(productionOrderId);
+        }
+
+        [HttpPost]
+        [Route("searchScheduleTurn")]
+        public async Task<IList<ProductionScheduleModel>> GetProductionSchedulesByScheduleTurnArray([FromBody]long[] scheduleTurnIds)
+        {
+            return await _productionScheduleService.GetProductionSchedulesByScheduleTurnArray(scheduleTurnIds);
         }
 
 

@@ -10,7 +10,7 @@ namespace VErp.Commons.Library.Model
         public string SheetName { get; set; }
         public int FromRow { get; set; }
         public int ToRow { get; set; }
-
+        public bool IgnoreDuplicate { get; set; }
         public IList<ImportExcelMappingField> MappingFields { get; set; }
     }
 

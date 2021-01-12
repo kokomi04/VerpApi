@@ -43,8 +43,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IOutsideImportMappingService _outsideImportMappingService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -52,8 +52,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
-            , IOutsideImportMappingService outsideImportMappingService
             , ICategoryHelperService httpCategoryHelperService
+            , IOutsideMappingHelperService outsideMappingHelperService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -62,8 +62,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
-            _outsideImportMappingService = outsideImportMappingService;
             _httpCategoryHelperService = httpCategoryHelperService;
+            _outsideMappingHelperService = outsideMappingHelperService;
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -322,16 +322,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-        public async Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId)
-        {
-            var mappingInfo = await _outsideImportMappingService.MappingObjectInfo(mappingFunctionKey, objectId);
-            if (mappingInfo == null)
-            {
-                return null;
-            }
-            return await GetBillInfoRows(mappingInfo.InputTypeId, mappingInfo.InputBillFId, "", false, 1, int.MaxValue);
-
-        }
 
         public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
         {
@@ -375,7 +365,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumAction.Add);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumActionType.Add);
 
                 if (result.Code != 0)
                 {
@@ -393,19 +383,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await _accountancyDBContext.SaveChangesAsync();
 
-                var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(inputTypeId, billInfo.FId, 1, data, areaFieldGenCodes);
+                await CreateBillVersion(inputTypeId, billInfo.FId, 1, data, generateTypeLastValues);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumAction.Add);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumActionType.Add);
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
                 {
-                    await _outsideImportMappingService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, billInfo.FId);
+                    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, EnumObjectType.InputBill, billInfo.FId);
                 }
 
-                await ConfirmCustomGenCode(areaFieldGenCodes);
+                await ConfirmCustomGenCode(generateTypeLastValues);
 
                 trans.Commit();
 
@@ -569,7 +559,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumAction action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -1017,7 +1007,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumAction.Update);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumActionType.Update);
                 if (result.Code != 0)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
@@ -1030,18 +1020,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
 
-                var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data, areaFieldGenCodes);
+                await CreateBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data, generateTypeLastValues);
 
                 billInfo.LatestBillVersion++;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumAction.Update);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumActionType.Update);
 
-                await ConfirmCustomGenCode(areaFieldGenCodes);
+                await ConfirmCustomGenCode(generateTypeLastValues);
 
                 trans.Commit();
 
@@ -1303,7 +1293,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumAction.Delete);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumActionType.Delete);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1314,9 +1304,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumAction.Delete);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumActionType.Delete);
 
-                await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
+                await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
 
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Xóa chứng từ {inputTypeInfo.Title}", new { inputTypeId, inputBill_F_Id }.JsonSerialize());
@@ -1330,7 +1320,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task FillGenerateColumn(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
+        private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
         {
             for (var i = 0; i < rows.Count; i++)
             {
@@ -1344,10 +1334,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         (!row.TryGetValue(field.FieldName, out var value) || value.IsNullObject())
                     )
                     {
-                        CustomGenCodeOutputModelOut currentConfig;
+
+                        var code = rows.FirstOrDefault(r => r.ContainsKey(AccountantConstants.BILL_CODE))?[AccountantConstants.BILL_CODE]?.ToString();
+
+                        var ngayCt = rows.FirstOrDefault(r => r.ContainsKey(AccountantConstants.BILL_DATE))?[AccountantConstants.BILL_DATE]?.ToString();
+
+                        long? ngayCtValue = null;
+                        if (long.TryParse(ngayCt, out var v))
+                        {
+                            ngayCtValue = v;
+                        }
+
+                        CustomGenCodeOutputModel currentConfig;
                         try
                         {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.InputTypeRow, EnumObjectType.InputAreaField, field.InputAreaFieldId);
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.InputTypeRow, EnumObjectType.InputAreaField, field.InputAreaFieldId, fId, code, ngayCtValue);
 
                             if (currentConfig == null)
                             {
@@ -1363,18 +1364,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             throw;
                         }
 
+                        var generateType = $"{currentConfig.CustomGenCodeId}_{currentConfig.CurrentLastValue.BaseValue}";
 
-                        if (!areaFieldGenCodes.ContainsKey(field.InputAreaFieldId))
+                        if (!generateTypeLastValues.ContainsKey(generateType))
                         {
-                            areaFieldGenCodes.Add(field.InputAreaFieldId, currentConfig);
+                            generateTypeLastValues.Add(generateType, currentConfig.CurrentLastValue);
                         }
 
-                        var genCodeInfo = areaFieldGenCodes[field.InputAreaFieldId];
+                        var lastTypeValue = generateTypeLastValues[generateType];
+
 
                         try
                         {
 
-                            var generated = await _customGenCodeHelperService.GenerateCode(genCodeInfo.CustomGenCodeId, genCodeInfo.LastValue);
+                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, lastTypeValue.LastValue, fId, code, ngayCtValue);
                             if (generated == null)
                             {
                                 throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
@@ -1382,8 +1385,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
                             value = generated.CustomCode;
-                            genCodeInfo.LastValue = generated.LastValue;
-                            genCodeInfo.LastCode = generated.CustomCode;
+                            lastTypeValue.LastValue = generated.LastValue;
+                            lastTypeValue.LastCode = generated.CustomCode;
                         }
                         catch (BadRequestException badRequest)
                         {
@@ -1408,27 +1411,26 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task ConfirmCustomGenCode(Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
+        private async Task ConfirmCustomGenCode(Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
-            var customGenCodeIds = areaFieldGenCodes.Select(f => f.Value.CustomGenCodeId).ToList();
-            foreach (var customGenCodeId in customGenCodeIds)
+            foreach (var (_, lasValue) in generateTypeLastValues)
             {
-                await _customGenCodeHelperService.ConfirmCode(customGenCodeId);
+                await _customGenCodeHelperService.ConfirmCode(lasValue);
             }
         }
 
-        private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, BillInfoModel data, Dictionary<int, CustomGenCodeOutputModelOut> areaFieldGenCodes)
+        private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
             var fields = (await GetInputFields(inputTypeId)).ToDictionary(f => f.FieldName, f => f);
 
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(areaFieldGenCodes, infoFields, new[] { data.Info });
+            await FillGenerateColumn(inputBill_F_Id, generateTypeLastValues, infoFields, new[] { data.Info });
 
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(areaFieldGenCodes, rowFields, data.Rows);
+            await FillGenerateColumn(inputBill_F_Id, generateTypeLastValues, rowFields, data.Rows);
 
             var insertColumns = new HashSet<string>();
 
@@ -1921,7 +1923,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 try
                 {
-                    var areaFieldGenCodes = new Dictionary<int, CustomGenCodeOutputModelOut>();
+
+                    var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
                     // Get all fields
                     var inputFields = _accountancyDBContext.InputField
@@ -1942,7 +1945,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, inputFields, EnumAction.Add);
+                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, inputFields, EnumActionType.Add);
 
                         var billInfo = new InputBill()
                         {
@@ -1956,13 +1959,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         await _accountancyDBContext.SaveChangesAsync();
 
-                        await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill, areaFieldGenCodes);
+                        await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputType.AfterSaveAction, bill, inputFields, EnumAction.Add);
+                        await ProcessActionAsync(inputType.AfterSaveAction, bill, inputFields, EnumActionType.Add);
                     }
 
-                    await ConfirmCustomGenCode(areaFieldGenCodes);
+                    await ConfirmCustomGenCode(generateTypeLastValues);
 
                     trans.Commit();
                 }

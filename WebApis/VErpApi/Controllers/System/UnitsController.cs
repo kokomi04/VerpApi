@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
@@ -28,6 +29,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<PageData<UnitOutput>> Get([FromQuery] string keyword, [FromQuery] EnumUnitStatus? unitStatusId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _unitService.GetList(keyword, unitStatusId, page, size);
