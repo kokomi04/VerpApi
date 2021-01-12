@@ -13,8 +13,10 @@ namespace VErp.Services.Organization.Model.Customer
         {
             Contacts = new List<CustomerContactModel>();
             BankAccounts = new List<CustomerBankAccountModel>();
+            CustomerAttachments = new List<CustomerAttachmentModel>();
         }
         public IList<CustomerContactModel> Contacts { get; set; }
         public IList<CustomerBankAccountModel> BankAccounts { get; set; }
+        public IList<CustomerAttachmentModel> CustomerAttachments { get; set; }
     }
 }

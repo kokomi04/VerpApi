@@ -22,6 +22,7 @@ using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Model;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -147,7 +148,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         {
             await ValidateCustomerModels(customers);
 
-            var (customerEntities, originData, contacts, bankAccounts) = ConvertToCustomerEntities(customers);
+            var (customerEntities, originData, contacts, bankAccounts, attachments) = ConvertToCustomerEntities(customers);
 
             using (var transaction = _organizationContext.Database.BeginTransaction())
             {
@@ -155,6 +156,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 var contactEntities = new List<CustomerContact>();
                 var bankAccountEntities = new List<CustomerBankAccount>();
+                var customerAttachments = new List<CustomerAttachment>();
 
                 foreach (var entity in customerEntities)
                 {
@@ -168,12 +170,19 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         bacnkAcc.CustomerId = entity.CustomerId;
                     }
 
+                    foreach (var attach in attachments[entity])
+                    {
+                        attach.CustomerId = entity.CustomerId;
+                    }
+
                     contactEntities.AddRange(contacts[entity]);
                     bankAccountEntities.AddRange(bankAccounts[entity]);
+                    customerAttachments.AddRange(attachments[entity]);
                 }
 
                 await _organizationContext.InsertByBatch(contactEntities, false);
                 await _organizationContext.InsertByBatch(bankAccountEntities, false);
+                await _organizationContext.InsertByBatch(customerAttachments, false);
 
                 transaction.Commit();
             }
@@ -215,6 +224,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var bankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+            var customerAttachments = await _organizationContext.CustomerAttachment.Where(at => at.CustomerId == customerId).ProjectTo<CustomerAttachmentModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             return new CustomerModel()
             {
@@ -261,7 +271,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     BankBranch = ba.BankBranch,
                     BankCode = ba.BankCode
 
-                }).ToList()
+                }).ToList(),
+                CustomerAttachments = customerAttachments
             };
         }
 
@@ -389,6 +400,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 {
                     var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
                     var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+                    var customerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
+
+
                     customerInfo.LegalRepresentative = data.LegalRepresentative;
                     customerInfo.CustomerCode = data.CustomerCode;
                     customerInfo.CustomerName = data.CustomerName;
@@ -492,6 +506,20 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                             ba.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
                     }
+
+                    foreach(var attach in customerAttachments)
+                    {
+                        var change = data.CustomerAttachments.FirstOrDefault(x => x.CustomerAttachmentId == attach.CustomerAttachmentId);
+                        if (change != null)
+                            _mapper.Map(change, attach);
+                        else
+                            attach.IsDeleted = true;
+                    }
+                    var newAttachment = data.CustomerAttachments.AsQueryable()
+                        .Where(x => !(x.CustomerAttachmentId > 0))
+                        .ProjectTo<CustomerAttachment>(_mapper.ConfigurationProvider).ToList();
+                    newAttachment.ForEach(x => x.CustomerId = customerInfo.CustomerId);
+                    await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
 
                     await _organizationContext.SaveChangesAsync();
                     trans.Commit();
@@ -658,13 +686,15 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         private (IList<CustomerEntity> customerEntities,
             Dictionary<CustomerEntity, CustomerModel> originData,
             Dictionary<CustomerEntity, List<CustomerContact>> contacts,
-            Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts)
+            Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts,
+            Dictionary<CustomerEntity, List<CustomerAttachment>> attachments)
             ConvertToCustomerEntities(IList<CustomerModel> customers)
         {
             var customerEntities = new List<CustomerEntity>();
             var originData = new Dictionary<CustomerEntity, CustomerModel>();
             var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
             var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
+            var attachments = new Dictionary<CustomerEntity, List<CustomerAttachment>>();
 
             foreach (var data in customers)
             {
@@ -700,6 +730,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 originData.Add(customer, data);
                 contacts.Add(customer, new List<CustomerContact>());
                 bankAccounts.Add(customer, new List<CustomerBankAccount>());
+                attachments.Add(customer, new List<CustomerAttachment>());
 
                 if (data.Contacts != null && data.Contacts.Count > 0)
                 {
@@ -734,9 +765,21 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         UpdatedDatetimeUtc = DateTime.UtcNow
                     }));
                 }
+
+                if (data.CustomerAttachments != null && data.CustomerAttachments.Count > 0)
+                {
+                    attachments[customer].AddRange(data.CustomerAttachments.Select(attach => new CustomerAttachment()
+                    {
+                        Title = attach.Title,
+                        AttachmentFileId = attach.AttachmentFileId,
+                        IsDeleted = false,
+                        CreatedDatetimeUtc = DateTime.UtcNow,
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                    }));
+                }
             }
 
-            return (customerEntities, originData, contacts, bankAccounts);
+            return (customerEntities, originData, contacts, bankAccounts, attachments);
         }
 
     }

@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
+using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
 namespace VErp.Services.Organization.Model.Customer
 {
-    public class CustomerListOutput
+    public class CustomerListOutput:  IMapFrom<CustomerEntity>
     {
         public int CustomerId { get; set; }
         public string CustomerCode { get; set; }
