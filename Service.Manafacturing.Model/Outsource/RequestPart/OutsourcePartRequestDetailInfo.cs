@@ -48,6 +48,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string ProductTitle { get; set; }
         public decimal QuantityProcessed { get; set; }
         public EnumOutsourceRequestStatusType OutsourcePartRequestDetailStatusId { get; set; }
+        public bool MarkInvalid { get; set; }
     }
 
 }

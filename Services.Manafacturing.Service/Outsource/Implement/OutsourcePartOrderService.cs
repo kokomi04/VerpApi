@@ -56,6 +56,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<long> CreateOutsourceOrderPart(OutsourceOrderInfo req)
         {
+            await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
+
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
                 try
@@ -247,6 +249,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> UpdateOutsourceOrderPart(long outsourceOrderId, OutsourceOrderInfo req)
         {
+             await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -286,6 +290,26 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 throw;
             }
         }
-        
+
+
+        private async Task CheckMarkInvalidOutsourcePartRequest(long[] outsourcePartrequestDetaildIds)
+        {
+            var lsInValid = (await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
+               .Include(x => x.OutsourcePartRequest)
+               .Where(x => outsourcePartrequestDetaildIds.Contains(x.OutsourcePartRequestDetailId))
+               .ToListAsync())
+               .Select(x => new
+               {
+                   OutsourcePartRequestCode = x.OutsourcePartRequest.OutsourcePartRequestCode,
+                   MarkInvalid = x.OutsourcePartRequest.MarkInvalid
+               })
+               .Where(x => x.MarkInvalid)
+               .Select(x => x.OutsourcePartRequestCode)
+               .Distinct()
+               .ToArray();
+            if (lsInValid.Length > 0)
+                throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{String.Join(", ", lsInValid)}\" chưa xác thực với QTSX");
+            
+        }
     }
 }
