@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -9,6 +10,8 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
@@ -27,19 +30,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
-        private readonly IOutsourcePartRequestService _outsourcePartRequestService;
 
         public ValidateProductionProcessService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionProcessService> logger
-            , IMapper mapper
-            , IOutsourcePartRequestService outsourcePartRequestService)
+            , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
-            _outsourcePartRequestService = outsourcePartRequestService;
         }
 
         public async Task<IList<ProductionProcessWarningMessage>> ValidateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel productionProcess)
@@ -122,41 +122,38 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                         QuantityUsage = x.Sum(x => x.Quantity)
                                     });
 
-            var outsourcePartRequestIds = (await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
-                            .Include(x => x.ProductionOrderDetail)
-                            .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionProcess.ContainerId)
-                            .Select(x => x.OutsourcePartRequestId)
-                            .ToArrayAsync());
-            if (outsourcePartRequestIds.Length > 0)
+            var outsourcePartRequestDetails = await GetOutsourcePartRequestDetailInfo(productionProcess.ContainerId);
+
+            if (outsourcePartRequestDetails.Count() > 0)
             {
-                var outsourcePartRequestDetails = await _outsourcePartRequestService.GetRequestDetailByArrayRequestId(outsourcePartRequestIds);
-                foreach (var rqDetail in outsourcePartRequestDetails)
+                foreach (var outsourcePartRequestDetail in outsourcePartRequestDetails)
                 {
-                    var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == rqDetail.OutsourcePartRequestDetailId);
+                     
+                        var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == outsourcePartRequestDetail.OutsourcePartRequestDetailId);
 
-                    if (usage == null)
-                    {
-                        lsWarning.Add(new ProductionProcessWarningMessage
+                        if (usage == null)
                         {
-                            Message = $"YCGC {rqDetail.OutsourcePartRequestCode}-Chi tiết \"{rqDetail.ProductPartTitle}\" của SP \"{rqDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
-                            ObjectId = rqDetail.OutsourcePartRequestId,
-                            ObjectCode = rqDetail.OutsourcePartRequestCode,
-                            GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
-                        });
+                            lsWarning.Add(new ProductionProcessWarningMessage
+                            {
+                                Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
+                                ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
+                                ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
+                                GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                                WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                            });
 
-                    }
-                    else if (usage.QuantityUsage != rqDetail.Quantity)
-                    {
-                        lsWarning.Add(new ProductionProcessWarningMessage
+                        }
+                        else if (usage.QuantityUsage != outsourcePartRequestDetail.Quantity)
                         {
-                            Message = $"YCGC {rqDetail.OutsourcePartRequestCode}-Số lượng của chi tiết \"{rqDetail.ProductPartTitle}\" của SP \"{rqDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
-                            ObjectId = rqDetail.OutsourcePartRequestId,
-                            ObjectCode = rqDetail.OutsourcePartRequestCode,
-                            GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
-                        });
-                    }
+                            lsWarning.Add(new ProductionProcessWarningMessage
+                            {
+                                Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Số lượng của chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
+                                ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
+                                ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
+                                GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                                WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                            });
+                        }
                 }
             }
             return lsWarning;
@@ -480,6 +477,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 result.Add(roleOutput.ProductionStepCode);
                 FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepCode);
             }
+        }
+
+        private async Task<IList<OutsourcePartRequestDetailInfo>> GetOutsourcePartRequestDetailInfo(long productionOrderId)
+        {
+            var parammeters = new List<SqlParameter>();
+            var sql = new StringBuilder($"SELECT * FROM vOutsourcePartRequestExtractInfo v Where v.ProductionOrderId = {productionOrderId}");
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData.ConvertData<OutsourcePartRequestDetailExtractInfo>()
+               .AsQueryable()
+               .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)
+               .ToList();
+
+            return lst;
         }
     }
 
