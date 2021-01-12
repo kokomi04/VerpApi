@@ -141,7 +141,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                             case (int)EnumModule.Input:
 
                                 foreach (var c in inputTypes)
-                                {                                 
+                                {
                                     var permission = new RolePermissionEntity
                                     {
                                         CreatedDatetimeUtc = DateTime.UtcNow,
@@ -149,7 +149,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                         RoleId = roleInfo.RoleId,
                                         Permission = int.MaxValue,
                                         ObjectTypeId = (int)EnumObjectType.InputType,
-                                        ObjectId = c.InputTypeId,                                      
+                                        ObjectId = c.InputTypeId,
                                     };
                                     lstPermissions.Add(permission);
                                 }
@@ -157,7 +157,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                             case (int)EnumModule.SalesBill:
                                 foreach (var c in voucherTypes)
-                                {                                  
+                                {
                                     var permission = new RolePermissionEntity
                                     {
                                         CreatedDatetimeUtc = DateTime.UtcNow,
@@ -165,7 +165,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                         RoleId = roleInfo.RoleId,
                                         Permission = int.MaxValue,
                                         ObjectTypeId = (int)EnumObjectType.VoucherType,
-                                        ObjectId = c.VoucherTypeId,                                      
+                                        ObjectId = c.VoucherTypeId,
                                     };
                                     lstPermissions.Add(permission);
                                 }
@@ -398,15 +398,23 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 var newPermissions = new List<Infrastructure.EF.MasterDB.RolePermission>();
                 if (permissions.Count > 0)
                 {
-                    newPermissions = permissions.Select(p => new Infrastructure.EF.MasterDB.RolePermission()
+                    newPermissions = permissions.Select(p => new
                     {
                         RoleId = roleId,
                         ModuleId = p.ModuleId,
                         Permission = p.Permission,
                         ObjectTypeId = p.ObjectTypeId,
-                        ObjectId = p.ObjectId,
-                        CreatedDatetimeUtc = DateTime.UtcNow
-                    }).ToList();
+                        ObjectId = p.ObjectId
+                    }).Distinct()
+                    .Select(p => new Infrastructure.EF.MasterDB.RolePermission
+                    {
+                        RoleId = roleId,
+                        ModuleId = p.ModuleId,
+                        Permission = p.Permission,
+                        ObjectTypeId = p.ObjectTypeId,
+                        ObjectId = p.ObjectId
+                    })
+                    .ToList();
 
                     await _masterContext.RolePermission.AddRangeAsync(newPermissions);
                 }
