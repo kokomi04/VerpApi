@@ -69,22 +69,26 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 customGenCodeId = currentConfig.CustomGenCodeId;
 
                 // Create order
-                var order = _mapper.Map<OutsourcePartRequest>(req as OutsourcePartRequestModel );
-                order.OutsourcePartRequestCode = generated.CustomCode;
+                var request = _mapper.Map<OutsourcePartRequest>(req as OutsourcePartRequestModel);
+                request.OutsourcePartRequestCode = generated.CustomCode;
 
-                _manufacturingDBContext.OutsourcePartRequest.Add(order);
+                _manufacturingDBContext.OutsourcePartRequest.Add(request);
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 // Create order detail
-                var orderDetails = new List<OutsourcePartRequestDetail>();
+                var requestDetails = new List<OutsourcePartRequestDetail>();
                 foreach (var data in req.OutsourcePartRequestDetail)
                 {
-                    data.OutsourcePartRequestId = order.OutsourcePartRequestId;
+                    data.OutsourcePartRequestId = request.OutsourcePartRequestId;
                     var entity = _mapper.Map<OutsourcePartRequestDetail>(data as RequestOutsourcePartDetailModel);
-                    orderDetails.Add(entity);
+                    requestDetails.Add(entity);
                 }
 
-                await _manufacturingDBContext.OutsourcePartRequestDetail.AddRangeAsync(orderDetails);
+                await _manufacturingDBContext.OutsourcePartRequestDetail.AddRangeAsync(requestDetails);
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                //Check valid với quy trinh san xuat
+                request.MarkInvalid = await MarkValidateOutsourcePartRequest(req.ProductionOrderId, requestDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 if (customGenCodeId > 0)
@@ -93,9 +97,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {order.OutsourcePartRequestId}", order.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, request.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {request.OutsourcePartRequestId}", request.JsonSerialize());
 
-                return order.OutsourcePartRequestId;
+                return request.OutsourcePartRequestId;
             }
             catch (Exception ex)
             {
@@ -140,8 +144,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> UpdateOutsourcePartRequest(int OutsourcePartRequestId, OutsourcePartRequestInfo req)
         {
-            var order = await _manufacturingDBContext.OutsourcePartRequest.FirstOrDefaultAsync(x => x.OutsourcePartRequestId == OutsourcePartRequestId);
-            if (order == null)
+            var request = await _manufacturingDBContext.OutsourcePartRequest.FirstOrDefaultAsync(x => x.OutsourcePartRequestId == OutsourcePartRequestId);
+            if (request == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công có mã là {OutsourcePartRequestId}");
 
             var details = _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => x.OutsourcePartRequestId == OutsourcePartRequestId).ToList();
@@ -149,7 +153,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             try
             {
                 // update order
-                _mapper.Map(req, order);
+                _mapper.Map(req, request);
 
                 //Valid Update and action
                 foreach (var u in details)
@@ -162,12 +166,21 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
 
                 // create new detail
-                var lsNewDetail = req.OutsourcePartRequestDetail.Where(x => !details.Select(x => x.OutsourcePartRequestDetailId).Contains(x.OutsourcePartRequestDetailId)).ToList();
-                var temp = _mapper.Map<List<OutsourcePartRequestDetail>>(lsNewDetail);
-                temp.ForEach(x => x.OutsourcePartRequestId = order.OutsourcePartRequestId);
-                await _manufacturingDBContext.OutsourcePartRequestDetail.AddRangeAsync(temp);
+                var newRequestDetails  = req.OutsourcePartRequestDetail
+                    .Where(x => !details.Select(x => x.OutsourcePartRequestDetailId).Contains(x.OutsourcePartRequestDetailId))
+                    .AsQueryable()
+                    .ProjectTo<OutsourcePartRequestDetail>(_mapper.ConfigurationProvider)
+                    .ToList();
+                newRequestDetails.ForEach(x => x.OutsourcePartRequestId = request.OutsourcePartRequestId);
 
+                await _manufacturingDBContext.OutsourcePartRequestDetail.AddRangeAsync(newRequestDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
+
+                //Check valid với quy trinh san xuat
+                newRequestDetails.AddRange(details.Where(x => !x.IsDeleted).ToList());
+                request.MarkInvalid = await MarkValidateOutsourcePartRequest(req.ProductionOrderId, newRequestDetails);
+                await _manufacturingDBContext.SaveChangesAsync();
+
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, req.OutsourcePartRequestId, $"Cập nhật yêu cầu gia công chi tiết {req.OutsourcePartRequestId}", req.JsonSerialize());
@@ -335,6 +348,32 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                 .ToListAsync();
             return data;
         }
-       
+
+        private async Task<bool> MarkValidateOutsourcePartRequest(long productionOrderId , IList<OutsourcePartRequestDetail> rqDetails)
+        {
+            var outsourcePartRequestDetailIds = rqDetails.Select(x => x.OutsourcePartRequestDetailId).ToArray();
+
+            var totalQuantityAllocate = (await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Include(s => s.ProductionStepLinkDataRole)
+                .ThenInclude(r => r.ProductionStepLinkData)
+                .Where(x => x.ContainerId == productionOrderId && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
+                .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider).ToListAsync())
+                .SelectMany(x => x.ProductionStepLinkDatas)
+                .Where(x => outsourcePartRequestDetailIds.Contains(x.OutsourceRequestDetailId.GetValueOrDefault()))
+                .GroupBy(x => x.OutsourceRequestDetailId.GetValueOrDefault())
+                .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+
+            if (totalQuantityAllocate.Count() > 0)
+            {
+                foreach (var rqd in rqDetails)
+                    if (!totalQuantityAllocate.ContainsKey(rqd.OutsourcePartRequestDetailId) 
+                        || totalQuantityAllocate[rqd.OutsourcePartRequestDetailId] != rqd.Quantity)
+                        return true;
+
+                return false;
+            }
+
+            return true;
+        }
     }
 }
