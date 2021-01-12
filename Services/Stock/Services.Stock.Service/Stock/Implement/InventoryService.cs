@@ -246,7 +246,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             SourceId = m.SourceId,
                             InputBillFId = m.InputBillFId,
                             BillObjectTypeId = (EnumObjectType)m.BillObjectTypeId
-                            
+
                         }).ToList()
                 });
 
@@ -1490,7 +1490,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             pk.ProductUnitConversionRemaining,
                             pk.ProductUnitConversionWaitting,
                             pk.CreatedDatetimeUtc,
-                            pk.UpdatedDatetimeUtc
+                            pk.UpdatedDatetimeUtc,
+                            pk.OrderCode,
+                            pk.Pocode,
+                            pk.ProductionOrderCode
                         };
 
             var total = await query.CountAsync();
@@ -1537,7 +1540,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
                     LocationOutputModel = locationOutputModel,
-                    ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null
+                    ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null,
+                    OrderCode = item.OrderCode,
+                    POCode = item.Pocode,
+                    ProductionOrderCode = item.ProductionOrderCode
+
                 });
             }
             return (packageList, total);

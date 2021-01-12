@@ -62,6 +62,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             obj.ExpiryTime = expiredDate == DateTime.MinValue ? null : (DateTime?)expiredDate;
             obj.UpdatedDatetimeUtc = DateTime.UtcNow;
             obj.Description = req.Description;
+            obj.OrderCode = req.OrderCode;
+            obj.Pocode = req.POCode;
+            obj.ProductionOrderCode = req.ProductionOrderCode;
 
             await _stockDbContext.SaveChangesAsync();
 
