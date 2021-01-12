@@ -652,17 +652,17 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size);
+            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
 
             var fields = (from f in _accountancyContext.CategoryField
@@ -762,7 +762,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (!category.IsTreeView)
             {
-                dataSql.Append($" ORDER BY [{viewAlias}].F_Id");
+                dataSql.Append(string.IsNullOrEmpty(orderBy) ? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY [{viewAlias}].{orderBy}");
                 if (size > 0)
                 {
                     dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
