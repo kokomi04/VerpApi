@@ -121,7 +121,13 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{containerTypeId}/{containerId}")]
         public async Task<bool> UpdateProductionProcess([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] ProductionProcessModel req)
         {
-            return await _productionProcessService.UpdateProductionProcess(containerTypeId, containerId, req);
+            var rs = await _productionProcessService.UpdateProductionProcess(containerTypeId, containerId, req);
+            if (containerTypeId == EnumContainerType.ProductionOrder)
+            {
+                await _productionProcessService.UpdateMarkInvalidOutsourcePartRequest(containerId);
+                await _productionProcessService.UpdateMarkInvalidOutsourceStepRequest(containerId);
+            }
+            return rs;
         }
 
         [HttpPost]

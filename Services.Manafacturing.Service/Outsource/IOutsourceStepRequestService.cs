@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<PageData<OutsourceStepRequestSearch>> GetListOutsourceStepRequest(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId);
         Task<IList<OutsourceStepRequestModel>> GetAllOutsourceStepRequest();
-        Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepInOutsourceStepRequest(long productionOrderId);
+        Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepHadOutsourceStepRequest(long productionOrderId);
         Task<IList<ProductionStepInfo>> GeneralOutsourceStepOfProductionOrder(long productionOrderId);
     }
 }
