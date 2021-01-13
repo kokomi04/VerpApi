@@ -145,7 +145,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
 #endif
                 }
-                if (!string.IsNullOrEmpty(_model.Header.FormBreif))
+                if (!string.IsNullOrEmpty(_model.Header.FormBreif) && !_model.Header.FormBreif.Contains("null"))
                 {
                     int l = lCol;
                     int f = lCol - 4;
@@ -154,7 +154,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     sheet.EnsureCell(fRow, f).SetCellValue(_model.Header.FormBreif);
                     sheet.SetCellStyle(fRow, f, 12, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Center, isWrap: true);
                 }
-                if (!string.IsNullOrEmpty(_model.Header.CompanyBreif))
+                if (!string.IsNullOrEmpty(_model.Header.CompanyBreif) && !_model.Header.CompanyBreif.Contains("null"))
                 {
                     sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, fCol, lCol));
                     sheet.EnsureCell(fRow, fCol).SetCellValue(_model.Header.CompanyBreif);
@@ -178,28 +178,31 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private void GenerateBodyInfo()
         {
-            //Tiêu đề báo cáo
-            currentRow += 2;
-            if (!string.IsNullOrEmpty(_model.Body.Title))
+            if (_model.Body != null)
             {
-                int fRow = currentRow;
-                sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, maxCloumn - 1));
-                sheet.EnsureCell(fRow, 0).SetCellValue(_model.Body.Title);
-                sheet.SetCellStyle(fRow, 0, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center, fontSize: 18, isBold: true);
-            }
-            if (_model.Body.HeadDetails.Count > 0)
-            {
-                int i = 1;
-                foreach (var info in _model.Body.HeadDetails)
+                //Tiêu đề báo cáo
+                currentRow += 2;
+                if (!string.IsNullOrEmpty(_model.Body.Title))
                 {
-                    int row = currentRow + i;
-                    sheet.AddMergedRegion(new CellRangeAddress(row, row, 0, maxCloumn - 1));
-                    sheet.EnsureCell(row, 0).SetCellValue(info.Value);
-                    sheet.SetCellStyle(row, 0, vAlign: VerticalAlignment.Top, hAlign: drTextAlign[info.TextAlign]);
-                    i++;
+                    int fRow = currentRow;
+                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, maxCloumn - 1));
+                    sheet.EnsureCell(fRow, 0).SetCellValue(_model.Body.Title);
+                    sheet.SetCellStyle(fRow, 0, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center, fontSize: 18, isBold: true);
                 }
+                if (_model.Body.HeadDetails.Count > 0)
+                {
+                    int i = 1;
+                    foreach (var info in _model.Body.HeadDetails)
+                    {
+                        int row = currentRow + i;
+                        sheet.AddMergedRegion(new CellRangeAddress(row, row, 0, maxCloumn - 1));
+                        sheet.EnsureCell(row, 0).SetCellValue(info.Value);
+                        sheet.SetCellStyle(row, 0, vAlign: VerticalAlignment.Top, hAlign: drTextAlign[info.TextAlign]);
+                        i++;
+                    }
 
-                currentRow += _model.Body.HeadDetails.Count;
+                    currentRow += _model.Body.HeadDetails.Count;
+                }
             }
         }
 
@@ -327,9 +330,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private void WriteFooter()
         {
-            var signs = _model.Footer.SignText.Split("@");
+            var signs = _model.Footer?.SignText?.Split("@");
 
-            if (signs.Length > 0)
+            if (signs != null && signs.Length > 0)
             {
                 int fRow = currentRow + 3;
 
