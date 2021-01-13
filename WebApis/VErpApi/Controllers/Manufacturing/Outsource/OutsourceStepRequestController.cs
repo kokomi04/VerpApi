@@ -80,7 +80,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         [Route("listProductionStepOutsourced")]
         public async Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepInOutsourceStepRequest([FromQuery]long productionOrderId)
         {
-            return await _outsourceStepRequestService.GetProductionStepInOutsourceStepRequest(productionOrderId);
+            return await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(productionOrderId);
         }
 
     }

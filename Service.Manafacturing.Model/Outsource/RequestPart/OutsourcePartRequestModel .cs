@@ -18,6 +18,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public long OutsourcePartRequestDate { get; set; }
         [Required(ErrorMessage ="Thông tin thời hạn hoàn thành là bắt buộc")]
         public long OutsourcePartRequestFinishDate { get; set; }
+        public bool MarkInvalid { get; set; }
 
         public void Mapping(Profile profile)
         {
