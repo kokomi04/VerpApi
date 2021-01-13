@@ -626,7 +626,7 @@ namespace VErp.Commons.Library
                     return longValue;
                 case EnumDataType.Decimal:
                     decimal decimalValue;
-                    if (!decimal.TryParse(value.ToString(), out decimalValue))
+                    if (!decimal.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu decimal");
                     }
