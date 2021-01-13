@@ -359,7 +359,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                 FromStepId = from.ProductionStepId,
                                 ToStepId = to.ProductionStepId,
                                 ToStepCode = to.ProductionStepCode,
-                                ProductionStepLinkTypeId = to.ProductionStepLinkTypeId
+                                ProductionStepLinkTypeId = (int)to.ProductionStepLinkTypeId
                             });
                         }
                     }

@@ -13,6 +13,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public string FromStepCode { get; set; }
         public long ToStepId { get; set; }
         public string ToStepCode { get; set; }
-        public EnumProductionStepLinkType ProductionStepLinkTypeId { get; set; }
+        public int? ProductionStepLinkTypeId { get; set; }
     }
 }
