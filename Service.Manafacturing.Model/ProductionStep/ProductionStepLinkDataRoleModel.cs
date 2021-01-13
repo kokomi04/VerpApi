@@ -20,7 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     {
         public string ProductionStepCode { get; set; }
         public string ProductionStepLinkDataCode { get; set; }
-        public EnumProductionStepLinkType ProductionStepLinkTypeId { get; set; }
+        public int? ProductionStepLinkTypeId { get; set; }
 
         //public void Mapping(Profile profile)
         //{
