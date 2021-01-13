@@ -55,7 +55,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<long> CreateOutsourceStepOrderPart(OutsourceStepOrderModel req)
         {
-
+            await CheckMarkInvalidOutsourceStepRequest(req);
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
                 try
@@ -237,6 +237,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             if (outsourceStepOrder == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
 
+            await CheckMarkInvalidOutsourceStepRequest(req);
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -306,6 +308,18 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 _logger.LogError(ex, "DeleteOutsouceStepOrder");
                 throw;
             }
+        }
+
+        private async Task CheckMarkInvalidOutsourceStepRequest(OutsourceStepOrderModel req)
+        {
+            var requestIds = req.outsourceOrderDetail.Select(x => x.OutsourceStepRequestId).Distinct();
+            var outsourceStepRequests = (await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
+                .Where(x => requestIds.Contains(x.OutsourceStepRequestId) && x.MarkInValid)
+                .Select(x => x.OutsourceStepRequestCode)
+                .ToListAsync());
+            if (outsourceStepRequests.Count > 0)
+                throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{String.Join(", ", outsourceStepRequests)}\" chưa xác thực với QTSX");
+
         }
     }
 }

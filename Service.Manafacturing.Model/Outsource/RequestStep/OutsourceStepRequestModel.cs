@@ -23,6 +23,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public long OutsourceStepRequestDate { get; set; }
         public string ProductionOrderCode { get; set; }
         public string ProductionProcessTitle { get; set; }
+        public bool MarkInValid { get; set; }
 
         public IList<OutsourceStepRequestDataModel> OutsourceStepRequestData { get; set; }
 
@@ -60,6 +61,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
                 .ForMember(m => m.OutsourceStepRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestData, v => v.MapFrom(m => m.OutsourceStepRequestData))
                 .ForMember(m => m.ProductionProcessId, v => v.MapFrom(m => m.ProductionStepId))
+                .ForMember(m => m.MarkInValid, v => v.MapFrom(m => m.MarkInValid))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
