@@ -151,7 +151,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepCode = s.ProductionStepCode,
                 ProductionStepLinkDataCode = d.ProductionStepLinkDataCode,
                 ProductionStepLinkDataRoleTypeId = d.ProductionStepLinkDataRoleTypeId,
-                ProductionStepLinkTypeId = d.ProductionStepLinkTypeId
+                ProductionStepLinkTypeId = (int)d.ProductionStepLinkTypeId
             }).ToList();
 
             var stepInfos = productionSteps.Select(s => (ProductionStepModel)s).ToList();
@@ -212,7 +212,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepCode = s.ProductionStepCode,
                 ProductionStepLinkDataCode = d.ProductionStepLinkData.ProductionStepLinkDataCode,
                 ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
-                ProductionStepLinkTypeId = (EnumProductionStepLinkType)d.ProductionStepLinkData.ProductionStepLinkTypeId
+                ProductionStepLinkTypeId = d.ProductionStepLinkData.ProductionStepLinkTypeId
             }).ToList();
 
             //Lấy thông tin dữ liệu của steplinkdata
