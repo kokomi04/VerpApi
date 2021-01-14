@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum.Accountant;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Programing;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Accountancy.Service.Programing
 {
@@ -19,5 +20,7 @@ namespace VErp.Services.Accountancy.Service.Programing
         Task<bool> UpdateFunction(int programingFunctionId, ProgramingFunctionModel model);
 
         Task<bool> DeleteFunction(int programingFunctionId);
+
+        Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary inputData);
     }
 }
