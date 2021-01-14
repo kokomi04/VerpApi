@@ -148,6 +148,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.MenuId).HasComment("");
+
                 entity.Property(e => e.Title).HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
@@ -582,7 +584,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.HasKey(e => new { e.RoleId, e.ModuleId, e.ObjectTypeId, e.ObjectId });
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
-               
 
                 entity.HasOne(d => d.Module)
                     .WithMany(p => p.RolePermission)
