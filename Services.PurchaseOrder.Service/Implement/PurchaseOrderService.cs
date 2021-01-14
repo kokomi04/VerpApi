@@ -61,9 +61,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _productHelperService = productHelperService;
         }
 
-        public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
+                        join d in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals d.PurchaseOrderId
+                        join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId into ps
+                        from p in ps.DefaultIfEmpty()
+                        join c in _purchaseOrderDBContext.RefCustomer on po.CustomerId equals c.CustomerId into cs
+                        from c in cs.DefaultIfEmpty()
                         select new
                         {
                             po.PurchaseOrderId,
@@ -90,6 +95,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.CheckedDatetimeUtc,
                             po.CensorDatetimeUtc,
 
+                            c.CustomerCode,
+                            c.CustomerName,
+
+                            p.ProductId,
+                            p.ProductCode,
+                            p.ProductName,
+
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -98,7 +110,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                    .Where(q => q.PurchaseOrderCode.Contains(keyword)
                    || q.Content.Contains(keyword)
                    || q.AdditionNote.Contains(keyword)
+                   || q.CustomerCode.Contains(keyword)
+                   || q.CustomerName.Contains(keyword)
+                   || q.ProductCode.Contains(keyword)
+                   || q.ProductName.Contains(keyword)
                    );
+
             }
 
 
@@ -134,11 +151,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 query = query.Where(q => q.Date <= time);
             }
 
-            var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+
+            if (productIds != null && productIds.Count > 0)
+            {
+                query = query.Where(p => productIds.Contains(p.ProductId));
+            }
+
+            var poQuery = _purchaseOrderDBContext.PurchaseOrder.Where(po => query.Select(p => p.PurchaseOrderId).Contains(po.PurchaseOrderId));
+
+            var total = await poQuery.CountAsync();
+            var pagedData = await poQuery.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
             var result = new List<PurchaseOrderOutputList>();
-
-
 
 
             foreach (var info in pagedData)
@@ -178,6 +201,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
                         join pod in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals pod.PurchaseOrderId
+                        join p in _purchaseOrderDBContext.RefProduct on pod.ProductId equals p.ProductId into ps
+                        from p in ps.DefaultIfEmpty()
+                        join c in _purchaseOrderDBContext.RefCustomer on po.CustomerId equals c.CustomerId into cs
+                        from c in cs.DefaultIfEmpty()
                         join ad in _purchaseOrderDBContext.PoAssignmentDetail on pod.PoAssignmentDetailId equals ad.PoAssignmentDetailId into ads
                         from ad in ads.DefaultIfEmpty()
                         join a in _purchaseOrderDBContext.PoAssignment on ad.PoAssignmentId equals a.PoAssignmentId into aa
@@ -234,6 +261,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             pod.OrderCode,
                             pod.ProductionOrderCode,
 
+
+                            c.CustomerCode,
+                            c.CustomerName,
+
+                            p.ProductCode,
+                            p.ProductName,
+
                             PoAssignmentId = a == null ? (long?)null : a.PoAssignmentId,
                             PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
 
@@ -247,6 +281,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .Where(q => q.PurchaseOrderCode.Contains(keyword)
                     || q.Content.Contains(keyword)
                     || q.AdditionNote.Contains(keyword)
+                    || q.CustomerCode.Contains(keyword)
+                   || q.CustomerName.Contains(keyword)
+                   || q.ProductCode.Contains(keyword)
+                   || q.ProductName.Contains(keyword)
                     || q.PoAssignmentCode.Contains(keyword)
                     || q.PurchasingSuggestCode.Contains(keyword)
                     || q.OrderCode.Contains(keyword)
