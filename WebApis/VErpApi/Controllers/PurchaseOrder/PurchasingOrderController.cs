@@ -47,10 +47,10 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<PageData<PurchaseOrderOutputList>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PurchaseOrderOutputList>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchaseOrderService
-                .GetList(keyword, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetList(keyword, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(true);
         }
 

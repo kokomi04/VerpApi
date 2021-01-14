@@ -26,6 +26,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
         public virtual DbSet<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }
         public virtual DbSet<PurchasingSuggestFile> PurchasingSuggestFile { get; set; }
+        public virtual DbSet<RefCustomer> RefCustomer { get; set; }
+        public virtual DbSet<RefProduct> RefProduct { get; set; }
         public virtual DbSet<VoucherAction> VoucherAction { get; set; }
         public virtual DbSet<VoucherArea> VoucherArea { get; set; }
         public virtual DbSet<VoucherAreaField> VoucherAreaField { get; set; }
@@ -275,6 +277,86 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchasingSuggestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchasingSuggestFile_PurchasingSuggest");
+            });
+
+            modelBuilder.Entity<RefCustomer>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefCustomer");
+
+                entity.Property(e => e.Address).HasMaxLength(128);
+
+                entity.Property(e => e.CustomerCode).HasMaxLength(128);
+
+                entity.Property(e => e.CustomerId).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.CustomerName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.DebtLimitation).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Email).HasMaxLength(128);
+
+                entity.Property(e => e.Identify).HasMaxLength(64);
+
+                entity.Property(e => e.LegalRepresentative).HasMaxLength(128);
+
+                entity.Property(e => e.LoanLimitation).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.PhoneNumber).HasMaxLength(32);
+
+                entity.Property(e => e.TaxIdNo).HasMaxLength(64);
+
+                entity.Property(e => e.Website).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<RefProduct>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefProduct");
+
+                entity.Property(e => e.Barcode).HasMaxLength(128);
+
+                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
+
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.PackingMethod).HasMaxLength(255);
+
+                entity.Property(e => e.ProductCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ProductId).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.ProductInternalName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ProductName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ProductNameEng).HasMaxLength(255);
+
+                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
             });
 
             modelBuilder.Entity<VoucherAction>(entity =>
