@@ -14,7 +14,8 @@ namespace VErp.Services.Master.Service.Config
         Task<ICollection<MenuOutputModel>> GetMeMenuList();
 
         Task<ICollection<MenuOutputModel>> GetList();
-        
+        Task<MenuOutputModel> Get(int menuId);
+
         Task<bool> Update(int menuId, MenuInputModel model);
         
         Task<bool> Delete(int menuId);

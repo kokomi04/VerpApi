@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsOutSideData { get; set; }
         public string UsePlace { get; set; }
+        public int? MenuId { get; set; }
 
         public virtual CategoryGroup CategoryGroup { get; set; }
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
