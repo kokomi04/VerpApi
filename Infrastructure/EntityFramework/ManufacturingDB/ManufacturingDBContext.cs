@@ -126,6 +126,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(50);
 
+                entity.Property(e => e.OutsourcePartRequestStatusId)
+                    .HasDefaultValueSql("((1))")
+                    .HasComment("");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.HasOne(d => d.ProductionOrderDetail)
@@ -162,6 +166,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.OutsourcePartRequestStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.OutsourceStepRequestCode)
                     .IsRequired()
