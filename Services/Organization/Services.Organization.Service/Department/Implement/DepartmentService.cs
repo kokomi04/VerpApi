@@ -161,6 +161,32 @@ namespace VErp.Services.Organization.Service.Department.Implement
             return (lst, total);
         }
 
+
+        public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
+        {
+            if (departmentIds == null || departmentIds.Count == 0)
+            {
+                return new List<DepartmentModel>();
+            }
+            var query = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).Include(d => d.Parent).AsQueryable();
+
+            var lst = await query.Select(d => new DepartmentModel
+            {
+                DepartmentId = d.DepartmentId,
+                DepartmentCode = d.DepartmentCode,
+                DepartmentName = d.DepartmentName,
+                Description = d.Description,
+                IsActived = d.IsActived,
+                ParentId = d.ParentId,
+                ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
+                IsProduction = d.IsProduction,
+                WorkingHoursPerDay = d.WorkingHoursPerDay
+            }).ToListAsync();
+
+            return lst;
+        }
+
+
         public async Task<bool> UpdateDepartment(int updatedUserId, int departmentId, DepartmentModel data)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
