@@ -135,7 +135,7 @@ namespace VErp.Services.Accountancy.Service.Programing.Implement
             {
                 foreach (var item in inputData)
                 {
-                    sqlParams.Add(new SqlParameter($"@{item.Key}", item.Value));
+                    sqlParams.Add(new SqlParameter($"@{item.Key}", item.Value ?? DBNull.Value));
                 }
             }
 
