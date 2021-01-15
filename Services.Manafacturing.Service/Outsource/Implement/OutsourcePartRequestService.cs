@@ -21,8 +21,10 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Manafacturing.Model.Outsource.Order;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
@@ -109,7 +111,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<OutsourcePartRequestInfo> GetOutsourcePartRequestExtraInfo(int outsourcePartRequestId = 0)
+        public async Task<OutsourcePartRequestInfo> GetOutsourcePartRequestExtraInfo(long outsourcePartRequestId = 0)
         {
             var sql = new StringBuilder("SELECT * FROM vOutsourcePartRequestExtractInfo v WHERE v.OutsourcePartRequestId = @OutsourcePartRequestId");
 
@@ -126,23 +128,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
             var rs = _mapper.Map<OutsourcePartRequestInfo>(extractInfo[0]);
-            rs.OutsourcePartRequestStatus = GetOutsourcePartRequestStatus(extractInfo);
             rs.OutsourcePartRequestDetail = extractInfo.Where(x => x.OutsourcePartRequestDetailId > 0).ToList();
             return rs;
         }
 
-        private string GetOutsourcePartRequestStatus(List<OutsourcePartRequestDetailInfo> req)
-        {
-            var sumStatus = req.Sum(x => (int)x.OutsourcePartRequestDetailStatusId);
-            if (sumStatus == ((int)EnumOutsourceRequestStatusType.Unprocessed * req.Count))
-                return EnumOutsourceRequestStatusType.Unprocessed.GetEnumDescription();
-            else if (sumStatus == ((int)EnumOutsourceRequestStatusType.Processed * req.Count))
-                return EnumOutsourceRequestStatusType.Processed.GetEnumDescription();
-            else
-                return EnumOutsourceRequestStatusType.Processing.GetEnumDescription();
-        }
-
-        public async Task<bool> UpdateOutsourcePartRequest(int OutsourcePartRequestId, OutsourcePartRequestInfo req)
+        public async Task<bool> UpdateOutsourcePartRequest(long OutsourcePartRequestId, OutsourcePartRequestInfo req)
         {
             var request = await _manufacturingDBContext.OutsourcePartRequest.FirstOrDefaultAsync(x => x.OutsourcePartRequestId == OutsourcePartRequestId);
             if (request == null)
@@ -166,7 +156,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
 
                 // create new detail
-                var newRequestDetails  = req.OutsourcePartRequestDetail
+                var newRequestDetails = req.OutsourcePartRequestDetail
                     .Where(x => !details.Select(x => x.OutsourcePartRequestDetailId).Contains(x.OutsourcePartRequestDetailId))
                     .AsQueryable()
                     .ProjectTo<OutsourcePartRequestDetail>(_mapper.ConfigurationProvider)
@@ -294,7 +284,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return lst;
         }
 
-        public async Task<bool> DeletedOutsourcePartRequest(int OutsourcePartRequestId)
+        public async Task<bool> DeletedOutsourcePartRequest(long OutsourcePartRequestId)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -349,7 +339,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return data;
         }
 
-        private async Task<bool> MarkValidateOutsourcePartRequest(long productionOrderId , IList<OutsourcePartRequestDetail> rqDetails)
+        private async Task<bool> MarkValidateOutsourcePartRequest(long productionOrderId, IList<OutsourcePartRequestDetail> rqDetails)
         {
             var outsourcePartRequestDetailIds = rqDetails.Select(x => x.OutsourcePartRequestDetailId).ToArray();
 
@@ -366,13 +356,66 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             if (totalQuantityAllocate.Count() > 0)
             {
                 foreach (var rqd in rqDetails)
-                    if (!totalQuantityAllocate.ContainsKey(rqd.OutsourcePartRequestDetailId) 
+                    if (!totalQuantityAllocate.ContainsKey(rqd.OutsourcePartRequestDetailId)
                         || totalQuantityAllocate[rqd.OutsourcePartRequestDetailId] != rqd.Quantity)
                         return true;
 
                 return false;
             }
 
+            return true;
+        }
+
+        public async Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId)
+        {
+            var lsOutsourceRequest = await _manufacturingDBContext.OutsourcePartRequest
+                .Include(x => x.OutsourcePartRequestDetail)
+                .Where(x => outsourcePartRequestId.Contains(x.OutsourcePartRequestId))
+                .ToListAsync();
+            foreach(var rq in lsOutsourceRequest)
+            {
+                var outsourcePartRequestDetailIds = rq.OutsourcePartRequestDetail.Select(x => x.OutsourcePartRequestDetailId);
+
+                var outsourceOrderDetails = await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
+                    .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourcePart
+                        && outsourcePartRequestDetailIds.Contains(x.ObjectId))
+                    .ToListAsync();
+
+                var outsourceOrderIds = outsourceOrderDetails.Select(x => x.OutsourceOrderId);
+
+                var totalStatus = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
+                    .Where(x => outsourceOrderIds.Contains(x.OutsourceOrderId)
+                        && (!x.ObjectId.HasValue || outsourcePartRequestDetailIds.Contains(x.ObjectId.GetValueOrDefault())))
+                    .ToListAsync())
+                    .GroupBy(x => x.OutsourceOrderId)
+                    .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
+                    .Sum();
+
+                if (!totalStatus.HasValue)
+                    rq.OutsourcePartRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
+                else
+                {
+                    var quantityOrderByRequestDetail = outsourceOrderDetails.GroupBy(x => x.ObjectId)
+                                    .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+
+                    var isCheckOrder = false;
+                    foreach (var d in rq.OutsourcePartRequestDetail)
+                    {
+                        if (!quantityOrderByRequestDetail.ContainsKey(d.OutsourcePartRequestDetailId)
+                            || (d.Quantity - quantityOrderByRequestDetail[d.OutsourcePartRequestDetailId]) != 0)
+                        {
+                            isCheckOrder = false;
+                            break;
+                        }
+
+                        isCheckOrder = true;
+                    }
+                    if (isCheckOrder && (totalStatus.GetValueOrDefault() == ((int)EnumOutsourceTrackStatus.HandedOver * outsourceOrderIds.Count())))
+                        rq.OutsourcePartRequestStatusId = (int)EnumOutsourceRequestStatusType.Processed;
+                    else rq.OutsourcePartRequestStatusId = (int)EnumOutsourceRequestStatusType.Processing;
+                }
+            }
+            await _manufacturingDBContext.SaveChangesAsync();
             return true;
         }
     }

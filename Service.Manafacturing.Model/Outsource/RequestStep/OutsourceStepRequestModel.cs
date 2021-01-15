@@ -7,6 +7,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 {
@@ -24,6 +25,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public string ProductionOrderCode { get; set; }
         public string ProductionProcessTitle { get; set; }
         public bool MarkInValid { get; set; }
+        public EnumOutsourceRequestStatusType OutsourceStepRequestStatusId { get; set; }
 
         public IList<OutsourceStepRequestDataModel> OutsourceStepRequestData { get; set; }
 
@@ -36,6 +38,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
                 .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrder.ProductionOrderCode))
                 .ForMember(m => m.ProductionProcessTitle, v => v.MapFrom(m => m.ProductionStep.Title))
                 .ForMember(m => m.ProductionProcessId, v => v.MapFrom(m => m.ProductionStepId))
+                .ForMember(m => m.OutsourceStepRequestStatusId, v => v.MapFrom(m => m.OutsourceStepRequestStatusId))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
                 .ForMember(m => m.ProductionStepId, v => v.MapFrom(m => m.ProductionProcessId))
@@ -62,6 +65,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
                 .ForMember(m => m.OutsourceStepRequestData, v => v.MapFrom(m => m.OutsourceStepRequestData))
                 .ForMember(m => m.ProductionProcessId, v => v.MapFrom(m => m.ProductionStepId))
                 .ForMember(m => m.MarkInValid, v => v.MapFrom(m => m.MarkInValid))
+                .ForMember(m => m.OutsourceStepRequestStatusId, v => v.MapFrom(m => m.OutsourceStepRequestStatusId))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())

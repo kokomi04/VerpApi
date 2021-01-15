@@ -22,6 +22,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
@@ -168,34 +169,34 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
 
             // Tính toán trạng thái cho các công đoạn
-            var temp = (from rd in _manufacturingDBContext.OutsourceStepRequestData
-                        join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
-                        join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
-                        where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
-                        select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
+            //var temp = (from rd in _manufacturingDBContext.OutsourceStepRequestData
+            //            join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
+            //            join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
+            //            where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
+            //            select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
 
-            var tracks = await (from d in temp
-                                join track in _manufacturingDBContext.OutsourceTrack on d.OutsourceOrderId equals track.OutsourceOrderId
-                                select new { d.OutsourceStepRequestId, track }).ToListAsync();
+            //var tracks = await (from d in temp
+            //                    join track in _manufacturingDBContext.OutsourceTrack on d.OutsourceOrderId equals track.OutsourceOrderId
+            //                    select new { d.OutsourceStepRequestId, track }).ToListAsync();
 
-            foreach (var l in lst)
-            {
-                var gTrack = tracks.Where(x => x.OutsourceStepRequestId == l.OutsourceStepRequestId)
-                    .Select(x => x.track)
-                    .GroupBy(x => x.OutsourceOrderId);
+            //foreach (var l in lst)
+            //{
+            //    var gTrack = tracks.Where(x => x.OutsourceStepRequestId == l.OutsourceStepRequestId)
+            //        .Select(x => x.track)
+            //        .GroupBy(x => x.OutsourceOrderId);
 
-                var sumTrack = 0;
-                foreach (var t in gTrack)
-                {
-                    var lastTrack = t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
-                    sumTrack += lastTrack.OutsourceTrackStatusId;
-                }
-                if (sumTrack == 0) l.ProductionStepInRequestStatusId = EnumOutsourceRequestStatusType.Unprocessed;
-                else if (sumTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * gTrack.Count()))
-                    l.ProductionStepInRequestStatusId = EnumOutsourceRequestStatusType.Processed;
-                else if (sumTrack > 0)
-                    l.ProductionStepInRequestStatusId = EnumOutsourceRequestStatusType.Processing;
-            }
+            //    var sumTrack = 0;
+            //    foreach (var t in gTrack)
+            //    {
+            //        var lastTrack = t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
+            //        sumTrack += lastTrack.OutsourceTrackStatusId;
+            //    }
+            //    if (sumTrack == 0) l.OutsourceStepRequestStatusId = EnumOutsourceRequestStatusType.Unprocessed;
+            //    else if (sumTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * gTrack.Count()))
+            //        l.OutsourceStepRequestStatusId = EnumOutsourceRequestStatusType.Processed;
+            //    else if (sumTrack > 0)
+            //        l.OutsourceStepRequestStatusId = EnumOutsourceRequestStatusType.Processing;
+            //}
 
             return (lst, total);
         }
@@ -265,35 +266,35 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 outsourceStepRequest.OrderCode = string.Join(", ", lst.Where(x => !string.IsNullOrWhiteSpace(x.OrderCode)).Select(x => x.OrderCode).Distinct());
             }
 
-            var distinctKeys = (from rd in _manufacturingDBContext.OutsourceStepRequestData
-                                join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
-                                join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
-                                where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
-                                select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
+            //var distinctKeys = (from rd in _manufacturingDBContext.OutsourceStepRequestData
+            //                    join d in _manufacturingDBContext.OutsourceOrderDetail on rd.ProductionStepLinkDataId equals d.ObjectId
+            //                    join o in _manufacturingDBContext.OutsourceOrder on d.OutsourceOrderId equals o.OutsourceOrderId
+            //                    where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
+            //                    select new { rd.OutsourceStepRequestId, o.OutsourceOrderId }).Distinct();
 
-            var outsourceTracks = await (from d in distinctKeys
-                                         join track in _manufacturingDBContext.OutsourceTrack on d.OutsourceOrderId equals track.OutsourceOrderId
-                                         select new { d.OutsourceStepRequestId, track }).ToListAsync();
-            var totalTrack = 0;
-            foreach (var l in outsourceStepRequest.ProductionSteps)
-            {
-                var track = outsourceTracks.Where(x => x.OutsourceStepRequestId == outsourceStepRequest.OutsourceStepRequestId).Select(x => x.track).GroupBy(x => x.OutsourceOrderId);
+            //var outsourceTracks = await (from d in distinctKeys
+            //                             join track in _manufacturingDBContext.OutsourceTrack on d.OutsourceOrderId equals track.OutsourceOrderId
+            //                             select new { d.OutsourceStepRequestId, track }).ToListAsync();
+            //var totalTrack = 0;
+            //foreach (var l in outsourceStepRequest.ProductionSteps)
+            //{
+            //    var track = outsourceTracks.Where(x => x.OutsourceStepRequestId == outsourceStepRequest.OutsourceStepRequestId).Select(x => x.track).GroupBy(x => x.OutsourceOrderId);
 
-                var sumTrack = 0;
-                foreach (var t in track)
-                {
-                    var lastTrack = t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
-                    sumTrack += lastTrack.OutsourceTrackStatusId;
-                }
-                totalTrack += sumTrack;
+            //    var sumTrack = 0;
+            //    foreach (var t in track)
+            //    {
+            //        var lastTrack = t.Where(x => !x.ObjectId.HasValue || x.ObjectId.Value == l.ProductionStepId).Last();
+            //        sumTrack += lastTrack.OutsourceTrackStatusId;
+            //    }
+            //    totalTrack += sumTrack;
 
-            }
+            //}
 
-            if (totalTrack == 0) outsourceStepRequest.OutsourceStepRequestStatus = EnumOutsourceRequestStatusType.Unprocessed.GetEnumDescription();
-            else if (totalTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * outsourceStepRequest.ProductionSteps.Count()))
-                outsourceStepRequest.OutsourceStepRequestStatus = EnumOutsourceRequestStatusType.Processed.GetEnumDescription();
-            else if (totalTrack > 0)
-                outsourceStepRequest.OutsourceStepRequestStatus = EnumOutsourceRequestStatusType.Processing.GetEnumDescription();
+            //if (totalTrack == 0) outsourceStepRequest.OutsourceStepRequestStatus = EnumOutsourceRequestStatusType.Unprocessed.GetEnumDescription();
+            //else if (totalTrack == ((int)EnumOutsourceTrack.EnumOutsourceTrackStatus.HandedOver * outsourceStepRequest.ProductionSteps.Count()))
+            //    outsourceStepRequest.OutsourceStepRequestStatus = EnumOutsourceRequestStatusType.Processed.GetEnumDescription();
+            //else if (totalTrack > 0)
+            //    outsourceStepRequest.OutsourceStepRequestStatus = EnumOutsourceRequestStatusType.Processing.GetEnumDescription();
 
             return outsourceStepRequest;
         }
@@ -693,6 +694,59 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 results.AddRange(productionSteps);
             }
             return results;
+        }
+
+        public async Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId)
+        {
+            var lsOutsourceRequest = await _manufacturingDBContext.OutsourceStepRequest
+                .Include(x => x.OutsourceStepRequestData)
+                .Where(x => outsourceStepRequestId.Contains(x.OutsourceStepRequestId))
+                .ToListAsync();
+            foreach (var rq in lsOutsourceRequest)
+            {
+                var productionLinkDataIds = rq.OutsourceStepRequestData.Select(x => x.ProductionStepLinkDataId);
+
+                var outsourceOrderDetails = await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
+                    .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
+                        && productionLinkDataIds.Contains(x.ObjectId))
+                    .ToListAsync();
+
+                var outsourceOrderIds = outsourceOrderDetails.Select(x => x.OutsourceOrderId);
+
+                var totalStatus = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
+                    .Where(x => outsourceOrderIds.Contains(x.OutsourceOrderId)
+                        && (!x.ObjectId.HasValue || productionLinkDataIds.Contains(x.ObjectId.GetValueOrDefault())))
+                    .ToListAsync())
+                    .GroupBy(x => x.OutsourceOrderId)
+                    .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
+                    .Sum();
+
+                if (!totalStatus.HasValue)
+                    rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
+                else
+                {
+                    var quantityOrderByRequestDetail = outsourceOrderDetails.GroupBy(x => x.ObjectId)
+                                    .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+
+                    var isCheckOrder = false;
+                    foreach (var d in rq.OutsourceStepRequestData)
+                    {
+                        if (!quantityOrderByRequestDetail.ContainsKey(d.ProductionStepLinkDataId)
+                            || (d.Quantity - quantityOrderByRequestDetail[d.ProductionStepLinkDataId]) != 0)
+                        {
+                            isCheckOrder = false;
+                            break;
+                        }
+
+                        isCheckOrder = true;
+                    }
+                    if (isCheckOrder && (totalStatus.GetValueOrDefault() == ((int)EnumOutsourceTrackStatus.HandedOver * outsourceOrderIds.Count())))
+                        rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Processed;
+                    else rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Processing;
+                }
+            }
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
         }
 
         #region private
