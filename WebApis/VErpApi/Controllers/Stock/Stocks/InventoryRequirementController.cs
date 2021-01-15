@@ -45,7 +45,6 @@ namespace VErpApi.Controllers.Stock.Inventory
         {
             return await _inventoryRequirementService.GetInventoryRequirement(inventoryType, inventoryRequirementId);
         }
-
        
         [HttpPost]
         [Route("inventorytype/{inventoryType}")]
