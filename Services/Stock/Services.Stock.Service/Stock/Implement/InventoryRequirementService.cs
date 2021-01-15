@@ -69,30 +69,36 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _stockDBContext.InventoryRequirement.Where(s => s.InventoryTypeId == (int)inventoryType);
+            var query = _stockDBContext.InventoryRequirementDetail
+                .Include(s => s.InventoryRequirement)
+                .Include(s => s.AssignStock)
+                .Include(s => s.Product)
+                .Where(s => s.InventoryRequirement.InventoryTypeId == (int)inventoryType);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = query.Where(s => s.InventoryRequirementCode.Contains(keyword)
-                || s.Content.Contains(keyword));
+                query = query.Where(s => s.InventoryRequirement.InventoryRequirementCode.Contains(keyword)
+                || s.InventoryRequirement.Content.Contains(keyword));
             }
-            query = query.InternalFilter(filters);
+
+            var result = query.ProjectTo<InventoryRequirementListModel>(_mapper.ConfigurationProvider);
+
+            result = result.InternalFilter(filters);
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName))
             {
                 string command = asc ? "OrderBy" : "OrderByDescending";
-                var type = typeof(InventoryRequirement);
+                var type = typeof(InventoryRequirementListModel);
                 var property = type.GetProperty(orderByFieldName);
                 var parameter = Expression.Parameter(type, "s");
                 var propertyAccess = Expression.MakeMemberAccess(parameter, property);
                 var orderByExpression = Expression.Lambda(propertyAccess, parameter);
                 var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType },
                                               query.Expression, Expression.Quote(orderByExpression));
-                query = query.Provider.CreateQuery<InventoryRequirement>(resultExpression);
+                result = result.Provider.CreateQuery<InventoryRequirementListModel>(resultExpression);
             }
 
-            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query)
-                .ProjectTo<InventoryRequirementListModel>(_mapper.ConfigurationProvider)
+            var lst = await (size > 0 ? result.Skip((page - 1) * size).Take(size) : result)
                 .ToListAsync();
 
             var total = await query.CountAsync();
@@ -156,7 +162,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 }
 
                 // validate product duplicate
-                if(req.InventoryRequirementDetail.GroupBy(d => d.ProductId).Any(g => g.Count() > 1))
+                if (req.InventoryRequirementDetail.GroupBy(d => d.ProductId).Any(g => g.Count() > 1))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại sản phẩm trùng nhau trong phiếu yêu cầu");
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
@@ -187,7 +193,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await _stockDBContext.SaveChangesAsync();
                 trans.Commit();
 
-               
+
 
                 await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                 await _activityLogService.CreateLog(objectType, inventoryRequirement.InventoryRequirementId, $"Thêm mới dữ liệu yêu cầu xuất/nhập kho {inventoryRequirement.InventoryRequirementCode}", req.JsonSerialize());
@@ -312,9 +318,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
                 if (inventoryRequirement.ScheduleTurnId.HasValue)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
-                
+
                 await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
-                
+
                 inventoryRequirement.IsDeleted = true;
 
                 // Xóa file
@@ -357,12 +363,12 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
             if (inventoryRequirement == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
 
-            if(status == EnumInventoryRequirementStatus.Accepted && inventoryRequirement.CensorStatus == (int)EnumInventoryRequirementStatus.Accepted)
+            if (status == EnumInventoryRequirementStatus.Accepted && inventoryRequirement.CensorStatus == (int)EnumInventoryRequirementStatus.Accepted)
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} đã được duyệt");
 
             if (status == EnumInventoryRequirementStatus.Rejected && inventoryRequirement.CensorStatus != (int)EnumInventoryRequirementStatus.Waiting)
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} không phải đơn chờ duyệt");
-            
+
             // Validate assign stock
             if (status == EnumInventoryRequirementStatus.Accepted && (assignStocks == null || inventoryRequirement.InventoryRequirementDetail.Any(d => !assignStocks.ContainsKey(d.InventoryRequirementDetailId))))
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Phiếu yêu cầu {type} chưa chỉ định đủ kho xuất cho mặt hàng");
@@ -372,7 +378,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             inventoryRequirement.CensorStatus = (int)status;
             inventoryRequirement.CensorByUserId = _currentContextService.UserId;
             inventoryRequirement.CensorDatetimeUtc = DateTime.UtcNow;
-            if(status == EnumInventoryRequirementStatus.Accepted)
+            if (status == EnumInventoryRequirementStatus.Accepted)
             {
                 foreach (var item in inventoryRequirement.InventoryRequirementDetail)
                 {
