@@ -23,6 +23,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.Report;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 
 namespace VErp.Services.Manafacturing.Service.Report.Implement
 {
@@ -789,6 +790,85 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             }
 
             return result;
+        }
+
+        public async Task<IList<OutsourcePartRequestReportModel>> GetOursourcePartRequestReport(long fromDate, long toDate, long? productionOrderId)
+        {
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+            var parammeters = new List<SqlParameter>();
+
+            if (!fromDateTime.HasValue || !toDateTime.HasValue)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
+
+            parammeters.Add(new SqlParameter("@FromDate", fromDateTime.Value));
+            parammeters.Add(new SqlParameter("@ToDate", toDateTime.Value));
+
+            var sql = new StringBuilder("SELECT * FROM vOutsourcePartRequestExtractInfo v " +
+                "WHERE v.OutsourcePartRequestFinishDate <= @ToDate AND v.OutsourcePartRequestFinishDate >= @FromDate");
+
+            if (productionOrderId.GetValueOrDefault() > 0)
+            {
+                parammeters.Add(new SqlParameter("@ProductionOrderId", toDateTime.Value));
+                sql.Append(" AND v.ProductionOrderId = @ProductionOrderId");
+            }
+
+            var queryData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var reportData = queryData
+                .ConvertData<OutsourcePartRequestDetailExtractInfo>()
+                .AsQueryable()
+                .ProjectTo<OutsourcePartRequestReportModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            var quantityCompleteMaps = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
+                        .Include(x => x.OutsourceOrder)
+                        .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourcePart && x.ObjectId.GetValueOrDefault() > 0)
+                        .ToListAsync())
+                        .GroupBy(x => x.ObjectId)
+                        .ToDictionary
+                        (
+                            k => k.Key,
+                            v => v.Sum(x => x.Quantity)
+                        );
+            foreach(var r in reportData)
+            {
+                if (quantityCompleteMaps.ContainsKey(r.OutsourcePartRequestDetailId))
+                    r.QuantityComplete = quantityCompleteMaps[r.OutsourcePartRequestDetailId].GetValueOrDefault();
+            }
+
+            return reportData;
+        }
+
+        public async Task<IList<OutsourcePartRequestReportModel>> GetOursourceStepRequestReport(long fromDate, long toDate, long? productionOrderId)
+        {
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+            var parammeters = new List<SqlParameter>();
+
+            if (!fromDateTime.HasValue || !toDateTime.HasValue)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
+
+
+            
+
+            var quantityCompleteMaps = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
+                        .Include(x => x.OutsourceOrder)
+                        .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep && x.ObjectId.GetValueOrDefault() > 0)
+                        .ToListAsync())
+                        .GroupBy(x => x.ObjectId)
+                        .ToDictionary
+                        (
+                            k => k.Key,
+                            v => v.Sum(x => x.Quantity)
+                        );
+            //foreach (var r in reportData)
+            //{
+            //    if (quantityCompleteMaps.ContainsKey(r.OutsourcePartRequestDetailId))
+            //        r.QuantityComplete = quantityCompleteMaps[r.OutsourcePartRequestDetailId].GetValueOrDefault();
+            //}
+
+            //return reportData;
+            return null;
         }
 
     }
