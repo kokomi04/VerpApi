@@ -167,11 +167,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.OutsourcePartRequestStatusId).HasDefaultValueSql("((1))");
-
                 entity.Property(e => e.OutsourceStepRequestCode)
                     .IsRequired()
                     .HasMaxLength(50);
+
+                entity.Property(e => e.OutsourceStepRequestStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ProductionStepId).HasComment("Lấy ra tên QTSX được gắn với YCGC");
 
