@@ -128,20 +128,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
             var rs = _mapper.Map<OutsourcePartRequestInfo>(extractInfo[0]);
-            rs.OutsourcePartRequestStatus = GetOutsourcePartRequestStatus(extractInfo);
             rs.OutsourcePartRequestDetail = extractInfo.Where(x => x.OutsourcePartRequestDetailId > 0).ToList();
             return rs;
-        }
-
-        private string GetOutsourcePartRequestStatus(List<OutsourcePartRequestDetailInfo> req)
-        {
-            var sumStatus = req.Sum(x => (int)x.OutsourcePartRequestDetailStatusId);
-            if (sumStatus == ((int)EnumOutsourceRequestStatusType.Unprocessed * req.Count))
-                return EnumOutsourceRequestStatusType.Unprocessed.GetEnumDescription();
-            else if (sumStatus == ((int)EnumOutsourceRequestStatusType.Processed * req.Count))
-                return EnumOutsourceRequestStatusType.Processed.GetEnumDescription();
-            else
-                return EnumOutsourceRequestStatusType.Processing.GetEnumDescription();
         }
 
         public async Task<bool> UpdateOutsourcePartRequest(long OutsourcePartRequestId, OutsourcePartRequestInfo req)

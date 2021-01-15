@@ -19,6 +19,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         [Required(ErrorMessage ="Thông tin thời hạn hoàn thành là bắt buộc")]
         public long OutsourcePartRequestFinishDate { get; set; }
         public bool MarkInvalid { get; set; }
+        public EnumOutsourceRequestStatusType OutsourcePartRequestStatusId { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -42,7 +43,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public string ProductTitle { get; set; }
         public int ProductId { get; set; }
         public string OrderCode { get; set; }
-        public string OutsourcePartRequestStatus { get; set; }
 
         public IList<OutsourcePartRequestDetailInfo> OutsourcePartRequestDetail { get; set; }
 
@@ -60,7 +60,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
                 .ForMember(m => m.ProductId, v => v.MapFrom(m => m.ProductId))
                 .ForMember(m => m.OrderCode, v => v.MapFrom(m => m.OrderCode))
                 .ForMember(m => m.ProductOrderDetailQuantity, v => v.MapFrom(m => m.ProductOrderDetailQuantity))
-                .ForMember(m => m.ProductTitle, v => v.MapFrom(m => m.ProductTitle));
+                .ForMember(m => m.ProductTitle, v => v.MapFrom(m => m.ProductTitle))
+                .ForMember(m => m.OutsourcePartRequestStatusId, v => v.MapFrom(m => m.OutsourcePartRequestStatusId));
                 
         }
     }

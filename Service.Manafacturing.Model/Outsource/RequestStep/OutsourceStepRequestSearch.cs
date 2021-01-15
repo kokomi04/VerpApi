@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public long OutsourceStepRequestFinishDate { get; set; }
         public long OutsourceStepRequestDate { get; set; }
         public string ProductTitle { get; set; }
-        public EnumOutsourceRequestStatusType ProductionStepInRequestStatusId { get; set; }
+        public EnumOutsourceRequestStatusType OutsourceStepRequestStatusId { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -39,6 +39,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public DateTime OutsourceStepRequestDate { get; set; }
         public string ProductionStepTitle { get; set; }
         public string ProductTitle { get; set; }
+        public EnumOutsourceRequestStatusType OutsourceStepRequestStatusId { get; set; }
     }
     
 }
