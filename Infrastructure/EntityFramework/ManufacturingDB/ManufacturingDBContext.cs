@@ -449,6 +449,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
+                entity.Property(e => e.QuantityOrigin).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 

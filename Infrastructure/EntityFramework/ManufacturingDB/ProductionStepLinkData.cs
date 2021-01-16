@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal QuantityOrigin { get; set; }
         public decimal? OutsourceQuantity { get; set; }
         public decimal? ExportOutsourceQuantity { get; set; }
         public int SortOrder { get; set; }
