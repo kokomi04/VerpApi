@@ -447,7 +447,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ContainerTypeId = (int)EnumContainerType.ProductionOrder,
                         ContainerId = productionOrderId,
                         IsGroup = true,
-                        ProductionStepCode = Guid.NewGuid().ToString()
+                        ProductionStepCode = Guid.NewGuid().ToString(),
                     };
                     _manufacturingDBContext.ProductionStep.Add(processStep);
                     _manufacturingDBContext.SaveChanges();
@@ -478,7 +478,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             CoordinateX = step.CoordinateX,
                             CoordinateY = step.CoordinateY,
                             SortOrder = step.SortOrder,
-                            Workload = step.Workload * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault()
+                            Workload = step.Workload * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault(),
+                            IsFinish = step.IsFinish
                         };
                         if (step.ParentId.HasValue)
                         {
@@ -528,6 +529,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ObjectId = item.ObjectId,
                             ObjectTypeId = item.ObjectTypeId,
                             Quantity = item.Quantity * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault(),
+                            QuantityOrigin = item.QuantityOrigin * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault(),
                             SortOrder = item.SortOrder,
                             ProductionStepLinkDataCode = Guid.NewGuid().ToString()
                         };

@@ -128,32 +128,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 foreach (var outsourcePartRequestDetail in outsourcePartRequestDetails)
                 {
-                     
-                        var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == outsourcePartRequestDetail.OutsourcePartRequestDetailId);
 
-                        if (usage == null)
-                        {
-                            lsWarning.Add(new ProductionProcessWarningMessage
-                            {
-                                Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
-                                ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
-                                ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
-                                GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                                WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
-                            });
+                    var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == outsourcePartRequestDetail.OutsourcePartRequestDetailId);
 
-                        }
-                        else if (usage.QuantityUsage != outsourcePartRequestDetail.Quantity)
+                    if (usage == null)
+                    {
+                        lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            lsWarning.Add(new ProductionProcessWarningMessage
-                            {
-                                Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Số lượng của chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
-                                ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
-                                ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
-                                GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                                WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
-                            });
-                        }
+                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
+                            ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
+                            ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
+                            GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                        });
+
+                    }
+                    else if (usage.QuantityUsage != outsourcePartRequestDetail.Quantity)
+                    {
+                        lsWarning.Add(new ProductionProcessWarningMessage
+                        {
+                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Số lượng của chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
+                            ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
+                            ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
+                            GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                        });
+                    }
                 }
             }
             return lsWarning;
@@ -167,7 +167,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             foreach (var group in groupRole)
             {
                 var step = productionProcess.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.Key);
-                if (step == null)
+                if (step == null || step.IsFinish)
+                {
+                    continue;
+                }
+                var inputs = group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
+                var outputs = group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
+
+                if (inputs.Count() == 0 && outputs.Count() == 0)
                 {
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
@@ -179,8 +186,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     });
                     continue;
                 }
-                var inputs= group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
-                var outputs = group.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
 
                 if (inputs.Count() == 0)
                 {
@@ -205,7 +210,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     });
                 }
 
-                if(inputs.Count() > 0 && outputs.Count() > 0)
+                if (inputs.Count() > 0 && outputs.Count() > 0)
                 {
                     var inputLinkDataInfos = productionProcess.ProductionStepLinkDatas
                         .Where(l => inputs.Select(x => x.ProductionStepLinkDataCode).Contains(l.ProductionStepLinkDataCode)
@@ -218,7 +223,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                      join o in outputLinkDataInfos
                                         on new { i.ObjectId, i.ObjectTypeId } equals new { o.ObjectId, o.ObjectTypeId }
                                      select i;
-                    foreach(var d in duplicates)
+                    foreach (var d in duplicates)
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
                             Message = $"Công đoạn \"{step.Title}\" có chi tiết \"{d.ObjectTitle}\" ở đầu vào và đầu ra.",
@@ -290,6 +295,28 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
                     });
                 }
+            }
+
+            /*
+             * Kiểm tra sản phẩm đầu ra cuối cùng đã về công đoạn kết thúc hay chưa
+             */
+
+            var ldFinishInvalid = productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepLinkDataCode)
+                .Where(x => x.Count() == 1)
+                .Select(x => x.FirstOrDefault())
+                .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
+            foreach (var l in ldFinishInvalid)
+            {
+                var ld = productionProcess.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataCode == l.ProductionStepLinkDataCode);
+                if (ld != null && productionProcess.ContainerTypeId == EnumContainerType.ProductionOrder)
+                    lsWarning.Add(new ProductionProcessWarningMessage
+                    {
+                        Message = $"Chi tiết đầu ra \"{ld.ObjectTitle}\" chưa được kết nối công đoạn \"Kết thúc\"",
+                        ObjectCode = ld.ProductionStepLinkDataCode,
+                        ObjectId = ld.ProductionStepLinkDataId,
+                        GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                    });
             }
 
             /*
