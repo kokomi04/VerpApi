@@ -367,6 +367,16 @@ namespace VErp.Commons.Library
             return a - b;
         }
 
+        public static decimal SubProductionDecimal(this decimal a, decimal b)
+        {
+            if (a > 0 && b > 0 || a < 0 && b < 0)
+            {
+                var c = a - b;
+                if (Math.Abs(c) < Numbers.PRODUCTION_MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
+                return c;
+            }
+            return a - b;
+        }
         public static decimal RelativeTo(this decimal value, decimal relValue)
         {
             if (Math.Abs(value) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
