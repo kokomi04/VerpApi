@@ -416,5 +416,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return null;
         }
+
+        public async Task<IList<ProductOrderModel>> GetProductionOrders()
+        {
+            var rs = await _manufacturingDBContext.ProductionOrder.AsNoTracking()
+                .Select(x => new ProductOrderModel{
+                    Description = x.Description,
+                    FinishDate = x.FinishDate.GetUnix(),
+                    IsDraft = x.IsDraft,
+                    ProductionDate = x.ProductionDate.GetUnix(),
+                    ProductionOrderCode = x.ProductionOrderCode,
+                    ProductionOrderId = x.ProductionOrderId
+                })
+                .ToListAsync();
+            return rs;
+        }
     }
 }
