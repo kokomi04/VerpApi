@@ -811,7 +811,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             if (productionOrderId.GetValueOrDefault() > 0)
             {
-                parammeters.Add(new SqlParameter("@ProductionOrderId", toDateTime.Value));
+                parammeters.Add(new SqlParameter("@ProductionOrderId", productionOrderId));
                 sql.Append(" AND v.ProductionOrderId = @ProductionOrderId");
             }
 
@@ -850,10 +850,13 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             if (!fromDateTime.HasValue || !toDateTime.HasValue)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
 
-            var outsourceStepRequests = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
-                .Where(x => x.OutsourceStepRequestFinishDate >= fromDateTime.Value || x.OutsourceStepRequestFinishDate <= toDateTime.Value
-                    && (productionOrderId.GetValueOrDefault() > 0 && x.ProductionOrderId == productionOrderId))
-                .ProjectTo<OutsourceStepRequestModel>(_mapper.ConfigurationProvider)
+            var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
+                .Where(x => x.OutsourceStepRequestFinishDate >= fromDateTime.Value || x.OutsourceStepRequestFinishDate <= toDateTime.Value);
+
+            if (productionOrderId.GetValueOrDefault() > 0)
+                query = query.Where(x => x.ProductionOrderId == productionOrderId);
+
+           var outsourceStepRequests = await query.ProjectTo<OutsourceStepRequestModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
             var roleMap = (await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
