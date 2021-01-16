@@ -285,6 +285,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             var productInfos = (await _productHelperService.GetListProducts(productIds)).ToDictionary(p => p.ProductId, p => p);
 
             var stt = 1;
+
+            var centerCell = sheet.GetCellStyle(hAlign: HorizontalAlignment.Center, isBorder: true);
+            var normalCell = sheet.GetCellStyle(hAlign: null, isBorder: true);
+
             foreach (var item in inventoryInfo.InventoryDetailOutputList)
             {
                 sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
@@ -310,7 +314,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 }
 
                 sheet.EnsureCell(currentRow, 5).SetCellValue(Convert.ToDouble(item.PrimaryQuantity));
-                sheet.EnsureCell(currentRow, 6).SetCellValue(Convert.ToDouble(item.UnitPrice));
+                if (item.UnitPrice > 0)
+                    sheet.EnsureCell(currentRow, 6).SetCellValue(Convert.ToDouble(item.UnitPrice));
 
                 if (isUsePu)
                 {
@@ -349,7 +354,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     sheet.EnsureCell(currentRow, 10);
                 }
 
-                sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(item.PrimaryQuantity * item.UnitPrice));
+                if (item.UnitPrice > 0)
+                    sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(item.PrimaryQuantity * item.UnitPrice));
 
                 sheet.EnsureCell(currentRow, 12).SetCellValue(item.POCode);
 
@@ -361,9 +367,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 for (var i = 0; i <= maxColumnIndex; i++)
                 {
-                    var cell = sheet.GetRow(currentRow).GetCell(i);
-                    if (cell != null)
-                        cell.CellStyle = sheet.GetCellStyle(hAlign: (i == 0 || i == 3 || i == 6) ? (HorizontalAlignment?)HorizontalAlignment.Center : null, isBorder: true);
+                    sheet.EnsureCell(currentRow, i).CellStyle = (i == 0 || i == 3 || i == 6) ? centerCell : normalCell;
                 }
 
                 currentRow++;
