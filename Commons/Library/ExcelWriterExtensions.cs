@@ -27,7 +27,7 @@ namespace VErp.Commons.Library
             return cell;
         }
 
-        public static ICell EnsureCell(this ISheet sheet, int row, int column)
+        public static ICell EnsureCell(this ISheet sheet, int row, int column, ICellStyle style = null)
         {
             var excelRow = sheet.GetRow(row);
             if (excelRow == null)
@@ -41,6 +41,10 @@ namespace VErp.Commons.Library
                 cell = excelRow.CreateCell(column);
             }
 
+            if (style != null)
+            {
+                cell.CellStyle = style;
+            }
             return cell;
         }
 
@@ -73,7 +77,7 @@ namespace VErp.Commons.Library
             if (isWrap)
                 style.WrapText = true;
 
-            if(rgb!=null)
+            if (rgb != null)
             {
                 ((XSSFCellStyle)style).SetFillForegroundColor(new XSSFColor(rgb));
                 style.FillPattern = FillPattern.SolidForeground;
@@ -84,7 +88,7 @@ namespace VErp.Commons.Library
                 ((XSSFCellStyle)style).SetDataFormat(sheet.Workbook.GetCreationHelper().CreateDataFormat().GetFormat(dataFormat));
             }
 
-            
+
 
             return style;
         }

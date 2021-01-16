@@ -40,6 +40,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly Dictionary<string, PictureType> drImageType = new Dictionary<string, PictureType>
         {
             {".jpeg", PictureType.JPEG },
+            {".jpg", PictureType.JPEG },
             {".png", PictureType.PNG },
             {".gif", PictureType.GIF },
             {".emf", PictureType.EMF },
@@ -123,13 +124,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
 #if !DEBUG
                     var fileInfo = await _physicalFileService.GetSimpleFileInfo(_model.Header.fLogoId);
-                    if (fileInfo != null)
+                    var pictureType = GetPictureType(Path.GetExtension(fileInfo.FileName).ToLower());
+
+                    if (fileInfo != null && pictureType != PictureType.None)
                     {
                         fCol = 2;
                         var fileStream = File.OpenRead(GetPhysicalFilePath(fileInfo.FilePath));
                         byte[] bytes = IOUtils.ToByteArray(fileStream);
-
-                        int pictureIdx = xssfwb.AddPicture(bytes, GetPictureType(Path.GetExtension(fileInfo.FileName)));
+                        int pictureIdx = xssfwb.AddPicture(bytes, pictureType);
                         fileStream.Close();
 
                         var helper = xssfwb.GetCreationHelper();
@@ -370,7 +372,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private PictureType GetPictureType(string extension)
         {
-            if (drImageType.ContainsKey(extension))
+            if (!string.IsNullOrWhiteSpace(extension) && drImageType.ContainsKey(extension))
                 return drImageType[extension];
             return PictureType.None;
         }
