@@ -25,6 +25,7 @@ using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.Produc
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Commons.Constants;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
@@ -149,7 +150,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     totalAssignmentQuantity += assignment.AssignmentQuantity * linkData.Value / sourceData;
                 }
 
-                if (totalAssignmentQuantity > linkData.Value)
+                if (totalAssignmentQuantity.SubProductionDecimal(linkData.Value) > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công lớn hơn số lượng trong kế hoạch sản xuất");
             }
 
