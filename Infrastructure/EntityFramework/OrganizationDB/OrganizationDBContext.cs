@@ -171,8 +171,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.DepartmentCode)
                     .IsRequired()
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+                    .HasMaxLength(32);
 
                 entity.Property(e => e.DepartmentName)
                     .IsRequired()
