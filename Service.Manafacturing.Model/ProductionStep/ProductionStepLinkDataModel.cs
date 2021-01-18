@@ -52,6 +52,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.ProductionStepLinkDataCode, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataCode))
                 .ForMember(m => m.OutsourceRequestDetailId, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourceRequestDetailId))
                 .ForMember(m => m.ProductionStepLinkDataTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataTypeId))
+                .ForMember(m => m.ProductionStepLinkTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkTypeId))
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId))
                 .ReverseMap()
                 .ForMember(m => m.ProductionStepLinkData, v => v.Ignore())
