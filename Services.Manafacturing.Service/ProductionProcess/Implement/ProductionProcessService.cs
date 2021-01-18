@@ -310,7 +310,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ProductionStepCode = groupStep.ProductionStepCode,
                         ProductionStepLinkDataCode = r.ProductionStepLinkDataCode,
                         ProductionStepLinkDataRoleTypeId = r.ProductionStepLinkDataRoleTypeId,
-                         ProductionStepLinkTypeId = r.ProductionStepLinkTypeId
+                        ProductionStepLinkTypeId = r.ProductionStepLinkTypeId
                     })
                     .ToList();
 

@@ -60,6 +60,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 lsWarning.AddRange(warningOutsourceStepRequest);
             }
 
+
+
             return lsWarning;
         }
 
@@ -88,19 +90,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                                 x.First().ProductionStepLinkDataId,
                                             });
 
+            var stepInProcess = GetStepInProductionProcess(productionProcess);
+
             foreach (var linkData in productionProcess.ProductionStepLinkDatas)
             {
                 if (productionStepLinkDataIds.ContainsKey(linkData.ProductionStepLinkDataCode)
                     && (linkData.OutsourceQuantity > linkData.Quantity || linkData.ExportOutsourceQuantity > linkData.Quantity))
                 {
-                    var stepRequest = outsourceStepRequest[dicOutsourceStep.FirstOrDefault(x => x.Value.Contains(productionStepLinkDataIds[linkData.ProductionStepLinkDataCode].ProductionStepCode)).Key];
+                    var stepInfo = productionStepLinkDataIds[linkData.ProductionStepLinkDataCode];
+                    var stepRequest = outsourceStepRequest[dicOutsourceStep.FirstOrDefault(x => x.Value.Contains(stepInfo.ProductionStepCode)).Key];
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
                         Message = $"YCGC {stepRequest.OutsourceStepRequestCode}-Chi tiết \"{linkData.ObjectTitle}\" có số lượng gia công vượt quá so với QTSX.",
                         ObjectId = stepRequest.OutsourceStepRequestId,
                         ObjectCode = stepRequest.OutsourceStepRequestCode,
                         GroupName = EnumProductionProcessWarningCode.WarningOutsourceStepRequest.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningOutsourceStepRequest
+                        WarningCode = EnumProductionProcessWarningCode.WarningOutsourceStepRequest,
+                        ProductionProcessCode = stepInProcess[stepInfo.ProductionStepCode].ProductionStepCode,
+                        ProductionProcessId = stepInProcess[stepInfo.ProductionStepCode].ProductionStepId,
                     });
                 }
             }
@@ -124,6 +131,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var outsourcePartRequestDetails = await GetOutsourcePartRequestDetailInfo(productionProcess.ContainerId);
 
+            var productionProcessMap = (from s in productionProcess.ProductionSteps
+                                        join o in productionProcess.ProductionStepOrders
+                                         on s.ProductionStepCode equals o.ProductionStepCode
+                                        where !s.ParentId.HasValue
+                                        select o).ToDictionary(k => k.ProductionOrderDetailId, v => new { v.ProductionStepCode, v.ProductionStepId });
+
+
             if (outsourcePartRequestDetails.Count() > 0)
             {
                 foreach (var outsourcePartRequestDetail in outsourcePartRequestDetails)
@@ -139,7 +153,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
                             ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
+                            ProductionProcessCode = productionProcessMap[outsourcePartRequestDetail.ProductionOrderDetailId].ProductionStepCode,
+                            ProductionProcessId = productionProcessMap[outsourcePartRequestDetail.ProductionOrderDetailId].ProductionStepId
                         });
 
                     }
@@ -151,7 +167,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
                             ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
-                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
+                            ProductionProcessCode = productionProcessMap[outsourcePartRequestDetail.ProductionOrderDetailId].ProductionStepCode,
+                            ProductionProcessId = productionProcessMap[outsourcePartRequestDetail.ProductionOrderDetailId].ProductionStepId
                         });
                     }
                 }
@@ -163,6 +181,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             IList<ProductionProcessWarningMessage> lsWarning = new List<ProductionProcessWarningMessage>();
 
+            var stepInProcess = GetStepInProductionProcess(productionProcess);
             var groupRole = productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
             foreach (var group in groupRole)
             {
@@ -182,7 +201,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = step.ProductionStepCode,
                         ObjectId = step.ProductionStepId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                        ProductionProcessCode = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepCode,
+                        ProductionProcessId = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepId
                     });
                     continue;
                 }
@@ -195,7 +216,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = step.ProductionStepCode,
                         ObjectId = step.ProductionStepId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                        ProductionProcessCode = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepCode,
+                        ProductionProcessId = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepId
                     });
                 }
                 if (outputs.Count() == 0)
@@ -206,7 +229,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = step.ProductionStepCode,
                         ObjectId = step.ProductionStepId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                        ProductionProcessCode = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepCode,
+                        ProductionProcessId = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepId
                     });
                 }
 
@@ -226,11 +251,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     foreach (var d in duplicates)
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"Công đoạn \"{step.Title}\" có chi tiết \"{d.ObjectTitle}\" ở đầu vào và đầu ra.",
+                            Message = $"Công đoạn \"{step.Title}\" có chi tiết \"{d.ObjectTitle}\" xuất hiện ở đầu vào và đầu ra.",
                             ObjectCode = step.ProductionStepCode,
                             ObjectId = step.ProductionStepId,
                             GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
-                            WarningCode = EnumProductionProcessWarningCode.WarningProductionStep
+                            WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                            ProductionProcessCode = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepCode,
+                            ProductionProcessId = stepInProcess.Count == 0 ? null : stepInProcess?[step.ProductionStepCode].ProductionStepId
                         });
                 }
             }
@@ -241,6 +268,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private Task<IList<ProductionProcessWarningMessage>> ValidateProductionStepLinkData(ProductionProcessModel productionProcess)
         {
             IList<ProductionProcessWarningMessage> lsWarning = new List<ProductionProcessWarningMessage>();
+
+            var linkDataInProcess = GetLinkDataInProductionProcess(productionProcess);
 
             var lsInputStep = productionProcess.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
             var lsOutputStep = productionProcess.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
@@ -254,7 +283,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         Message = $"Tồn tại 2 chi tiết có mã \"{group.Key}\"",
                         GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                        ProductionProcessCode = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[group.Key].ProductionStepCode,
+                        ProductionProcessId = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[group.Key].ProductionStepId,
                     });
                     continue;
                 }
@@ -270,7 +301,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = linkData.ProductionStepLinkDataCode,
                         ObjectId = linkData.ProductionStepLinkDataId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                        ProductionProcessCode = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[group.Key].ProductionStepCode,
+                        ProductionProcessId = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[group.Key].ProductionStepId,
                     });
                 }
                 if (inStep.Count > 1)
@@ -281,7 +314,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = linkData.ProductionStepLinkDataCode,
                         ObjectId = linkData.ProductionStepLinkDataId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                        ProductionProcessCode = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[group.Key].ProductionStepCode,
+                        ProductionProcessId = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[group.Key].ProductionStepId,
                     });
                 }
                 if (outStep.Count > 1)
@@ -292,7 +327,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = linkData.ProductionStepLinkDataCode,
                         ObjectId = linkData.ProductionStepLinkDataId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                        ProductionProcessCode = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[group.Key].ProductionStepCode,
+                        ProductionProcessId = linkDataInProcess.Count == 0 ? 0 : linkDataInProcess?[group.Key].ProductionStepId,
                     });
                 }
             }
@@ -315,7 +352,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = ld.ProductionStepLinkDataCode,
                         ObjectId = ld.ProductionStepLinkDataId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                        ProductionProcessCode = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[ld.ProductionStepLinkDataCode].ProductionStepCode,
+                        ProductionProcessId = linkDataInProcess.Count == 0 ? 0 : linkDataInProcess?[ld.ProductionStepLinkDataCode].ProductionStepId,
+
                     });
             }
 
@@ -339,7 +379,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ObjectCode = linkData.ProductionStepLinkDataCode,
                     ObjectId = linkData.ProductionStepLinkDataId,
                     GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
-                    WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                    WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                    ProductionProcessCode = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[linkData.ProductionStepLinkDataCode].ProductionStepCode,
+                    ProductionProcessId = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[linkData.ProductionStepLinkDataCode].ProductionStepId,
                 });
             }
 
@@ -387,7 +429,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                        .Where(x => x.ProductionStepLinkDataCode == linkData.ProductionStepLinkDataCode
                                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                                        .ToList();
-                        var warning = SeekingLinkDataInRelationship(productionProcess, currentRole, linkData);
+                        var warning = SeekingLinkDataInRelationship(productionProcess, currentRole, linkData, linkDataInProcess);
                         if (warning != null)
                             lsWarning.Add(warning);
                     }
@@ -397,7 +439,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return Task.FromResult(lsWarning);
         }
 
-        private ProductionProcessWarningMessage SeekingLinkDataInRelationship(ProductionProcessModel req, IList<ProductionStepLinkDataRoleInput> currentRole, ProductionStepLinkDataInput linkData)
+        private ProductionProcessWarningMessage SeekingLinkDataInRelationship(ProductionProcessModel req, IList<ProductionStepLinkDataRoleInput> currentRole, ProductionStepLinkDataInput linkData, Dictionary<string, ProductionProcess> linkDataInProcess)
         {
             foreach (var c in currentRole)
             {
@@ -414,7 +456,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ObjectCode = linkData.ProductionStepLinkDataCode,
                         ObjectId = linkData.ProductionStepLinkDataId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                        ProductionProcessCode = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[linkData.ProductionStepLinkDataCode].ProductionStepCode,
+                        ProductionProcessId = linkDataInProcess.Count == 0 ? null : linkDataInProcess?[linkData.ProductionStepLinkDataCode].ProductionStepId,
 
                     };
 
@@ -424,7 +468,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                        .Where(x => x.ProductionStepLinkDataCode == output.ProductionStepLinkDataCode
                                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                                        .ToList();
-                    return SeekingLinkDataInRelationship(req, nextRole, linkData);
+                    return SeekingLinkDataInRelationship(req, nextRole, linkData, linkDataInProcess);
                 }
             }
             return null;
@@ -517,6 +561,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                .ToList();
 
             return lst;
+        }
+
+        private class ProductionProcess
+        {
+            public long? ProductionStepId { get; set; }
+            public string ProductionStepCode { get; set; }
+        }
+
+        private Dictionary<string, ProductionProcess> GetStepInProductionProcess(ProductionProcessModel productionProcess)
+        {
+            var productionProcessMap = (from s in productionProcess.ProductionSteps
+                                        join o in productionProcess.ProductionStepOrders
+                                         on s.ProductionStepCode equals o.ProductionStepCode
+                                        where !s.ParentId.HasValue
+                                        select o).ToDictionary(k => k.ProductionOrderDetailId, v => new ProductionProcess { ProductionStepCode = v.ProductionStepCode, ProductionStepId = v.ProductionStepId });
+            var ignoreStepCode = productionProcessMap.Values.Select(x => x.ProductionStepCode).Distinct();
+
+            return (from s in productionProcess.ProductionSteps
+                    join o in productionProcess.ProductionStepOrders
+                     on s.ProductionStepCode equals o.ProductionStepCode
+                    where !ignoreStepCode.Contains(o.ProductionStepCode)
+                    select o).ToDictionary(k => k.ProductionStepCode, v => !productionProcessMap.ContainsKey(v.ProductionOrderDetailId)? new ProductionProcess() : productionProcessMap[v.ProductionOrderDetailId]);
+        }
+
+        private Dictionary<string, ProductionProcess> GetLinkDataInProductionProcess(ProductionProcessModel productionProcess)
+        {
+            var stepInProcess = GetStepInProductionProcess(productionProcess);
+            return productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepLinkDataCode)
+                 .ToDictionary(k => k.Key, v => stepInProcess.Count == 0 || !stepInProcess.ContainsKey(v.First().ProductionStepCode) ? new ProductionProcess() : stepInProcess[v.First().ProductionStepCode]);
         }
     }
 
