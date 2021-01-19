@@ -276,12 +276,17 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        public async Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
+        public async Task<PageData<CustomerListOutput>> GetList(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
+            var customerQuery = _organizationContext.Customer.AsQueryable();
+            if (customerIds != null && customerIds.Count > 0)
+            {
+                customerQuery = customerQuery.Where(c => customerIds.Contains(c.CustomerId));
+            }
             var query = (
-                 from c in _organizationContext.Customer
+                 from c in customerQuery
                  select new CustomerListOutput()
                  {
                      CustomerCode = c.CustomerCode,
@@ -507,7 +512,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         }
                     }
 
-                    foreach(var attach in customerAttachments)
+                    foreach (var attach in customerAttachments)
                     {
                         var change = data.CustomerAttachments.FirstOrDefault(x => x.CustomerAttachmentId == attach.CustomerAttachmentId);
                         if (change != null)

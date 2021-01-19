@@ -130,10 +130,14 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size, Clause filters = null)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isActived, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
+            if (departmentIds != null && departmentIds.Count > 0)
+            {
+                query = query.Where(d => departmentIds.Contains(d.DepartmentId));
+            }
             if (isActived.HasValue)
             {
                 query = query.Where(d => d.IsActived == isActived);

@@ -56,9 +56,9 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _customerService.GetList(keyword, customerStatusId, page, size);
+            return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size);
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace VErpApi.Controllers.System
         {
             return await _customerService.DeleteCustomer(customerId);
         }
-       
+
 
         /// <summary>
         /// Upload file dữ liệu khách hàng

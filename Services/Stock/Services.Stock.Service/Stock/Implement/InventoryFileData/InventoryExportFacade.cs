@@ -204,7 +204,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             sheet.SetCellStyle(4, 12, isItalic: true).SetCellValue($"Ngày hóa đơn:");
 
             sheet.AddMergedRegion(new CellRangeAddress(4, 4, 14, 15));
-            sheet.SetCellStyle(4, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillDate?.UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd/MM/yyyy")}");
+            sheet.SetCellStyle(4, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo.BillDate.UnixToDateTime(_currentContextService.TimeZoneOffset)?.ToString("dd/MM/yyyy")}");
 
             currentRow = 12;
         }
