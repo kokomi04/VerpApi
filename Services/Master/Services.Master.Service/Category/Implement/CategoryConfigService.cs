@@ -546,7 +546,9 @@ namespace VErp.Services.Master.Service.Category
 
             if (!((EnumFormType)data.FormTypeId).IsSelectForm())
             {
+                data.RefTableCode = null;
                 data.RefTableField = null;
+                data.RefTableTitle = null;
             }
         }
 
@@ -959,5 +961,6 @@ namespace VErp.Services.Master.Service.Category
                 .ToListAsync();
 
         }
+
     }
 }
