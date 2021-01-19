@@ -13,7 +13,7 @@ namespace VErp.Services.Organization.Service.Customer
     public interface ICustomerService
     {
         Task<int> AddCustomer(int updatedUserId, CustomerModel data);
-        Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null);
+        Task<PageData<CustomerListOutput>> GetList(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null);
         Task<IList<CustomerListOutput>> GetListByIds(IList<int> customerIds);
         Task<CustomerModel> GetCustomerInfo(int customerId);
         Task<bool> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data);

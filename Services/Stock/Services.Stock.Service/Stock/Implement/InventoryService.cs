@@ -213,6 +213,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Content = item.Content,
                     Date = item.Date.GetUnix(),
                     CustomerId = item.CustomerId,
+                    DepartmentId = item.DepartmentId,
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
                     BillForm = item.BillForm,
@@ -397,6 +398,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Shipper = inventoryObj.Shipper,
                     Content = inventoryObj.Content,
                     Date = inventoryObj.Date.GetUnix(),
+                    DepartmentId = inventoryObj.DepartmentId,
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
@@ -861,6 +863,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.Shipper = req.Shipper;
             inventoryObj.Content = req.Content;
             inventoryObj.CustomerId = req.CustomerId;
+            inventoryObj.DepartmentId = req.DepartmentId;
             inventoryObj.Department = req.Department;
             inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
             inventoryObj.BillForm = req.BillForm;
@@ -937,6 +940,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.Content = req.Content;
                         inventoryObj.Date = issuedDate;
                         inventoryObj.CustomerId = req.CustomerId;
+                        inventoryObj.DepartmentId = req.DepartmentId;
                         inventoryObj.Department = req.Department;
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
 
