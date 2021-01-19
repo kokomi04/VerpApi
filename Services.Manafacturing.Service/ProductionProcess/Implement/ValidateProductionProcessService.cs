@@ -101,7 +101,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var stepRequest = outsourceStepRequest[dicOutsourceStep.FirstOrDefault(x => x.Value.Contains(stepInfo.ProductionStepCode)).Key];
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
-                        Message = $"YCGC {stepRequest.OutsourceStepRequestCode}-Chi tiết \"{linkData.ObjectTitle}\" có số lượng gia công vượt quá so với QTSX.",
+                        Message = $"YCGC {stepRequest.OutsourceStepRequestCode} - Chi tiết \"{linkData.ObjectTitle}\" có số lượng gia công vượt quá so với QTSX.",
                         ObjectId = stepRequest.OutsourceStepRequestId,
                         ObjectCode = stepRequest.OutsourceStepRequestCode,
                         GroupName = EnumProductionProcessWarningCode.WarningOutsourceStepRequest.GetEnumDescription(),
@@ -136,8 +136,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                          on s.ProductionStepCode equals o.ProductionStepCode
                                         where !s.ParentId.HasValue
                                         select o).ToDictionary(k => k.ProductionOrderDetailId, v => new { v.ProductionStepCode, v.ProductionStepId });
-
-
+            
             if (outsourcePartRequestDetails.Count() > 0)
             {
                 foreach (var outsourcePartRequestDetail in outsourcePartRequestDetails)
@@ -149,7 +148,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
+                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode} - Chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
                             ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
                             ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
@@ -163,7 +162,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode}-Số lượng của chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
+                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode} - Số lượng của chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
                             ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
                             ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
@@ -174,6 +173,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     }
                 }
             }
+
+            var requestDetailIds = outsourcePartRequestDetails.Select(x => x.OutsourcePartRequestDetailId);
+            var linkDataInProcess = GetLinkDataInProductionProcess(productionProcess);
+            foreach (var linkData in outsourceLinkData)
+            {
+                if (!requestDetailIds.Contains(linkData.OutsourceRequestDetailId.GetValueOrDefault()))
+                {
+                    lsWarning.Add(new ProductionProcessWarningMessage
+                    {
+                        Message = $"Chi tiết gia công \"{linkData.ObjectTitle}\" không thuộc bất kỳ đơn YCGC nào. Cần phải xóa chi tiết này đi.",
+                        ObjectId = linkData.ProductionStepLinkDataId,
+                        ObjectCode = linkData.ProductionStepLinkDataCode,
+                        GroupName = EnumProductionProcessWarningCode.WarningProductionLinkData.GetEnumDescription(),
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionLinkData,
+                        ProductionProcessCode = linkDataInProcess[linkData.ProductionStepLinkDataCode].ProductionStepCode,
+                        ProductionProcessId = linkDataInProcess[linkData.ProductionStepLinkDataCode].ProductionStepId
+                    });
+                }
+            }
+
             return lsWarning;
         }
 
