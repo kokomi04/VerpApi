@@ -361,10 +361,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(x => x.Count() == 1)
                 .Select(x => x.FirstOrDefault())
                 .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
+            var productIds = _manufacturingDBContext.ProductionOrderDetail.AsNoTracking()
+                .Where(x => x.ProductionOrderId == productionProcess.ContainerId)
+                .Select(x=> (long)x.ProductId);
             foreach (var l in ldFinishInvalid)
             {
                 var ld = productionProcess.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataCode == l.ProductionStepLinkDataCode);
-                if (ld != null && productionProcess.ContainerTypeId == EnumContainerType.ProductionOrder)
+                if (ld != null && productionProcess.ContainerTypeId == EnumContainerType.ProductionOrder && productIds.Contains(ld.ObjectId))
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
                         Message = $"Chi tiết đầu ra \"{ld.ObjectTitle}\" chưa được kết nối công đoạn \"Kết thúc\"",
