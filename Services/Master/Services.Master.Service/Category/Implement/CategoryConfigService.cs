@@ -276,6 +276,7 @@ namespace VErp.Services.Master.Service.Category
                 category.UsePlace = data.UsePlace;
                 category.CategoryGroupId = data.CategoryGroupId;
                 category.MenuId = data.MenuId;
+                category.ParentTitle = data.ParentTitle;
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ

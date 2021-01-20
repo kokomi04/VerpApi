@@ -150,6 +150,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.MenuId).HasComment("");
 
+                entity.Property(e => e.ParentTitle).HasMaxLength(255);
+
                 entity.Property(e => e.Title).HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
