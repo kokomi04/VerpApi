@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsOutSideData { get; set; }
         public string UsePlace { get; set; }
         public int? MenuId { get; set; }
+        public string ParentTitle { get; set; }
 
         public virtual CategoryGroup CategoryGroup { get; set; }
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
