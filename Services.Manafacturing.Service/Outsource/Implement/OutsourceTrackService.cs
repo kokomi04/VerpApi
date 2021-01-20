@@ -7,7 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -42,6 +45,30 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             await _manufacturingDBContext.SaveChangesAsync();
 
             return entity.OutsourceTrackId;
+        }
+
+        public async Task<bool> UpdateOutsourceTrack(long outsourceTrackId, OutsourceTrackModel req)
+        {
+            var track = await _manufacturingDBContext.OutsourceTrack.FirstOrDefaultAsync(x => x.OutsourceTrackId == outsourceTrackId);
+            if (track == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            _mapper.Map(req, track);
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> DeleteOutsourceTrack(long outsourceTrackId)
+        {
+            var track = await _manufacturingDBContext.OutsourceTrack.FirstOrDefaultAsync(x => x.OutsourceTrackId == outsourceTrackId);
+            if (track == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            track.IsDeleted = true;
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task<IList<OutsourceTrackModel>> SearchOutsourceTrackByOutsourceOrder(long outsourceOrderId)

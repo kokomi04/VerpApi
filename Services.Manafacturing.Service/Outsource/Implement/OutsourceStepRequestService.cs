@@ -336,6 +336,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var outsourceStepRequest = _mapper.Map<OutsourceStepRequest>(req);
                 outsourceStepRequest.OutsourceStepRequestCode = generated.CustomCode;
                 outsourceStepRequest.MarkInValid = false;
+                outsourceStepRequest.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
 
                 _manufacturingDBContext.OutsourceStepRequest.Add(outsourceStepRequest);
                 await _manufacturingDBContext.SaveChangesAsync();

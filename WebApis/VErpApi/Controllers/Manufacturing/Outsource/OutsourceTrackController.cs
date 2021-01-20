@@ -27,15 +27,37 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpGet]
         [Route("ofOutsourceOrder/{outsourceOrderId}")]
-        public async Task<IList<OutsourceTrackModel>> SearchOutsourceTrackByOutsourceOrder([FromRoute]long outsourceOrderId)
+        public async Task<IList<OutsourceTrackModel>> SearchOutsourceTrackByOutsourceOrder([FromRoute] long outsourceOrderId)
         {
             return await _outsourceTrackService.SearchOutsourceTrackByOutsourceOrder(outsourceOrderId);
         }
+
         [HttpPut]
         [Route("ofOutsourceOrder/{outsourceOrderId}")]
         public async Task<bool> UpdateOutsourceTrackByOutsourceOrder([FromRoute] long outsourceOrderId, [FromBody] IList<OutsourceTrackModel> req)
         {
             return await _outsourceTrackService.UpdateOutsourceTrackByOutsourceOrder(outsourceOrderId, req);
+        }
+
+        [HttpPost]
+        [Route("")]
+        public async Task<long> CreateOutsourceTrack([FromBody] OutsourceTrackModel req)
+        {
+            return await _outsourceTrackService.CreateOutsourceTrack(req);
+        }
+
+        [HttpPut]
+        [Route("{outsourceTrackId}")]
+        public async Task<bool> UpdateOutsourceTrack([FromRoute] long outsourceTrackId, [FromBody] OutsourceTrackModel req)
+        {
+            return await _outsourceTrackService.UpdateOutsourceTrack(outsourceTrackId, req);
+        }
+
+        [HttpDelete]
+        [Route("{outsourceTrackId}")]
+        public async Task<bool> DeleteOutsourceTrack([FromRoute] long outsourceTrackId)
+        {
+            return await _outsourceTrackService.DeleteOutsourceTrack(outsourceTrackId);
         }
     }
 }
