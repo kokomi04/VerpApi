@@ -22,9 +22,13 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
             profile.CreateMap<OutsourceOrder, OutsourceOrderModel>()
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
+                .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonDeserialize<DeliveryDestinationModel>()))
+                .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonDeserialize<SuppliersModel>()))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.Value.UnixToDateTime()))
-                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()));
+                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()))
+                .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonSerialize()))
+                .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonSerialize()));
         }
 
     }
@@ -44,10 +48,14 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
                 .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore())
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
+                .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonDeserialize<DeliveryDestinationModel>()))
+                .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonDeserialize<SuppliersModel>()))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.Value.UnixToDateTime()))
                 .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore())
-                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()));
+                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()))
+                .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonSerialize()))
+                .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonSerialize()));
         }
     }
 
@@ -68,6 +76,27 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string Note { get; set; }
         public decimal FreightCost { get; set; }
         public decimal OtherCost { get; set; }
+        public int? CustomerId { get; set; }
+        public DeliveryDestinationModel DeliveryDestination { get; set; }
+        public SuppliersModel Suppliers { get; set; }
+    }
+
+    public class SuppliersModel
+    {
+        public string CustomerName { get; set; }
+        public string Address { get; set; }
+        public string LegalRepresentative { get; set; }
+        public string PhoneNumber { get; set; }
+        public string Fax { get; set; }
+    }
+
+    public class DeliveryDestinationModel
+    {
+        public string DeliverTo { get; set; }
+        public string Company { get; set; }
+        public string Address { get; set; }
+        public string Telephone { get; set; }
+        public string Fax { get; set; }
     }
 
 
