@@ -64,6 +64,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
+
                 entity.Property(e => e.FreightCost).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OtherCost).HasColumnType("decimal(18, 5)");
@@ -83,6 +85,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProviderPhone).HasMaxLength(20);
 
                 entity.Property(e => e.ProviderReceiver).HasMaxLength(128);
+
+                entity.Property(e => e.Suppliers)
+                    .HasMaxLength(1024)
+                    .HasComment("");
 
                 entity.Property(e => e.TransportToAddress).HasMaxLength(256);
 
