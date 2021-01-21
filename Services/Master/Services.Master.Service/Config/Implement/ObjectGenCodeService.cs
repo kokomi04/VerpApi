@@ -457,14 +457,21 @@ namespace VErp.Services.Master.Service.Config.Implement
              moduleTypeId: EnumModuleType.Manufacturing,
              targeObjectTypeId: EnumObjectType.OutsourceRequest,
              fieldName: "Mã yêu cầu gia công")
-         );
+            );
 
             result.Add(
                GetObjectGenCodeMappingTypeModel(
                moduleTypeId: EnumModuleType.Manufacturing,
                targeObjectTypeId: EnumObjectType.OutsourceOrder,
                fieldName: "Mã đơn hàng gia công")
-           );
+            );
+
+            result.Add(
+               GetObjectGenCodeMappingTypeModel(
+               moduleTypeId: EnumModuleType.Manufacturing,
+               targeObjectTypeId: EnumObjectType.ProductionSchedule,
+               fieldName: "Mã kế hoạch sản xuất")
+            );
 
             return Task.FromResult(result);
         }
