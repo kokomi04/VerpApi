@@ -358,6 +358,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.ProductionScheduleQuantity).HasColumnType("decimal(18, 5)");
 
+                entity.Property(e => e.ScheduleCode)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
                 entity.HasOne(d => d.ProductionOrderDetail)
                     .WithMany(p => p.ProductionSchedule)
                     .HasForeignKey(d => d.ProductionOrderDetailId)
