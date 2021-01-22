@@ -112,9 +112,11 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var vourcherTask = VourcherMappingTypeModels();
             var inputTask = InputMappingTypeModels();
+            var manufactureTask = ManufactureMappingTypeModels();
 
             result.AddRange(await vourcherTask);
             result.AddRange(await inputTask);
+            result.AddRange(await manufactureTask);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -126,6 +128,36 @@ namespace VErp.Services.Master.Service.Config.Implement
             var total = result.Count;
 
             return (result.Skip((page - 1) * size).Take(size).ToList(), total);
+        }
+
+        private async Task<IList<ObjectPrintConfigSearch>> ManufactureMappingTypeModels()
+        {
+            IList<ObjectPrintConfigSearch> result = new List<ObjectPrintConfigSearch>();
+
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                objectTypeId: EnumObjectType.ProductionAssignment,
+                objectId: 1,
+                objectTitle: "Phân công sản xuất")
+            );
+
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                objectTypeId: EnumObjectType.ProductionAssignment,
+                objectId: 2,
+                objectTitle: "Phiếu phân công sản xuất")
+            );
+
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                objectTypeId: EnumObjectType.ProductionSchedule,
+                objectTitle: "Kế hoạch sản xuất")
+            );
+
+            return result;
         }
 
         private async Task<IList<ObjectPrintConfigSearch>> VourcherMappingTypeModels()
@@ -170,7 +202,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private ObjectPrintConfigSearch GetObjectPrintConfigSearch(
             EnumModuleType moduleTypeId,
-            EnumObjectType objectTypeId, int objectId, string objectTitle)
+            EnumObjectType objectTypeId, int objectId = 0, string objectTitle = "")
         {
             var mapping = _objectPrintConfigMappings.Where(m => m.ObjectTypeId == (int)objectTypeId && m.ObjectId == objectId).ToList();
             var printConfig = _printConfigs.Where(c => mapping?.Select(x => x.PrintConfigId).Contains(c.PrintConfigId) == true).Select(x => x.PrintConfigId).ToArray();
