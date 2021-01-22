@@ -10,6 +10,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public long ProductionOrderDetailId { get; set; }
         public string ProductionOrderCode { get; set; }
         public string OrderCode { get; set; }
-        public bool MarkInValid { get; set; }
+        public bool MarkInvalid { get; set; }
     }
 }

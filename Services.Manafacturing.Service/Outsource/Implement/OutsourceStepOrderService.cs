@@ -148,7 +148,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                            OutsourceStepRequestCode = g.Key.OutsourceStepRequestCode,
                                            OutsourceStepRequestId = g.Key.OutsourceStepRequestId,
                                        }).ToList();
-            var outsourceStepRequests = (await _outsourceStepRequestService.GetListOutsourceStepRequest(string.Empty, 1, -1, string.Empty, true)).List;
+            var outsourceStepRequests = (await _outsourceStepRequestService.SearchOutsourceStepRequest(string.Empty, 1, -1, string.Empty, true)).List;
 
             var data = from order in outsourceStepOrders
                        join request in outsourceStepRequests
@@ -162,7 +162,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                            OutsourceOrderFinishDate = order.OutsourceOrderFinishDate,
                            OutsourceStepRequestCode = order.OutsourceStepRequestCode,
                            ProductionOrderCode = request.ProductionOrderCode,
-                           ProductionStepTitle = request.ProductionStepTitle
+                           //ProductionStepTitle = 
                        };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -314,7 +314,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var requestIds = req.outsourceOrderDetail.Select(x => x.OutsourceStepRequestId).Distinct();
             var outsourceStepRequests = (await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
-                .Where(x => requestIds.Contains(x.OutsourceStepRequestId) && x.MarkInValid)
+                .Where(x => requestIds.Contains(x.OutsourceStepRequestId) && x.MarkInvalid)
                 .Select(x => x.OutsourceStepRequestCode)
                 .ToListAsync());
             if (outsourceStepRequests.Count > 0)
