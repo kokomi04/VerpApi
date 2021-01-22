@@ -21,6 +21,6 @@ namespace VErp.Services.Accountancy.Service.Programing
 
         Task<bool> DeleteFunction(int programingFunctionId);
 
-        Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary inputData);
+        Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary<FuncParameter> inputData);
     }
 }

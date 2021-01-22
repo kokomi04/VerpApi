@@ -57,7 +57,7 @@ namespace VErpApi.Controllers.Accountancy
         }
 
         [HttpPost("ExecFunction/{programingFunctionName}")]
-        public Task<IList<NonCamelCaseDictionary>> ExecSQLFunction([FromRoute] string programingFunctionName, [FromBody]  NonCamelCaseDictionary inputData)
+        public Task<IList<NonCamelCaseDictionary>> ExecSQLFunction([FromRoute] string programingFunctionName, [FromBody]  NonCamelCaseDictionary<FuncParameter> inputData)
         {
             return _programingFunctionService.ExecSQLFunction(programingFunctionName, inputData);
         }
