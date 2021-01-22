@@ -461,6 +461,31 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
+        public CategoryNameModel FieldsForParse(EnumInventoryType inventoryTypeId)
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = inventoryTypeId == EnumInventoryType.Input ? "InventoryInput" : "InventoryOutput",
+                CategoryTitle = inventoryTypeId == EnumInventoryType.Input ? "Nhập kho" : "Xuất kho",
+                IsTreeView = false,
+                Fields = Utils.GetFieldNameModels<InventoryExcelParseModel>((int)inventoryTypeId)
+            };
+
+            return result;
+        }
+
+        public IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId)
+        {
+            var parse = new InventoryDetailParseFacade();
+
+            parse.SetProductService(_productService)
+                .SetStockDbContext(_stockDbContext);
+
+            return parse.ParseExcel(mapping, stream, inventoryTypeId);
+        }
+
+
         public async Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model)
         {
             var insertedData = new Dictionary<long, (string inventoryCode, object data)>();

@@ -315,7 +315,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     }
 
 
-                    _units.TryGetValue(p.Value.UnitName, out var unit);
+                    _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
                     if (unit == null)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính \"{p.Value.UnitName}\" cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
