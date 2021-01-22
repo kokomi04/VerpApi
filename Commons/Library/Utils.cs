@@ -992,7 +992,7 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
         }
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>()
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null)
         {
             var fields = new List<CategoryFieldNameModel>();
             foreach (var prop in typeof(T).GetProperties())
@@ -1001,6 +1001,8 @@ namespace VErp.Commons.Library
 
                 var title = string.Empty;
                 var groupName = "Trường dữ liệu";
+                int? type = null;
+
                 if (attrs != null && attrs.Count() > 0)
                 {
                     title = attrs.First().Name;
@@ -1011,12 +1013,23 @@ namespace VErp.Commons.Library
                     title = prop.Name;
                 }
 
+                var types = prop.GetCustomAttributes<FieldDataTypeAttribute>();
+                if (types != null && types.Count() > 0)
+                {
+                    type = types.First().Type;
+                }
+                if (byType.HasValue && type.HasValue && byType.Value != type.Value)
+                {
+                    continue;
+                }
+
                 var fileMapping = new CategoryFieldNameModel()
                 {
                     GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
+                    Type = type,
                     RefCategory = null
                 };
 

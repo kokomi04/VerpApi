@@ -330,7 +330,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (requestType == EnumPurchasingRequestType.OrderMaterial)
                 {
                     purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
-                    purchasingRequest.IsApproved = true;
+                    purchasingRequest.IsApproved = true;                    
                     purchasingRequest.CensorByUserId = _currentContext.UserId;
                     purchasingRequest.CensorDatetimeUtc = DateTime.UtcNow;
                 }

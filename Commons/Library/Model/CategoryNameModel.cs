@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library.Model
 {
@@ -21,6 +22,16 @@ namespace VErp.Commons.Library.Model
         public int CategoryFieldId { get; set; }
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
+        public int? Type { get; set; }
         public CategoryNameModel RefCategory { get; set; }
+    }
+
+    public class FieldDataTypeAttribute : Attribute
+    {
+        public int Type { get; private set; }
+        public FieldDataTypeAttribute(int type)
+        {
+            Type = type;
+        }
     }
 }
