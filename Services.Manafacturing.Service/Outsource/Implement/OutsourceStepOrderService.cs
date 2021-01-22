@@ -119,8 +119,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     });
 
                     await _manufacturingDBContext.SaveChangesAsync();
-                    await trans.CommitAsync();
+
+                    await UpdateOutsourceStepRequestStatus(detail.Select(x => x.ObjectId));
+
                     await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourceOrderId, $"Thêm mới đơn hàng gia công công đoạn {order.OutsourceOrderCode}", req.JsonSerialize());
+
+                    await trans.CommitAsync();
+
                     return order.OutsourceOrderId;
                 }
                 catch (Exception ex)
@@ -162,7 +167,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                            OutsourceOrderFinishDate = order.OutsourceOrderFinishDate,
                            OutsourceStepRequestCode = order.OutsourceStepRequestCode,
                            ProductionOrderCode = request.ProductionOrderCode,
-                           //ProductionStepTitle = 
+                           ProductionStepTitle = String.Join(", ", request.ProductionSteps.Select(x=>x.Title))
                        };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -268,8 +273,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(newOutsourceStepOrderDetail);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await trans.CommitAsync();
+                var objectIds = outsourceStepOrderDetail.Select(x => x.ObjectId).ToList();
+                objectIds.AddRange(newOutsourceStepOrderDetail.Select(x => x.ObjectId));
+
+                await UpdateOutsourceStepRequestStatus(objectIds);
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceStepOrder.OutsourceOrderId, $"Cập nhật đơn hàng gia công công đoạn {outsourceStepOrder.OutsourceOrderCode}", req.JsonSerialize());
+
+                await trans.CommitAsync();
+
                 return true;
             }
             catch (Exception ex)
@@ -297,9 +309,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                                         .ToListAsync();
                 outsourceStepOrderDetail.ForEach(x => x.IsDeleted = true);
                 await _manufacturingDBContext.SaveChangesAsync();
-                await trans.CommitAsync();
+
+                await UpdateOutsourceStepRequestStatus(outsourceStepOrderDetail.Select(x => x.ObjectId));
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceStepOrder.OutsourceOrderId, $"Loại bỏ đơn hàng gia công công đoạn {outsourceStepOrder.OutsourceOrderCode}", outsourceStepOrder.JsonSerialize());
+
+                await trans.CommitAsync();
+
                 return true;
             }
             catch (Exception ex)
@@ -320,6 +336,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             if (outsourceStepRequests.Count > 0)
                 throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{String.Join(", ", outsourceStepRequests)}\" chưa xác thực với QTSX");
 
+        }
+
+        private async Task UpdateOutsourceStepRequestStatus(IEnumerable<long> ObjectIds) {
+            var stepIds = await _manufacturingDBContext.OutsourceStepRequestData.AsNoTracking()
+                .Where(x => ObjectIds.Contains(x.ProductionStepLinkDataId))
+                .Select(x => x.OutsourceStepRequestId)
+                .Distinct()
+                .ToArrayAsync();
+            await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(stepIds);
         }
     }
 }
