@@ -125,7 +125,7 @@ namespace VErp.Services.Accountancy.Service.Programing.Implement
             return true;
         }
 
-        public async Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary inputData)
+        public async Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary<FuncParameter> inputData)
         {
             var function = _accountancyDBContext.ProgramingFunction.FirstOrDefault(f => f.ProgramingFunctionName == programingFunctionName);
             if (function == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy chức năng {programingFunctionName}");
@@ -135,7 +135,7 @@ namespace VErp.Services.Accountancy.Service.Programing.Implement
             {
                 foreach (var item in inputData)
                 {
-                    sqlParams.Add(new SqlParameter($"@{item.Key}", item.Value ?? DBNull.Value));
+                    sqlParams.Add(new SqlParameter($"@{item.Key}", item.Value != null && item.Value.Value != null ? item.Value.DataType.GetSqlValue(item.Value.Value) : DBNull.Value));
                 }
             }
 
