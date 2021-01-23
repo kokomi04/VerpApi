@@ -132,8 +132,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
-                var data = await _dbContext.QueryDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
-                result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
+                var data = await _dbContext.QueryMultiDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                if(data.Tables.Count > 0) result.Head = data.Tables[0].ConvertFirstRowData().ToNonCamelCaseDictionary();
+                if (data.Tables.Count > 1) result.HeadTable = data.Tables[1].ConvertFirstRowData().ToNonCamelCaseDictionary();
+
                 foreach (var head in result.Head)
                 {
                     sqlParams.Add(new SqlParameter($"@{AccountantConstants.REPORT_HEAD_PARAM_PREFIX}" + head.Key, head.Value ?? DBNull.Value));
