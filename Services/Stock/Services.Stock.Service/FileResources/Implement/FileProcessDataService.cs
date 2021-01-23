@@ -1048,6 +1048,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             Content = model.Description,
                             Date = model.IssuedDate,
                             CustomerId = null,
+                            DepartmentId = null,
                             Department = string.Empty,
                             StockKeeperUserId = null,
                             FileIdList = null,

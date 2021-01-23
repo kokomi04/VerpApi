@@ -49,6 +49,13 @@ namespace VErpApi.Controllers.System
             return await _menuService.Create(req);
         }
 
+        [HttpGet]
+        [Route("{menuId}")]
+        public async Task<MenuOutputModel> Get([FromRoute] int menuId)
+        {
+            return await _menuService.Get(menuId);
+        }
+
         [HttpPut]
         [Route("{menuId}")]
         public async Task<bool> Update([FromRoute] int menuId, [FromBody] MenuInputModel req)

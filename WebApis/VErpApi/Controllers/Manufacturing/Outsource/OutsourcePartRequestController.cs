@@ -32,7 +32,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpGet]
         [Route("{outsourcePartRequestId}")]
-        public async Task<OutsourcePartRequestInfo> GetRequestOutsourcePartExtraInfo([FromRoute] int outsourcePartRequestId)
+        public async Task<OutsourcePartRequestInfo> GetRequestOutsourcePartExtraInfo([FromRoute] long outsourcePartRequestId)
         {
             return await _outsourcePartRequestService.GetOutsourcePartRequestExtraInfo(outsourcePartRequestId);
         }
@@ -46,14 +46,14 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPut]
         [Route("{outsourcePartRequestId}")]
-        public async Task<bool> UpdateRequestOutsourcePart([FromRoute] int outsourcePartRequestId, [FromBody] OutsourcePartRequestInfo req)
+        public async Task<bool> UpdateRequestOutsourcePart([FromRoute] long outsourcePartRequestId, [FromBody] OutsourcePartRequestInfo req)
         {
             return await _outsourcePartRequestService.UpdateOutsourcePartRequest(outsourcePartRequestId, req);
         }
 
         [HttpDelete]
         [Route("{outsourcePartRequestId}")]
-        public async Task<bool> DeletedRequestOutsourcePart([FromRoute] int outsourcePartRequestId) {
+        public async Task<bool> DeletedRequestOutsourcePart([FromRoute] long outsourcePartRequestId) {
             return await _outsourcePartRequestService.DeletedOutsourcePartRequest(outsourcePartRequestId);
         }
 
@@ -62,6 +62,13 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId([FromQuery] long productionOrderId)
         {
             return await _outsourcePartRequestService.GetOutsourcePartRequestByProductionOrderId(productionOrderId);
+        }
+
+        [HttpPut]
+        [Route("status")]
+        public async Task<bool> UpdateOutsourcePartRequestStatus([FromBody] long[] outsourcePartRequestId)
+        {
+            return await _outsourcePartRequestService.UpdateOutsourcePartRequestStatus(outsourcePartRequestId);
         }
     }
 }

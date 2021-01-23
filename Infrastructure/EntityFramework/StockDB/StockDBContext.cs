@@ -271,11 +271,22 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasColumnType("decimal(18, 4)")
                     .HasDefaultValueSql("((0))");
 
+                entity.HasOne(d => d.AssignStock)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.AssignStockId)
+                    .HasConstraintName("FK_InventoryRequirementDetail_Stock");
+
                 entity.HasOne(d => d.InventoryRequirement)
                     .WithMany(p => p.InventoryRequirementDetail)
                     .HasForeignKey(d => d.InventoryRequirementId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryRequirementDetail_InventoryRequirement");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryRequirementDetail_Product");
 
                 entity.HasOne(d => d.ProductUnitConversion)
                     .WithMany(p => p.InventoryRequirementDetail)
@@ -320,12 +331,19 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
+                entity.Property(e => e.OrderCode).HasMaxLength(64);
+
                 entity.Property(e => e.PackageCode)
                     .IsRequired()
                     .HasMaxLength(128)
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.Pocode)
+                    .HasColumnName("POCode")
+                    .HasMaxLength(64)
+                    .HasComment("Purchasing Order Code");
 
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
@@ -334,6 +352,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(64);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 

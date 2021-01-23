@@ -328,7 +328,22 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound, "Không có bản phiếu in gốc");
 
             var detailModify = await _masterDBContext.PrintConfigDetail.FirstOrDefaultAsync(p => p.PrintConfigId == printConfigId && !p.IsOrigin);
-            detailModify.IsDeleted = true;
+
+            detailModify.Background = detailOrigin.Background;
+            detailModify.BodyTable = detailOrigin.BodyTable;
+            detailModify.ContentType = detailOrigin.ContentType;
+            detailModify.FootTable = detailOrigin.FootTable;
+            detailModify.StickyFootTable = detailOrigin.StickyFootTable;
+            detailModify.GenerateCode = detailOrigin.GenerateCode;
+            detailModify.GenerateToString = detailOrigin.GenerateToString;
+            detailModify.HasTable = detailOrigin.HasTable;
+            detailModify.HeadTable = detailOrigin.HeadTable;
+            detailModify.Layout = detailOrigin.Layout;
+            detailModify.PaperSize = detailOrigin.PaperSize;
+            detailModify.StickyHeadTable = detailOrigin.StickyHeadTable;
+            detailModify.TemplateFileId = detailOrigin.TemplateFileId;
+            detailModify.TemplateFileName = detailOrigin.TemplateFileName;
+            detailModify.TemplateFilePath = detailOrigin.TemplateFilePath;
 
             await _masterDBContext.SaveChangesAsync();
             return true;

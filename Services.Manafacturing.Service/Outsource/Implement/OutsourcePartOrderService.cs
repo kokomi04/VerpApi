@@ -38,13 +38,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IOutsourceTrackService _outsourceTrackService;
+        private readonly IOutsourcePartRequestService _outsourcePartRequestService;
 
         public OutsourcePartOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourcePartOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOutsourceTrackService outsourceTrackService)
+            , IOutsourceTrackService outsourceTrackService
+            , IOutsourcePartRequestService outsourcePartRequestService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -52,10 +54,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _outsourceTrackService = outsourceTrackService;
+            _outsourcePartRequestService = outsourcePartRequestService;
         }
 
         public async Task<long> CreateOutsourceOrderPart(OutsourceOrderInfo req)
         {
+            await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
+
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
                 try
@@ -118,8 +123,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     });
 
                     await _manufacturingDBContext.SaveChangesAsync();
-                    await trans.CommitAsync();
+
+                    await UpdateOutsourcePartRequestStatus(detail.Select(x => x.ObjectId));
+
                     await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourceOrderId, $"Thêm mới đơn hàng gia công chi tiết {order.OutsourceOrderId}", req.JsonSerialize());
+
+                    await trans.CommitAsync();
+
                     return order.OutsourceOrderId;
                 }
                 catch (Exception ex)
@@ -145,8 +155,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 outsourceOrderDetail.ForEach(x => x.IsDeleted = true);
 
                 await _manufacturingDBContext.SaveChangesAsync();
-                await trans.CommitAsync();
+
+                await UpdateOutsourcePartRequestStatus(outsourceOrderDetail.Select(x => x.ObjectId));
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceOrder.OutsourceOrderId, $"Loại bỏ đơn hàng gia công chi tiết {outsourceOrder.OutsourceOrderId}", outsourceOrder.JsonSerialize());
+
+                await trans.CommitAsync();
+
                 return true;
             }
             catch (Exception ex)
@@ -247,6 +262,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> UpdateOutsourceOrderPart(long outsourceOrderId, OutsourceOrderInfo req)
         {
+             await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -272,11 +289,19 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var lsNewDetail = req.OutsourceOrderDetail.Where(x => !outsourceOrderDetail.Select(x => x.OutsourceOrderDetailId).Contains(x.OutsourceOrderDetailId)).ToList();
                 lsNewDetail.ForEach(x => x.OutsourceOrderId = outsourceOrder.OutsourceOrderId);
                 var temp = _mapper.Map<List<OutsourceOrderDetail>>(lsNewDetail);
-                await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(temp);
 
+                await _manufacturingDBContext.OutsourceOrderDetail.AddRangeAsync(temp);
                 await _manufacturingDBContext.SaveChangesAsync();
-                await trans.CommitAsync();
+
+                var objectIds = outsourceOrderDetail.Select(x => x.ObjectId).ToList();
+                objectIds.AddRange(lsNewDetail.Select(x => x.ObjectId));
+
+                await UpdateOutsourcePartRequestStatus(objectIds);
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, outsourceOrder.OutsourceOrderId, $"Cập nhật đơn hàng gia công chi tiết {outsourceOrder.OutsourceOrderId}", outsourceOrder.JsonSerialize());
+
+                await trans.CommitAsync();
+
                 return true;
             }
             catch (Exception ex)
@@ -286,6 +311,35 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 throw;
             }
         }
-        
+
+
+        private async Task CheckMarkInvalidOutsourcePartRequest(long[] outsourcePartrequestDetaildIds)
+        {
+            var lsInValid = (await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
+               .Include(x => x.OutsourcePartRequest)
+               .Where(x => outsourcePartrequestDetaildIds.Contains(x.OutsourcePartRequestDetailId))
+               .ToListAsync())
+               .Select(x => new
+               {
+                   OutsourcePartRequestCode = x.OutsourcePartRequest.OutsourcePartRequestCode,
+                   MarkInvalid = x.OutsourcePartRequest.MarkInvalid
+               })
+               .Where(x => x.MarkInvalid)
+               .Select(x => x.OutsourcePartRequestCode)
+               .Distinct()
+               .ToArray();
+            if (lsInValid.Length > 0)
+                throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{String.Join(", ", lsInValid)}\" chưa xác thực với QTSX");
+            
+        }
+
+        private async Task UpdateOutsourcePartRequestStatus(IEnumerable<long> ObjectIds) {
+            var stepIds = await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
+                .Where(x => ObjectIds.Contains(x.OutsourcePartRequestDetailId))
+                .Select(x => x.OutsourcePartRequestId)
+                .Distinct()
+                .ToArrayAsync();
+            await _outsourcePartRequestService.UpdateOutsourcePartRequestStatus(stepIds);
+        }
     }
 }

@@ -130,10 +130,14 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size, Clause filters = null)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isActived, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
+            if (departmentIds != null && departmentIds.Count > 0)
+            {
+                query = query.Where(d => departmentIds.Contains(d.DepartmentId));
+            }
             if (isActived.HasValue)
             {
                 query = query.Where(d => d.IsActived == isActived);
@@ -160,6 +164,32 @@ namespace VErp.Services.Organization.Service.Department.Implement
 
             return (lst, total);
         }
+
+
+        public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
+        {
+            if (departmentIds == null || departmentIds.Count == 0)
+            {
+                return new List<DepartmentModel>();
+            }
+            var query = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).Include(d => d.Parent).AsQueryable();
+
+            var lst = await query.Select(d => new DepartmentModel
+            {
+                DepartmentId = d.DepartmentId,
+                DepartmentCode = d.DepartmentCode,
+                DepartmentName = d.DepartmentName,
+                Description = d.Description,
+                IsActived = d.IsActived,
+                ParentId = d.ParentId,
+                ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
+                IsProduction = d.IsProduction,
+                WorkingHoursPerDay = d.WorkingHoursPerDay
+            }).ToListAsync();
+
+            return lst;
+        }
+
 
         public async Task<bool> UpdateDepartment(int updatedUserId, int departmentId, DepartmentModel data)
         {

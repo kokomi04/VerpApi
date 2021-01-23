@@ -15,6 +15,7 @@ namespace Verp.Services.ReportConfig.Model
         public NonCamelCaseDictionary Totals { get; set; }
         public PageDataTable Rows { get; set; }
         public NonCamelCaseDictionary Head { get; set; }
+        public IList<NonCamelCaseDictionary> HeadTable { get; set; }
         public NonCamelCaseDictionary Foot { get; set; }
     }
 }

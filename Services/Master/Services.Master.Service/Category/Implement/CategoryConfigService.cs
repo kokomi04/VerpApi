@@ -275,6 +275,8 @@ namespace VErp.Services.Master.Service.Category
                 category.IsReadonly = data.IsReadonly;
                 category.UsePlace = data.UsePlace;
                 category.CategoryGroupId = data.CategoryGroupId;
+                category.MenuId = data.MenuId;
+                category.ParentTitle = data.ParentTitle;
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
@@ -545,7 +547,9 @@ namespace VErp.Services.Master.Service.Category
 
             if (!((EnumFormType)data.FormTypeId).IsSelectForm())
             {
+                data.RefTableCode = null;
                 data.RefTableField = null;
+                data.RefTableTitle = null;
             }
         }
 
@@ -958,5 +962,6 @@ namespace VErp.Services.Master.Service.Category
                 .ToListAsync();
 
         }
+
     }
 }

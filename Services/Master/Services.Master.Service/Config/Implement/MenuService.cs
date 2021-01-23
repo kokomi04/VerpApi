@@ -173,5 +173,29 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             return entity.MenuId;
         }
+
+        public async Task<MenuOutputModel> Get(int menuId)
+        {
+            var obj = await _masterDbContext.Menu.FirstOrDefaultAsync(m => m.MenuId == menuId);
+            if (obj == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            }
+            return new MenuOutputModel()
+            {
+                MenuId = obj.MenuId,
+                ParentId = obj.ParentId,
+                IsDisabled = obj.IsDisabled,
+                ModuleId = obj.ModuleId,
+                ObjectTypeId = obj.ObjectTypeId,
+                ObjectId = obj.ObjectId,
+                MenuName = obj.MenuName,
+                Url = obj.Url,
+                Icon = obj.Icon,
+                Param = obj.Param,
+                SortOrder = obj.SortOrder,
+                IsGroup = obj.IsGroup
+            };
+        }
     }
 }

@@ -27,14 +27,14 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         [Route("search")]
         public async Task<PageData<OutsourceStepRequestSearch>> GetListOutsourceStepRequest([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
-            return await _outsourceStepRequestService.GetListOutsourceStepRequest(keyword, page, size, orderByFieldName, asc, filters);
+            return await _outsourceStepRequestService.SearchOutsourceStepRequest(keyword, page, size, orderByFieldName, asc, filters);
         }
 
         [HttpGet]
         [Route("{outsourceStepRequestId}")]
-        public async Task<OutsourceStepRequestInfo> GetRequestOutsourceStep([FromRoute] long outsourceStepRequestId)
+        public async Task<OutsourceStepRequestOutput> GetRequestOutsourceStep([FromRoute] long outsourceStepRequestId)
         {
-            return await _outsourceStepRequestService.GetOutsourceStepRequest(outsourceStepRequestId);
+            return await _outsourceStepRequestService.GetOutsourceStepRequestOutput(outsourceStepRequestId);
         }
 
         [HttpDelete]
@@ -80,7 +80,13 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         [Route("listProductionStepOutsourced")]
         public async Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepInOutsourceStepRequest([FromQuery]long productionOrderId)
         {
-            return await _outsourceStepRequestService.GetProductionStepInOutsourceStepRequest(productionOrderId);
+            return await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(productionOrderId);
+        }
+        [HttpPut]
+        [Route("status")]
+        public async Task<bool> UpdateOutsourceStepRequestStatus([FromBody]long[] outsourceStepRequestId)
+        {
+            return await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(outsourceStepRequestId);
         }
 
     }

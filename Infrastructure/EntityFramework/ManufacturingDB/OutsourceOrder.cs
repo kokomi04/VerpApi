@@ -35,6 +35,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public int? CustomerId { get; set; }
+        public string DeliveryDestination { get; set; }
+        public string Suppliers { get; set; }
 
         public virtual ICollection<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual ICollection<OutsourceTrack> OutsourceTrack { get; set; }

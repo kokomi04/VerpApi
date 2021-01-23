@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
+        public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
         public virtual DbSet<Department> Department { get; set; }
@@ -100,6 +101,17 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Website).HasMaxLength(128);
             });
 
+            modelBuilder.Entity<CustomerAttachment>(entity =>
+            {
+                entity.Property(e => e.Title).HasMaxLength(256);
+
+                entity.HasOne(d => d.Customer)
+                    .WithMany(p => p.CustomerAttachment)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerAttachment_Customer");
+            });
+
             modelBuilder.Entity<CustomerBankAccount>(entity =>
             {
                 entity.Property(e => e.AccountNumber)
@@ -159,8 +171,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.DepartmentCode)
                     .IsRequired()
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+                    .HasMaxLength(32);
 
                 entity.Property(e => e.DepartmentName)
                     .IsRequired()

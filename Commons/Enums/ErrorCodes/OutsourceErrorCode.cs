@@ -20,5 +20,6 @@ namespace VErp.Commons.Enums.ErrorCodes
         NotFoundOutsourOrderDetail = 5,
         [Description("Đã tồn tại công đoạn có yêu cầu gia công")]
         EarlyExistsProductionStepHadOutsourceRequest = 6,
+        CanNotCreateOutsourceOrder = 7,
     }
 }

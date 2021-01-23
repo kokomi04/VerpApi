@@ -39,5 +39,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId);
         Task<NonCamelCaseDictionary> GroupProductionStepRelationShip(IList<long> productionStepIds);
         Task<bool> SetProductionStepWorkload(IList<ProductionStepWorkload> productionStepWorkload);
+
+        //OutsourceRequest
+        Task<bool> UpdateMarkInvalidOutsourcePartRequest(long productionOrderId);
+        Task<bool> UpdateMarkInvalidOutsourceStepRequest(long productionOrderId);
     }
 }

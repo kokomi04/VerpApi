@@ -212,6 +212,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         ProductionOrder = 70,
         [Description("Kế hoạch sản xuất")]
+        [GenCodeObject]
         ProductionSchedule = 71,
         [Description("Đơn hàng gia công")]
         [GenCodeObject]

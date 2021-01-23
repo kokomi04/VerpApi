@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.StockDB;
 using InventoryRequirementEntity = VErp.Infrastructure.EF.StockDB.InventoryRequirement;
 
 namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
@@ -25,19 +26,38 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public long BillDate { get; set; }
     }
 
-    public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementEntity>
+    public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
     {
         public long InventoryRequirementId { get; set; }
         public int? CensorByUserId { get; set; }
         public long? CensorDatetimeUtc { get; set; }
         public EnumInventoryRequirementStatus CensorStatus { get; set; }
+        public string ProductTitle { get; set; }
+        public string StockName { get; set; }
+
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InventoryRequirementEntity, InventoryRequirementListModel>()
-                .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))
-                .ForMember(dest => dest.CensorDatetimeUtc, opt => opt.MapFrom(source => source.CensorDatetimeUtc.GetUnix()))
-                .ForMember(dest => dest.BillDate, opt => opt.MapFrom(source => source.BillDate.GetUnix()))
-                .ForMember(dest => dest.CensorStatus, opt => opt.MapFrom(source => (EnumInventoryRequirementStatus)source.CensorStatus));
+            profile.CreateMap<InventoryRequirementDetail, InventoryRequirementListModel>()
+                .ForMember(dest => dest.InventoryRequirementCode, otp => otp.MapFrom(source => source.InventoryRequirement.InventoryRequirementCode))
+                .ForMember(dest => dest.Content, otp => otp.MapFrom(source => source.InventoryRequirement.Content))
+                .ForMember(dest => dest.Date, otp => otp.MapFrom(source => source.InventoryRequirement.Date.GetUnix()))
+                .ForMember(dest => dest.DepartmentId, otp => otp.MapFrom(source => source.InventoryRequirement.DepartmentId))
+                .ForMember(dest => dest.CreatedByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CreatedByUserId))
+                .ForMember(dest => dest.ScheduleTurnId, otp => otp.MapFrom(source => source.InventoryRequirement.ScheduleTurnId))
+                .ForMember(dest => dest.ProductionStepId, otp => otp.MapFrom(source => source.InventoryRequirement.ProductionStepId))
+                .ForMember(dest => dest.Shipper, otp => otp.MapFrom(source => source.InventoryRequirement.Shipper))
+                .ForMember(dest => dest.CustomerId, otp => otp.MapFrom(source => source.InventoryRequirement.CustomerId))
+                .ForMember(dest => dest.BillForm, otp => otp.MapFrom(source => source.InventoryRequirement.BillForm))
+                .ForMember(dest => dest.BillCode, otp => otp.MapFrom(source => source.InventoryRequirement.BillCode))
+                .ForMember(dest => dest.BillSerial, otp => otp.MapFrom(source => source.InventoryRequirement.BillSerial))
+                .ForMember(dest => dest.BillDate, otp => otp.MapFrom(source => source.InventoryRequirement.BillDate.GetUnix()))
+                .ForMember(dest => dest.InventoryRequirementId, otp => otp.MapFrom(source => source.InventoryRequirement.InventoryRequirementId))
+                .ForMember(dest => dest.CensorByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CensorByUserId))
+                .ForMember(dest => dest.CensorDatetimeUtc, otp => otp.MapFrom(source => source.InventoryRequirement.CensorDatetimeUtc.GetUnix()))
+                .ForMember(dest => dest.CensorStatus, otp => otp.MapFrom(source => (EnumInventoryRequirementStatus)source.InventoryRequirement.CensorStatus))
+                .ForMember(dest => dest.CensorByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CensorByUserId))
+                .ForMember(dest => dest.ProductTitle, otp => otp.MapFrom(source => $"{source.Product.ProductCode} / {source.Product.ProductName}"))
+                .ForMember(dest => dest.StockName, otp => otp.MapFrom(source => source.AssignStock.StockName));
         }
     }
 

@@ -14,6 +14,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
@@ -306,6 +307,24 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.InventoryImport(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), JsonConvert.DeserializeObject<InventoryOpeningBalanceModel>(info)).ConfigureAwait(true);
         }
 
-        
+
+        [HttpGet]
+        [Route("{inventoryTypeId}/FieldsForParse")]
+        public CategoryNameModel FieldsForParse([FromRoute] EnumInventoryType inventoryTypeId)
+        {
+            return _inventoryService.FieldsForParse(inventoryTypeId);
+        }
+
+        [HttpPost]
+        [Route("{inventoryTypeId}/ParseExcel")]
+        public IAsyncEnumerable<InventoryDetailRowValue> InputExcelParse([FromRoute] EnumInventoryType inventoryTypeId, [FromForm] string mapping, [FromForm] IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return _inventoryService.ParseExcel(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), inventoryTypeId);
+        }
+
     }
 }
