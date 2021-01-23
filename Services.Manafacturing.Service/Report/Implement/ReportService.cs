@@ -841,20 +841,11 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             return reportData;
         }
 
-        public async Task<IList<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport(long fromDate, long toDate, long? productionOrderId)
+        public async Task<PageData<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport(int page, int size, string orderByFieldName, bool asc, Clause filters)
         {
             var reportData = new List<OutsourceStepRequestReportModel>();
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
 
-            if (!fromDateTime.HasValue || !toDateTime.HasValue)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
-
-            var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
-                .Where(x => x.OutsourceStepRequestFinishDate >= fromDateTime.Value || x.OutsourceStepRequestFinishDate <= toDateTime.Value);
-
-            if (productionOrderId.GetValueOrDefault() > 0)
-                query = query.Where(x => x.ProductionOrderId == productionOrderId);
+            var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking();
 
            var outsourceStepRequests = await query.ProjectTo<OutsourceStepRequestModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -950,8 +941,11 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         r.QuantityComplete = quantityCompleteMaps[r.ProductionStepLinkDataId].GetValueOrDefault();
                 }
             }
+            var queryFilter = reportData.AsQueryable();
+            if (filters != null)
+                 queryFilter = reportData.AsQueryable().InternalFilter(filters);
 
-            return reportData;
+            return (queryFilter.ToList(), queryFilter.Count());
         }
 
         private IList<long> FoundProductionStepInOutsourceStepRequest(IList<OutsourceStepRequestDataModel> outsourceStepRequestDatas, List<ProductionStepLinkDataRoleModel> roles)
