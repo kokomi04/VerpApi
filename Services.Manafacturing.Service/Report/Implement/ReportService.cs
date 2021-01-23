@@ -941,11 +941,19 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         r.QuantityComplete = quantityCompleteMaps[r.ProductionStepLinkDataId].GetValueOrDefault();
                 }
             }
+
             var queryFilter = reportData.AsQueryable();
             if (filters != null)
                  queryFilter = reportData.AsQueryable().InternalFilter(filters);
 
-            return (queryFilter.ToList(), queryFilter.Count());
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+                queryFilter = queryFilter.InternalOrderBy(orderByFieldName, asc);
+
+            var lst = (size > 0 ? queryFilter.Skip((page - 1) * size).Take(size) : queryFilter).ToList();
+
+            var total = queryFilter.Count();
+
+            return (lst, total);
         }
 
         private IList<long> FoundProductionStepInOutsourceStepRequest(IList<OutsourceStepRequestDataModel> outsourceStepRequestDatas, List<ProductionStepLinkDataRoleModel> roles)
