@@ -841,20 +841,11 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             return reportData;
         }
 
-        public async Task<IList<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport(long fromDate, long toDate, long? productionOrderId)
+        public async Task<PageData<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport(int page, int size, string orderByFieldName, bool asc, Clause filters)
         {
             var reportData = new List<OutsourceStepRequestReportModel>();
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
 
-            if (!fromDateTime.HasValue || !toDateTime.HasValue)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
-
-            var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
-                .Where(x => x.OutsourceStepRequestFinishDate >= fromDateTime.Value || x.OutsourceStepRequestFinishDate <= toDateTime.Value);
-
-            if (productionOrderId.GetValueOrDefault() > 0)
-                query = query.Where(x => x.ProductionOrderId == productionOrderId);
+            var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking();
 
            var outsourceStepRequests = await query.ProjectTo<OutsourceStepRequestModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -951,7 +942,18 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 }
             }
 
-            return reportData;
+            var queryFilter = reportData.AsQueryable();
+            if (filters != null)
+                 queryFilter = reportData.AsQueryable().InternalFilter(filters);
+
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+                queryFilter = queryFilter.InternalOrderBy(orderByFieldName, asc);
+
+            var lst = (size > 0 ? queryFilter.Skip((page - 1) * size).Take(size) : queryFilter).ToList();
+
+            var total = queryFilter.Count();
+
+            return (lst, total);
         }
 
         private IList<long> FoundProductionStepInOutsourceStepRequest(IList<OutsourceStepRequestDataModel> outsourceStepRequestDatas, List<ProductionStepLinkDataRoleModel> roles)

@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Verp.Services.ReportConfig.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Report;
 using VErp.Services.Manafacturing.Model.Step;
@@ -72,11 +74,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _reportService.GetOursourcePartRequestReport(fromDate, toDate, productionOrderId);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("OutsourceStepRequest")]
-        public async Task<IList<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] long? productionOrderId)
+        public async Task<PageData<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport([FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters)
         {
-            return await _reportService.GetOursourceStepRequestReport(fromDate, toDate, productionOrderId);
+            return await _reportService.GetOursourceStepRequestReport(page, size, orderByFieldName, asc, filters);
         }
     }
 }
