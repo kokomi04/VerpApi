@@ -22,7 +22,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
-        public bool MarkInValid { get; set; }
+        public bool MarkInvalid { get; set; }
         public int OutsourceStepRequestStatusId { get; set; }
 
         public virtual ProductionOrder ProductionOrder { get; set; }

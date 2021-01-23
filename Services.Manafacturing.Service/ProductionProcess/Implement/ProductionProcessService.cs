@@ -1284,7 +1284,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 foreach(var rq in outsourceStepRequests)
                 {
-                    rq.MarkInValid = false;
+                    rq.MarkInvalid = false;
 
                     var stepInRequests = productionStepOutsourced.Where(p => p.OutsourceStepRequestId == rq.OutsourceStepRequestId).Select(s => s.ProductionStepId);
                     var stepInfoInRequests = productionStepInfos.Where(p => stepInRequests.Contains(p.ProductionStepId));
@@ -1294,7 +1294,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         {
                             if(l.ExportOutsourceQuantity > l.Quantity || l.OutsourceQuantity > l.Quantity)
                             {
-                                rq.MarkInValid = true;
+                                rq.MarkInvalid = true;
                                 break;
                             }
                         }
