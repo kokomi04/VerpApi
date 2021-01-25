@@ -204,7 +204,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             sheet.SetCellStyle(4, 12, isItalic: true).SetCellValue($"Ngày hóa đơn:");
 
             sheet.AddMergedRegion(new CellRangeAddress(4, 4, 14, 15));
-            sheet.SetCellStyle(4, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo?.BillDate?.UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd/MM/yyyy")}");
+            sheet.SetCellStyle(4, 14, hAlign: HorizontalAlignment.Right, isItalic: true).SetCellValue($"{inventoryInfo.BillDate.UnixToDateTime(_currentContextService.TimeZoneOffset)?.ToString("dd/MM/yyyy")}");
 
             currentRow = 12;
         }
@@ -285,8 +285,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             var productInfos = (await _productHelperService.GetListProducts(productIds)).ToDictionary(p => p.ProductId, p => p);
 
             var stt = 1;
+
+            var centerCell = sheet.GetCellStyle(hAlign: HorizontalAlignment.Center, isBorder: true);
+            var normalCell = sheet.GetCellStyle(isBorder: true);
+
+            var numberCell = sheet.GetCellStyle(isBorder: true, dataFormat: "#,##0");
+
             foreach (var item in inventoryInfo.InventoryDetailOutputList)
             {
+                for (var i = 0; i <= maxColumnIndex; i++)
+                {
+                    var style = normalCell;
+                    if (i == 0 || i == 3 || i == 6)
+                    {
+                        style = centerCell;
+                    }
+                    if (new[] { 4, 5, 6, 8, 9, 10, 11 }.Contains(i))
+                    {
+                        style = numberCell;
+                    }
+                    sheet.EnsureCell(currentRow, i).CellStyle = style;
+                }
+
                 sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
 
                 productInfos.TryGetValue(item.ProductId, out var productInfo);
@@ -304,52 +324,37 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 {
                     sheet.EnsureCell(currentRow, 4).SetCellValue(Convert.ToDouble(item.RequestPrimaryQuantity));
                 }
-                else
-                {
-                    sheet.EnsureCell(currentRow, 4);
-                }
+
 
                 sheet.EnsureCell(currentRow, 5).SetCellValue(Convert.ToDouble(item.PrimaryQuantity));
-                sheet.EnsureCell(currentRow, 6).SetCellValue(Convert.ToDouble(item.UnitPrice));
+                if (item.UnitPrice > 0)
+                    sheet.EnsureCell(currentRow, 6).SetCellValue(Convert.ToDouble(item.UnitPrice));
 
                 if (isUsePu)
                 {
                     sheet.EnsureCell(currentRow, 7).SetCellValue(pu?.ProductUnitConversionName);
                 }
-                else
-                {
-                    sheet.EnsureCell(currentRow, 7);
-                }
+
 
                 if (isUsePu && item.RequestProductUnitConversionQuantity.HasValue)
                 {
                     sheet.EnsureCell(currentRow, 8).SetCellValue(Convert.ToDouble(item.RequestProductUnitConversionQuantity));
                 }
-                else
-                {
-                    sheet.EnsureCell(currentRow, 8);
-                }
+
 
                 if (isUsePu && item.ProductUnitConversionQuantity.HasValue)
                 {
                     sheet.EnsureCell(currentRow, 9).SetCellValue(Convert.ToDouble(item.ProductUnitConversionQuantity));
                 }
-                else
-                {
-                    sheet.EnsureCell(currentRow, 9);
-                }
-
 
                 if (isUsePu && item.ProductUnitConversionPrice.HasValue)
                 {
                     sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.ProductUnitConversionPrice));
                 }
-                else
-                {
-                    sheet.EnsureCell(currentRow, 10);
-                }
 
-                sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(item.PrimaryQuantity * item.UnitPrice));
+
+                if (item.UnitPrice > 0)
+                    sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(item.PrimaryQuantity * item.UnitPrice));
 
                 sheet.EnsureCell(currentRow, 12).SetCellValue(item.POCode);
 
@@ -359,12 +364,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 sheet.EnsureCell(currentRow, 15).SetCellValue(item.Description);
 
-                for (var i = 0; i <= maxColumnIndex; i++)
-                {
-                    var cell = sheet.GetRow(currentRow).GetCell(i);
-                    if (cell != null)
-                        cell.CellStyle = sheet.GetCellStyle(hAlign: (i == 0 || i == 3 || i == 6) ? (HorizontalAlignment?)HorizontalAlignment.Center : null, isBorder: true);
-                }
 
                 currentRow++;
                 stt++;

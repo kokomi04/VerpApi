@@ -26,6 +26,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public decimal? CoordinateY { get; set; }
         public string ProductionStepCode { get; set; }
         public int UnitId { get; set; }
+        public bool IsFinish { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepModel>()

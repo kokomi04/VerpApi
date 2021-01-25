@@ -19,6 +19,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string ProductionOrderCode { get; set; }
         public long? ScheduleTurnId { get; set; }
         public bool HasAssignment { get; set; }
+        public string ScheduleCode { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionScheduleEntity, ProductionScheduleModel>()
@@ -38,6 +39,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string ProductionOrderCode { get; set; }
         public long? ScheduleTurnId { get; set; }
         public bool HasAssignment { get; set; }
+        public string ScheduleCode { get; set; }
     }
 
     public class ProductionScheduleInputModel : IMapFrom<ProductionSchedule>
@@ -49,6 +51,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal ProductionScheduleQuantity { get; set; }
         public long? ScheduleTurnId { get; set; }
         public EnumScheduleStatus ProductionScheduleStatus { get; set; }
+        public string ScheduleCode { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionScheduleInputModel, ProductionSchedule>()

@@ -64,6 +64,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
+
                 entity.Property(e => e.FreightCost).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OtherCost).HasColumnType("decimal(18, 5)");
@@ -83,6 +85,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProviderPhone).HasMaxLength(20);
 
                 entity.Property(e => e.ProviderReceiver).HasMaxLength(128);
+
+                entity.Property(e => e.Suppliers)
+                    .HasMaxLength(1024)
+                    .HasComment("");
 
                 entity.Property(e => e.TransportToAddress).HasMaxLength(256);
 
@@ -126,6 +132,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(50);
 
+                entity.Property(e => e.OutsourcePartRequestStatusId)
+                    .HasDefaultValueSql("((1))")
+                    .HasComment("");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.HasOne(d => d.ProductionOrderDetail)
@@ -166,6 +176,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.OutsourceStepRequestCode)
                     .IsRequired()
                     .HasMaxLength(50);
+
+                entity.Property(e => e.OutsourceStepRequestStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ProductionStepId).HasComment("Lấy ra tên QTSX được gắn với YCGC");
 
@@ -211,6 +223,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Quantity)
+                    .HasColumnType("decimal(18, 5)")
+                    .HasComment("");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
@@ -342,6 +358,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.ProductionScheduleQuantity).HasColumnType("decimal(18, 5)");
 
+                entity.Property(e => e.ScheduleCode)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
                 entity.HasOne(d => d.ProductionOrderDetail)
                     .WithMany(p => p.ProductionSchedule)
                     .HasForeignKey(d => d.ProductionOrderDetailId)
@@ -448,6 +468,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProductionStepLinkTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.QuantityOrigin).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });

@@ -177,7 +177,7 @@ namespace VErpApi.Controllers.System
         [Route("fieldDataForMapping")]
         public CategoryNameModel GetCustomerFieldDataForMapping()
         {
-            return _userService.GetCustomerFieldDataForMapping();
+            return _userService.GetFieldDataForMapping();
         }
 
         [HttpPost]

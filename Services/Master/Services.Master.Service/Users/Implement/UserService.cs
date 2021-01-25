@@ -564,7 +564,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return await GetBasicInfos(userIds);
         }
 
-        public CategoryNameModel GetCustomerFieldDataForMapping()
+        public CategoryNameModel GetFieldDataForMapping()
         {
             var result = new CategoryNameModel()
             {

@@ -367,6 +367,16 @@ namespace VErp.Commons.Library
             return a - b;
         }
 
+        public static decimal SubProductionDecimal(this decimal a, decimal b)
+        {
+            if (a > 0 && b > 0 || a < 0 && b < 0)
+            {
+                var c = a - b;
+                if (Math.Abs(c) < Numbers.PRODUCTION_MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
+                return c;
+            }
+            return a - b;
+        }
         public static decimal RelativeTo(this decimal value, decimal relValue)
         {
             if (Math.Abs(value) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
@@ -626,7 +636,7 @@ namespace VErp.Commons.Library
                     return longValue;
                 case EnumDataType.Decimal:
                     decimal decimalValue;
-                    if (!decimal.TryParse(value.ToString(), out decimalValue))
+                    if (!decimal.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu decimal");
                     }
@@ -982,7 +992,7 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
         }
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>()
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null)
         {
             var fields = new List<CategoryFieldNameModel>();
             foreach (var prop in typeof(T).GetProperties())
@@ -991,6 +1001,8 @@ namespace VErp.Commons.Library
 
                 var title = string.Empty;
                 var groupName = "Trường dữ liệu";
+                int? type = null;
+
                 if (attrs != null && attrs.Count() > 0)
                 {
                     title = attrs.First().Name;
@@ -1001,12 +1013,23 @@ namespace VErp.Commons.Library
                     title = prop.Name;
                 }
 
+                var types = prop.GetCustomAttributes<FieldDataTypeAttribute>();
+                if (types != null && types.Count() > 0)
+                {
+                    type = types.First().Type;
+                }
+                if (byType.HasValue && type.HasValue && byType.Value != type.Value)
+                {
+                    continue;
+                }
+
                 var fileMapping = new CategoryFieldNameModel()
                 {
                     GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
+                    Type = type,
                     RefCategory = null
                 };
 

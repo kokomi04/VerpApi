@@ -12,5 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcess
         public long? ObjectId { get; set; }
         public string ObjectCode { get; set; }
         public string Message { get; set; }
+        public long? ProductionProcessId { get; set; }
+        public string ProductionProcessCode { get; set; }
     }
 }

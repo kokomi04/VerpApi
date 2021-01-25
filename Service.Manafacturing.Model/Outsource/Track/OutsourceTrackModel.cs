@@ -23,6 +23,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Track
         public string OutsourceTrackDescription { get; set; }
         [Required]
         public EnumOutsourceTrackStatus OutsourceTrackStatusId { get; set; }
+        public decimal? Quantity { get; set; }
 
         public void Mapping(Profile profile)
         {

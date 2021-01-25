@@ -157,29 +157,53 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryQuery = inventoryQuery.Where(q => q.AccountancyAccountNumber.StartsWith(accountancyAccountNumber));
             }
 
-            IQueryable<VMappingOusideImportObject> mappingObjectQuery = null;
+            //IQueryable<VMappingOusideImportObject> mappingObjectQuery = null;
 
-            if (mappingFunctionKeys != null && mappingFunctionKeys.Count > 0)
+            //if (mappingFunctionKeys != null && mappingFunctionKeys.Count > 0)
+            //{
+            //    mappingObjectQuery = _stockDbContext.VMappingOusideImportObject
+            //         .Where(m => mappingFunctionKeys.Contains(m.MappingFunctionKey));
+
+            //    if (isExistedInputBill != null)
+            //    {
+            //        if (isExistedInputBill.Value)
+            //        {
+            //            inventoryQuery = from q in inventoryQuery
+            //                             where mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
+            //                             select q;
+            //        }
+            //        else
+            //        {
+            //            inventoryQuery = from q in inventoryQuery
+            //                             where !mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
+            //                             select q;
+            //        }
+            //    }
+            //}
+
+
+            IQueryable<RefInputBillBasic> billQuery = _stockDbContext.RefInputBillBasic.AsQueryable();
+
+            if (isExistedInputBill != null)
             {
-                mappingObjectQuery = _stockDbContext.VMappingOusideImportObject
-                     .Where(m => mappingFunctionKeys.Contains(m.MappingFunctionKey));
-
-                if (isExistedInputBill != null)
+                if (isExistedInputBill.Value)
                 {
-                    if (isExistedInputBill.Value)
-                    {
-                        inventoryQuery = from q in inventoryQuery
-                                         where mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
-                                         select q;
-                    }
-                    else
-                    {
-                        inventoryQuery = from q in inventoryQuery
-                                         where !mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
-                                         select q;
-                    }
+                    inventoryQuery = from q in inventoryQuery
+                                     join b in billQuery on q.InventoryCode equals b.SoCt into bs
+                                     from b in bs.DefaultIfEmpty()
+                                     where b != null
+                                     select q;
+                }
+                else
+                {
+                    inventoryQuery = from q in inventoryQuery
+                                     join b in billQuery on q.InventoryCode equals b.SoCt into bs
+                                     from b in bs.DefaultIfEmpty()
+                                     where b == null
+                                     select q;
                 }
             }
+
 
             var total = await inventoryQuery.CountAsync();
 
@@ -191,11 +215,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var stockInfos = (await _stockDbContext.Stock.AsNoTracking().Where(s => stockIds.Contains(s.StockId)).ToListAsync()).ToDictionary(s => s.StockId, s => s);
 
             var inventoryIds = inventoryDataList.Select(iv => iv.InventoryId.ToString()).ToList();
+            var inventoryCodes = inventoryDataList.Select(iv => iv.InventoryCode).ToList();
+            //var mappingObjects = new List<VMappingOusideImportObject>();
+            //if (mappingObjectQuery != null)
+            //{
+            //    mappingObjects = await mappingObjectQuery.Where(m => inventoryIds.Contains(m.SourceId)).ToListAsync();
+            //}
 
-            var mappingObjects = new List<VMappingOusideImportObject>();
-            if (mappingObjectQuery != null)
+
+            var inputObjects = new List<RefInputBillBasic>();
+            if (billQuery != null)
             {
-                mappingObjects = await mappingObjectQuery.Where(m => inventoryIds.Contains(m.SourceId)).ToListAsync();
+                inputObjects = await billQuery.Where(m => inventoryCodes.Contains(m.SoCt)).ToListAsync();
             }
 
             var pagedData = new List<InventoryOutput>();
@@ -213,6 +244,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Content = item.Content,
                     Date = item.Date.GetUnix(),
                     CustomerId = item.CustomerId,
+                    DepartmentId = item.DepartmentId,
                     Department = item.Department,
                     StockKeeperUserId = item.StockKeeperUserId,
                     BillForm = item.BillForm,
@@ -237,16 +269,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     },
                     InventoryDetailOutputList = null,
                     FileList = null,
-                    InputBills = mappingObjects
-                        .Where(m => m.SourceId == item.InventoryId.ToString())
+                    //InputBills = mappingObjects
+                    //    .Where(m => m.SourceId == item.InventoryId.ToString())
+                    //    .Select(m => new MappingInputBillModel()
+                    //    {
+                    //        MappingFunctionKey = m.MappingFunctionKey,
+                    //        InputTypeId = m.InputTypeId,
+                    //        SourceId = m.SourceId,
+                    //        InputBillFId = m.InputBillFId,
+                    //        BillObjectTypeId = (EnumObjectType)m.BillObjectTypeId
+
+                    //    }).ToList()
+                    InputBills = inputObjects
+                        .Where(m => m.SoCt.ToLower() == item.InventoryCode.ToLower())
                         .Select(m => new MappingInputBillModel()
                         {
-                            MappingFunctionKey = m.MappingFunctionKey,
+                            MappingFunctionKey = null,
                             InputTypeId = m.InputTypeId,
-                            SourceId = m.SourceId,
+                            SourceId = item.InventoryId.ToString(),
                             InputBillFId = m.InputBillFId,
-                            BillObjectTypeId = (EnumObjectType)m.BillObjectTypeId
-                            
+                            BillObjectTypeId = EnumObjectType.InputBill
+
                         }).ToList()
                 });
 
@@ -397,6 +440,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Shipper = inventoryObj.Shipper,
                     Content = inventoryObj.Content,
                     Date = inventoryObj.Date.GetUnix(),
+                    DepartmentId = inventoryObj.DepartmentId,
                     CustomerId = inventoryObj.CustomerId,
                     Department = inventoryObj.Department,
                     StockKeeperUserId = inventoryObj.StockKeeperUserId,
@@ -456,6 +500,31 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var fields = Utils.GetFieldNameModels<OpeningBalanceModel>();
             result.Fields = fields;
             return result;
+        }
+
+
+        public CategoryNameModel FieldsForParse(EnumInventoryType inventoryTypeId)
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = inventoryTypeId == EnumInventoryType.Input ? "InventoryInput" : "InventoryOutput",
+                CategoryTitle = inventoryTypeId == EnumInventoryType.Input ? "Nhập kho" : "Xuất kho",
+                IsTreeView = false,
+                Fields = Utils.GetFieldNameModels<InventoryExcelParseModel>((int)inventoryTypeId)
+            };
+
+            return result;
+        }
+
+        public IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId)
+        {
+            var parse = new InventoryDetailParseFacade();
+
+            parse.SetProductService(_productService)
+                .SetStockDbContext(_stockDbContext);
+
+            return parse.ParseExcel(mapping, stream, inventoryTypeId);
         }
 
 
@@ -861,6 +930,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.Shipper = req.Shipper;
             inventoryObj.Content = req.Content;
             inventoryObj.CustomerId = req.CustomerId;
+            inventoryObj.DepartmentId = req.DepartmentId;
             inventoryObj.Department = req.Department;
             inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
             inventoryObj.BillForm = req.BillForm;
@@ -937,6 +1007,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.Content = req.Content;
                         inventoryObj.Date = issuedDate;
                         inventoryObj.CustomerId = req.CustomerId;
+                        inventoryObj.DepartmentId = req.DepartmentId;
                         inventoryObj.Department = req.Department;
                         inventoryObj.StockKeeperUserId = req.StockKeeperUserId;
 
@@ -1490,7 +1561,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             pk.ProductUnitConversionRemaining,
                             pk.ProductUnitConversionWaitting,
                             pk.CreatedDatetimeUtc,
-                            pk.UpdatedDatetimeUtc
+                            pk.UpdatedDatetimeUtc,
+                            pk.OrderCode,
+                            pk.Pocode,
+                            pk.ProductionOrderCode
                         };
 
             var total = await query.CountAsync();
@@ -1537,7 +1611,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
                     LocationOutputModel = locationOutputModel,
-                    ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null
+                    ProductUnitConversionModel = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId) ?? null,
+                    OrderCode = item.OrderCode,
+                    POCode = item.Pocode,
+                    ProductionOrderCode = item.ProductionOrderCode
+
                 });
             }
             return (packageList, total);

@@ -39,6 +39,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
+        public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
         public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
@@ -271,11 +272,22 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasColumnType("decimal(18, 4)")
                     .HasDefaultValueSql("((0))");
 
+                entity.HasOne(d => d.AssignStock)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.AssignStockId)
+                    .HasConstraintName("FK_InventoryRequirementDetail_Stock");
+
                 entity.HasOne(d => d.InventoryRequirement)
                     .WithMany(p => p.InventoryRequirementDetail)
                     .HasForeignKey(d => d.InventoryRequirementId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_InventoryRequirementDetail_InventoryRequirement");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryRequirementDetail_Product");
 
                 entity.HasOne(d => d.ProductUnitConversion)
                     .WithMany(p => p.InventoryRequirementDetail)
@@ -320,12 +332,19 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
+                entity.Property(e => e.OrderCode).HasMaxLength(64);
+
                 entity.Property(e => e.PackageCode)
                     .IsRequired()
                     .HasMaxLength(128)
                     .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.Pocode)
+                    .HasColumnName("POCode")
+                    .HasMaxLength(64)
+                    .HasComment("Purchasing Order Code");
 
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
@@ -334,6 +353,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(64);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -574,6 +595,19 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.ProductUnitConversion)
                     .HasForeignKey(d => d.ProductId)
                     .HasConstraintName("FK_ProductUnitConversion_Product");
+            });
+
+            modelBuilder.Entity<RefInputBillBasic>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefInputBillBasic");
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.SoCt)
+                    .HasColumnName("so_ct")
+                    .HasMaxLength(512);
             });
 
             modelBuilder.Entity<Stock>(entity =>

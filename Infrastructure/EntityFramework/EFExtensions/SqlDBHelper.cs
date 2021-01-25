@@ -116,6 +116,57 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
+
+        public static async Task<DataSet> QueryMultiDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        {
+            try
+            {
+                using (var command = dbContext.Database.GetDbConnection().CreateCommand())
+                {
+                    command.CommandType = cmdType;
+                    command.CommandText = rawSql;
+                    command.Parameters.Clear();
+                    foreach (var param in parammeters)
+                    {
+                        command.Parameters.Add(param);
+                    }
+
+                    if (dbContext is ISubsidiayRequestDbContext requestDbContext)
+                    {
+                        command.Parameters.Add(requestDbContext.CreateSubSqlParam());
+                    }
+
+                    if (timeout.HasValue)
+                    {
+                        command.CommandTimeout = Convert.ToInt32(timeout.Value.TotalSeconds);
+                    }
+
+                    var trans = dbContext.Database.CurrentTransaction?.GetDbTransaction();
+                    if (trans != null)
+                    {
+                        command.Transaction = trans;
+                    }
+
+                    dbContext.Database.OpenConnection();
+                    using (var result = await command.ExecuteReaderAsync())
+                    {
+                        DataSet dt = new DataSet();
+                        while (!result.IsClosed)
+                        {
+                            DataTable t = new DataTable();
+                            t.Load(result);
+                            dt.Tables.Add(t);
+                        }
+                        return dt;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+            }
+        }
+
         public static SqlParameter CloneSqlParam(this SqlParameter sqlParameter)
         {
             return new SqlParameter(sqlParameter.ParameterName, sqlParameter.Value)

@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public Stock()
         {
             Inventory = new HashSet<Inventory>();
+            InventoryRequirementDetail = new HashSet<InventoryRequirementDetail>();
             Package = new HashSet<Package>();
         }
 
@@ -24,6 +25,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
 
         public virtual ICollection<Inventory> Inventory { get; set; }
+        public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
         public virtual ICollection<Package> Package { get; set; }
     }
 }

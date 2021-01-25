@@ -46,7 +46,7 @@ namespace VErpApi.Controllers.System.Category
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size);
+            return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
 
         [GlobalApi]

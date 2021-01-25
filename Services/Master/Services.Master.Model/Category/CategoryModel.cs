@@ -17,7 +17,8 @@ namespace VErp.Services.Master.Model.Category
         public bool IsOutSideData { get; set; }
         public bool IsTreeView { get; set; }
         public string UsePlace { get; set; }
-        
+        public int? MenuId { get; set; }
+        public string ParentTitle { get; set; }
         public OutSideDataConfigModel OutSideDataConfig { get; set; }
     }
 

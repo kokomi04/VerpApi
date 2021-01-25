@@ -177,14 +177,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                     }
-                    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderCode, data.ProductionDate);
-                    if (generated == null)
+                    bool isFirst = true;
+                    do
                     {
-                        throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
-                    }
+                        if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
-
-                    data.ProductionOrderCode = generated.CustomCode;
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderCode, data.ProductionDate);
+                        if (generated == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
+                        }
+                        data.ProductionOrderCode = generated.CustomCode;
+                        isFirst = false;
+                    } while (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == data.ProductionOrderCode));
                 }
                 else
                 {
@@ -415,6 +420,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             return null;
+        }
+
+        public async Task<IList<ProductOrderModel>> GetProductionOrders()
+        {
+            var rs = await _manufacturingDBContext.ProductionOrder.AsNoTracking()
+                .Select(x => new ProductOrderModel
+                {
+                    Description = x.Description,
+                    FinishDate = x.FinishDate.GetUnix(),
+                    IsDraft = x.IsDraft,
+                    ProductionDate = x.ProductionDate.GetUnix(),
+                    ProductionOrderCode = x.ProductionOrderCode,
+                    ProductionOrderId = x.ProductionOrderId
+                })
+                .ToListAsync();
+            return rs;
         }
     }
 }

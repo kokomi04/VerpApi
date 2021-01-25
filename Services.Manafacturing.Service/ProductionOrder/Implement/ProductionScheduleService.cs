@@ -22,6 +22,7 @@ using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -261,15 +262,45 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var dataMap = new List<(ProductionScheduleInputModel Input, ProductionSchedule Entity)>();
                 foreach (var item in data)
                 {
+                    CustomGenCodeOutputModel currentConfig = null;
+                    if (string.IsNullOrEmpty(item.ScheduleCode))
+                    {
+                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionSchedule, EnumObjectType.ProductionSchedule, 0, null, item.ScheduleCode, item.StartDate);
+                        if (currentConfig == null)
+                        {
+                            throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
+                        }
+                        bool isFirst = true;
+                        do
+                        {
+                            if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+
+                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, item.ScheduleCode, item.StartDate);
+                            if (generated == null)
+                            {
+                                throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
+                            }
+                            item.ScheduleCode = generated.CustomCode;
+                            isFirst = false;
+                        } while (_manufacturingDBContext.ProductionSchedule.Any(o => o.ScheduleCode == item.ScheduleCode));
+                    }
+                    else
+                    {
+                        // Validate unique
+                        if (_manufacturingDBContext.ProductionSchedule.Any(o => o.ScheduleCode == item.ScheduleCode))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Mã kế hoạch sản xuất đã tồn tại");
+                    }
+
                     item.ScheduleTurnId = currentTurnId + 1;
                     var productionSchedule = _mapper.Map<ProductionSchedule>(item);
                     productionSchedule.ProductionScheduleStatus = (int)EnumScheduleStatus.Waiting;
                     _manufacturingDBContext.ProductionSchedule.Add(productionSchedule);
                     dataMap.Add((item, productionSchedule));
                     await _activityLogService.CreateLog(EnumObjectType.ProductionSchedule, productionSchedule.ProductionOrderDetailId, $"Thêm mới lịch sản xuất cho LSX", data.JsonSerialize());
+                    _manufacturingDBContext.SaveChanges();
+                    await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                 }
 
-                _manufacturingDBContext.SaveChanges();
                 foreach (var (input, entity) in dataMap)
                 {
                     input.ProductionScheduleId = entity.ProductionScheduleId;

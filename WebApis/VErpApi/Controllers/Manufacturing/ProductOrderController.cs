@@ -75,5 +75,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionOrderDetail(productionOrderDetailId);
         }
 
+        [HttpGet]
+        [Route("")]
+        public async Task<IList<ProductOrderModel>> GetProductionOrders()
+        {
+            return await _productionOrderService.GetProductionOrders();
+        }
+
     }
 }

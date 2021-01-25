@@ -17,6 +17,8 @@ namespace VErp.Services.Master.Model.Category
 
         public int Page { get; set; }
         public int Size { get; set; }
+        public string OrderBy { get; set; }
+        public bool Asc { get; set; } = true;
     }
 
     public class ExtraFilterParam

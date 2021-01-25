@@ -16,7 +16,9 @@ using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Programing;
-
+using Microsoft.Data.SqlClient;
+using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.Library;
 namespace VErp.Services.Accountancy.Service.Programing.Implement
 {
     /// <summary>
@@ -121,6 +123,24 @@ namespace VErp.Services.Accountancy.Service.Programing.Implement
 
             await _accountancyDBContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary<FuncParameter> inputData)
+        {
+            var function = _accountancyDBContext.ProgramingFunction.FirstOrDefault(f => f.ProgramingFunctionName == programingFunctionName);
+            if (function == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy chức năng {programingFunctionName}");
+
+            List<SqlParameter> sqlParams = new List<SqlParameter>();
+            if (inputData != null)
+            {
+                foreach (var item in inputData)
+                {
+                    sqlParams.Add(new SqlParameter($"@{item.Key}", item.Value != null && item.Value.Value != null ? item.Value.DataType.GetSqlValue(item.Value.Value) : DBNull.Value));
+                }
+            }
+
+            var data = await _accountancyDBContext.QueryDataTable(function.FunctionBody, sqlParams);
+            return data.ConvertData();
         }
     }
 }

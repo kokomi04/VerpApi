@@ -14,6 +14,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Content { get; set; }
         public long Date { get; set; }
         public int? CustomerId { get; set; }
+        public int? DepartmentId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
 
@@ -28,8 +29,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public IList<long> FileIdList { set; get; }
 
         public IList<InventoryOutProductModel> OutProducts { set; get; }
-        public string AccountancyAccountNumber { get; set; }
-        public int? DepartmentId { get; set; }
+        public string AccountancyAccountNumber { get; set; }        
     }
 
     public class InventoryOutProductModel

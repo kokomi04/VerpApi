@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 {
@@ -51,14 +53,16 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         public decimal Factor { set; get; }
 
 
-
         [Display(Name = "Tài khoản kế toán", GroupName = "Thẻ Kho")]
         public string AccountancyAccountNumber { set; get; }
 
         [Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
         public string AccountancyAccountNumberDu { set; get; }
 
-        
+        [Display(Name = "Mã kiện (Bỏ chọn nếu là mặc định)", GroupName = "Thẻ Kho")]
+
+        [FieldDataType((int)EnumInventoryType.Output)]
+        public string PackageCode { set; get; }
 
     }
 }
