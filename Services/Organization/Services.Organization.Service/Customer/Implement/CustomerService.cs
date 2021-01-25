@@ -511,6 +511,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                             ba.BankBranch = reqBankAccount.BankBranch;
                             ba.BankCode = reqBankAccount.BankCode;
                             ba.UpdatedUserId = updatedUserId;
+                            ba.AccountName = reqBankAccount.AccountName;
+                            ba.Province = reqBankAccount.Province;
+                            ba.CurrencyId = reqBankAccount.CurrencyId;
                             ba.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
                     }
