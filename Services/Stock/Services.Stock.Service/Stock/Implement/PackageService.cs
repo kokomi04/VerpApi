@@ -312,6 +312,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 PackageId = obj.PackageId,
                 PackageTypeId = obj.PackageTypeId,
                 PackageCode = obj.PackageCode,
+                OrderCode = obj.OrderCode,
+                POCode = obj.Pocode,
+                ProductionOrderCode = obj.ProductionOrderCode,
                 LocationId = obj.LocationId ?? 0,
                 StockId = obj.StockId,
                 ProductId = obj.ProductId,
@@ -399,7 +402,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQuantityRemaining = item.Package.PrimaryQuantityRemaining,
                     ProductUnitConversionWaitting = item.Package.ProductUnitConversionWaitting,
                     ProductUnitConversionRemaining = item.Package.ProductUnitConversionRemaining,
-                    LocationOutputModel = locationOutputModel
+                    LocationOutputModel = locationOutputModel,
+
+                    POCode = item.Package.Pocode,
+                    ProductionOrderCode= item.Package.ProductionOrderCode,
+                    OrderCode = item.Package.OrderCode
                 };
                 resultList.Add(model);
             }
