@@ -39,6 +39,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
+        public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
         public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
@@ -594,6 +595,19 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.ProductUnitConversion)
                     .HasForeignKey(d => d.ProductId)
                     .HasConstraintName("FK_ProductUnitConversion_Product");
+            });
+
+            modelBuilder.Entity<RefInputBillBasic>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefInputBillBasic");
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.SoCt)
+                    .HasColumnName("so_ct")
+                    .HasMaxLength(512);
             });
 
             modelBuilder.Entity<Stock>(entity =>
