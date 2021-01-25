@@ -360,6 +360,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     PackageId = pk.PackageId,
                     PackageCode = pk.PackageCode,
+                    pk.OrderCode,
+                    pk.ProductionOrderCode,
+                    pk.Pocode,
                     LocationId = pk.LocationId,
                     LocationName = l == null ? null : l.Name,
                     Date = pk.Date,
@@ -397,6 +400,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 PackageId = pk.PackageId,
                 PackageCode = pk.PackageCode,
+                
                 LocationId = pk.LocationId,
                 LocationName = pk.LocationName,
                 Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
@@ -410,7 +414,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
                 PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                 RefObjectId = null,
-                RefObjectCode = ""
+                RefObjectCode = "",
+                OrderCode = pk.OrderCode,
+                POCode=pk.Pocode,
+                ProductionOrderCode = pk.ProductionOrderCode
             })
             .ToList();
 
