@@ -269,7 +269,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     SwiffCode = ba.SwiffCode,
                     BankAddress = ba.BankAddress,
                     BankBranch = ba.BankBranch,
-                    BankCode = ba.BankCode
+                    BankCode = ba.BankCode,
+                    AccountName = ba.AccountName,
+                    Province = ba.Province,
+                    CurrencyId = ba.CurrencyId
 
                 }).ToList(),
                 CustomerAttachments = customerAttachments
@@ -765,6 +768,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         BankBranch = ba.BankBranch,
                         BankAddress = ba.BankAddress,
                         UpdatedUserId = _currentContextService.UserId,
+                        AccountName = ba.AccountName,
+                        Province = ba.Province,
+                        CurrencyId = ba.CurrencyId,
                         IsDeleted = false,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow
