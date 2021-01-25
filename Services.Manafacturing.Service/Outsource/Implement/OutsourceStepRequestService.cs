@@ -432,7 +432,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         ProductionStepLinkDataQuantity = x.Quantity,
                         ProductionStepLinkDataRoleTypeId = x.ProductionStepLinkDataRoleTypeId,
                         OutsourceStepRequestDataQuantity = outsourceStepRequest.OutsourceStepRequestData.FirstOrDefault(s => s.ProductionStepLinkDataId == x.ProductionStepLinkDataId).OutsourceStepRequestDataQuantity,
-                        ProductionStepLinkDataTitle = string.Empty
+                        ProductionStepLinkDataTitle = string.Empty,
+                        OutsourceStepRequestFinishDate = outsourceStepRequest.OutsourceStepRequestFinishDate
                     })
                     .ToList();
                 if (outsourceStepRequestDatas.Count == 0)
@@ -442,7 +443,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         OutsourceStepRequestId = outsourceStepRequest.OutsourceStepRequestId,
                         ProductionStepId = productionStep.ProductionStepId,
                         ProductionStepTitle = productionStep.Title,
-                        ProductionStepLinkDataRoleTypeId = EnumProductionStepLinkDataRoleType.Input
+                        ProductionStepLinkDataRoleTypeId = EnumProductionStepLinkDataRoleType.Input,
+                        OutsourceStepRequestFinishDate = outsourceStepRequest.OutsourceStepRequestFinishDate
                     });
                 else
                     lst.AddRange(outsourceStepRequestDatas);
