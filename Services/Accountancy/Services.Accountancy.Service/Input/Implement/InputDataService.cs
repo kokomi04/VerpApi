@@ -153,7 +153,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             if (!mainColumns.Contains(orderByFieldName))
             {
-                orderByFieldName = "F_Id";
+                orderByFieldName = mainColumns.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
 
