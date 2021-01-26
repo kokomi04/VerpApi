@@ -538,6 +538,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<Step>(entity =>
             {
+                entity.Property(e => e.HandoverTypeId).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.ShrinkageRate).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.StepName)
