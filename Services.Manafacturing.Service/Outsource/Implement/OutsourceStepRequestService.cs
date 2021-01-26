@@ -635,6 +635,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return true;
         }
 
+        public async Task<IList<OutsourceStepRequestDataOutput>> GetOutsourceStepRequestDatasByProductionOrderId(long productionOrderId)
+        {
+            var sqlData = new StringBuilder(@$"SELECT * FROM vOutsourceStepRequestDataExtractInfo v WHERE v.ProductionOrderId = {productionOrderId}");
+            var data = (await _manufacturingDBContext.QueryDataTable(sqlData.ToString(), Array.Empty<SqlParameter>())).ConvertData<OutsourceStepRequestDataOutput>();
+            return data;
+        }
+
         #region private
         private async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepLinkDataId)
         {

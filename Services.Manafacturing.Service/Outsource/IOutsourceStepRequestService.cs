@@ -19,5 +19,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepHadOutsourceStepRequest(long productionOrderId);
         Task<IList<ProductionStepInfo>> GeneralOutsourceStepOfProductionOrder(long productionOrderId);
         Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId);
+        Task<IList<OutsourceStepRequestDataOutput>> GetOutsourceStepRequestDatasByProductionOrderId(long productionOrderId);
     }
 }

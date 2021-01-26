@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<long> CreateOutsourcePartRequest(OutsourcePartRequestInfo req);
         Task<bool> UpdateOutsourcePartRequest(long outsourcePartRequestId, OutsourcePartRequestInfo req);
         Task<bool> DeletedOutsourcePartRequest(long outsourcePartRequestId);
-        Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId);
+        Task<IList<OutsourcePartRequestDetailInfo>> GetOutsourcePartRequestDetailByProductionOrderId(long productionOrderId);
         Task<IList<OutsourcePartRequestDetailInfo>> GetRequestDetailByArrayRequestId(long[] outsourcePartRequestIds);
         Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId);
 
