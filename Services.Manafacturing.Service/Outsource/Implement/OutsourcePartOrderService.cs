@@ -191,7 +191,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 var suffix = 0;
                 var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vOutsourceOrderExtractInfo", "v", ref filterCondition, ref parammeters, ref suffix);
+                filters.FilterClauseProcess("vOutsourcePartOrderDetailExtractInfo", "v", ref filterCondition, ref parammeters, ref suffix);
                 if (filterCondition.Length > 2)
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");
