@@ -135,7 +135,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }).ToList();
             if (!mainColumns.Contains(orderByFieldName))
             {
-                orderByFieldName = "F_Id";
+                orderByFieldName = mainColumns.Contains("ngay_ct")? "ngay_ct" : "F_Id";
                 asc = false;
             }
             var totalSql = @$"SELECT COUNT(DISTINCT r.VoucherBill_F_Id) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}";
