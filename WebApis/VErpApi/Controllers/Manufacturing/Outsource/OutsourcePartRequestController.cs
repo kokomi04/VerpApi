@@ -70,5 +70,12 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _outsourcePartRequestService.UpdateOutsourcePartRequestStatus(outsourcePartRequestId);
         }
+
+        [HttpGet]
+        [Route("byProductionOrder")]
+        public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId([FromQuery] long productionOrderId)
+        {
+            return await _outsourcePartRequestService.GetOutsourcePartRequestByProductionOrderId(productionOrderId);
+        }
     }
 }

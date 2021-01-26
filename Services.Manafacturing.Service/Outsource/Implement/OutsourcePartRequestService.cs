@@ -340,6 +340,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             return resultData;
         }
+        public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId)
+        {
+            var data = await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
+                                .Include(x => x.ProductionOrderDetail)
+                                .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionOrderId)
+                                .ProjectTo<OutsourcePartRequestOutput>(_mapper.ConfigurationProvider)
+                                .ToListAsync();
+            return data;
+        }
 
         private async Task<bool> MarkValidateOutsourcePartRequest(long productionOrderId, IList<OutsourcePartRequestDetail> rqDetails)
         {
