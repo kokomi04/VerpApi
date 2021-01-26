@@ -861,7 +861,11 @@ namespace VErp.Commons.Library
 
             foreach (DataColumn column in dr.Table.Columns)
             {
-                foreach (PropertyInfo pro in temp.GetProperties())
+                var props = from p in temp.GetProperties()
+                            group p by p.Name into g
+                            select g.OrderByDescending(t => t.DeclaringType == typeof(T)).First();
+
+                foreach (PropertyInfo pro in props)
                 {
                     if (pro.Name == column.ColumnName && dr[column.ColumnName] != DBNull.Value)
                         pro.SetValue(obj, dr[column.ColumnName], null);
