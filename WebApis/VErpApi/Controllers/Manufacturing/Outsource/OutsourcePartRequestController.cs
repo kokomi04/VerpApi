@@ -58,10 +58,10 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         }
 
         [HttpGet]
-        [Route("byProductionOrder")]
-        public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId([FromQuery] long productionOrderId)
+        [Route("detail/byProductionOrder")]
+        public async Task<IList<OutsourcePartRequestDetailInfo>> GetOutsourcePartRequestDetailByProductionOrderId([FromQuery] long productionOrderId)
         {
-            return await _outsourcePartRequestService.GetOutsourcePartRequestByProductionOrderId(productionOrderId);
+            return await _outsourcePartRequestService.GetOutsourcePartRequestDetailByProductionOrderId(productionOrderId);
         }
 
         [HttpPut]

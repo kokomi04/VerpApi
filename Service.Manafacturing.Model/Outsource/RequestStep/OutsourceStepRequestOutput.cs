@@ -33,5 +33,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public string ProductionStepTitle { get; set; }
         public string ProductionStepLinkDataTitle { get; set; }
         public int ProductionStepLinkDataUnitId { get; set; }
+        public long ProductionOrderId { get; set; }
+        public string OutsourceStepRequestCode { get; set; }
     }
 }

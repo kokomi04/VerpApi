@@ -329,14 +329,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         }
 
-        public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId)
+        public async Task<IList<OutsourcePartRequestDetailInfo>> GetOutsourcePartRequestDetailByProductionOrderId(long productionOrderId)
         {
-            var data = await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
-                                .Include(x => x.ProductionOrderDetail)
-                                .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionOrderId)
-                                .ProjectTo<OutsourcePartRequestOutput>(_mapper.ConfigurationProvider)
-                                .ToListAsync();
-            return data;
+            var sql = new StringBuilder($"SELECT * FROM vOutsourcePartRequestExtractInfo v WHERE v.ProductionOrderId = {productionOrderId}");
+            var resultData = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), Array.Empty<SqlParameter>()))
+                .ConvertData<OutsourcePartRequestDetailExtractInfo>()
+                .AsQueryable()
+                .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            return resultData;
         }
 
         private async Task<bool> MarkValidateOutsourcePartRequest(long productionOrderId, IList<OutsourcePartRequestDetail> rqDetails)
