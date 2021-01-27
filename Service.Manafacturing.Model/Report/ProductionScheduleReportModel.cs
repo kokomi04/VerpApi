@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Model.Report
         public decimal CompletedQuantity { get; set; }
         public string UnfinishedStepTitle { get; set; }
 
-        public void Mapping(Profile profile)
+        public new void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionScheduleEntity, ProductionScheduleReportModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))

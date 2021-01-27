@@ -1345,27 +1345,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var original = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
 
-                        var groupByProducts = inventoryDetails
-                            .GroupBy(g => new { g.ProductId, g.ProductUnitConversionId })
-                            .Select(g => new
-                            {
-                                g.Key.ProductId,
-                                g.Key.ProductUnitConversionId,
-                                OutPrimary = g.Sum(d => d.PrimaryQuantity),
-                                OutSecondary = g.Sum(d => d.ProductUnitConversionQuantity)
-                            });
-                        foreach (var product in groupByProducts)
-                        {
+                        //var groupByProducts = inventoryDetails
+                        //    .GroupBy(g => new { g.ProductId, g.ProductUnitConversionId })
+                        //    .Select(g => new
+                        //    {
+                        //        g.Key.ProductId,
+                        //        g.Key.ProductUnitConversionId,
+                        //        OutPrimary = g.Sum(d => d.PrimaryQuantity),
+                        //        OutSecondary = g.Sum(d => d.ProductUnitConversionQuantity)
+                        //    });
+                        //foreach (var product in groupByProducts)
+                        //{
 
-                            var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, inventoryObj.InventoryId, product.ProductUnitConversionId, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
+                        //    var validate = await ValidateBalanceForOutput(inventoryObj.StockId, product.ProductId, inventoryObj.InventoryId, product.ProductUnitConversionId, inventoryObj.Date, product.OutPrimary, product.OutSecondary);
 
-                            if (!validate.IsSuccessCode())
-                            {
-                                trans.Rollback();
+                        //    if (!validate.IsSuccessCode())
+                        //    {
+                        //        trans.Rollback();
 
-                                throw new BadRequestException(validate.Code, validate.Message);
-                            }
-                        }
+                        //        throw new BadRequestException(validate.Code, validate.Message);
+                        //    }
+                        //}
 
                         foreach (var detail in inventoryDetails)
                         {
@@ -1787,9 +1787,52 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="inventoryId"></param>
         private async Task ReCalculateRemainingAfterUpdate(long inventoryId)
         {
-            //await _stockDbContext.Database.ExecuteSqlRawAsync("EXEC usp_InventoryDetail_UpdatePrimaryQuantityRemanings_Event @UpdatedInventoryId = @UpdatedInventoryId", new SqlParameter("@UpdatedInventoryId", inventoryId));
-            var inventoryTrackingFacade = await InventoryTrackingFacadeFactory.Create(_stockDbContext, inventoryId);
-            await inventoryTrackingFacade.Execute();
+            //var errorInventoryId = new SqlParameter("@ErrorInventoryId", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var errorIventoryDetailId = new SqlParameter("@ErrorIventoryDetailId", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+
+            // await _stockDbContext.Database.ExecuteSqlRawAsync("EXEC usp_InventoryDetail_UpdatePrimaryQuantityRemanings_Event @UpdatedInventoryId = @UpdatedInventoryId", new SqlParameter("@UpdatedInventoryId", inventoryId), errorInventoryId);
+
+            await _stockDbContext.ExecuteNoneQueryProcedure("usp_InventoryDetail_UpdatePrimaryQuantityRemanings_Event", new[] { new SqlParameter("@UpdatedInventoryId", inventoryId), errorIventoryDetailId });
+            //var inventoryTrackingFacade = await InventoryTrackingFacadeFactory.Create(_stockDbContext, inventoryId);
+            //await inventoryTrackingFacade.Execute();
+
+            var inventoryDetailId = (errorIventoryDetailId.Value as long?).GetValueOrDefault();
+            if (inventoryDetailId > 0)
+            {
+                var errorInfo = await (
+                    from iv in _stockDbContext.Inventory
+                    join id in _stockDbContext.InventoryDetail on iv.InventoryId equals id.InventoryId
+                    join p in _stockDbContext.Product on id.ProductId equals p.ProductId into ps
+                    from p in ps.DefaultIfEmpty()
+                    where id.InventoryDetailId == inventoryDetailId
+                    select new
+                    {
+                        iv.Date,
+                        iv.InventoryId,
+                        iv.InventoryCode,
+                        iv.InventoryTypeId,
+                        ProductCode = p == null ? null : p.ProductCode,
+                        ProductId = p == null ? (int?)null : p.ProductId,
+                        ProductName = p == null ? null : p.ProductName,
+
+                        id.InventoryDetailId,
+                        id.PrimaryQuantityRemaning
+                    }).FirstOrDefaultAsync();
+                if (errorInfo == null)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Có phiếu bị lỗi. Không thể lấy thông tin chi tiết lỗi");
+                }
+                else
+                {
+
+                    var message = $"Số lượng \"{errorInfo.ProductCode}\" trong kho tại thời điểm {errorInfo.Date:dd-MM-yyyy} phiếu " +
+                        $"{(errorInfo.InventoryTypeId == (int)EnumInventoryType.Input ? "Nhập" : "Xuất")} {errorInfo.InventoryCode} không đủ. Số tồn là " +
+                       $"{errorInfo.PrimaryQuantityRemaning.Value.Format()} không hợp lệ";
+
+                    throw new BadRequestException(GeneralCode.InvalidParams, message);
+
+                }
+            }
 
         }
 
@@ -2294,56 +2337,57 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return GeneralCode.Success;
         }
 
-        private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, long currentInventoryId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
-        {
-            var sums = await (
-                from id in _stockDbContext.InventoryDetail
-                join iv in _stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
-                where iv.StockId == stockId
-                && id.ProductId == productId
-                && id.ProductUnitConversionId == productUnitConversionId
-                && iv.Date <= endDate
-                && iv.IsApproved
-                && iv.InventoryId != currentInventoryId
-                select new
-                {
-                    iv.InventoryTypeId,
-                    id.PrimaryQuantity,
-                    id.ProductUnitConversionQuantity
-                }).GroupBy(g => true)
-                   .Select(g => new
-                   {
-                       TotalPrimary = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
-                       TotalSecondary = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
-                   }).FirstAsync();
+        //private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, long currentInventoryId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
+        //{
+        //    var sums = await (
+        //        from id in _stockDbContext.InventoryDetail
+        //        join iv in _stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
+        //        where iv.StockId == stockId
+        //        && id.ProductId == productId
+        //        && id.ProductUnitConversionId == productUnitConversionId
+        //        && iv.Date <= endDate
+        //        && iv.IsApproved
+        //        && iv.InventoryId != currentInventoryId
+        //        select new
+        //        {
+        //            iv.InventoryTypeId,
+        //            id.PrimaryQuantity,
+        //            id.ProductUnitConversionQuantity
+        //        }).GroupBy(g => true)
+        //           .Select(g => new
+        //           {
+        //               TotalPrimary = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
+        //               TotalSecondary = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
+        //           }).FirstAsync();
 
 
-            if (sums.TotalPrimary.SubDecimal(outPrimary) < 0 || sums.TotalSecondary.SubDecimal(outSecondary) < 0)
-            {
-                var productCode = await _stockDbContext
-                                    .Product
-                                    .Where(p => p.ProductId == productId)
-                                    .Select(p => p.ProductCode)
-                                    .FirstOrDefaultAsync();
+        //    if (sums.TotalPrimary.SubDecimal(outPrimary) < 0 || sums.TotalSecondary.SubDecimal(outSecondary) < 0)
+        //    {
+        //        var productCode = await _stockDbContext
+        //                            .Product
+        //                            .Where(p => p.ProductId == productId)
+        //                            .Select(p => p.ProductCode)
+        //                            .FirstOrDefaultAsync();
 
-                var total = sums.TotalSecondary;
-                var output = outSecondary;
+        //        var total = sums.TotalSecondary;
+        //        var output = outSecondary;
 
-                if (sums.TotalPrimary - outPrimary < MINIMUM_JS_NUMBER)
-                {
-                    total = sums.TotalPrimary;
-                    output = outPrimary;
-                }
+        //        if (sums.TotalPrimary - outPrimary < MINIMUM_JS_NUMBER)
+        //        {
+        //            total = sums.TotalPrimary;
+        //            output = outPrimary;
+        //        }
 
-                var message = $"Số lượng \"{productCode}\" trong kho tại thời điểm {endDate:dd-MM-yyyy} là " +
-                   $"{total.Format()} không đủ để xuất ({output.Format()})";
 
-                return (InventoryErrorCode.NotEnoughQuantity, message);
-            }
+        //        var message = $"Số lượng \"{productCode}\" trong kho tại thời điểm {endDate:dd-MM-yyyy} là " +
+        //           $"{total.Format()} không đủ để xuất ({output.Format()})";
 
-            return GeneralCode.Success;
+        //        return (InventoryErrorCode.NotEnoughQuantity, message);
+        //    }
 
-        }
+        //    return GeneralCode.Success;
+
+        //}
 
         protected async Task ValidateInventoryConfig(DateTime? billDate, DateTime? oldDate)
         {

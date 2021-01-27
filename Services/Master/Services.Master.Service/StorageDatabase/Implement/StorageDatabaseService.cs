@@ -33,7 +33,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         private readonly MasterDBContext _masterContext;
         private readonly ActivityLogDBContext _activityLogDBContext;
         private readonly AppSetting _appSetting;
-        private readonly ILogger<StorageDatabaseService> _logger;
+        private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IPhysicalFileService _physicalFileService;
@@ -46,16 +46,19 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             ILogger<StorageDatabaseService> logger,
             ICurrentContextService currentContextService,
             IPhysicalFileService physicalFileService,
-            ISubSystemService manageVErpModuleService)
+            ISubSystemService manageVErpModuleService
+            )
         {
             _masterContext = masterDBContext;
             _activityLogDBContext = activityLogDBContext;
             _appSetting = appSetting.Value;
             _activityLogService = activityLogService;
+            _logger = logger;
 
             _currentContextService = currentContextService;
             _physicalFileService = physicalFileService;
             _manageVErpModuleService = manageVErpModuleService;
+           
         }
 
         public async Task<bool> BackupStorage(BackupStorageInput backupStorage)
