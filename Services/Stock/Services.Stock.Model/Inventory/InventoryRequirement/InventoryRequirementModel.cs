@@ -101,7 +101,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
             InventoryRequirementDetail = new List<InventoryRequirementDetailOutputModel>();
         }
 
-        public void Mapping(Profile profile)
+        public new void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementEntity, InventoryRequirementOutputModel>()
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))

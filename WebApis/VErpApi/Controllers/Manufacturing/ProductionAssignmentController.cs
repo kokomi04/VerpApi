@@ -14,6 +14,8 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Enums.StandardEnum;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -39,6 +41,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productionStepId}/{scheduleTurnId}")]
         public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentInputModel data)
         {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data.ProductionAssignments, data.ProductionStepWorkInfo, data.DepartmentTimeTable);
         }
 

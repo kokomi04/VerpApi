@@ -64,6 +64,35 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
         }
 
+        public static async Task<int> ExecuteNoneQueryProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
+        {
+            var ps = new List<SqlParameter>();
+            foreach (var param in parammeters)
+            {
+                ps.Add(param);
+            }
+
+            if (dbContext is ISubsidiayRequestDbContext requestDbContext)
+            {
+                ps.Add(requestDbContext.CreateSubSqlParam());
+            }
+
+            var sql = new StringBuilder($"EXEC {procedureName}");
+            foreach (var param in ps)
+            {
+                sql.Append($" {param.ParameterName} = {param.ParameterName}");
+                if (param.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
+                sql.Append(",");
+            }
+
+            if (timeout.HasValue)
+            {
+                dbContext.Database.SetCommandTimeout(timeout.Value);
+            }
+
+            return await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), ps);
+        }
+
         public static async Task ChangeDatabase(this DbContext dbContext, string dbName)
         {
             var dbConnection = dbContext.Database.GetDbConnection();

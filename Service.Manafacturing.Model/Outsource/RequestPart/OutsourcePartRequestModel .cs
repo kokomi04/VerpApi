@@ -35,7 +35,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 
         public IList<OutsourcePartRequestDetailInfo> OutsourcePartRequestDetail { get; set; }
 
-        public new void Mapping(Profile profile) {
+        public void Mapping(Profile profile) {
             profile.CreateMap<OutsourcePartRequestDetailInfo, OutsourcePartRequestInfo>()
                 .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.OutsourcePartRequestDate))
                 .ForMember(m => m.OutsourcePartRequestId, v => v.MapFrom(m => m.OutsourcePartRequestId))

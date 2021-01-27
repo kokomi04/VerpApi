@@ -184,10 +184,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var updateDetails = data.UpdateDetails;
 
             await ApprovedInputDataUpdateAction_Normalize(req, products);
+            var issuedDate = req.Inventory.Date.UnixToDateTime().Value;
+            
+            //need to update before validate quantity order by time
+            inventoryInfo.Date = issuedDate;
 
             var updateResult = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
 
-            var issuedDate = req.Inventory.Date.UnixToDateTime().Value;
             var billDate = req.Inventory.BillDate?.UnixToDateTime();
 
             await _stockDbContext.SaveChangesAsync();
@@ -747,16 +750,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
+           // await _stockDbContext.SaveChangesAsync();
 
-            foreach (var output in validateOutputDetails)
-            {
-                var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
+            //foreach (var output in validateOutputDetails)
+            //{
+            //    var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
 
-                if (!validate.IsSuccessCode())
-                {
-                    throw new BadRequestException(validate.Code);
-                }
-            }
+            //    if (!validate.IsSuccessCode())
+            //    {
+            //        throw new BadRequestException(validate.Code);
+            //    }
+            //}
 
             return changesInventories;
         }

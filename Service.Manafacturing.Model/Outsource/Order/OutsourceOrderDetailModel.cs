@@ -34,7 +34,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public long OutsourcePartRequestId{ get; set; }
         public long OutsourcePartRequestDetailFinishDate { get; set; }
 
-        public new void Mapping(Profile profile)
+        public void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourcePartOrderDetailInfo, OutsourceOrderDetailInfo>()
                 .ForMember(m => m.OutsourceOrderDetailId, v => v.MapFrom(m => m.OutsourceOrderDetailId))

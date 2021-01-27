@@ -76,18 +76,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             if (data.Any(a => a.Productivity <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Năng suất không hợp lệ");
 
-            var productionSchedules = (from s in _manufacturingDBContext.ProductionSchedule
-                                       join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
-                                       where s.ScheduleTurnId == scheduleTurnId
-                                       select new
-                                       {
-                                           s.ProductionOrderDetailId,
-                                           s.ProductionScheduleQuantity,
-                                           od.ProductId,
-                                           ProductionOrderQuantity = od.Quantity + od.ReserveQuantity,
-                                           s.StartDate,
-                                           s.EndDate
-                                       }).ToList();
+            var productionSchedules = (
+                from s in _manufacturingDBContext.ProductionSchedule
+                join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                where s.ScheduleTurnId == scheduleTurnId
+                select new
+                {
+                    s.ProductionOrderDetailId,
+                    s.ProductionScheduleQuantity,
+                    od.ProductId,
+                    ProductionOrderQuantity = od.Quantity + od.ReserveQuantity,
+                    s.StartDate,
+                    s.EndDate
+                }).ToList();
 
             if (productionSchedules.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
 
@@ -347,14 +348,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             var startDateTime = startDate.UnixToDateTime();
             var endDateTime = endDate.UnixToDateTime();
 
-            var scheduleTime = (from s in _manufacturingDBContext.ProductionSchedule
-                                join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
-                                where s.ScheduleTurnId == scheduleTurnId
-                                select new
-                                {
-                                    s.StartDate,
-                                    s.EndDate
-                                }).FirstOrDefault();
+            var scheduleTime = await (
+                from s in _manufacturingDBContext.ProductionSchedule
+                join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                where s.ScheduleTurnId == scheduleTurnId
+                select new
+                {
+                    s.StartDate,
+                    s.EndDate
+                }).FirstOrDefaultAsync();
 
             if (scheduleTime == null)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
@@ -368,17 +370,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (productionStep == null)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
-            List<int> departmentIds = (from sd in _manufacturingDBContext.StepDetail
-                                       join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
-                                       where ps.ProductionStepId == productionStepId
-                                       select sd.DepartmentId).ToList();
+            var departmentIds = await (
+                from sd in _manufacturingDBContext.StepDetail
+                join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
+                where ps.ProductionStepId == productionStepId
+                select sd.DepartmentId
+            ).ToListAsync();
 
-            var includeAssignments = _manufacturingDBContext.ProductionAssignment
+            var includeAssignments = await _manufacturingDBContext.ProductionAssignment
                 .Where(a => a.ProductionStepId == productionStepId
-                && a.ScheduleTurnId == scheduleTurnId
-                && !departmentIds.Contains(a.DepartmentId))
+                    && a.ScheduleTurnId == scheduleTurnId
+                    && !departmentIds.Contains(a.DepartmentId)
+                )
                 .Select(a => a.DepartmentId)
-                .ToList();
+                .ToListAsync();
+
             departmentIds.AddRange(includeAssignments);
 
             if (departmentIds.Count == 0)
@@ -386,43 +392,41 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityModel>());
 
-            var otherAssignments = (from a in _manufacturingDBContext.ProductionAssignment
-                                    where departmentIds.Contains(a.DepartmentId)
-                                    && (a.ProductionStepId != productionStepId || a.ScheduleTurnId != scheduleTurnId)
-                                    && a.StartDate <= endDateTime
-                                    && a.EndDate >= startDateTime
-                                    join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
-                                    join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
-                                    join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
-                                    join d in _manufacturingDBContext.ProductionStepLinkData
-                                    on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
-                                    join ad in _manufacturingDBContext.ProductionAssignmentDetail
-                                    on new { a.ScheduleTurnId, a.ProductionStepId, a.DepartmentId } equals new { ad.ScheduleTurnId, ad.ProductionStepId, ad.DepartmentId }
-                                    into ads
-                                    from ad in ads.DefaultIfEmpty()
-                                    select new
-                                    {
-                                        ProductionAssignment = a,
-                                        TotalQuantity = d.Quantity,
-                                        s.StepName,
-                                        po.ProductionOrderCode,
-                                        ad.QuantityPerDay,
-                                        ad.WorkDate
-                                    })
-                                    .ToList()
-                                    .GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.ProductionOrderCode })
-                                    .Select(g => new
-                                    {
-                                        g.Key.ProductionAssignment,
-                                        g.Key.TotalQuantity,
-                                        g.Key.StepName,
-                                        g.Key.ProductionOrderCode,
-                                        ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
-                                        {
-                                            ad.WorkDate,
-                                            ad.QuantityPerDay
-                                        }).ToList()
-                                    }).ToList();
+            var otherAssignments = (
+                await (
+                from a in _manufacturingDBContext.ProductionAssignment
+                where departmentIds.Contains(a.DepartmentId)
+                    && (a.ProductionStepId != productionStepId || a.ScheduleTurnId != scheduleTurnId)
+                    && a.StartDate <= endDateTime
+                    && a.EndDate >= startDateTime
+                join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
+                join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
+                join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                join ad in _manufacturingDBContext.ProductionAssignmentDetail on new { a.ScheduleTurnId, a.ProductionStepId, a.DepartmentId } equals new { ad.ScheduleTurnId, ad.ProductionStepId, ad.DepartmentId } into ads
+                from ad in ads.DefaultIfEmpty()
+                select new
+                {
+                    ProductionAssignment = a,
+                    TotalQuantity = d.Quantity,
+                    s.StepName,
+                    po.ProductionOrderCode,
+                    ad.QuantityPerDay,
+                    ad.WorkDate
+                }).ToListAsync()
+                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.ProductionOrderCode })
+                 .Select(g => new
+                 {
+                     g.Key.ProductionAssignment,
+                     g.Key.TotalQuantity,
+                     g.Key.StepName,
+                     g.Key.ProductionOrderCode,
+                     ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
+                     {
+                         ad.WorkDate,
+                         ad.QuantityPerDay
+                     }).ToList()
+                 }).ToList();
 
             var productionStepIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionStepId).Distinct().ToList();
             if (!productionStepIds.Contains(productionStepId))
@@ -438,18 +442,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             var zeroWorkloads = new List<ZeroWorkloadModel>();
             if (zeroWorkloadIds.Count > 0)
             {
-                zeroWorkloads = (from ps in _manufacturingDBContext.ProductionStep
-                                 where zeroWorkloadIds.Contains(ps.ProductionStepId)
-                                 join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
-                                 join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
-                                 select new ZeroWorkloadModel
-                                 {
-                                     StepName = s.StepName,
-                                     UnitId = s.UnitId,
-                                     ProductionOrderCode = po.ProductionOrderCode,
-                                     ProductionStepId = ps.ProductionStepId,
-                                     ProductionOrderId = po.ProductionOrderId
-                                 }).ToList();
+                zeroWorkloads = await (
+                    from ps in _manufacturingDBContext.ProductionStep
+                    where zeroWorkloadIds.Contains(ps.ProductionStepId)
+                    join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                    join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
+                    select new ZeroWorkloadModel
+                    {
+                        StepName = s.StepName,
+                        UnitId = s.UnitId,
+                        ProductionOrderCode = po.ProductionOrderCode,
+                        ProductionStepId = ps.ProductionStepId,
+                        ProductionOrderId = po.ProductionOrderId
+                    }).ToListAsync();
             }
 
             foreach (var otherAssignment in otherAssignments)
@@ -513,49 +518,49 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToDictionary(g => g.Key, g => g.First());
 
             var scheduleTurnIds = allScheduleTurns.Select(s => s.Key).ToList();
-            var allAssignments = (from a in _manufacturingDBContext.ProductionAssignment
-                                  where scheduleTurnIds.Contains(a.ScheduleTurnId)
-                                  join d in _manufacturingDBContext.ProductionStepLinkData
-                                  on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
-                                  join r in _manufacturingDBContext.ProductionStepLinkDataRole
-                                  on new { a.ProductionStepId, ProductionStepLinkDataRoleTypeId = (int)EnumProductionStepLinkDataRoleType.Output } equals new { r.ProductionStepId, r.ProductionStepLinkDataRoleTypeId }
-                                  join td in _manufacturingDBContext.ProductionStepLinkData
-                                  on new { r.ProductionStepLinkDataId, d.ObjectTypeId, d.ObjectId } equals new { td.ProductionStepLinkDataId, td.ObjectTypeId, td.ObjectId }
-                                  select new
-                                  {
-                                      a.ProductionStepId,
-                                      a.DepartmentId,
-                                      a.AssignmentQuantity,
-                                      a.ScheduleTurnId,
-                                      a.Productivity,
-                                      d.ObjectId,
-                                      d.ObjectTypeId,
-                                      d.Quantity,
-                                      TotalQuantity = td.Quantity
-                                  }).GroupBy(a => new
-                                  {
-                                      a.ProductionStepId,
-                                      a.DepartmentId,
-                                      a.AssignmentQuantity,
-                                      a.ScheduleTurnId,
-                                      a.Productivity,
-                                      a.ObjectId,
-                                      a.ObjectTypeId,
-                                      a.Quantity,
-                                  })
-                                    .Select(g => new
-                                    {
-                                        g.Key.ProductionStepId,
-                                        g.Key.DepartmentId,
-                                        g.Key.AssignmentQuantity,
-                                        g.Key.ScheduleTurnId,
-                                        g.Key.Productivity,
-                                        g.Key.ObjectId,
-                                        g.Key.ObjectTypeId,
-                                        g.Key.Quantity,
-                                        TotalQuantity = g.Sum(a => a.TotalQuantity)
-                                    })
-                                    .ToList();
+            var allAssignments = (
+                from a in _manufacturingDBContext.ProductionAssignment
+                where scheduleTurnIds.Contains(a.ScheduleTurnId)
+                join d in _manufacturingDBContext.ProductionStepLinkData
+                on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                join r in _manufacturingDBContext.ProductionStepLinkDataRole
+                on new { a.ProductionStepId, ProductionStepLinkDataRoleTypeId = (int)EnumProductionStepLinkDataRoleType.Output } equals new { r.ProductionStepId, r.ProductionStepLinkDataRoleTypeId }
+                join td in _manufacturingDBContext.ProductionStepLinkData
+                on new { r.ProductionStepLinkDataId, d.ObjectTypeId, d.ObjectId } equals new { td.ProductionStepLinkDataId, td.ObjectTypeId, td.ObjectId }
+                select new
+                {
+                    a.ProductionStepId,
+                    a.DepartmentId,
+                    a.AssignmentQuantity,
+                    a.ScheduleTurnId,
+                    a.Productivity,
+                    d.ObjectId,
+                    d.ObjectTypeId,
+                    d.Quantity,
+                    TotalQuantity = td.Quantity
+                }).GroupBy(a => new
+                {
+                    a.ProductionStepId,
+                    a.DepartmentId,
+                    a.AssignmentQuantity,
+                    a.ScheduleTurnId,
+                    a.Productivity,
+                    a.ObjectId,
+                    a.ObjectTypeId,
+                    a.Quantity,
+                }).Select(g => new
+                {
+                    g.Key.ProductionStepId,
+                    g.Key.DepartmentId,
+                    g.Key.AssignmentQuantity,
+                    g.Key.ScheduleTurnId,
+                    g.Key.Productivity,
+                    g.Key.ObjectId,
+                    g.Key.ObjectTypeId,
+                    g.Key.Quantity,
+                    TotalQuantity = g.Sum(a => a.TotalQuantity)
+                })
+                .ToList();
 
             var productionStepIds = allAssignments.Select(a => a.ProductionStepId).Distinct().ToList();
             var departmentIds = allAssignments.Select(a => a.DepartmentId).Distinct().ToList();
@@ -633,20 +638,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments(long productionStepId)
         {
-            return await (from sd in _manufacturingDBContext.StepDetail
-                          join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
-                          join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
-                          where ps.ProductionStepId == productionStepId
-                          select new
-                          {
-                              sd.DepartmentId,
-                              sd.Quantity,
-                              s.UnitId
-                          }).ToDictionaryAsync(sd => sd.DepartmentId, sd => new ProductivityModel
-                          {
-                              Quantity = sd.Quantity,
-                              UnitId = sd.UnitId
-                          });
+            return await (
+                from sd in _manufacturingDBContext.StepDetail
+                join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
+                join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
+                where ps.ProductionStepId == productionStepId
+                select new
+                {
+                    sd.DepartmentId,
+                    sd.Quantity,
+                    s.UnitId
+                }).ToDictionaryAsync(sd => sd.DepartmentId, sd => new ProductivityModel
+                {
+                    Quantity = sd.Quantity,
+                    UnitId = sd.UnitId
+                });
         }
 
         public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long scheduleTurnId)
