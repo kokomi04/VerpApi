@@ -18,7 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long? OutsourcePartRequestId { get; set; }
     }
 
-    public class ProductionOrderDetailInputModel :  IMapFrom<ProductionOrderDetail>
+    public class ProductionOrderDetailInputModel : IMapFrom<ProductionOrderDetail>
     {
         public long? ProductionOrderDetailId { get; set; }
         public long ProductionOrderId { get; set; }

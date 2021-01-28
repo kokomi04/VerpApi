@@ -10,7 +10,7 @@ namespace VErp.Services.Master.Model.Category
     public class CategoryFilterModel
     {
         public string Keyword { get; set; }
-        public string Filters { get; set; }
+        public Clause Filters { get; set; }
         public string ExtraFilter { get; set; }
 
         public ExtraFilterParam[] ExtraFilterParams { get; set; }
