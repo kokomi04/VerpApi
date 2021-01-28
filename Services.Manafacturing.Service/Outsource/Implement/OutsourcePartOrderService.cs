@@ -314,14 +314,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<IList<OutsourcePartOrderMaterials>> GetMaterials(long outsourceOrderId)
+        public async Task<IList<OutsourceOrderMaterials>> GetMaterials(long outsourceOrderId)
         {
-            var results = new List<OutsourcePartOrderMaterials>();
+            var results = new List<OutsourceOrderMaterials>();
             var roleMaps = new Dictionary<long, IList<ProductionStepLinkDataRole>>();
 
             var outsourceOrder = await _manufacturingDBContext.OutsourceOrder.AsNoTracking()
                 .Include(x => x.OutsourceOrderDetail)
-               .FirstOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
+                .FirstOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
 
             if (outsourceOrder == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
@@ -433,7 +433,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                             .ConvertData<ProductionStepLinkDataInput>();
 
                     stepLinkDatas.ForEach(ld=>{
-                        results.Add(new OutsourcePartOrderMaterials
+                        results.Add(new OutsourceOrderMaterials
                         {
                             CustomerId = outsourceOrder.CustomerId,
                             Description = $"Xuất vật tư cho đơn hàng gia công {outsourceOrder.OutsourceOrderCode}",
@@ -443,8 +443,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                             ProductId = ld.ObjectId,
                             ProductionOrdeCode = request.ProductionOrderCode,
                             UnitId = ld.UnitId,
-                            OutsourcePartRequestId = request.OutsourcePartRequestId,
-                            OutsourcePartRequestCode = request.OutsourcePartRequestCode,
+                            OutsourceRequestId = request.OutsourcePartRequestId,
+                            OutsourceRequestCode = request.OutsourcePartRequestCode,
                             Quantity = decimal.Zero
                         });
 

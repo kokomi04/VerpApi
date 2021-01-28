@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
-    public class OutsourcePartOrderMaterials
+    public class OutsourceOrderMaterials
     {
         public long OutsourceOrderId { get; set; }
         public string OutsourceOrderCode { get; set; }
@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string OrderCode { get; set; }
         public string ProductionOrdeCode { get; set; }
         public int? CustomerId { get; set; } 
-        public long OutsourcePartRequestId { get; set; }
-        public string OutsourcePartRequestCode { get; set; }
+        public long OutsourceRequestId { get; set; }
+        public string OutsourceRequestCode { get; set; }
     }
 }

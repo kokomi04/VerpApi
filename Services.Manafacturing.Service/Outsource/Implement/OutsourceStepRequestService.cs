@@ -433,7 +433,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         ProductionStepLinkDataRoleTypeId = x.ProductionStepLinkDataRoleTypeId,
                         OutsourceStepRequestDataQuantity = outsourceStepRequest.OutsourceStepRequestData.FirstOrDefault(s => s.ProductionStepLinkDataId == x.ProductionStepLinkDataId).OutsourceStepRequestDataQuantity,
                         ProductionStepLinkDataTitle = string.Empty,
-                        OutsourceStepRequestFinishDate = outsourceStepRequest.OutsourceStepRequestFinishDate
+                        OutsourceStepRequestFinishDate = outsourceStepRequest.OutsourceStepRequestFinishDate,
+                        ProductionOrderCode = outsourceStepRequest.ProductionOrderCode
                     })
                     .ToList();
                 if (outsourceStepRequestDatas.Count == 0)

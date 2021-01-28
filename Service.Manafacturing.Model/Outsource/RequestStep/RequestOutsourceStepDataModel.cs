@@ -37,5 +37,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public string ProductionStepLinkDataTitle { get; set; }
         public decimal? OutsourceStepRequestDataQuantityProcessed { get; set; }
         public long OutsourceStepRequestFinishDate { get; set; }
+        public string ProductionOrderCode { get; set; }
     }
 }
