@@ -24,7 +24,9 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
+using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Model.Outsource.Track;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
@@ -262,7 +264,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> UpdateOutsourceOrderPart(long outsourceOrderId, OutsourceOrderInfo req)
         {
-             await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
+            await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -312,6 +314,195 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
+        public async Task<IList<OutsourcePartOrderMaterials>> GetMaterials(long outsourceOrderId)
+        {
+            var results = new List<OutsourcePartOrderMaterials>();
+            var roleMaps = new Dictionary<long, IList<ProductionStepLinkDataRole>>();
+
+            var outsourceOrder = await _manufacturingDBContext.OutsourceOrder.AsNoTracking()
+                .Include(x => x.OutsourceOrderDetail)
+               .FirstOrDefaultAsync(o => o.OutsourceOrderId == outsourceOrderId);
+
+            if (outsourceOrder == null)
+                throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
+
+            var requestMap = (await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
+                .Where(x => outsourceOrder.OutsourceOrderDetail.Select(x => x.ObjectId).Contains(x.OutsourcePartRequestDetailId))
+                .ToListAsync())
+                .GroupBy(x => x.OutsourcePartRequestId);
+
+            foreach (var rq in requestMap)
+            {
+                var sqlRequest = new StringBuilder($"SELECT * FROM vOutsourcePartRequestExtractInfo v WHERE v.OutsourcePartRequestId = {rq.Key}");
+
+                var request = (await _manufacturingDBContext.QueryDataTable(sqlRequest.ToString(), Array.Empty<SqlParameter>()))
+                     .ConvertData<OutsourcePartRequestDetailExtractInfo>()
+                    .FirstOrDefault();
+
+                if (request == null)
+                    throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
+
+                if (request.MarkInvalid)
+                    throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{request.OutsourcePartRequestCode}\" chưa được xác thực với QTSX");
+
+                var productionOrderId = request.ProductionOrderId;
+                IList<ProductionStepLinkDataRole> role;
+
+                // lấy role QTSX
+                if (!roleMaps.ContainsKey(productionOrderId))
+                {
+                    role = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
+                        .Include(x => x.ProductionStep)
+                        .Include(x => x.ProductionStepLinkData)
+                        .Where(x => x.ProductionStep.ContainerId == productionOrderId && x.ProductionStep.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
+                        .ToArrayAsync();
+                    roleMaps.Add(productionOrderId, role);
+                }
+                else
+                {
+                    role = roleMaps[productionOrderId];
+                }
+
+                // Tính toán steplink
+                var steplinks = CalcProdictonStepLink(role);
+
+                var linkDataMap = role.Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                    .Select(x => x.ProductionStepLinkData)
+                    .Where(x => rq.Select(r => r.OutsourcePartRequestDetailId).Contains(x.OutsourceRequestDetailId ?? 0))
+                    .GroupBy(g => g.OutsourceRequestDetailId);
+
+                // Tìm các công đoạn đầu tiên
+                var firstSteps = new List<long>();
+                foreach(var map in linkDataMap)
+                {
+                    foreach(var ld in map)
+                    {
+                        var productionStepId = role.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId)?.ProductionStepId;
+                        var linkDataOrigin = role.Where(x => x.ProductionStepId == productionStepId 
+                                                            && x.ProductionStepLinkData.ObjectId == ld.ObjectId 
+                                                            && x.ProductionStepLinkData.ProductionStepLinkDataId != ld.ProductionStepLinkDataId)
+                                                 .Select(x => x.ProductionStepLinkDataId);
+                        foreach (var ldOriginId in linkDataOrigin)
+                        {
+                            productionStepId = role.FirstOrDefault(x => x.ProductionStepLinkDataId == ldOriginId
+                             && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)?.ProductionStepId;
+
+                            var stepLinks = steplinks.Where(x => x.ToStepId == productionStepId);
+                            foreach (var sl in stepLinks)
+                            {
+                                var s_id = sl.FromStepId;
+                                firstSteps.AddRange(TracedStepStoreMaterials(s_id, steplinks));
+                            }
+                        }
+                    }
+                }
+
+                // lấy các linkData NVL đầu vào
+                var linkDataIds = role.Where(x => firstSteps.Contains(x.ProductionStepId)
+                                                && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                                      .Select(x => x.ProductionStepLinkDataId)
+                                      .ToArray();
+                var stepLinkDatas = new List<ProductionStepLinkDataInput>();
+
+                if (linkDataIds.Length > 0)
+                {
+                    var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
+                    var parammeters = new List<SqlParameter>();
+                    var whereCondition = new StringBuilder();
+
+                    whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
+                    for (int i = 0; i < linkDataIds.Length; i++)
+                    {
+                        var number = linkDataIds[i];
+                        string pName = $"@ProductionStepLinkDataId_{i + 1}";
+
+                        if (i == linkDataIds.Length - 1)
+                            whereCondition.Append($"{pName} )");
+                        else
+                            whereCondition.Append($"{pName}, ");
+
+                        parammeters.Add(new SqlParameter(pName, number));
+                    }
+                    if (whereCondition.Length > 0)
+                    {
+                        sql.Append(" WHERE ");
+                        sql.Append(whereCondition);
+                    }
+
+                    stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
+                            .ConvertData<ProductionStepLinkDataInput>();
+
+                    stepLinkDatas.ForEach(ld=>{
+                        results.Add(new OutsourcePartOrderMaterials
+                        {
+                            CustomerId = outsourceOrder.CustomerId,
+                            Description = $"Xuất vật tư cho đơn hàng gia công {outsourceOrder.OutsourceOrderCode}",
+                            OrderCode = request.OrderCode,
+                            OutsourceOrderCode = outsourceOrder.OutsourceOrderCode,
+                            OutsourceOrderId = outsourceOrder.OutsourceOrderId,
+                            ProductId = ld.ObjectId,
+                            ProductionOrdeCode = request.ProductionOrderCode,
+                            UnitId = ld.UnitId,
+                            OutsourcePartRequestId = request.OutsourcePartRequestId,
+                            OutsourcePartRequestCode = request.OutsourcePartRequestCode,
+                            Quantity = decimal.Zero
+                        });
+
+                    });
+                }
+
+            }
+
+            return results;
+        }
+
+        #region private
+        private IEnumerable<long> TracedStepStoreMaterials(long? currentStepId, IEnumerable<ProductionStepLinkModel> lsStepLink )
+        {
+            var rs = new List<long>();
+            var stepLinks = lsStepLink.Where(x => x.ToStepId == currentStepId);
+
+            if(stepLinks.Count() == 0)
+            {
+                rs.Add(currentStepId.GetValueOrDefault());
+                return rs;
+            }
+
+            foreach (var sl in stepLinks)
+            {
+                var s_id = sl.FromStepId;
+                rs.AddRange(TracedStepStoreMaterials(s_id, lsStepLink));
+            }
+            return rs;
+        }
+
+        private static IEnumerable<ProductionStepLinkModel> CalcProdictonStepLink(IEnumerable<ProductionStepLinkDataRole> roles)
+        {
+            var roleGroups = roles.GroupBy(r => r.ProductionStepLinkDataId);
+            var productionStepLinks = new List<ProductionStepLinkModel>();
+
+            foreach (var roleGroup in roleGroups)
+            {
+                var froms = roleGroup.Where(r => r.ProductionStepLinkDataRoleTypeId == (int) EnumProductionStepLinkDataRoleType.Output).ToList();
+                var tos = roleGroup.Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input).ToList();
+                foreach (var from in froms)
+                {
+                    bool bExisted = productionStepLinks.Any(r => r.FromStepId == from.ProductionStepId);
+                    foreach (var to in tos)
+                    {
+                        if (!bExisted || !productionStepLinks.Any(r => r.FromStepId == from.ProductionStepId && r.ToStepId == to.ProductionStepId))
+                        {
+                            productionStepLinks.Add(new ProductionStepLinkModel
+                            {
+                                FromStepId = from.ProductionStepId,
+                                ToStepId = to.ProductionStepId,
+                            });
+                        }
+                    }
+                }
+            }
+            return productionStepLinks;
+        }
 
         private async Task CheckMarkInvalidOutsourcePartRequest(long[] outsourcePartrequestDetaildIds)
         {
@@ -330,10 +521,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                .ToArray();
             if (lsInValid.Length > 0)
                 throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{String.Join(", ", lsInValid)}\" chưa xác thực với QTSX");
-            
+
         }
 
-        private async Task UpdateOutsourcePartRequestStatus(IEnumerable<long> ObjectIds) {
+        private async Task UpdateOutsourcePartRequestStatus(IEnumerable<long> ObjectIds)
+        {
             var stepIds = await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
                 .Where(x => ObjectIds.Contains(x.OutsourcePartRequestDetailId))
                 .Select(x => x.OutsourcePartRequestId)
@@ -341,5 +533,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ToArrayAsync();
             await _outsourcePartRequestService.UpdateOutsourcePartRequestStatus(stepIds);
         }
+        #endregion
     }
 }
