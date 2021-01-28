@@ -758,7 +758,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (!category.IsTreeView)
             {
-                dataSql.Append(string.IsNullOrEmpty(orderBy) ? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
+                dataSql.Append(string.IsNullOrEmpty(orderBy) ? string.IsNullOrEmpty(category.DefaultOrder)? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY {category.DefaultOrder}" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
                 if (size > 0)
                 {
                     dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
