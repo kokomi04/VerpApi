@@ -226,7 +226,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         ProductionStepLinkDataRoleTypeId = data.ProductionStepLinkDataRoleTypeId,
                         ProductionStepLinkDataTitle = data.ProductionStepLinkDataTitle,
                         ProductionStepTitle = data.ProductionStepTitle,
-                        OutsourceStepRequestFinishDate = data.OutsourceStepRequestFinishDate
+                        OutsourceStepRequestFinishDate = data.OutsourceStepRequestFinishDate,
+                        ProductionOrderCode = data.ProductionOrderCode
                     });
                 }
                 outsourceOrderDetail.AddRange(lst.OrderBy(x => x.ProductionStepId));
