@@ -27,8 +27,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public string ProductionStepCode { get; set; }
         public int UnitId { get; set; }
         public bool IsFinish { get; set; }
-        public decimal ShrinkageRate { get; set; }
-        public EnumHandoverTypeStatus HandoverTypeId { get; set; }
+        public decimal? ShrinkageRate { get; set; }
+        public EnumHandoverTypeStatus? HandoverTypeId { get; set; }
 
         public void Mapping(Profile profile)
         {
