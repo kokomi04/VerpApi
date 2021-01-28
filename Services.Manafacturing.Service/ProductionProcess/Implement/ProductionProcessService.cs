@@ -531,7 +531,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             Quantity = item.Quantity * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault(),
                             QuantityOrigin = item.QuantityOrigin * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault(),
                             SortOrder = item.SortOrder,
-                            ProductionStepLinkDataCode = Guid.NewGuid().ToString()
+                            ProductionStepLinkDataCode = Guid.NewGuid().ToString(),
+                            ProductionStepLinkTypeId = item.ProductionStepLinkTypeId,
+                            ProductionStepLinkDataTypeId = item.ProductionStepLinkDataTypeId,
                         };
 
                         _manufacturingDBContext.ProductionStepLinkData.Add(newLinkData);
