@@ -323,7 +323,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
                         }
-                        
+
                         CustomGenCodeBaseValue = currentConfig.CurrentLastValue;
 
                         value = generatedCode.CustomCode;
@@ -652,7 +652,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
@@ -662,7 +662,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, string filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
 
             var fields = (from f in _accountancyContext.CategoryField
@@ -714,15 +714,11 @@ namespace VErp.Services.Accountancy.Service.Category
                 whereCondition.Append(")");
             }
 
-            if (!string.IsNullOrEmpty(filters))
+            if (filters != null)
             {
-                Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
-                if (filterClause != null)
-                {
-                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
-                    int suffix = 0;
-                    filterClause.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix);
-                }
+                if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                int suffix = 0;
+                filters.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix);
             }
 
             if (!string.IsNullOrEmpty(extraFilter))
