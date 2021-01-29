@@ -372,18 +372,23 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .GroupBy(g => g.OutsourceRequestDetailId);
 
                 // Tìm các công đoạn đầu tiên
-                var firstSteps = new List<long>();
+                var requestDetailMap = new Dictionary<long, Dictionary<long, Dictionary<long, IList<long>>>>(); 
                 foreach(var map in linkDataMap)
                 {
-                    foreach(var ld in map)
+                    var d_1 =  new Dictionary<long, Dictionary<long, IList<long>>>();
+                    foreach (var ld in map)
                     {
                         var productionStepId = role.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId)?.ProductionStepId;
                         var linkDataOrigin = role.Where(x => x.ProductionStepId == productionStepId 
                                                             && x.ProductionStepLinkData.ObjectId == ld.ObjectId 
                                                             && x.ProductionStepLinkData.ProductionStepLinkDataId != ld.ProductionStepLinkDataId)
                                                  .Select(x => x.ProductionStepLinkDataId);
+                        var d_2 = new Dictionary<long, IList<long>>();
+
                         foreach (var ldOriginId in linkDataOrigin)
                         {
+                            var t_1 = new List<long>();
+
                             productionStepId = role.FirstOrDefault(x => x.ProductionStepLinkDataId == ldOriginId
                              && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)?.ProductionStepId;
 
@@ -391,65 +396,89 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                             foreach (var sl in stepLinks)
                             {
                                 var s_id = sl.FromStepId;
-                                firstSteps.AddRange(TracedStepStoreMaterials(s_id, steplinks));
+                                t_1.AddRange(TracedStepStoreMaterials(s_id, steplinks));
+                            }
+                            if (t_1.Count > 0 && !d_2.ContainsKey(ldOriginId))
+                            {
+                                d_2.Add(ldOriginId, t_1);
                             }
                         }
+                        if(d_2.Count > 0)
+                            d_1.Add(ld.ProductionStepLinkDataId, d_2);
                     }
+                    requestDetailMap.Add(map.Key.GetValueOrDefault(), d_1);
                 }
 
                 // lấy các linkData NVL đầu vào
-                var linkDataIds = role.Where(x => firstSteps.Contains(x.ProductionStepId)
+                foreach( var f_1 in requestDetailMap)
+                {
+                    var outsourceOrderDetail = outsourceOrder.OutsourceOrderDetail.FirstOrDefault(x => x.ObjectId == f_1.Key);
+                    var quantityAverage = (outsourceOrderDetail.Quantity / f_1.Value.Count());
+                    foreach(var f_2 in f_1.Value)
+                    {
+                        foreach (var f_3 in f_2.Value)
+                        {
+                            var quantityOrigin = role.FirstOrDefault(x => x.ProductionStepLinkDataId == f_3.Key).ProductionStepLinkData.QuantityOrigin;
+                            var percent = quantityAverage / quantityOrigin;
+
+                            var linkDataIds = role.Where(x => f_3.Value.Contains(x.ProductionStepId)
                                                 && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
                                       .Select(x => x.ProductionStepLinkDataId)
                                       .ToArray();
-                var stepLinkDatas = new List<ProductionStepLinkDataInput>();
+                            var stepLinkDatas = new List<ProductionStepLinkDataInput>();
 
-                if (linkDataIds.Length > 0)
-                {
-                    var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
-                    var parammeters = new List<SqlParameter>();
-                    var whereCondition = new StringBuilder();
+                            if (linkDataIds.Length > 0)
+                            {
+                                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
+                                var parammeters = new List<SqlParameter>();
+                                var whereCondition = new StringBuilder();
 
-                    whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
-                    for (int i = 0; i < linkDataIds.Length; i++)
-                    {
-                        var number = linkDataIds[i];
-                        string pName = $"@ProductionStepLinkDataId_{i + 1}";
+                                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
+                                for (int i = 0; i < linkDataIds.Length; i++)
+                                {
+                                    var number = linkDataIds[i];
+                                    string pName = $"@ProductionStepLinkDataId_{i + 1}";
 
-                        if (i == linkDataIds.Length - 1)
-                            whereCondition.Append($"{pName} )");
-                        else
-                            whereCondition.Append($"{pName}, ");
+                                    if (i == linkDataIds.Length - 1)
+                                        whereCondition.Append($"{pName} )");
+                                    else
+                                        whereCondition.Append($"{pName}, ");
 
-                        parammeters.Add(new SqlParameter(pName, number));
+                                    parammeters.Add(new SqlParameter(pName, number));
+                                }
+                                if (whereCondition.Length > 0)
+                                {
+                                    sql.Append(" WHERE ");
+                                    sql.Append(whereCondition);
+                                }
+
+                                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
+                                        .ConvertData<ProductionStepLinkDataInput>();
+
+                                stepLinkDatas.ForEach(ld => {
+                                    results.Add(new OutsourceOrderMaterials
+                                    {
+                                        CustomerId = outsourceOrder.CustomerId,
+                                        Description = $"Xuất vật tư cho đơn hàng gia công {outsourceOrder.OutsourceOrderCode}",
+                                        OrderCode = request.OrderCode,
+                                        OutsourceOrderCode = outsourceOrder.OutsourceOrderCode,
+                                        OutsourceOrderId = outsourceOrder.OutsourceOrderId,
+                                        ProductId = ld.ObjectId,
+                                        ProductionOrdeCode = request.ProductionOrderCode,
+                                        UnitId = ld.UnitId,
+                                        OutsourceRequestId = request.OutsourcePartRequestId,
+                                        OutsourceRequestCode = request.OutsourcePartRequestCode,
+                                        Quantity = decimal.Round((percent * ld.QuantityOrigin), 5)
+                                    });
+
+                                });
+                            }
+                        }
+                            
                     }
-                    if (whereCondition.Length > 0)
-                    {
-                        sql.Append(" WHERE ");
-                        sql.Append(whereCondition);
-                    }
-
-                    stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                            .ConvertData<ProductionStepLinkDataInput>();
-
-                    stepLinkDatas.ForEach(ld=>{
-                        results.Add(new OutsourceOrderMaterials
-                        {
-                            CustomerId = outsourceOrder.CustomerId,
-                            Description = $"Xuất vật tư cho đơn hàng gia công {outsourceOrder.OutsourceOrderCode}",
-                            OrderCode = request.OrderCode,
-                            OutsourceOrderCode = outsourceOrder.OutsourceOrderCode,
-                            OutsourceOrderId = outsourceOrder.OutsourceOrderId,
-                            ProductId = ld.ObjectId,
-                            ProductionOrdeCode = request.ProductionOrderCode,
-                            UnitId = ld.UnitId,
-                            OutsourceRequestId = request.OutsourcePartRequestId,
-                            OutsourceRequestCode = request.OutsourcePartRequestCode,
-                            Quantity = decimal.Zero
-                        });
-
-                    });
+                    
                 }
+                
 
             }
 
