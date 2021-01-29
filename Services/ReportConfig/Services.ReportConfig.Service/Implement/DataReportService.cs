@@ -459,9 +459,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sql = sql.TSqlAppendCondition(filterCondition);
             }
 
-            string orderBy = reportInfo?.OrderBy;
+            string orderBy = reportInfo?.OrderBy??"";
 
-            if (!string.IsNullOrWhiteSpace(orderByFieldName) && !string.IsNullOrWhiteSpace(orderBy) && !orderBy.Contains(orderByFieldName))
+            if (!string.IsNullOrWhiteSpace(orderByFieldName) && !orderBy.Contains(orderByFieldName))
             {
                 if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
                 orderBy += $"{orderByFieldName}" + (asc ? "" : " DESC");
