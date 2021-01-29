@@ -37,7 +37,7 @@ namespace MasterTests
         [Fact]
         public async Task TestGetMaterialsOutsourcePartOrder()
         {
-            var outsourceOrderId = 10048;
+            var outsourceOrderId = 10055;
             try
             {
                 var rs = await outsourcePartOrderService.GetMaterials(outsourceOrderId);
