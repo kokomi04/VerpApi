@@ -364,7 +364,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
 
                 // Tính toán steplink
-                var steplinks = CalcProdictonStepLink(role);
+                var productionStepLinks = CalcProdictonStepLink(role);
 
                 var linkDataMap = role.Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
                     .Select(x => x.ProductionStepLinkData)
@@ -379,10 +379,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     foreach (var ld in map)
                     {
                         var productionStepId = role.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId)?.ProductionStepId;
+                        
                         var linkDataOrigin = role.Where(x => x.ProductionStepId == productionStepId 
                                                             && x.ProductionStepLinkData.ObjectId == ld.ObjectId 
                                                             && x.ProductionStepLinkData.ProductionStepLinkDataId != ld.ProductionStepLinkDataId)
-                                                 .Select(x => x.ProductionStepLinkDataId);
+                                                 .Select(x => x.ProductionStepLinkDataId)
+                                                 .ToList();
                         var d_2 = new Dictionary<long, IList<long>>();
 
                         foreach (var ldOriginId in linkDataOrigin)
@@ -391,12 +393,18 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                             productionStepId = role.FirstOrDefault(x => x.ProductionStepLinkDataId == ldOriginId
                              && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)?.ProductionStepId;
+                            if (!productionStepId.HasValue)
+                                continue;
 
-                            var stepLinks = steplinks.Where(x => x.ToStepId == productionStepId);
+                            var stepLinks = productionStepLinks.Where(x => x.ToStepId == productionStepId);
+                            if(stepLinks.Count() == 0)
+                            {
+                                t_1.Add(productionStepId.GetValueOrDefault());
+                            }
                             foreach (var sl in stepLinks)
                             {
                                 var s_id = sl.FromStepId;
-                                t_1.AddRange(TracedStepStoreMaterials(s_id, steplinks));
+                                t_1.AddRange(TracedStepStoreMaterials(s_id, productionStepLinks));
                             }
                             if (t_1.Count > 0 && !d_2.ContainsKey(ldOriginId))
                             {
@@ -413,13 +421,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 foreach( var f_1 in requestDetailMap)
                 {
                     var outsourceOrderDetail = outsourceOrder.OutsourceOrderDetail.FirstOrDefault(x => x.ObjectId == f_1.Key);
-                    var quantityAverage = (outsourceOrderDetail.Quantity / f_1.Value.Count());
                     foreach(var f_2 in f_1.Value)
                     {
+                        var totalQuantityOrigin = role.Where(x => f_2.Value.Keys.Contains(x.ProductionStepLinkDataId) && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output).Sum(x => x.ProductionStepLinkData.QuantityOrigin);
+
                         foreach (var f_3 in f_2.Value)
                         {
                             var quantityOrigin = role.FirstOrDefault(x => x.ProductionStepLinkDataId == f_3.Key).ProductionStepLinkData.QuantityOrigin;
-                            var percent = quantityAverage / quantityOrigin;
+                            var percent = ((quantityOrigin / totalQuantityOrigin) * outsourceOrderDetail.Quantity) / quantityOrigin;
 
                             var linkDataIds = role.Where(x => f_3.Value.Contains(x.ProductionStepId)
                                                 && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
