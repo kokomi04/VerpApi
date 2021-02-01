@@ -109,5 +109,86 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                 .ToList();
         }
+
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, Clause filters = null)
+        {
+            keyword = (keyword ?? "").Trim();
+            var parammeters = new List<SqlParameter>();
+
+            var whereCondition = new StringBuilder("v.DepartmentId = @DepartmentId");
+            parammeters.Add(new SqlParameter("@DepartmentId", departmentId));
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                whereCondition.Append("(v.OrderCode LIKE @KeyWord ");
+                whereCondition.Append("OR v.ProductionOrderCode LIKE @Keyword ");
+                whereCondition.Append("OR v.ScheduleCode LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductTitle LIKE @Keyword ");
+                whereCondition.Append("OR v.StepName LIKE @Keyword ");
+                whereCondition.Append("OR v.Material LIKE @Keyword ");
+                whereCondition.Append("OR v.InOutType LIKE @Keyword ");
+                whereCondition.Append("OR v.ReciprocalStep LIKE @Keyword ) ");
+
+                parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+
+            if (filters != null)
+            {
+                var suffix = 0;
+                var filterCondition = new StringBuilder();
+                filters.FilterClauseProcess("vProductionDepartmentHandover", "v", ref filterCondition, ref parammeters, ref suffix);
+                if (filterCondition.Length > 2)
+                {
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(filterCondition);
+                }
+            }
+
+            var sql = new StringBuilder(
+                @";WITH tmp AS (
+                    SELECT v1.ScheduleTurnId, v1.ProductionStepId
+                    FROM(
+                        SELECT * FROM vProductionDepartmentHandover v");
+
+            var totalSql = new StringBuilder(
+                @"SELECT 
+                    COUNT(*) Total 
+                FROM (
+                    SELECT v.ScheduleTurnId, v.ProductionStepId FROM vProductionDepartmentHandover v ");
+            if (whereCondition.Length > 0)
+            {
+                totalSql.Append(" WHERE ");
+                totalSql.Append(whereCondition);
+                totalSql.Append(" GROUP BY v.ScheduleTurnId, v.ProductionStepId ) g");
+                sql.Append(" WHERE ");
+                sql.Append(whereCondition);
+                sql.Append(
+                    @") v1
+	                GROUP BY v1.ScheduleTurnId, v1.ProductionStepId
+                    ORDER BY v1.ScheduleTurnId, v1.ProductionStepId");
+            }
+          
+            var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+            var total = 0;
+            if (table != null && table.Rows.Count > 0)
+            {
+                total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+            }
+
+            if (size >= 0)
+            {
+                sql.Append(@$" OFFSET {(page - 1) * size} ROWS
+                FETCH NEXT { size}
+                ROWS ONLY");
+            }
+            sql.Append(@")
+                SELECT v.* FROM tmp t
+                INNER JOIN vProductionDepartmentHandover v ON t.ScheduleTurnId = v.ScheduleTurnId AND t.ProductionStepId = v.ProductionStepId");
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData.ConvertData<DepartmentHandoverModel>();
+
+            return (lst, total);
+        }
+
     }
 }

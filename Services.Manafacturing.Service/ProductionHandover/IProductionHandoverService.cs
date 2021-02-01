@@ -11,6 +11,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
 {
     public interface IProductionHandoverService
     {
+
+        Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, Clause filters = null);
+
         Task<IList<ProductionHandoverModel>> GetProductionHandovers(long scheduleTurnId);
         Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements(long scheduleTurnId);
 
