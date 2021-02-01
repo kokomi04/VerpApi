@@ -185,7 +185,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 INNER JOIN vProductionDepartmentHandover v ON t.ScheduleTurnId = v.ScheduleTurnId AND t.ProductionStepId = v.ProductionStepId");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
-            var lst = resultData.ConvertData<DepartmentHandoverModel>();
+            var lst = resultData.ConvertData<DepartmentHandoverEntity>().AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
         }
