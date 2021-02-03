@@ -12,7 +12,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public long ProductionConsumMaterialId { get; set; }
         public int DepartmentId { get; set; }
-        public long ProductionOrderId { get; set; }
         public long ProductionStepId { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
@@ -23,6 +22,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public long ProductionOrderId { get; set; }
 
         public virtual ProductionAssignment ProductionAssignment { get; set; }
         public virtual ICollection<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }

@@ -226,12 +226,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 // Thêm thông tin công việc
                 var productionStepWorkInfo = _manufacturingDBContext.ProductionStepWorkInfo
-                    .FirstOrDefault(w => w.ProductionStepId == productionStepId && w.ProductionOrderId == productionOrderId);
+                    .FirstOrDefault(w => w.ProductionStepId == productionStepId);
                 if (productionStepWorkInfo == null)
                 {
                     productionStepWorkInfo = _mapper.Map<ProductionStepWorkInfo>(info);
                     productionStepWorkInfo.ProductionStepId = productionStepId;
-                    productionStepWorkInfo.ProductionOrderId = productionOrderId;
                     _manufacturingDBContext.ProductionStepWorkInfo.Add(productionStepWorkInfo);
                 }
                 else
@@ -626,10 +625,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId)
         {
-            return await _manufacturingDBContext.ProductionStepWorkInfo
-                .Where(w => w.ProductionOrderId == productionOrderId)
-                .ProjectTo<ProductionStepWorkInfoOutputModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            return await (from w in _manufacturingDBContext.ProductionStepWorkInfo
+                          join ps in _manufacturingDBContext.ProductionStep on w.ProductionStepId equals ps.ProductionStepId
+                          where ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId
+                          select w)
+                          .ProjectTo<ProductionStepWorkInfoOutputModel>(_mapper.ConfigurationProvider)
+                          .ToListAsync();
         }
 
         public async Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate)
