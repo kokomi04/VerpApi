@@ -31,18 +31,18 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{scheduleTurnId}")]
-        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments([FromRoute] long scheduleTurnId)
+        [Route("{productionOrderId}")]
+        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments([FromRoute] long productionOrderId)
         {
-            return await _productionAssignmentService.GetProductionAssignments(scheduleTurnId);
+            return await _productionAssignmentService.GetProductionAssignments(productionOrderId);
         }
 
         [HttpPut]
-        [Route("{productionStepId}/{scheduleTurnId}")]
-        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long scheduleTurnId, [FromBody] ProductionAssignmentInputModel data)
+        [Route("{productionStepId}/{productionOrderId}")]
+        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long productionOrderId, [FromBody] ProductionAssignmentInputModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, scheduleTurnId, data.ProductionAssignments, data.ProductionStepWorkInfo, data.DepartmentTimeTable);
+            return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, productionOrderId, data.ProductionAssignments, data.ProductionStepWorkInfo, data.DepartmentTimeTable);
         }
 
         [HttpPost]
@@ -54,9 +54,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("Departments/{departmentId}")]
-        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] long? scheduleTurnId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] long? productionOrderId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
         {
-            return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, scheduleTurnId, page, size, orderByFieldName, asc);
+            return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, productionOrderId, page, size, orderByFieldName, asc);
         }
 
         [HttpGet]
@@ -67,10 +67,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{scheduleTurnId}/capacity/{productionStepId}")]
-        public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long scheduleTurnId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
+        [Route("{productionOrderId}/capacity/{productionStepId}")]
+        public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
         {
-            return await _productionAssignmentService.GetCapacityDepartments(scheduleTurnId, productionStepId, startDate, endDate);
+            return await _productionAssignmentService.GetCapacityDepartments(productionOrderId, productionStepId, startDate, endDate);
         }
 
         [HttpGet]
@@ -81,10 +81,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{scheduleTurnId}/WorkInfo")]
-        public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo([FromRoute] long scheduleTurnId)
+        [Route("{productionOrderId}/WorkInfo")]
+        public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo([FromRoute] long productionOrderId)
         {
-            return await _productionAssignmentService.GetListProductionStepWorkInfo(scheduleTurnId);
+            return await _productionAssignmentService.GetListProductionStepWorkInfo(productionOrderId);
         }
     }
 }

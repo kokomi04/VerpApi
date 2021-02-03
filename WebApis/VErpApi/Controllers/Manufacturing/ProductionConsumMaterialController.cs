@@ -30,42 +30,42 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("")]
-        public async Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId)
+        public async Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId)
         {
-            return await _productionConsumMaterialService.GetConsumMaterials(departmentId, scheduleTurnId, productionStepId);
+            return await _productionConsumMaterialService.GetConsumMaterials(departmentId, productionOrderId, productionStepId);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateConsumMaterial([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        public async Task<long> CreateConsumMaterial([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId
             , [FromBody] ProductionConsumMaterialModel model)
         {
-            return await _productionConsumMaterialService.CreateConsumMaterial(departmentId, scheduleTurnId, productionStepId, model);
+            return await _productionConsumMaterialService.CreateConsumMaterial(departmentId, productionOrderId, productionStepId, model);
         }
 
         [HttpPut]
         [Route("{productionConsumMaterialId}")]
-        public async Task<bool> UpdateConsumMaterial([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        public async Task<bool> UpdateConsumMaterial([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId
           , [FromRoute] long productionConsumMaterialId
           , [FromBody] ProductionConsumMaterialModel model)
         {
-            return await _productionConsumMaterialService.UpdateConsumMaterial(departmentId, scheduleTurnId, productionStepId, productionConsumMaterialId, model);
+            return await _productionConsumMaterialService.UpdateConsumMaterial(departmentId, productionOrderId, productionStepId, productionConsumMaterialId, model);
         }
 
         [HttpDelete]
         [Route("{productionConsumMaterialId}")]
-        public async Task<bool> DeleteConsumMaterial([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        public async Task<bool> DeleteConsumMaterial([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId
         , [FromRoute] long productionConsumMaterialId)
         {
-            return await _productionConsumMaterialService.DeleteConsumMaterial(departmentId, scheduleTurnId, productionStepId, productionConsumMaterialId);
+            return await _productionConsumMaterialService.DeleteConsumMaterial(departmentId, productionOrderId, productionStepId, productionConsumMaterialId);
         }
 
         [HttpDelete]
         [Route("Material")]
-        public async Task<bool> DeleteMaterial([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        public async Task<bool> DeleteMaterial([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId
         , [FromQuery] int objectTypeId, [FromQuery] long objectId)
         {
-            return await _productionConsumMaterialService.DeleteMaterial(departmentId, scheduleTurnId, productionStepId, objectTypeId, objectId);
+            return await _productionConsumMaterialService.DeleteMaterial(departmentId, productionOrderId, productionStepId, objectTypeId, objectId);
         }
     }
 }
