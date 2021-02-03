@@ -64,7 +64,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IProductionScheduleHelperService _productionScheduleHelperService;
+        private readonly IProductionOrderHelperService _productionOrderHelperService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICurrentContextService currentContextService
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionScheduleHelperService productionScheduleHelperService
+            , IProductionOrderHelperService productionOrderHelperService
             )
         {
             _masterDBContext = masterDBContext;
@@ -96,7 +96,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _currentContextService = currentContextService;
             _productService = productService;
             _customGenCodeHelperService = customGenCodeHelperService;
-            _productionScheduleHelperService = productionScheduleHelperService;
+            _productionOrderHelperService = productionOrderHelperService;
         }
 
 
@@ -1269,13 +1269,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         // update trạng thái cho lịch sản xuất
                         var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
-                        var scheduleTurnIds = (from req in _stockDbContext.InventoryRequirement
+                        var productionOrderIds = (from req in _stockDbContext.InventoryRequirement
                                                join rd in _stockDbContext.InventoryRequirementDetail on req.InventoryRequirementId equals rd.InventoryRequirementId
-                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && req.ScheduleTurnId.HasValue
-                                               select req.ScheduleTurnId.Value).Distinct().ToList();
-                        foreach (var scheduleTurnId in scheduleTurnIds)
+                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && req.ProductionOrderId.HasValue
+                                               select req.ProductionOrderId.Value).Distinct().ToList();
+                        foreach (var productionOrderId in productionOrderIds)
                         {
-                            await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Finished);
+                            await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, EnumProductionStatus.Finished);
                         }
 
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
@@ -1430,13 +1430,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         // update trạng thái cho lịch sản xuất
                         var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
-                        var scheduleTurnIds = (from r in _stockDbContext.InventoryRequirement
+                        var productionOrderIds = (from r in _stockDbContext.InventoryRequirement
                                                join rd in _stockDbContext.InventoryRequirementDetail on r.InventoryRequirementId equals rd.InventoryRequirementId
-                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && r.ScheduleTurnId.HasValue
-                                               select r.ScheduleTurnId.Value).Distinct().ToList();
-                        foreach (var scheduleTurnId in scheduleTurnIds)
+                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && r.ProductionOrderId.HasValue
+                                               select r.ProductionOrderId.Value).Distinct().ToList();
+                        foreach (var productionOrderId in productionOrderIds)
                         {
-                            await _productionScheduleHelperService.UpdateProductionScheduleStatus(scheduleTurnId, EnumScheduleStatus.Processing);
+                            await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, EnumProductionStatus.Processing);
                         }
 
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";

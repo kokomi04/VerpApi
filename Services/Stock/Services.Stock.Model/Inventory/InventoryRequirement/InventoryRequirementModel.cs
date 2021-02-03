@@ -43,7 +43,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.Date, otp => otp.MapFrom(source => source.InventoryRequirement.Date.GetUnix()))
                 .ForMember(dest => dest.DepartmentId, otp => otp.MapFrom(source => source.InventoryRequirement.DepartmentId))
                 .ForMember(dest => dest.CreatedByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CreatedByUserId))
-                .ForMember(dest => dest.ScheduleTurnId, otp => otp.MapFrom(source => source.InventoryRequirement.ScheduleTurnId))
+                .ForMember(dest => dest.ScheduleTurnId, otp => otp.MapFrom(source => source.InventoryRequirement.ProductionOrderId))
                 .ForMember(dest => dest.ProductionStepId, otp => otp.MapFrom(source => source.InventoryRequirement.ProductionStepId))
                 .ForMember(dest => dest.Shipper, otp => otp.MapFrom(source => source.InventoryRequirement.Shipper))
                 .ForMember(dest => dest.CustomerId, otp => otp.MapFrom(source => source.InventoryRequirement.CustomerId))

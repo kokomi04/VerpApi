@@ -232,7 +232,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi mã phiếu yêu cầu");
 
-                if (inventoryRequirement.ScheduleTurnId.HasValue)
+                if (inventoryRequirement.ProductionOrderId.HasValue)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
 
                 // validate product duplicate
@@ -316,7 +316,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
                 if (inventoryRequirement == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
 
-                if (inventoryRequirement.ScheduleTurnId.HasValue)
+                if (inventoryRequirement.ProductionOrderId.HasValue)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
 
                 await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);

@@ -23,6 +23,7 @@ using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionO
 using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Services.Manafacturing.Model.ProductionHandover;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -86,7 +87,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 sql.Append("WHERE ");
                 sql.Append(whereCondition);
             }
-            if(string.IsNullOrEmpty(orderByFieldName))
+            if (string.IsNullOrEmpty(orderByFieldName))
             {
                 orderByFieldName = "ProductionDate";
                 asc = false;
@@ -409,6 +410,93 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 })
                 .ToListAsync();
             return rs;
+        }
+
+        public async Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder
+                .Include(po => po.ProductionOrderDetail)
+                .FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+
+            if (productionOrder == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+            try
+            {
+                if (status.ProductionOrderStatus == EnumProductionStatus.Finished)
+                {
+                    // Check nhận đủ số lượng đầu ra
+                    var parammeters = new SqlParameter[]
+                    {
+                        new SqlParameter("@ProductionOrderId", productionOrderId)
+                    };
+                    var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+
+                    var inputInventories = resultData.ConvertData<ProductionInventoryRequirementEntity>();
+
+                    bool isFinish = true;
+
+                    foreach (var productionOrderDetail in productionOrder.ProductionOrderDetail)
+                    {
+                        var quantity = inputInventories
+                            .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
+                            .Sum(i => i.ActualQuantity.GetValueOrDefault());
+
+                        if (quantity != (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
+                        {
+                            isFinish = false;
+                            break;
+                        }
+                    }
+                    if (isFinish)
+                    {
+                        productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, status, isManual = false }.JsonSerialize());
+                    }
+                }
+                else
+                {
+
+                    if (productionOrder.ProductionOrderStatus < (int)status.ProductionOrderStatus)
+                    {
+                        productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, status, isManual = false }.JsonSerialize());
+                    }
+                }
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductOrderStatus");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+            if (productionOrder == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+            if (productionOrder.ProductionOrderStatus > (int)status.ProductionOrderStatus)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
+
+            try
+            {
+                if (productionOrder.ProductionOrderStatus != (int)status.ProductionOrderStatus)
+                {
+                    productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệch sản xuất ", new { productionOrder, status, isManual = true }.JsonSerialize());
+                }
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductOrderStatus");
+                throw;
+            }
         }
     }
 }

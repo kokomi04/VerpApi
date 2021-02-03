@@ -18,5 +18,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<bool> DeleteProductionOrder(int productionOrderId);
         Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
         Task<IList<ProductOrderModel>> GetProductionOrders();
+
+        Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
+        Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
     }
 }
