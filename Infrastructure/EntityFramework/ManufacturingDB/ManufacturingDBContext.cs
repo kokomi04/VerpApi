@@ -31,7 +31,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
-        public virtual DbSet<ProductionSchedule> ProductionSchedule { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
@@ -256,7 +255,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionAssignment>(entity =>
             {
-                entity.HasKey(e => new { e.ProductionStepId, e.ScheduleTurnId, e.DepartmentId });
+                entity.HasKey(e => new { e.ProductionStepId, e.ProductionOrderId, e.DepartmentId });
 
                 entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(18, 5)");
 
@@ -271,14 +270,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionAssignmentDetail>(entity =>
             {
-                entity.HasKey(e => new { e.ProductionStepId, e.ScheduleTurnId, e.DepartmentId, e.WorkDate })
+                entity.HasKey(e => new { e.ProductionStepId, e.ProductionOrderId, e.DepartmentId, e.WorkDate })
                     .HasName("PK_ProductionAssignment_copy2");
 
                 entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(18, 5)");
 
                 entity.HasOne(d => d.ProductionAssignment)
                     .WithMany(p => p.ProductionAssignmentDetail)
-                    .HasForeignKey(d => new { d.ProductionStepId, d.ScheduleTurnId, d.DepartmentId })
+                    .HasForeignKey(d => new { d.ProductionStepId, d.ProductionOrderId, d.DepartmentId })
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionAssignmentDetail_ProductionAssignment");
             });
@@ -293,7 +292,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.HasOne(d => d.ProductionAssignment)
                     .WithMany(p => p.ProductionConsumMaterial)
-                    .HasForeignKey(d => new { d.ProductionStepId, d.ScheduleTurnId, d.DepartmentId })
+                    .HasForeignKey(d => new { d.ProductionStepId, d.ProductionOrderId, d.DepartmentId })
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductionConsumMaterial_ProductionAssignment");
             });
@@ -315,13 +314,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.HasOne(d => d.ProductionAssignment)
                     .WithMany(p => p.ProductionHandoverProductionAssignment)
-                    .HasForeignKey(d => new { d.FromProductionStepId, d.ScheduleTurnId, d.FromDepartmentId })
+                    .HasForeignKey(d => new { d.FromProductionStepId, d.ProductionOrderId, d.FromDepartmentId })
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHandover_ProductionAssignmentFrom");
 
                 entity.HasOne(d => d.ProductionAssignmentNavigation)
                     .WithMany(p => p.ProductionHandoverProductionAssignmentNavigation)
-                    .HasForeignKey(d => new { d.ToProductionStepId, d.ScheduleTurnId, d.ToDepartmentId })
+                    .HasForeignKey(d => new { d.ToProductionStepId, d.ProductionOrderId, d.ToDepartmentId })
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHandover_ProductionAssignmentTo");
             });
@@ -353,21 +352,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionOrderDetail_ProductionOrder");
             });
-
-            modelBuilder.Entity<ProductionSchedule>(entity =>
-            {
-                entity.Property(e => e.ProductionScheduleQuantity).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.ScheduleCode)
-                    .IsRequired()
-                    .HasMaxLength(255);
-
-                entity.HasOne(d => d.ProductionOrderDetail)
-                    .WithMany(p => p.ProductionSchedule)
-                    .HasForeignKey(d => d.ProductionOrderDetailId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionSchedule_ProductionOrderDetail");
-            });
+          
 
             modelBuilder.Entity<ProductionScheduleTurnShift>(entity =>
             {
@@ -381,7 +366,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.HasOne(d => d.ProductionAssignment)
                     .WithMany(p => p.ProductionScheduleTurnShift)
-                    .HasForeignKey(d => new { d.ProductionStepId, d.ScheduleTurnId, d.DepartmentId })
+                    .HasForeignKey(d => new { d.ProductionStepId, d.ProductionOrderId, d.DepartmentId })
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionScheduleTurnShift_ProductionAssignment");
             });
@@ -522,7 +507,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStepWorkInfo>(entity =>
             {
-                entity.HasKey(e => new { e.ProductionStepId, e.ScheduleTurnId })
+                entity.HasKey(e => new { e.ProductionStepId, e.ProductionOrderId })
                     .HasName("PK_ProductionAssignment_copy1");
 
                 entity.Property(e => e.MaxHour).HasColumnType("decimal(18, 5)");

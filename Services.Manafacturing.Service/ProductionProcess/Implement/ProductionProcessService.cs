@@ -122,10 +122,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        public async Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long scheduleTurnId)
+        public async Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long productionOrderId)
         {
-            var productOrderDetailIds = _manufacturingDBContext.ProductionSchedule
-                .Where(s => s.ScheduleTurnId == scheduleTurnId)
+            var productOrderDetailIds = _manufacturingDBContext.ProductionOrderDetail
+                .Where(s => s.ProductionOrderId == productionOrderId)
                 .Select(s => s.ProductionOrderDetailId)
                 .ToList();
 

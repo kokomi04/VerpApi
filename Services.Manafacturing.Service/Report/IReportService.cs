@@ -14,9 +14,9 @@ namespace VErp.Services.Manafacturing.Service.Report
         Task<IList<StepModel>> GetSteps(long fromDate, long toDate);
         Task<IList<StepProgressModel>> GetProductionProgressReport(long fromDate, long toDate, int[] stepIds);
         Task<ProductionOrderStepModel> GetProductionOrderStepProgress(long fromDate, long toDate);
-        Task<IList<ProductionScheduleReportModel>> GetProductionScheduleReport(long fromDate, long toDate);
-        Task<IList<ProcessingScheduleListModel>> GetProcessingScheduleList();
-        Task<IList<StepReportModel>> GetProcessingStepReport(long scheduleTurnId, int[] stepIds);
+        //Task<IList<ProductionReportModel>> GetProductionScheduleReport(long fromDate, long toDate);
+        //Task<IList<ProductionProcessingListModel>> GetProcessingScheduleList();
+        //Task<IList<StepReportModel>> GetProcessingStepReport(long scheduleTurnId, int[] stepIds);
         Task<IList<OutsourcePartRequestReportModel>> GetOursourcePartRequestReport(long fromDate, long toDate, long? productionOrderId);
         Task<PageData<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport(int page, int size, string orderByFieldName, bool asc, Clause filters);
     }

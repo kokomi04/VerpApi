@@ -17,19 +17,19 @@ namespace VErpApi.Controllers.Manufacturing.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]
-    public class InternalProductionScheduleController : CrossServiceBaseController
+    public class InternalProductionOrderController : CrossServiceBaseController
     {
-        private readonly IProductionScheduleService _productionScheduleService;
-        public InternalProductionScheduleController(IProductionScheduleService productionScheduleService)
+        private readonly IProductionOrderService _productionOrderService;
+        public InternalProductionOrderController(IProductionOrderService productionOrderService)
         {
-            _productionScheduleService = productionScheduleService;
+            _productionOrderService = productionOrderService;
         }
 
         [HttpPut]
-        [Route("{scheduleTurnId}/status")]
-        public async Task<bool> UpdateProductionScheduleStatus([FromRoute] long scheduleTurnId, [FromBody] ProductionScheduleStatusModel status)
+        [Route("{productionOrderId}/status")]
+        public async Task<bool> UpdateProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] ProductionOrderStatusModel status)
         {
-            return await _productionScheduleService.UpdateProductionScheduleStatus(scheduleTurnId, status);
+            return await _productionOrderService.UpdateProductionOrderStatus(productionOrderId, status);
         }
     }
 }

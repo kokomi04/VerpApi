@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public long ProductionConsumMaterialId { get; set; }
         public int DepartmentId { get; set; }
-        public long ScheduleTurnId { get; set; }
+        public long ProductionOrderId { get; set; }
         public long ProductionStepId { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }

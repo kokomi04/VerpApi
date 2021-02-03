@@ -34,10 +34,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("ScheduleTurn/{scheduleTurnId}")]
-        public async Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn([FromRoute] long scheduleTurnId)
+        [Route("ScheduleTurn/{productionOrderId}")]
+        public async Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn([FromRoute] long productionOrderId)
         {
-            return await _productionProcessService.GetProductionProcessByScheduleTurn(scheduleTurnId);
+            return await _productionProcessService.GetProductionProcessByScheduleTurn(productionOrderId);
         }
 
         [HttpGet]

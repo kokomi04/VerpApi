@@ -6,7 +6,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     public partial class ProductionHandover
     {
         public long ProductionHandoverId { get; set; }
-        public long ScheduleTurnId { get; set; }
+        public long ProductionOrderId { get; set; }
         public int FromDepartmentId { get; set; }
         public decimal HandoverQuantity { get; set; }
         public long ObjectId { get; set; }

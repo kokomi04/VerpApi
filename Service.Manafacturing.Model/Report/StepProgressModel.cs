@@ -12,15 +12,15 @@ namespace VErp.Services.Manafacturing.Model.Report
     {
         public int StepId { get; set; }
 
-        public IList<StepScheduleProgressModel> StepScheduleProgress { get; set; }
+        public IList<StepProductionOrderProgressModel> StepScheduleProgress { get; set; }
         public StepProgressModel()
         {
-            StepScheduleProgress = new List<StepScheduleProgressModel>();
+            StepScheduleProgress = new List<StepProductionOrderProgressModel>();
         }
 
     }
 
-    public class StepScheduleProgressModel
+    public class StepProductionOrderProgressModel
     {
         public string ProductionOrderCode { get; set; }
         public int[] ProductIds { get; set; }
@@ -28,7 +28,7 @@ namespace VErp.Services.Manafacturing.Model.Report
         public decimal ProgressPercent { get; set; }
         public IList<StepScheduleProgressDataModel> InputData { get; set; }
         public IList<StepScheduleProgressDataModel> OutputData { get; set; }
-        public StepScheduleProgressModel()
+        public StepProductionOrderProgressModel()
         {
             InputData = new List<StepScheduleProgressDataModel>();
             OutputData = new List<StepScheduleProgressDataModel>();
