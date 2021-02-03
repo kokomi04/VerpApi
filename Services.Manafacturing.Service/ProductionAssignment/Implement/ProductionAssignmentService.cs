@@ -51,16 +51,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         }
 
 
-        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long scheduleTurnId)
+        public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId)
         {
             return await _manufacturingDBContext.ProductionAssignment
                 .Include(a => a.ProductionAssignmentDetail)
-                .Where(a => a.ScheduleTurnId == scheduleTurnId)
+                .Where(a => a.ProductionOrderId == productionOrderId)
                 .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
 
-        public async Task<bool> UpdateProductionAssignment(long productionStepId, long scheduleTurnId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable)
+        public async Task<bool> UpdateProductionAssignment(long productionStepId, long productionOrderId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable)
         {
             // Validate
             var step = _manufacturingDBContext.ProductionStep
@@ -69,43 +69,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .Where(s => s.ProductionStepId == productionStepId)
                 .FirstOrDefault();
 
-            if (data.Any(a => a.ScheduleTurnId != scheduleTurnId || a.ProductionStepId != productionStepId))
+            if (data.Any(a => a.ProductionOrderId != productionOrderId || a.ProductionStepId != productionStepId))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin lượt kế hoạch hoặc công đoạn sản xuất giữa các tổ không khớp");
 
             if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
             if (data.Any(a => a.Productivity <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Năng suất không hợp lệ");
 
-            var productionSchedules = (
-                from s in _manufacturingDBContext.ProductionSchedule
-                join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
-                where s.ScheduleTurnId == scheduleTurnId
+            var productionOderDetails = (
+                from po in _manufacturingDBContext.ProductionOrder
+                join pod in _manufacturingDBContext.ProductionOrderDetail on po.ProductionOrderId equals pod.ProductionOrderId
+                where po.ProductionOrderId == productionOrderId
                 select new
                 {
-                    s.ProductionOrderDetailId,
-                    s.ProductionScheduleQuantity,
-                    od.ProductId,
-                    ProductionOrderQuantity = od.Quantity + od.ReserveQuantity,
-                    s.StartDate,
-                    s.EndDate
+                    pod.ProductionOrderDetailId,
+                    pod.ProductId,
+                    ProductionOrderQuantity = pod.Quantity + pod.ReserveQuantity,
+                    po.ProductionDate,
+                    po.FinishDate
                 }).ToList();
 
-            if (productionSchedules.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
+            if (productionOderDetails.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
 
-            var previousScheduleQuantities = (from s in _manufacturingDBContext.ProductionSchedule
-                                              join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
-                                              where s.ProductionOrderDetailId == productionSchedules[0].ProductionOrderDetailId && s.ScheduleTurnId < scheduleTurnId
-                                              select new
-                                              {
-                                                  ProductionOrderQuantity = od.Quantity + od.ReserveQuantity,
-                                                  s.ProductionScheduleQuantity
-                                              }).ToList();
-
-            var isFinal = previousScheduleQuantities.Sum(s => s.ProductionScheduleQuantity) + productionSchedules[0].ProductionScheduleQuantity >= productionSchedules[0].ProductionOrderQuantity;
-
-            var productionOrderDetailIds = productionSchedules.Select(s => s.ProductionOrderDetailId).ToList();
-
-            if (productionOrderDetailIds.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
+            var productionOrderDetailIds = productionOderDetails.Select(s => s.ProductionOrderDetailId).ToList();
 
             if (!_manufacturingDBContext.ProductionStepOrder
                 .Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
@@ -118,14 +104,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToDictionary(r => r.ProductionStepLinkDataId,
                 r =>
                 {
-                    if (isFinal)
-                    {
-                        return r.ProductionStepLinkData.Quantity - previousScheduleQuantities.Sum(s => Math.Round(r.ProductionStepLinkData.Quantity * s.ProductionScheduleQuantity / s.ProductionOrderQuantity.Value, 5));
-                    }
-                    else
-                    {
-                        return Math.Round(r.ProductionStepLinkData.Quantity * productionSchedules[0].ProductionScheduleQuantity / productionSchedules[0].ProductionOrderQuantity.Value, 5);
-                    }
+                    return Math.Round(r.ProductionStepLinkData.Quantity, 5);
                 });
 
             if (data.Any(d => d.AssignmentQuantity <= 0))
@@ -157,7 +136,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
                 .Include(a => a.ProductionAssignmentDetail)
-                .Where(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId)
+                .Where(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == productionStepId)
                 .ToList();
 
             var updateAssignments = new List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)>();
@@ -182,14 +161,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             // Validate khai báo chi phí
             var deleteAssignDepartmentIds = oldProductionAssignments.Select(a => a.DepartmentId).ToList();
             if (_manufacturingDBContext.ProductionScheduleTurnShift
-                .Any(s => s.ScheduleTurnId == scheduleTurnId && s.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
+                .Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
             }
 
             // Validate vật tư tiêu hao
             if (_manufacturingDBContext.ProductionConsumMaterial
-                .Any(m => m.ScheduleTurnId == scheduleTurnId && m.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(m.DepartmentId)))
+                .Any(m => m.ProductionOrderId == productionOrderId && m.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(m.DepartmentId)))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
             }
@@ -197,16 +176,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             // Validate tổ đã thực hiện sản xuất
             var parammeters = new SqlParameter[]
             {
-                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+                new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionCode", parammeters);
 
             var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
                 .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
                 .ToList();
 
             var handovers = _manufacturingDBContext.ProductionHandover
-                .Where(h => h.ScheduleTurnId == scheduleTurnId
+                .Where(h => h.ProductionOrderId == productionOrderId
                 && (h.FromProductionStepId == productionStepId || h.ToProductionStepId == productionStepId)
                 && h.Status != (int)EnumHandoverStatus.Rejected)
                 .ToList();
@@ -228,8 +207,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             try
             {
                 // Thêm thông tin thời gian biểu làm việc
-                var startDate = productionSchedules[0].StartDate;
-                var endDate = productionSchedules[0].EndDate;
+                var startDate = productionOderDetails[0].ProductionDate;
+                var endDate = productionOderDetails[0].FinishDate;
 
                 var startDateUnix = startDate.GetUnix();
                 var endDateUnix = endDate.GetUnix();
@@ -247,12 +226,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 // Thêm thông tin công việc
                 var productionStepWorkInfo = _manufacturingDBContext.ProductionStepWorkInfo
-                    .FirstOrDefault(w => w.ProductionStepId == productionStepId && w.ScheduleTurnId == scheduleTurnId);
+                    .FirstOrDefault(w => w.ProductionStepId == productionStepId && w.ProductionOrderId == productionOrderId);
                 if (productionStepWorkInfo == null)
                 {
                     productionStepWorkInfo = _mapper.Map<ProductionStepWorkInfo>(info);
                     productionStepWorkInfo.ProductionStepId = productionStepId;
-                    productionStepWorkInfo.ScheduleTurnId = scheduleTurnId;
+                    productionStepWorkInfo.ProductionOrderId = productionOrderId;
                     _manufacturingDBContext.ProductionStepWorkInfo.Add(productionStepWorkInfo);
                 }
                 else
@@ -283,7 +262,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
                 _manufacturingDBContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionStepId, $"Cập nhật phân công sản xuất cho nhóm kế hoạch {scheduleTurnId}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionStepId, $"Cập nhật phân công sản xuất cho nhóm kế hoạch {productionOrderId}", data.JsonSerialize());
 
                 return true;
             }
@@ -294,31 +273,28 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? scheduleTurnId, int page, int size, string orderByFieldName, bool asc)
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc)
         {
             var assignmentQuery = (
                 from a in _manufacturingDBContext.ProductionAssignment
-                join t in _manufacturingDBContext.ProductionSchedule on a.ScheduleTurnId equals t.ScheduleTurnId
                 join s in _manufacturingDBContext.ProductionStep.Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder) on a.ProductionStepId equals s.ProductionStepId
-                join o in _manufacturingDBContext.ProductionOrder on s.ContainerId equals o.ProductionOrderId
-                join od in _manufacturingDBContext.ProductionOrderDetail on t.ProductionOrderDetailId equals od.ProductionOrderDetailId
+                join o in _manufacturingDBContext.ProductionOrder on a.ProductionOrderId equals o.ProductionOrderId
+                join od in _manufacturingDBContext.ProductionOrderDetail on o.ProductionOrderId equals od.ProductionOrderId
                 where a.DepartmentId == departmentId
                 select new
                 {
-                    a.ScheduleTurnId,
                     o.ProductionOrderId,
                     o.ProductionOrderCode,
                     od.OrderDetailId,
                     od.ProductId,
-                    t.StartDate,
-                    t.EndDate,
-                    t.ProductionScheduleStatus,
-                    t.ProductionScheduleQuantity
+                    o.ProductionDate,
+                    o.FinishDate,
+                    TotalQuantity = od.Quantity + od.ReserveQuantity
                 })
                 .Distinct();
-            if (scheduleTurnId.HasValue)
+            if (productionOrderId.HasValue)
             {
-                assignmentQuery = assignmentQuery.Where(a => a.ScheduleTurnId == scheduleTurnId);
+                assignmentQuery = assignmentQuery.Where(a => a.ProductionOrderId == productionOrderId);
             }
 
             var total = await assignmentQuery.CountAsync();
@@ -331,37 +307,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             return (pagedData.Select(d => new DepartmentProductionAssignmentModel()
             {
-                ScheduleTurnId = d.ScheduleTurnId,
                 ProductionOrderId = d.ProductionOrderId,
                 ProductionOrderCode = d.ProductionOrderCode,
                 OrderDetailId = d.OrderDetailId,
                 ProductId = d.ProductId,
-                StartDate = d.StartDate.GetUnix(),
-                EndDate = d.EndDate.GetUnix(),
-                ProductionScheduleStatus = (EnumScheduleStatus)d.ProductionScheduleStatus,
-                ProductionScheduleQuantity = d.ProductionScheduleQuantity
+                StartDate = d.ProductionDate.GetUnix(),
+                EndDate = d.FinishDate.Value.GetUnix(),
+                ProductionScheduleQuantity = d.TotalQuantity.Value
             }).ToList(), total);
         }
 
-        public async Task<CapacityOutputModel> GetCapacityDepartments(long scheduleTurnId, long productionStepId, long startDate, long endDate)
+        public async Task<CapacityOutputModel> GetCapacityDepartments(long productionOrderId, long productionStepId, long startDate, long endDate)
         {
             var startDateTime = startDate.UnixToDateTime();
             var endDateTime = endDate.UnixToDateTime();
 
-            var scheduleTime = await (
-                from s in _manufacturingDBContext.ProductionSchedule
-                join od in _manufacturingDBContext.ProductionOrderDetail on s.ProductionOrderDetailId equals od.ProductionOrderDetailId
-                where s.ScheduleTurnId == scheduleTurnId
+            var productionTime = await (
+                from o in _manufacturingDBContext.ProductionOrder
+                where o.ProductionOrderId == productionOrderId
                 select new
                 {
-                    s.StartDate,
-                    s.EndDate
+                    StartDate = o.ProductionDate,
+                    EndDate = o.FinishDate.Value
                 }).FirstOrDefaultAsync();
 
-            if (scheduleTime == null)
+            if (productionTime == null)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
 
-            if (startDateTime < scheduleTime.StartDate || endDateTime > scheduleTime.EndDate || startDateTime > endDateTime)
+            if (startDateTime < productionTime.StartDate || endDateTime > productionTime.EndDate || startDateTime > endDateTime)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian sản xuất công đoạn không hợp lệ");
 
             var productionStep = _manufacturingDBContext.ProductionStep
@@ -379,7 +352,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var includeAssignments = await _manufacturingDBContext.ProductionAssignment
                 .Where(a => a.ProductionStepId == productionStepId
-                    && a.ScheduleTurnId == scheduleTurnId
+                    && a.ProductionOrderId == productionOrderId
                     && !departmentIds.Contains(a.DepartmentId)
                 )
                 .Select(a => a.DepartmentId)
@@ -396,14 +369,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await (
                 from a in _manufacturingDBContext.ProductionAssignment
                 where departmentIds.Contains(a.DepartmentId)
-                    && (a.ProductionStepId != productionStepId || a.ScheduleTurnId != scheduleTurnId)
+                    && (a.ProductionStepId != productionStepId || a.ProductionOrderId != productionOrderId)
                     && a.StartDate <= endDateTime
                     && a.EndDate >= startDateTime
                 join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
                 join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
                 join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                 join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
-                join ad in _manufacturingDBContext.ProductionAssignmentDetail on new { a.ScheduleTurnId, a.ProductionStepId, a.DepartmentId } equals new { ad.ScheduleTurnId, ad.ProductionStepId, ad.DepartmentId } into ads
+                join ad in _manufacturingDBContext.ProductionAssignmentDetail on new { a.ProductionOrderId, a.ProductionStepId, a.DepartmentId } equals new { ad.ProductionOrderId, ad.ProductionStepId, ad.DepartmentId } into ads
                 from ad in ads.DefaultIfEmpty()
                 select new
                 {
@@ -495,32 +468,30 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             DateTime startDateTime = startDate.UnixToDateTime().GetValueOrDefault();
             DateTime endDateTime = endDate.UnixToDateTime().GetValueOrDefault();
 
-            var allScheduleTurns = _manufacturingDBContext.ProductionSchedule
-                .Where(s => s.ProductionScheduleStatus != (int)EnumScheduleStatus.Finished && s.StartDate <= endDateTime && s.EndDate >= startDateTime)
-                .Join(_manufacturingDBContext.ProductionOrderDetail, s => s.ProductionOrderDetailId, od => od.ProductionOrderDetailId, (s, od) => new
+            var allProductionOrders = _manufacturingDBContext.ProductionOrder
+                .Where(o => o.ProductionDate <= endDateTime && o.FinishDate >= startDateTime)
+                .Join(_manufacturingDBContext.ProductionOrderDetail, o => o.ProductionOrderId, od => od.ProductionOrderId, (o, od) => new
                 {
-                    s.ScheduleTurnId,
-                    s.ProductionScheduleQuantity,
+                    o.ProductionOrderId,
                     ProductionOrderQuantity = od.Quantity.GetValueOrDefault() + od.ReserveQuantity.GetValueOrDefault(),
-                    s.StartDate,
-                    s.EndDate
+                    StartDate = o.ProductionDate,
+                    EndDate = o.FinishDate.Value
                 })
                 .Select(s => new
                 {
-                    s.ScheduleTurnId,
-                    s.ProductionScheduleQuantity,
+                    s.ProductionOrderId,
                     s.ProductionOrderQuantity,
                     s.StartDate,
                     s.EndDate
                 })
                 .ToList()
-                .GroupBy(s => s.ScheduleTurnId)
+                .GroupBy(s => s.ProductionOrderId)
                 .ToDictionary(g => g.Key, g => g.First());
 
-            var scheduleTurnIds = allScheduleTurns.Select(s => s.Key).ToList();
+            var productionOrderIds = allProductionOrders.Select(s => s.Key).ToList();
             var allAssignments = (
                 from a in _manufacturingDBContext.ProductionAssignment
-                where scheduleTurnIds.Contains(a.ScheduleTurnId)
+                where productionOrderIds.Contains(a.ProductionOrderId)
                 join d in _manufacturingDBContext.ProductionStepLinkData
                 on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
                 join r in _manufacturingDBContext.ProductionStepLinkDataRole
@@ -532,7 +503,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     a.ProductionStepId,
                     a.DepartmentId,
                     a.AssignmentQuantity,
-                    a.ScheduleTurnId,
+                    a.ProductionOrderId,
                     a.Productivity,
                     d.ObjectId,
                     d.ObjectTypeId,
@@ -543,7 +514,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     a.ProductionStepId,
                     a.DepartmentId,
                     a.AssignmentQuantity,
-                    a.ScheduleTurnId,
+                    a.ProductionOrderId,
                     a.Productivity,
                     a.ObjectId,
                     a.ObjectTypeId,
@@ -553,7 +524,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     g.Key.ProductionStepId,
                     g.Key.DepartmentId,
                     g.Key.AssignmentQuantity,
-                    g.Key.ScheduleTurnId,
+                    g.Key.ProductionOrderId,
                     g.Key.Productivity,
                     g.Key.ObjectId,
                     g.Key.ObjectTypeId,
@@ -572,29 +543,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (workloadMap.Count < productionStepIds.Count) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất chưa thiết lập khối lượng công việc");
 
             var handovers = _manufacturingDBContext.ProductionHandover
-                .Where(h => scheduleTurnIds.Contains(h.ScheduleTurnId) && departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
+                .Where(h => productionOrderIds.Contains(h.ProductionOrderId) && departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
                 .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
                 .ToList();
 
-            var capacityDepartments = departmentIds.ToDictionary(d => d, d => scheduleTurnIds.ToDictionary(s => s, s => (decimal)0));
+            var capacityDepartments = departmentIds.ToDictionary(d => d, d => productionOrderIds.ToDictionary(s => s, s => (decimal)0));
 
-            foreach (var scheduleTurnId in scheduleTurnIds)
+            foreach (var productionOrderId in productionOrderIds)
             {
-                var scheduleAssignments = allAssignments.Where(a => a.ScheduleTurnId == scheduleTurnId).ToList();
-                if (scheduleAssignments.Count == 0) continue;
+                var productionOrderAssignments = allAssignments.Where(a => a.ProductionOrderId == productionOrderId).ToList();
+                if (productionOrderAssignments.Count == 0) continue;
                 var parammeters = new SqlParameter[]
                 {
-                    new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+                    new SqlParameter("@ProductionOrderId", productionOrderId)
                 };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
                 var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList();
 
-                var scheduleDays = allScheduleTurns[scheduleTurnId].EndDate.Subtract(allScheduleTurns[scheduleTurnId].StartDate).TotalDays + 1;
+                var scheduleDays = allProductionOrders[productionOrderId].EndDate.Subtract(allProductionOrders[productionOrderId].StartDate).TotalDays + 1;
 
-                foreach (var assignment in scheduleAssignments)
+                foreach (var assignment in productionOrderAssignments)
                 {
                     var totalAssignQuantity = assignment.AssignmentQuantity * assignment.TotalQuantity / assignment.Quantity;
 
@@ -609,19 +580,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                     if (totalAssignQuantity <= handoverQuantity + inputInventoryQuantity) continue;
 
-                    var startMax = startDateTime > allScheduleTurns[assignment.ScheduleTurnId].StartDate ? startDateTime : allScheduleTurns[assignment.ScheduleTurnId].StartDate;
-                    var endMin = endDateTime < allScheduleTurns[assignment.ScheduleTurnId].EndDate ? endDateTime : allScheduleTurns[assignment.ScheduleTurnId].EndDate;
+                    var startMax = startDateTime > allProductionOrders[assignment.ProductionOrderId].StartDate ? startDateTime : allProductionOrders[assignment.ProductionOrderId].StartDate;
+                    var endMin = endDateTime < allProductionOrders[assignment.ProductionOrderId].EndDate ? endDateTime : allProductionOrders[assignment.ProductionOrderId].EndDate;
                     var matchDays = endMin.Subtract(startMax).TotalDays + 1;
 
                     var workload = (workloadMap[assignment.ProductionStepId]
-                        * allScheduleTurns[assignment.ScheduleTurnId].ProductionScheduleQuantity
                         * Convert.ToDecimal(matchDays / scheduleDays)
                         * (totalAssignQuantity - handoverQuantity - inputInventoryQuantity))
-                        / (allScheduleTurns[assignment.ScheduleTurnId].ProductionOrderQuantity
-                        * assignment.Productivity
+                        / (assignment.Productivity
                         * totalAssignQuantity);
 
-                    capacityDepartments[assignment.DepartmentId][scheduleTurnId] += workload;
+                    capacityDepartments[assignment.DepartmentId][productionOrderId] += workload;
                 }
             }
 
@@ -629,7 +598,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                             .SelectMany(x => x.Value.Select(y => new CapacityDepartmentChartsModel
                                             {
                                                 DepartmentId = x.Key,
-                                                ScheduleTurnId = y.Key,
+                                                ProductionOrderId = y.Key,
                                                 Capacity = y.Value
                                             })).ToList();
 
@@ -655,10 +624,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 });
         }
 
-        public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long scheduleTurnId)
+        public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId)
         {
             return await _manufacturingDBContext.ProductionStepWorkInfo
-                .Where(w => w.ScheduleTurnId == scheduleTurnId)
+                .Where(w => w.ProductionOrderId == productionOrderId)
                 .ProjectTo<ProductionStepWorkInfoOutputModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }

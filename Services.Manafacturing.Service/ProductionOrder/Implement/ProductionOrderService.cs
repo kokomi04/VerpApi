@@ -268,25 +268,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         _manufacturingDBContext.ProductionOrderDetail.Add(entity);
                     }
                 }
-                // Xóa
-                // Validate lịch sản xuất
-                var delIds = oldDetail.Select(od => od.ProductionOrderDetailId).ToList();
-                var hasScheduleDetailIds = _manufacturingDBContext.ProductionSchedule
-                    .Where(sc => delIds.Contains(sc.ProductionOrderDetailId))
-                    .Select(sc => sc.ProductionOrderDetailId)
-                    .Distinct()
-                    .ToList();
-                if (hasScheduleDetailIds.Count > 0)
-                {
-                    var productIds = oldDetail
-                        .Where(od => hasScheduleDetailIds.Contains(od.ProductionOrderDetailId))
-                        .Select(od => od.ProductId)
-                        .ToList();
-                    var products = (await _productHelperService.GetListProducts(productIds)).Select(p => p.ProductCode).ToList();
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại lịch sản xuất các mặt hàng: {string.Join(",", products)}");
-                }
 
                 // Xóa quy trình sản xuất
+                var delIds = oldDetail.Select(od => od.ProductionOrderDetailId).ToList();
                 var stepOrders = _manufacturingDBContext.ProductionStepOrder.Where(so => delIds.Contains(so.ProductionOrderDetailId)).ToList();
                 // Check gộp quy trình
                 var stepIds = stepOrders.Select(so => so.ProductionStepId).Distinct().ToList();
@@ -347,22 +331,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 var detail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
 
-                // Validate lịch sản xuất
                 var delIds = detail.Select(od => od.ProductionOrderDetailId).ToList();
-                var hasScheduleDetailIds = _manufacturingDBContext.ProductionSchedule
-                    .Where(sc => delIds.Contains(sc.ProductionOrderDetailId))
-                    .Select(sc => sc.ProductionOrderDetailId)
-                    .Distinct()
-                    .ToList();
-                if (hasScheduleDetailIds.Count > 0)
-                {
-                    var productIds = detail
-                        .Where(od => hasScheduleDetailIds.Contains(od.ProductionOrderDetailId))
-                        .Select(od => od.ProductId)
-                        .ToList();
-                    var products = (await _productHelperService.GetListProducts(productIds)).Select(p => p.ProductCode).ToList();
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại lịch sản xuất các mặt hàng: {string.Join(",", products)}");
-                }
                 // Xóa quy trình sản xuất
                 var stepOrders = _manufacturingDBContext.ProductionStepOrder.Where(so => delIds.Contains(so.ProductionOrderDetailId)).ToList();
                 var stepIds = stepOrders.Select(so => so.ProductionStepId).Distinct().ToList();

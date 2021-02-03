@@ -11,9 +11,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class ProductionScheduleTurnShiftModel : IMapFrom<ProductionScheduleTurnShift>
     {
         public long? ProductionScheduleTurnShiftId { get; set; }
-        //public int DepartmentId { get; set; }
-        //public int ScheduleTurnId { get; set; }
-        //public long ProductionStepId { get; set; }
         public long? FromDate { get; set; }
         public long? ToDate { get; set; }
         public decimal? Hours { get; set; }

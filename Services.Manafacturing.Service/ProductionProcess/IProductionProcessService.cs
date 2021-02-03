@@ -14,7 +14,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
     {
         Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
 
-        Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long scheduleTurnId);
+        Task<ProductionProcessInfo> GetProductionProcessByScheduleTurn(long productionOrderId);
         Task<ProductionProcessModel> GetProductionProcessByContainerId(EnumContainerType containerTypeId, long containerId);
         Task<ProductionStepInfo> GetProductionStepById(long productionStepId);
         Task<bool> UpdateProductionStepById(long productionStepId, ProductionStepInfo req);

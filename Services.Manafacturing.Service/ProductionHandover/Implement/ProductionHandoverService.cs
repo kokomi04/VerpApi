@@ -46,9 +46,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _mapper = mapper;
         }
 
-        public async Task<ProductionHandoverModel> ConfirmProductionHandover(long scheduleTurnId, long productionHandoverId, EnumHandoverStatus status)
+        public async Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status)
         {
-            var productionHandover = _manufacturingDBContext.ProductionHandover.FirstOrDefault(ho => ho.ScheduleTurnId == scheduleTurnId && ho.ProductionHandoverId == productionHandoverId);
+            var productionHandover = _manufacturingDBContext.ProductionHandover.FirstOrDefault(ho => ho.ProductionOrderId == productionOrderId && ho.ProductionHandoverId == productionHandoverId);
             if (productionHandover == null) throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
             if (productionHandover.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
             try
@@ -65,17 +65,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
-        public async Task<ProductionHandoverModel> CreateProductionHandover(long scheduleTurnId, ProductionHandoverInputModel data)
+        public async Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data)
         {
             try
             {
-                if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.FromProductionStepId && a.DepartmentId == data.FromDepartmentId && a.ScheduleTurnId == scheduleTurnId))
+                if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.FromProductionStepId && a.DepartmentId == data.FromDepartmentId && a.ProductionOrderId == productionOrderId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phân công công việc cho tổ bàn giao");
-                if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.ToProductionStepId && a.DepartmentId == data.ToDepartmentId && a.ScheduleTurnId == scheduleTurnId))
+                if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.ToProductionStepId && a.DepartmentId == data.ToDepartmentId && a.ProductionOrderId == productionOrderId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phân công công việc cho tổ được bàn giao");
                 var productionHandover = _mapper.Map<ProductionHandoverEntity>(data);
                 productionHandover.Status = (int)EnumHandoverStatus.Waiting;
-                productionHandover.ScheduleTurnId = scheduleTurnId;
+                productionHandover.ProductionOrderId = productionOrderId;
                 _manufacturingDBContext.ProductionHandover.Add(productionHandover);
                 _manufacturingDBContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandover.ProductionHandoverId, $"Tạo bàn giao công việc / yêu cầu xuất kho", data.JsonSerialize());
@@ -88,21 +88,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
-        public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long scheduleTurnId)
+        public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId)
         {
             return await _manufacturingDBContext.ProductionHandover
-                .Where(h => h.ScheduleTurnId == scheduleTurnId)
+                .Where(h => h.ProductionOrderId == productionOrderId)
                 .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
         }
-        public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements(long scheduleTurnId)
+        public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements(long productionOrderId)
         {
             var parammeters = new SqlParameter[]
             {
-                new SqlParameter("@ScheduleTurnId", scheduleTurnId)
+                new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByScheduleTurn", parammeters);
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
             return resultData.ConvertData<ProductionInventoryRequirementEntity>()
                 .AsQueryable()
@@ -145,7 +145,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var sql = new StringBuilder(
                 @";WITH tmp AS (
-                    SELECT v1.ScheduleTurnId, v1.ProductionStepId
+                    SELECT v1.ProductionOrderId, v1.ProductionStepId
                     FROM(
                         SELECT * FROM vProductionDepartmentHandover v");
 
@@ -158,13 +158,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 totalSql.Append(" WHERE ");
                 totalSql.Append(whereCondition);
-                totalSql.Append(" GROUP BY v.ScheduleTurnId, v.ProductionStepId ) g");
+                totalSql.Append(" GROUP BY v.ProductionOrderId, v.ProductionStepId ) g");
                 sql.Append(" WHERE ");
                 sql.Append(whereCondition);
                 sql.Append(
                     @") v1
-	                GROUP BY v1.ScheduleTurnId, v1.ProductionStepId
-                    ORDER BY v1.ScheduleTurnId, v1.ProductionStepId");
+	                GROUP BY v1.ProductionOrderId, v1.ProductionStepId
+                    ORDER BY v1.ProductionOrderId, v1.ProductionStepId");
             }
           
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
@@ -182,7 +182,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
             sql.Append(@")
                 SELECT v.* FROM tmp t
-                INNER JOIN vProductionDepartmentHandover v ON t.ScheduleTurnId = v.ScheduleTurnId AND t.ProductionStepId = v.ProductionStepId");
+                INNER JOIN vProductionDepartmentHandover v ON t.ProductionOrderId = v.ScheduleTurnId AND t.ProductionStepId = v.ProductionStepId");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<DepartmentHandoverEntity>().AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
