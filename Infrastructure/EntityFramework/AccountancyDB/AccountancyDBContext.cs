@@ -15,7 +15,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
-        //public virtual DbSet<InputAction> InputAction { get; set; }
+        public virtual DbSet<CalcPeriod> CalcPeriod { get; set; }
+        public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
@@ -34,6 +35,13 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CalcPeriod>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(512);
+            });
+
             modelBuilder.Entity<InputAction>(entity =>
             {
                 entity.Property(e => e.IconName).HasMaxLength(25);

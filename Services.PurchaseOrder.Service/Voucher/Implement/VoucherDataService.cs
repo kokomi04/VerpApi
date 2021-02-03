@@ -2240,8 +2240,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                    new SqlParameter("@FromDate",  EnumDataType.Date.GetSqlValue(fromDate?.UnixToDateTime())),
                    new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate?.UnixToDateTime())),
                    new SqlParameter("@IsCreatedPurchasingRequest", EnumDataType.Boolean.GetSqlValue(isCreatedPurchasingRequest)),
-                   new SqlParameter("@Page",page),
-                   new SqlParameter("@Size",size),
+                   new SqlParameter("@Page", page),
+                   new SqlParameter("@Size", size),
                    total
                 });
 

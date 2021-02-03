@@ -30,35 +30,31 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.Inventory.StockId)))
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.Inventory.StockId));
+            await ValidateInventoryCode(inventoryId, req.Inventory.InventoryCode);
+
+            using var trans = await _stockDbContext.Database.BeginTransactionAsync();
+            try
             {
-                await ValidateInventoryCode(inventoryId, req.Inventory.InventoryCode);
+                var data = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req);
 
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                foreach (var changedInventoryId in data)
                 {
-                    try
-                    {
-                        var data = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req);
-
-                        foreach (var changedInventoryId in data)
-                        {
-                            await ReCalculateRemainingAfterUpdate(changedInventoryId);
-                        }
-
-                        trans.Commit();
-
-                        var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, messageLog, req.JsonSerialize());
-
-                        return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        trans.TryRollbackTransaction();
-                        _logger.LogError(ex, "ApprovedInputDataUpdate");
-                        throw;
-                    }
+                    await ReCalculateRemainingAfterUpdate(changedInventoryId);
                 }
+
+                trans.Commit();
+
+                var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
+                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, messageLog, req.JsonSerialize());
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "ApprovedInputDataUpdate");
+                throw;
             }
         }
 

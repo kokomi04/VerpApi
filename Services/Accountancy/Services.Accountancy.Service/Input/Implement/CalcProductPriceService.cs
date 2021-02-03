@@ -16,7 +16,9 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
@@ -30,6 +32,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ICalcPeriodService _calcPeriodService;
 
         public CalcProductPriceService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -38,6 +41,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
+            , ICalcPeriodService calcPeriodService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -46,6 +50,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
+            _calcPeriodService = calcPeriodService;
         }
 
         public async Task<CalcProductPriceGetTableOutput> CalcProductPriceTable(CalcProductPriceGetTableInput req)
@@ -161,5 +166,92 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 ).ConvertData();
 
         }
+
+        public Task<PageData<CalcPeriodListModel>> CalcProfitAndLossPeriods(string keyword, long? fromDate, long? toDate, int page, int? size)
+        {
+            return _calcPeriodService.GetList(EnumCalcPeriodType.CalcProfitAndLoss, keyword, fromDate, toDate, page, size);
+        }
+
+        public async Task<CalcProfitAndLossView> CalcProfitAndLossPeriodInfo(long calcPeriodId)
+        {
+            var info =  await _calcPeriodService.GetInfo(EnumCalcPeriodType.CalcProfitAndLoss, calcPeriodId);
+            return new CalcProfitAndLossView()
+            {
+                CalcPeriodInfo = info,
+                FilterData = info.FilterData.JsonDeserialize<CalcProfitAndLossInput>(),
+                OutputData = info.Data.JsonDeserialize<CalcProfitAndLossTableOutput>()
+            };
+        }
+
+        public async Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req)
+        {
+            var fDate = req.FromDate.UnixToDateTime();
+            var tDate = req.ToDate.UnixToDateTime();
+
+            var priceSellInDirectlySum = new SqlParameter("@PriceSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+            var costSellInDirectlySum = new SqlParameter("@CostSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+            var costManagerSum = new SqlParameter("@CostManagerSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+
+            if (!string.IsNullOrWhiteSpace(req.OrderCode))
+            {
+                req.IsByOrder = true;
+            }
+            if (!string.IsNullOrWhiteSpace(req.MaLsx))
+            {
+                req.IsByLsx = true;
+            }
+
+            var data = (await _accountancyDBContext.QueryDataTable(
+                "asp_CalcProfitAndLoss",
+                    new[] {
+                    new SqlParameter("@IsByLsx", SqlDbType.Decimal){ Value = req.IsByLsx},
+                    new SqlParameter("@IsByOrder", SqlDbType.Decimal){ Value = req.IsByOrder},
+
+                    new SqlParameter("@ProductId", SqlDbType.Int){ Value = req.ProductId.HasValue?req.ProductId.Value: (object)DBNull.Value},
+                    new SqlParameter("@OrderCode", SqlDbType.NVarChar){ Value = !string.IsNullOrWhiteSpace(req.OrderCode) ?req.OrderCode.Trim(): (object)DBNull.Value},
+                    new SqlParameter("@MaLsx", SqlDbType.NVarChar){ Value = !string.IsNullOrWhiteSpace(req.MaLsx) ?req.MaLsx.Trim(): (object)DBNull.Value},
+
+                    new SqlParameter("@FromDate", SqlDbType.DateTime2){ Value = fDate},
+                    new SqlParameter("@ToDate", SqlDbType.DateTime2){ Value = tDate},
+
+
+                    req.Custom_AllocationRate.ToDecimalKeyValueSqlParameter("@Custom_AllocationRate"),
+                    req.Custom_PriceSellDirectly.ToDecimalKeyValueSqlParameter("@Custom_PriceSellDirectly"),
+                    req.Custom_CostSellDirectly.ToDecimalKeyValueSqlParameter("@Custom_CostSellDirectly"),
+                    req.Custom_CostManagerDirectly.ToDecimalKeyValueSqlParameter("@Custom_CostManagerDirectly"),
+                    req.Custom_OtherFee.ToDecimalKeyValueSqlParameter("@Custom_OtherFee"),
+
+                    new SqlParameter("@PriceSellInDirectlyAllocationTypeId", SqlDbType.Int){ Value = req.PriceSellInDirectlyAllocationTypeId},
+                    req.PriceSellInDirectlySumCustom.ToSqlParameterValue("@PriceSellInDirectlySumCustom"),
+                    priceSellInDirectlySum,
+
+                    new SqlParameter("@CostSellInDirectlyAllocationTypeId", SqlDbType.Int){ Value = req.CostSellInDirectlyAllocationTypeId},
+                    req.CostSellInDirectlySumCustom.ToSqlParameterValue("@CostSellInDirectlySumCustom"),
+                    costSellInDirectlySum,
+
+                    new SqlParameter("@CostManagerAllowcationAllocationTypeId", SqlDbType.Int){ Value = req.CostManagerAllowcationAllocationTypeId},
+                    req.CostManagerSumCustom.ToSqlParameterValue("@CostManagerSumCustom"),
+                    costManagerSum,
+
+                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
+                ).ConvertData();
+
+            var result = new CalcProfitAndLossTableOutput()
+            {
+                Data = data,
+                PriceSellInDirectlySum = priceSellInDirectlySum.Value as decimal?,
+                CostSellInDirectlySum = costSellInDirectlySum.Value as decimal?,
+                CostManagerSum = costManagerSum.Value as decimal?
+            };
+
+            if (req.IsSave)
+            {
+                var calcPeriodId = await _calcPeriodService.Create(EnumCalcPeriodType.CalcProfitAndLoss, req.Title, req.Descirption, req.FromDate, req.ToDate, req, result);
+                result.CalcPeriodId = calcPeriodId;
+            }
+
+            return result;
+        }
+
     }
 }
