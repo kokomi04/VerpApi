@@ -56,7 +56,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
                                join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
                                join po in _manufacturingDBContext.ProductionOrder on pod.ProductionOrderId equals po.ProductionOrderId
-                               where po.ProductionDate <= toDateTime && po.FinishDate >= fromDateTime
+                               where po.StartDate <= toDateTime && po.EndDate >= fromDateTime
                                select s).Distinct().ProjectTo<StepModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             return steps;
@@ -71,7 +71,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                    join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
                                    join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
                                    join po in _manufacturingDBContext.ProductionOrder on pod.ProductionOrderId equals po.ProductionOrderId
-                                   where stepIds.Contains(ps.StepId.Value) && po.ProductionDate <= toDateTime && po.FinishDate >= fromDateTime
+                                   where stepIds.Contains(ps.StepId.Value) && po.StartDate <= toDateTime && po.EndDate >= fromDateTime
                                    select new
                                    {
                                        StepId = ps.StepId.Value,
@@ -227,7 +227,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                    join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
                                    join po in _manufacturingDBContext.ProductionOrder on pod.ProductionOrderId equals po.ProductionOrderId
                                    join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
-                                   where po.ProductionDate <= toDateTime && po.FinishDate >= fromDateTime
+                                   where po.StartDate <= toDateTime && po.EndDate >= fromDateTime
                                    select new
                                    {
                                        StepId = ps.StepId.Value,

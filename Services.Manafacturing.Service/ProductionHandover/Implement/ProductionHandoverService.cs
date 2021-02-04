@@ -144,7 +144,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var sql = new StringBuilder(
                 @";WITH tmp AS (
-                    SELECT v1.ProductionOrderId, v1.ProductionStepId
+                    SELECT g.ProductionOrderId, g.ProductionStepId
                     FROM(
                         SELECT * FROM vProductionDepartmentHandover v");
 
@@ -157,15 +157,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 totalSql.Append(" WHERE ");
                 totalSql.Append(whereCondition);
-                totalSql.Append(" GROUP BY v.ProductionOrderId, v.ProductionStepId ) g");
+               
                 sql.Append(" WHERE ");
                 sql.Append(whereCondition);
-                sql.Append(
-                    @") v1
-	                GROUP BY v1.ProductionOrderId, v1.ProductionStepId
-                    ORDER BY v1.ProductionOrderId, v1.ProductionStepId");
             }
-          
+
+            totalSql.Append(" GROUP BY v.ProductionOrderId, v.ProductionStepId ) g");
+            sql.Append(
+                    @") g
+	                GROUP BY g.ProductionOrderId, g.ProductionStepId
+                    ORDER BY g.ProductionOrderId, g.ProductionStepId");
+
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
             if (table != null && table.Rows.Count > 0)
