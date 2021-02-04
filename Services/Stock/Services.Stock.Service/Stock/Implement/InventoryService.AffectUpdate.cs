@@ -276,19 +276,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         if (obj.NewPrimaryQuantity >= 0)
                         {
+
                             //var primaryQualtity = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(obj.NewProductUnitConversionQuantity, productUnitConversionInfo.FactorExpression);
 
                             bool isSuccess = false;
                             decimal pucQuantity = 0;
 
-                            if (obj.OldPrimaryQuantity != 0)
-                            {
-                                (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity, obj.NewProductUnitConversionQuantity);
+                            //if (obj.OldPrimaryQuantity != 0)
+                            //{
+                            //    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity, obj.NewProductUnitConversionQuantity);
 
-                            }
-                            else
+                            //}
+                            //else
                             {
-                                (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity);
+                                if (obj.OldPrimaryQuantity.SubDecimal(obj.NewPrimaryQuantity) == 0)
+                                {
+                                    (isSuccess, pucQuantity) = (true, obj.OldProductUnitConversionQuantity);
+                                }
+                                else
+                                {
+                                    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity);
+                                }
                             }
 
                             if (isSuccess)
@@ -357,14 +365,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     decimal pucQuantity = 0;
 
 
-                                    if (c.OldTransferPrimaryQuantity != 0)
-                                    {
-                                        (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity, c.NewTransferProductUnitConversionQuantity);
+                                    //if (c.OldTransferPrimaryQuantity != 0)
+                                    //{
+                                    //    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity, c.NewTransferProductUnitConversionQuantity);
 
-                                    }
-                                    else
+                                    //}
+                                    //else
                                     {
-                                        (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity);
+                                        if (c.NewTransferPrimaryQuantity.SubDecimal(c.OldTransferPrimaryQuantity) == 0)
+                                        {
+                                            (isSuccess, pucQuantity) = (true, c.OldTransferProductUnitConversionQuantity);
+                                        }
+                                        else
+                                        {
+                                            (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity);
+                                        }
                                     }
 
 
