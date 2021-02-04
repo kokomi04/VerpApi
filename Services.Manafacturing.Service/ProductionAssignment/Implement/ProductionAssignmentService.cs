@@ -85,8 +85,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     pod.ProductionOrderDetailId,
                     pod.ProductId,
                     ProductionOrderQuantity = pod.Quantity + pod.ReserveQuantity,
-                    po.ProductionDate,
-                    po.FinishDate
+                    po.StartDate,
+                    po.EndDate
                 }).ToList();
 
             if (productionOderDetails.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
@@ -207,8 +207,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             try
             {
                 // Thêm thông tin thời gian biểu làm việc
-                var startDate = productionOderDetails[0].ProductionDate;
-                var endDate = productionOderDetails[0].FinishDate;
+                var startDate = productionOderDetails[0].StartDate;
+                var endDate = productionOderDetails[0].EndDate;
 
                 var startDateUnix = startDate.GetUnix();
                 var endDateUnix = endDate.GetUnix();
@@ -286,8 +286,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     o.ProductionOrderCode,
                     od.OrderDetailId,
                     od.ProductId,
-                    o.ProductionDate,
-                    o.FinishDate,
+                    o.StartDate,
+                    o.EndDate,
                     TotalQuantity = od.Quantity + od.ReserveQuantity
                 })
                 .Distinct();
@@ -310,8 +310,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 ProductionOrderCode = d.ProductionOrderCode,
                 OrderDetailId = d.OrderDetailId,
                 ProductId = d.ProductId,
-                StartDate = d.ProductionDate.GetUnix(),
-                EndDate = d.FinishDate.Value.GetUnix(),
+                StartDate = d.StartDate.GetUnix(),
+                EndDate = d.EndDate.GetUnix(),
                 ProductionScheduleQuantity = d.TotalQuantity.Value
             }).ToList(), total);
         }
@@ -326,8 +326,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 where o.ProductionOrderId == productionOrderId
                 select new
                 {
-                    StartDate = o.ProductionDate,
-                    EndDate = o.FinishDate.Value
+                    o.StartDate,
+                    o.EndDate
                 }).FirstOrDefaultAsync();
 
             if (productionTime == null)
@@ -468,13 +468,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             DateTime endDateTime = endDate.UnixToDateTime().GetValueOrDefault();
 
             var allProductionOrders = _manufacturingDBContext.ProductionOrder
-                .Where(o => o.ProductionDate <= endDateTime && o.FinishDate >= startDateTime)
+                .Where(o => o.StartDate <= endDateTime && o.EndDate >= startDateTime)
                 .Join(_manufacturingDBContext.ProductionOrderDetail, o => o.ProductionOrderId, od => od.ProductionOrderId, (o, od) => new
                 {
                     o.ProductionOrderId,
                     ProductionOrderQuantity = od.Quantity.GetValueOrDefault() + od.ReserveQuantity.GetValueOrDefault(),
-                    StartDate = o.ProductionDate,
-                    EndDate = o.FinishDate.Value
+                    o.StartDate,
+                    o.EndDate
                 })
                 .Select(s => new
                 {

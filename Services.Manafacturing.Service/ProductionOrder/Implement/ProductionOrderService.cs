@@ -78,24 +78,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
             }
 
-            var sql = new StringBuilder("SELECT * FROM vProductionOrderDetail v ");
-            var totalSql = new StringBuilder("SELECT COUNT(v.ProductionOrderDetailId) Total FROM vProductionOrderDetail v ");
+            var sql = new StringBuilder(
+                @";WITH tmp AS (
+                    SELECT g.ProductionOrderId
+                    FROM(
+                        SELECT * FROM vProductionOrderDetail v");
+
+            var totalSql = new StringBuilder(
+                @"SELECT 
+                    COUNT(*) Total 
+                FROM (
+                    SELECT v.ProductionOrderId FROM vProductionOrderDetail v ");
+
             if (whereCondition.Length > 0)
             {
-                totalSql.Append("WHERE ");
+                totalSql.Append(" WHERE ");
                 totalSql.Append(whereCondition);
-                sql.Append("WHERE ");
+
+                sql.Append(" WHERE ");
                 sql.Append(whereCondition);
             }
-            if (string.IsNullOrEmpty(orderByFieldName))
-            {
-                orderByFieldName = "ProductionDate";
-                asc = false;
-            }
-            sql.Append($" ORDER BY v.[{orderByFieldName}] {(asc ? "" : "DESC")}");
+            totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
+            sql.Append(
+                   @") g
+	                GROUP BY g.ProductionOrderId
+                    ORDER BY g.ProductionOrderId ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
-
             var total = 0;
             if (table != null && table.Rows.Count > 0)
             {
@@ -108,6 +117,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 FETCH NEXT { size}
                 ROWS ONLY");
             }
+            sql.Append(@")
+                SELECT v.* FROM tmp t
+                INNER JOIN vProductionOrderDetail v ON t.ProductionOrderId = v.ProductionOrderId ");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
@@ -174,10 +186,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (data.StartDate <= 0 || data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu, ngày kết thúc sản xuất.");
+
                 CustomGenCodeOutputModel currentConfig = null;
                 if (string.IsNullOrEmpty(data.ProductionOrderCode))
                 {
-                    currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0, null, data.ProductionOrderCode, data.ProductionDate);
+                    currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0, null, data.ProductionOrderCode, data.StartDate);
                     if (currentConfig == null)
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
@@ -187,7 +201,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderCode, data.ProductionDate);
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderCode, data.StartDate);
                         if (generated == null)
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
@@ -242,6 +256,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (data.StartDate <= 0 || data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu, ngày kết thúc sản xuất.");
+
                 var productionOrder = _manufacturingDBContext.ProductionOrder
                     .Where(o => o.ProductionOrderId == productionOrderId)
                     .FirstOrDefault();
@@ -402,9 +418,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .Select(x => new ProductOrderModel
                 {
                     Description = x.Description,
-                    FinishDate = x.FinishDate.GetUnix(),
+                    EndDate = x.EndDate.GetUnix(),
                     IsDraft = x.IsDraft,
-                    ProductionDate = x.ProductionDate.GetUnix(),
+                    StartDate = x.StartDate.GetUnix(),
                     ProductionOrderCode = x.ProductionOrderCode,
                     ProductionOrderId = x.ProductionOrderId
                 })
