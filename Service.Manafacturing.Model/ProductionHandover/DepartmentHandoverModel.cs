@@ -15,7 +15,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string ProductionOrderCode { get; set; }
         public long ProductionDate { get; set; }
         public long FinishDate { get; set; }
-        public string ScheduleCode { get; set; }
         public long ProductionOrderId { get; set; }
         public int ProductId { get; set; }
         public string ProductTitle { get; set; }
@@ -41,7 +40,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string ProductionOrderCode { get; set; }
         public DateTime ProductionDate { get; set; }
         public DateTime FinishDate { get; set; }
-        public string ScheduleCode { get; set; }
         public long ProductionOrderId { get; set; }
         public int ProductId { get; set; }
         public string ProductTitle { get; set; }
