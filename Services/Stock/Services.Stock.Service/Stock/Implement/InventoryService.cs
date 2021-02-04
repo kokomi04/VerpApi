@@ -1894,7 +1894,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var totalOut = samPackages.Sum(d => d.PrimaryQuantity);
                 var isEnough = totalOut < fromPackageInfo.PrimaryQuantityRemaining;
 
-                errorMessage += $" {(isEnough ? ">=" : "<")} {totalOut.Format()} {primaryUnit.ProductUnitConversionName} ";
+                errorMessage += $" {(isEnough ? ">=" : "<")} {totalOut.Format()} {primaryUnit?.ProductUnitConversionName} ";
                 if (!isEnough)
                 {
                     errorMessage += " không đủ để xuất";
