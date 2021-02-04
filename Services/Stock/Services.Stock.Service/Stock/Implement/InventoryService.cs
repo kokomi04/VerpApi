@@ -688,7 +688,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!processInventoryOut.Code.IsSuccess())
                 {
-                    throw new BadRequestException(processInventoryOut.Code);
+                    throw new BadRequestException(processInventoryOut.Code, processInventoryOut.Message);
                 }
 
                 var totalMoney = InputCalTotalMoney(processInventoryOut.Data);
@@ -907,7 +907,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         if (!processInventoryOut.Code.IsSuccess())
                         {
                             trans.Rollback();
-                            throw new BadRequestException(processInventoryOut.Code);
+                            throw new BadRequestException(processInventoryOut.Code, processInventoryOut.Message);
                         }
                         await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
 
@@ -1886,10 +1886,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
                 }
 
+                var primaryUnit = productUnitConversions.FirstOrDefault(c => c.IsDefault && c.ProductId == productInfo.ProductId);
+
+                var errorMessage =  $"Số dư trong kiện {fromPackageInfo.PackageCode} mặt hàng {productInfo.ProductCode} ({fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}) ";
+                var samPackages = req.OutProducts.Where(d => d.FromPackageId == details.FromPackageId);
+
+                var totalOut = samPackages.Sum(d => d.PrimaryQuantity);
+                var isEnough = totalOut < fromPackageInfo.PrimaryQuantityRemaining;
+
+                errorMessage += $" {(isEnough ? ">=" : "<")} {totalOut.Format()} {primaryUnit.ProductUnitConversionName} ";
+                if (!isEnough)
+                {
+                    errorMessage += " không đủ để xuất";
+                }
+
                 if (fromPackageInfo.PrimaryQuantityRemaining == 0 || fromPackageInfo.ProductUnitConversionRemaining == 0)
                 {
                     _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , packageId: {fromPackageInfo.PackageId} PrimaryQuantityRemaining: {fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}, req: {req.JsonSerialize()} ");
-                    return InventoryErrorCode.NotEnoughQuantity;
+
+                    return (InventoryErrorCode.NotEnoughQuantity, errorMessage);
                 }
 
                 //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
@@ -1931,7 +1946,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (primaryQualtity > fromPackageInfo.PrimaryQuantityRemaining)
                 {
                     _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {details.ProductId} , ProductUnitConversionQuantity: {details.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
-                    return InventoryErrorCode.NotEnoughQuantity;
+
+                    return (InventoryErrorCode.NotEnoughQuantity, errorMessage);
                 }
 
                 inventoryDetailList.Add(new InventoryDetail
