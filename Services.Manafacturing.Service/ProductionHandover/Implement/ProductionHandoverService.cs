@@ -121,7 +121,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 whereCondition.Append("(v.OrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductionOrderCode LIKE @Keyword ");
-                whereCondition.Append("OR v.ScheduleCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductTitle LIKE @Keyword ");
                 whereCondition.Append("OR v.StepName LIKE @Keyword ");
                 whereCondition.Append("OR v.Material LIKE @Keyword ");
@@ -153,7 +152,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 @"SELECT 
                     COUNT(*) Total 
                 FROM (
-                    SELECT v.ScheduleTurnId, v.ProductionStepId FROM vProductionDepartmentHandover v ");
+                    SELECT v.ProductionOrderId, v.ProductionStepId FROM vProductionDepartmentHandover v ");
             if (whereCondition.Length > 0)
             {
                 totalSql.Append(" WHERE ");
@@ -182,13 +181,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
             sql.Append(@")
                 SELECT v.* FROM tmp t
-                INNER JOIN vProductionDepartmentHandover v ON t.ProductionOrderId = v.ScheduleTurnId AND t.ProductionStepId = v.ProductionStepId");
+                INNER JOIN vProductionDepartmentHandover v ON t.ProductionOrderId = v.ProductionOrderId AND t.ProductionStepId = v.ProductionStepId");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<DepartmentHandoverEntity>().AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
         }
-
     }
 }

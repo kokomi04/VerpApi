@@ -594,12 +594,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
             var capacityDepartmentArray = capacityDepartments
-                                            .SelectMany(x => x.Value.Select(y => new CapacityDepartmentChartsModel
-                                            {
-                                                DepartmentId = x.Key,
-                                                ProductionOrderId = y.Key,
-                                                Capacity = y.Value
-                                            })).ToList();
+                .SelectMany(x => x.Value.Select(y => new CapacityDepartmentChartsModel
+                {
+                    DepartmentId = x.Key,
+                    ProductionOrderId = y.Key,
+                    Capacity = y.Value
+                })).ToList();
 
             return capacityDepartmentArray;
         }
