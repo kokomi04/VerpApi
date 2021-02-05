@@ -920,7 +920,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
             var singleFields = voucherAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
-            infoSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
+            infoSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherTypeId = {voucherTypeId} AND VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
             var currentInfo = (await _purchaseOrderDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
 
             if (currentInfo == null)
@@ -984,7 +984,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
                 }
-                var billInfo = await _purchaseOrderDBContext.VoucherBill.FirstOrDefaultAsync(b => b.FId == voucherValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
+                var billInfo = await _purchaseOrderDBContext.VoucherBill.FirstOrDefaultAsync(b => b.VoucherTypeId == voucherTypeId && b.FId == voucherValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
@@ -1007,7 +1007,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, billInfo.FId, $"Thêm chứng từ {voucherTypeInfo.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, billInfo.FId, $"Cập nhật chứng từ BH {voucherTypeInfo.Title}", data.JsonSerialize());
                 return true;
             }
             catch (Exception ex)
@@ -1158,7 +1158,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             foreach (var oldBillDate in oldBillDates)
             {
-                await ValidateSaleVoucherConfig(fieldName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
+                var newDate = fieldName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null;
+
+                await ValidateSaleVoucherConfig(newDate ?? oldBillDate.Value, oldBillDate.Value);
             }
 
             var bills = _purchaseOrderDBContext.VoucherBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
@@ -1167,18 +1169,21 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 // Created bill version
                 await _purchaseOrderDBContext.InsertDataTable(dataTable, true);
-
-                foreach (var bill in bills)
+                using (var batch = _activityLogService.BeginBatchLog())
                 {
-                    // Delete bill version
-                    await DeleteVoucherBillVersion(voucherTypeId, bill.FId, bill.LatestBillVersion);
+                    foreach (var bill in bills)
+                    {
+                        // Delete bill version
+                        await DeleteVoucherBillVersion(voucherTypeId, bill.FId, bill.LatestBillVersion);
+                        await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, bill.FId, $"Cập nhật nhiều dòng {field?.Title} {newValue} {voucherTypeInfo.Title}", new { voucherTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize());
 
-                    // Update last bill version
-                    bill.LatestBillVersion++;
+                        // Update last bill version
+                        bill.LatestBillVersion++;
+                    }
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+                    trans.Commit();
                 }
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-                trans.Commit();
                 return true;
             }
             catch (Exception ex)
@@ -2240,8 +2245,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                    new SqlParameter("@FromDate",  EnumDataType.Date.GetSqlValue(fromDate?.UnixToDateTime())),
                    new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate?.UnixToDateTime())),
                    new SqlParameter("@IsCreatedPurchasingRequest", EnumDataType.Boolean.GetSqlValue(isCreatedPurchasingRequest)),
-                   new SqlParameter("@Page",page),
-                   new SqlParameter("@Size",size),
+                   new SqlParameter("@Page", page),
+                   new SqlParameter("@Size", size),
                    total
                 });
 

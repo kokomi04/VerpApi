@@ -22,6 +22,7 @@ namespace VErpApi.Controllers.Accountancy.Data
     public class CalcProductPriceController : VErpBaseController
     {
         private readonly ICalcProductPriceService _calcProductPriceService;
+
         public CalcProductPriceController(ICalcProductPriceService calcProductPriceService)
         {
             _calcProductPriceService = calcProductPriceService;
@@ -29,7 +30,6 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpPost]
         [VErpAction(EnumActionType.Update)]
-        [GlobalApi]
         [Route("CalcProductPriceTable")]
         public async Task<CalcProductPriceGetTableOutput> CalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
         {
@@ -38,7 +38,6 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpPost]
         [VErpAction(EnumActionType.Update)]
-        [GlobalApi]
         [Route("CalcProductOutputPrice")]
         public async Task<CalcProductOutputPriceModel> CalcProductOutputPrice([FromBody] CalcProductOutputPriceInput req)
         {
@@ -53,5 +52,30 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             return await _calcProductPriceService.GetWeightedAverageProductPrice(req).ConfigureAwait(true);
         }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.Update)]
+        [Route("CalcProfitAndLoss")]
+        public async Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss([FromBody] CalcProfitAndLossInput req)
+        {
+            return await _calcProductPriceService.CalcProfitAndLoss(req).ConfigureAwait(true);
+        }
+
+
+        [HttpGet]
+        [Route("CalcProfitAndLossPeriods")]
+        public async Task<PageData<CalcPeriodListModel>> CalcProfitAndLossPeriods([FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] int page, [FromQuery] int? size)
+        {
+            return await _calcProductPriceService.CalcProfitAndLossPeriods(keyword, fromDate, toDate, page, size).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("CalcProfitAndLossPeriods/{calcPeriodId}")]
+        public async Task<CalcProfitAndLossView> CalcProfitAndLossPeriodInfo([FromRoute] long calcPeriodId)
+        {
+            return await _calcProductPriceService.CalcProfitAndLossPeriodInfo(calcPeriodId).ConfigureAwait(true);
+        }
+
     }
 }

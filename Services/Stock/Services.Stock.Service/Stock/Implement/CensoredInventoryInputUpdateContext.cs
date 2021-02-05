@@ -11,16 +11,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     public class CensoredInventoryInputUpdateContext
     {
         //private StockDBContext stockDbContext;
-        private IQueryable<Package> packages;
-        private IQueryable<PackageRef> packageRefs;
-        private IQueryable<InventoryDetailAffectModel> inventoryAffectDetails;
-        private IList<CensoredInventoryInputObject> affectObjects;
-        private InventoryDetail inventoryDetail;
-        private Inventory inventory;
-        private DateTime FromDate;
-        private DateTime ToDate;
-        private int otherInputId = -1;
-        private int otherOutputputId = -2;
+        private readonly IQueryable<Package> packages;
+        private readonly IQueryable<PackageRef> packageRefs;
+        private readonly IQueryable<InventoryDetailAffectModel> inventoryAffectDetails;
+        private readonly IList<CensoredInventoryInputObject> affectObjects;
+        private readonly InventoryDetail inventoryDetail;
+        private readonly Inventory inventory;
+        private readonly DateTime FromDate;
+        private readonly DateTime ToDate;
+        private readonly int otherInputId = -1;
+        private readonly int otherOutputputId = -2;
 
         public CensoredInventoryInputUpdateContext(StockDBContext stockDbContext, Inventory inventory, InventoryDetail inventoryDetail, long fromDate, long toDate)
         {

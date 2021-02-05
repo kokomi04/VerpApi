@@ -949,7 +949,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
-            infoSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
+            infoSQL.Append($" FROM vInputValueRow r WHERE InputTypeId={inputTypeId} AND InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
             var currentInfo = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
 
             if (currentInfo == null)
@@ -1012,7 +1012,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
                 }
-                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
+                var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.InputTypeId == inputTypeId && b.FId == inputValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ");
 
@@ -1035,7 +1035,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Cập nhật chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
                 return true;
             }
             catch (Exception ex)
@@ -1181,7 +1181,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             foreach (var oldBillDate in oldBillDates)
             {
-                await ValidateAccountantConfig(fieldName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null, oldBillDate.Value);
+                var newDate = fieldName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) ? (newSqlValue as DateTime?) : null;
+
+                await ValidateAccountantConfig(newDate ?? oldBillDate.Value, oldBillDate.Value);
             }
 
             var bills = _accountancyDBContext.InputBill.Where(b => updateBillIds.Contains(b.FId) && b.SubsidiaryId == _currentContextService.SubsidiaryId).ToList();
@@ -1191,17 +1193,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Created bill version
                 await _accountancyDBContext.InsertDataTable(dataTable, true);
 
-                foreach (var bill in bills)
+                using (var batch = _activityLogService.BeginBatchLog())
                 {
-                    // Delete bill version
-                    await DeleteBillVersion(inputTypeId, bill.FId, bill.LatestBillVersion);
+                    foreach (var bill in bills)
+                    {
+                        // Delete bill version
+                        await DeleteBillVersion(inputTypeId, bill.FId, bill.LatestBillVersion);
 
-                    // Update last bill version
-                    bill.LatestBillVersion++;
+                        await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, bill.FId, $"Cập nhật nhiều dòng {field?.Title} {newValue} {inputTypeInfo.Title}", new { inputTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize());
+
+                        // Update last bill version
+                        bill.LatestBillVersion++;
+                    }
+
+                    await _accountancyDBContext.SaveChangesAsync();
+                    trans.Commit();
+
                 }
 
-                await _accountancyDBContext.SaveChangesAsync();
-                trans.Commit();
+
                 return true;
             }
             catch (Exception ex)
