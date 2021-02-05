@@ -19,10 +19,12 @@ namespace VErpApi.Controllers.Manufacturing
     public class ProductOrderController : VErpBaseController
     {
         private readonly IProductionOrderService _productionOrderService;
+        private readonly IProductionOrderMaterialsService _productionOrderMaterialsService;
 
-        public ProductOrderController(IProductionOrderService productionOrderService)
+        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService)
         {
             _productionOrderService = productionOrderService;
+            _productionOrderMaterialsService = productionOrderMaterialsService;
         }
 
         [HttpPost]
@@ -87,6 +89,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateManualProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] ProductionOrderStatusModel status)
         {
             return await _productionOrderService.UpdateManualProductionOrderStatus(productionOrderId, status);
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/materials")]
+        public async Task<IList<ProductionOrderMaterialsModel>> GetProductionOrderMaterials([FromRoute] int productionOrderId)
+        {
+            return await _productionOrderMaterialsService.GetProductionOrderMaterials(productionOrderId);
         }
     }
 }
