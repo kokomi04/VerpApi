@@ -229,7 +229,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     item.ProductionOrderId = productionOrder.ProductionOrderId;
                     // Tạo mới
                     var entity = _mapper.Map<ProductionOrderDetail>(item);
-                    entity.Status = (int)EnumProductionStatus.NotReady;
+                    //entity.Status = (int)EnumProductionStatus.NotReady;
 
                     _manufacturingDBContext.ProductionOrderDetail.Add(entity);
                 }
@@ -292,7 +292,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 // Check gộp quy trình
                 var stepIds = stepOrders.Select(so => so.ProductionStepId).Distinct().ToList();
                 if (_manufacturingDBContext.ProductionStepOrder.Any(so => stepIds.Contains(so.ProductionStepId) && !delIds.Contains(so.ProductionOrderDetailId)))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Yếu cầu xóa các sản phẩm gộp cùng 1 quy trình cùng nhau");
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu xóa các sản phẩm gộp cùng 1 quy trình cùng nhau");
                 var steps = _manufacturingDBContext.ProductionStep.Where(s => stepIds.Contains(s.ProductionStepId)).ToList();
                 var linkDataRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(r => stepIds.Contains(r.ProductionStepId)).ToList();
                 var linkDataIds = linkDataRoles.Select(r => r.ProductionStepLinkDataId).Distinct().ToList();

@@ -344,7 +344,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasColumnType("decimal(18, 5)")
                     .HasComment("Bù hao (dự trữ)");
 
-                entity.Property(e => e.Status).HasDefaultValueSql("((1))");
+                //entity.Property(e => e.Status).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.ProductionOrder)
                     .WithMany(p => p.ProductionOrderDetail)
