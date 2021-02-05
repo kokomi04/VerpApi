@@ -463,6 +463,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 //    item.Status = (int)EnumProductionStatus.Waiting;
                 //}
 
+                //
+                var bottomStep = _manufacturingDBContext.ProductionStep
+                    .Where(ps => ps.ContainerId == productionOrderId && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
+                    .OrderByDescending(ps => ps.CoordinateY)
+                    .FirstOrDefault();
+
+                var maxY = bottomStep?.CoordinateY.GetValueOrDefault() ?? 0;
+                var newMaxY = maxY;
                 foreach (var productionOrderDetail in productionOrderDetails)
                 {
                     // Tạo step ứng với quy trình sản xuất
@@ -489,7 +497,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     // create productionStep
                     var stepMap = new Dictionary<long, ProductionStep>();
-                    var stepOrders = new List<ProductionStep>();
+                    //var stepOrders = new List<ProductionStep>();
 
                     var parentIdUpdater = new List<ProductionStep>();
                     var steps = productionSteps.Where(s => s.ContainerId == product.ProductId).ToList();
@@ -504,11 +512,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ContainerId = productionOrderId,
                             IsGroup = steps.Any(s => s.ParentId == step.ProductionStepId),
                             CoordinateX = step.CoordinateX,
-                            CoordinateY = step.CoordinateY,
+                            CoordinateY = maxY + step.CoordinateY,
                             SortOrder = step.SortOrder,
                             Workload = step.Workload * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault(),
                             IsFinish = step.IsFinish
                         };
+                        if (newStep.CoordinateY.GetValueOrDefault() > newMaxY) newMaxY = newStep.CoordinateY.GetValueOrDefault();
                         if (step.ParentId.HasValue)
                         {
                             parentIdUpdater.Add(step);
@@ -520,7 +529,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         //}
                         _manufacturingDBContext.ProductionStep.Add(newStep);
                         stepMap.Add(step.ProductionStepId, newStep);
-                        stepOrders.Add(newStep);
+                        //stepOrders.Add(newStep);
                     }
                     _manufacturingDBContext.SaveChanges();
 
@@ -532,15 +541,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         stepMap[step.ProductionStepId].ParentCode = stepMap[step.ParentId.Value].ProductionStepCode;
                     }
 
-                    // Map step công đoạn, quy trình con với chi tiết lệnh sản xuất
-                    foreach (var item in stepOrders)
-                    {
-                        _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
-                        {
-                            ProductionOrderDetailId = productionOrderDetail.ProductionOrderDetailId,
-                            ProductionStepId = item.ProductionStepId
-                        });
-                    }
+                    //// Map step công đoạn, quy trình con với chi tiết lệnh sản xuất
+                    //foreach (var item in stepOrders)
+                    //{
+                    //    _manufacturingDBContext.ProductionStepOrder.Add(new ProductionStepOrder
+                    //    {
+                    //        ProductionOrderDetailId = productionOrderDetail.ProductionOrderDetailId,
+                    //        ProductionStepId = item.ProductionStepId
+                    //    });
+                    //}
 
                     var stepIds = steps.Select(s => s.ProductionStepId).ToList();
                     var roles = linkDataRoles.Where(r => stepIds.Contains(r.ProductionStepId)).ToList();
@@ -581,6 +590,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         _manufacturingDBContext.ProductionStepLinkDataRole.Add(newRole);
                     }
                     _manufacturingDBContext.SaveChanges();
+
+                    maxY = newMaxY;
                 }
                 await trans.CommitAsync();
 
