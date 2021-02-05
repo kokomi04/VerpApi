@@ -206,7 +206,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 try
                 {
                     dbContext.Database.SetCommandTimeout(new TimeSpan(1, 0, 0));
-                    await dbContext.Database.ExecuteSqlRawAsync($"Alter Database {db} SET SINGLE_USER With ROLLBACK AFTER 300");
+                    await dbContext.Database.ExecuteSqlRawAsync($"Alter Database {db} SET SINGLE_USER With ROLLBACK AFTER 30");
                     await dbContext.Database.ExecuteSqlRawAsync($"RESTORE DATABASE {db} FROM DISK = '{filePath}' WITH REPLACE");
                 }
                 catch (Exception)
