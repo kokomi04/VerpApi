@@ -51,7 +51,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var roleInputData = roles.GroupBy(x => x.ProductionStepLinkDataId)
                 .Where(x => x.Count() == 1)
                 .Select(x => x.First())
-                .Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                .Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input
+                        && (x.ProductionStepLinkData.ProductionStepLinkDataTypeId == (int)EnumProductionStepLinkDataType.None
+                            || x.ProductionStepLinkData.ProductionStepLinkDataTypeId == (int)EnumProductionStepLinkDataType.Others))
                 .ToList();
 
             var materialsAssigned = (from r in roleInputData
