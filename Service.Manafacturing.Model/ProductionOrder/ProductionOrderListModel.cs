@@ -25,7 +25,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
                 .ForMember(dest => dest.ProductionOrderStatus, opt => opt.MapFrom(source => (EnumProductionStatus)source.ProductionOrderStatus))
                 .ForMember(dest => dest.Description, opt => opt.MapFrom(source => source.Description))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()));
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()));
         }
     }
 
