@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string ProductionOrderCode { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
+        public long Date { get; set; }
         public string Description { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
         public void Mapping(Profile profile)
@@ -33,6 +34,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string ProductionOrderCode { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public DateTime Date { get; set; }
         public string Description { get; set; }
         public int ProductionOrderStatus { get; set; }
     }
