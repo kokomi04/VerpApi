@@ -25,7 +25,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDraft { get; set; }
         public int SubsidiaryId { get; set; }
         public int ProductionOrderStatus { get; set; }
-        public DateTime? Date { get; set; }
+        public DateTime Date { get; set; }
 
         public virtual ICollection<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual ICollection<ProductionOrderDetail> ProductionOrderDetail { get; set; }
