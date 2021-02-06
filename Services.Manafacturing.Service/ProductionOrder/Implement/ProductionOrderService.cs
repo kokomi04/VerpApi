@@ -186,7 +186,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (data.StartDate <= 0 || data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu, ngày kết thúc sản xuất.");
+                if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
+                if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
                 CustomGenCodeOutputModel currentConfig = null;
                 if (string.IsNullOrEmpty(data.ProductionOrderCode))
@@ -256,7 +258,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (data.StartDate <= 0 || data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu, ngày kết thúc sản xuất.");
+                if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
+                if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
                 var productionOrder = _manufacturingDBContext.ProductionOrder
                     .Where(o => o.ProductionOrderId == productionOrderId)
