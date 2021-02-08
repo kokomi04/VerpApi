@@ -196,7 +196,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
-                whereCondition.Append("OR v.RequestOutsourcePartCode LIKE @Keyword ");
+                whereCondition.Append("OR v.OutsourcePartRequestCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductPartName LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -402,7 +402,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
                     .Sum();
 
-                if (!totalStatus.HasValue)
+                if (totalStatus.GetValueOrDefault() == 0)
                     rq.OutsourcePartRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
                 else
                 {
