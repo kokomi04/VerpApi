@@ -191,7 +191,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryQuery = from q in inventoryQuery
                                      join b in billQuery on q.InventoryCode equals b.SoCt into bs
                                      from b in bs.DefaultIfEmpty()
-                                     where b != null
+#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
+                                     where b.InputBillFId != null
+#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
                                      select q;
                 }
                 else
@@ -199,7 +201,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryQuery = from q in inventoryQuery
                                      join b in billQuery on q.InventoryCode equals b.SoCt into bs
                                      from b in bs.DefaultIfEmpty()
-                                     where b == null
+#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
+                                     where b.InputBillFId == null
+#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
                                      select q;
                 }
             }
@@ -1270,9 +1274,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         // update trạng thái cho lịch sản xuất
                         var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
                         var productionOrderIds = (from req in _stockDbContext.InventoryRequirement
-                                               join rd in _stockDbContext.InventoryRequirementDetail on req.InventoryRequirementId equals rd.InventoryRequirementId
-                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && req.ProductionOrderId.HasValue
-                                               select req.ProductionOrderId.Value).Distinct().ToList();
+                                                  join rd in _stockDbContext.InventoryRequirementDetail on req.InventoryRequirementId equals rd.InventoryRequirementId
+                                                  where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && req.ProductionOrderId.HasValue
+                                                  select req.ProductionOrderId.Value).Distinct().ToList();
                         foreach (var productionOrderId in productionOrderIds)
                         {
                             await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, EnumProductionStatus.Finished);
@@ -1431,9 +1435,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         // update trạng thái cho lịch sản xuất
                         var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
                         var productionOrderIds = (from r in _stockDbContext.InventoryRequirement
-                                               join rd in _stockDbContext.InventoryRequirementDetail on r.InventoryRequirementId equals rd.InventoryRequirementId
-                                               where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && r.ProductionOrderId.HasValue
-                                               select r.ProductionOrderId.Value).Distinct().ToList();
+                                                  join rd in _stockDbContext.InventoryRequirementDetail on r.InventoryRequirementId equals rd.InventoryRequirementId
+                                                  where requirementDetailIds.Contains(rd.InventoryRequirementDetailId) && r.ProductionOrderId.HasValue
+                                                  select r.ProductionOrderId.Value).Distinct().ToList();
                         foreach (var productionOrderId in productionOrderIds)
                         {
                             await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, EnumProductionStatus.Processing);
@@ -2055,7 +2059,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var primaryUnit = productUnitConversions.FirstOrDefault(c => c.IsDefault && c.ProductId == productInfo.ProductId);
 
-                var errorMessage =  $"Số dư trong kiện {fromPackageInfo.PackageCode} mặt hàng {productInfo.ProductCode} ({fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}) ";
+                var errorMessage = $"Số dư trong kiện {fromPackageInfo.PackageCode} mặt hàng {productInfo.ProductCode} ({fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}) ";
                 var samPackages = req.OutProducts.Where(d => d.FromPackageId == details.FromPackageId);
 
                 var totalOut = samPackages.Sum(d => d.PrimaryQuantity);
