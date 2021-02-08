@@ -40,6 +40,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly AppSetting _appSetting;
         private readonly IPhysicalFileService _physicalFileService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ICurrentContextService _currentContextService;
 
         private readonly Dictionary<EnumModuleType, Type> ModuleDbContextTypes = new Dictionary<EnumModuleType, Type>()
         {
@@ -59,7 +60,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             IDocOpenXmlService docOpenXmlService,
             IOptions<AppSetting> appSetting,
             IPhysicalFileService physicalFileService,
-            IServiceProvider serviceProvider
+            IServiceProvider serviceProvider,
+            ICurrentContextService currentContextService
             )
         {
             _reportConfigDBContext = reportConfigDBContext;
@@ -68,6 +70,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _appSetting = appSetting.Value;
             _physicalFileService = physicalFileService;
             _serviceProvider = serviceProvider;
+            _currentContextService = currentContextService;
         }
 
 
@@ -801,6 +804,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             accountancyReportExport.SetAppSetting(_appSetting);
             accountancyReportExport.SetPhysicalFileService(_physicalFileService);
             accountancyReportExport.SetContextData(_reportConfigDBContext);
+            accountancyReportExport.SetCurrentContextService(_currentContextService);
             return await accountancyReportExport.AccountancyReportExport(reportId, model);
         }
 
