@@ -36,6 +36,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private AppSetting _appSetting;
         private IPhysicalFileService _physicalFileService;
         private ReportConfigDBContext _contextData;
+        private ICurrentContextService _currentContextService;
 
         private readonly Dictionary<string, PictureType> drImageType = new Dictionary<string, PictureType>
         {
@@ -303,7 +304,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (row.ContainsKey(field.Alias))
                         tbRow[columnIndx] = new ExcelCell
                         {
-                            Value = dataType.GetSqlValue(row[field.Alias]),
+                            Value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset),
                             Type = dataType.GetExcelType()
                         };
                     columnIndx++;
@@ -387,5 +388,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
         internal void SetPhysicalFileService(IPhysicalFileService physicalFileService) => _physicalFileService = physicalFileService;
 
         internal void SetContextData(ReportConfigDBContext reportConfigDB) => _contextData = reportConfigDB;
+        internal void SetCurrentContextService(ICurrentContextService currentContextService) => _currentContextService = currentContextService;
     }
 }

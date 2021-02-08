@@ -563,7 +563,7 @@ namespace VErp.Commons.Library
             return true;
         }
 
-        public static object GetSqlValue(this EnumDataType dataType, object value)
+        public static object GetSqlValue(this EnumDataType dataType, object value, int? timeZoneOffset = null)
         {
             if (value.IsNullObject()) return DBNull.Value;
 
@@ -589,7 +589,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
-                    long dateValue;
+                    long? dateValue;
                     try
                     {
                         dateValue = Convert.ToInt64(value);
@@ -600,7 +600,7 @@ namespace VErp.Commons.Library
                     }
 
                     if (dateValue == 0) return DBNull.Value;
-                    return dateValue.UnixToDateTime().Value;
+                    return dateValue.UnixToDateTime(timeZoneOffset).Value;
 
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
