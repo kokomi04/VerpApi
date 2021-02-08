@@ -79,7 +79,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             if (whereCondition.Length > 0)
             {
-                sql.Append(" AND ");
+                sql.Append(" WHERE ");
                 sql.Append(whereCondition);
             }
 
@@ -608,7 +608,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
                     .Sum();
 
-                if (!totalStatus.HasValue)
+                if (totalStatus.GetValueOrDefault() == 0)
                     rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
                 else
                 {
