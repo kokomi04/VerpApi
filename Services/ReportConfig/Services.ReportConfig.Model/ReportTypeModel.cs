@@ -51,7 +51,6 @@ namespace Verp.Services.ReportConfig.Model
         public IList<ReportColumnModel> Columns { get; set; }
         public bool IsBsc { get; set; }
         public BscConfigModel BscConfig { get; set; }
-        public string GroupBodyColumns { get; set; }
 
         public List<ReportColumnModel> ParseColumns(string column)
         {
