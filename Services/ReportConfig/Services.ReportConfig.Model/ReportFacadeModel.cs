@@ -28,7 +28,7 @@ namespace Verp.Services.ReportConfig.Model
         {
             public string Title { get; set; }
             public List<ReportHeadModel> HeadDetails { get; set; }
-            public List<NonCamelCaseDictionary> TableData { get; set; }
+            public ReportFilterDataModel FilterData { get; set; }
         }
     }
 }
