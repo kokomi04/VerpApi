@@ -151,6 +151,11 @@ namespace VErp.Commons.Library
             int addedRow = 0;
             int columnLength = table.Columns.Count;
 
+            var stringStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+            var boolStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+            var dateStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
+            var numberStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00");
+            var formulaStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00", isBold: true);
             foreach (ExcelRow row in table.Rows)
             {
                 int curRow = startRow + addedRow;
@@ -159,40 +164,42 @@ namespace VErp.Commons.Library
                 {
                     int curCollumn = indx + startCollumn;
                     ICell cell = newRow.CreateCell(curCollumn);
-                    if (row[indx] == null || (row[indx] as ExcelCell).Value == DBNull.Value)
+                    if (row[indx].Value.IsNullObject())
                     {
-                        (row[indx] as ExcelCell).Value = string.Empty;
-                        (row[indx] as ExcelCell).Type = EnumExcelType.String;
+                        row[indx].Value = string.Empty;
+                        row[indx].Type = EnumExcelType.String;
                     }
-                    switch ((row[indx] as ExcelCell).Type)
+
+                    switch (row[indx].Type)
                     {
                         case EnumExcelType.String:
-                            cell.SetCellValue((row[indx] as ExcelCell).Value.ToString());
+                            cell.SetCellValue(row[indx].Value.ToString());
                             cell.SetCellType(CellType.String);
-                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                            cell.CellStyle = stringStyle;
                             break;
                         case EnumExcelType.Boolean:
-                            cell.SetCellValue((bool)(row[indx] as ExcelCell).Value);
+                            cell.SetCellValue((bool)row[indx].Value);
                             cell.SetCellType(CellType.Boolean);
-                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                            cell.CellStyle = boolStyle;
                             break;
                         case EnumExcelType.DateTime:
-                            cell.SetCellValue((DateTime)(row[indx] as ExcelCell).Value);
-                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
+                            cell.SetCellValue((DateTime)row[indx].Value);
+                            cell.CellStyle = dateStyle;
                             break;
                         case EnumExcelType.Number:
-                            cell.SetCellValue(Convert.ToDouble((row[indx] as ExcelCell).Value));
+                            cell.SetCellValue(Convert.ToDouble(row[indx].Value));
                             cell.SetCellType(CellType.Numeric);
-                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00");
+                            cell.CellStyle = numberStyle;
                             break;
                         case EnumExcelType.Formula:
-                            cell.SetCellFormula((row[indx] as ExcelCell).Value.ToString());
+                            cell.SetCellFormula(row[indx].Value.ToString());
                             cell.SetCellType(CellType.Formula);
-                            cell.CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00", isBold: true);
+                            cell.CellStyle = formulaStyle;
                             break;
                         default:
                             break;
                     }
+
 
                 }
                 addedRow++;
