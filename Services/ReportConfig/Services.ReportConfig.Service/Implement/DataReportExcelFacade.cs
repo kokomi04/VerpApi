@@ -37,6 +37,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private IPhysicalFileService _physicalFileService;
         private ReportConfigDBContext _contextData;
         private ICurrentContextService _currentContextService;
+        private IDataReportService _dataReportService;
 
         private readonly Dictionary<string, PictureType> drImageType = new Dictionary<string, PictureType>
         {
@@ -293,7 +294,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 table.Columns.Add($"Col-{index}");
             }
             var sumCalc = new List<int>();
-            foreach (var row in _model.Body.TableData)
+            var dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
+            foreach (var row in dataTable.Rows.List)
             {
                 ExcelRow tbRow = table.NewRow();
                 int columnIndx = 0;
@@ -320,7 +322,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     var columnName = (columnIndx + 1).GetExcelColumnName();
                     sumRow[columnIndx] = new ExcelCell
                     {
-                        Value = $"SUM({columnName}{currentRow + 1}:{columnName}{currentRow + _model.Body.TableData.Count()})",
+                        Value = $"SUM({columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()})",
                         Type = EnumExcelType.Formula
                     };
                 }
@@ -389,5 +391,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         internal void SetContextData(ReportConfigDBContext reportConfigDB) => _contextData = reportConfigDB;
         internal void SetCurrentContextService(ICurrentContextService currentContextService) => _currentContextService = currentContextService;
+        internal void SetDataReportService(IDataReportService dataReportService) => _dataReportService = dataReportService;
     }
 }

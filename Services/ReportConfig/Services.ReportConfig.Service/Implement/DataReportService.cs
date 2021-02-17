@@ -88,15 +88,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        public async Task<ReportDataModel> Report(int reportId, ReportFilterModel model)
+        public async Task<ReportDataModel> Report(int reportId, ReportFilterDataModel model, int page, int size)
         {
             var result = new ReportDataModel();
 
             var filters = model.Filters.GroupBy(f => f.Key.Trim().ToLower()).ToDictionary(f => f.Key, f => f.Last().Value);
             var orderByFieldName = model.OrderByFieldName;
             var asc = model.Asc;
-            var page = model.Page;
-            var size = model.Size;
 
             var reportInfo = await _reportConfigDBContext.ReportType.Include(x => x.ReportTypeGroup).AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
@@ -136,7 +134,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
                 var data = await _dbContext.QueryMultiDataTable(reportInfo.HeadSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
-                if(data.Tables.Count > 0) result.Head = data.Tables[0].ConvertFirstRowData().ToNonCamelCaseDictionary();
+                if (data.Tables.Count > 0) result.Head = data.Tables[0].ConvertFirstRowData().ToNonCamelCaseDictionary();
                 if (data.Tables.Count > 1) result.HeadTable = data.Tables[1].ConvertData();
 
                 foreach (var head in result.Head)
@@ -462,7 +460,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sql = sql.TSqlAppendCondition(filterCondition);
             }
 
-            string orderBy = reportInfo?.OrderBy??"";
+            string orderBy = reportInfo?.OrderBy ?? "";
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName) && !orderBy.Contains(orderByFieldName))
             {
@@ -511,7 +509,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             }
 
-            var pagedData = data.Skip((page - 1) * size).Take(size).ToList();
+            var pagedData = size > 0 ? data.Skip((page - 1) * size).Take(size).ToList() : data;
 
             return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
 
@@ -690,10 +688,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 dataSql.Append($"WHERE {filterCondition}");
             dataSql.Append(@$"
                 ORDER BY {orderBy}
+                ");
 
+            if (size > 0)
+            {
+                dataSql.Append(@$"
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
                 ");
+            }
 
             var data = await _dbContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
@@ -805,6 +808,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             accountancyReportExport.SetPhysicalFileService(_physicalFileService);
             accountancyReportExport.SetContextData(_reportConfigDBContext);
             accountancyReportExport.SetCurrentContextService(_currentContextService);
+            accountancyReportExport.SetDataReportService(this);
             return await accountancyReportExport.AccountancyReportExport(reportId, model);
         }
 
