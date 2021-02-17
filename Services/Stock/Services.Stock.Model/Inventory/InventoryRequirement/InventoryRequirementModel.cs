@@ -33,6 +33,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public long? CensorDatetimeUtc { get; set; }
         public EnumInventoryRequirementStatus CensorStatus { get; set; }
         public string ProductTitle { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
         public string StockName { get; set; }
 
         public void Mapping(Profile profile)
@@ -56,6 +58,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.CensorDatetimeUtc, otp => otp.MapFrom(source => source.InventoryRequirement.CensorDatetimeUtc.GetUnix()))
                 .ForMember(dest => dest.CensorStatus, otp => otp.MapFrom(source => (EnumInventoryRequirementStatus)source.InventoryRequirement.CensorStatus))
                 .ForMember(dest => dest.CensorByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CensorByUserId))
+                .ForMember(dest => dest.ProductCode, otp => otp.MapFrom(source => source.Product.ProductCode))
+                .ForMember(dest => dest.ProductName, otp => otp.MapFrom(source => source.Product.ProductName))
                 .ForMember(dest => dest.ProductTitle, otp => otp.MapFrom(source => $"{source.Product.ProductCode} / {source.Product.ProductName}"))
                 .ForMember(dest => dest.StockName, otp => otp.MapFrom(source => source.AssignStock.StockName));
         }
