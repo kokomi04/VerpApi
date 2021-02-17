@@ -101,8 +101,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderId
-                    ORDER BY g.ProductionOrderId ");
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate ");
+
+            if (string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "ProductionOrderId";
+                asc = true;
+            }
+            sql.Append($"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -119,7 +125,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
             sql.Append(@")
                 SELECT v.* FROM tmp t
-                INNER JOIN vProductionOrderDetail v ON t.ProductionOrderId = v.ProductionOrderId ");
+                LEFT JOIN vProductionOrderDetail v ON t.ProductionOrderId = v.ProductionOrderId ");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
