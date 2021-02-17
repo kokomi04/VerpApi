@@ -445,7 +445,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     DefaultValue = af.DefaultValue,
                     RefTableCode = f.RefTableCode,
                     RefTableField = f.RefTableField,
-                    RefTableTitle = f.RefTableTitle
+                    RefTableTitle = f.RefTableTitle,
+                    IsRequire = af.IsRequire
 
                 }).ToListAsync();
 
