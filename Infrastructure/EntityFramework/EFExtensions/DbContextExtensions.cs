@@ -339,6 +339,29 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return query;
         }
 
+        public static IQueryable<T> InternalOrderBy<T>(this IQueryable<T> query, string orderByFieldName, bool asc)
+        {
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+            {
+                string command = asc ? "OrderBy" : "OrderByDescending";
+                var type = typeof(T);
+                var propertyNames = orderByFieldName.Split(".");
+
+                var parameter = Expression.Parameter(type, "s");
+                Expression body = parameter;
+                foreach (var propertyName in propertyNames)
+                {
+                    body = Expression.PropertyOrField(body, propertyName);
+                }
+                var orderByExpression = Expression.Lambda(body, parameter);
+                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, body.Type }, 
+                    query.Expression, Expression.Quote(orderByExpression));
+                query = query.Provider.CreateQuery<T>(resultExpression);
+            }
+            return query;
+        }
+
+
         public static Expression FilterClauseProcess<T>(ParameterExpression param, Clause clause, IQueryable<T> query, bool not = false)
         {
             Expression exp = null;
@@ -382,7 +405,15 @@ namespace VErp.Infrastructure.EF.EFExtensions
             Expression expression = null;
             if (clause != null)
             {
-                var prop = Expression.Property(param, clause.FieldName);
+                var propertyNames = clause.FieldName.Split(".");
+                Expression prop = param;
+                foreach (var propertyName in propertyNames)
+                {
+                    prop = Expression.PropertyOrField(prop, propertyName);
+                }
+
+                //var prop = Expression.Property(param, clause.FieldName);
+
                 TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
                 // Check value
                 ConstantExpression value;
@@ -454,46 +485,46 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return expression;
         }
 
-        public static IOrderedQueryable<TSource> InternalOrderBy<TSource>(this IQueryable<TSource> query, string propertyName, bool asc) {
-            return asc ? BuildOrderBy(query, "OrderBy", propertyName) : BuildOrderBy(query, "OrderByDescending", propertyName);
-        }
+        //public static IOrderedQueryable<TSource> InternalOrderBy<TSource>(this IQueryable<TSource> query, string propertyName, bool asc) {
+        //    return asc ? BuildOrderBy(query, "OrderBy", propertyName) : BuildOrderBy(query, "OrderByDescending", propertyName);
+        //}
 
-        /// <summary>
-        /// 
-        /// Ref links: https://entityframework.net/knowledge-base/31955025/generate-ef-orderby-expression-by-string 
-        /// </summary>
-        /// <typeparam name="TSource"></typeparam>
-        /// <param name="query"></param>
-        /// <param name="linqMethod"></param>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
-        private static IOrderedQueryable<TSource> BuildOrderBy<TSource>(IQueryable<TSource> query, string linqMethod, string propertyName) {
-            var entityType = typeof(TSource);
+        ///// <summary>
+        ///// 
+        ///// Ref links: https://entityframework.net/knowledge-base/31955025/generate-ef-orderby-expression-by-string 
+        ///// </summary>
+        ///// <typeparam name="TSource"></typeparam>
+        ///// <param name="query"></param>
+        ///// <param name="linqMethod"></param>
+        ///// <param name="propertyName"></param>
+        ///// <returns></returns>
+        //private static IOrderedQueryable<TSource> BuildOrderBy<TSource>(IQueryable<TSource> query, string linqMethod, string propertyName) {
+        //    var entityType = typeof(TSource);
 
-            //Create x=>x.PropName
-            ParameterExpression arg = Expression.Parameter(entityType, "s");
-            MemberExpression property = Expression.Property(arg, propertyName);
-            var selector = Expression.Lambda(property, new ParameterExpression[] { arg });
+        //    //Create x=>x.PropName
+        //    ParameterExpression arg = Expression.Parameter(entityType, "s");
+        //    MemberExpression property = Expression.Property(arg, propertyName);
+        //    var selector = Expression.Lambda(property, new ParameterExpression[] { arg });
 
-            //Get System.Linq.Queryable.OrderBy() method.
-            var enumarableType = typeof(System.Linq.Queryable);
-            var method = enumarableType.GetMethods()
-                 .Where(m => m.Name == linqMethod && m.IsGenericMethodDefinition)
-                 .Where(m => {
-                     var parameters = m.GetParameters().ToList();
-                     //Put more restriction here to ensure selecting the right overload                
-                     return parameters.Count == 2;//overload that has 2 parameters
-                 }).Single();
-            //The linq's OrderBy<TSource, TKey> has two generic types, which provided here
-            MethodInfo genericMethod = method
-                 .MakeGenericMethod(entityType, property.Type);
+        //    //Get System.Linq.Queryable.OrderBy() method.
+        //    var enumarableType = typeof(System.Linq.Queryable);
+        //    var method = enumarableType.GetMethods()
+        //         .Where(m => m.Name == linqMethod && m.IsGenericMethodDefinition)
+        //         .Where(m => {
+        //             var parameters = m.GetParameters().ToList();
+        //             //Put more restriction here to ensure selecting the right overload                
+        //             return parameters.Count == 2;//overload that has 2 parameters
+        //         }).Single();
+        //    //The linq's OrderBy<TSource, TKey> has two generic types, which provided here
+        //    MethodInfo genericMethod = method
+        //         .MakeGenericMethod(entityType, property.Type);
 
-            /*Call query.OrderBy(selector), with query and selector: x=> x.PropName
-              Note that we pass the selector as Expression to the method and we don't compile it.
-              By doing so EF can extract "order by" columns and generate SQL for it.*/
-            var newQuery = (IOrderedQueryable<TSource>)genericMethod
-                 .Invoke(genericMethod, new object[] { query, selector });
-            return newQuery;
-        }
+        //    /*Call query.OrderBy(selector), with query and selector: x=> x.PropName
+        //      Note that we pass the selector as Expression to the method and we don't compile it.
+        //      By doing so EF can extract "order by" columns and generate SQL for it.*/
+        //    var newQuery = (IOrderedQueryable<TSource>)genericMethod
+        //         .Invoke(genericMethod, new object[] { query, selector });
+        //    return newQuery;
+        //}
     }
 }

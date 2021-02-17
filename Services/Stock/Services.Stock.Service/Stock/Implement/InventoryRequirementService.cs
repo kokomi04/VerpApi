@@ -28,6 +28,7 @@ using VErp.Services.Stock.Model.FileResources;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using System.Data;
+using System.Reflection;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
@@ -81,22 +82,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 || s.InventoryRequirement.Content.Contains(keyword));
             }
 
+            query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
+
             var result = query.ProjectTo<InventoryRequirementListModel>(_mapper.ConfigurationProvider);
-
-            result = result.InternalFilter(filters);
-
-            if (!string.IsNullOrWhiteSpace(orderByFieldName))
-            {
-                string command = asc ? "OrderBy" : "OrderByDescending";
-                var type = typeof(InventoryRequirementListModel);
-                var property = type.GetProperty(orderByFieldName);
-                var parameter = Expression.Parameter(type, "s");
-                var propertyAccess = Expression.MakeMemberAccess(parameter, property);
-                var orderByExpression = Expression.Lambda(propertyAccess, parameter);
-                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType },
-                                              query.Expression, Expression.Quote(orderByExpression));
-                result = result.Provider.CreateQuery<InventoryRequirementListModel>(resultExpression);
-            }
 
             var lst = await (size > 0 ? result.Skip((page - 1) * size).Take(size) : result)
                 .ToListAsync();
