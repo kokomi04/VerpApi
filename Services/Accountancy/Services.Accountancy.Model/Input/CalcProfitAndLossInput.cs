@@ -18,11 +18,11 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsByLsx { get; set; }
         public bool IsByOrder { get; set; }
 
-        public NonCamelCaseDictionary<decimal> Custom_AllocationRate { get; set; }
-        public NonCamelCaseDictionary<decimal> Custom_PriceSellDirectly { get; set; }
-        public NonCamelCaseDictionary<decimal> Custom_CostSellDirectly { get; set; }
-        public NonCamelCaseDictionary<decimal> Custom_CostManagerDirectly { get; set; }
-        public NonCamelCaseDictionary<decimal> Custom_OtherFee { get; set; }
+        public NonCamelCaseDictionary<decimal?> Custom_AllocationRate { get; set; }
+        public NonCamelCaseDictionary<decimal?> Custom_PriceSellDirectly { get; set; }
+        public NonCamelCaseDictionary<decimal?> Custom_CostSellDirectly { get; set; }
+        public NonCamelCaseDictionary<decimal?> Custom_CostManagerDirectly { get; set; }
+        public NonCamelCaseDictionary<decimal?> Custom_OtherFee { get; set; }
 
         public EnumCalcProfitAndLossAllocation PriceSellInDirectlyAllocationTypeId { get; set; }
         public decimal? PriceSellInDirectlySumCustom { get; set; }

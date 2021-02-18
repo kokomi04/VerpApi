@@ -603,6 +603,27 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
         }
 
+        public static SqlParameter ToDecimalKeyValueSqlParameter(this NonCamelCaseDictionary<decimal?> values, string parameterName)
+        {
+            var type = "_DECIMAL_KEY_VALUES";
+            var keyColumn = "Key";
+            var valueColumn = "Value";
+            var table = new DataTable(type);
+            table.Columns.Add(new DataColumn(keyColumn, typeof(string)));
+            table.Columns.Add(new DataColumn(valueColumn, typeof(decimal)));
+            if (values != null)
+            {
+                foreach (var item in values)
+                {
+                    var row = table.NewRow();
+                    row[keyColumn] = item.Key;
+                    row[valueColumn] = item.Value.HasValue ? (object)item.Value.Value : DBNull.Value;
+                    table.Rows.Add(row);
+                }
+            }
+            return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
+        }
+
         public static SqlParameter ToSqlParameterValue(this decimal? value, string parameterName)
         {
             return new SqlParameter(parameterName, SqlDbType.Decimal) { Value = value.HasValue ? (object)value : DBNull.Value };
