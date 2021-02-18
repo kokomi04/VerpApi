@@ -11,6 +11,7 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Lệnh sản xuất không tồn tại")]
         ProductOrderNotfound = 1,
         [Description("Mã lệnh sản xuất đã tồn tại")]
-        ProductOrderCodeAlreadyExisted = 2
+        ProductOrderCodeAlreadyExisted = 2,
+        NotFoundMaterials = 3
     }
 }
