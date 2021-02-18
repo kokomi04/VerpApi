@@ -16,6 +16,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.Outsource;
@@ -56,11 +57,56 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 var warningOutsourcePartRequest = await ValidateOutsourcePartRequest(productionProcess);
                 var warningOutsourceStepRequest = await ValidateOutsourceStepRequest(productionProcess);
+                var warningProductionOrder = await ValidateProductionOrder(productionProcess);
+                lsWarning.AddRange(warningProductionOrder);
                 lsWarning.AddRange(warningOutsourcePartRequest);
                 lsWarning.AddRange(warningOutsourceStepRequest);
             }
 
 
+
+            return lsWarning;
+        }
+
+        public async Task<IList<ProductionProcessWarningMessage>> ValidateProductionOrder(ProductionProcessModel productionProcess)
+        {
+            IList<ProductionProcessWarningMessage> lsWarning = new List<ProductionProcessWarningMessage>();
+
+            var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderId = @ProductionOrderId";
+            var parammeters = new SqlParameter[]
+            {
+                    new SqlParameter("@ProductionOrderId", productionProcess.ContainerId)
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+
+            var productionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
+
+            var stepFinal = productionProcess.ProductionSteps.FirstOrDefault(x => x.IsFinish);
+
+            if (stepFinal != null)
+            {
+                var linkData = from role in productionProcess.ProductionStepLinkDataRoles
+                               join ld in productionProcess.ProductionStepLinkDatas on role.ProductionStepLinkDataCode equals ld.ProductionStepLinkDataCode
+                               where role.ProductionStepCode == stepFinal.ProductionStepCode && role.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input
+                               select ld;
+                foreach(var ld in linkData)
+                {
+                    var p = productionOrderDetail.FirstOrDefault(x => x.ProductId == ld.ObjectId);
+                    if(p == null)
+                    {
+                        lsWarning.Add(new ProductionProcessWarningMessage
+                        {
+                            Message = $"Sản phẩm \"{ld.ObjectTitle}\" đã bị xóa, cần xem xét thay đổi quy trình sản xuất.",
+                            ObjectId = ld.ProductionStepLinkDataId,
+                            ObjectCode = ld.ProductionStepLinkDataCode,
+                            GroupName = EnumProductionProcessWarningCode.WarningProductionOrder.GetEnumDescription(),
+                            WarningCode = EnumProductionProcessWarningCode.WarningProductionOrder
+                        });
+                    }
+                }
+                
+
+            }
 
             return lsWarning;
         }

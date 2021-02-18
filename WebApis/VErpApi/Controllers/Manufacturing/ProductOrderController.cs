@@ -20,11 +20,13 @@ namespace VErpApi.Controllers.Manufacturing
     {
         private readonly IProductionOrderService _productionOrderService;
         private readonly IProductionOrderMaterialsService _productionOrderMaterialsService;
+        private readonly IValidateProductionOrderService _validateProductionOrderService;
 
-        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService)
+        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService, IValidateProductionOrderService validateProductionOrderService)
         {
             _productionOrderService = productionOrderService;
             _productionOrderMaterialsService = productionOrderMaterialsService;
+            _validateProductionOrderService = validateProductionOrderService;
         }
 
         [HttpPost]
@@ -96,6 +98,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<IList<ProductionOrderMaterialsModel>> GetProductionOrderMaterials([FromRoute] int productionOrderId)
         {
             return await _productionOrderMaterialsService.GetProductionOrderMaterials(productionOrderId);
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/warnings")]
+        public async Task<IList<string>> GetWarnings([FromRoute] int productionOrderId)
+        {
+            return await _validateProductionOrderService.ValidateProductionOrder(productionOrderId);
         }
     }
 }
