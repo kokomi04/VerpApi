@@ -72,6 +72,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
             {
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
+                entity.Property(e => e.HelpText).HasMaxLength(512);
+
                 entity.Property(e => e.ParamerterName)
                     .IsRequired()
                     .HasMaxLength(128);
