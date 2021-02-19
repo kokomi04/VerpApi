@@ -78,11 +78,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
             }
 
+            if (string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "ProductionOrderId";
+                asc = true;
+            }
+
             var sql = new StringBuilder(
-                @";WITH tmp AS (
-                    SELECT g.ProductionOrderId
-                    FROM(
-                        SELECT * FROM vProductionOrderDetail v");
+                @$";WITH tmp AS (
+                    SELECT ");
+
+            if(size < 0)
+            {
+                sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+            }
+
+            sql.Append(@" g.ProductionOrderId
+                        FROM(
+                            SELECT * FROM vProductionOrderDetail v");
 
             var totalSql = new StringBuilder(
                 @"SELECT 
@@ -103,13 +116,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                    @") g
 	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.ProductionOrderStatus ");
 
-            if (string.IsNullOrEmpty(orderByFieldName))
-            {
-                orderByFieldName = "ProductionOrderId";
-                asc = true;
-            }
-            sql.Append($"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}");
-
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
             if (table != null && table.Rows.Count > 0)
@@ -119,13 +125,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (size >= 0)
             {
-                sql.Append(@$" OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT { size}
-                ROWS ONLY");
+                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                            OFFSET {(page - 1) * size} ROWS
+                            FETCH NEXT { size}
+                            ROWS ONLY");
             }
+
             sql.Append(@")
                 SELECT v.* FROM tmp t
                 LEFT JOIN vProductionOrderDetail v ON t.ProductionOrderId = v.ProductionOrderId ");
+
+            if(size < 0)
+            {
+                sql.Append(" ORDER BY t.RowNum");
+            }
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
