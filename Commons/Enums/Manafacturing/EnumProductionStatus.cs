@@ -8,7 +8,7 @@ namespace VErp.Commons.Enums.Manafacturing
     public enum EnumProductionStatus : int
     {
         [Description("Đang thiết lập")]
-        NotReady = 0,
+        NotReady = 9,
         [Description("Chờ sản xuât")]
         Waiting = 1,
         [Description("Đang sản xuất")]

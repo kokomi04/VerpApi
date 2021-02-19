@@ -93,11 +93,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var productionOrderDetailIds = productionOderDetails.Select(s => s.ProductionOrderDetailId).ToList();
 
-            if (!_manufacturingDBContext.ProductionStepOrder
-                .Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại trong quy trình sản xuất");
-            }
+            //if (!_manufacturingDBContext.ProductionStepOrder
+            //    .Any(so => productionOrderDetailIds.Contains(so.ProductionOrderDetailId) && so.ProductionStepId == productionStepId))
+            //{
+            //    throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại trong quy trình sản xuất");
+            //}
 
             var linkDatas = step.ProductionStepLinkDataRole
                 .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
@@ -178,7 +178,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionCode", parammeters);
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
             var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
                 .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
