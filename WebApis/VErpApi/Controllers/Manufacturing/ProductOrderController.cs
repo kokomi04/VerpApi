@@ -11,6 +11,7 @@ using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -94,8 +95,22 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
+        [Route("{productionOrderId}/materials-calc")]
+        public async Task<IList<ProductionOrderMaterialsCalc>> GetProductionOrderMaterials([FromRoute] int productionOrderId)
+        {
+            return await _productionOrderMaterialsService.GetProductionOrderMaterialsCalc(productionOrderId);
+        }
+
+        [HttpPut]
         [Route("{productionOrderId}/materials")]
-        public async Task<IList<ProductionOrderMaterialsModel>> GetProductionOrderMaterials([FromRoute] int productionOrderId)
+        public async Task<bool> UpdateProductionOrderMaterials([FromRoute] long productionOrderId, [FromBody] IList<ProductionOrderMaterialsInput> materials)
+        {
+            return await _productionOrderMaterialsService.UpdateProductionOrderMaterials(productionOrderId, materials);
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/materials")]
+        public async Task<IList<ProductionOrderMaterialsOutput>> GetProductionOrderMaterials(long productionOrderId)
         {
             return await _productionOrderMaterialsService.GetProductionOrderMaterials(productionOrderId);
         }

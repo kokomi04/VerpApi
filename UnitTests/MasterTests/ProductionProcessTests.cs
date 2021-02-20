@@ -57,7 +57,7 @@ namespace MasterTests
             var productionOrderId = 10045;
             try
             {
-                var data = await productOrderMaterialsService.GetProductionOrderMaterials(productionOrderId);
+                var data = await productOrderMaterialsService.GetProductionOrderMaterialsCalc(productionOrderId);
             }
             catch (Exception)
             {

@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace VErp.Services.Manafacturing.Model.ProductionOrder
+namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 {
-    public class ProductionOrderMaterialsModel
+    public class ProductionOrderMaterialsCalc
     {
+        public long? ProductionOrderMaterialsId { get; set; }
         public long ProductionStepId { get; set; }
         public string ProductionStepTitle { get; set; }
         public long ProductionStepLinkDataId { get; set; }
@@ -14,5 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal? AssignmentQuantity { get; set; }
         public int? DepartmentId { get; set; }
         public decimal RateQuantity { get; set; }
+        public bool IsReplacement { get; set; }
+        public long? ParentId { get; set; }
     }
 }
