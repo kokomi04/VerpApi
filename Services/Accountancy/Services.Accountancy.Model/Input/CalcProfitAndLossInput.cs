@@ -27,6 +27,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public EnumCalcProfitAndLossAllocation PriceSellInDirectlyAllocationTypeId { get; set; }
         public decimal? PriceSellInDirectlySumCustom { get; set; }
 
+        public EnumCalcProfitAndLossAllocation CostAccountingAllocationTypeId { get; set; }
+        public decimal? CostAccountingSumCustom { get; set; }
+
+
         public EnumCalcProfitAndLossAllocation CostSellInDirectlyAllocationTypeId { get; set; }
         public decimal? CostSellInDirectlySumCustom { get; set; }
 
@@ -47,6 +51,7 @@ namespace VErp.Services.Accountancy.Model.Input
     {
         public IList<NonCamelCaseDictionary> Data { get; set; }
         public decimal? PriceSellInDirectlySum { get; set; }
+        public decimal? CostAccountingSum { get; set; }
         public decimal? CostSellInDirectlySum { get; set; }
         public decimal? CostManagerSum { get; set; }
 

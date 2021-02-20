@@ -189,6 +189,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var tDate = req.ToDate.UnixToDateTime();
 
             var priceSellInDirectlySum = new SqlParameter("@PriceSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
+            var costAccountingSum = new SqlParameter("@CostAccountingSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costSellInDirectlySum = new SqlParameter("@CostSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costManagerSum = new SqlParameter("@CostManagerSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
 
@@ -225,6 +226,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     req.PriceSellInDirectlySumCustom.ToSqlParameterValue("@PriceSellInDirectlySumCustom"),
                     priceSellInDirectlySum,
 
+                    new SqlParameter("@CostAccountingAllocationTypeId", SqlDbType.Int){ Value = req.CostAccountingAllocationTypeId},
+                    req.CostAccountingSumCustom.ToSqlParameterValue("@CostAccountingSumCustom"),
+                    costAccountingSum,
+
                     new SqlParameter("@CostSellInDirectlyAllocationTypeId", SqlDbType.Int){ Value = req.CostSellInDirectlyAllocationTypeId},
                     req.CostSellInDirectlySumCustom.ToSqlParameterValue("@CostSellInDirectlySumCustom"),
                     costSellInDirectlySum,
@@ -240,6 +245,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 Data = data,
                 PriceSellInDirectlySum = priceSellInDirectlySum.Value as decimal?,
+                CostAccountingSum = costAccountingSum.Value as decimal?,
                 CostSellInDirectlySum = costSellInDirectlySum.Value as decimal?,
                 CostManagerSum = costManagerSum.Value as decimal?
             };
