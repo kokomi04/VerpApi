@@ -119,6 +119,16 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             return (data, total);
         }
 
+        public async Task<StepModel> GetStep(int stepId)
+        {
+            var step = await _manufacturingDBContext.Step.AsNoTracking()
+                .ProjectTo<StepModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(x => x.StepId == stepId);
+            if (step == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            return step;
+        }
+
         public async Task<bool> UpdateStep(int stepId, StepModel req)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();

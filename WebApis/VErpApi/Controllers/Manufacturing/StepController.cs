@@ -49,5 +49,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _stepService.GetListStep(keyword, page, size);
         }
+
+        [HttpGet]
+        [Route("{stepId}")]
+        public async Task<StepModel> GetStep([FromRoute] int stepId)
+        {
+            return await _stepService.GetStep(stepId);
+        }
     }
 }
