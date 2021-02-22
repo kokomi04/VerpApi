@@ -873,7 +873,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel model)
         {
-            var info = _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == model.ContainerId && x.ContainerTypeId == model.ContainerTypeId).FirstOrDefault();
+            var info = _manufacturingDBContext.ProductionStepRoleClient
+                .Where(x => x.ContainerId == model.ContainerId && x.ContainerTypeId == model.ContainerTypeId)
+                .FirstOrDefault();
+
             if (info != null)
                 info.ClientData = model.ClientData;
             else
@@ -885,10 +888,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId)
         {
-            var info = await _manufacturingDBContext.ProductionStepRoleClient.Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId).FirstOrDefaultAsync();
-            if (info == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-            return info.ClientData;
+            var info = await _manufacturingDBContext.ProductionStepRoleClient
+                .Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId)
+                .FirstOrDefaultAsync();
+            
+            return info == null? "" : info.ClientData;
         }
 
         public async Task<long> CreateProductionStepGroup(ProductionStepGroupModel req)
