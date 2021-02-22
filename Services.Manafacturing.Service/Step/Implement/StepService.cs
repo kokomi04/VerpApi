@@ -57,7 +57,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
                 await trans.CommitAsync();
 
-                return entity.StepGroupId;
+                return entity.StepId;
             }
             catch (Exception ex)
             {
