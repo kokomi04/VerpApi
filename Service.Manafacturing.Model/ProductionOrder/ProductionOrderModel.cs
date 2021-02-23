@@ -12,7 +12,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
     public class ProductionOrderOutputModel : ProductOrderModel, IMapFrom<ProductionOrderEntity>
     {
-        public EnumProcessStatus ProcessStatus { get; set; }
+        public EnumProductionStatus? ProductionOrderStatus { get; set; }
+        //public EnumProcessStatus ProcessStatus { get; set; }
         public virtual ICollection<ProductionOrderDetailOutputModel> ProductionOrderDetail { get; set; }
 
         public void Mapping(Profile profile)
@@ -34,7 +35,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         {
             profile.CreateMap<ProductionOrderInputModel, ProductionOrderEntity>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductionOrderStatus, opt => opt.MapFrom(source => (int)source.ProductionOrderStatus))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()))
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.UnixToDateTime()))
@@ -52,8 +52,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long EndDate { get; set; }
         public string Description { get; set; }
         public bool IsDraft { get; set; }
-
-        public EnumProductionStatus ProductionOrderStatus { get; set; }
     }
 
     public class ProductionOrderStatusModel
