@@ -457,6 +457,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             using var trans = _manufacturingDBContext.Database.BeginTransaction();
             try
             {
+                // Update status cho chi tiết LSX
+                productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Waiting;
+
                 //// Update status cho chi tiết LSX
                 //foreach (var item in productionOrderDetails)
                 //{
