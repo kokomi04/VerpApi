@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionOrderId}")]
-        public async Task<ProductionOrderInputModel> UpdateProductionOrder([FromRoute] int productionOrderId, [FromBody] ProductionOrderInputModel req)
+        public async Task<ProductionOrderInputModel> UpdateProductionOrder([FromRoute] long productionOrderId, [FromBody] ProductionOrderInputModel req)
         {
             return await _productionOrderService.UpdateProductionOrder(productionOrderId, req);
         }
@@ -54,7 +54,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productionOrderId}")]
-        public async Task<ProductionOrderOutputModel> GetProductionOrder([FromRoute] int productionOrderId)
+        public async Task<ProductionOrderOutputModel> GetProductionOrder([FromRoute] long productionOrderId)
         {
             return await _productionOrderService.GetProductionOrder(productionOrderId);
         }
@@ -68,7 +68,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpDelete]
         [Route("{productionOrderId}")]
-        public async Task<bool> DeleteProductionOrder([FromRoute] int productionOrderId)
+        public async Task<bool> DeleteProductionOrder([FromRoute] long productionOrderId)
         {
             return await _productionOrderService.DeleteProductionOrder(productionOrderId);
         }
