@@ -60,19 +60,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             || x.ProductionStepLinkData.ProductionStepLinkDataTypeId == (int)EnumProductionStepLinkDataType.Others))
                 .ToList();
 
+            var productionAssignments = _manufacturingDBContext.ProductionAssignment.AsNoTracking()
+                                            .Where(x => roleInputData.Select(x => x.ProductionStepId).Contains(x.ProductionStepId))
+                                            .Include(x => x.ProductionStepLinkData)
+                                            .Select(x => new
+                                            {
+                                                x.ProductionStepId,
+                                                x.DepartmentId,
+                                                RateQuantity = Math.Round(x.AssignmentQuantity / (x.ProductionStepLinkData.Quantity - x.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()), 5)
+                                            }).ToArray();
+
             var materialsAssigned = (from r in roleInputData
-                                     join a in _manufacturingDBContext.ProductionAssignment
-                                         on r.ProductionStepLinkDataId equals a.ProductionStepLinkDataId
+                                     join a in productionAssignments
+                                         on r.ProductionStepId equals a.ProductionStepId
                                      select new ProductionOrderMaterialsCalc
                                      {
-                                         AssignmentQuantity = a.AssignmentQuantity,
+                                         AssignmentQuantity = a.RateQuantity * (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                          DepartmentId = a.DepartmentId,
                                          ProductId = r.ProductionStepLinkData.ObjectId,
                                          ProductionStepId = r.ProductionStepId,
                                          ProductionStepTitle = r.ProductionStep.Step?.StepName,
                                          ProductionStepLinkDataId = r.ProductionStepLinkDataId,
                                          Quantity = r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault(),
-                                         RateQuantity = a.AssignmentQuantity / (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault())
+                                         RateQuantity = a.RateQuantity
                                      }).ToList();
             var calcuTotalAssignmentQuantity = from m in materialsAssigned
                                                group m by new

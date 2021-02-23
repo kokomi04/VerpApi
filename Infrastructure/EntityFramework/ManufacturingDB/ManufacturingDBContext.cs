@@ -262,9 +262,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Productivity).HasColumnType("decimal(18, 5)");
 
-                entity.HasOne(d => d.ProductionStep)
+                entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.ProductionAssignment)
-                    .HasForeignKey(d => d.ProductionStepId)
+                    .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductionAssignment_ProductionStep");
             });

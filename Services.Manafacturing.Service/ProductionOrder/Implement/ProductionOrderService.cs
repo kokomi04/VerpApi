@@ -562,5 +562,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
+
+        public async Task<bool> UpdateManualProductionOrderRequirements(long productionOrderId, ProductionOrderRequirementModel requirement)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+            if (productionOrder == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+            try
+            {
+                productionOrder.InventoryRequirementId = requirement.InventoryRequirementId;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật các yêu cầu của lệch sản xuất ", new { productionOrder, requirement, isManual = true }.JsonSerialize());
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateManualProductionOrderRequirements");
+                throw;
+            }
+        }
     }
 }

@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public long ProductionOrderId { get; set; }
 
-        public virtual ProductionStep ProductionStep { get; set; }
+        public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }
         public virtual ICollection<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual ICollection<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual ICollection<ProductionHandover> ProductionHandoverProductionAssignment { get; set; }
