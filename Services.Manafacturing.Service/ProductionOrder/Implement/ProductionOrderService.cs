@@ -159,7 +159,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return resultData.ConvertData<ProductionOrderExtraInfo>();
         }
 
-        public async Task<ProductionOrderOutputModel> GetProductionOrder(int productionOrderId)
+        public async Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId)
         {
             var productOrder = _manufacturingDBContext.ProductionOrder
                 .Where(o => o.ProductionOrderId == productionOrderId)
@@ -273,7 +273,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<ProductionOrderInputModel> UpdateProductionOrder(int productionOrderId, ProductionOrderInputModel data)
+        public async Task<ProductionOrderInputModel> UpdateProductionOrder(long productionOrderId, ProductionOrderInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -359,7 +359,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> DeleteProductionOrder(int productionOrderId)
+        public async Task<bool> DeleteProductionOrder(long productionOrderId)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
