@@ -31,5 +31,19 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         {
             return await _productionOrderService.UpdateProductionOrderStatus(productionOrderId, status);
         }
+
+        [HttpPut]
+        [Route("requirements/inventory")]
+        public async Task<bool> DeleteManualProductionOrderInventoryRequirements([FromQuery] long? inventoryRequirementId)
+        {
+            return await _productionOrderService.DeleteManualProductionOrderInventoryRequirements(inventoryRequirementId);
+        }
+
+        [HttpPut]
+        [Route("requirements/purchasing")]
+        public async Task<bool> DeleteManualProductionOrderPurchasingRequirements([FromQuery] long? purchasingRequestId)
+        {
+            return await _productionOrderService.DeleteManualProductionOrderPurchasingRequirements(purchasingRequestId);
+        }
     }
 }

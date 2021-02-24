@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 
@@ -17,6 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public long? ParentId { get; set; }
         public bool IsReplacement { get; set; }
         public long ProductionStepLinkDataId { get; set; }
+        public EnumProductionOrderMaterials.EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
     }
 
     public class ProductionOrderMaterialsInput : ProductionOrderMaterialsBaseInfo

@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public decimal Quantity { get; set; }
         public int UnitId { get; set; }
         public int? DepartmentId { get; set; }
+        public int InventoryRequirementStatusId { get; set; }
         public long? ParentId { get; set; }
         public bool IsReplacement { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

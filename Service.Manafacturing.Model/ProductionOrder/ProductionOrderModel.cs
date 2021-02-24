@@ -55,6 +55,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public EnumProductionStatus ProductionOrderStatus { get; set; }
         public long? InventoryRequirementId { get; set; }
+        public long? PurchasingRequestId { get; set; }
     }
 
     public class ProductionOrderStatusModel
@@ -65,5 +66,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionOrderRequirementModel
     {
         public long? InventoryRequirementId { get; set; }
+        public long? PurchasingRequestId { get; set; }
     }
 }

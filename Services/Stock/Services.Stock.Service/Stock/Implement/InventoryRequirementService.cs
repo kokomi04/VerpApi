@@ -43,6 +43,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         private readonly IFileService _fileService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
+        private readonly IProductionOrderHelperService _productionOrderHelperService;
 
         public InventoryRequirementService(StockDBContext stockDBContext
             , IActivityLogService activityLogService
@@ -53,6 +54,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , IFileService fileService
             , ICurrentContextService currentContextService
             , IOutsideMappingHelperService outsideMappingHelperService
+            , IProductionOrderHelperService productionOrderHelperService
             )
         {
             _stockDBContext = stockDBContext;
@@ -64,6 +66,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _fileService = fileService;
             _currentContextService = currentContextService;
             _outsideMappingHelperService = outsideMappingHelperService;
+            _productionOrderHelperService = productionOrderHelperService;
         }
 
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -329,6 +332,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await _activityLogService.CreateLog(objectType, inventoryRequirement.InventoryRequirementId, $"Xóa dữ liệu yêu cầu xuất/nhập kho {inventoryRequirement.InventoryRequirementCode}", inventoryRequirement.JsonSerialize());
 
                 await _outsideMappingHelperService.MappingObjectDelete(objectType, inventoryRequirementId);
+
+                await _productionOrderHelperService.UpdateManualProductionOrderInventoryRequirements(inventoryRequirementId);
 
                 return true;
             }

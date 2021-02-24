@@ -127,6 +127,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 item.AssignmentQuantity = m.Quantity;
                 item.ProductionOrderMaterialsId = m.ProductionOrderMaterialsId;
+                item.InventoryRequirementStatusId = m.InventoryRequirementStatusId;
 
                 var child = materialsDb.Where(x => x.ParentId.HasValue && x.ParentId == m.ProductionOrderMaterialsId && x.IsReplacement == true)
                     .Select(r => new ProductionOrderMaterialsCalc
@@ -140,7 +141,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         RateQuantity = 1,
                         IsReplacement = r.IsReplacement,
                         ParentId = r.ParentId,
-                        ProductionOrderMaterialsId = r.ProductionOrderMaterialsId
+                        ProductionOrderMaterialsId = r.ProductionOrderMaterialsId,
+                        InventoryRequirementStatusId = r.InventoryRequirementStatusId,
+                        DepartmentId = r.DepartmentId
                     });
                 materialsReplacement.AddRange(child);
             }
