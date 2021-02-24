@@ -17,6 +17,7 @@ using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -110,7 +111,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                           ProductionStepTitle = r.ProductionStep.Step?.StepName,
                                           ProductionStepLinkDataId = r.ProductionStepLinkDataId,
                                           Quantity = r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault(),
-                                          RateQuantity = !AssignmentQuantity.HasValue ? 1 : (AssignmentQuantity.GetValueOrDefault() / (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()))
+                                          RateQuantity = !AssignmentQuantity.HasValue ? 1 : (AssignmentQuantity.GetValueOrDefault() / (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault())),
+                                          InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet
                                       };
 
             materialsAssigned.AddRange(materialsUnAssigned);
