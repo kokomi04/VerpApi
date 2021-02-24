@@ -386,7 +386,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (productionOrderDetails.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại sản phẩm trong lệnh sản xuất.");
 
-            var productIds = productionOrderDetails.Select(od => (long)od.ProductId).ToList();
+            var productIds = productionOrderDetails.Select(od => (long)od.ProductId).Distinct().ToList();
 
             // Lấy ra thông tin đầu ra nhập kho trong quy trình
             var processProductIds = (

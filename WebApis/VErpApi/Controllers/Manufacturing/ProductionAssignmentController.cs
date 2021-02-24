@@ -45,6 +45,14 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.UpdateProductionAssignment(productionStepId, productionOrderId, data.ProductionAssignments, data.ProductionStepWorkInfo, data.DepartmentTimeTable);
         }
 
+        [HttpPut]
+        [Route("{productionOrderId}")]
+        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionOrderId, [FromBody] GeneralAssignmentModel data)
+        {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _productionAssignmentService.UpdateProductionAssignment(productionOrderId, data);
+        }
+
         [HttpPost]
         [Route("DepartmentTimeTable")]
         public async Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable([FromBody] int[] departmentIds, [FromQuery] long startDate, [FromQuery] long endDate)
