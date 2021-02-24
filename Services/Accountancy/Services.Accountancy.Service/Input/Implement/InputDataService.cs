@@ -234,10 +234,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
+            ";
 
+            if (size > 0)
+            {
+                dataSql += @$"
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
             ";
+            }
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";

@@ -43,13 +43,13 @@ namespace VErpApi.Controllers.Accountancy.Data
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
             return await _inputDataService.GetBills(inputTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
-        }      
+        }
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}")]
-        public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int? page, [FromQuery] int? size)
         {
-            return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page, size).ConfigureAwait(true);
+            return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page ?? 1, size ?? 0).ConfigureAwait(true);
         }
 
         [HttpGet]
