@@ -36,13 +36,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductHelperService _productHelperService;
+        private readonly IValidateProductionOrderService _validateProductionOrderService;
 
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductHelperService productHelperService)
+            , IProductHelperService productHelperService
+            , IValidateProductionOrderService validateProductionOrderService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -50,6 +52,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _productHelperService = productHelperService;
+            _validateProductionOrderService = validateProductionOrderService;
         }
 
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -177,6 +180,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 productOrder.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
+                var warnings = await _validateProductionOrderService.GetWarningProductionOrder(productionOrderId, productOrder.ProductionOrderDetail);
+                productOrder.MarkInValid = warnings.Count > 0;
 
                 //var detailIds = productOrder.ProductionOrderDetail.Select(od => od.ProductionOrderDetailId).ToList();
                 //var countDetailId = _manufacturingDBContext.ProductionStepOrder
@@ -242,6 +247,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
+                productionOrder.MarkInvalid = true;
                 productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
                 _manufacturingDBContext.ProductionOrder.Add(productionOrder);
                 await _manufacturingDBContext.SaveChangesAsync();
@@ -257,6 +263,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     _manufacturingDBContext.ProductionOrderDetail.Add(entity);
                 }
                 await _manufacturingDBContext.SaveChangesAsync();
+
+                
+
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
 
@@ -368,7 +377,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     item.IsDeleted = true;
                 }
 
+                var warnings = await _validateProductionOrderService.GetWarningProductionOrder(data.ProductionOrderId, data.ProductionOrderDetail.Select(x => new ProductionOrderDetailOutputModel
+                {
+                    Quantity = x.Quantity,
+                    ReserveQuantity = x.ReserveQuantity,
+                    ProductId = x.ProductId,
+                }).ToList());
+
+                productionOrder.MarkInvalid = warnings.Count > 0;
+
                 await _manufacturingDBContext.SaveChangesAsync();
+
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());

@@ -51,7 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return await GetWarningProductionOrder(productionOrderId, productionOrderDetail);
         }
 
-        public  async Task<IList<string>> GetWarningProductionOrder(long productionOrderId, IList<ProductionOrderDetailOutputModel> productionOrderDetail)
+        public  async Task<IList<string>> GetWarningProductionOrder(long productionOrderId, IEnumerable<ProductionOrderDetailOutputModel> productionOrderDetail)
         {
             var lsWarning = new List<string>();
 
@@ -79,7 +79,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                 }
 
-                var ldNotProcess = linkData.Where(x => productionOrderDetail.Select(p => (long)p.ProductId).Contains(x.ObjectId)).Select(x => x.ObjectId);
+                var ldNotProcess = linkData.Where(x => !productionOrderDetail.Select(p => (long)p.ProductId).Contains(x.ObjectId)).Select(x => x.ObjectId);
                 if (ldNotProcess.Count() > 0)
                     lsWarning.Add($"Số lượng sản phẩm đầu ra của QTSX lệch với LSX");
             }

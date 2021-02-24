@@ -9,6 +9,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
     public interface IValidateProductionOrderService
     {
         Task<IList<string>> ValidateProductionOrder(long productionOrderId);
-        Task<IList<string>> GetWarningProductionOrder(long productionOrderId, IList<ProductionOrderDetailOutputModel> productionOrderDetail);
+        Task<IList<string>> GetWarningProductionOrder(long productionOrderId, IEnumerable<ProductionOrderDetailOutputModel> productionOrderDetail);
     }
 }
