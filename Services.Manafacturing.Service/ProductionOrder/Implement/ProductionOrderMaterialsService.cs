@@ -83,7 +83,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                          ProductionStepTitle = r.ProductionStep.Step?.StepName,
                                          ProductionStepLinkDataId = r.ProductionStepLinkDataId,
                                          Quantity = r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault(),
-                                         RateQuantity = a.RateQuantity
+                                         RateQuantity = a.RateQuantity,
+                                         InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet
                                      }).ToList();
             var calcuTotalAssignmentQuantity = from m in materialsAssigned
                                                group m by new
