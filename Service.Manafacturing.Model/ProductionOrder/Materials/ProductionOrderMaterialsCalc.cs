@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 {
@@ -17,5 +18,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public decimal RateQuantity { get; set; }
         public bool IsReplacement { get; set; }
         public long? ParentId { get; set; }
+        public EnumProductionOrderMaterials.EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
     }
 }

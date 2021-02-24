@@ -21,5 +21,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 
         Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
         Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
+        Task<bool> UpdateManualProductionOrderRequirements(long productionOrderId, ProductionOrderRequirementModel requirement);
+        Task<bool> DeleteManualProductionOrderInventoryRequirements(long? inventoryRequirementId);
+        Task<bool> DeleteManualProductionOrderPurchasingRequirements(long? purchasingRequestId);
     }
 }

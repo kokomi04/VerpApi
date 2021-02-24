@@ -562,5 +562,62 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
+
+        public async Task<bool> UpdateManualProductionOrderRequirements(long productionOrderId, ProductionOrderRequirementModel requirement)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+            if (productionOrder == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+            try
+            {
+                productionOrder.InventoryRequirementId = requirement.InventoryRequirementId;
+                productionOrder.PurchasingRequestId = requirement.PurchasingRequestId;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật các yêu cầu của lệch sản xuất ", new { productionOrder, requirement, isManual = true }.JsonSerialize());
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateManualProductionOrderRequirements");
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteManualProductionOrderInventoryRequirements(long? inventoryRequirementId)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.InventoryRequirementId == inventoryRequirementId);
+            if (productionOrder == null)
+                return true;
+            try
+            {
+                productionOrder.InventoryRequirementId = null;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật các yêu cầu của lệch sản xuất ", new { productionOrder, isManual = true }.JsonSerialize());
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateManualProductionOrderInventoryRequirements");
+                throw;
+            }
+        }
+        public async Task<bool> DeleteManualProductionOrderPurchasingRequirements(long? purchasingRequestId)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.PurchasingRequestId == purchasingRequestId);
+            if (productionOrder == null)
+                return true;
+            try
+            {
+                productionOrder.PurchasingRequestId = null;
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật các yêu cầu của lệch sản xuất ", new { productionOrder, isManual = true }.JsonSerialize());
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateManualProductionOrderPurchasingRequirements");
+                throw;
+            }
+        }
     }
 }

@@ -262,9 +262,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Productivity).HasColumnType("decimal(18, 5)");
 
-                entity.HasOne(d => d.ProductionStep)
+                entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.ProductionAssignment)
-                    .HasForeignKey(d => d.ProductionStepId)
+                    .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductionAssignment_ProductionStep");
             });
@@ -328,11 +328,19 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionOrder>(entity =>
             {
+                entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.Description).HasMaxLength(128);
+
+                entity.Property(e => e.EndDate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.ProductionOrderCode)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderStatus).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.StartDate).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<ProductionOrderDetail>(entity =>
@@ -354,6 +362,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionOrderMaterials>(entity =>
             {
+                entity.Property(e => e.InventoryRequirementStatusId).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
                 entity.HasOne(d => d.Parent)

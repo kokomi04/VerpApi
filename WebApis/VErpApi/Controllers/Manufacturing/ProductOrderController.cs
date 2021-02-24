@@ -121,5 +121,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _validateProductionOrderService.ValidateProductionOrder(productionOrderId);
         }
+
+        [HttpPut]
+        [Route("{productionOrderId}/requirements")]
+        public async Task<bool> UpdateManualProductionOrderRequirements([FromRoute] long productionOrderId, [FromBody] ProductionOrderRequirementModel requirements)
+        {
+            return await _productionOrderService.UpdateManualProductionOrderRequirements(productionOrderId, requirements);
+        }
     }
 }
