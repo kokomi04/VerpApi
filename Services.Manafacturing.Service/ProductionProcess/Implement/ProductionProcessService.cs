@@ -1060,6 +1060,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req.JsonSerialize());
+
+                if(containerTypeId == EnumContainerType.ProductionOrder)
+                    await UpdateProductionOrder(containerId);
                 return true;
             }
             catch (Exception ex)
@@ -1357,6 +1360,30 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 await trans.TryRollbackTransactionAsync();
                 _logger.LogError(ex, "UpdateMarkInvalidOutsourceStepRequest");
+                throw;
+            }
+        }
+
+        private async Task<bool> UpdateProductionOrder(long productionOrderId)
+        {
+            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(po => po.ProductionOrderId == productionOrderId);
+            var materials = await _manufacturingDBContext.ProductionOrderMaterials.Where(po => po.ProductionOrderId == productionOrderId).ToListAsync();
+            if (productionOrder == null)
+                return true;
+            try
+            {
+                productionOrder.PurchasingRequestId = null;
+                productionOrder.InventoryRequirementId = null;
+
+                materials.ForEach(x => x.IsDeleted = true);
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật lệnh sản xuất và materials của LSX ", new { productionOrder, materials}.JsonSerialize());
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductionOrder");
                 throw;
             }
         }
