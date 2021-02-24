@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
     {
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId);
         Task<bool> UpdateProductionAssignment(long productionStepId, long productionOrderId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable);
-
+        Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc);
 
         Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments(long productionStepId);
