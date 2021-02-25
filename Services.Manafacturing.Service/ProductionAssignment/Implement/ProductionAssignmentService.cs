@@ -687,6 +687,159 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             };
         }
 
+        public async Task<CapacityOutputModel> GetGeneralCapacityDepartments(long productionOrderId)
+        {
+            var productionTime = await (
+                from o in _manufacturingDBContext.ProductionOrder
+                where o.ProductionOrderId == productionOrderId
+                select new
+                {
+                    o.StartDate,
+                    o.EndDate
+                }).FirstOrDefaultAsync();
+
+            if (productionTime == null)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
+
+            var productionSteps = _manufacturingDBContext.ProductionStep
+                .Where(ps => ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId).ToList();
+
+            if (productionSteps.Count == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
+
+            var departmentIdMap = (from sd in _manufacturingDBContext.StepDetail
+                                 join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
+                                 where ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId
+                                 select new
+                                 {
+                                     ps.ProductionStepId,
+                                     sd.DepartmentId
+                                 })
+                                 .ToList()
+                                 .GroupBy(sd => sd.ProductionStepId)
+                                 .ToDictionary(sd => sd.Key, sd => sd.Select(sd => sd.DepartmentId).ToList());
+
+            var productionStepIds = productionSteps.Select(ps => ps.ProductionStepId).ToList();
+            var departmentIds = departmentIdMap.SelectMany(sd => sd.Value).ToList();
+
+            var includeAssignments = _manufacturingDBContext.ProductionAssignment
+                .Where(a => productionStepIds.Contains(a.ProductionStepId)
+                    && a.ProductionOrderId == productionOrderId
+                    && !departmentIds.Contains(a.DepartmentId)
+                )
+                .Select(a => new
+                {
+                    a.ProductionStepId,
+                    a.DepartmentId
+                })
+                .ToList()
+                .GroupBy(sd => sd.ProductionStepId)
+                .ToDictionary(sd => sd.Key, sd => sd.Select(sd => sd.DepartmentId).ToList());
+
+            departmentIds.AddRange(includeAssignments.SelectMany(sd => sd.Value).ToList());
+            foreach (var includeAssignment in includeAssignments)
+            {
+                departmentIdMap[includeAssignment.Key].AddRange(includeAssignment.Value);
+            }
+            
+
+            if (departmentIdMap.Any(sd => sd.Value.Count == 0))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại công đoạn chưa thiết lập tổ sản xuất");
+
+            var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityModel>());
+
+            var otherAssignments = (
+                await (
+                from a in _manufacturingDBContext.ProductionAssignment
+                where departmentIds.Contains(a.DepartmentId)
+                    && a.ProductionOrderId != productionOrderId
+                    && a.StartDate <= productionTime.EndDate
+                    && a.EndDate >= productionTime.StartDate
+                join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
+                join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
+                join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                join ad in _manufacturingDBContext.ProductionAssignmentDetail on new { a.ProductionOrderId, a.ProductionStepId, a.DepartmentId } equals new { ad.ProductionOrderId, ad.ProductionStepId, ad.DepartmentId } into ads
+                from ad in ads.DefaultIfEmpty()
+                select new
+                {
+                    ProductionAssignment = a,
+                    TotalQuantity = d.Quantity,
+                    s.StepName,
+                    po.ProductionOrderCode,
+                    ad.QuantityPerDay,
+                    ad.WorkDate
+                }).ToListAsync()
+                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.ProductionOrderCode })
+                 .Select(g => new
+                 {
+                     g.Key.ProductionAssignment,
+                     g.Key.TotalQuantity,
+                     g.Key.StepName,
+                     g.Key.ProductionOrderCode,
+                     ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
+                     {
+                         ad.WorkDate,
+                         ad.QuantityPerDay
+                     }).ToList()
+                 }).ToList();
+
+            var workloadMap = _manufacturingDBContext.ProductionStep
+                .Where(s => productionStepIds.Contains(s.ProductionStepId))
+                .ToDictionary(s => s.ProductionStepId, s => s.Workload.GetValueOrDefault());
+
+            var zeroWorkloadIds = workloadMap.Where(w => w.Value == 0).Select(w => w.Key).ToList();
+            var zeroWorkloads = new List<ZeroWorkloadModel>();
+            if (zeroWorkloadIds.Count > 0)
+            {
+                zeroWorkloads = await (
+                    from ps in _manufacturingDBContext.ProductionStep
+                    where zeroWorkloadIds.Contains(ps.ProductionStepId)
+                    join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                    join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
+                    select new ZeroWorkloadModel
+                    {
+                        StepName = s.StepName,
+                        UnitId = s.UnitId,
+                        ProductionOrderCode = po.ProductionOrderCode,
+                        ProductionStepId = ps.ProductionStepId,
+                        ProductionOrderId = po.ProductionOrderId
+                    }).ToListAsync();
+            }
+
+            foreach (var otherAssignment in otherAssignments)
+            {
+                var capacityDepartment = new CapacityModel
+                {
+                    StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
+                    EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
+                    CreatedDatetimeUtc = otherAssignment.ProductionAssignment.CreatedDatetimeUtc.GetUnix(),
+                    Capacity = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                                * otherAssignment.ProductionAssignment.AssignmentQuantity)
+                                / (otherAssignment.TotalQuantity
+                                * otherAssignment.ProductionAssignment.Productivity),
+                    CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
+                    {
+                        WorkDate = ad.WorkDate.GetUnix(),
+                        StepName = otherAssignment.StepName,
+                        ProductionOrderCode = otherAssignment.ProductionOrderCode,
+                        CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                                            * ad.QuantityPerDay.Value)
+                                            / (otherAssignment.TotalQuantity
+                                            * otherAssignment.ProductionAssignment.Productivity)
+
+                    }).ToList()
+                };
+                capacityDepartments[otherAssignment.ProductionAssignment.DepartmentId].Add(capacityDepartment);
+            }
+
+            return new CapacityOutputModel
+            {
+                CapacityData = capacityDepartments,
+                ZeroWorkload = zeroWorkloads
+            };
+        }
+
         public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate)
         {
             DateTime startDateTime = startDate.UnixToDateTime().GetValueOrDefault();
@@ -846,6 +999,28 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     Quantity = sd.Quantity,
                     UnitId = sd.UnitId
                 });
+        }
+
+        public async Task<IDictionary<long, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments(long productionOrderId)
+        {
+            return (from sd in _manufacturingDBContext.StepDetail
+                    join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
+                    join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
+                    where ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId
+                    select new
+                    {
+                        ps.ProductionStepId,
+                        sd.DepartmentId,
+                        sd.Quantity,
+                        s.UnitId
+                    })
+                .ToList()
+                .GroupBy(sd => sd.ProductionStepId)
+                .ToDictionary(g => g.Key, g => g.ToDictionary(sd => sd.DepartmentId, sd => new ProductivityModel
+                {
+                    Quantity = sd.Quantity,
+                    UnitId = sd.UnitId
+                }));
         }
 
         public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId)
