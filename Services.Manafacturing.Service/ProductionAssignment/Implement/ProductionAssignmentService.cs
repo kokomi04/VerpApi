@@ -702,7 +702,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch sản xuất không tồn tại");
 
             var productionSteps = _manufacturingDBContext.ProductionStep
-                .Where(ps => ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId).ToList();
+                .Where(ps => ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId && ps.StepId.HasValue).ToList();
 
             if (productionSteps.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
@@ -741,12 +741,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 departmentIdMap[includeAssignment.Key].AddRange(includeAssignment.Value);
             }
-            
 
             if (departmentIdMap.Any(sd => sd.Value.Count == 0))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại công đoạn chưa thiết lập tổ sản xuất");
 
-            var capacityDepartments = departmentIds.ToDictionary(d => d, d => new List<CapacityModel>());
+            var capacityDepartments = departmentIds.Distinct().ToDictionary(d => d, d => new List<CapacityModel>());
 
             var otherAssignments = (
                 await (
@@ -784,8 +783,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                      }).ToList()
                  }).ToList();
 
+            var includeProductionStepIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionStepId).Distinct().ToList();
+
+            productionStepIds.AddRange(includeProductionStepIds);
+            productionStepIds = productionStepIds.Distinct().ToList();
+
             var workloadMap = _manufacturingDBContext.ProductionStep
-                .Where(s => productionStepIds.Contains(s.ProductionStepId))
+                .Where(ps => productionStepIds.Contains(ps.ProductionStepId))
                 .ToDictionary(s => s.ProductionStepId, s => s.Workload.GetValueOrDefault());
 
             var zeroWorkloadIds = workloadMap.Where(w => w.Value == 0).Select(w => w.Key).ToList();
