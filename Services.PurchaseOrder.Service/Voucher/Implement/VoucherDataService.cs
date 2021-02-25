@@ -209,9 +209,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
+            ";
+            if (size > 0)
+            {
+                dataSql += @$"
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
             ";
+            }
             var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {fId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
