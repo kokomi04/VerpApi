@@ -43,9 +43,9 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpGet]
         [Route("{voucherTypeId}/{fId}")]
-        public async Task<PageDataTable> GetVoucherBillInfoRows([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageDataTable> GetVoucherBillInfoRows([FromRoute] int voucherTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int? page, [FromQuery] int? size)
         {
-            return await _voucherDataService.GetVoucherBillInfoRows(voucherTypeId, fId, orderByFieldName, asc, page, size).ConfigureAwait(true);
+            return await _voucherDataService.GetVoucherBillInfoRows(voucherTypeId, fId, orderByFieldName, asc, page ?? 0, size ?? 0).ConfigureAwait(true);
         }
 
         [HttpGet]
@@ -124,7 +124,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             return await _voucherDataService.OrderDetailByPurchasingRequest(keyword, fromDate, toDate, isCreatedPurchasingRequest, page, size);
         }
-        
+
         [HttpPost("OrderDetails")]
         [VErpAction(EnumActionType.View)]
         public async Task<IList<NonCamelCaseDictionary>> OrderDetailByPurchasingRequest([FromBody] IList<long> orderDetailIds)

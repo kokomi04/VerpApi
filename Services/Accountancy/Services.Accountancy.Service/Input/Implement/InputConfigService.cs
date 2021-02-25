@@ -277,7 +277,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         InputTypeId = cloneType.InputTypeId,
                         InputAreaCode = area.InputAreaCode,
                         Title = area.Title,
+                        Description = area.Description,
                         IsMultiRow = area.IsMultiRow,
+                        IsAddition = area.IsAddition,
                         Columns = area.Columns,
                         SortOrder = area.SortOrder
                     };
@@ -745,6 +747,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> UpdateInputArea(int inputTypeId, int inputAreaId, InputAreaInputModel data)
         {
+            data.InputTypeId = inputTypeId;
+            data.InputAreaId = inputAreaId;
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputArea = await _accountancyDBContext.InputArea.FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && a.InputAreaId == inputAreaId);
             if (inputArea == null)
@@ -773,12 +778,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                inputArea.InputAreaCode = data.InputAreaCode;
-                inputArea.Title = data.Title;
-                inputArea.IsMultiRow = data.IsMultiRow;
-                inputArea.Columns = data.Columns;
-                inputArea.ColumnStyles = data.ColumnStyles;
-                inputArea.SortOrder = data.SortOrder;
+                //inputArea.InputAreaCode = data.InputAreaCode;
+                //inputArea.Title = data.Title;
+                //inputArea.Description = data.Description;
+                //inputArea.IsMultiRow = data.IsMultiRow;
+                //inputArea.IsAddition = data.IsAddition;
+                //inputArea.Columns = data.Columns;
+                //inputArea.ColumnStyles = data.ColumnStyles;
+                //inputArea.SortOrder = data.SortOrder;
+                _mapper.Map(data, inputArea);
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
