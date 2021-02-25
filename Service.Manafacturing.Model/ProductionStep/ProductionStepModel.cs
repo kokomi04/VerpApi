@@ -33,7 +33,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepModel>()
-                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title))
+                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? $"{s.Step.StepName} (#{s.ProductionStepId})" : s.Title))
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
                 .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
@@ -49,7 +49,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         {
             profile.CreateMap<ProductionStepEnity, ProductionStepInfo>()
                 .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))
-                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.StepName : s.Title))
+                .ForMember(m => m.Title, a => a.MapFrom(s => s.StepId.HasValue ? $"{s.Step.StepName} (#{s.ProductionStepId})" : s.Title))
                 .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
