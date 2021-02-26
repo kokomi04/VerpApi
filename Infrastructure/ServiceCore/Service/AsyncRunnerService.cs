@@ -27,31 +27,39 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public void RunAsync<T>(Expression<Func<T, Task>> action)
         {
-            var userId = _currentContext.UserId;
-            var actionId = _currentContext.Action;
-            var stockIds = _currentContext.StockIds;
-            var roleInfo = _currentContext.RoleInfo;
-            var subsidiaryId = _currentContext.SubsidiaryId;
-            var timeZone = _currentContext.TimeZoneOffset;
-            Task.Run(async () =>
+            try
             {
-                try
+                var userId = _currentContext.UserId;
+                var actionId = _currentContext.Action;
+                var stockIds = _currentContext.StockIds;
+                var roleInfo = _currentContext.RoleInfo;
+                var subsidiaryId = _currentContext.SubsidiaryId;
+                var timeZone = _currentContext.TimeZoneOffset;
+                Task.Run(async () =>
                 {
-                    using (var scope = _serviceScopeFactory.CreateScope())
+                    try
                     {
-                        var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
-                        currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, roleInfo, stockIds, subsidiaryId, timeZone));
-                        var obj = scope.ServiceProvider.GetService<T>();
-                        var fn = action.Compile();
-                        await fn.Invoke(obj);
+                        using (var scope = _serviceScopeFactory.CreateScope())
+                        {
+                            var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
+                            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, roleInfo, stockIds, subsidiaryId, timeZone));
+                            var obj = scope.ServiceProvider.GetService<T>();
+                            var fn = action.Compile();
+                            await fn.Invoke(obj);
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "RunAsync");
-                }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "RunAsyncTask");
+                    }
 
-            });
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "IAsyncRunnerService:RunAsync");
+                throw;
+            }
 
         }
     }

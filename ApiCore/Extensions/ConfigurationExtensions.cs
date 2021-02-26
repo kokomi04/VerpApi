@@ -32,7 +32,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             services.AddDbContext<UnAuthorizeMasterDBContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.MasterDatabase);
-            }, ServiceLifetime.Scoped);
+            }, ServiceLifetime.Transient);
 
         }
 
@@ -67,7 +67,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             services.AddDbContext<UnAuthorizeOrganizationContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.OrganizationDatabase);
-            }, ServiceLifetime.Scoped);
+            }, ServiceLifetime.Transient);
 
         }
 

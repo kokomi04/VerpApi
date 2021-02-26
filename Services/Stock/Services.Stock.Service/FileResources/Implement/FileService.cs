@@ -278,23 +278,29 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
 
             const int quality = 75;
-
-            using (var image = new MagickImage(filePath))
+            if (File.Exists(filePath))
             {
-                image.Resize((int)(image.Width * 500.0 / image.Height), 500);
-                image.Strip();
-                image.Quality = quality;
-                image.Write(GetPhysicalFilePath(largeThumb));
+                using (var image = new MagickImage(filePath))
+                {
+                    image.Resize((int)(image.Width * 500.0 / image.Height), 500);
+                    image.Strip();
+                    image.Quality = quality;
+                    image.Write(GetPhysicalFilePath(largeThumb));
 
-                image.Resize((int)(image.Width * 100.0 / image.Height), 100);
-                image.Strip();
+                    image.Resize((int)(image.Width * 100.0 / image.Height), 100);
+                    image.Strip();
 
-                image.Write(GetPhysicalFilePath(smallThumb));
+                    image.Write(GetPhysicalFilePath(smallThumb));
+                }
+
+                fileInfo.SmallThumb = smallThumb;
+                fileInfo.LargeThumb = largeThumb;
+                await _stockContext.SaveChangesAsync();
             }
-
-            fileInfo.SmallThumb = smallThumb;
-            fileInfo.LargeThumb = largeThumb;
-            _stockContext.SaveChanges();
+            else
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"File {fileInfo.FilePath} not found");
+            }
             return true;
 
 

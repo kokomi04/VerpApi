@@ -19,6 +19,7 @@ using System.Security.Principal;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.EF.OrganizationDB;
 using OpenXmlPowerTools;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -58,8 +59,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly UnAuthorizeMasterDBContext _masterDBContext;
-        private readonly UnAuthorizeOrganizationContext _organizationDBContext;
+        //private readonly UnAuthorizeMasterDBContext _masterDBContext;
+        //private readonly UnAuthorizeOrganizationContext _organizationDBContext;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         private int _userId = 0;
         private string _userName = "";
@@ -74,15 +76,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
-            , UnAuthorizeMasterDBContext masterDBContext
-            , UnAuthorizeOrganizationContext organizationDBContext
+           // , UnAuthorizeMasterDBContext masterDBContext
+           // , UnAuthorizeOrganizationContext organizationDBContext
+           , IServiceScopeFactory serviceScopeFactory
             )
         {
             _appSetting = appSetting.Value;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
-            _masterDBContext = masterDBContext;
-            _organizationDBContext = organizationDBContext;
+            // _masterDBContext = masterDBContext;
+            // _organizationDBContext = organizationDBContext;
+            _serviceScopeFactory = serviceScopeFactory;
             CrossServiceLogin();
         }
 
@@ -161,12 +165,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 if (!string.IsNullOrEmpty(_userName)) return _userName;
 
-                var userInfo = _masterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
-                if (userInfo != null)
+                using (var scope = _serviceScopeFactory.CreateScope())
                 {
-                    _userName = userInfo.UserName;
-                }
+                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
 
+                    var userInfo = masterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
+                    if (userInfo != null)
+                    {
+                        _userName = userInfo.UserName;
+                    }
+                }
                 return _userName;
             }
         }
@@ -243,28 +251,33 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     return null;
                 }
 
-                var userInfo = _masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
-                var roleInfo = (
-                    from r in _masterDBContext.Role
-                    where r.RoleId == userInfo.RoleId
-                    select new
-                    {
-                        r.RoleId,
-                        r.IsDataPermissionInheritOnStock,
-                        r.IsModulePermissionInherit,
-                        r.ChildrenRoleIds,
-                        r.RoleName
-                    }
-                   )
-                   .First();
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
 
-                _roleInfo = new RoleInfo(
-                    roleInfo.RoleId,
-                    roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
-                    roleInfo.IsDataPermissionInheritOnStock,
-                    roleInfo.IsModulePermissionInherit,
-                    roleInfo.RoleName
-                );
+                    var userInfo = masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
+                    var roleInfo = (
+                        from r in masterDBContext.Role
+                        where r.RoleId == userInfo.RoleId
+                        select new
+                        {
+                            r.RoleId,
+                            r.IsDataPermissionInheritOnStock,
+                            r.IsModulePermissionInherit,
+                            r.ChildrenRoleIds,
+                            r.RoleName
+                        }
+                       )
+                       .First();
+
+                    _roleInfo = new RoleInfo(
+                        roleInfo.RoleId,
+                        roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
+                        roleInfo.IsDataPermissionInheritOnStock,
+                        roleInfo.IsModulePermissionInherit,
+                        roleInfo.RoleName
+                    );
+                }
 
 
                 return _roleInfo;
@@ -292,12 +305,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     roleIds.AddRange(roleInfo.ChildrenRoleIds);
                 }
 
-                _stockIds = _masterDBContext.RoleDataPermission
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
+
+                    _stockIds = masterDBContext.RoleDataPermission
                     .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && roleIds.Contains(d.RoleId))
                     .Select(d => d.ObjectId)
                     .ToList()
                     .Select(d => (int)d)
                     .ToArray();
+                }
 
                 return _stockIds;
             }
@@ -307,11 +325,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             get
             {
-                var subdiaryInfo = _organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var organizationDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeOrganizationContext>();
 
-                if (subdiaryInfo == null) return false;
+                    var subdiaryInfo = organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
 
-                return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
+                    if (subdiaryInfo == null) return false;
+
+                    return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
+                }
             }
         }
     }
