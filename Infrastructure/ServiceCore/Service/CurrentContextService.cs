@@ -59,8 +59,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        //private readonly UnAuthorizeMasterDBContext _masterDBContext;
-        //private readonly UnAuthorizeOrganizationContext _organizationDBContext;
+        private readonly Func<UnAuthorizeMasterDBContext> _masterDBContext;
+        private readonly Func<UnAuthorizeOrganizationContext> _organizationDBContext;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         private int _userId = 0;
@@ -76,16 +76,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
-           // , UnAuthorizeMasterDBContext masterDBContext
-           // , UnAuthorizeOrganizationContext organizationDBContext
+            , Func<UnAuthorizeMasterDBContext> masterDBContext
+            , Func<UnAuthorizeOrganizationContext> organizationDBContext
            , IServiceScopeFactory serviceScopeFactory
             )
         {
             _appSetting = appSetting.Value;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
-            // _masterDBContext = masterDBContext;
-            // _organizationDBContext = organizationDBContext;
+            _masterDBContext = masterDBContext;
+            _organizationDBContext = organizationDBContext;
             _serviceScopeFactory = serviceScopeFactory;
             CrossServiceLogin();
         }
@@ -165,16 +165,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 if (!string.IsNullOrEmpty(_userName)) return _userName;
 
-                using (var scope = _serviceScopeFactory.CreateScope())
+                var userInfo = _masterDBContext().User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
+                if (userInfo != null)
                 {
-                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
-
-                    var userInfo = masterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
-                    if (userInfo != null)
-                    {
-                        _userName = userInfo.UserName;
-                    }
+                    _userName = userInfo.UserName;
                 }
+
                 return _userName;
             }
         }
@@ -251,34 +247,30 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     return null;
                 }
 
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
+                var masterDBContext = _masterDBContext();
 
-                    var userInfo = masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
-                    var roleInfo = (
-                        from r in masterDBContext.Role
-                        where r.RoleId == userInfo.RoleId
-                        select new
-                        {
-                            r.RoleId,
-                            r.IsDataPermissionInheritOnStock,
-                            r.IsModulePermissionInherit,
-                            r.ChildrenRoleIds,
-                            r.RoleName
-                        }
-                       )
-                       .First();
+                var userInfo = masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
+                var roleInfo = (
+                    from r in masterDBContext.Role
+                    where r.RoleId == userInfo.RoleId
+                    select new
+                    {
+                        r.RoleId,
+                        r.IsDataPermissionInheritOnStock,
+                        r.IsModulePermissionInherit,
+                        r.ChildrenRoleIds,
+                        r.RoleName
+                    }
+                   )
+                   .First();
 
-                    _roleInfo = new RoleInfo(
-                        roleInfo.RoleId,
-                        roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
-                        roleInfo.IsDataPermissionInheritOnStock,
-                        roleInfo.IsModulePermissionInherit,
-                        roleInfo.RoleName
-                    );
-                }
-
+                _roleInfo = new RoleInfo(
+                    roleInfo.RoleId,
+                    roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
+                    roleInfo.IsDataPermissionInheritOnStock,
+                    roleInfo.IsModulePermissionInherit,
+                    roleInfo.RoleName
+                );
 
                 return _roleInfo;
             }
@@ -325,16 +317,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             get
             {
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    var organizationDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeOrganizationContext>();
 
-                    var subdiaryInfo = organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
+                var subdiaryInfo = _organizationDBContext().Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
 
-                    if (subdiaryInfo == null) return false;
+                if (subdiaryInfo == null) return false;
 
-                    return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
-                }
+                return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
             }
         }
     }

@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
                 option.UseSqlServer(databaseConnections.MasterDatabase);
             }, ServiceLifetime.Transient);
 
+            services.AddSingleton<Func<UnAuthorizeMasterDBContext>>(option => () => option.GetService<UnAuthorizeMasterDBContext>());
         }
 
         public static void ConfigStockDBContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
@@ -68,6 +69,9 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.OrganizationDatabase);
             }, ServiceLifetime.Transient);
+
+
+            services.AddSingleton<Func<UnAuthorizeOrganizationContext>>(option => () => option.GetService<UnAuthorizeOrganizationContext>());
 
         }
 
