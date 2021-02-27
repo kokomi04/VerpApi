@@ -247,7 +247,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
-                productionOrder.MarkInvalid = true;
                 productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
                 _manufacturingDBContext.ProductionOrder.Add(productionOrder);
                 await _manufacturingDBContext.SaveChangesAsync();
@@ -376,15 +375,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.IsDeleted = true;
                 }
-
-                var warnings = await _validateProductionOrderService.GetWarningProductionOrder(data.ProductionOrderId, data.ProductionOrderDetail.Select(x => new ProductionOrderDetailOutputModel
-                {
-                    Quantity = x.Quantity,
-                    ReserveQuantity = x.ReserveQuantity,
-                    ProductId = x.ProductId,
-                }).ToList());
-
-                productionOrder.MarkInvalid = warnings.Count > 0;
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
