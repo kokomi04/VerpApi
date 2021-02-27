@@ -333,8 +333,6 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
                 await _outsideMappingHelperService.MappingObjectDelete(objectType, inventoryRequirementId);
 
-                await _productionOrderHelperService.UpdateManualProductionOrderInventoryRequirements(inventoryRequirementId);
-
                 return true;
             }
             catch (Exception ex)

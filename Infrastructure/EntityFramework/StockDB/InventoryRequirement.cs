@@ -14,6 +14,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public long InventoryRequirementId { get; set; }
         public int SubsidiaryId { get; set; }
         public string InventoryRequirementCode { get; set; }
+        public int InventoryRequirementTypeId { get; set; }
+        public int InventoryOutsideMappingTypeId { get; set; }
         public int InventoryTypeId { get; set; }
         public string Content { get; set; }
         public DateTime Date { get; set; }

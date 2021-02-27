@@ -54,19 +54,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public bool IsDraft { get; set; }
 
         public EnumProductionStatus ProductionOrderStatus { get; set; }
-        public long? InventoryRequirementId { get; set; }
-        public long? PurchasingRequestId { get; set; }
-        public bool MarkInValid { get; set; }
     }
 
     public class ProductionOrderStatusModel
     {
         public EnumProductionStatus ProductionOrderStatus { get; set; }
-    }
-
-    public class ProductionOrderRequirementModel
-    {
-        public long? InventoryRequirementId { get; set; }
-        public long? PurchasingRequestId { get; set; }
     }
 }

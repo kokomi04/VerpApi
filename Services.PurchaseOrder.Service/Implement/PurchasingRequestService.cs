@@ -502,7 +502,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
-                await _productionOrderHelperService.UpdateManualProductionOrderPurchasingRequirements(purchasingRequestId);
                 return true;
             }
         }
