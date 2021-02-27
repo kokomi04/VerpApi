@@ -13,6 +13,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionOrderOutputModel : ProductOrderModel, IMapFrom<ProductionOrderEntity>
     {
         public EnumProductionStatus? ProductionOrderStatus { get; set; }
+        public bool? MarkInValid { get; set; }
         //public EnumProcessStatus ProcessStatus { get; set; }
         public virtual ICollection<ProductionOrderDetailOutputModel> ProductionOrderDetail { get; set; }
 
