@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using VErp.Commons.Enums.Stock;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
@@ -16,7 +17,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public long Date { get; set; }
         public int? DepartmentId { get; set; }
         public int CreatedByUserId { get; set; }
-        public long? ScheduleTurnId { get; set; }
+        public long? ProductionOrderId { get; set; }
         public long? ProductionStepId { get; set; }
         public string Shipper { get; set; }
         public int? CustomerId { get; set; }
@@ -24,6 +25,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string BillCode { get; set; }
         public string BillSerial { get; set; }
         public long BillDate { get; set; }
+        public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
+        public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
     }
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
@@ -45,7 +48,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.Date, otp => otp.MapFrom(source => source.InventoryRequirement.Date.GetUnix()))
                 .ForMember(dest => dest.DepartmentId, otp => otp.MapFrom(source => source.InventoryRequirement.DepartmentId))
                 .ForMember(dest => dest.CreatedByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CreatedByUserId))
-                .ForMember(dest => dest.ScheduleTurnId, otp => otp.MapFrom(source => source.InventoryRequirement.ProductionOrderId))
+                .ForMember(dest => dest.ProductionOrderId, otp => otp.MapFrom(source => source.InventoryRequirement.ProductionOrderId))
                 .ForMember(dest => dest.ProductionStepId, otp => otp.MapFrom(source => source.InventoryRequirement.ProductionStepId))
                 .ForMember(dest => dest.Shipper, otp => otp.MapFrom(source => source.InventoryRequirement.Shipper))
                 .ForMember(dest => dest.CustomerId, otp => otp.MapFrom(source => source.InventoryRequirement.CustomerId))
