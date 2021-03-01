@@ -11,11 +11,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
 {
     public interface IProductionHandoverService
     {
-        Task<IList<ProductionHandoverModel>> GetProductionHandovers(long scheduleTurnId);
-        Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements(long scheduleTurnId);
 
-        Task<ProductionHandoverModel> CreateProductionHandover(long scheduleTurnId, ProductionHandoverInputModel data);
+        Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, Clause filters = null);
 
-        Task<ProductionHandoverModel> ConfirmProductionHandover(long scheduleTurnId, long productionHandoverId, EnumHandoverStatus status);
+        Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId);
+        Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements(long productionOrderId);
+
+        Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data);
+
+        Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status);
     }
 }

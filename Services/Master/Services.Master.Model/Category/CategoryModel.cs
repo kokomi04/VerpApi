@@ -19,6 +19,7 @@ namespace VErp.Services.Master.Model.Category
         public string UsePlace { get; set; }
         public int? MenuId { get; set; }
         public string ParentTitle { get; set; }
+        public string DefaultOrder { get; set; }
         public OutSideDataConfigModel OutSideDataConfig { get; set; }
     }
 

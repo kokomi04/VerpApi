@@ -23,14 +23,14 @@ namespace VErp.Services.Manafacturing.Model.Report
         public string UnitId { get; set; }
         public decimal Quantity { get; set; }
         public decimal QuantityComplete { get; set; }
-        public long OutsourcePartRequestFinishDate { get; set; }
+        public long OutsourcePartRequestDetailFinishDate { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourcePartRequestDetailExtractInfo, OutsourcePartRequestReportModel>()
-                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.GetUnix()))
+                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.GetUnix()))
                 .ReverseMap()
-                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.UnixToDateTime()));
+                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.UnixToDateTime()));
         }
     }
 }

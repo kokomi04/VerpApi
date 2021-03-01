@@ -12,7 +12,7 @@ namespace VErp.Services.Stock.Service.Products
 {
     public interface IProductService
     {
-        Task<PageData<ProductListOutput>> GetList(string keyword, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null);
+        Task<PageData<ProductListOutput>> GetList(string keyword, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, Clause filters = null, bool isProductSemi = false);
         Task<IList<ProductListOutput>> GetListByIds(IList<int> productIds);
         Task<IList<ProductModel>> GetListProductsByIds(IList<int> productIds);
         Task<IList<ProductModel>> GetListByCodeAndInternalNames(ProductQueryByProductCodeOrInternalNameRequest req);

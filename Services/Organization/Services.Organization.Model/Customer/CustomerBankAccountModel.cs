@@ -18,5 +18,10 @@ namespace VErp.Services.Organization.Model.Customer
         public string BankBranch { get; set; }
         [MaxLength(255, ErrorMessage = "BankAddress quá dài")]
         public string BankAddress { get; set; }
+
+        [MaxLength(255, ErrorMessage = "Tên tài khoản quá dài")]
+        public string AccountName { get; set; }
+        public int? CurrencyId { get; set; }
+        public string Province { get; set; }
     }
 }

@@ -8,10 +8,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionStep()
         {
             OutsourceStepRequest = new HashSet<OutsourceStepRequest>();
-            ProductionAssignment = new HashSet<ProductionAssignment>();
             ProductionStepLinkDataRole = new HashSet<ProductionStepLinkDataRole>();
             ProductionStepOrder = new HashSet<ProductionStepOrder>();
-            ProductionStepWorkInfo = new HashSet<ProductionStepWorkInfo>();
         }
 
         public long ProductionStepId { get; set; }
@@ -35,12 +33,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public decimal? CoordinateY { get; set; }
         public int SubsidiaryId { get; set; }
         public bool IsFinish { get; set; }
+        public long? OutsourceStepRequestId { get; set; }
 
         public virtual Step Step { get; set; }
+        public virtual ProductionStepWorkInfo ProductionStepWorkInfo { get; set; }
         public virtual ICollection<OutsourceStepRequest> OutsourceStepRequest { get; set; }
-        public virtual ICollection<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
         public virtual ICollection<ProductionStepOrder> ProductionStepOrder { get; set; }
-        public virtual ICollection<ProductionStepWorkInfo> ProductionStepWorkInfo { get; set; }
     }
 }

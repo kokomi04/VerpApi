@@ -19,6 +19,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public decimal? UnitPrice { get; set; }
         public decimal? ProductUnitConversionPrice { get; set; }
         public string OrderCode { get; set; }
+        public int? DepartmentId { get; set; }
+        public long? ProductionStepId { get; set; }
     }
 
     public class InventoryRequirementDetailOutputModel : InventoryRequirementDetailInputModel

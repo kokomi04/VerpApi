@@ -11,6 +11,7 @@ using VErp.Commons.Library;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
+    /*
     public interface IInventoryTrackingFacade
     {
         Task Execute();
@@ -299,5 +300,5 @@ FROM
                     throw new NotSupportedException("Invalid inventory type " + inventoryInfo.InventoryTypeId);
             }
         }
-    }
+    }*/
 }

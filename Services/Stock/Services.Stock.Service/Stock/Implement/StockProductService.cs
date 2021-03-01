@@ -318,23 +318,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Dictionary<int, RemainStock[]>> GetRemainStockByProducts(int[] productIds)
         {
 
-            var remainStocks = _stockContext.StockProduct.Where(sp => productIds.Contains(sp.ProductId))
-                .GroupBy(sp => new { sp.ProductId, sp.StockId })
-                .Select(g => new
-                {
-                    g.Key.ProductId,
-                    g.Key.StockId,
-                    PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
-                })
-                .Where(s => s.PrimaryQuantityRemaining > 0)
-                .Join(_stockContext.Stock, rs => rs.StockId, s => s.StockId, (rs, s) => new
-                {
-                    rs.StockId,
-                    rs.ProductId,
-                    rs.PrimaryQuantityRemaining,
-                    s.StockName
-                })
-                .ToList()
+            var remainStocks = (
+                await _stockContext.StockProduct.Where(sp => productIds.Contains(sp.ProductId))
+                    .GroupBy(sp => new { sp.ProductId, sp.StockId })
+                    .Select(g => new
+                    {
+                        g.Key.ProductId,
+                        g.Key.StockId,
+                        PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
+                    })
+                    .Where(s => s.PrimaryQuantityRemaining > 0)
+                    .Join(_stockContext.Stock, rs => rs.StockId, s => s.StockId, (rs, s) => new
+                    {
+                        rs.StockId,
+                        rs.ProductId,
+                        rs.PrimaryQuantityRemaining,
+                        s.StockName
+                    })
+                    .ToListAsync()
+                )
                 .GroupBy(s => s.ProductId)
                 .ToDictionary(g => g.Key, g => g.Select(s => new RemainStock
                 {
@@ -400,7 +402,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 PackageId = pk.PackageId,
                 PackageCode = pk.PackageCode,
-                
+
                 LocationId = pk.LocationId,
                 LocationName = pk.LocationName,
                 Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
@@ -416,7 +418,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 RefObjectId = null,
                 RefObjectCode = "",
                 OrderCode = pk.OrderCode,
-                POCode=pk.Pocode,
+                POCode = pk.Pocode,
                 ProductionOrderCode = pk.ProductionOrderCode
             })
             .ToList();

@@ -14,11 +14,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal? Quantity { get; set; }
         public decimal? ReserveQuantity { get; set; }
         public string Note { get; set; }
-        public int Status { get; set; }
+        //public int Status { get; set; }
         public long? OutsourcePartRequestId { get; set; }
     }
 
-    public class ProductionOrderDetailInputModel :  IMapFrom<ProductionOrderDetail>
+    public class ProductionOrderDetailInputModel : IMapFrom<ProductionOrderDetail>
     {
         public long? ProductionOrderDetailId { get; set; }
         public long ProductionOrderId { get; set; }
@@ -43,6 +43,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string OrderCode { get; set; }
         public int? ProductId { get; set; }
         public string PartnerTitle { get; set; }
+        public int UnitId { get; set; }
         public string UnitName { get; set; }
     }
 }

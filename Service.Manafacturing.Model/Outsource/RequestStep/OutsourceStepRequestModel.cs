@@ -66,11 +66,13 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
                 .ForMember(m => m.ProductionProcessId, v => v.MapFrom(m => m.ProductionStepId))
                 .ForMember(m => m.MarkInvalid, v => v.MapFrom(m => m.MarkInvalid))
                 .ForMember(m => m.OutsourceStepRequestStatusId, v => v.MapFrom(m => m.OutsourceStepRequestStatusId))
+                .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrder.ProductionOrderCode))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
                 .ForMember(m => m.ProductionStepId, v => v.MapFrom(m => m.ProductionProcessId))
-                .ForMember(m => m.OutsourceStepRequestData, v => v.Ignore());
+                .ForMember(m => m.OutsourceStepRequestData, v => v.Ignore())
+                .ForMember(m => m.ProductionOrder, v => v.Ignore());
 
         }
     }

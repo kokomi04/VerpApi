@@ -8,6 +8,7 @@ using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
+    /*
     public class InventoryInputTrackingFacade : InventoryTrackingFacadeAbstract
     {
         public InventoryInputTrackingFacade(InventoryTrackingUpdateContext ctx) : base(ctx)
@@ -179,5 +180,5 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await UpdateInventoryDetailByCondition(dateRangeCondition, productId, deltaChangePrimaryQuantity, addPuQuantities);
         }
 
-    }
+    }*/
 }

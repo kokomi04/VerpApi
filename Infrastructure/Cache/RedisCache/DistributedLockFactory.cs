@@ -91,7 +91,7 @@ namespace Verp.Cache.RedisCache
             return $"CATEGORY_LOCK_{categoryId}";
         }
 
-        public static string GetLockProductionOrderKey(int productOrderId)
+        public static string GetLockProductionOrderKey(long productOrderId)
         {
             return $"PRODUCTION_ORDER_LOCK_{productOrderId}";
         }

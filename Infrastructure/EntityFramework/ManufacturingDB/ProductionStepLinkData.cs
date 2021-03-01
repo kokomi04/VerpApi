@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionStepLinkData()
         {
             OutsourceStepRequestData = new HashSet<OutsourceStepRequestData>();
+            ProductionAssignment = new HashSet<ProductionAssignment>();
             ProductionStepLinkDataRole = new HashSet<ProductionStepLinkDataRole>();
         }
 
@@ -32,6 +33,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int ProductionStepLinkTypeId { get; set; }
 
         public virtual ICollection<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
+        public virtual ICollection<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
     }
 }

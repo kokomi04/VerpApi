@@ -14,7 +14,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class ProductionAssignmentModel : IMapFrom<ProductionAssignmentEntity>
     {
         public long? ProductionStepId { get; set; }
-        public long ScheduleTurnId { get; set; }
+        public long ProductionOrderId { get; set; }
         public int DepartmentId { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public int CompletedQuantity { get; set; }
@@ -80,6 +80,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public ProductionAssignmentModel[] ProductionAssignments { get; set; }
         public ProductionStepWorkInfoInputModel ProductionStepWorkInfo { get; set; }
 
+        public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
+    }
+
+    public class GeneralProductionStepAssignmentModel
+    {
+        public long ProductionStepId { get; set; }
+        public ProductionAssignmentModel[] ProductionAssignments { get; set; }
+        public ProductionStepWorkInfoInputModel ProductionStepWorkInfo { get; set; }
+    }
+
+    public class GeneralAssignmentModel
+    {
+        public GeneralProductionStepAssignmentModel[] ProductionStepAssignment { get; set; }
         public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
     }
 }

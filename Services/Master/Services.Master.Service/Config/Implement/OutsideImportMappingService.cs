@@ -79,7 +79,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                     return functionInfo.OutsideImportMappingFunctionId;
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     await trans.TryRollbackTransactionAsync();
                     throw;

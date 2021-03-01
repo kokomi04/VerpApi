@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using StepEnity = VErp.Infrastructure.EF.ManufacturingDB.Step;
@@ -16,6 +17,8 @@ namespace VErp.Services.Manafacturing.Model.Step
         public int StepGroupId { get; set; }
         public bool IsHide { get; set; }
         public int UnitId { get; set; }
+        public decimal ShrinkageRate { get; set; }
+        public EnumHandoverTypeStatus HandoverTypeId { get; set; }
 
         public List<StepDetailModel> StepDetail { get; set; }
 

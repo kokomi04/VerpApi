@@ -11,7 +11,7 @@ using VErp.Services.Manafacturing.Service.Step;
 
 namespace VErpApi.Controllers.Manufacturing
 {
-    [Route("api/stepGroups")]
+    [Route("api/manufacturing/stepGroups")]
     [ApiController]
     public class StepGroupController : VErpBaseController
     {

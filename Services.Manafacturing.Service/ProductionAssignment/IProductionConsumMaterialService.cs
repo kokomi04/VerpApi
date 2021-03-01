@@ -8,10 +8,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 {
     public interface IProductionConsumMaterialService
     {
-        Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials(int departmentId, long scheduleTurnId, long productionStepId);
-        Task<long> CreateConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, ProductionConsumMaterialModel model);
-        Task<bool> UpdateConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, long productionConsumMaterialId, ProductionConsumMaterialModel model);
-        Task<bool> DeleteConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, long productionConsumMaterialId);
-        Task<bool> DeleteMaterial(int departmentId, long scheduleTurnId, long productionStepId, int objectTypeId, long objectId);
+        Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials(int departmentId, long productionOrderId, long productionStepId);
+        Task<long> CreateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, ProductionConsumMaterialModel model);
+        Task<bool> UpdateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, long productionConsumMaterialId, ProductionConsumMaterialModel model);
+        Task<bool> DeleteConsumMaterial(int departmentId, long productionOrderId, long productionStepId, long productionConsumMaterialId);
+        Task<bool> DeleteMaterial(int departmentId, long productionOrderId, long productionStepId, int objectTypeId, long objectId);
     }
 }

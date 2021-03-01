@@ -49,6 +49,9 @@ namespace Verp.Services.ReportConfig.Model
         public string ExtraFilter { get; set; }
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
+        public string TitleStyleJson { get; set; }
+        public string InputStyleJson { get; set; }
+        public string HelpText { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<ReportTypeViewField, ReportTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))

@@ -79,7 +79,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             if (whereCondition.Length > 0)
             {
-                sql.Append(" AND ");
+                sql.Append(" WHERE ");
                 sql.Append(whereCondition);
             }
 
@@ -432,7 +432,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         ProductionStepLinkDataQuantity = x.Quantity,
                         ProductionStepLinkDataRoleTypeId = x.ProductionStepLinkDataRoleTypeId,
                         OutsourceStepRequestDataQuantity = outsourceStepRequest.OutsourceStepRequestData.FirstOrDefault(s => s.ProductionStepLinkDataId == x.ProductionStepLinkDataId).OutsourceStepRequestDataQuantity,
-                        ProductionStepLinkDataTitle = string.Empty
+                        ProductionStepLinkDataTitle = string.Empty,
+                        OutsourceStepRequestFinishDate = outsourceStepRequest.OutsourceStepRequestFinishDate,
+                        ProductionOrderCode = outsourceStepRequest.ProductionOrderCode
                     })
                     .ToList();
                 if (outsourceStepRequestDatas.Count == 0)
@@ -442,7 +444,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         OutsourceStepRequestId = outsourceStepRequest.OutsourceStepRequestId,
                         ProductionStepId = productionStep.ProductionStepId,
                         ProductionStepTitle = productionStep.Title,
-                        ProductionStepLinkDataRoleTypeId = EnumProductionStepLinkDataRoleType.Input
+                        ProductionStepLinkDataRoleTypeId = EnumProductionStepLinkDataRoleType.Input,
+                        OutsourceStepRequestFinishDate = outsourceStepRequest.OutsourceStepRequestFinishDate
                     });
                 else
                     lst.AddRange(outsourceStepRequestDatas);
@@ -605,7 +608,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
                     .Sum();
 
-                if (!totalStatus.HasValue)
+                if (totalStatus.GetValueOrDefault() == 0)
                     rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
                 else
                 {
@@ -631,6 +634,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<IList<OutsourceStepRequestDataOutput>> GetOutsourceStepRequestDatasByProductionOrderId(long productionOrderId)
+        {
+            var sqlData = new StringBuilder(@$"SELECT * FROM vOutsourceStepRequestDataExtractInfo v WHERE v.ProductionOrderId = {productionOrderId}");
+            var data = (await _manufacturingDBContext.QueryDataTable(sqlData.ToString(), Array.Empty<SqlParameter>())).ConvertData<OutsourceStepRequestDataOutput>();
+            return data;
         }
 
         #region private

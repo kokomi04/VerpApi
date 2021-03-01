@@ -57,6 +57,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequest(outsourceStepRequestId, req);
         }
+
         [HttpGet]
         [Route("{outsourceStepRequestId}/outsourceStepRequestData")]
         public async Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData([FromRoute]long outsourceStepRequestId)
@@ -82,11 +83,19 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(productionOrderId);
         }
+
         [HttpPut]
         [Route("status")]
         public async Task<bool> UpdateOutsourceStepRequestStatus([FromBody]long[] outsourceStepRequestId)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(outsourceStepRequestId);
+        }
+
+        [HttpGet]
+        [Route("detail/byProductionOrder")]
+        public async Task<IList<OutsourceStepRequestDataOutput>> GetOutsourceStepRequestDatasByProductionOrderId([FromQuery] long productionOrderId)
+        {
+            return await _outsourceStepRequestService.GetOutsourceStepRequestDatasByProductionOrderId(productionOrderId);
         }
 
     }

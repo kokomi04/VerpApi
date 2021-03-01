@@ -8,6 +8,7 @@ using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
+    /*
     public class InventoryTrackingUpdateContext
     {
         public StockDBContext StockDbContext { get; set; }
@@ -180,5 +181,5 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             context.ProductChanges = productChanges;
             return context;
         }
-    }
+    }*/
 }

@@ -30,34 +30,34 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("")]
-        public async Task<IList<ProductionScheduleTurnShiftModel>> GetShifts([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId)
+        public async Task<IList<ProductionScheduleTurnShiftModel>> GetShifts([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId)
         {
-            return await _productionScheduleTurnShiftService.GetShifts(departmentId, scheduleTurnId, productionStepId);
+            return await _productionScheduleTurnShiftService.GetShifts(departmentId, productionOrderId, productionStepId);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateShift([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        public async Task<long> CreateShift([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId
             , [FromBody] ProductionScheduleTurnShiftModel model)
         {
-            return await _productionScheduleTurnShiftService.CreateShift(departmentId, scheduleTurnId, productionStepId, model);
+            return await _productionScheduleTurnShiftService.CreateShift(departmentId, productionOrderId, productionStepId, model);
         }
 
         [HttpPut]
         [Route("{productionScheduleTurnShiftId}")]
-        public async Task<bool> UpdateShift([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        public async Task<bool> UpdateShift([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId
           , [FromRoute] long productionScheduleTurnShiftId
           , [FromBody] ProductionScheduleTurnShiftModel model)
         {
-            return await _productionScheduleTurnShiftService.UpdateShift(departmentId, scheduleTurnId, productionStepId, productionScheduleTurnShiftId, model);
+            return await _productionScheduleTurnShiftService.UpdateShift(departmentId, productionOrderId, productionStepId, productionScheduleTurnShiftId, model);
         }
 
         [HttpDelete]
         [Route("{productionScheduleTurnShiftId}")]
-        public async Task<bool> DeleteShift([FromQuery] int departmentId, [FromQuery] long scheduleTurnId, [FromQuery] long productionStepId
+        public async Task<bool> DeleteShift([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId
         , [FromRoute] long productionScheduleTurnShiftId)
         {
-            return await _productionScheduleTurnShiftService.DeleteShift(departmentId, scheduleTurnId, productionStepId, productionScheduleTurnShiftId);
+            return await _productionScheduleTurnShiftService.DeleteShift(departmentId, productionOrderId, productionStepId, productionScheduleTurnShiftId);
         }
 
     }

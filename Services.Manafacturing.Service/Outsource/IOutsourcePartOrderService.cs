@@ -6,6 +6,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 
 namespace VErp.Services.Manafacturing.Service.Outsource
 {
@@ -16,5 +17,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<bool> UpdateOutsourceOrderPart(long outsourceOrderId,OutsourceOrderInfo req);
         Task<bool> DeleteOutsourceOrderPart(long outsourceOrderId);
         Task<OutsourceOrderInfo> GetOutsourceOrderPart(long outsourceOrderId);
+
+        Task<IList<OutsourceOrderMaterials>> GetMaterials(long outsourceOrderId);
     }
 }

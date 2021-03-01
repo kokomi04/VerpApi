@@ -77,7 +77,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                 where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
-                select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow }
+                select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
 
@@ -153,7 +153,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             if (!mainColumns.Contains(orderByFieldName))
             {
-                orderByFieldName = "F_Id";
+                orderByFieldName = mainColumns.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
 
@@ -234,10 +234,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
+            ";
 
+            if (size > 0)
+            {
+                dataSql += @$"
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
             ";
+            }
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";

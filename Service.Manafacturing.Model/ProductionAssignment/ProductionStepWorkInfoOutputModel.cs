@@ -12,7 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class ProductionStepWorkInfoOutputModel : IMapFrom<ProductionStepWorkInfo>
     {
         public long ProductionStepId { get; set; }
-        public long ScheduleTurnId { get; set; }
+        public long ProductionOrderId { get; set; }
         public EnumHandoverTypeStatus HandoverType { get; set; }
         public decimal? MinHour { get; set; }
         public decimal? MaxHour { get; set; }

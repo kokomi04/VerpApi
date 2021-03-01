@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Verp.Services.ReportConfig.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Report;
 using VErp.Services.Manafacturing.Model.Step;
@@ -44,26 +46,26 @@ namespace VErpApi.Controllers.Manufacturing
             return await _reportService.GetProductionOrderStepProgress(fromDate, toDate);
         }
 
-        [HttpGet]
-        [Route("ProductionSchedule")]
-        public async Task<IList<ProductionScheduleReportModel>> GetProductionScheduleReport([FromQuery] long fromDate, [FromQuery] long toDate)
-        {
-            return await _reportService.GetProductionScheduleReport(fromDate, toDate);
-        }
+        //[HttpGet]
+        //[Route("ProductionSchedule")]
+        //public async Task<IList<ProductionReportModel>> GetProductionScheduleReport([FromQuery] long fromDate, [FromQuery] long toDate)
+        //{
+        //    return await _reportService.GetProductionScheduleReport(fromDate, toDate);
+        //}
 
-        [HttpGet]
-        [Route("ProcessingScheduleList")]
-        public async Task<IList<ProcessingScheduleListModel>> GetProcessingScheduleList()
-        {
-            return await _reportService.GetProcessingScheduleList();
-        }
+        //[HttpGet]
+        //[Route("ProcessingScheduleList")]
+        //public async Task<IList<ProductionProcessingListModel>> GetProcessingScheduleList()
+        //{
+        //    return await _reportService.GetProcessingScheduleList();
+        //}
 
-        [HttpPost]
-        [Route("ProductionProgress/{scheduleTurnId}")]
-        public async Task<IList<StepReportModel>> GetProcessingStepReport([FromRoute] long scheduleTurnId, [FromBody] int[] stepIds)
-        {
-            return await _reportService.GetProcessingStepReport(scheduleTurnId, stepIds);
-        }
+        //[HttpPost]
+        //[Route("ProductionProgress/{scheduleTurnId}")]
+        //public async Task<IList<StepReportModel>> GetProcessingStepReport([FromRoute] long scheduleTurnId, [FromBody] int[] stepIds)
+        //{
+        //    return await _reportService.GetProcessingStepReport(scheduleTurnId, stepIds);
+        //}
 
         [HttpGet]
         [Route("OutsourcePartRequest")]
@@ -72,11 +74,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _reportService.GetOursourcePartRequestReport(fromDate, toDate, productionOrderId);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("OutsourceStepRequest")]
-        public async Task<IList<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] long? productionOrderId)
+        public async Task<PageData<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport([FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters)
         {
-            return await _reportService.GetOursourceStepRequestReport(fromDate, toDate, productionOrderId);
+            return await _reportService.GetOursourceStepRequestReport(page, size, orderByFieldName, asc, filters);
         }
     }
 }

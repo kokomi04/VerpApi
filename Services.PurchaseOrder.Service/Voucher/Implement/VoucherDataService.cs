@@ -135,7 +135,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }).ToList();
             if (!mainColumns.Contains(orderByFieldName))
             {
-                orderByFieldName = "F_Id";
+                orderByFieldName = mainColumns.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
             var totalSql = @$"SELECT COUNT(DISTINCT r.VoucherBill_F_Id) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}";
@@ -209,9 +209,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
 
+            ";
+            if (size > 0)
+            {
+                dataSql += @$"
                 OFFSET {(page - 1) * size} ROWS
                 FETCH NEXT {size} ROWS ONLY
             ";
+            }
             var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM { VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {fId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
@@ -2245,8 +2250,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                    new SqlParameter("@FromDate",  EnumDataType.Date.GetSqlValue(fromDate?.UnixToDateTime())),
                    new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate?.UnixToDateTime())),
                    new SqlParameter("@IsCreatedPurchasingRequest", EnumDataType.Boolean.GetSqlValue(isCreatedPurchasingRequest)),
-                   new SqlParameter("@Page",page),
-                   new SqlParameter("@Size",size),
+                   new SqlParameter("@Page", page),
+                   new SqlParameter("@Size", size),
                    total
                 });
 

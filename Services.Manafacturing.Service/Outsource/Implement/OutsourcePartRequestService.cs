@@ -196,7 +196,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
-                whereCondition.Append("OR v.RequestOutsourcePartCode LIKE @Keyword ");
+                whereCondition.Append("OR v.OutsourcePartRequestCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductPartName LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -329,6 +329,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         }
 
+        public async Task<IList<OutsourcePartRequestDetailInfo>> GetOutsourcePartRequestDetailByProductionOrderId(long productionOrderId)
+        {
+            var sql = new StringBuilder($"SELECT * FROM vOutsourcePartRequestExtractInfo v WHERE v.ProductionOrderId = {productionOrderId}");
+            var resultData = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), Array.Empty<SqlParameter>()))
+                .ConvertData<OutsourcePartRequestDetailExtractInfo>()
+                .AsQueryable()
+                .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            return resultData;
+        }
         public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId)
         {
             var data = await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
@@ -391,7 +402,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
                     .Sum();
 
-                if (!totalStatus.HasValue)
+                if (totalStatus.GetValueOrDefault() == 0)
                     rq.OutsourcePartRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
                 else
                 {

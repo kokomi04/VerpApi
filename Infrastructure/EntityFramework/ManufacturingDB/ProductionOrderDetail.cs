@@ -8,7 +8,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionOrderDetail()
         {
             OutsourcePartRequest = new HashSet<OutsourcePartRequest>();
-            ProductionSchedule = new HashSet<ProductionSchedule>();
             ProductionStepOrder = new HashSet<ProductionStepOrder>();
         }
 
@@ -25,12 +24,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public long? OrderDetailId { get; set; }
-        public int? Status { get; set; }
         public int SubsidiaryId { get; set; }
 
         public virtual ProductionOrder ProductionOrder { get; set; }
         public virtual ICollection<OutsourcePartRequest> OutsourcePartRequest { get; set; }
-        public virtual ICollection<ProductionSchedule> ProductionSchedule { get; set; }
         public virtual ICollection<ProductionStepOrder> ProductionStepOrder { get; set; }
     }
 }

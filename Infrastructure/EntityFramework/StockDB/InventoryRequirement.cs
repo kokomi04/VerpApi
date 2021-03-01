@@ -14,6 +14,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public long InventoryRequirementId { get; set; }
         public int SubsidiaryId { get; set; }
         public string InventoryRequirementCode { get; set; }
+        public int InventoryRequirementTypeId { get; set; }
+        public int InventoryOutsideMappingTypeId { get; set; }
         public int InventoryTypeId { get; set; }
         public string Content { get; set; }
         public DateTime Date { get; set; }
@@ -27,7 +29,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? CensorByUserId { get; set; }
         public DateTime? CensorDatetimeUtc { get; set; }
         public int CensorStatus { get; set; }
-        public long? ScheduleTurnId { get; set; }
+        public long? ProductionOrderId { get; set; }
         public long? ProductionStepId { get; set; }
         public string Shipper { get; set; }
         public int? CustomerId { get; set; }

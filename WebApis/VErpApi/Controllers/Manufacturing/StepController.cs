@@ -11,7 +11,7 @@ using VErp.Services.Manafacturing.Service.Step;
 
 namespace VErpApi.Controllers.Manufacturing
 {
-    [Route("api/steps")]
+    [Route("api/manufacturing/steps")]
     [ApiController]
     public class StepController : VErpBaseController
     {
@@ -48,6 +48,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<PageData<StepModel>> GetListStep([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stepService.GetListStep(keyword, page, size);
+        }
+
+        [HttpGet]
+        [Route("{stepId}")]
+        public async Task<StepModel> GetStep([FromRoute] int stepId)
+        {
+            return await _stepService.GetStep(stepId);
         }
     }
 }
