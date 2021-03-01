@@ -19,6 +19,7 @@ namespace VErp.Services.Stock.Model.Product
         public string UnitName { get; set; }
         public decimal? EstimatePrice { get; set; }
         public bool IsProductSemi { get; set; }
+        public decimal Quantity { get; set; }
 
         public List<StockProductOutput> StockProductModelList { set; get; }
     }
