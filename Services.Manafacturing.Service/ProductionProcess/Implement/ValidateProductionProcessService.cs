@@ -63,8 +63,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 lsWarning.AddRange(warningOutsourceStepRequest);
             }
 
-
-
             return lsWarning;
         }
 

@@ -838,5 +838,25 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId(long productionOrderId)
+        {
+            var info = await _purchaseOrderDBContext
+                .PurchasingRequest
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ProductionOrderId == productionOrderId);
+
+            if (info == null) return null;
+
+            var details = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking()
+                .Where(d => d.PurchasingRequestId == info.PurchasingRequestId)
+                .ToListAsync();
+
+            var data = _mapper.Map<PurchasingRequestOutput>(info);
+
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+
+            return data;
+        }
+
     }
 }

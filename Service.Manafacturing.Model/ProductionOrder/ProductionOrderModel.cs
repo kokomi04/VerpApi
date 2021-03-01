@@ -13,7 +13,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionOrderOutputModel : ProductOrderModel, IMapFrom<ProductionOrderEntity>
     {
         public EnumProductionStatus? ProductionOrderStatus { get; set; }
-        public bool? MarkInValid { get; set; }
         //public EnumProcessStatus ProcessStatus { get; set; }
         public virtual ICollection<ProductionOrderDetailOutputModel> ProductionOrderDetail { get; set; }
 
@@ -53,7 +52,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long EndDate { get; set; }
         public string Description { get; set; }
         public bool IsDraft { get; set; }
-
+        public bool IsInvalid { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
     }
 

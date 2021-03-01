@@ -96,7 +96,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productionOrderId}/materials-calc")]
-        public async Task<IList<ProductionOrderMaterialsCalc>> GetProductionOrderMaterials([FromRoute] int productionOrderId)
+        public async Task<ProductionOrderMaterialsModel> GetProductionOrderMaterials([FromRoute] int productionOrderId)
         {
             return await _productionOrderMaterialsService.GetProductionOrderMaterialsCalc(productionOrderId);
         }

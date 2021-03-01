@@ -205,5 +205,17 @@ namespace VErpApi.Controllers.PurchaseOrder
             if (poProcessStatusModel == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _purchasingRequestService.UpdatePoProcessStatus(purchasingRequestId, poProcessStatusModel.PoProcessStatusId).ConfigureAwait(true);
         }
+
+        /// <summary>
+        /// Lấy thông tin phiếu yêu cầu vật tư theo LSX
+        /// </summary>
+        /// <param name="productionOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("")]
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId)
+        {
+            return await _purchasingRequestService.GetPurchasingRequestByProductionOrderId(productionOrderId);
+        }
     }
 }
