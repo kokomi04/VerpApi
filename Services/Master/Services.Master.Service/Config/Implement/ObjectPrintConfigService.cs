@@ -177,7 +177,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 result.Add(
                          GetObjectPrintConfigSearch(
                          moduleTypeId: EnumModuleType.PurchaseOrder,
-                         objectTypeId: EnumObjectType.VoucherBill,
+                         objectTypeId: EnumObjectType.VoucherType,
                          objectId: voucherType.VoucherTypeId,
                          objectTitle: voucherType.Title
                          )
@@ -197,7 +197,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 result.Add(
                         GetObjectPrintConfigSearch(
                         moduleTypeId: EnumModuleType.Accountant,
-                        objectTypeId: EnumObjectType.InputBill,
+                        objectTypeId: EnumObjectType.InputType,
                         objectId: inputType.InputTypeId,
                         objectTitle: inputType.Title
                         )
