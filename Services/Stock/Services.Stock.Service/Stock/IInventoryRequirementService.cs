@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Stock;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -22,5 +23,7 @@ namespace VErp.Services.Stock.Service.Stock
         Task<bool> DeleteInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId);
 
         Task<bool> ConfirmInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status, Dictionary<long, int> assignStocks = null);
+
+        Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType);
     }
 }

@@ -36,15 +36,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductHelperService _productHelperService;
-        private readonly IValidateProductionOrderService _validateProductionOrderService;
 
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductHelperService productHelperService
-            , IValidateProductionOrderService validateProductionOrderService)
+            , IProductHelperService productHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -52,7 +50,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _productHelperService = productHelperService;
-            _validateProductionOrderService = validateProductionOrderService;
         }
 
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -180,9 +177,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 productOrder.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
-                var warnings = await _validateProductionOrderService.GetWarningProductionOrder(productionOrderId, productOrder.ProductionOrderDetail);
-                productOrder.MarkInValid = warnings.Count > 0;
-
                 //var detailIds = productOrder.ProductionOrderDetail.Select(od => od.ProductionOrderDetailId).ToList();
                 //var countDetailId = _manufacturingDBContext.ProductionStepOrder
                 //    .Where(so => detailIds.Contains(so.ProductionOrderDetailId))
@@ -247,6 +241,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
+                productionOrder.IsResetProductionProcess = false;
+                productionOrder.IsInvalid = true;
                 productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
                 _manufacturingDBContext.ProductionOrder.Add(productionOrder);
                 await _manufacturingDBContext.SaveChangesAsync();

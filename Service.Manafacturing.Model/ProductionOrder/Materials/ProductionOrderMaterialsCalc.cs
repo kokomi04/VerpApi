@@ -20,4 +20,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public long? ParentId { get; set; }
         public EnumProductionOrderMaterials.EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
     }
+
+    public class ProductionOrderMaterialsModel
+    {
+        public bool IsReset { get; set; }
+        public IList<ProductionOrderMaterialsCalc> materials { get; set; }
+    }
 }

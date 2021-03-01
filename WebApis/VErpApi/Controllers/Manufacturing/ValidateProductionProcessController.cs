@@ -8,6 +8,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using VErp.Commons.Enums.StandardEnum;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -33,9 +34,20 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("warning")]
-        public async Task<IList<ProductionProcessWarningMessage>> ValidateProductionProcess([FromQuery] EnumContainerType containerTypeId, [FromQuery] long containerId)
+        public async Task<IEnumerable<ProductionProcessWarningMessage>> ValidateProductionProcess([FromQuery] EnumContainerType containerTypeId, [FromQuery] long containerId)
         {
             var productionProcess = await _productionProcessService.GetProductionProcessByContainerId(containerTypeId, containerId);
+
+            if (productionProcess != null && productionProcess.ProductionStepLinkDataRoles.Count == 0)
+            {
+                var warningCode = containerTypeId == EnumContainerType.ProductionOrder ? EnumProductionProcessWarningCode.WarningProductionStep : EnumProductionProcessWarningCode.WarningProduct;
+                return new[] { new ProductionProcessWarningMessage { 
+                    Message = "Chưa thiết lập quy trình sản xuất",
+                    WarningCode = warningCode,
+                    GroupName = warningCode.GetEnumDescription()
+                } };
+            }
+
             return await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, productionProcess);
         }
 

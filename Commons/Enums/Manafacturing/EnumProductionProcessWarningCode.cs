@@ -15,7 +15,9 @@ namespace VErp.Commons.Enums.Manafacturing
         WarningOutsourcePartRequest = 3,
         [Description("Warning-YCGC công đoạn")]
         WarningOutsourceStepRequest = 4,
-       [Description("Warning-Lệnh sản xuất")]
-        WarningProductionOrder = 5
+        [Description("Warning-Lệnh sản xuất")]
+        WarningProductionOrder = 5,
+        [Description("Warning-Đơn hàng")]
+        WarningProduct = 6
     }
 }

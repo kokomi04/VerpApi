@@ -7,7 +7,7 @@ namespace VErp.Commons.Enums.StockEnum
 {
     public enum EnumInventoryOutsideMappingType
     {
-        [Description("Hoàn chỉnh")]
+        [Description("Mặc định")]
         Normal = 0,
         [Description("Đơn hàng")]
         Order = 1,

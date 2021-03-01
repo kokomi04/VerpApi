@@ -35,13 +35,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
         private readonly IOutsourceStepRequestService _outsourceStepRequestService;
+        private readonly IValidateProductionProcessService _validateProductionProcessService;
 
         public ProductionProcessService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionProcessService> logger
             , IMapper mapper
             , IProductHelperService productHelperService
-            , IOutsourceStepRequestService outsourceStepRequestService)
+            , IOutsourceStepRequestService outsourceStepRequestService
+            , IValidateProductionProcessService validateProductionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -49,6 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _mapper = mapper;
             _productHelperService = productHelperService;
             _outsourceStepRequestService = outsourceStepRequestService;
+            _validateProductionProcessService = validateProductionProcessService;
         }
 
         public async Task<long> CreateProductionStep(ProductionStepInfo req)
@@ -596,6 +599,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     maxY = newMaxY;
                 }
+
+                await UpdateStatusValidForProductionOrder(EnumContainerType.ProductionOrder, productionOrderId, (await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId)));
+
                 await trans.CommitAsync();
 
                 return true;
@@ -1056,6 +1062,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 }
 
+                if(containerTypeId == EnumContainerType.ProductionOrder)
+                {
+                    await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
+                }
+
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
@@ -1070,6 +1081,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 throw;
             }
 
+        }
+
+        private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
+        {
+            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(x => x.ProductionOrderId == containerId);
+            productionOrder.IsResetProductionProcess = true;
+            productionOrder.IsInvalid = (await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, process)).Count() > 0;
+
+            await _manufacturingDBContext.SaveChangesAsync();
         }
 
         #endregion
