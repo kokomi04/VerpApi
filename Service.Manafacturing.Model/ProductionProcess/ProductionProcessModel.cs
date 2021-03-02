@@ -9,6 +9,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcess
 {
     public class ProductionProcessModel
     {
+        public ProductionProcessModel()
+        {
+            ProductionStepLinks = new List<ProductionStepLinkModel>();
+            ProductionStepGroupLinkDataRoles = new List<ProductionStepLinkDataRoleInput>();
+            ProductionStepOrders = new List<ProductionStepOrderModel>();
+        }
         public long ContainerId { get; set; }
         public EnumContainerType ContainerTypeId { get; set; }
 
