@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
+        public virtual DbSet<ProductionStepCollection> ProductionStepCollection { get; set; }
         public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
@@ -453,6 +454,15 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .WithMany(p => p.ProductionStep)
                     .HasForeignKey(d => d.StepId)
                     .HasConstraintName("FK_ProductionStep_Step");
+            });
+
+            modelBuilder.Entity<ProductionStepCollection>(entity =>
+            {
+                entity.Property(e => e.ProductionStepCollectionId).ValueGeneratedNever();
+
+                entity.Property(e => e.Collections).IsRequired();
+
+                entity.Property(e => e.Title).HasMaxLength(256);
             });
 
             modelBuilder.Entity<ProductionStepInOutConverter>(entity =>
