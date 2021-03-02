@@ -171,5 +171,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionProcessService.SetProductionStepWorkload(productionStepWorkload);
         }
+
+        [HttpPost]
+        [Route("copy")]
+        public async Task<bool> CopyProductionProcess(long fromProductId, long toProductId)
+        {
+            return await _productionProcessService.CopyProductionProcess(fromProductId, toProductId);
+        }
     }
 }

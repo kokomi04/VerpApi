@@ -951,123 +951,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
-            var productionStepOutsourced = await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(containerTypeId == EnumContainerType.ProductionOrder ? containerId : 0);
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                //Cập nhật, xóa và tạo mới steplinkdata
-                var lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
-                                        join r in _manufacturingDBContext.ProductionStepLinkDataRole on s.ProductionStepId equals r.ProductionStepId
-                                        where s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId
-                                        select r.ProductionStepLinkDataId).Distinct();
-                var sourceStepLinkData = await _manufacturingDBContext.ProductionStepLinkData.Where(p => lsStepLinkDataId.Contains(p.ProductionStepLinkDataId)).ToListAsync();
-                foreach (var dest in sourceStepLinkData)
-                {
-                    var source = req.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId);
-                    if (source != null)
-                    {
-                        _mapper.Map(source, dest);
-                    }
-                    else
-                    {
-                        if (containerTypeId == EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0 || dest.ExportOutsourceQuantity.GetValueOrDefault() > 0))
-                        {
-                            var outsourceStepRequest = await _manufacturingDBContext.OutsourceStepRequest.Include(x => x.OutsourceStepRequestData)
-                                .Where(x => x.OutsourceStepRequestData.Any(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId))
-                                .FirstOrDefaultAsync();
-                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Không thể xóa chi tiết nằm trong YCGC công đoạn \"{outsourceStepRequest.OutsourceStepRequestCode}\"");
-                        }
-                        dest.IsDeleted = true;
-                    }
-                }
-
-                var newStepLinkData = req.ProductionStepLinkDatas.AsQueryable().ProjectTo<ProductionStepLinkData>(_mapper.ConfigurationProvider)
-                    .Where(x => !sourceStepLinkData.Select(y => y.ProductionStepLinkDataId).Contains(x.ProductionStepLinkDataId))
-                    .ToList();
-
-                await _manufacturingDBContext.ProductionStepLinkData.AddRangeAsync(newStepLinkData);
-                await _manufacturingDBContext.SaveChangesAsync();
-
-                //Cập nhật, xóa và tạo mới step
-                var sourceStep = await _manufacturingDBContext.ProductionStep.Where(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId).ToListAsync();
-                foreach (var dest in sourceStep)
-                {
-                    var source = req.ProductionSteps.SingleOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
-                    if (source != null)
-                        _mapper.Map(source, dest);
-                    else
-                    {
-                        var os = productionStepOutsourced.FirstOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
-                        if (containerTypeId == EnumContainerType.ProductionOrder && os != null)
-                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Không thể xóa công đoạn nằm trong YCGC công đoạn {os.OutsourceStepRequestCode}");
-                        dest.IsDeleted = true;
-                    }
-                }
-
-                var newStep = req.ProductionSteps.AsQueryable().ProjectTo<ProductionStep>(_mapper.ConfigurationProvider)
-                    .Where(x => !sourceStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId))
-                    .ToList();
-
-                await _manufacturingDBContext.ProductionStep.AddRangeAsync(newStep);
-                await _manufacturingDBContext.SaveChangesAsync();
-
-                //Cập nhật role steplinkdata trong step
-                newStep.AddRange(sourceStep.Where(x => !x.IsDeleted).ToList());
-                newStepLinkData.AddRange(sourceStepLinkData.Where(x => !x.IsDeleted).ToList());
-
-                var roles = from r in req.ProductionStepLinkDataRoles
-                            join s in newStep on r.ProductionStepCode equals s.ProductionStepCode
-                            join d in newStepLinkData on r.ProductionStepLinkDataCode equals d.ProductionStepLinkDataCode
-                            select new ProductionStepLinkDataRole
-                            {
-                                ProductionStepId = s.ProductionStepId,
-                                ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                                ProductionStepLinkDataRoleTypeId = (int)r.ProductionStepLinkDataRoleTypeId
-                            };
-                var oldRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(x => newStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId)).ToList();
-
-                _manufacturingDBContext.ProductionStepLinkDataRole.RemoveRange(oldRoles);
-                await _manufacturingDBContext.SaveChangesAsync();
-                await _manufacturingDBContext.ProductionStepLinkDataRole.AddRangeAsync(roles);
-
-                //Gán parentId nếu trong nhóm công đoạn có QTSX con
-                foreach (var s in newStep)
-                {
-                    if (!string.IsNullOrWhiteSpace(s.ParentCode))
-                    {
-                        var p = newStep.FirstOrDefault(x => x.ProductionStepCode.Equals(s.ParentCode));
-                        if (p != null)
-                            s.ParentId = p.ProductionStepId;
-                    }
-                }
-                await _manufacturingDBContext.SaveChangesAsync();
-
-                //Lưu công đoạn thuộc QTSX trong LSX nào
-                if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
-                {
-                    var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail.AsNoTracking().Where(x => x.ProductionOrderId == containerId).Select(x => x.ProductionOrderDetailId).ToListAsync();
-                    var lsProductionStepOrderOld = await _manufacturingDBContext.ProductionStepOrder.AsNoTracking().Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId)).ToListAsync();
-                    _manufacturingDBContext.ProductionStepOrder.RemoveRange(lsProductionStepOrderOld);
-                    await _manufacturingDBContext.SaveChangesAsync();
-
-                    req.ProductionStepOrders.ForEach(x =>
-                    {
-                        var step = newStep.FirstOrDefault(y => y.ProductionStepCode.Equals(x.ProductionStepCode));
-                        x.ProductionStepId = step.ProductionStepId;
-                    });
-                    var lsProductionStepOrderNew = _mapper.Map<IList<ProductionStepOrder>>(req.ProductionStepOrders);
-                    await _manufacturingDBContext.ProductionStepOrder.AddRangeAsync(lsProductionStepOrderNew);
-                    await _manufacturingDBContext.SaveChangesAsync();
-
-
-                }
-
-                if(containerTypeId == EnumContainerType.ProductionOrder)
-                {
-                    await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
-                }
-
-                await _manufacturingDBContext.SaveChangesAsync();
+                await UpdateProductionProcessManual(containerTypeId, containerId, req);
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req.JsonSerialize());
@@ -1081,6 +968,125 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 throw;
             }
 
+        }
+
+        private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
+        {
+            var productionStepOutsourced = await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(containerTypeId == EnumContainerType.ProductionOrder ? containerId : 0);
+
+            //Cập nhật, xóa và tạo mới steplinkdata
+            var lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
+                                    join r in _manufacturingDBContext.ProductionStepLinkDataRole on s.ProductionStepId equals r.ProductionStepId
+                                    where s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId
+                                    select r.ProductionStepLinkDataId).Distinct();
+            var sourceStepLinkData = await _manufacturingDBContext.ProductionStepLinkData.Where(p => lsStepLinkDataId.Contains(p.ProductionStepLinkDataId)).ToListAsync();
+            foreach (var dest in sourceStepLinkData)
+            {
+                var source = req.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId);
+                if (source != null)
+                {
+                    _mapper.Map(source, dest);
+                }
+                else
+                {
+                    if (containerTypeId == EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0 || dest.ExportOutsourceQuantity.GetValueOrDefault() > 0))
+                    {
+                        var outsourceStepRequest = await _manufacturingDBContext.OutsourceStepRequest.Include(x => x.OutsourceStepRequestData)
+                            .Where(x => x.OutsourceStepRequestData.Any(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId))
+                            .FirstOrDefaultAsync();
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Không thể xóa chi tiết nằm trong YCGC công đoạn \"{outsourceStepRequest.OutsourceStepRequestCode}\"");
+                    }
+                    dest.IsDeleted = true;
+                }
+            }
+
+            var newStepLinkData = req.ProductionStepLinkDatas.AsQueryable().ProjectTo<ProductionStepLinkData>(_mapper.ConfigurationProvider)
+                .Where(x => !sourceStepLinkData.Select(y => y.ProductionStepLinkDataId).Contains(x.ProductionStepLinkDataId))
+                .ToList();
+
+            await _manufacturingDBContext.ProductionStepLinkData.AddRangeAsync(newStepLinkData);
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            //Cập nhật, xóa và tạo mới step
+            var sourceStep = await _manufacturingDBContext.ProductionStep.Where(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId).ToListAsync();
+            foreach (var dest in sourceStep)
+            {
+                var source = req.ProductionSteps.SingleOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
+                if (source != null)
+                    _mapper.Map(source, dest);
+                else
+                {
+                    var os = productionStepOutsourced.FirstOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
+                    if (containerTypeId == EnumContainerType.ProductionOrder && os != null)
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Không thể xóa công đoạn nằm trong YCGC công đoạn {os.OutsourceStepRequestCode}");
+                    dest.IsDeleted = true;
+                }
+            }
+
+            var newStep = req.ProductionSteps.AsQueryable().ProjectTo<ProductionStep>(_mapper.ConfigurationProvider)
+                .Where(x => !sourceStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId))
+                .ToList();
+
+            await _manufacturingDBContext.ProductionStep.AddRangeAsync(newStep);
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            //Cập nhật role steplinkdata trong step
+            newStep.AddRange(sourceStep.Where(x => !x.IsDeleted).ToList());
+            newStepLinkData.AddRange(sourceStepLinkData.Where(x => !x.IsDeleted).ToList());
+
+            var roles = from r in req.ProductionStepLinkDataRoles
+                        join s in newStep on r.ProductionStepCode equals s.ProductionStepCode
+                        join d in newStepLinkData on r.ProductionStepLinkDataCode equals d.ProductionStepLinkDataCode
+                        select new ProductionStepLinkDataRole
+                        {
+                            ProductionStepId = s.ProductionStepId,
+                            ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                            ProductionStepLinkDataRoleTypeId = (int)r.ProductionStepLinkDataRoleTypeId
+                        };
+            var oldRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(x => newStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId)).ToList();
+
+            _manufacturingDBContext.ProductionStepLinkDataRole.RemoveRange(oldRoles);
+            await _manufacturingDBContext.SaveChangesAsync();
+            await _manufacturingDBContext.ProductionStepLinkDataRole.AddRangeAsync(roles);
+
+            //Gán parentId nếu trong nhóm công đoạn có QTSX con
+            foreach (var s in newStep)
+            {
+                if (!string.IsNullOrWhiteSpace(s.ParentCode))
+                {
+                    var p = newStep.FirstOrDefault(x => x.ProductionStepCode.Equals(s.ParentCode));
+                    if (p != null)
+                        s.ParentId = p.ProductionStepId;
+                }
+            }
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            //Lưu công đoạn thuộc QTSX trong LSX nào
+            if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionStepOrders.Count > 0)
+            {
+                var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail.AsNoTracking().Where(x => x.ProductionOrderId == containerId).Select(x => x.ProductionOrderDetailId).ToListAsync();
+                var lsProductionStepOrderOld = await _manufacturingDBContext.ProductionStepOrder.AsNoTracking().Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId)).ToListAsync();
+                _manufacturingDBContext.ProductionStepOrder.RemoveRange(lsProductionStepOrderOld);
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                req.ProductionStepOrders.ForEach(x =>
+                {
+                    var step = newStep.FirstOrDefault(y => y.ProductionStepCode.Equals(x.ProductionStepCode));
+                    x.ProductionStepId = step.ProductionStepId;
+                });
+                var lsProductionStepOrderNew = _mapper.Map<IList<ProductionStepOrder>>(req.ProductionStepOrders);
+                await _manufacturingDBContext.ProductionStepOrder.AddRangeAsync(lsProductionStepOrderNew);
+                await _manufacturingDBContext.SaveChangesAsync();
+
+
+            }
+
+            if (containerTypeId == EnumContainerType.ProductionOrder)
+            {
+                await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
+            }
+
+            await _manufacturingDBContext.SaveChangesAsync();
         }
 
         private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
@@ -1381,6 +1387,62 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 throw;
             }
         }
-        
+
+        public async Task<bool> CopyProductionProcess(long fromProductId, long toProductId)
+        {
+            var process = await GetProductionProcessByContainerId(EnumContainerType.Product, fromProductId);
+
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+
+            try
+            {
+                var semiIds = process.ProductionStepLinkDatas
+                                .Where(x => x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                                .Select(x => x.ObjectId);
+                var lsProductSemi = await _manufacturingDBContext.ProductSemi.AsNoTracking()
+                    .Where(s => semiIds.Contains(s.ProductSemiId))
+                    .ToListAsync();
+
+
+                process.ProductionSteps.ForEach(x => { x.ProductionStepId = 0; x.ContainerId = toProductId; });
+                process.ProductionStepLinkDatas.ForEach(x => { 
+                    x.ProductionStepLinkDataId = 0; 
+                    if(x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                    {
+                        var p = lsProductSemi.FirstOrDefault(s => s.ProductSemiId == x.ObjectId);
+                        if (p == null)
+                            throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
+                        p.ProductSemiId = 0;
+                        p.ContainerId = toProductId;
+
+                        _manufacturingDBContext.ProductSemi.Add(p);
+                        _manufacturingDBContext.SaveChanges();
+
+                        x.ObjectId = p.ProductSemiId;
+                    }
+                });
+                process.ProductionStepLinkDataRoles.ForEach(r => { r.ProductionStepId = 0; r.ProductionStepLinkDataId = 0; });
+
+                await UpdateProductionProcessManual(EnumContainerType.Product, toProductId, new ProductionProcessModel
+                {
+                    ProductionStepLinkDataRoles = process.ProductionStepLinkDataRoles,
+                    ContainerId = toProductId,
+                    ContainerTypeId = EnumContainerType.Product,
+                    ProductionStepLinkDatas = process.ProductionStepLinkDatas,
+                    ProductionSteps = process.ProductionSteps,
+                });
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError("CopyProductionProcess", ex);
+                throw;
+            }
+            
+        }
+
     }
 }
