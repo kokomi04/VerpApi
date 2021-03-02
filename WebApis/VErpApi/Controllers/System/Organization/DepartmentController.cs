@@ -9,6 +9,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.Department;
 using VErp.Services.Organization.Model.Department;
 using System.Collections.Generic;
+using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.System
 {
@@ -16,10 +17,12 @@ namespace VErpApi.Controllers.System
     public class DepartmentController : VErpBaseController
     {
         private readonly IDepartmentService _departmentService;
+        private readonly IFileService _fileService;
 
-        public DepartmentController(IDepartmentService departmentService)
+        public DepartmentController(IDepartmentService departmentService, IFileService fileService)
         {
             _departmentService = departmentService;
+            _fileService = fileService;
         }
 
         [HttpGet]
@@ -63,5 +66,18 @@ namespace VErpApi.Controllers.System
         {
             return await _departmentService.DeleteDepartment(departmentId);
         }
+
+        /// <summary>
+        /// Upload department image
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("image")]
+        public async Task<long> Image([FromForm] IFormFile file)
+        {
+            return await _fileService.Upload(EnumObjectType.Department, EnumFileType.Image, string.Empty, file).ConfigureAwait(true);
+        }
+
     }
 }
