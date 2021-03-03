@@ -87,6 +87,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
             }
+
+            inputType.VoucherAreas = inputType.VoucherAreas.OrderBy(f => f.SortOrder).ToList();
+            foreach (var item in inputType.VoucherAreas)
+            {
+                item.VoucherAreaFields = item.VoucherAreaFields.OrderBy(f => f.SortOrder).ToList();
+            }
             return inputType;
         }
 
