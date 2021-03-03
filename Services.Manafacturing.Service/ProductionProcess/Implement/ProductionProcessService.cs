@@ -1388,9 +1388,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
-        public async Task<bool> CopyProductionProcess(long fromProductId, long toProductId)
+        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
         {
-            var process = await GetProductionProcessByContainerId(EnumContainerType.Product, fromProductId);
+            var process = await GetProductionProcessByContainerId(containerTypeId, fromContainerId);
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
 
@@ -1404,7 +1404,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .ToListAsync();
 
 
-                process.ProductionSteps.ForEach(x => { x.ProductionStepId = 0; x.ContainerId = toProductId; });
+                process.ProductionSteps.ForEach(x => { x.ProductionStepId = 0; x.ContainerId = toContainerId; });
                 process.ProductionStepLinkDatas.ForEach(x => { 
                     x.ProductionStepLinkDataId = 0; 
                     if(x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
@@ -1413,7 +1413,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         if (p == null)
                             throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
                         p.ProductSemiId = 0;
-                        p.ContainerId = toProductId;
+                        p.ContainerId = toContainerId;
 
                         _manufacturingDBContext.ProductSemi.Add(p);
                         _manufacturingDBContext.SaveChanges();
@@ -1423,11 +1423,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 });
                 process.ProductionStepLinkDataRoles.ForEach(r => { r.ProductionStepId = 0; r.ProductionStepLinkDataId = 0; });
 
-                await UpdateProductionProcessManual(EnumContainerType.Product, toProductId, new ProductionProcessModel
+                await UpdateProductionProcessManual(containerTypeId, toContainerId, new ProductionProcessModel
                 {
                     ProductionStepLinkDataRoles = process.ProductionStepLinkDataRoles,
-                    ContainerId = toProductId,
-                    ContainerTypeId = EnumContainerType.Product,
+                    ContainerId = toContainerId,
+                    ContainerTypeId = containerTypeId,
                     ProductionStepLinkDatas = process.ProductionStepLinkDatas,
                     ProductionSteps = process.ProductionSteps,
                 });
