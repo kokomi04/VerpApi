@@ -88,6 +88,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
+            inputType.InputAreas = inputType.InputAreas.OrderBy(f => f.SortOrder).ToList();
+            foreach(var item in inputType.InputAreas)
+            {
+                item.InputAreaFields = item.InputAreaFields.OrderBy(f => f.SortOrder).ToList();
+            }
             return inputType;
         }
 
@@ -858,6 +863,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             var total = await query.CountAsync();
 
+            query = query.OrderBy(f => f.SortOrder);
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
@@ -878,6 +884,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
             }
 
+            
             return inputAreaField;
         }
 
