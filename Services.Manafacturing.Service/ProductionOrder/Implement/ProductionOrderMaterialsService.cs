@@ -190,7 +190,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ProjectTo<ProductionOrderMaterials>(_mapper.ConfigurationProvider)
                 .ToArray();
 
-                var newMaterialsReplacement = materials.AsQueryable().SelectMany(x => x.materialsReplacement).Where(x => x.ProductionOrderMaterialsId == 0 && x.Quantity > 0)
+                var newMaterialsReplacement = materials.AsQueryable().SelectMany(x => x.materialsReplacement).Where(x => x.ProductionOrderMaterialsId == 0)
                 .ProjectTo<ProductionOrderMaterials>(_mapper.ConfigurationProvider)
                 .ToArray();
 
@@ -199,7 +199,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     var s = materials.FirstOrDefault(x => x.ProductionOrderMaterialsId == m.ProductionOrderMaterialsId);
                     if (s == null)
                     {
-                        s = materials.SelectMany(x => x.materialsReplacement).Where(x => x.Quantity > 0).FirstOrDefault(x => x.ProductionOrderMaterialsId == m.ProductionOrderMaterialsId);
+                        s = materials.SelectMany(x => x.materialsReplacement).FirstOrDefault(x => x.ProductionOrderMaterialsId == m.ProductionOrderMaterialsId);
                     }
                     if (s == null)
                         m.IsDeleted = true;
