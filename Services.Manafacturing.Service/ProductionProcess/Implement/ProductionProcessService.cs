@@ -1432,7 +1432,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ProductionSteps = process.ProductionSteps,
                 });
 
+                // Sync cơ số sản phẩm của SPA->SPB
+                if(containerTypeId == EnumContainerType.Product)
+                {
+                    var p = await _productHelperService.GetProduct((int)fromContainerId);
+
+                    await _productHelperService.UpdateProductCoefficientManual((int)toContainerId, p.Coefficient);
+                }
+
                 await trans.CommitAsync();
+
                 return true;
             }
             catch (Exception ex)
