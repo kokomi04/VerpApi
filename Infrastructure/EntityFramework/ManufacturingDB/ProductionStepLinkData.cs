@@ -31,6 +31,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
         public long? OutsourceRequestDetailId { get; set; }
         public int ProductionStepLinkTypeId { get; set; }
+        public long? ConverterId { get; set; }
 
         public virtual ICollection<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
         public virtual ICollection<ProductionAssignment> ProductionAssignment { get; set; }
