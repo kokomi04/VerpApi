@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
     public interface IProductionProcessService
     {
         Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
-        Task<bool> CopyProductionProcess(long fromProductId, long toProductId);
+        Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId);
 
         Task<ProductionProcessInfo> GetProductionProcessByProductionOrder(long productionOrderId);
         Task<ProductionProcessModel> GetProductionProcessByContainerId(EnumContainerType containerTypeId, long containerId);

@@ -174,9 +174,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("copy")]
-        public async Task<bool> CopyProductionProcess(long fromProductId, long toProductId)
+        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
         {
-            return await _productionProcessService.CopyProductionProcess(fromProductId, toProductId);
+            return await _productionProcessService.CopyProductionProcess(containerTypeId, fromContainerId, toContainerId);
         }
     }
 }
