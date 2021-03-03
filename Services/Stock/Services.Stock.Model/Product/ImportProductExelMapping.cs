@@ -42,7 +42,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Bán thành phẩm", GroupName = "Thông tin chung")]
         public bool? IsProductSemi { get; set; }
         [Display(Name = "Cơ số sản phẩm", GroupName = "Thông tin chung")]
-        public decimal Quantity { get; set; }
+        public int Coefficient { get; set; }
 
         // Extra info
         [Display(Name = "Quy cách", GroupName = "Thông tin bổ sung")]

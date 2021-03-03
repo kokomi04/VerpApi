@@ -409,6 +409,10 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
+                entity.Property(e => e.Coefficient)
+                    .HasDefaultValueSql("((1))")
+                    .HasComment("Cơ số sản phẩm");
+
                 entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
 
                 entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
@@ -446,11 +450,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
-
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18, 5)")
-                    .HasDefaultValueSql("((1))")
-                    .HasComment("Cơ số sản phẩm");
 
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
 

@@ -118,7 +118,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductCateId = defaultProductCate.ProductCateId,
                     UnitId = req.UnitId, 
                     IsProductSemi = false,
-                    Quantity = 1
+                    Coefficient = 1
                 };
 
                 await _stockContext.AddAsync(productInfo);
@@ -221,7 +221,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 ProductDescription = req.ProductDescription,
                 ProductNameEng = req.ProductNameEng,
                 IsProductSemi = req.IsProductSemi,
-                Quantity = req.Quantity
+                Coefficient = req.Coefficient < 1? 1: req.Coefficient
             };
 
             await _stockContext.AddAsync(productInfo);
@@ -422,7 +422,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.ProductDescription = req.ProductDescription;
                     productInfo.ProductNameEng = req.ProductNameEng;
                     productInfo.IsProductSemi = req.IsProductSemi;
-                    productInfo.Quantity = req.Quantity;
+                    productInfo.Coefficient = req.Coefficient < 1 ? 1 : req.Coefficient;
 
                     //Product extra info
                     productExtra.Specification = req.Extra?.Specification;
@@ -666,7 +666,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.UnitId,
                   p.EstimatePrice,
                   p.IsProductSemi,
-                  p.Quantity
+                  p.Coefficient
               });
 
             if (productTypeIds != null && productTypeIds.Length > 0)
@@ -723,7 +723,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     UnitId = item.UnitId,
                     EstimatePrice = item.EstimatePrice,
                     IsProductSemi = item.IsProductSemi,
-                    Quantity = item.Quantity
+                    Coefficient = item.Coefficient
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -765,7 +765,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.UnitId,
                     p.EstimatePrice,
                     p.IsProductSemi,
-                    p.Quantity
+                    p.Coefficient
                 });
 
             var lstData = await query.ToListAsync();
@@ -794,7 +794,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     UnitId = item.UnitId,
                     EstimatePrice = item.EstimatePrice,
                     IsProductSemi = item.IsProductSemi,
-                    Quantity = item.Quantity,
+                    Coefficient = item.Coefficient,
                     StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
                     {
                         StockId = q.StockId,
@@ -898,7 +898,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductDescription = productInfo.ProductDescription,
                     ProductNameEng = productInfo.ProductNameEng,
                     IsProductSemi = productInfo.IsProductSemi,
-                    Quantity = productInfo.Quantity,
+                    Coefficient = productInfo.Coefficient,
 
                     Extra = productExtra != null ? new ProductModelExtra()
                     {
@@ -1146,7 +1146,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
                         IsProductSemi = row.IsProductSemi ?? false,
-                        Quantity = row.Quantity,
+                        Coefficient = row.Coefficient,
 
                         ProductExtraInfo = new ProductExtraInfo()
                         {
@@ -1278,5 +1278,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return GeneralCode.Success;
         }
 
+        public async Task<bool> UpdateProductCoefficientManual(int productId, int coefficient)
+        {
+            var product = await _stockContext.Product.FirstOrDefaultAsync(x => x.ProductId == productId);
+            if (product == null)
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            product.Coefficient = coefficient < 1 ? 1 : coefficient;
+
+            await _stockContext.SaveChangesAsync();
+            return true;
+        }
     }
 }
