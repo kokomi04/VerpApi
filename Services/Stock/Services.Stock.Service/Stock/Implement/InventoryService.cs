@@ -1049,6 +1049,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await _stockDbContext.SaveChangesAsync();
 
+                        await ReCalculateRemainingAfterUpdate(inventoryObj.InventoryId);
+
                         trans.Commit();
 
                         var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
@@ -1190,9 +1192,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await _stockDbContext.SaveChangesAsync();
 
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), new { InventoryId = inventoryId }.JsonSerialize());
+                        if (inventoryObj.IsApproved)
+                        {
+                            await ReCalculateRemainingAfterUpdate(inventoryObj.InventoryId);
+                        }
 
                         trans.Commit();
+
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), new { InventoryId = inventoryId }.JsonSerialize());
 
                         return true;
                     }
@@ -2349,10 +2356,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await _stockDbContext.SaveChangesAsync();
 
-            if (inventory.IsApproved)
-            {
-                await ReCalculateRemainingAfterUpdate(inventory.InventoryId);
-            }
 
             return GeneralCode.Success;
         }
