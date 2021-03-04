@@ -29,6 +29,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
+        public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
+        public virtual DbSet<ProductionMaterialsRequirementDetail> ProductionMaterialsRequirementDetail { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
@@ -327,6 +329,38 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => new { d.ToProductionStepId, d.ToDepartmentId, d.ProductionOrderId })
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHandover_ProductionAssignmentTo");
+            });
+
+            modelBuilder.Entity<ProductionMaterialsRequirement>(entity =>
+            {
+                entity.Property(e => e.RequirementCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.RequirementContent).HasMaxLength(512);
+
+                entity.HasOne(d => d.ProductionOrder)
+                    .WithMany(p => p.ProductionMaterialsRequirement)
+                    .HasForeignKey(d => d.ProductionOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionMaterialsRequirement_ProductionOrder");
+            });
+
+            modelBuilder.Entity<ProductionMaterialsRequirementDetail>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.ProductionMaterialsRequirement)
+                    .WithMany(p => p.ProductionMaterialsRequirementDetail)
+                    .HasForeignKey(d => d.ProductionMaterialsRequirementId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionMaterialsRequirementDetail_ProductionMaterialsRequirement");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.ProductionMaterialsRequirementDetail)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionMaterialsRequirementDetail_ProductionStep");
             });
 
             modelBuilder.Entity<ProductionOrder>(entity =>

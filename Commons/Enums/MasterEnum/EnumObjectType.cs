@@ -239,6 +239,7 @@ namespace VErp.Commons.Enums.MasterEnum
         ActionType = 100,
 
         [Description("ActionButton")]
-        ActionButton = 101
+        ActionButton = 101,
+        ProductionMaterialsRequirement = 102
     }
 }
