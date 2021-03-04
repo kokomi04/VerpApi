@@ -131,7 +131,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (fileInfo != null && pictureType != PictureType.None)
                     {
                         fCol = 2;
-                        var fileStream = File.OpenRead(GetPhysicalFilePath(fileInfo.FilePath));
+                        var filePath = GetPhysicalFilePath(fileInfo.FilePath);
+                        if (!File.Exists(filePath))
+                        {
+                            throw new BadRequestException(GeneralCode.ItemNotFound, $"Logo file {fileInfo.FilePath} was not found!");
+                        }
+                        var fileStream = File.OpenRead(filePath);
                         byte[] bytes = IOUtils.ToByteArray(fileStream);
                         int pictureIdx = xssfwb.AddPicture(bytes, pictureType);
                         fileStream.Close();
@@ -144,8 +149,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         anchor.Row1 = 0;
                         anchor.Col2 = 2;
                         anchor.Row2 = 4;
-
-                        drawing.CreatePicture(anchor, pictureIdx);
+                        anchor.AnchorType = AnchorType.MoveDontResize;
+                        var picture = drawing.CreatePicture(anchor, pictureIdx);
+                        picture.Resize(1, 1);
                     }
 #endif
                 }
