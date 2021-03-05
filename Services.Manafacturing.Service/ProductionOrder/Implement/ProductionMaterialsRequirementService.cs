@@ -55,6 +55,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         {
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
+                if (model.MaterialsRequirementDetails.Count == 0)
+                    throw new BadRequestException(ProductionMaterialsRequirementErrorCode.NotFoundDetailMaterials);
                 try
                 {
                     if (!model.RequirementDate.HasValue)

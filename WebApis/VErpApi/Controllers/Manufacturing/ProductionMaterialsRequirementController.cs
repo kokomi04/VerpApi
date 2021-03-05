@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
@@ -34,6 +36,9 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productionMaterialsRequirementId}")]
         public async Task<bool> UpdateProductionMaterialsRequirement([FromRoute]long productionMaterialsRequirementId, [FromBody]ProductionMaterialsRequirementModel model)
         {
+            if (model != null && model.MaterialsRequirementDetails.Count == 0)
+                return await _requirementService.DeleteProductionMaterialsRequirement(productionMaterialsRequirementId);
+
             return await _requirementService.UpdateProductionMaterialsRequirement(productionMaterialsRequirementId, model);
         }
 
@@ -53,6 +58,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("search")]
+        [VErpAction(EnumActionType.View)]
         public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size,[FromBody] Clause filters)
         {
             return await _requirementService.SearchProductionMaterialsRequirement(keyword, page, size, filters);

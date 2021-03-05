@@ -44,5 +44,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         //OutsourceRequest
         Task<bool> UpdateMarkInvalidOutsourcePartRequest(long productionOrderId);
         Task<bool> UpdateMarkInvalidOutsourceStepRequest(long productionOrderId);
+
+        Task<IList<ProductionStepModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId);
     }
 }
