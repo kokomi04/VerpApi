@@ -61,6 +61,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.CreateProductionStep(req);
         }
 
+        [HttpGet]
+        [Route("{containerTypeId}/{containerId}/productionStep")]
+        public async Task<IList<ProductionStepModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
+        {
+            return await _productionProcessService.GetAllProductionStep(containerTypeId, containerId);
+        }
+
         [HttpPost]
         [Route("productionStepGroup")]
         public async Task<long> CreateProductionStepGroup([FromBody] ProductionStepGroupModel req)

@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
             profile.CreateMap<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailModel>()
                 .ForMember(m => m.ProductionStepTitle, v => v.MapFrom(m => string.Concat(m.ProductionStep.Step.StepName, $" (#{m.ProductionStepId})")))
                 .ReverseMap()
-                .ForMember(m => m.ProductionStepId, v => v.Ignore());
+                .ForMember(m => m.ProductionStep, v => v.Ignore());
         }
     }
 
@@ -32,7 +32,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
     {
         public long RequirementDate { get; set; }
 
-        public void Mapping(Profile profile)
+        public new  void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionMaterialsRequirementDetailExtrackInfo, ProductionMaterialsRequirementDetailSearch>()
                 .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.RequirementDate.GetUnix()))
@@ -41,7 +41,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         }
     }
 
-    public class ProductionMaterialsRequirementDetailExtrackInfo: ProductionMaterialsRequirementDetailModel
+    public class ProductionMaterialsRequirementDetailExtrackInfo: ProductionMaterialsRequirementDetailExtrackBase
     {
         public DateTime RequirementDate { get; set; }
 
@@ -49,8 +49,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 
     public class ProductionMaterialsRequirementDetailExtrackBase: ProductionMaterialsRequirementDetailModel
     {
-        public string ProductionStepTitle { get; set; }
         public string RequirementCode { get; set; }
+        public int CreatedByUserId { get; set; }
         public EnumProductionMaterialsRequirementStatus CensorStatus { get; set; }
 
     }
