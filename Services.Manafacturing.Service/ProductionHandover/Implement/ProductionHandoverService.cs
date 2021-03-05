@@ -67,6 +67,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data)
         {
+            return await CreateProductionHandover(productionOrderId, data, EnumHandoverStatus.Waiting);
+        }
+
+        private async Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data, EnumHandoverStatus status)
+        {
             try
             {
                 if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.FromProductionStepId && a.DepartmentId == data.FromDepartmentId && a.ProductionOrderId == productionOrderId))
@@ -74,7 +79,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.ToProductionStepId && a.DepartmentId == data.ToDepartmentId && a.ProductionOrderId == productionOrderId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phân công công việc cho tổ được bàn giao");
                 var productionHandover = _mapper.Map<ProductionHandoverEntity>(data);
-                productionHandover.Status = (int)EnumHandoverStatus.Waiting;
+                productionHandover.Status = (int)status;
                 productionHandover.ProductionOrderId = productionOrderId;
                 _manufacturingDBContext.ProductionHandover.Add(productionHandover);
                 _manufacturingDBContext.SaveChanges();
@@ -86,6 +91,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 _logger.LogError(ex, "CreateProductHandover");
                 throw;
             }
+        }
+
+        public async Task<bool> DeleteProductionHandover(long productionHandoverId)
+        {
+            try
+            {
+                var productionHandover = _manufacturingDBContext.ProductionHandover
+                    .Where(h => h.ProductionHandoverId == productionHandoverId)
+                    .FirstOrDefault();
+
+                if (productionHandover == null)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại bàn giao công việc");
+                productionHandover.IsDeleted = true;
+                _manufacturingDBContext.SaveChanges();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandoverId, $"Xoá bàn giao công việc", productionHandover.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }
+
+        public async Task<ProductionHandoverModel> CreateStatictic(long productionOrderId, ProductionHandoverInputModel data)
+        {
+            return await CreateProductionHandover(productionOrderId, data, EnumHandoverStatus.Accepted);
         }
 
         public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId)

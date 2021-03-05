@@ -55,6 +55,20 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHandoverService.CreateProductionHandover(productionOrderId, data);
         }
 
+        [HttpPost]
+        [Route("statictic/{productionOrderId}")]
+        public async Task<ProductionHandoverModel> CreateStatictic([FromRoute] long productionOrderId, [FromBody] ProductionHandoverInputModel data)
+        {
+            return await _productionHandoverService.CreateStatictic(productionOrderId, data);
+        }
+
+        [HttpDelete]
+        [Route("/{productionHandoverId}")]
+        public async Task<bool> DeleteProductionHandover([FromRoute] long productionHandoverId)
+        {
+            return await _productionHandoverService.DeleteProductionHandover(productionHandoverId);
+        }
+
         [HttpPut]
         [Route("{productionOrderId}/{productionHandoverId}/accept")]
         public async Task<ProductionHandoverModel> AcceptProductionHandover([FromRoute] long productionOrderId, [FromRoute] long productionHandoverId)
