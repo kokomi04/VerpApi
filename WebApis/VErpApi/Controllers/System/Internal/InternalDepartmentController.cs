@@ -37,5 +37,13 @@ namespace VErpApi.Controllers.System.Internal
         {
             return await _departmentService.GetDepartmentInfo(departmentId);
         }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByIds")]
+        public async Task<IList<DepartmentModel>> GetByIds([FromBody] IList<int> departmentIds)
+        {
+            return await _departmentService.GetListByIds(departmentIds);
+        }
     }
 }
