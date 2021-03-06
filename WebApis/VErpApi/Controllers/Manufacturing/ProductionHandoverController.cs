@@ -63,7 +63,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpDelete]
-        [Route("/{productionHandoverId}")]
+        [Route("{productionHandoverId}")]
         public async Task<bool> DeleteProductionHandover([FromRoute] long productionHandoverId)
         {
             return await _productionHandoverService.DeleteProductionHandover(productionHandoverId);
