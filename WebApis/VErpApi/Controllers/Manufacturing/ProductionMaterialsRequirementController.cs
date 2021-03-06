@@ -65,7 +65,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("/productionOrder/{productionOrderId}")]
+        [Route("productionOrder/{productionOrderId}")]
         public async Task<IList<ProductionMaterialsRequirementDetailListModel>> GetProductionMaterialsRequirementByProductionOrder([FromRoute]long productionOrderId)
         {
             return await _requirementService.GetProductionMaterialsRequirementByProductionOrder(productionOrderId);
