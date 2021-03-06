@@ -234,6 +234,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return (lst, total);
         }
 
+        public async Task<IList<ProductionMaterialsRequirementDetailListModel>> GetProductionMaterialsRequirementByProductionOrder(long productionOrderId)
+        {
+            return await _manufacturingDBContext.ProductionMaterialsRequirementDetail
+                .Include(rd => rd.ProductionMaterialsRequirement)
+                .Where(rd => rd.ProductionMaterialsRequirement.ProductionOrderId == productionOrderId)
+                .ProjectTo<ProductionMaterialsRequirementDetailListModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
+
         public async Task<bool> UpdateProductionMaterialsRequirement(long requirementId, ProductionMaterialsRequirementModel model)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();

@@ -55,5 +55,4 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public EnumProductionMaterialsRequirementStatus CensorStatus { get; set; }
 
     }
-
 }

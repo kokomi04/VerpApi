@@ -34,4 +34,27 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
                 .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.RequirementDate.UnixToDateTime()));
         }
     }
+
+
+    public class ProductionMaterialsRequirementDetailListModel : IMapFrom<ProductionMaterialsRequirementDetail>
+    {
+        public long? RequirementDate { get; set; }
+        public string RequirementContent { get; set; }
+        public int CensorStatus { get; set; }
+        public int ProductId { get; set; }
+        public decimal Quantity { get; set; }
+        public int DepartmentId { get; set; }
+        public long ProductionStepId { get; set; }
+        public long ProductionOrderId { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailListModel>()
+                .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.ProductionMaterialsRequirement.RequirementDate.GetUnix()))
+                .ForMember(m => m.RequirementContent, v => v.MapFrom(m => m.ProductionMaterialsRequirement.RequirementContent))
+                .ForMember(m => m.CensorStatus, v => v.MapFrom(m => m.ProductionMaterialsRequirement.CensorStatus))
+                .ForMember(m => m.ProductionOrderId, v => v.MapFrom(m => m.ProductionMaterialsRequirement.ProductionOrderId));
+        }
+
+    }
 }
