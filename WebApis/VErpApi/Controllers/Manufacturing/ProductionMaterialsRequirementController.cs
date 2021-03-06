@@ -59,9 +59,9 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [Route("search")]
         [VErpAction(EnumActionType.View)]
-        public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size,[FromBody] Clause filters)
+        public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement([FromQuery] long productionOrderId, [FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size,[FromBody] Clause filters)
         {
-            return await _requirementService.SearchProductionMaterialsRequirement(keyword, page, size, filters);
+            return await _requirementService.SearchProductionMaterialsRequirement(productionOrderId, keyword, page, size, filters);
         }
 
         [HttpPut]

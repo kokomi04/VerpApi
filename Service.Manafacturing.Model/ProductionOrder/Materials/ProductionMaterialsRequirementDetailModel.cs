@@ -50,6 +50,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
     public class ProductionMaterialsRequirementDetailExtrackBase: ProductionMaterialsRequirementDetailModel
     {
         public string RequirementCode { get; set; }
+        public string RequirementContent { get; set; }
         public int CreatedByUserId { get; set; }
         public EnumProductionMaterialsRequirementStatus CensorStatus { get; set; }
 

@@ -169,15 +169,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return requirement;
         }
 
-        public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement(string keyword, int page, int size, Clause filters)
+        public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement(long productionOrderId, string keyword, int page, int size, Clause filters)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
-
             var whereCondition = new StringBuilder();
+
+            whereCondition.Append(" v.ProductionOrderId = @ProductionOrderId ");
+            parammeters.Add(new SqlParameter("@ProductionOrderId", productionOrderId));
+
             if (!string.IsNullOrEmpty(keyword))
             {
-                whereCondition.Append("(v.RequirementCode LIKE @KeyWord ");
+                whereCondition.Append(" AND");
+                whereCondition.Append(" (v.RequirementCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductionStepTitle LIKE @KeyWord )");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -193,6 +197,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     whereCondition.Append(filterCondition);
                 }
             }
+
+            
 
             var sql = new StringBuilder("SELECT * FROM vProductionMaterialsRequirementDeailExtractInfo v ");
             var totalSql = new StringBuilder("SELECT COUNT(v.ProductionMaterialsRequirementDetailId) Total FROM vProductionMaterialsRequirementDeailExtractInfo v ");
