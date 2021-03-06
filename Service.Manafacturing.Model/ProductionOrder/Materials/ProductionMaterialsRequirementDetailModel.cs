@@ -30,7 +30,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 
     public class ProductionMaterialsRequirementDetailSearch : ProductionMaterialsRequirementDetailExtrackBase, IMapFrom<ProductionMaterialsRequirementDetailExtrackInfo>
     {
-        public long RequirementDate { get; set; }
+        public long? RequirementDate { get; set; }
 
         public new  void Mapping(Profile profile)
         {
@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 
     public class ProductionMaterialsRequirementDetailExtrackInfo: ProductionMaterialsRequirementDetailExtrackBase
     {
-        public DateTime RequirementDate { get; set; }
+        public DateTime? RequirementDate { get; set; }
 
     }
 
@@ -52,6 +52,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public string RequirementCode { get; set; }
         public string RequirementContent { get; set; }
         public int CreatedByUserId { get; set; }
+        public string DepartmentTitle { get; set; }
+        public string ProductTitle { get; set; }
+        public int UnitId { get; set; }
         public EnumProductionMaterialsRequirementStatus CensorStatus { get; set; }
 
     }

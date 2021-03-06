@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -17,7 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
         public int? CensorByUserId { get; set; }
-        public int CensorStatus { get; set; }
+        public EnumProductionMaterialsRequirementStatus CensorStatus { get; set; }
         public int CreatedByUserId { get; set; }
 
         public IList<ProductionMaterialsRequirementDetailModel> MaterialsRequirementDetails { get; set; }

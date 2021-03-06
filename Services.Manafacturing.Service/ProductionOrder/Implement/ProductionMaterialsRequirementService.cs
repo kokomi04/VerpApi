@@ -33,6 +33,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IOrganizationHelperService _organizationHelperService;
 
         public ProductionMaterialsRequirementService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
@@ -40,7 +41,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
-            , ICurrentContextService currentContextService)
+            , ICurrentContextService currentContextService
+            , IOrganizationHelperService organizationHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -49,6 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _productHelperService = productHelperService;
             _currentContextService = currentContextService;
+            _organizationHelperService = organizationHelperService;
         }
 
         public async Task<long> AddProductionMaterialsRequirement(ProductionMaterialsRequirementModel model)
@@ -171,65 +174,72 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement(long productionOrderId, string keyword, int page, int size, Clause filters)
         {
-            keyword = (keyword ?? "").Trim();
-            var parammeters = new List<SqlParameter>();
-            var whereCondition = new StringBuilder();
+            var requirements = (await _manufacturingDBContext.ProductionMaterialsRequirement.AsNoTracking()
+               .Where(x => x.ProductionOrderId == productionOrderId)
+               .ProjectTo<ProductionMaterialsRequirementModel>(_mapper.ConfigurationProvider)
+               .ToListAsync()).SelectMany(r => r.MaterialsRequirementDetails
+                    , (p, c) => new ProductionMaterialsRequirementDetailSearch
+                    {
+                        CensorStatus = p.CensorStatus,
+                        CreatedByUserId = p.CreatedByUserId,
+                        DepartmentId = c.DepartmentId,
+                        ProductId = c.ProductId,
+                        ProductionMaterialsRequirementDetailId = c.ProductionMaterialsRequirementDetailId,
+                        RequirementCode = p.RequirementCode,
+                        ProductionMaterialsRequirementId = p.ProductionMaterialsRequirementId,
+                        ProductionStepId = c.ProductionStepId,
+                        ProductionStepTitle = c.ProductionStepTitle,
+                        RequirementContent = p.RequirementContent,
+                        Quantity = c.Quantity,
+                        RequirementDate = p.RequirementDate
+                    });
 
-            whereCondition.Append(" v.ProductionOrderId = @ProductionOrderId ");
-            parammeters.Add(new SqlParameter("@ProductionOrderId", productionOrderId));
+            var productIds = requirements.Select(x => x.ProductId).ToArray();
+            var departmentIds = requirements.Select(x => x.DepartmentId).ToArray();
 
-            if (!string.IsNullOrEmpty(keyword))
+            var products = await _productHelperService.GetListProducts(productIds);
+            var departments = await _organizationHelperService.GetDepartmentSimples(departmentIds);
+
+            var query = (from r in requirements
+            join p in products on r.ProductId equals p.ProductId into pi
+            from p in pi.DefaultIfEmpty()
+            join d in departments on r.DepartmentId equals d.DepartmentId into di
+            from d in di.DefaultIfEmpty()
+            select new ProductionMaterialsRequirementDetailSearch
             {
-                whereCondition.Append(" AND");
-                whereCondition.Append(" (v.RequirementCode LIKE @KeyWord ");
-                whereCondition.Append("OR v.ProductionStepTitle LIKE @KeyWord )");
-                parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+                CensorStatus = r.CensorStatus,
+                CreatedByUserId = r.CreatedByUserId,
+                DepartmentId = r.DepartmentId,
+                ProductId = r.ProductId,
+                ProductionMaterialsRequirementDetailId = r.ProductionMaterialsRequirementDetailId,
+                RequirementCode = r.RequirementCode,
+                ProductionMaterialsRequirementId = r.ProductionMaterialsRequirementId,
+                ProductionStepId = r.ProductionStepId,
+                ProductionStepTitle = r.ProductionStepTitle,
+                RequirementContent = r.RequirementContent,
+                Quantity = r.Quantity,
+                RequirementDate = r.RequirementDate,
+                ProductTitle = p != null ? string.Concat(p.ProductCode, "/ ", p.ProductName) : string.Empty,
+                UnitId = p != null ? p.UnitId : 0,
+                DepartmentTitle = d !=null ? string.Concat(d.DepartmentCode, "/ ", d.DepartmentName): string.Empty
+            }).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(x => x.ProductTitle.Contains(keyword) 
+                        || x.RequirementCode.Contains(keyword)
+                        || x.ProductionStepTitle.Contains(keyword)
+                        || x.DepartmentTitle.Contains(keyword));
             }
 
             if (filters != null)
             {
-                var suffix = 0;
-                var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vProductionMaterialsRequirementDeailExtractInfo", "v", ref filterCondition, ref parammeters, ref suffix);
-                if (filterCondition.Length > 2)
-                {
-                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
-                    whereCondition.Append(filterCondition);
-                }
+                query = query.InternalFilter(filters);
             }
 
-            
+            var lst = (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToList();
 
-            var sql = new StringBuilder("SELECT * FROM vProductionMaterialsRequirementDeailExtractInfo v ");
-            var totalSql = new StringBuilder("SELECT COUNT(v.ProductionMaterialsRequirementDetailId) Total FROM vProductionMaterialsRequirementDeailExtractInfo v ");
-            if (whereCondition.Length > 0)
-            {
-                totalSql.Append("WHERE ");
-                totalSql.Append(whereCondition);
-                sql.Append("WHERE ");
-                sql.Append(whereCondition);
-            }
-
-            sql.Append($" ORDER BY v.ProductionMaterialsRequirementId");
-
-            var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
-
-            var total = 0;
-            if (table != null && table.Rows.Count > 0)
-            {
-                total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
-            }
-
-            if (size >= 0)
-            {
-                sql.Append(@$" OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT { size}
-                ROWS ONLY");
-            }
-
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
-            var lst = resultData.ConvertData<ProductionMaterialsRequirementDetailExtrackInfo>().AsQueryable()
-                .ProjectTo<ProductionMaterialsRequirementDetailSearch>(_mapper.ConfigurationProvider).ToList();
+            var total = query.Count();
 
             return (lst, total);
         }
