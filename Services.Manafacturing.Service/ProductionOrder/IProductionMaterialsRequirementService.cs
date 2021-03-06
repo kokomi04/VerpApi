@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<bool> DeleteProductionMaterialsRequirement(long requirementId);
         Task<ProductionMaterialsRequirementModel> GetProductionMaterialsRequirement(long requirementId);
 
-        Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement(string keyword, int page, int size, Clause filters);
+        Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement(long productionOrderId, string keyword, int page, int size, Clause filters);
         Task<bool> ConfirmInventoryRequirement(long requirementId, EnumProductionMaterialsRequirementStatus status);
     }
 }
