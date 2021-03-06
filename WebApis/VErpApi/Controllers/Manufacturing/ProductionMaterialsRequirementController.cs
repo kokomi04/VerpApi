@@ -64,6 +64,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _requirementService.SearchProductionMaterialsRequirement(keyword, page, size, filters);
         }
 
+        [HttpGet]
+        [Route("/productionOrder/{productionOrderId}")]
+        public async Task<IList<ProductionMaterialsRequirementDetailListModel>> GetProductionMaterialsRequirementByProductionOrder([FromRoute]long productionOrderId)
+        {
+            return await _requirementService.GetProductionMaterialsRequirementByProductionOrder(productionOrderId);
+        }
+
         [HttpPut]
         [Route("{productionMaterialsRequirementId}/reject")]
         public async Task<bool> RejectInventoryRequirement([FromRoute] long productionMaterialsRequirementId)
