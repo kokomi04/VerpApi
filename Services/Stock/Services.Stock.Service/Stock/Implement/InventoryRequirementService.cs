@@ -154,7 +154,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 }
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId }).Any(g => g.Count() > 1))
+                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại sản phẩm trùng nhau trong phiếu yêu cầu");
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
