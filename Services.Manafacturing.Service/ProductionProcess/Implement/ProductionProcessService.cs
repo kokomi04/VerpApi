@@ -600,6 +600,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     maxY = newMaxY;
                 }
 
+
+                // Copy roleClient
+                var dataClient = await _manufacturingDBContext.ProductionStepRoleClient.FirstOrDefaultAsync(x => x.ContainerId == productionOrderId && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder);
+                var roleClients = (await _manufacturingDBContext.ProductionStepRoleClient.AsNoTracking()
+                         .Where(x => productionOrderDetails.Select(p => (long)p.ProductId).Contains(x.ContainerId) && x.ContainerTypeId == (int)EnumContainerType.Product)
+                         .ToListAsync()).SelectMany(x => (x.ClientData.JsonDeserialize<IList<RoleClientData>>()));
+
+                if (dataClient != null)
+                {
+                    var roleClientModelOrigin = dataClient.ClientData.JsonDeserialize<List<RoleClientData>>();
+                    roleClientModelOrigin.AddRange(roleClients);
+
+                    dataClient.ClientData = roleClientModelOrigin.JsonSerialize();
+                }
+                else
+                {
+                    _manufacturingDBContext.ProductionStepRoleClient.Add(new ProductionStepRoleClient
+                    {
+                        ClientData = roleClients.JsonSerialize(),
+                        ContainerId = productionOrderId,
+                        ContainerTypeId = (int)EnumContainerType.ProductionOrder
+                    });
+                }
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
                 await UpdateStatusValidForProductionOrder(EnumContainerType.ProductionOrder, productionOrderId, (await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId)));
 
                 await trans.CommitAsync();
@@ -1403,6 +1429,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Where(s => semiIds.Contains(s.ProductSemiId))
                     .ToListAsync();
 
+                var lsProductionSemiFinal = await _manufacturingDBContext.ProductSemi.AsNoTracking()
+                    .Where(x => x.ContainerId == toContainerId && (int)containerTypeId == x.ContainerTypeId)
+                    .ToListAsync();
 
                 process.ProductionSteps.ForEach(x => { x.ProductionStepId = 0; x.ContainerId = toContainerId; });
                 process.ProductionStepLinkDatas.ForEach(x => { 
@@ -1412,13 +1441,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         var p = lsProductSemi.FirstOrDefault(s => s.ProductSemiId == x.ObjectId);
                         if (p == null)
                             throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
-                        p.ProductSemiId = 0;
-                        p.ContainerId = toContainerId;
+                        var pf = lsProductionSemiFinal.FirstOrDefault(x => x.Title.ToLower().Equals(p.Title.ToLower()));
+                        if(pf != null)
+                        {
+                            x.ObjectId = pf.ProductSemiId;
+                        }
+                        else
+                        {
+                            p.ProductSemiId = 0;
+                            p.ContainerId = toContainerId;
 
-                        _manufacturingDBContext.ProductSemi.Add(p);
-                        _manufacturingDBContext.SaveChanges();
+                            _manufacturingDBContext.ProductSemi.Add(p);
+                            _manufacturingDBContext.SaveChanges();
 
-                        x.ObjectId = p.ProductSemiId;
+                            x.ObjectId = p.ProductSemiId;
+                        }
+                        
                     }
                 });
                 process.ProductionStepLinkDataRoles.ForEach(r => { r.ProductionStepId = 0; r.ProductionStepLinkDataId = 0; });
@@ -1432,8 +1470,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ProductionSteps = process.ProductionSteps,
                 });
 
+                var d1 = await _manufacturingDBContext.ProductionStepRoleClient.AsNoTracking().FirstOrDefaultAsync(x => x.ContainerTypeId == (int)containerTypeId && x.ContainerId == fromContainerId);
+                var d2 = await _manufacturingDBContext.ProductionStepRoleClient.FirstOrDefaultAsync(x => x.ContainerTypeId == (int)containerTypeId && x.ContainerId == toContainerId);
+
+                if (d1 != null)
+                {
+                    if (d2 != null)
+                        d2.ClientData = d1.ClientData;
+                    else
+                    {
+                        d1.ContainerId = toContainerId;
+                        await _manufacturingDBContext.ProductionStepRoleClient.AddAsync(d1);
+                    }
+                    await _manufacturingDBContext.SaveChangesAsync();
+                }
+
                 // Sync cơ số sản phẩm của SPA->SPB
-                if(containerTypeId == EnumContainerType.Product)
+                if (containerTypeId == EnumContainerType.Product)
                 {
                     var p = await _productHelperService.GetProduct((int)fromContainerId);
 
