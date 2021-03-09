@@ -89,7 +89,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 @$";WITH tmp AS (
                     SELECT ");
 
-            if(size < 0)
+            if (size < 0)
             {
                 sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
             }
@@ -138,7 +138,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 SELECT v.* FROM tmp t
                 LEFT JOIN vProductionOrderDetail v ON t.ProductionOrderId = v.ProductionOrderId ");
 
-            if(size < 0)
+            if (size < 0)
             {
                 sql.Append(" ORDER BY t.RowNum");
             }
@@ -259,7 +259,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                
+
 
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
@@ -402,18 +402,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var detail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
 
                 var delIds = detail.Select(od => od.ProductionOrderDetailId).ToList();
+
                 // Xóa quy trình sản xuất
-                var stepOrders = _manufacturingDBContext.ProductionStepOrder.Where(so => delIds.Contains(so.ProductionOrderDetailId)).ToList();
-                var stepIds = stepOrders.Select(so => so.ProductionStepId).Distinct().ToList();
-                var steps = _manufacturingDBContext.ProductionStep.Where(s => stepIds.Contains(s.ProductionStepId)).ToList();
+                var steps = _manufacturingDBContext.ProductionStep.Where(s => s.ContainerId == productionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder).ToList();
+                var stepIds = steps.Select(ps => ps.ProductionStepId).ToList();
                 var linkDataRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(r => stepIds.Contains(r.ProductionStepId)).ToList();
                 var linkDataIds = linkDataRoles.Select(r => r.ProductionStepLinkDataId).Distinct().ToList();
                 var linkDatas = _manufacturingDBContext.ProductionStepLinkData.Where(d => linkDataIds.Contains(d.ProductionStepLinkDataId)).ToList();
 
                 // Xóa role
                 _manufacturingDBContext.ProductionStepLinkDataRole.RemoveRange(linkDataRoles);
-                // Xóa quan hệ step-order
-                _manufacturingDBContext.ProductionStepOrder.RemoveRange(stepOrders);
                 await _manufacturingDBContext.SaveChangesAsync();
                 // Xóa step
                 foreach (var item in steps)

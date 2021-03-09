@@ -41,7 +41,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
-        public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<ProductionStepWorkInfo> ProductionStepWorkInfo { get; set; }
         public virtual DbSet<Step> Step { get; set; }
@@ -550,23 +549,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionStepLinkDataRole_ProductionStepLinkData");
-            });
-
-            modelBuilder.Entity<ProductionStepOrder>(entity =>
-            {
-                entity.HasKey(e => new { e.ProductionStepId, e.ProductionOrderDetailId });
-
-                entity.HasOne(d => d.ProductionOrderDetail)
-                    .WithMany(p => p.ProductionStepOrder)
-                    .HasForeignKey(d => d.ProductionOrderDetailId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionStepOrder_ProductionOrderDetail");
-
-                entity.HasOne(d => d.ProductionStep)
-                    .WithMany(p => p.ProductionStepOrder)
-                    .HasForeignKey(d => d.ProductionStepId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionStepOrder_ProductionStep");
             });
 
             modelBuilder.Entity<ProductionStepRoleClient>(entity =>
