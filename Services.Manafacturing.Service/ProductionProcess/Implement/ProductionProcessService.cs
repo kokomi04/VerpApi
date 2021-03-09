@@ -127,17 +127,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<ProductionProcessInfo> GetProductionProcessByProductionOrder(long productionOrderId)
         {
-            //var productOrderDetailIds = _manufacturingDBContext.ProductionOrderDetail
-            //    .Where(s => s.ProductionOrderId == productionOrderId)
-            //    .Select(s => s.ProductionOrderDetailId)
-            //    .ToList();
-
-            //var productionStepIds = _manufacturingDBContext.ProductionStepOrder
-            //    .Where(so => productOrderDetailIds.Contains(so.ProductionOrderDetailId))
-            //    .Select(so => so.ProductionStepId)
-            //    .Distinct()
-            //    .ToList();
-
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Include(s => s.Step)
                 .Include(s => s.ProductionStepLinkDataRole)
@@ -256,21 +245,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             //Tính toán mối quan hệ giữa (stepLink) các công đoạn
             var productionStepLinks = CalcProductionStepLink(roles, productionStepGroupLinkDataRoles);
 
-            //var productionStepOrders = new List<ProductionStepOrderModel>();
-            if (containerTypeId == EnumContainerType.ProductionOrder)
-            {
-                var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail
-                    .Where(x => x.ProductionOrderId == containerId)
-                    .Select(x => x.ProductionOrderDetailId)
-                    .ToListAsync();
-
-                //productionStepOrders = await _manufacturingDBContext.ProductionStepOrder
-                //    .Include(x => x.ProductionStep)
-                //    .Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId))
-                //    .ProjectTo<ProductionStepOrderModel>(_mapper.ConfigurationProvider)
-                //    .ToListAsync();
-            }
-
             return new ProductionProcessModel
             {
                 ContainerId = containerId,
@@ -280,7 +254,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepLinkDatas = stepLinkDatas,
                 ProductionStepLinks = productionStepLinks,
                 ProductionStepGroupLinkDataRoles = productionStepGroupLinkDataRoles,
-                //ProductionStepOrders = productionStepOrders
             };
         }
 
@@ -1087,26 +1060,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
-            //Lưu công đoạn thuộc QTSX trong LSX nào
-            if (containerTypeId == EnumContainerType.ProductionOrder)
-            {
-                var lsProductionOrderDetailId = await _manufacturingDBContext.ProductionOrderDetail.AsNoTracking().Where(x => x.ProductionOrderId == containerId).Select(x => x.ProductionOrderDetailId).ToListAsync();
-                //var lsProductionStepOrderOld = await _manufacturingDBContext.ProductionStepOrder.AsNoTracking().Where(x => lsProductionOrderDetailId.Contains(x.ProductionOrderDetailId)).ToListAsync();
-                //_manufacturingDBContext.ProductionStepOrder.RemoveRange(lsProductionStepOrderOld);
-                await _manufacturingDBContext.SaveChangesAsync();
-
-                //req.ProductionStepOrders.ForEach(x =>
-                //{
-                //    var step = newStep.FirstOrDefault(y => y.ProductionStepCode.Equals(x.ProductionStepCode));
-                //    x.ProductionStepId = step.ProductionStepId;
-                //});
-                //var lsProductionStepOrderNew = _mapper.Map<IList<ProductionStepOrder>>(req.ProductionStepOrders);
-                //await _manufacturingDBContext.ProductionStepOrder.AddRangeAsync(lsProductionStepOrderNew);
-                await _manufacturingDBContext.SaveChangesAsync();
-
-
-            }
-
+           
             if (containerTypeId == EnumContainerType.ProductionOrder)
             {
                 await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
