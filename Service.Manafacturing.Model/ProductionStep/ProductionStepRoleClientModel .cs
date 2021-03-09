@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     {
         public string Key { get; set; }
         public bool Value { get; set; }
-        public int Pos_x { get; set; }
-        public int Pos_y { get; set; }
+        public float Pos_x { get; set; }
+        public float Pos_y { get; set; }
     }
 }
