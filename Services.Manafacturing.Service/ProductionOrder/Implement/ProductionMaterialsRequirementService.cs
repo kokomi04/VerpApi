@@ -12,6 +12,8 @@ using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.Stock;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
@@ -34,6 +36,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IInventoryRequirementHelperService _inventoryRequirementHelperService;
 
         public ProductionMaterialsRequirementService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
@@ -42,7 +45,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
             , ICurrentContextService currentContextService
-            , IOrganizationHelperService organizationHelperService)
+            , IOrganizationHelperService organizationHelperService
+            , IInventoryRequirementHelperService inventoryRequirementHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -52,6 +56,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _productHelperService = productHelperService;
             _currentContextService = currentContextService;
             _organizationHelperService = organizationHelperService;
+            _inventoryRequirementHelperService = inventoryRequirementHelperService;
         }
 
         public async Task<long> AddProductionMaterialsRequirement(ProductionMaterialsRequirementModel model)
@@ -136,8 +141,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             try
             {
                 var requirement = await _manufacturingDBContext.ProductionMaterialsRequirement.FirstOrDefaultAsync(x => x.ProductionMaterialsRequirementId == requirementId);
-                if (requirement == null)
-                    throw new BadRequestException(ProductionMaterialsRequirementErrorCode.NotFoundRequirement);
+
+                ValidProductionMaterialsRequirement(requirement);
 
                 var detail = await _manufacturingDBContext.ProductionMaterialsRequirementDetail
                     .Where(x => x.ProductionMaterialsRequirementId == requirementId)
@@ -159,6 +164,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError("DeleteProductionMaterialsRequirement", ex);
                 throw;
             }
+        }
+
+        private void ValidProductionMaterialsRequirement(ProductionMaterialsRequirement requirement)
+        {
+            if (requirement == null)
+                throw new BadRequestException(ProductionMaterialsRequirementErrorCode.NotFoundRequirement);
+
+            if (requirement.CensorStatus == (int)EnumInventoryRequirementStatus.Accepted)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu vật tư thêm đã được duyệt");
+
+            if (requirement.CensorStatus == (int)EnumInventoryRequirementStatus.Rejected)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu vật tư thêm đã bị từ chối");
         }
 
         public async Task<ProductionMaterialsRequirementModel> GetProductionMaterialsRequirement(long requirementId)
@@ -250,8 +267,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             try
             {
                 var requirement = await _manufacturingDBContext.ProductionMaterialsRequirement.FirstOrDefaultAsync(x => x.ProductionMaterialsRequirementId == requirementId);
-                if (requirement == null)
-                    throw new BadRequestException(ProductionMaterialsRequirementErrorCode.NotFoundRequirement);
+
+                ValidProductionMaterialsRequirement(requirement);
 
                 var detail = await _manufacturingDBContext.ProductionMaterialsRequirementDetail
                     .Where(x => x.ProductionMaterialsRequirementId == requirementId)
@@ -289,15 +306,49 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<bool> ConfirmInventoryRequirement(long requirementId, EnumProductionMaterialsRequirementStatus status)
         {
-            var requirement = await _manufacturingDBContext.ProductionMaterialsRequirement.FirstOrDefaultAsync(x => x.ProductionMaterialsRequirementId == requirementId);
-            if (requirement == null)
-                throw new BadRequestException(ProductionMaterialsRequirementErrorCode.NotFoundRequirement);
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var requirement = await _manufacturingDBContext.ProductionMaterialsRequirement
+                    .Include(x=>x.ProductionMaterialsRequirementDetail)
+                    .Include(x=>x.ProductionOrder)
+                    .FirstOrDefaultAsync(x => x.ProductionMaterialsRequirementId == requirementId);
 
-            requirement.CensorStatus = (int)status;
-            requirement.CensorByUserId = _currentContextService.UserId;
-            requirement.CensorDatetimeUtc = DateTime.UtcNow;
-            await _manufacturingDBContext.SaveChangesAsync();
-            return true;
+                ValidProductionMaterialsRequirement(requirement);
+
+                requirement.CensorStatus = (int)status;
+                requirement.CensorByUserId = _currentContextService.UserId;
+                requirement.CensorDatetimeUtc = DateTime.UtcNow;
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                var inventoryRequirementModel = new InventoryRequirementSimpleModel
+                {
+                    ProductionOrderId = requirement.ProductionOrderId,
+                    InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
+                    InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
+                    Date = DateTime.UtcNow.GetUnix(),
+                    Content = requirement.RequirementContent,
+
+                    InventoryRequirementDetail = requirement.ProductionMaterialsRequirementDetail.Select(x => new InventoryRequirementSimpleDetailModel
+                    {
+                        DepartmentId = x.DepartmentId,
+                        ProductId = x.ProductId,
+                        PrimaryQuantity = x.Quantity,
+                        ProductionStepId = x.ProductionStepId,
+                        ProductionOrderCode = requirement.ProductionOrder.ProductionOrderCode
+                    }).ToList()
+                };
+                await _inventoryRequirementHelperService.AddInventoryRequirement(EnumInventoryType.Output, inventoryRequirementModel);
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "ConfirmInventoryRequirement");
+                throw;
+            }
+            
         }
     }
 }
