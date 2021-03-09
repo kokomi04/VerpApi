@@ -332,7 +332,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var requestIds = req.outsourceOrderDetail.Select(x => x.OutsourceStepRequestId).Distinct();
             var outsourceStepRequests = (await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
-                .Where(x => requestIds.Contains(x.OutsourceStepRequestId) && x.MarkInvalid)
+                .Where(x => requestIds.Contains(x.OutsourceStepRequestId) && x.IsInvalid)
                 .Select(x => x.OutsourceStepRequestCode)
                 .ToListAsync());
             if (outsourceStepRequests.Count > 0)

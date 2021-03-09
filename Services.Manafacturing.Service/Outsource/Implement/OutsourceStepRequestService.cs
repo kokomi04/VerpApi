@@ -218,7 +218,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 // Create outsourceStepRequest
                 var outsourceStepRequest = _mapper.Map<OutsourceStepRequest>(req);
                 outsourceStepRequest.OutsourceStepRequestCode = generated.CustomCode;
-                outsourceStepRequest.MarkInvalid = false;
+                outsourceStepRequest.IsInvalid = false;
                 outsourceStepRequest.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed;
 
                 _manufacturingDBContext.OutsourceStepRequest.Add(outsourceStepRequest);
@@ -264,7 +264,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             try
             {
                 _mapper.Map(req, outsourceStepRequest);
-                outsourceStepRequest.MarkInvalid = false;
+                outsourceStepRequest.IsInvalid = false;
 
                 var outsourceStepRequestDataOld = await _manufacturingDBContext.OutsourceStepRequestData
                     .Where(d => d.OutsourceStepRequestId == outsourceStepRequestId)

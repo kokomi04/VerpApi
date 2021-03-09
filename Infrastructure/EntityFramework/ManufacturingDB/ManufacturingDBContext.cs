@@ -181,8 +181,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.OutsourceStepRequestStatusId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.ProductionStepId).HasComment("Lấy ra tên QTSX được gắn với YCGC");
-
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.HasOne(d => d.ProductionOrder)
@@ -190,12 +188,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceStepRequest_ProductionOrder");
-
-                entity.HasOne(d => d.ProductionStep)
-                    .WithMany(p => p.OutsourceStepRequest)
-                    .HasForeignKey(d => d.ProductionStepId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsourceStepRequest_ProductionStep");
             });
 
             modelBuilder.Entity<OutsourceStepRequestData>(entity =>
@@ -484,6 +476,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Workload)
                     .HasColumnType("decimal(18, 5)")
                     .HasComment("khoi luong cong viec");
+
+                entity.HasOne(d => d.OutsourceStepRequest)
+                    .WithMany(p => p.ProductionStep)
+                    .HasForeignKey(d => d.OutsourceStepRequestId)
+                    .HasConstraintName("FK_ProductionStep_OutsourceStepRequest");
 
                 entity.HasOne(d => d.Step)
                     .WithMany(p => p.ProductionStep)

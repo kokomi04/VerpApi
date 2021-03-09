@@ -8,12 +8,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public OutsourceStepRequest()
         {
             OutsourceStepRequestData = new HashSet<OutsourceStepRequestData>();
+            ProductionStep = new HashSet<ProductionStep>();
         }
 
         public long OutsourceStepRequestId { get; set; }
         public string OutsourceStepRequestCode { get; set; }
         public long ProductionOrderId { get; set; }
-        public long ProductionStepId { get; set; }
         public DateTime OutsourceStepRequestFinishDate { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
@@ -22,11 +22,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
-        public bool MarkInvalid { get; set; }
+        public bool IsInvalid { get; set; }
         public int OutsourceStepRequestStatusId { get; set; }
 
         public virtual ProductionOrder ProductionOrder { get; set; }
-        public virtual ProductionStep ProductionStep { get; set; }
         public virtual ICollection<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
+        public virtual ICollection<ProductionStep> ProductionStep { get; set; }
     }
 }
