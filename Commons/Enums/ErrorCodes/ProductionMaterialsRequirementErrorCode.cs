@@ -12,6 +12,7 @@ namespace VErp.Commons.Enums.ErrorCodes
         [Description("Không tìm thấy yêu cầu vật tư thêm")]
         NotFoundRequirement = 2,
         [Description("Không tìm thấy chi tiết các mặt hàng")]
-        NotFoundDetailMaterials = 3
+        NotFoundDetailMaterials = 3,
+        MaterialsRequirementNotAtStatusWaiting = 4
     }
 }
