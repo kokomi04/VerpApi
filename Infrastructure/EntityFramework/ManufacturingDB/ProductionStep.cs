@@ -10,7 +10,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             OutsourceStepRequest = new HashSet<OutsourceStepRequest>();
             ProductionMaterialsRequirementDetail = new HashSet<ProductionMaterialsRequirementDetail>();
             ProductionStepLinkDataRole = new HashSet<ProductionStepLinkDataRole>();
-            ProductionStepOrder = new HashSet<ProductionStepOrder>();
         }
 
         public long ProductionStepId { get; set; }
@@ -41,6 +40,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual ICollection<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual ICollection<ProductionMaterialsRequirementDetail> ProductionMaterialsRequirementDetail { get; set; }
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
-        public virtual ICollection<ProductionStepOrder> ProductionStepOrder { get; set; }
     }
 }
