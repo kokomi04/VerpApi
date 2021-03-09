@@ -15,9 +15,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
 
     public class RoleClientData
     {
-        public string Key { get; set; }
-        public bool Value { get; set; }
-        public float Pos_x { get; set; }
-        public float Pos_y { get; set; }
+        public string key { get; set; }
+        public bool value { get; set; }
+        public float pos_x { get; set; }
+        public float pos_y { get; set; }
     }
 }
