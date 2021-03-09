@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public decimal QuantityOrigin { get; set; }
         public decimal? OutsourceQuantity { get; set; }
         public decimal? ExportOutsourceQuantity { get; set; }
+        public decimal? OutsourcePartQuantity { get; set; }
         public int SortOrder { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
