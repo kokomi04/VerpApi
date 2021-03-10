@@ -125,6 +125,7 @@ namespace VErp.Commons.Library
                             cell.SetCellValue((DateTime)(row[indx] as ExcelCell).Value);
                             cell.CellStyle = dateStyle;
                             break;
+                        case EnumExcelType.Percentage:
                         case EnumExcelType.Number:
                             cell.SetCellValue(Convert.ToDouble((row[indx] as ExcelCell).Value));
                             break;
@@ -140,22 +141,10 @@ namespace VErp.Commons.Library
             }
             endRow = startRow + addedRow - 1;
         }
-        public void WriteToSheet(ExcelData table, string sheetName, out int endRow, int startCollumn = 0, int startRow = 0)
+        public void WriteToSheet(ISheet sheet, ExcelData table, out int endRow, int startCollumn = 0, int startRow = 0)
         {
-            var sheet = hssfwb.GetSheet(sheetName);
-            if (sheet == null)
-            {
-                sheet = hssfwb.CreateSheet(sheetName);
-            }
-
             int addedRow = 0;
             int columnLength = table.Columns.Count;
-
-            var stringStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
-            var boolStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
-            var dateStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
-            var numberStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00");
-            var formulaStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "#,##0.00", isBold: true);
             foreach (ExcelRow row in table.Rows)
             {
                 int curRow = startRow + addedRow;
@@ -168,6 +157,7 @@ namespace VErp.Commons.Library
                     {
                         row[indx].Value = string.Empty;
                         row[indx].Type = EnumExcelType.String;
+                        row[indx].CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
                     }
 
                     switch (row[indx].Type)
@@ -175,26 +165,31 @@ namespace VErp.Commons.Library
                         case EnumExcelType.String:
                             cell.SetCellValue(row[indx].Value.ToString());
                             cell.SetCellType(CellType.String);
-                            cell.CellStyle = stringStyle;
+                            cell.CellStyle = row[indx].CellStyle;
                             break;
                         case EnumExcelType.Boolean:
                             cell.SetCellValue((bool)row[indx].Value);
                             cell.SetCellType(CellType.Boolean);
-                            cell.CellStyle = boolStyle;
+                            cell.CellStyle = row[indx].CellStyle;
                             break;
                         case EnumExcelType.DateTime:
                             cell.SetCellValue((DateTime)row[indx].Value);
-                            cell.CellStyle = dateStyle;
+                            cell.CellStyle = row[indx].CellStyle;
                             break;
                         case EnumExcelType.Number:
                             cell.SetCellValue(Convert.ToDouble(row[indx].Value));
                             cell.SetCellType(CellType.Numeric);
-                            cell.CellStyle = numberStyle;
+                            cell.CellStyle = row[indx].CellStyle;
+                            break;
+                        case EnumExcelType.Percentage:
+                            cell.SetCellValue(Convert.ToDouble(row[indx].Value)/100);
+                            cell.SetCellType(CellType.Numeric);
+                            cell.CellStyle = row[indx].CellStyle;
                             break;
                         case EnumExcelType.Formula:
                             cell.SetCellFormula(row[indx].Value.ToString());
                             cell.SetCellType(CellType.Formula);
-                            cell.CellStyle = formulaStyle;
+                            cell.CellStyle = row[indx].CellStyle;
                             break;
                         default:
                             break;
@@ -310,5 +305,6 @@ namespace VErp.Commons.Library
     {
         public object Value { get; set; }
         public EnumExcelType Type { get; set; }
+        public ICellStyle CellStyle { get; set; }
     }
 }

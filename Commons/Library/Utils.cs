@@ -657,10 +657,11 @@ namespace VErp.Commons.Library
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
 
-                case EnumDataType.Percentage:
                 case EnumDataType.BigInt:
                 case EnumDataType.Decimal:
                     return EnumExcelType.Number;
+                case EnumDataType.Percentage:
+                    return EnumExcelType.Percentage;
                 case EnumDataType.Date:
                     return EnumExcelType.DateTime;
                 case EnumDataType.Text:
