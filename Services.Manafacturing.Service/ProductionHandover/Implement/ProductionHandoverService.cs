@@ -157,7 +157,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 whereCondition.Append("OR v.StepName LIKE @Keyword ");
                 whereCondition.Append("OR v.Material LIKE @Keyword ");
                 whereCondition.Append("OR v.InOutType LIKE @Keyword ");
-                whereCondition.Append("OR v.ReciprocalStep LIKE @Keyword ) ");
 
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -215,7 +214,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
             sql.Append(@")
                 SELECT v.* FROM tmp t
-                INNER JOIN vProductionDepartmentHandover v ON t.ProductionOrderId = v.ProductionOrderId AND t.ProductionStepId = v.ProductionStepId");
+                LEFT JOIN vProductionDepartmentHandover v ON t.ProductionOrderId = v.ProductionOrderId AND t.ProductionStepId = v.ProductionStepId");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<DepartmentHandoverEntity>().AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
