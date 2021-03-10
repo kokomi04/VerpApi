@@ -359,13 +359,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 case EnumDataType.BigInt:
                 case EnumDataType.Decimal:
                     {
-                        var format = new StringBuilder("#,##0");
+                        var format = new StringBuilder("#,##");
                         if (column.DecimalPlace.GetValueOrDefault() > 0)
                         {
-                            format.Append(".");
-                            for (int i = 0; i < column.DecimalPlace; i++)
+                            format.Append(".0");
+                            for (int i = 1; i < column.DecimalPlace; i++)
                             {
-                                format.Append("0");
+                                format.Append("#");
                             }
                         }
                         return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
@@ -374,13 +374,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
                 case EnumDataType.Percentage:
                     {
-                        var format = new StringBuilder("0");
+                        var format = new StringBuilder("#");
                         if (column.DecimalPlace.GetValueOrDefault() > 0)
                         {
-                            format.Append(".");
-                            for (int i = 0; i < column.DecimalPlace; i++)
+                            format.Append(".0");
+                            for (int i = 1; i < column.DecimalPlace; i++)
                             {
-                                format.Append("0");
+                                format.Append("#");
                             }
                         }
                         format.Append(" %");
