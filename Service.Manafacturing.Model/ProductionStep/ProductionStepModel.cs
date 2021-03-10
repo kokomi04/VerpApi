@@ -29,6 +29,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public bool IsFinish { get; set; }
         public decimal? ShrinkageRate { get; set; }
         public EnumHandoverTypeStatus? HandoverTypeId { get; set; }
+        public long? OutsourceStepRequestId { get; set; }
+        public string OutsourceStepRequestCode { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -37,8 +39,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
                 .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
+                .ForMember(m => m.OutsourceStepRequestCode, a => a.MapFrom(s => s.OutsourceStepRequest.OutsourceStepRequestCode))
                 .ReverseMap()
-                .ForMember(m => m.Step, v => v.Ignore());
+                .ForMember(m => m.Step, v => v.Ignore())
+                .ForMember(m => m.OutsourceStepRequest, v => v.Ignore());
         }
     }
 

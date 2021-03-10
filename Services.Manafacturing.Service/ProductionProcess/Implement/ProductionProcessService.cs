@@ -188,10 +188,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
 
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId)
                 .Include(s => s.Step)
+                .Include(s => s.OutsourceStepRequest)
                 .Include(s => s.ProductionStepLinkDataRole)
                 .ThenInclude(r => r.ProductionStepLinkData)
-                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId)
                 .ToListAsync();
 
             //Lấy thông tin công đoạn
