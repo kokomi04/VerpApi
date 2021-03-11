@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("{productionOrderId}/productionStep/{productionStepId}/ department/{departmentId}")]
+        [Route("{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}")]
         public async Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] long departmentId)
         {
             return await _productionHandoverService.GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
