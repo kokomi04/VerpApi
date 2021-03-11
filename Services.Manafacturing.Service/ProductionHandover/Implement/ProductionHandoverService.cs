@@ -24,6 +24,7 @@ using Microsoft.Data.SqlClient;
 using ProductionHandoverEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionHandover;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -188,7 +189,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 totalSql.Append(" WHERE ");
                 totalSql.Append(whereCondition);
-               
+
                 sql.Append(" WHERE ");
                 sql.Append(whereCondition);
             }
@@ -220,6 +221,214 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var lst = resultData.ConvertData<DepartmentHandoverEntity>().AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
+        }
+
+
+        public async Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId)
+        {
+            var productionStep = _manufacturingDBContext.ProductionStep
+                .Include(ps => ps.ProductionStepLinkDataRole)
+                .ThenInclude(ldr => ldr.ProductionStepLinkData)
+                .First(ps => ps.ContainerId == productionOrderId && ps.ProductionStepId == productionStepId && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder);
+
+            if (productionStep == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại bàn công đoạn");
+
+            var productionAssignment = _manufacturingDBContext.ProductionAssignment
+                .Where(a => a.ProductionOrderId == productionOrderId
+                && a.ProductionStepId == productionStepId
+                && a.DepartmentId == departmentId)
+                .FirstOrDefault();
+
+            if (productionAssignment == null) throw new BadRequestException(GeneralCode.InvalidParams, "Tổ không được phân công trong công đoạn");
+
+            var inputLinkDatas = productionStep.ProductionStepLinkDataRole
+                .Where(ldr => ldr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                .Select(ldr => ldr.ProductionStepLinkData).ToList();
+
+            var outputLinkDatas = productionStep.ProductionStepLinkDataRole
+                .Where(ldr => ldr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                .Select(ldr => ldr.ProductionStepLinkData).ToList();
+
+            var linkDataIds = inputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).ToList().Concat(outputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).ToList());
+
+            var stepIdMap = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(ldr => ldr.ProductionStepId != productionStepId && linkDataIds.Contains(ldr.ProductionStepLinkDataId))
+                .Select(ldr => new { ldr.ProductionStepLinkDataId, ldr.ProductionStepId })
+                .ToList()
+                .GroupBy(ldr => ldr.ProductionStepLinkDataId)
+                .ToDictionary(g => g.Key, g => g.First().ProductionStepId);
+
+            var stepIds = stepIdMap.Select(m => m.Value).ToList();
+            var steps = _manufacturingDBContext.ProductionStep
+                .Include(ps => ps.Step)
+                .Where(ps => stepIds.Contains(ps.ProductionStepId))
+                .ToDictionary(ps => ps.ProductionStepId, ps => $"{ps.Step.StepName}(#{ps.ProductionStepId})");
+
+            var handovers = _manufacturingDBContext.ProductionHandover
+                .Where(h => h.ProductionOrderId == productionOrderId
+                && ((h.FromDepartmentId == departmentId && h.FromProductionStepId == productionStepId) || (h.ToDepartmentId == departmentId && h.ToProductionStepId == productionStepId)))
+                .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            // Lấy thông tin xuất nhập kho
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ProductionOrderId", productionOrderId)
+            };
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+
+            var inventoryRequirements = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            // Lấy thông tin yêu cầu thêm
+            var materialRequirements = _manufacturingDBContext.ProductionMaterialsRequirementDetail
+                .Include(mrd => mrd.ProductionMaterialsRequirement)
+                .Where(mrd => mrd.ProductionMaterialsRequirement.ProductionOrderId == productionOrderId
+                && mrd.ProductionStepId == productionStepId
+                && mrd.DepartmentId == departmentId)
+                .ProjectTo<ProductionMaterialsRequirementDetailListModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            var quantity = outputLinkDatas.Where(ld => ld.ProductionStepLinkDataId == productionAssignment.ProductionStepLinkDataId).FirstOrDefault()?.Quantity ?? 0;
+             if(quantity == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Dữ liệu đầu ra dùng để phân công không còn tồn tại trong quy trình");
+
+            var detail = new DepartmentHandoverDetailModel();
+
+            foreach (var inputLinkData in inputLinkDatas)
+            {
+                // Nếu có nguồn vào => vật tư được bàn giao từ công đoạn trước
+                // Nếu không có nguồn vào => vật tư được xuất từ kho
+                long? fromStepId = null;
+                if (stepIdMap.ContainsKey(inputLinkData.ProductionStepLinkDataId)) fromStepId = stepIdMap[inputLinkData.ProductionStepLinkDataId];
+                var item = detail.InputDatas
+                    .Where(d => d.ObjectId == inputLinkData.ObjectId
+                    && d.ObjectTypeId == inputLinkData.ObjectTypeId
+                    && d.ToStepId == fromStepId)
+                    .FirstOrDefault();
+
+                if (item != null)
+                {
+                    item.TotalRequireQuantity += inputLinkData.Quantity;
+                }
+                else
+                {
+                    var handoverHistories = new List<ProductionHandoverModel>();
+                    if (fromStepId.HasValue)
+                    {
+                        handoverHistories = handovers.Where(h => h.ToDepartmentId == departmentId
+                            && h.ToProductionStepId == productionStepId
+                            && h.ObjectId == inputLinkData.ObjectId
+                            && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)inputLinkData.ObjectTypeId
+                            && h.FromProductionStepId == fromStepId.Value)
+                            .ToList();
+                    }
+
+                    var inventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
+                    var materialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
+
+                    if (!fromStepId.HasValue)
+                    {
+                        inventoryRequirementHistories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
+                            && h.ProductionStepId == productionStepId
+                            && h.InventoryTypeId == EnumInventoryType.Output
+                            && h.ProductId == inputLinkData.ObjectId)
+                            .ToList();
+
+                        materialsRequirementHistories = materialRequirements.Where(mr => mr.ProductId == inputLinkData.ObjectId).ToList();
+                    }
+
+                    var receivedQuantity = handoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
+                        + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+
+                    detail.InputDatas.Add(new StepInOutData
+                    {
+                        ObjectId = inputLinkData.ObjectId,
+                        ObjectTypeId = inputLinkData.ObjectTypeId,
+                        TotalRequireQuantity = inputLinkData.Quantity,
+                        ReceivedQuantity = receivedQuantity,
+                        FromStepTitle = fromStepId.HasValue ? steps[fromStepId.Value] : "Kho",
+                        FromStepId = fromStepId,
+                        HandoverHistories = handoverHistories,
+                        InventoryRequirementHistories = inventoryRequirementHistories,
+                        MaterialsRequirementHistories = materialsRequirementHistories
+                    });
+                }
+            }
+
+            // Tính toán khối lượng đầu vào theo phân công công việc
+            foreach (var inputData in detail.InputDatas)
+            {
+                inputData.TotalRequireQuantity = inputData.TotalRequireQuantity * productionAssignment.AssignmentQuantity / quantity;
+            }
+
+            foreach (var outputLinkData in outputLinkDatas)
+            {
+                // Nếu có nguồn ra => vật tư bàn giao tới công đoạn sau
+                // Nếu không có nguồn ra => vật tư được nhập vào kho
+                long? toStepId = null;
+                if (stepIdMap.ContainsKey(outputLinkData.ProductionStepLinkDataId)) toStepId = stepIdMap[outputLinkData.ProductionStepLinkDataId];
+                var item = detail.OutputDatas
+                    .Where(d => d.ObjectId == outputLinkData.ObjectId
+                    && d.ObjectTypeId == outputLinkData.ObjectTypeId
+                    && d.FromStepId == toStepId)
+                    .FirstOrDefault();
+
+                if (item != null)
+                {
+                    item.TotalRequireQuantity += outputLinkData.Quantity;
+                }
+                else
+                {
+                    var handoverHistories = new List<ProductionHandoverModel>();
+                    if (toStepId.HasValue)
+                    {
+                        handoverHistories = handovers.Where(h => h.ToDepartmentId == departmentId
+                            && h.FromProductionStepId == productionStepId
+                            && h.ObjectId == outputLinkData.ObjectId
+                            && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)outputLinkData.ObjectTypeId
+                            && h.ToProductionStepId == toStepId.Value)
+                            .ToList();
+                    }
+
+                    var inventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
+                    var materialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
+
+                    if (!toStepId.HasValue)
+                    {
+                        inventoryRequirementHistories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
+                            && h.ProductionStepId == productionStepId
+                            && h.InventoryTypeId == EnumInventoryType.Input
+                            && h.ProductId == outputLinkData.ObjectId)
+                            .ToList();
+                    }
+
+                    var receivedQuantity = handoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
+                        + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+
+                    detail.OutputDatas.Add(new StepInOutData
+                    {
+                        ObjectId = outputLinkData.ObjectId,
+                        ObjectTypeId = outputLinkData.ObjectTypeId,
+                        TotalRequireQuantity = outputLinkData.Quantity,
+                        ReceivedQuantity = receivedQuantity,
+                        ToStepTitle = toStepId.HasValue ? steps[toStepId.Value] : "Kho",
+                        ToStepId = toStepId,
+                        HandoverHistories = handoverHistories,
+                        InventoryRequirementHistories = inventoryRequirementHistories,
+                        MaterialsRequirementHistories = materialsRequirementHistories
+                    });
+                }
+            }
+
+            // Tính toán khối lượng đầu ra theo phân công công việc
+            foreach (var outputData in detail.OutputDatas)
+            {
+                outputData.TotalRequireQuantity = outputData.TotalRequireQuantity * productionAssignment.AssignmentQuantity / quantity;
+            }
+
+            return detail;
         }
     }
 }
