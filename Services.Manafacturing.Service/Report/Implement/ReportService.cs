@@ -839,7 +839,6 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         OutsourceStepRequestCode = rq.OutsourceStepRequestCode,
                         ProductionOrderCode = rq.ProductionOrderCode,
                         ProductionOrderId = rq.ProductionOrderId,
-                        ProductionProcessTitle = rq.ProductionProcessTitle,
                         ProductionStepArrayString = string.Join(", ", lsStepTitle),
                         ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                         Quantity = d.OutsourceStepRequestDataQuantity.GetValueOrDefault()
