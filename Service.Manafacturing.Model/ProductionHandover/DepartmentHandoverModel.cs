@@ -6,6 +6,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Commons.Library;
+using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -50,6 +51,43 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string InOutType { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
+    }
+
+
+    public class DepartmentHandoverDetailModel
+    {
+        public IList<StepInOutData> InputDatas { get; set; }
+        public IList<StepInOutData> OutputDatas { get; set; }
+        public DepartmentHandoverDetailModel()
+        {
+            InputDatas = new List<StepInOutData>();
+            OutputDatas = new List<StepInOutData>();
+        }
+    }
+
+    public class StepInOutData
+    {
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
+        public decimal ReceivedQuantity { get; set; }
+        public decimal TotalRequireQuantity { get; set; }
+        public string FromStepTitle { get; set; }
+        public long? FromStepId { get; set; }
+        public string ToStepTitle { get; set; }
+        public long? ToStepId { get; set; }
+        public long HandoverDatetime { get; set; }
+
+        public IList<ProductionHandoverModel> HandoverHistories { get; set; }
+        public IList<ProductionInventoryRequirementModel> InventoryRequirementHistories { get; set; }
+        public IList<ProductionMaterialsRequirementDetailListModel> MaterialsRequirementHistories { get; set; }
+
+        public StepInOutData()
+        {
+            HandoverHistories = new List<ProductionHandoverModel>();
+            InventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
+            MaterialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
+        }
+
     }
 
 }
