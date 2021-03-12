@@ -1224,10 +1224,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 trans.Commit();
                 return data.Count > 0;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 trans.TryRollbackTransaction();
-                throw ex;
+                throw;
             }
 
         }

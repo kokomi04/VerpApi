@@ -129,8 +129,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 catch (Exception ex)
                 {
                     await trans.RollbackAsync();
-                    _logger.LogError("AddProductionMaterialsRequirement");
-                    throw ex;
+                    _logger.LogError(ex, "AddProductionMaterialsRequirement");
+                    throw;
                 }
             }
         }

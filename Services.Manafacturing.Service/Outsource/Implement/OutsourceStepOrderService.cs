@@ -131,8 +131,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 catch (Exception ex)
                 {
                     await trans.TryRollbackTransactionAsync();
-                    _logger.LogError("CreateOutsourceStepOrderPart");
-                    throw ex;
+                    _logger.LogError(ex,"CreateOutsourceStepOrderPart");
+                    throw ;
                 }
             }
         }
