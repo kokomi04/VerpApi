@@ -387,7 +387,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var handoverHistories = new List<ProductionHandoverModel>();
                     if (toStepId.HasValue)
                     {
-                        handoverHistories = handovers.Where(h => h.ToDepartmentId == departmentId
+                        handoverHistories = handovers.Where(h => h.FromDepartmentId == departmentId
                             && h.FromProductionStepId == productionStepId
                             && h.ObjectId == outputLinkData.ObjectId
                             && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)outputLinkData.ObjectTypeId
