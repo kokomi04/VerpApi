@@ -251,18 +251,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var linkDataIds = inputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).ToList().Concat(outputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).ToList());
 
-            var stepIdMap = _manufacturingDBContext.ProductionStepLinkDataRole
-                .Where(ldr => ldr.ProductionStepId != productionStepId && linkDataIds.Contains(ldr.ProductionStepLinkDataId))
-                .Select(ldr => new { ldr.ProductionStepLinkDataId, ldr.ProductionStepId })
+            var stepMap = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Include(ldr => ldr.ProductionStep)
+                .ThenInclude(ps => ps.Step)
+                .Where(ldr => !ldr.ProductionStep.IsFinish && ldr.ProductionStepId != productionStepId && linkDataIds.Contains(ldr.ProductionStepLinkDataId))
+                .Select(ldr => new { ldr.ProductionStepLinkDataId, ldr.ProductionStep.ProductionStepId, ldr.ProductionStep.Step.StepName })
                 .ToList()
                 .GroupBy(ldr => ldr.ProductionStepLinkDataId)
-                .ToDictionary(g => g.Key, g => g.First().ProductionStepId);
+                .ToDictionary(g => g.Key, g => g.First());
 
-            var stepIds = stepIdMap.Select(m => m.Value).ToList();
-            var steps = _manufacturingDBContext.ProductionStep
-                .Include(ps => ps.Step)
-                .Where(ps => stepIds.Contains(ps.ProductionStepId))
-                .ToDictionary(ps => ps.ProductionStepId, ps => $"{ps.Step.StepName}(#{ps.ProductionStepId})");
+            var stepIds = stepMap.Select(m => m.Value.ProductionStepId).ToList();
 
             var handovers = _manufacturingDBContext.ProductionHandover
                 .Where(h => h.ProductionOrderId == productionOrderId
@@ -305,8 +303,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 // Nếu có nguồn vào => vật tư được bàn giao từ công đoạn trước
                 // Nếu không có nguồn vào => vật tư được xuất từ kho
-                long? fromStepId = null;
-                if (stepIdMap.ContainsKey(inputLinkData.ProductionStepLinkDataId)) fromStepId = stepIdMap[inputLinkData.ProductionStepLinkDataId];
+                var fromStep = stepMap.ContainsKey(inputLinkData.ProductionStepLinkDataId) ? stepMap[inputLinkData.ProductionStepLinkDataId] : null;
+                long? fromStepId = fromStep?.ProductionStepId ?? null;
                 var item = detail.InputDatas
                     .Where(d => d.ObjectId == inputLinkData.ObjectId
                     && d.ObjectTypeId == inputLinkData.ObjectTypeId
@@ -353,7 +351,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         ObjectTypeId = inputLinkData.ObjectTypeId,
                         TotalRequireQuantity = inputLinkData.Quantity,
                         ReceivedQuantity = receivedQuantity,
-                        FromStepTitle = fromStepId.HasValue ? steps[fromStepId.Value] : "Kho",
+                        FromStepTitle = fromStepId.HasValue ? $"{fromStep.StepName}(#{fromStep.ProductionStepId})" : "Kho",
                         FromStepId = fromStepId,
                         HandoverHistories = handoverHistories,
                         InventoryRequirementHistories = inventoryRequirementHistories,
@@ -372,8 +370,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 // Nếu có nguồn ra => vật tư bàn giao tới công đoạn sau
                 // Nếu không có nguồn ra => vật tư được nhập vào kho
-                long? toStepId = null;
-                if (stepIdMap.ContainsKey(outputLinkData.ProductionStepLinkDataId)) toStepId = stepIdMap[outputLinkData.ProductionStepLinkDataId];
+                var toStep = stepMap.ContainsKey(outputLinkData.ProductionStepLinkDataId) ? stepMap[outputLinkData.ProductionStepLinkDataId] : null;
+                long? toStepId = toStep?.ProductionStepId ?? null;
                 var item = detail.OutputDatas
                     .Where(d => d.ObjectId == outputLinkData.ObjectId
                     && d.ObjectTypeId == outputLinkData.ObjectTypeId
@@ -418,7 +416,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         ObjectTypeId = outputLinkData.ObjectTypeId,
                         TotalRequireQuantity = outputLinkData.Quantity,
                         ReceivedQuantity = receivedQuantity,
-                        ToStepTitle = toStepId.HasValue ? steps[toStepId.Value] : "Kho",
+                        ToStepTitle = toStepId.HasValue ? $"{toStep.StepName}(#{toStep.ProductionStepId})" : "Kho",
                         ToStepId = toStepId,
                         HandoverHistories = handoverHistories,
                         InventoryRequirementHistories = inventoryRequirementHistories,
