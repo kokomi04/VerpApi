@@ -292,10 +292,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ToList();
 
             var quantity = outputLinkDatas.Where(ld => ld.ProductionStepLinkDataId == productionAssignment.ProductionStepLinkDataId).FirstOrDefault()?.Quantity ?? 0;
-             if(quantity == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Dữ liệu đầu ra dùng để phân công không còn tồn tại trong quy trình");
+            if (quantity == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Dữ liệu đầu ra dùng để phân công không còn tồn tại trong quy trình");
 
-            var detail = new DepartmentHandoverDetailModel();
-
+            var detail = new DepartmentHandoverDetailModel
+            {
+                Assignments = _manufacturingDBContext.ProductionAssignment
+                    .Where(a => stepIds.Contains(a.ProductionStepId) && a.ProductionOrderId == productionOrderId)
+                    .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
+                    .ToList()
+            };
             foreach (var inputLinkData in inputLinkDatas)
             {
                 // Nếu có nguồn vào => vật tư được bàn giao từ công đoạn trước

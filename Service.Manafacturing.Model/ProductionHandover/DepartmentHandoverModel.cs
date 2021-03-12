@@ -7,6 +7,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Commons.Library;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
+using VErp.Services.Manafacturing.Model.ProductionAssignment;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -58,10 +59,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
     {
         public IList<StepInOutData> InputDatas { get; set; }
         public IList<StepInOutData> OutputDatas { get; set; }
+        public IList<ProductionAssignmentModel> Assignments { get; set; }
         public DepartmentHandoverDetailModel()
         {
             InputDatas = new List<StepInOutData>();
             OutputDatas = new List<StepInOutData>();
+            Assignments = new List<ProductionAssignmentModel>();
         }
     }
 
