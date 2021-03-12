@@ -167,7 +167,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                            OutsourceOrderFinishDate = order.OutsourceOrderFinishDate,
                            OutsourceStepRequestCode = order.OutsourceStepRequestCode,
                            ProductionOrderCode = request.ProductionOrderCode,
-                           ProductionStepTitle = String.Join(", ", request.ProductionSteps.Select(x=>x.Title))
+                           /*ProductionStepTitle = String.Join(", ", request.ProductionSteps.Select(x=>x.Title))*/
                        };
 
             if (!string.IsNullOrWhiteSpace(keyword))
