@@ -359,7 +359,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 case EnumDataType.BigInt:
                 case EnumDataType.Decimal:
                     {
-                        var format = new StringBuilder("#,##");
+                        var format = new StringBuilder("#,##0");
                         if (column.DecimalPlace.GetValueOrDefault() > 0)
                         {
                             format.Append(".0");
@@ -374,7 +374,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
                 case EnumDataType.Percentage:
                     {
-                        var format = new StringBuilder("#");
+                        var format = new StringBuilder("0");
                         if (column.DecimalPlace.GetValueOrDefault() > 0)
                         {
                             format.Append(".0");
