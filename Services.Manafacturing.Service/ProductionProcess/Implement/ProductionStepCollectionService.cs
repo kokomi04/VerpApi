@@ -93,8 +93,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .ProjectTo<ProductionStepCollectionSearch>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
+            var arrCollectionId = collections.SelectMany(x => x.Collections).Select(x => x.StepId).Distinct().ToArray();
             var stepInfos = await _manufacturingDBContext.Step.AsNoTracking()
-                .Where(x => collections.SelectMany(x => x.Collections).Select(x => x.StepId).Distinct().Contains(x.StepId))
+                .Where(x => arrCollectionId.Contains(x.StepId))
                 .ToListAsync();
 
             collections.ForEach(x =>

@@ -458,8 +458,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStepCollection>(entity =>
             {
-                entity.Property(e => e.ProductionStepCollectionId).ValueGeneratedNever();
-
                 entity.Property(e => e.Collections).IsRequired();
 
                 entity.Property(e => e.Title).HasMaxLength(256);
