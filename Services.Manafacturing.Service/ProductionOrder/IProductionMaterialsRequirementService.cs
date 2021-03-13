@@ -11,7 +11,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 {
     public interface IProductionMaterialsRequirementService
     {
-        Task<long> AddProductionMaterialsRequirement(ProductionMaterialsRequirementModel model);
+        Task<long> AddProductionMaterialsRequirement(ProductionMaterialsRequirementModel model, EnumProductionMaterialsRequirementStatus status);
         Task<bool> UpdateProductionMaterialsRequirement(long requirementId, ProductionMaterialsRequirementModel model);
         Task<bool> DeleteProductionMaterialsRequirement(long requirementId);
         Task<ProductionMaterialsRequirementModel> GetProductionMaterialsRequirement(long requirementId);

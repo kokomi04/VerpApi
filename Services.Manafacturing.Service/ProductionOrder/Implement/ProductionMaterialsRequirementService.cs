@@ -26,7 +26,7 @@ using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
-    public class ProductionMaterialsRequirementService: IProductionMaterialsRequirementService
+    public class ProductionMaterialsRequirementService : IProductionMaterialsRequirementService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -59,7 +59,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _inventoryRequirementHelperService = inventoryRequirementHelperService;
         }
 
-        public async Task<long> AddProductionMaterialsRequirement(ProductionMaterialsRequirementModel model)
+        public async Task<long> AddProductionMaterialsRequirement(ProductionMaterialsRequirementModel model, EnumProductionMaterialsRequirementStatus status)
         {
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -85,7 +85,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         {
                             if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
-                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, 
+                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId,
                                 currentConfig.CurrentLastValue.LastValue, null, model.RequirementCode, model.RequirementDate);
                             if (generated == null)
                             {
@@ -102,15 +102,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         if (_manufacturingDBContext.ProductionMaterialsRequirement.Any(o => o.RequirementCode == model.RequirementCode))
                             throw new BadRequestException(ProductionMaterialsRequirementErrorCode.OutsoureOrderCodeAlreadyExisted);
                     }
-                    
+
 
                     var requirement = _mapper.Map<ProductionMaterialsRequirement>(model);
-                    requirement.CensorStatus = (int)EnumProductionMaterialsRequirementStatus.Waiting;
+
+                    requirement.CensorStatus = (int)status;
 
                     _manufacturingDBContext.ProductionMaterialsRequirement.Add(requirement);
                     await _manufacturingDBContext.SaveChangesAsync();
 
-                    foreach( var item in model.MaterialsRequirementDetails)
+                    foreach (var item in model.MaterialsRequirementDetails)
                     {
                         item.ProductionMaterialsRequirementId = requirement.ProductionMaterialsRequirementId;
 
@@ -129,8 +130,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 catch (Exception ex)
                 {
                     await trans.RollbackAsync();
-                    _logger.LogError(ex, "AddProductionMaterialsRequirement");
-                    throw;
+                    _logger.LogError("AddProductionMaterialsRequirement");
+                    throw ex;
                 }
             }
         }
@@ -218,32 +219,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var departments = await _organizationHelperService.GetDepartmentSimples(departmentIds);
 
             var query = (from r in requirements
-            join p in products on r.ProductId equals p.ProductId into pi
-            from p in pi.DefaultIfEmpty()
-            join d in departments on r.DepartmentId equals d.DepartmentId into di
-            from d in di.DefaultIfEmpty()
-            select new ProductionMaterialsRequirementDetailSearch
-            {
-                CensorStatus = r.CensorStatus,
-                CreatedByUserId = r.CreatedByUserId,
-                DepartmentId = r.DepartmentId,
-                ProductId = r.ProductId,
-                ProductionMaterialsRequirementDetailId = r.ProductionMaterialsRequirementDetailId,
-                RequirementCode = r.RequirementCode,
-                ProductionMaterialsRequirementId = r.ProductionMaterialsRequirementId,
-                ProductionStepId = r.ProductionStepId,
-                ProductionStepTitle = r.ProductionStepTitle,
-                RequirementContent = r.RequirementContent,
-                Quantity = r.Quantity,
-                RequirementDate = r.RequirementDate,
-                ProductTitle = p != null ? string.Concat(p.ProductCode, "/ ", p.ProductName) : string.Empty,
-                UnitId = p != null ? p.UnitId : 0,
-                DepartmentTitle = d !=null ? string.Concat(d.DepartmentCode, "/ ", d.DepartmentName): string.Empty
-            }).AsQueryable();
+                         join p in products on r.ProductId equals p.ProductId into pi
+                         from p in pi.DefaultIfEmpty()
+                         join d in departments on r.DepartmentId equals d.DepartmentId into di
+                         from d in di.DefaultIfEmpty()
+                         select new ProductionMaterialsRequirementDetailSearch
+                         {
+                             CensorStatus = r.CensorStatus,
+                             CreatedByUserId = r.CreatedByUserId,
+                             DepartmentId = r.DepartmentId,
+                             ProductId = r.ProductId,
+                             ProductionMaterialsRequirementDetailId = r.ProductionMaterialsRequirementDetailId,
+                             RequirementCode = r.RequirementCode,
+                             ProductionMaterialsRequirementId = r.ProductionMaterialsRequirementId,
+                             ProductionStepId = r.ProductionStepId,
+                             ProductionStepTitle = r.ProductionStepTitle,
+                             RequirementContent = r.RequirementContent,
+                             Quantity = r.Quantity,
+                             RequirementDate = r.RequirementDate,
+                             ProductTitle = p != null ? string.Concat(p.ProductCode, "/ ", p.ProductName) : string.Empty,
+                             UnitId = p != null ? p.UnitId : 0,
+                             DepartmentTitle = d != null ? string.Concat(d.DepartmentCode, "/ ", d.DepartmentName) : string.Empty
+                         }).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = query.Where(x => x.ProductTitle.Contains(keyword) 
+                query = query.Where(x => x.ProductTitle.Contains(keyword)
                         || x.RequirementCode.Contains(keyword)
                         || x.ProductionStepTitle.Contains(keyword)
                         || x.DepartmentTitle.Contains(keyword));
@@ -290,7 +291,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .ProjectTo<ProductionMaterialsRequirementDetail>(_mapper.ConfigurationProvider)
                     .Where(x => !(x.ProductionMaterialsRequirementDetailId > 0));
 
-                foreach(var item in detail)
+                foreach (var item in detail)
                 {
                     var modify = model.MaterialsRequirementDetails.FirstOrDefault(x => x.ProductionMaterialsRequirementDetailId == item.ProductionMaterialsRequirementDetailId);
                     if (modify == null)
@@ -320,8 +321,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             try
             {
                 var requirement = await _manufacturingDBContext.ProductionMaterialsRequirement
-                    .Include(x=>x.ProductionMaterialsRequirementDetail)
-                    .Include(x=>x.ProductionOrder)
+                    .Include(x => x.ProductionMaterialsRequirementDetail)
+                    .Include(x => x.ProductionOrder)
                     .FirstOrDefaultAsync(x => x.ProductionMaterialsRequirementId == requirementId);
 
                 ValidProductionMaterialsRequirement(requirement);
@@ -358,7 +359,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError(ex, "ConfirmInventoryRequirement");
                 throw;
             }
-            
+
         }
     }
 }
