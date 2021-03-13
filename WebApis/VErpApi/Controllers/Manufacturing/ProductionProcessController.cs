@@ -129,11 +129,11 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateProductionProcess([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] ProductionProcessModel req)
         {
             var rs = await _productionProcessService.UpdateProductionProcess(containerTypeId, containerId, req);
-            if (containerTypeId == EnumContainerType.ProductionOrder)
-            {
-                await _productionProcessService.UpdateMarkInvalidOutsourcePartRequest(containerId);
-                await _productionProcessService.UpdateMarkInvalidOutsourceStepRequest(containerId);
-            }
+            //if (containerTypeId == EnumContainerType.ProductionOrder)
+            //{
+            //    await _productionProcessService.UpdateMarkInvalidOutsourcePartRequest(containerId);
+            //    await _productionProcessService.UpdateMarkInvalidOutsourceStepRequest(containerId);
+            //}
             return rs;
         }
 

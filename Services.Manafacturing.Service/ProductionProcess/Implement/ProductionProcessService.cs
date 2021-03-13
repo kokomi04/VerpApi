@@ -34,7 +34,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
-        private readonly IOutsourceStepRequestService _outsourceStepRequestService;
         private readonly IValidateProductionProcessService _validateProductionProcessService;
 
         public ProductionProcessService(ManufacturingDBContext manufacturingDB
@@ -42,7 +41,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             , ILogger<ProductionProcessService> logger
             , IMapper mapper
             , IProductHelperService productHelperService
-            , IOutsourceStepRequestService outsourceStepRequestService
             , IValidateProductionProcessService validateProductionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
@@ -50,7 +48,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
-            _outsourceStepRequestService = outsourceStepRequestService;
             _validateProductionProcessService = validateProductionProcessService;
         }
 
@@ -972,7 +969,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
-            var productionStepOutsourced = await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(containerTypeId == EnumContainerType.ProductionOrder ? containerId : 0);
 
             //Cập nhật, xóa và tạo mới steplinkdata
             var lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
@@ -991,10 +987,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     if (containerTypeId == EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0 || dest.ExportOutsourceQuantity.GetValueOrDefault() > 0))
                     {
-                        var outsourceStepRequest = await _manufacturingDBContext.OutsourceStepRequest.Include(x => x.OutsourceStepRequestData)
-                            .Where(x => x.OutsourceStepRequestData.Any(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId))
-                            .FirstOrDefaultAsync();
-                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Không thể xóa chi tiết nằm trong YCGC công đoạn \"{outsourceStepRequest.OutsourceStepRequestCode}\"");
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, 
+                            $"Không thể xóa chi tiết liên quan đến YCGC công đoạn");
                     }
                     dest.IsDeleted = true;
                 }
@@ -1016,9 +1010,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     _mapper.Map(source, dest);
                 else
                 {
-                    var os = productionStepOutsourced.FirstOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
-                    if (containerTypeId == EnumContainerType.ProductionOrder && os != null)
-                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Không thể xóa công đoạn nằm trong YCGC công đoạn {os.OutsourceStepRequestCode}");
+                    if (containerTypeId == EnumContainerType.ProductionOrder && dest.OutsourceStepRequestId.GetValueOrDefault() > 0)
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Không thể xóa công đoạn có liên quan đến YCGC công đoạn");
                     dest.IsDeleted = true;
                 }
             }
@@ -1065,6 +1058,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (containerTypeId == EnumContainerType.ProductionOrder)
             {
                 await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
+                await ValidOutsourcePartRequest(containerId);
+                await ValidOutsourceStepRequest(containerId);
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
@@ -1266,107 +1261,82 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return true;
         }
 
-        public async Task<bool> UpdateMarkInvalidOutsourcePartRequest(long productionOrderId)
+        private async Task ValidOutsourcePartRequest(long productionOrderId)
         {
-            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
-            try
+
+            var outsourcePartRequests = await _manufacturingDBContext.OutsourcePartRequest
+            .Include(x => x.ProductionOrderDetail)
+            .Include(x => x.OutsourcePartRequestDetail)
+            .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionOrderId)
+            .ToListAsync();
+
+            var outsourcePartRequestDetailIds = outsourcePartRequests.SelectMany(x => x.OutsourcePartRequestDetail).Select(x => x.OutsourcePartRequestDetailId);
+
+            var totalQuantityAllocate = (await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Include(s => s.ProductionStepLinkDataRole)
+                .ThenInclude(r => r.ProductionStepLinkData)
+                .Where(x => x.ContainerId == productionOrderId && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
+                .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider).ToListAsync())
+                .SelectMany(x => x.ProductionStepLinkDatas)
+                .Where(x => outsourcePartRequestDetailIds.Contains(x.OutsourceRequestDetailId.GetValueOrDefault()))
+                .GroupBy(x => x.OutsourceRequestDetailId.GetValueOrDefault())
+                .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+
+            foreach (var rq in outsourcePartRequests)
             {
-                var outsourcePartRequests = await _manufacturingDBContext.OutsourcePartRequest
-                .Include(x => x.ProductionOrderDetail)
-                .Include(x => x.OutsourcePartRequestDetail)
-                .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionOrderId)
-                .ToListAsync();
-
-                var outsourcePartRequestDetailIds = outsourcePartRequests.SelectMany(x => x.OutsourcePartRequestDetail).Select(x => x.OutsourcePartRequestDetailId);
-
-                var totalQuantityAllocate = (await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                    .Include(s => s.ProductionStepLinkDataRole)
-                    .ThenInclude(r => r.ProductionStepLinkData)
-                    .Where(x => x.ContainerId == productionOrderId && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
-                    .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider).ToListAsync())
-                    .SelectMany(x => x.ProductionStepLinkDatas)
-                    .Where(x => outsourcePartRequestDetailIds.Contains(x.OutsourceRequestDetailId.GetValueOrDefault()))
-                    .GroupBy(x => x.OutsourceRequestDetailId.GetValueOrDefault())
-                    .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
-
-                foreach (var rq in outsourcePartRequests)
+                rq.MarkInvalid = false;
+                if (totalQuantityAllocate.Count() == 0)
+                    rq.MarkInvalid = true;
+                else
                 {
-                    rq.MarkInvalid = false;
-                    if (totalQuantityAllocate.Count() == 0)
-                        rq.MarkInvalid = true;
-                    else
+                    foreach (var rqd in rq.OutsourcePartRequestDetail)
                     {
-                        foreach (var rqd in rq.OutsourcePartRequestDetail)
+                        if (!totalQuantityAllocate.ContainsKey(rqd.OutsourcePartRequestDetailId)
+                                || (totalQuantityAllocate[rqd.OutsourcePartRequestDetailId] != rqd.Quantity))
                         {
-                            if (!totalQuantityAllocate.ContainsKey(rqd.OutsourcePartRequestDetailId)
-                                    || (totalQuantityAllocate[rqd.OutsourcePartRequestDetailId] != rqd.Quantity))
-                            {
-                                rq.MarkInvalid = true;
-                                break;
-                            }
+                            rq.MarkInvalid = true;
+                            break;
                         }
                     }
                 }
+            }
 
-                await _manufacturingDBContext.SaveChangesAsync();
-                await trans.CommitAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await trans.TryRollbackTransactionAsync();
-                _logger.LogError(ex, "UpdateMarkInvalidOutsourcePartRequest");
-                throw;
-            }
+            await _manufacturingDBContext.SaveChangesAsync();
 
         }
 
-        public async Task<bool> UpdateMarkInvalidOutsourceStepRequest(long productionOrderId)
+        public async Task ValidOutsourceStepRequest(long productionOrderId)
         {
-            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
-            try
+            var lsRequest = await _manufacturingDBContext.OutsourceStepRequest.Where(x => x.ProductionOrderId == productionOrderId).ToListAsync();
+
+            var productionStepInfos = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+            .Include(s => s.Step)
+            .Include(s => s.ProductionStepLinkDataRole)
+            .ThenInclude(r => r.ProductionStepLinkData)
+            .Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder && s.ContainerId == productionOrderId)
+            .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
+            .ToListAsync();
+
+            foreach (var rq in lsRequest)
             {
-                var productionStepOutsourced = await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(productionOrderId);
+                rq.IsInvalid = false;
 
-                var outsourceStepRequests = await _manufacturingDBContext.OutsourceStepRequest.Where(x => x.ProductionOrderId == productionOrderId).ToListAsync();
-
-                var productionStepInfos = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                .Include(s => s.Step)
-                .Include(s => s.ProductionStepLinkDataRole)
-                .ThenInclude(r => r.ProductionStepLinkData)
-                .Where(s => productionStepOutsourced.Select(s => s.ProductionStepId).Contains(s.ProductionStepId))
-                .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-
-                foreach (var rq in outsourceStepRequests)
+                var stepInfoInRequests = productionStepInfos.Where(p => p.OutsourceStepRequestId == rq.OutsourceStepRequestId);
+                foreach (var s in stepInfoInRequests)
                 {
-                    rq.IsInvalid = false;
-
-                    var stepInRequests = productionStepOutsourced.Where(p => p.OutsourceStepRequestId == rq.OutsourceStepRequestId).Select(s => s.ProductionStepId);
-                    var stepInfoInRequests = productionStepInfos.Where(p => stepInRequests.Contains(p.ProductionStepId));
-                    foreach (var s in stepInfoInRequests)
+                    foreach (var l in s.ProductionStepLinkDatas)
                     {
-                        foreach (var l in s.ProductionStepLinkDatas)
+                        if (l.ExportOutsourceQuantity > (l.QuantityOrigin - (l.OutsourcePartQuantity + l.OutsourceQuantity))
+                            || l.OutsourceQuantity > (l.QuantityOrigin - l.OutsourcePartQuantity))
                         {
-                            if (l.ExportOutsourceQuantity > l.Quantity || l.OutsourceQuantity > l.Quantity)
-                            {
-                                rq.IsInvalid = true;
-                                break;
-                            }
+                            rq.IsInvalid = true;
+                            break;
                         }
                     }
                 }
+            }
 
-                await _manufacturingDBContext.SaveChangesAsync();
-                await trans.CommitAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                await trans.TryRollbackTransactionAsync();
-                _logger.LogError(ex, "UpdateMarkInvalidOutsourceStepRequest");
-                throw;
-            }
+            await _manufacturingDBContext.SaveChangesAsync();
         }
 
         public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
