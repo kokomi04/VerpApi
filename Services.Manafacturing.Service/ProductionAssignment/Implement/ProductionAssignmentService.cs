@@ -62,6 +62,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data)
         {
+            // 
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+            if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+
             // Validate
             var steps = _manufacturingDBContext.ProductionStep
                 .Include(s => s.ProductionStepLinkDataRole)
@@ -270,6 +274,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     }
                 }
 
+                // Update reset process status
+                productionOrder.IsResetProductionProcess = true;
+
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
@@ -287,6 +294,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<bool> UpdateProductionAssignment(long productionStepId, long productionOrderId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable)
         {
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+            if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+
             // Validate
             var step = _manufacturingDBContext.ProductionStep
                 .Include(s => s.ProductionStepLinkDataRole)
@@ -484,6 +494,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     tuple.Entity.ProductionAssignmentDetail.Clear();
                     _mapper.Map(tuple.Model, tuple.Entity);
                 }
+
+                // Update reset process status
+                productionOrder.IsResetProductionProcess = true;
+
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionStepId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
