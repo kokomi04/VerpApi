@@ -121,7 +121,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var dicOutsourceStep = new Dictionary<long, IList<string>>();
             foreach (var stepRequest in outsourceStepRequest)
-                dicOutsourceStep.Add(stepRequest.Key, FoundProductionStepInOutsourceStepRequest(stepRequest.Value.OutsourceStepRequestData, productionProcess.ProductionStepLinkDataRoles));
+                dicOutsourceStep.Add(stepRequest.Key, productionProcess.ProductionSteps.Where(x=>x.OutsourceStepRequestId == stepRequest.Key).Select(x=>x.ProductionStepCode).ToList());
 
             var productionStepIds = dicOutsourceStep.SelectMany(x => x.Value);
             var productionStepLinkDataIds = productionProcess.ProductionStepLinkDataRoles
@@ -136,8 +136,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var linkData in productionProcess.ProductionStepLinkDatas)
             {
+                var quantity = linkData.QuantityOrigin - (linkData.OutsourceQuantity + linkData.OutsourcePartQuantity);
+
                 if (productionStepLinkDataIds.ContainsKey(linkData.ProductionStepLinkDataCode)
-                    && (linkData.OutsourceQuantity > linkData.Quantity || linkData.ExportOutsourceQuantity > linkData.Quantity))
+                    && (linkData.OutsourceQuantity > (linkData.QuantityOrigin - linkData.OutsourcePartQuantity) || linkData.ExportOutsourceQuantity > quantity))
                 {
                     var stepInfo = productionStepLinkDataIds[linkData.ProductionStepLinkDataCode];
                     var stepRequest = outsourceStepRequest[dicOutsourceStep.FirstOrDefault(x => x.Value.Contains(stepInfo.ProductionStepCode)).Key];
