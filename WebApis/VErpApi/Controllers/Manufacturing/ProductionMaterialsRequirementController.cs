@@ -29,7 +29,14 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("")]
         public async Task<long> AddProductionMaterialsRequirement([FromBody] ProductionMaterialsRequirementModel model)
         {
-            return await _requirementService.AddProductionMaterialsRequirement(model);
+            return await _requirementService.AddProductionMaterialsRequirement(model, EnumProductionMaterialsRequirementStatus.Waiting);
+        }
+
+        [HttpPost]
+        [Route("manager")]
+        public async Task<long> AddProductionMaterialsRequirementForManager([FromBody] ProductionMaterialsRequirementModel model)
+        {
+            return await _requirementService.AddProductionMaterialsRequirement(model, EnumProductionMaterialsRequirementStatus.Accepted);
         }
 
         [HttpPut]
