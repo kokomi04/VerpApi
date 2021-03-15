@@ -28,24 +28,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         }
     }
 
-    public class ProductionMaterialsRequirementDetailSearch : ProductionMaterialsRequirementDetailExtrackBase, IMapFrom<ProductionMaterialsRequirementDetailExtrackInfo>
+    public class ProductionMaterialsRequirementDetailSearch : ProductionMaterialsRequirementDetailExtrackBase
     {
         public long? RequirementDate { get; set; }
-
-        public new  void Mapping(Profile profile)
-        {
-            profile.CreateMap<ProductionMaterialsRequirementDetailExtrackInfo, ProductionMaterialsRequirementDetailSearch>()
-                .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.RequirementDate.GetUnix()))
-                .ReverseMap()
-                .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.RequirementDate.UnixToDateTime()));
-        }
+        public long? CreatedDatetimeUtc { get; set; }
     }
 
-    public class ProductionMaterialsRequirementDetailExtrackInfo: ProductionMaterialsRequirementDetailExtrackBase
-    {
-        public DateTime? RequirementDate { get; set; }
-
-    }
 
     public class ProductionMaterialsRequirementDetailExtrackBase: ProductionMaterialsRequirementDetailModel
     {

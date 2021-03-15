@@ -117,12 +117,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                         var entity = _mapper.Map<ProductionMaterialsRequirementDetail>(item);
                         _manufacturingDBContext.ProductionMaterialsRequirementDetail.Add(entity);
+                        await _manufacturingDBContext.SaveChangesAsync();
+
+                        requirement.ProductionMaterialsRequirementDetail.Add(entity);
                     }
-                    await _manufacturingDBContext.SaveChangesAsync();
+
+                    await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+
+                    if (status == EnumProductionMaterialsRequirementStatus.Accepted)
+                        await AddInventoryRequirement(model);
 
                     await trans.CommitAsync();
 
-                    await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                     await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Thêm mới yêu cầu vật tư thêm", requirement.JsonSerialize());
 
                     return requirement.ProductionMaterialsRequirementId;
@@ -177,6 +183,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (requirement.CensorStatus == (int)EnumInventoryRequirementStatus.Rejected)
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu vật tư thêm đã bị từ chối");
+
+            if(requirement.ProductionMaterialsRequirementDetail.Any(x=>x.Quantity == 0))
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Chi tiết yêu cầu thêm phải có lượng lớn hơn  0");
         }
 
         public async Task<ProductionMaterialsRequirementModel> GetProductionMaterialsRequirement(long requirementId)
@@ -209,7 +218,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         ProductionStepTitle = c.ProductionStepTitle,
                         RequirementContent = p.RequirementContent,
                         Quantity = c.Quantity,
-                        RequirementDate = p.RequirementDate
+                        RequirementDate = p.RequirementDate,
+                        CreatedDatetimeUtc = p.CreatedDatetimeUtc
                     });
 
             var productIds = requirements.Select(x => x.ProductId).ToArray();
@@ -239,7 +249,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                              RequirementDate = r.RequirementDate,
                              ProductTitle = p != null ? string.Concat(p.ProductCode, "/ ", p.ProductName) : string.Empty,
                              UnitId = p != null ? p.UnitId : 0,
-                             DepartmentTitle = d != null ? string.Concat(d.DepartmentCode, "/ ", d.DepartmentName) : string.Empty
+                             DepartmentTitle = d != null ? string.Concat(d.DepartmentCode, "/ ", d.DepartmentName) : string.Empty,
+                             CreatedDatetimeUtc = r.CreatedDatetimeUtc
                          }).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -332,24 +343,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 requirement.CensorDatetimeUtc = DateTime.UtcNow;
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                var inventoryRequirementModel = new InventoryRequirementSimpleModel
-                {
-                    ProductionOrderId = requirement.ProductionOrderId,
-                    InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
-                    InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
-                    Date = DateTime.UtcNow.GetUnix(),
-                    Content = requirement.RequirementContent,
+                if(status == EnumProductionMaterialsRequirementStatus.Accepted)
+                    await AddInventoryRequirement(_mapper.Map<ProductionMaterialsRequirementModel>(requirement));
 
-                    InventoryRequirementDetail = requirement.ProductionMaterialsRequirementDetail.Select(x => new InventoryRequirementSimpleDetailModel
-                    {
-                        DepartmentId = x.DepartmentId,
-                        ProductId = x.ProductId,
-                        PrimaryQuantity = x.Quantity,
-                        ProductionStepId = x.ProductionStepId,
-                        ProductionOrderCode = requirement.ProductionOrder.ProductionOrderCode
-                    }).ToList()
-                };
-                await _inventoryRequirementHelperService.AddInventoryRequirement(EnumInventoryType.Output, inventoryRequirementModel);
                 await trans.CommitAsync();
                 return true;
             }
@@ -360,6 +356,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
 
+        }
+
+        private async Task AddInventoryRequirement(ProductionMaterialsRequirementModel requirement)
+        {
+            var inventoryRequirementModel = new InventoryRequirementSimpleModel
+            {
+                ProductionOrderId = requirement.ProductionOrderId,
+                InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
+                InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
+                Date = DateTime.UtcNow.GetUnix(),
+                Content = requirement.RequirementContent,
+
+                InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel
+                {
+                    DepartmentId = x.DepartmentId,
+                    ProductId = x.ProductId,
+                    PrimaryQuantity = x.Quantity,
+                    ProductionStepId = x.ProductionStepId,
+                    ProductionOrderCode = requirement.ProductionOrderCode
+                }).ToList()
+            };
+
+            await _inventoryRequirementHelperService.AddInventoryRequirement(EnumInventoryType.Output, inventoryRequirementModel);
         }
     }
 }
