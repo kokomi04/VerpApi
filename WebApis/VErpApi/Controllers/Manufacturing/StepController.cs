@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Step;
 using VErp.Services.Manafacturing.Service.Step;
@@ -55,6 +57,14 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<StepModel> GetStep([FromRoute] int stepId)
         {
             return await _stepService.GetStep(stepId);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("array")]
+        public async Task<IList<StepModel>> GetStepByArrayId([FromBody] int[] arrayId)
+        {
+            return await _stepService.GetStepByArrayId(arrayId);
         }
     }
 }

@@ -20,6 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public int? CensorByUserId { get; set; }
         public EnumProductionMaterialsRequirementStatus CensorStatus { get; set; }
         public int CreatedByUserId { get; set; }
+        public long? CreatedDatetimeUtc { get; set; }
 
         public IList<ProductionMaterialsRequirementDetailModel> MaterialsRequirementDetails { get; set; }
 
@@ -27,10 +28,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         {
             profile.CreateMap<ProductionMaterialsRequirement, ProductionMaterialsRequirementModel>()
                 .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.RequirementDate.GetUnix()))
+                .ForMember(m => m.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m=>m.MaterialsRequirementDetails, v=>v.MapFrom(m=>m.ProductionMaterialsRequirementDetail))
                 .ForMember(m=>m.ProductionOrderCode, v=>v.MapFrom(m=>m.ProductionOrder.ProductionOrderCode))
                 .ReverseMap()
                 .ForMember(m => m.ProductionMaterialsRequirementDetail, v => v.Ignore())
+                .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
                 .ForMember(m => m.ProductionOrder, v => v.Ignore())
                 .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.RequirementDate.UnixToDateTime()));
         }
