@@ -58,10 +58,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public long? CalcPeriodId { get; set; }
     }
 
-    public class CalcProfitAndLossView
+    public class CalcPeriodView<TFilter, TOutput>
     {
         public CalcPeriodListModel CalcPeriodInfo { get; set; }
-        public CalcProfitAndLossInput FilterData { get; set; }
-        public CalcProfitAndLossTableOutput OutputData { get; set; }
+        public TFilter FilterData { get; set; }
+        public TOutput OutputData { get; set; }
     }
 }

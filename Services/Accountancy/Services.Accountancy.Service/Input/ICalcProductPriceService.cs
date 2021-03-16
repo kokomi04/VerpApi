@@ -17,9 +17,6 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceWeightedAverageInput req);
 
         Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req);
-
-        Task<PageData<CalcPeriodListModel>> CalcProfitAndLossPeriods(string keyword, long? fromDate, long? toDate, int page, int? size);
-
-        Task<CalcProfitAndLossView> CalcProfitAndLossPeriodInfo(long calcPeriodId);
+       
     }
 }

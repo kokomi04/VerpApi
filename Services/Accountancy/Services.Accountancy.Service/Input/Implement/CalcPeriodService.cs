@@ -132,6 +132,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return data;
         }
 
+        public async Task<CalcPeriodView<TFilter, TOutput>> CalcPeriodInfo<TFilter, TOutput>(EnumCalcPeriodType calcPeriodTypeId, long calcPeriodId)
+        {
+            var info = await GetInfo(calcPeriodTypeId, calcPeriodId);
+            return new CalcPeriodView<TFilter, TOutput>()
+            {
+                CalcPeriodInfo = info,
+                FilterData = info.FilterData.JsonDeserialize<TFilter>(),
+                OutputData = info.Data.JsonDeserialize<TOutput>()
+            };
+        }
+
         public async Task<bool> Delete(EnumCalcPeriodType calcPeriodTypeId, long calcPeriodId)
         {
             var info = await _accountancyDBContext.CalcPeriod.FirstOrDefaultAsync(c => c.CalcPeriodTypeId == (int)calcPeriodTypeId && c.CalcPeriodId == calcPeriodId);

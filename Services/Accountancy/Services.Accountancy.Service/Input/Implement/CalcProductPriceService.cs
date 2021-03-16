@@ -116,13 +116,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
-            return new CalcProductPriceGetTableOutput()
+            
+            var result = new CalcProductPriceGetTableOutput()
             {
                 Data = data,
                 IndirectMaterialFeeSum = indirectMaterialFeeSum.Value as decimal?,
                 IndirectLaborFeeSum = indirectLaborFeeSum.Value as decimal?,
                 GeneralManufacturingSum = generalManufacturingSum.Value as decimal?
             };
+
+            if (req.IsSave)
+            {
+                var calcPeriodId = await _calcPeriodService.Create(EnumCalcPeriodType.CalcProfitAndLoss, req.Title, req.Descirption, req.FromDate, req.ToDate, req, result);
+                result.CalcPeriodId = calcPeriodId;
+            }
+            return result;
         }
 
 
@@ -165,23 +173,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
-        }
-
-        public Task<PageData<CalcPeriodListModel>> CalcProfitAndLossPeriods(string keyword, long? fromDate, long? toDate, int page, int? size)
-        {
-            return _calcPeriodService.GetList(EnumCalcPeriodType.CalcProfitAndLoss, keyword, fromDate, toDate, page, size);
-        }
-
-        public async Task<CalcProfitAndLossView> CalcProfitAndLossPeriodInfo(long calcPeriodId)
-        {
-            var info =  await _calcPeriodService.GetInfo(EnumCalcPeriodType.CalcProfitAndLoss, calcPeriodId);
-            return new CalcProfitAndLossView()
-            {
-                CalcPeriodInfo = info,
-                FilterData = info.FilterData.JsonDeserialize<CalcProfitAndLossInput>(),
-                OutputData = info.Data.JsonDeserialize<CalcProfitAndLossTableOutput>()
-            };
-        }
+        }     
+      
 
         public async Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req)
         {
