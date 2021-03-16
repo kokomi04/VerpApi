@@ -52,6 +52,7 @@ namespace VErp.Services.Accountancy.Model.Input
     public class CalcProductPriceGetTableOutput
     {
         public IList<NonCamelCaseDictionary> Data { get; set; }
+        public IList<NonCamelCaseDictionary> Result { get; set; }
         public decimal? IndirectMaterialFeeSum { get; set; }
         public decimal? IndirectLaborFeeSum { get; set; }
         public decimal? GeneralManufacturingSum { get; set; }

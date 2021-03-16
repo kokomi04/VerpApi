@@ -74,7 +74,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 req.IsByStock = true;
             }
-            var data = (await _accountancyDBContext.QueryDataTable(
+
+            var dataSet = await _accountancyDBContext.QueryMultiDataTable(
                 "asp_CalcProductPrice",
                     new[] {
                     new SqlParameter("@ProductId", SqlDbType.Int){ Value = req.ProductId.HasValue?req.ProductId.Value: (object)DBNull.Value},
@@ -113,13 +114,24 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@IsReviewUpdate", SqlDbType.Bit){ Value = req.IsReviewUpdate},
                     new SqlParameter("@IsUpdate", SqlDbType.Bit){ Value = req.IsUpdate}
 
-                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
-                ).ConvertData();
+                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0));
 
-            
+            IList<NonCamelCaseDictionary> data = null;
+            IList<NonCamelCaseDictionary> resultData = null;
+
+            if (dataSet != null && dataSet.Tables.Count > 0)
+            {
+                data = dataSet.Tables[0].ConvertData();
+                if (dataSet.Tables.Count > 1)
+                {
+                    resultData = dataSet.Tables[0].ConvertData();
+                }
+            }
+
             var result = new CalcProductPriceGetTableOutput()
             {
                 Data = data,
+                Result = resultData,
                 IndirectMaterialFeeSum = indirectMaterialFeeSum.Value as decimal?,
                 IndirectLaborFeeSum = indirectLaborFeeSum.Value as decimal?,
                 GeneralManufacturingSum = generalManufacturingSum.Value as decimal?
@@ -127,7 +139,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             if (req.IsSave)
             {
-                var calcPeriodId = await _calcPeriodService.Create(EnumCalcPeriodType.CalcProfitAndLoss, req.Title, req.Descirption, req.FromDate, req.ToDate, req, result);
+                var calcPeriodId = await _calcPeriodService.Create(EnumCalcPeriodType.CalcProductPrice, req.Title, req.Descirption, req.FromDate, req.ToDate, req, result);
                 result.CalcPeriodId = calcPeriodId;
             }
             return result;
@@ -173,8 +185,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
-        }     
-      
+        }
+
 
         public async Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req)
         {
