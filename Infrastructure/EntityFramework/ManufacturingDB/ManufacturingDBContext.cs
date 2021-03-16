@@ -390,6 +390,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionOrderMaterials>(entity =>
             {
+                entity.Property(e => e.ConversionRate)
+                    .HasColumnType("decimal(18, 5)")
+                    .HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.InventoryRequirementStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");

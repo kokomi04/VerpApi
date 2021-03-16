@@ -90,7 +90,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                          ProductionStepLinkDataId = r.ProductionStepLinkDataId,
                                          Quantity = a.RateQuantity * (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                          RateQuantity = a.RateQuantity,
-                                         InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet
+                                         InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
+                                         ConversionRate = 1
                                      }).ToList();
             var calcuTotalAssignmentQuantity = from m in materialsAssigned
                                                group m by new
@@ -119,7 +120,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                           ProductionStepLinkDataId = r.ProductionStepLinkDataId,
                                           Quantity = AssignmentQuantity.HasValue ? AssignmentQuantity.GetValueOrDefault() : (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                           RateQuantity = !AssignmentQuantity.HasValue ? 1 : (AssignmentQuantity.GetValueOrDefault() / (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault())),
-                                          InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet
+                                          InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
+                                          ConversionRate = 1
                                       };
 
             materialsAssigned.AddRange(materialsUnAssigned);
@@ -158,7 +160,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             ParentId = r.ParentId,
                             ProductionOrderMaterialsId = r.ProductionOrderMaterialsId,
                             InventoryRequirementStatusId = r.InventoryRequirementStatusId,
-                            DepartmentId = r.DepartmentId
+                            DepartmentId = r.DepartmentId,
+                            ConversionRate = r.ConversionRate
                         });
                     materialsReplacement.AddRange(child);
                 }
