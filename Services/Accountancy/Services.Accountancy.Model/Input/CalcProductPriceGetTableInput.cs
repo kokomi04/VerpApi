@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Services.Accountancy.Model.Data;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
-    public class CalcProductPriceGetTableInput
+    public class CalcProductPriceGetTableInput: IFilterHashData
     {
         public int? ProductId { get; set; }
         public string OrderCode { get; set; }
@@ -37,6 +38,15 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public bool IsReviewUpdate { get; set; }
         public bool IsUpdate { get; set; }
+
+        public bool IsSave { get; set; }
+        public string Title { get; set; }
+        public string Descirption { get; set; }
+
+        public string GetHashString()
+        {
+            return $"{ProductId}_{OrderCode}_{MaLsx}_{FromDate}_{ToDate}_{IsByLsx}_{IsByOrder}";
+        }
     }
 
     public class CalcProductPriceGetTableOutput
@@ -45,5 +55,6 @@ namespace VErp.Services.Accountancy.Model.Input
         public decimal? IndirectMaterialFeeSum { get; set; }
         public decimal? IndirectLaborFeeSum { get; set; }
         public decimal? GeneralManufacturingSum { get; set; }
+        public long? CalcPeriodId { get; set; }
     }
 }
