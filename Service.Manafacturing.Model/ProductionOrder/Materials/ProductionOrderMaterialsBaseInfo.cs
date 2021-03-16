@@ -13,6 +13,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public long ProductionOrderId { get; set; }
         public long ProductId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal ConversionRate { get; set; }
         public int UnitId { get; set; }
         public int? DepartmentId { get; set; }
         public long? ParentId { get; set; }
