@@ -261,23 +261,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     PhoneNumber = c.PhoneNumber,
                     Email = c.Email
                 }).ToList(),
-                BankAccounts = bankAccounts.Select(ba => new CustomerBankAccountModel()
-                {
-                    CustomerBankAccountId = ba.CustomerBankAccountId,
-                    BankName = ba.BankName,
-                    AccountNumber = ba.AccountNumber,
-                    SwiffCode = ba.SwiffCode,
-                    BankAddress = ba.BankAddress,
-                    BankBranch = ba.BankBranch,
-                    BankCode = ba.BankCode,
-                    AccountName = ba.AccountName,
-                    Province = ba.Province,
-                    CurrencyId = ba.CurrencyId
-
-                }).ToList(),
+                BankAccounts = bankAccounts.Select(ba => TransformBankAccModel(ba)).ToList(),
                 CustomerAttachments = customerAttachments
             };
         }
+
+      
 
         public async Task<PageData<CustomerListOutput>> GetList(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
@@ -478,7 +467,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         }
                     }
 
-                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.CustomerBankAccountId == ba.CustomerBankAccountId)).ToList();
+                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
                     foreach (var ba in deletedBankAccounts)
                     {
                         ba.IsDeleted = true;
@@ -486,22 +475,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         ba.UpdatedUserId = updatedUserId;
                     }
 
-                    var newBankAccounts = data.BankAccounts.Where(ba => !(ba.CustomerBankAccountId > 0)).Select(ba => new CustomerBankAccount()
-                    {
-                        CustomerId = customerInfo.CustomerId,
-                        BankName = ba.BankName,
-                        UpdatedUserId = updatedUserId,
-                        SwiffCode = ba.SwiffCode,
-                        AccountNumber = ba.AccountNumber,
-                        IsDeleted = false,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
-                    });
+                    var newBankAccounts = data.BankAccounts
+                        .Where(ba => ba.BankAccountId<=0)
+                        .Select(ba =>TransformBankAccEntity(ba));
                     await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
 
                     foreach (var ba in dbBankAccounts)
                     {
-                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.CustomerBankAccountId == ba.CustomerBankAccountId);
+                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId);
                         if (reqBankAccount != null)
                         {
                             ba.AccountNumber = reqBankAccount.AccountNumber;
@@ -761,23 +742,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 if (data.BankAccounts != null && data.BankAccounts.Count > 0)
                 {
-                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => new CustomerBankAccount()
-                    {
-                        // CustomerId = customer.CustomerId,
-                        BankName = ba.BankName,
-                        AccountNumber = ba.AccountNumber,
-                        SwiffCode = ba.SwiffCode,
-                        BankCode = ba.BankCode,
-                        BankBranch = ba.BankBranch,
-                        BankAddress = ba.BankAddress,
-                        UpdatedUserId = _currentContextService.UserId,
-                        AccountName = ba.AccountName,
-                        Province = ba.Province,
-                        CurrencyId = ba.CurrencyId,
-                        IsDeleted = false,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
-                    }));
+                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => TransformBankAccEntity(ba)));
                 }
 
                 if (data.CustomerAttachments != null && data.CustomerAttachments.Count > 0)
@@ -794,6 +759,43 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
 
             return (customerEntities, originData, contacts, bankAccounts, attachments);
+        }
+
+        private CustomerBankAccountModel TransformBankAccModel(CustomerBankAccount entity)
+        {
+            if (entity == null) return null;
+            return new CustomerBankAccountModel()
+            {
+                BankAccountId = entity.CustomerBankAccountId,
+                BankName = entity.BankName,
+                AccountNumber = entity.AccountNumber,
+                SwiffCode = entity.SwiffCode,
+                BankAddress = entity.BankAddress,
+                BankBranch = entity.BankBranch,
+                BankCode = entity.BankCode,
+                AccountName = entity.AccountName,
+                Province = entity.Province,
+                CurrencyId = entity.CurrencyId
+            };
+        }
+
+        private CustomerBankAccount TransformBankAccEntity(CustomerBankAccountModel model)
+        {
+            if (model == null) return null;
+            return new CustomerBankAccount()
+            {
+                CustomerBankAccountId = model.BankAccountId,
+                BankName = model.BankName,
+                AccountNumber = model.AccountNumber,
+                SwiffCode = model.SwiffCode,
+                BankAddress = model.BankAddress,
+                BankBranch = model.BankBranch,
+                BankCode = model.BankCode,
+                AccountName = model.AccountName,
+                Province = model.Province,
+                CurrencyId = model.CurrencyId,
+                IsDeleted = false,
+            };
         }
 
     }
