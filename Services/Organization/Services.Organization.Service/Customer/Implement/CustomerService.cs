@@ -266,7 +266,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-      
+
 
         public async Task<PageData<CustomerListOutput>> GetList(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
@@ -476,8 +476,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     }
 
                     var newBankAccounts = data.BankAccounts
-                        .Where(ba => ba.BankAccountId<=0)
-                        .Select(ba =>TransformBankAccEntity(ba));
+                        .Where(ba => ba.BankAccountId <= 0)
+                        .Select(ba => TransformBankAccEntity(customerId,ba));
                     await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
 
                     foreach (var ba in dbBankAccounts)
@@ -742,7 +742,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 if (data.BankAccounts != null && data.BankAccounts.Count > 0)
                 {
-                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => TransformBankAccEntity(ba)));
+                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => TransformBankAccEntity(0, ba)));
                 }
 
                 if (data.CustomerAttachments != null && data.CustomerAttachments.Count > 0)
@@ -779,11 +779,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        private CustomerBankAccount TransformBankAccEntity(CustomerBankAccountModel model)
+        private CustomerBankAccount TransformBankAccEntity(int customerId, CustomerBankAccountModel model)
         {
             if (model == null) return null;
             return new CustomerBankAccount()
             {
+                CustomerId = customerId,
                 CustomerBankAccountId = model.BankAccountId,
                 BankName = model.BankName,
                 AccountNumber = model.AccountNumber,
