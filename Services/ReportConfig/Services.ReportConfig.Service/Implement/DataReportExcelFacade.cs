@@ -325,7 +325,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (sumCalc.Count > 0)
             {
                 ExcelRow sumRow = table.NewRow();
-                foreach (var (index,column) in sumCalc)
+                foreach (var (index, column) in sumCalc)
                 {
                     var dataType = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
                     var columnName = (index + 1).GetExcelColumnName();
@@ -343,13 +343,20 @@ namespace Verp.Services.ReportConfig.Service.Implement
             xssfwb.WriteToSheet(sheet, table, out currentRow, startCollumn: 0, startRow: currentRow);
         }
 
+        Dictionary<EnumDataType, ICellStyle> cellStyles = new Dictionary<EnumDataType, ICellStyle>();
         private ICellStyle GetCellStyle(ISheet sheet, EnumDataType type, ReportColumnModel column)
         {
-
+            if (cellStyles.ContainsKey(type))
+            {
+                return cellStyles[type];
+            }
+            ICellStyle style;
             switch (type)
             {
                 case EnumDataType.Boolean:
-                    return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                    cellStyles.Add(type, style);
+                    return style;
                 case EnumDataType.Int:
                 case EnumDataType.Year:
                 case EnumDataType.Month:
@@ -368,10 +375,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 format.Append("#");
                             }
                         }
-                        return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
+                        style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
+                        cellStyles.Add(type, style);
+                        return style;
                     }
                 case EnumDataType.Date:
-                    return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
+                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
+                    cellStyles.Add(type, style);
+                    return style;
                 case EnumDataType.Percentage:
                     {
                         var format = new StringBuilder("0");
@@ -384,13 +395,17 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             }
                         }
                         format.Append(" %");
-                        return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
+                        style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
+                        cellStyles.Add(type, style);
+                        return style;
                     }
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
                 default:
-                    return sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true); ;
+                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                    cellStyles.Add(type, style);
+                    return style;
             }
         }
 

@@ -145,6 +145,7 @@ namespace VErp.Commons.Library
         {
             int addedRow = 0;
             int columnLength = table.Columns.Count;
+            var nullStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
             foreach (ExcelRow row in table.Rows)
             {
                 int curRow = startRow + addedRow;
@@ -157,7 +158,7 @@ namespace VErp.Commons.Library
                     {
                         row[indx].Value = string.Empty;
                         row[indx].Type = EnumExcelType.String;
-                        row[indx].CellStyle = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                        row[indx].CellStyle = nullStyle;
                     }
 
                     switch (row[indx].Type)
