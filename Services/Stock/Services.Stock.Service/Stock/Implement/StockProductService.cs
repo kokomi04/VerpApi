@@ -793,7 +793,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             return (data, total);
         }
-
+        /*
         /// <summary>
         /// Báo cáo chi tiết nhập xuất sp trong kỳ
         /// </summary>
@@ -942,7 +942,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return resultData;
         }
-
+        */
         public async Task<StockProductDetailsReportOutput> StockProductDetailsReport(int productId, IList<int> stockIds, long bTime, long eTime)
         {
             if (productId <= 0)
@@ -1040,7 +1040,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                   id.RefObjectCode,
                   id.PrimaryQuantity,
                   id.ProductUnitConversionQuantity,
-                  id.ProductUnitConversionId
+                  id.ProductUnitConversionId,
+                  id.OrderCode,
+                  id.ProductionOrderCode,
+                  id.Pocode
               }).ToList();
 
             var productUnitConversionIdsList = inPeriodData.Where(q => q.ProductUnitConversionId > 0).Select(q => q.ProductUnitConversionId).ToList();
@@ -1062,7 +1065,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o.TotalProductUnitConversion);
             var totalPrimary = openingStockQuery.Sum(o => o.TotalPrimaryUnit);
 
-            foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.CreatedDatetimeUtc).ToList())
+            foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.InventoryTypeId).ThenBy(q => q.InventoryDetailId).ToList())
             {
                 var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
                 var secondaryUnitObj = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
@@ -1105,6 +1108,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversion = productUnitConversionObj,
                     EndOfPerdiodPrimaryQuantity = totalPrimary,
                     EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId],
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                    Pocode = item.Pocode
                 });
             }
             #endregion
