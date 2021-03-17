@@ -28,5 +28,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate);
 
         Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId);
+
+        Task<bool> FinishProductionAssignment(long productionStepId, long productionOrderId, int departmentId);
     }
 }

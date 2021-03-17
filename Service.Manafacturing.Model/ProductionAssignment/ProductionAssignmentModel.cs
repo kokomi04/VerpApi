@@ -23,7 +23,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
-
+        public bool IsManualFinish { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
         public ProductionAssignmentModel()
@@ -40,7 +40,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                 .ReverseMap()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.UnixToDateTime()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
-                .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore());
+                .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore())
+                .ForMember(s => s.IsManualFinish, d => d.Ignore());
         }
 
         public bool IsChange(ProductionAssignmentEntity entity)
