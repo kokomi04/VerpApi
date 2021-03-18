@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
@@ -29,6 +30,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId);
 
-        Task<bool> FinishProductionAssignment(long productionStepId, long productionOrderId, int departmentId);
+        Task<bool> ChangeAssignedProgressStatus(long productionStepId, long productionOrderId, int departmentId, EnumAssignedProgressStatus status);
     }
 }

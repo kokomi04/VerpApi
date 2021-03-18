@@ -722,13 +722,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
             var departmentIdMap = (from sd in _manufacturingDBContext.StepDetail
-                                 join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
-                                 where ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId
-                                 select new
-                                 {
-                                     ps.ProductionStepId,
-                                     sd.DepartmentId
-                                 })
+                                   join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
+                                   where ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId
+                                   select new
+                                   {
+                                       ps.ProductionStepId,
+                                       sd.DepartmentId
+                                   })
                                  .ToList()
                                  .GroupBy(sd => sd.ProductionStepId)
                                  .ToDictionary(sd => sd.Key, sd => sd.Select(sd => sd.DepartmentId).ToList());
@@ -1062,15 +1062,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToListAsync();
         }
 
-        public async Task<bool> FinishProductionAssignment(long productionOrderId, long productionStepId, int departmentId)
+        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, EnumAssignedProgressStatus status)
         {
             var assignment = _manufacturingDBContext.ProductionAssignment
                 .FirstOrDefault(a => a.ProductionOrderId == productionOrderId && a.ProductionStepId == productionStepId && a.DepartmentId == departmentId);
-            if(assignment == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công việc không tồn tại");
-            if(assignment.IsManualFinish) throw new BadRequestException(GeneralCode.InvalidParams, "Công việc đã hoàn thành bàn giao");
+            if (assignment == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công việc không tồn tại");
             try
             {
-                assignment.IsManualFinish = true;
+                assignment.AssignedProgressStatus = (int)status;
                 _manufacturingDBContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", assignment.JsonSerialize());
                 return true;
