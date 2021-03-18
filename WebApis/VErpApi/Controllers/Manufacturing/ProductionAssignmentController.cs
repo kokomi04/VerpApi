@@ -55,7 +55,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionOrderId}/{productionStepId}/{departmentId}/status/{status}")]
-        public async Task<bool> FinishProductionAssignment([FromRoute] long productionStepId, [FromRoute] long productionOrderId, [FromRoute] int departmentId, EnumAssignedProgressStatus status)
+        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionStepId, [FromRoute] long productionOrderId, [FromRoute] int departmentId, EnumAssignedProgressStatus status)
         {
             return await _productionAssignmentService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId, status);
         }
