@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace Services.Organization.Service.Employee.Implement
 {
@@ -13,8 +14,11 @@ namespace Services.Organization.Service.Employee.Implement
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
-        public UserDataService(OrganizationDBContext organizationDBContext,
-            ICurrentContextService currentContextService
+     
+
+        public UserDataService(
+            OrganizationDBContext organizationDBContext
+            , ICurrentContextService currentContextService
             )
         {
             _organizationDBContext = organizationDBContext;

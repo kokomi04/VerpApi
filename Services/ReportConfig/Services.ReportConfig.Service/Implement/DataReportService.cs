@@ -150,7 +150,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var viewAlias = string.Empty;
                 if (reportInfo.IsBsc || !string.IsNullOrWhiteSpace(reportInfo.BodySql))
                 {
-                    viewAlias = "v";
+                    //viewAlias = "v";
                 }
                 model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, ref filterCondition, ref sqlParams, ref suffix);
             }

@@ -131,7 +131,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (fileInfo != null && pictureType != PictureType.None)
                     {
                         fCol = 2;
-                        var fileStream = File.OpenRead(GetPhysicalFilePath(fileInfo.FilePath));
+                        var filePath = GetPhysicalFilePath(fileInfo.FilePath);
+                        if (!File.Exists(filePath))
+                        {
+                            throw new BadRequestException(GeneralCode.ItemNotFound, $"Logo file {fileInfo.FilePath} was not found!");
+                        }
+                        var fileStream = File.OpenRead(filePath);
                         byte[] bytes = IOUtils.ToByteArray(fileStream);
                         int pictureIdx = xssfwb.AddPicture(bytes, pictureType);
                         fileStream.Close();
@@ -144,8 +149,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         anchor.Row1 = 0;
                         anchor.Col2 = 2;
                         anchor.Row2 = 4;
-
-                        drawing.CreatePicture(anchor, pictureIdx);
+                        anchor.AnchorType = AnchorType.MoveDontResize;
+                        var picture = drawing.CreatePicture(anchor, pictureIdx);
+                        picture.Resize(1, 1);
                     }
 #endif
                 }
@@ -286,6 +292,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private void GenerateDataTable(ReportType reportInfo)
         {
+            var sheet = xssfwb.GetSheet(sheetName);
             currentRow += 1;
             ExcelData table = new ExcelData();
 
@@ -293,7 +300,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 table.Columns.Add($"Col-{index}");
             }
-            var sumCalc = new List<int>();
+            var sumCalc = new Dictionary<int, ReportColumnModel>();
             var dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
             foreach (var row in dataTable.Rows.List)
             {
@@ -301,13 +308,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 int columnIndx = 0;
                 foreach (var field in columns)
                 {
-                    if (field.IsCalcSum) sumCalc.Add(columnIndx);
+                    if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx)) sumCalc.Add(columnIndx, field);
                     var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
                     if (row.ContainsKey(field.Alias))
                         tbRow[columnIndx] = new ExcelCell
                         {
                             Value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset),
-                            Type = dataType.GetExcelType()
+                            Type = dataType.GetExcelType(),
+                            CellStyle = GetCellStyle(sheet, dataType, field)
                         };
                     columnIndx++;
                 }
@@ -317,20 +325,88 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (sumCalc.Count > 0)
             {
                 ExcelRow sumRow = table.NewRow();
-                foreach (int columnIndx in sumCalc)
+                foreach (var (index, column) in sumCalc)
                 {
-                    var columnName = (columnIndx + 1).GetExcelColumnName();
-                    sumRow[columnIndx] = new ExcelCell
+                    var dataType = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
+                    var columnName = (index + 1).GetExcelColumnName();
+                    sumRow[index] = new ExcelCell
                     {
                         Value = $"SUM({columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()})",
-                        Type = EnumExcelType.Formula
+                        Type = EnumExcelType.Formula,
+                        CellStyle = GetCellStyle(sheet, dataType, column)
                     };
                 }
                 sumRow.FillAllRow();
                 table.Rows.Add(sumRow);
             }
 
-            xssfwb.WriteToSheet(table, sheetName, out currentRow, startCollumn: 0, startRow: currentRow);
+            xssfwb.WriteToSheet(sheet, table, out currentRow, startCollumn: 0, startRow: currentRow);
+        }
+
+        Dictionary<EnumDataType, ICellStyle> cellStyles = new Dictionary<EnumDataType, ICellStyle>();
+        private ICellStyle GetCellStyle(ISheet sheet, EnumDataType type, ReportColumnModel column)
+        {
+            if (cellStyles.ContainsKey(type))
+            {
+                return cellStyles[type];
+            }
+            ICellStyle style;
+            switch (type)
+            {
+                case EnumDataType.Boolean:
+                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                    cellStyles.Add(type, style);
+                    return style;
+                case EnumDataType.Int:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+
+                case EnumDataType.BigInt:
+                case EnumDataType.Decimal:
+                    {
+                        var format = new StringBuilder("#,##0");
+                        if (column.DecimalPlace.GetValueOrDefault() > 0)
+                        {
+                            format.Append(".0");
+                            for (int i = 1; i < column.DecimalPlace; i++)
+                            {
+                                format.Append("#");
+                            }
+                        }
+                        style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
+                        cellStyles.Add(type, style);
+                        return style;
+                    }
+                case EnumDataType.Date:
+                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
+                    cellStyles.Add(type, style);
+                    return style;
+                case EnumDataType.Percentage:
+                    {
+                        var format = new StringBuilder("0");
+                        if (column.DecimalPlace.GetValueOrDefault() > 0)
+                        {
+                            format.Append(".0");
+                            for (int i = 1; i < column.DecimalPlace; i++)
+                            {
+                                format.Append("#");
+                            }
+                        }
+                        format.Append(" %");
+                        style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
+                        cellStyles.Add(type, style);
+                        return style;
+                    }
+                case EnumDataType.Text:
+                case EnumDataType.PhoneNumber:
+                case EnumDataType.Email:
+                default:
+                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                    cellStyles.Add(type, style);
+                    return style;
+            }
         }
 
         private void WriteFooter()

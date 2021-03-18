@@ -9,6 +9,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcess
 {
     public class ProductionProcessModel
     {
+        public ProductionProcessModel()
+        {
+            ProductionStepLinks = new List<ProductionStepLinkModel>();
+            ProductionStepGroupLinkDataRoles = new List<ProductionStepLinkDataRoleInput>();
+        }
         public long ContainerId { get; set; }
         public EnumContainerType ContainerTypeId { get; set; }
 
@@ -17,6 +22,5 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcess
         public List<ProductionStepLinkDataRoleInput> ProductionStepLinkDataRoles { get; set; }
         public List<ProductionStepLinkDataRoleInput> ProductionStepGroupLinkDataRoles { get; set; } // dữ liệu chỉ view, không sử dụng trong CRUD 
         public List<ProductionStepLinkModel> ProductionStepLinks { get; set; } // dữ liệu chỉ view, không sử dụng trong CRUD 
-        public List<ProductionStepOrderModel> ProductionStepOrders { get; set; } 
     }
 }

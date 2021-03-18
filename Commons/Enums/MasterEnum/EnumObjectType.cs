@@ -239,6 +239,9 @@ namespace VErp.Commons.Enums.MasterEnum
         ActionType = 100,
 
         [Description("ActionButton")]
-        ActionButton = 101
+        ActionButton = 101,
+        [Description("Yêu cầu vật tư thêm")]
+        [GenCodeObject]
+        ProductionMaterialsRequirement = 102
     }
 }

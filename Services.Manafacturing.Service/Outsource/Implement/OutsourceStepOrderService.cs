@@ -131,8 +131,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 catch (Exception ex)
                 {
                     await trans.TryRollbackTransactionAsync();
-                    _logger.LogError("CreateOutsourceStepOrderPart");
-                    throw ex;
+                    _logger.LogError(ex,"CreateOutsourceStepOrderPart");
+                    throw ;
                 }
             }
         }
@@ -167,7 +167,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                            OutsourceOrderFinishDate = order.OutsourceOrderFinishDate,
                            OutsourceStepRequestCode = order.OutsourceStepRequestCode,
                            ProductionOrderCode = request.ProductionOrderCode,
-                           ProductionStepTitle = String.Join(", ", request.ProductionSteps.Select(x=>x.Title))
+                           /*ProductionStepTitle = String.Join(", ", request.ProductionSteps.Select(x=>x.Title))*/
                        };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -332,7 +332,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var requestIds = req.outsourceOrderDetail.Select(x => x.OutsourceStepRequestId).Distinct();
             var outsourceStepRequests = (await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
-                .Where(x => requestIds.Contains(x.OutsourceStepRequestId) && x.MarkInvalid)
+                .Where(x => requestIds.Contains(x.OutsourceStepRequestId) && x.IsInvalid)
                 .Select(x => x.OutsourceStepRequestCode)
                 .ToListAsync());
             if (outsourceStepRequests.Count > 0)

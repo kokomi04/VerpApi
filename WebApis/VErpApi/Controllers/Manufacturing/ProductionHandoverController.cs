@@ -34,6 +34,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHandoverService.GetProductionHandovers(productionOrderId);
         }
 
+        [HttpGet]
+        [Route("{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}")]
+        public async Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] long departmentId)
+        {
+            return await _productionHandoverService.GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
+        }
+
         [HttpPost]
         [Route("DepartmentHandover/{departmentId}")]
         public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
@@ -53,6 +60,20 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<ProductionHandoverModel> CreateProductionHandover([FromRoute] long productionOrderId, [FromBody] ProductionHandoverInputModel data)
         {
             return await _productionHandoverService.CreateProductionHandover(productionOrderId, data);
+        }
+
+        [HttpPost]
+        [Route("statictic/{productionOrderId}")]
+        public async Task<ProductionHandoverModel> CreateStatictic([FromRoute] long productionOrderId, [FromBody] ProductionHandoverInputModel data)
+        {
+            return await _productionHandoverService.CreateStatictic(productionOrderId, data);
+        }
+
+        [HttpDelete]
+        [Route("{productionHandoverId}")]
+        public async Task<bool> DeleteProductionHandover([FromRoute] long productionHandoverId)
+        {
+            return await _productionHandoverService.DeleteProductionHandover(productionHandoverId);
         }
 
         [HttpPut]

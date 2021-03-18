@@ -71,9 +71,9 @@ namespace Verp.Cache.RedisCache
                 }
                 return @lock;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                throw e;
+                throw;
             }
             finally
             {

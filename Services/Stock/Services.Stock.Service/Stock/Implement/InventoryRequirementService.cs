@@ -29,6 +29,7 @@ using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using System.Data;
 using System.Reflection;
+using VErp.Commons.Enums.StockEnum;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
@@ -153,7 +154,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 }
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId }).Any(g => g.Count() > 1))
+                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại sản phẩm trùng nhau trong phiếu yêu cầu");
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
@@ -223,11 +224,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi mã phiếu yêu cầu");
 
-                if (inventoryRequirement.ProductionOrderId.HasValue)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
+                //if (inventoryRequirement.ProductionOrderId.HasValue)
+                //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId }).Any(g => g.Count() > 1))
+                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại sản phẩm trùng nhau trong phiếu yêu cầu");
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), inventoryRequirement.Date);
@@ -407,6 +408,37 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 if (!(result.Value as bool?).GetValueOrDefault())
                     throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
             }
+        }
+
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType)
+        {
+            var entity = _stockDBContext.InventoryRequirement
+                .Include(r => r.InventoryRequirementFile)
+                .Include(r => r.InventoryRequirementDetail)
+                .ThenInclude(d => d.ProductUnitConversion)
+                .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType 
+                    && r.ProductionOrderId == productionOrderId 
+                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete);
+
+            var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
+
+            if (entity == null)
+                return null;
+
+            var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
+
+            var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
+
+            var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
+
+            if (attachedFiles == null)
+                attachedFiles = new List<FileToDownloadInfo>();
+
+            foreach (var item in model.InventoryRequirementFile)
+            {
+                item.FileToDownloadInfo = attachedFiles.FirstOrDefault(f => f.FileId == item.FileId);
+            }
+            return model;
         }
     }
 }

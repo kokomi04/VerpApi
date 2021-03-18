@@ -129,6 +129,14 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             return step;
         }
 
+        public async Task<IList<StepModel>> GetStepByArrayId(int[] arrayId)
+        {
+           return await _manufacturingDBContext.Step.AsNoTracking()
+                .Where(x=> arrayId.Contains(x.StepId))
+                .ProjectTo<StepModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
         public async Task<bool> UpdateStep(int stepId, StepModel req)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();

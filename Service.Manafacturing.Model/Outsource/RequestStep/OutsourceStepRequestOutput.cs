@@ -5,36 +5,29 @@ using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Services.Manafacturing.Model.ProductionStep;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 {
-    public class OutsourceStepRequestOutput: OutsourceStepRequestSearch, IMapFrom<OutsourceStepRequestExtractInfo>
+    public class OutsourceStepRequestOutput: OutsourceStepRequestPrivateKey
     {
-        public OutsourceStepRequestOutput()
-        {
-            OutsourceStepRequestDatas = new List<OutsourceStepRequestDataOutput>();
-        }
+        public long ProductionOrderId { get; set; }
+        public long OutsourceStepRequestFinishDate { get; set; }
+        public long OutsourceStepRequestDate { get; set; }
+        public bool IsInvalid { get; set; }
+        public int OutsourceStepRequestStatusId { get; set; }
 
-        public List<OutsourceStepRequestDataOutput> OutsourceStepRequestDatas { get; set; }
-
-        public new void Mapping(Profile profile)
-        {
-            profile.CreateMap<OutsourceStepRequestExtractInfo, OutsourceStepRequestOutput>()
-                .ForMember(m => m.OutsourceStepRequestDate, v => v.MapFrom(m => m.OutsourceStepRequestDate.GetUnix()))
-                .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.GetUnix()));
-
-        }
+        public ICollection<OutsourceStepRequestDetailOutput> DetailInputs { get; set; }
+        public ICollection<long> ProductionStepIds { get; set; }
+        public ICollection<ProductionStepLinkDataRoleModel> Roles { get; set; }
     }
 
-    public class OutsourceStepRequestDataOutput: OutsourceStepRequestDataModel
+    public class OutsourceStepRequestDetailOutput
     {
-        public decimal OutsourceStepRequestDataQuantityProcessed { get; set; }
-        public string ProductionStepTitle { get; set; }
-        public string ProductionStepLinkDataTitle { get; set; }
-        public int ProductionStepLinkDataUnitId { get; set; }
-        public long ProductionOrderId { get; set; }
-        public string OutsourceStepRequestCode { get; set; }
-        public long ProductionStepId { get; set; }
+        public long ProductionStepLinkDataId { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal TotalOutsourceOrderQuantity { get; set; }
+        public int RoleType { get; set; }
     }
 }

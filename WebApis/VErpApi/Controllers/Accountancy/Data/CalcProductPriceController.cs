@@ -15,6 +15,7 @@ using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
 using System.IO;
+using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -22,10 +23,12 @@ namespace VErpApi.Controllers.Accountancy.Data
     public class CalcProductPriceController : VErpBaseController
     {
         private readonly ICalcProductPriceService _calcProductPriceService;
+        private readonly ICalcPeriodService _calcPeriodService;
 
-        public CalcProductPriceController(ICalcProductPriceService calcProductPriceService)
+        public CalcProductPriceController(ICalcProductPriceService calcProductPriceService, ICalcPeriodService calcPeriodService)
         {
             _calcProductPriceService = calcProductPriceService;
+            _calcPeriodService = calcPeriodService;
         }
 
         [HttpPost]
@@ -34,6 +37,20 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<CalcProductPriceGetTableOutput> CalcProductPriceTable([FromBody] CalcProductPriceGetTableInput req)
         {
             return await _calcProductPriceService.CalcProductPriceTable(req).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("CalcProductPriceTablePeriods")]
+        public async Task<PageData<CalcPeriodListModel>> CalcProductPriceTablePeriods([FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] int page, [FromQuery] int? size)
+        {
+            return await _calcPeriodService.GetList(EnumCalcPeriodType.CalcProductPrice, keyword, fromDate, toDate, page, size).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("CalcProductPriceTablePeriods/{calcPeriodId}")]
+        public async Task<CalcPeriodView<CalcProductPriceGetTableInput, CalcProductPriceGetTableOutput>> CalcProductPriceTablePeriodsInfo([FromRoute] long calcPeriodId)
+        {
+            return await _calcPeriodService.CalcPeriodInfo<CalcProductPriceGetTableInput, CalcProductPriceGetTableOutput>(EnumCalcPeriodType.CalcProductPrice, calcPeriodId).ConfigureAwait(true);
         }
 
         [HttpPost]
@@ -67,14 +84,14 @@ namespace VErpApi.Controllers.Accountancy.Data
         [Route("CalcProfitAndLossPeriods")]
         public async Task<PageData<CalcPeriodListModel>> CalcProfitAndLossPeriods([FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] int page, [FromQuery] int? size)
         {
-            return await _calcProductPriceService.CalcProfitAndLossPeriods(keyword, fromDate, toDate, page, size).ConfigureAwait(true);
+            return await _calcPeriodService.GetList(EnumCalcPeriodType.CalcProfitAndLoss, keyword, fromDate, toDate, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("CalcProfitAndLossPeriods/{calcPeriodId}")]
-        public async Task<CalcProfitAndLossView> CalcProfitAndLossPeriodInfo([FromRoute] long calcPeriodId)
+        public async Task<CalcPeriodView<CalcProfitAndLossInput, CalcProfitAndLossTableOutput>> CalcProfitAndLossPeriodInfo([FromRoute] long calcPeriodId)
         {
-            return await _calcProductPriceService.CalcProfitAndLossPeriodInfo(calcPeriodId).ConfigureAwait(true);
+            return await _calcPeriodService.CalcPeriodInfo<CalcProfitAndLossInput, CalcProfitAndLossTableOutput>(EnumCalcPeriodType.CalcProfitAndLoss, calcPeriodId).ConfigureAwait(true);
         }
 
     }

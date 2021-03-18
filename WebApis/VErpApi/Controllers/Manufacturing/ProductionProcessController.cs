@@ -61,6 +61,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.CreateProductionStep(req);
         }
 
+        [HttpGet]
+        [Route("{containerTypeId}/{containerId}/productionStep")]
+        public async Task<IList<ProductionStepModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
+        {
+            return await _productionProcessService.GetAllProductionStep(containerTypeId, containerId);
+        }
+
         [HttpPost]
         [Route("productionStepGroup")]
         public async Task<long> CreateProductionStepGroup([FromBody] ProductionStepGroupModel req)
@@ -82,12 +89,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionProcessService.IncludeProductionProcess(productionOrderId);
         }
 
-        [HttpPut]
-        [Route("productionOrder/{productionOrderId}/process")]
-        public async Task<bool> MergeProductionProcess([FromRoute] int productionOrderId, [FromBody] IList<long> productionStepIds)
-        {
-            return await _productionProcessService.MergeProductionProcess(productionOrderId, productionStepIds);
-        }
+        //[HttpPut]
+        //[Route("productionOrder/{productionOrderId}/process")]
+        //public async Task<bool> MergeProductionProcess([FromRoute] int productionOrderId, [FromBody] IList<long> productionStepIds)
+        //{
+        //    return await _productionProcessService.MergeProductionProcess(productionOrderId, productionStepIds);
+        //}
 
         [HttpPut]
         [Route("productionOrder/{productionOrderId}/step")]
@@ -122,11 +129,11 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateProductionProcess([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] ProductionProcessModel req)
         {
             var rs = await _productionProcessService.UpdateProductionProcess(containerTypeId, containerId, req);
-            if (containerTypeId == EnumContainerType.ProductionOrder)
-            {
-                await _productionProcessService.UpdateMarkInvalidOutsourcePartRequest(containerId);
-                await _productionProcessService.UpdateMarkInvalidOutsourceStepRequest(containerId);
-            }
+            //if (containerTypeId == EnumContainerType.ProductionOrder)
+            //{
+            //    await _productionProcessService.UpdateMarkInvalidOutsourcePartRequest(containerId);
+            //    await _productionProcessService.UpdateMarkInvalidOutsourceStepRequest(containerId);
+            //}
             return rs;
         }
 
@@ -170,6 +177,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> SetProductionStepWorkload([FromBody] IList<ProductionStepWorkload> productionStepWorkload)
         {
             return await _productionProcessService.SetProductionStepWorkload(productionStepWorkload);
+        }
+
+        [HttpPost]
+        [Route("copy")]
+        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
+        {
+            return await _productionProcessService.CopyProductionProcess(containerTypeId, fromContainerId, toContainerId);
         }
     }
 }

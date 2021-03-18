@@ -77,6 +77,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         {
             InventoryRequirementFile = new List<InventoryRequirementFileInputModel>();
             InventoryRequirementDetail = new List<InventoryRequirementDetailInputModel>();
+            OutsideImportMappingData = new OutsideImportMappingData();
         }
 
         public void Mapping(Profile profile)

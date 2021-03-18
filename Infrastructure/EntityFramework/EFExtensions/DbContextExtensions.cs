@@ -16,6 +16,7 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.EFExtensions
@@ -413,23 +414,21 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
 
                 //var prop = Expression.Property(param, clause.FieldName);
-
-                TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
                 // Check value
                 ConstantExpression value;
                 MethodInfo method;
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         expression = Expression.Equal(prop, value);
                         break;
                     case EnumOperator.NotEqual:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         expression = Expression.NotEqual(prop, value);
                         break;
                     case EnumOperator.Contains:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         var toStringMethod = prop.Type.GetMethod("ToString");
                         var propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
@@ -442,39 +441,39 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         foreach (var item in ((string)clause.Value).Split(','))
                         {
                             MethodInfo addMethod = constructedListType.GetMethod("Add");
-                            addMethod.Invoke(instance, new object[] { typeConverter.ConvertFromString(item) });
+                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
                         }
                         method = constructedListType.GetMethod("Contains");
                         expression = Expression.Call(Expression.Constant(instance), method, prop);
                         break;
                     case EnumOperator.StartsWith:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         toStringMethod = prop.Type.GetMethod("ToString");
                         propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
                         expression = Expression.Call(propExpression, method, value);
                         break;
                     case EnumOperator.EndsWith:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         toStringMethod = prop.Type.GetMethod("ToString");
                         propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
                         expression = Expression.Call(propExpression, method, value);
                         break;
                     case EnumOperator.GreaterOrEqual:
-                        value = Expression.Constant(clause.Value);
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         expression = Expression.GreaterThanOrEqual(prop, value);
                         break;
                     case EnumOperator.LessThanOrEqual:
-                        value = Expression.Constant(clause.Value);
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         expression = Expression.LessThanOrEqual(prop, value);
                         break;
                     case EnumOperator.Greater:
-                        value = Expression.Constant(clause.Value);
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         expression = Expression.GreaterThan(prop, value);
                         break;
                     case EnumOperator.LessThan:
-                        value = Expression.Constant(clause.Value);
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
                         expression = Expression.LessThan(prop, value);
                         break;
                     default:

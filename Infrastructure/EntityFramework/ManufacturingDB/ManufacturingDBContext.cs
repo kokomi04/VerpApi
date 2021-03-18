@@ -29,16 +29,18 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
+        public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
+        public virtual DbSet<ProductionMaterialsRequirementDetail> ProductionMaterialsRequirementDetail { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
+        public virtual DbSet<ProductionStepCollection> ProductionStepCollection { get; set; }
         public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
-        public virtual DbSet<ProductionStepOrder> ProductionStepOrder { get; set; }
         public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<ProductionStepWorkInfo> ProductionStepWorkInfo { get; set; }
         public virtual DbSet<Step> Step { get; set; }
@@ -179,8 +181,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.OutsourceStepRequestStatusId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.ProductionStepId).HasComment("Lấy ra tên QTSX được gắn với YCGC");
-
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.HasOne(d => d.ProductionOrder)
@@ -188,12 +188,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceStepRequest_ProductionOrder");
-
-                entity.HasOne(d => d.ProductionStep)
-                    .WithMany(p => p.OutsourceStepRequest)
-                    .HasForeignKey(d => d.ProductionStepId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsourceStepRequest_ProductionStep");
             });
 
             modelBuilder.Entity<OutsourceStepRequestData>(entity =>
@@ -242,6 +236,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ContainerTypeId)
                     .HasDefaultValueSql("((1))")
                     .HasComment("1-SP 2-LSX");
+
+                entity.Property(e => e.Conversion).HasMaxLength(512);
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
@@ -326,6 +322,38 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasConstraintName("FK_ProductionHandover_ProductionAssignmentTo");
             });
 
+            modelBuilder.Entity<ProductionMaterialsRequirement>(entity =>
+            {
+                entity.Property(e => e.RequirementCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.RequirementContent).HasMaxLength(512);
+
+                entity.HasOne(d => d.ProductionOrder)
+                    .WithMany(p => p.ProductionMaterialsRequirement)
+                    .HasForeignKey(d => d.ProductionOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionMaterialsRequirement_ProductionOrder");
+            });
+
+            modelBuilder.Entity<ProductionMaterialsRequirementDetail>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.ProductionMaterialsRequirement)
+                    .WithMany(p => p.ProductionMaterialsRequirementDetail)
+                    .HasForeignKey(d => d.ProductionMaterialsRequirementId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionMaterialsRequirementDetail_ProductionMaterialsRequirement");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.ProductionMaterialsRequirementDetail)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionMaterialsRequirementDetail_ProductionStep");
+            });
+
             modelBuilder.Entity<ProductionOrder>(entity =>
             {
                 entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
@@ -362,6 +390,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionOrderMaterials>(entity =>
             {
+                entity.Property(e => e.ConversionRate)
+                    .HasColumnType("decimal(18, 5)")
+                    .HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.InventoryRequirementStatusId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
@@ -449,10 +481,22 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasColumnType("decimal(18, 5)")
                     .HasComment("khoi luong cong viec");
 
+                entity.HasOne(d => d.OutsourceStepRequest)
+                    .WithMany(p => p.ProductionStep)
+                    .HasForeignKey(d => d.OutsourceStepRequestId)
+                    .HasConstraintName("FK_ProductionStep_OutsourceStepRequest");
+
                 entity.HasOne(d => d.Step)
                     .WithMany(p => p.ProductionStep)
                     .HasForeignKey(d => d.StepId)
                     .HasConstraintName("FK_ProductionStep_Step");
+            });
+
+            modelBuilder.Entity<ProductionStepCollection>(entity =>
+            {
+                entity.Property(e => e.Collections).IsRequired();
+
+                entity.Property(e => e.Title).HasMaxLength(256);
             });
 
             modelBuilder.Entity<ProductionStepInOutConverter>(entity =>
@@ -469,6 +513,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ExportOutsourceQuantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.OutsourcePartQuantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OutsourceQuantity).HasColumnType("decimal(18, 5)");
 
@@ -504,23 +550,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionStepLinkDataRole_ProductionStepLinkData");
-            });
-
-            modelBuilder.Entity<ProductionStepOrder>(entity =>
-            {
-                entity.HasKey(e => new { e.ProductionStepId, e.ProductionOrderDetailId });
-
-                entity.HasOne(d => d.ProductionOrderDetail)
-                    .WithMany(p => p.ProductionStepOrder)
-                    .HasForeignKey(d => d.ProductionOrderDetailId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionStepOrder_ProductionOrderDetail");
-
-                entity.HasOne(d => d.ProductionStep)
-                    .WithMany(p => p.ProductionStepOrder)
-                    .HasForeignKey(d => d.ProductionStepId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionStepOrder_ProductionStep");
             });
 
             modelBuilder.Entity<ProductionStepRoleClient>(entity =>

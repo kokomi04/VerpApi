@@ -71,5 +71,11 @@ namespace VErpApi.Controllers.Stock.Internal
             return await _productService.GetListProductsByIds(productIds);
         }
 
+        [HttpPut]
+        [Route("{productId}/coefficient")]
+        public async Task<bool> UpdateProductCoefficientManual([FromRoute] int productId, [FromQuery] int coefficient)
+        {
+            return await _productService.UpdateProductCoefficientManual(productId, coefficient);
+        }
     }
 }
