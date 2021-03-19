@@ -35,19 +35,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Location = 11,
 
-        //[Description("Phiếu xuất/nhập kho")]
-        //Inventory = 12,
-        [Description("Phiếu YC nhập kho")]
-        RequestInventoryInput = 300,
-
-        [Description("Phiếu YC xuất kho")]
-        RequestInventoryOutput = 301,
-
-        [Description("Phiếu nhập kho")]
-        InventoryInput = 30,
-
-        [Description("Phiếu xuất kho")]
-        InventoryOutput = 31,
+     
 
         [Description("Xuất/nhập kho chi tiết")]
         InventoryDetail = 13,
@@ -108,9 +96,22 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Department = 29,
 
+        //[Description("Phiếu xuất/nhập kho")]
+        //Inventory = 12,
+        [Description("Phiếu YC nhập kho")]
+        RequestInventoryInput = 300,
+
+        [Description("Phiếu YC xuất kho")]
+        RequestInventoryOutput = 301,
+
+        [Description("Phiếu nhập kho")]
+        InventoryInput = 30,
+
+        [Description("Phiếu xuất kho")]
+        InventoryOutput = 31,
 
         [Description("Nhóm danh mục")]
-        CategoryGroup = 31,
+        CategoryGroup = 320,
 
         [Description("Loại danh mục")]
         Category = 32,
