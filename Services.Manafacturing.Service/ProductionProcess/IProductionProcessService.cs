@@ -7,6 +7,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Commons.GlobalObject;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
@@ -38,7 +39,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepId);
         Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId);
         Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId);
-        Task<NonCamelCaseDictionary> GroupProductionStepRelationShip(IList<long> productionStepIds);
+        Task<IList<GroupProductionStepToOutsource>> GroupProductionStepToOutsource(EnumContainerType containerType, long containerId, long[] productionStepIds);
         Task<bool> SetProductionStepWorkload(IList<ProductionStepWorkload> productionStepWorkload);
 
         //OutsourceRequest
@@ -46,5 +47,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         //Task<bool> UpdateMarkInvalidOutsourceStepRequest(long productionOrderId);
 
         Task<IList<ProductionStepModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId);
+
+        Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep(EnumContainerType containerType, long containerId, long[] productionStepIds);
     }
 }
