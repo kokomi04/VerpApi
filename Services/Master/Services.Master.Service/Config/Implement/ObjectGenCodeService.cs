@@ -317,9 +317,17 @@ namespace VErp.Services.Master.Service.Config.Implement
                     configObjectTypeId: EnumObjectType.ProductType,
                     configObjectId: inputType.ProductTypeId,
                     targetObjectName: inputType.ProductTypeName,
-                    fieldName: "Mã sản phẩm")
+                    fieldName: "Mã mặt hàng")
                 );
             }
+
+            result.Add(
+                    GetObjectGenCodeMappingTypeModel(
+                    moduleTypeId: EnumModuleType.Stock,
+                    targeObjectTypeId: EnumObjectType.Product,
+                    configObjectTypeId: EnumObjectType.Product,
+                    fieldName: "Mã chi tiết mặt hàng")
+                );
 
             return result;
         }
