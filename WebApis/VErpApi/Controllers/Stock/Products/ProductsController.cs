@@ -123,6 +123,14 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productService.AddProductDefault(product);
         }
 
+        [HttpPost]
+        [Route("{parentProductId}/SemiProduct")]
+        public async Task<ProductDefaultModel> AddProductSemiProduct([FromRoute] int parentProductId, [FromBody] ProductDefaultModel product)
+        {
+            return await _productService.ProductAddProductSemi(parentProductId, product);
+        }
+
+
         /// <summary>
         /// Lấy thông tin sản phẩm
         /// </summary>

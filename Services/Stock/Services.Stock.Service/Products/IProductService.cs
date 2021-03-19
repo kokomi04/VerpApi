@@ -19,6 +19,9 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<int> AddProduct(ProductModel req);
         Task<ProductDefaultModel> AddProductDefault(ProductDefaultModel req);
+
+        Task<ProductDefaultModel> ProductAddProductSemi(int parentProductId, ProductDefaultModel req);
+
         Task<int> AddProductToDb(ProductModel req);
 
         Task<ProductModel> ProductInfo(int productId);
