@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public List<ProductionStepLinkModel> ProductionStepLinks { get; set; } // dữ liệu chỉ view, không sử dụng trong CRUD 
 
         public long[] ProductionStepLinkDataOutput { get; set; }
+        public long[] ProductionStepLinkDataIntput { get; set; }
     }
 
     public class ProductionStepLinkDataOutsourceStep: ProductionStepLinkDataInput

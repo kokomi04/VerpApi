@@ -1282,18 +1282,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         private  bool TraceProductionStepInsideGroupProductionStepToOutsource(List<ProductionStepLinkDataRoleModel> roles, IList<long> stepIds, ProductionStepLinkDataRoleModel[] roleOutside)
         {
-            foreach (var role in roleOutside)
+                foreach (var role in roleOutside)
             {
                 var roleInput = roles.FirstOrDefault(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input && x.ProductionStepLinkDataId == role.ProductionStepLinkDataId);
                 
-                if (roleInput == null) return false;
+                if (roleInput == null) continue;
 
                 if (stepIds.Contains(roleInput.ProductionStepId))
                     return true;
 
                 var roleOutput = roles.Where(x => x.ProductionStepId == roleInput.ProductionStepId && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output).ToArray();
 
-                return TraceProductionStepInsideGroupProductionStepToOutsource(roles, stepIds, roleOutput);
+                if(TraceProductionStepInsideGroupProductionStepToOutsource(roles, stepIds, roleOutput)) return true;
             }
 
             return false;
@@ -1398,6 +1398,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepLinks = productionStepLinks,
                 ProductionStepLinkDataOutput = roles.Where(x => productionStepIds.Contains(x.ProductionStepId)).GroupBy(r => r.ProductionStepLinkDataId)
                     .Where(g => g.Count() == 1 && g.First().ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                    .SelectMany(r => r)
+                    .Select(x => x.ProductionStepLinkDataId)
+                    .ToArray(),
+                ProductionStepLinkDataIntput = roles.Where(x => productionStepIds.Contains(x.ProductionStepId)).GroupBy(r => r.ProductionStepLinkDataId)
+                    .Where(g => g.Count() == 1 && g.First().ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                     .SelectMany(r => r)
                     .Select(x => x.ProductionStepLinkDataId)
                     .ToArray()
