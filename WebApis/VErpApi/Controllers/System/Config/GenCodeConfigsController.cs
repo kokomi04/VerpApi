@@ -40,6 +40,12 @@ namespace VErpApi.Controllers.System
             return await _genCodeConfigService.GetInfo(customGenCodeId, fId, code, date);
         }
 
+        [HttpGet("{customGenCodeId}/baseValues")]
+        public async Task<PageData<CustomGenCodeBaseValueModel>> GetBaseValues([FromRoute] int customGenCodeId, [FromQuery] int page, [FromQuery] int size, [FromQuery] long? fId, [FromQuery] string code, [FromQuery] long? date)
+        {
+            return await _genCodeConfigService.GetBaseValues(customGenCodeId, fId, code, date, page, size);
+        }
+
         [HttpPut("{customGenCodeId}")]
         public async Task<bool> Update([FromRoute] int customGenCodeId, [FromBody] CustomGenCodeInputModel model)
         {

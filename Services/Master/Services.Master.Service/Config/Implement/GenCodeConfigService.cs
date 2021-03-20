@@ -97,7 +97,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     UpdatedTime = item.UpdatedTime != null ? ((DateTime)item.UpdatedTime).GetUnix() : 0,
                     SortOrder = item.SortOrder,
                     IsDefault = item.IsDefault,
-                    LastValues = lastBaseValues,
+                    //LastValues = lastBaseValues,
                     BaseFormat = item.BaseFormat,
                     CodeFormat = item.CodeFormat
                 };
@@ -124,15 +124,15 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
 
-            var lastValues = await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking()
-                .Select(l => new CustomGenCodeBaseValueModel
-                {
-                    CustomGenCodeId = customGenCodeId,
-                    BaseValue = l.BaseValue,
-                    LastValue = l.LastValue,
-                    LastCode = l.LastCode,
-                    Example = newCode
-                }).ToListAsync();
+            //var lastValues = await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking()
+            //    .Select(l => new CustomGenCodeBaseValueModel
+            //    {
+            //        CustomGenCodeId = customGenCodeId,
+            //        BaseValue = l.BaseValue,
+            //        LastValue = l.LastValue,
+            //        LastCode = l.LastCode,
+            //        Example = newCode
+            //    }).ToListAsync();
 
             var lastValueEntity = (await FindBaseValue(customGenCodeId, obj.BaseFormat, fId, code, date)).data;
             var currentLastValue = new CustomGenCodeBaseValueModel()
@@ -160,13 +160,55 @@ namespace VErp.Services.Master.Service.Config.Implement
                 UpdatedTime = obj.UpdatedTime != null ? ((DateTime)obj.UpdatedTime).GetUnix() : 0,
                 SortOrder = obj.SortOrder,
                 IsDefault = obj.IsDefault,
-                LastValues = lastValues,
+                //LastValues = lastValues,
                 CurrentLastValue = currentLastValue,
                 BaseFormat = obj.BaseFormat,
                 CodeFormat = obj.CodeFormat
             };
             return info;
         }
+
+        public async Task<PageData<CustomGenCodeBaseValueModel>> GetBaseValues(int customGenCodeId, long? fId, string code, long? date, int page, int size)
+        {
+
+            var obj = await _masterDbContext.CustomGenCode.FirstOrDefaultAsync(p => p.CustomGenCodeId == customGenCodeId);
+            if (obj == null)
+            {
+                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+            }
+
+            var stringNumber = string.Empty;
+            for (var i = 0; i < obj.CodeLength; i++)
+            {
+                stringNumber += "x";
+
+            }
+
+            var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
+
+            var query = _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking().OrderBy(c => c.BaseValue).AsQueryable();
+
+            var total = await query.CountAsync();
+
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            
+            var pagedData = await query
+                .Select(l => new CustomGenCodeBaseValueModel
+                {
+                    CustomGenCodeId = customGenCodeId,
+                    BaseValue = l.BaseValue,
+                    LastValue = l.LastValue,
+                    LastCode = l.LastCode,
+                    Example = newCode
+                }).ToListAsync();
+
+            return (pagedData, total);
+
+        }
+
 
         public async Task<bool> Update(int customGenCodeId, CustomGenCodeInputModel model)
         {
