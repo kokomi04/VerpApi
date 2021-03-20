@@ -124,7 +124,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 data = dataSet.Tables[0].ConvertData();
                 if (dataSet.Tables.Count > 1)
                 {
-                    resultData = dataSet.Tables[0].ConvertData();
+                    resultData = dataSet.Tables[1].ConvertData();
                 }
             }
 
