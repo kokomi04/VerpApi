@@ -23,7 +23,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime EndDate { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public long ProductionOrderId { get; set; }
-
         public int AssignedProgressStatus { get; set; }
         public bool IsManualFinish { get; set; }
 
