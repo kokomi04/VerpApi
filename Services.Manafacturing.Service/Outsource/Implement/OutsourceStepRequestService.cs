@@ -186,9 +186,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 OutsourceStepRequestId = request.OutsourceStepRequestId,
                 OutsourceStepRequestDate = request.CreatedDatetimeUtc.GetUnix(),
                 DetailInputs = arrOutput,
-                Roles = _mapper.Map<ICollection<ProductionStepLinkDataRoleModel>>(roles),
                 IsInvalid = request.IsInvalid,
-                OutsourceStepRequestStatusId = request.OutsourceStepRequestStatusId
+                OutsourceStepRequestStatusId = request.OutsourceStepRequestStatusId,
+                Setting = request.Setting.JsonDeserialize<OutsourceStepSetting>()
             };
         }
 
@@ -215,22 +215,33 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 request.OutsourceStepRequestFinishDate = requestModel.OutsourceStepRequestFinishDate.UnixToDateTime(0);
                 request.IsInvalid = false;
+                request.Setting = requestModel.Setting.JsonSerialize();
 
-                var requestDetail = await _manufacturingDBContext.OutsourceStepRequestData
+                var oldDetail = await _manufacturingDBContext.OutsourceStepRequestData
                     .Where(d => d.OutsourceStepRequestId == outsourceStepRequestId)
                     .ToListAsync();
+                _manufacturingDBContext.OutsourceStepRequestData.RemoveRange(oldDetail);
+                await _manufacturingDBContext.SaveChangesAsync();
 
-                foreach (var d in requestDetail)
+                var lsLinkDataOutput = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas
+                    .Where(x => requestModel.ProductionProcessOutsource.ProductionStepLinkDataOutput.Contains(x.ProductionStepLinkDataId));
+                // Create outsourceStepRequestData
+                foreach (var d in lsLinkDataOutput)
                 {
-                    var s = requestModel.DetailInputs.FirstOrDefault(x => x.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-                    if (s == null)
-                        throw new BadRequestException(GeneralCode.InternalError, "Không tìm thấy chi tiết trong yêu cầu gia công công đoạn");
-                    d.Quantity = s.Quantity;
+                    if (d.OutsourceQuantity > 0)
+                        _manufacturingDBContext.OutsourceStepRequestData.Add(new OutsourceStepRequestData
+                        {
+                            OutsourceStepRequestId = request.OutsourceStepRequestId,
+                            ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                            Quantity = d.OutsourceQuantity,
+                            ProductionStepLinkDataRoleTypeId = 2,
+                        });
                 }
+
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 // Update productionStep and linkData
-                await SyncInfoForProductionProcess(requestModel, request.OutsourceStepRequestId);
+                await SyncInfoForProductionProcess(requestModel.ProductionProcessOutsource, request.OutsourceStepRequestId);
 
                 await trans.CommitAsync();
 
@@ -247,42 +258,25 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        private async Task SyncInfoForProductionProcess(OutsourceStepRequestInput requestModel, long outsourceStepRequestId)
+        private async Task SyncInfoForProductionProcess(ProductionProcessOutsourceStep processOutsourceStep, long outsourceStepRequestId)
         {
-            var productionSteps = await _manufacturingDBContext.ProductionStep.Where(x => requestModel.ProductionStepIds.Contains(x.ProductionStepId))
-                                .ToListAsync();
-
-            var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
-                .Where(x => requestModel.ProductionStepIds.Contains(x.ProductionStepId))
+            var productionSteps = await _manufacturingDBContext.ProductionStep
+                .Where(x => processOutsourceStep.ProductionSteps.Select(s => s.ProductionStepId).Contains(x.ProductionStepId))
                 .ToListAsync();
-            var arrLinkDataId = roles.Select(x => x.ProductionStepLinkDataId).Distinct();
-            var arrLinkDataInputId = roles.GroupBy(r => r.ProductionStepLinkDataId)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.First())
-                .Where(l => l.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
-                .Select(x => x.ProductionStepLinkDataId);
 
-            var productionStepLinkDatas = (await _manufacturingDBContext.ProductionStepLinkData
-                .Where(x => arrLinkDataId.Contains(x.ProductionStepLinkDataId))
-                .ToListAsync()).OrderBy(x => arrLinkDataInputId.Contains(x.ProductionStepLinkDataId)  ? 2 : requestModel.DetailInputs.Any(y => y.ProductionStepLinkDataId == x.ProductionStepLinkDataId) ? 0: 1);
+            var productionStepLinkDatas = await _manufacturingDBContext.ProductionStepLinkData
+                .Where(x => processOutsourceStep.ProductionStepLinkDatas.Select(s => s.ProductionStepLinkDataId).Contains(x.ProductionStepLinkDataId))
+                .ToListAsync();
 
             productionSteps.ForEach(x => x.OutsourceStepRequestId = outsourceStepRequestId);
 
-            decimal rateQuantity = 1;
             foreach (var ld in productionStepLinkDatas)
             {
-                var d = requestModel.DetailInputs.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId);
-                if (d != null)
+                var source = processOutsourceStep.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId);
+                if(source != null)
                 {
-                    rateQuantity = Math.Round(d.Quantity / ld.QuantityOrigin, 5);
-                }
-                if (!arrLinkDataInputId.Contains(ld.ProductionStepLinkDataId))
-                {
-                    ld.OutsourceQuantity = d != null ? d.Quantity : rateQuantity * ld.QuantityOrigin;
-                }
-                else
-                {
-                    ld.ExportOutsourceQuantity = rateQuantity * ld.QuantityOrigin;
+                    ld.OutsourceQuantity = source.OutsourceQuantity;
+                    ld.ExportOutsourceQuantity = source.ExportOutsourceQuantity;
                 }
             }
 
@@ -845,9 +839,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (requestModel.DetailInputs.Count == 0)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không có chi tiết gia công");
-
                 CustomGenCodeOutputModel currentConfig = null;
                 string outsourceStepRequestCode = string.Empty;
 
@@ -878,27 +869,31 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     OutsourceStepRequestFinishDate = requestModel.OutsourceStepRequestFinishDate.UnixToDateTime(0),
                     ProductionOrderId = requestModel.ProductionOrderId,
                     IsInvalid = false,
-                    OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed
+                    OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Unprocessed,
+                    Setting = requestModel.Setting.JsonSerialize()
                 };
 
                 _manufacturingDBContext.OutsourceStepRequest.Add(entiryRequest);
                 await _manufacturingDBContext.SaveChangesAsync();
 
+                var lsLinkDataOutput = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas
+                    .Where(x => requestModel.ProductionProcessOutsource.ProductionStepLinkDataOutput.Contains(x.ProductionStepLinkDataId));
                 // Create outsourceStepRequestData
-                foreach (var d in requestModel.DetailInputs)
+                foreach (var d in lsLinkDataOutput)
                 {
-                    _manufacturingDBContext.OutsourceStepRequestData.Add(new OutsourceStepRequestData
-                    {
-                        OutsourceStepRequestId = entiryRequest.OutsourceStepRequestId,
-                        ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                        Quantity = d.Quantity,
-                        ProductionStepLinkDataRoleTypeId = 2,
-                    });
+                    if (d.OutsourceQuantity > 0)
+                        _manufacturingDBContext.OutsourceStepRequestData.Add(new OutsourceStepRequestData
+                        {
+                            OutsourceStepRequestId = entiryRequest.OutsourceStepRequestId,
+                            ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                            Quantity = d.OutsourceQuantity,
+                            ProductionStepLinkDataRoleTypeId = 2,
+                        });
                 }
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 // Update productionStep and linkData
-                await SyncInfoForProductionProcess(requestModel, entiryRequest.OutsourceStepRequestId);
+                await SyncInfoForProductionProcess(requestModel.ProductionProcessOutsource, entiryRequest.OutsourceStepRequestId);
 
                 await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
 

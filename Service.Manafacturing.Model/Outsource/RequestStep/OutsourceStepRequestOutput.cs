@@ -17,10 +17,10 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public long OutsourceStepRequestDate { get; set; }
         public bool IsInvalid { get; set; }
         public int OutsourceStepRequestStatusId { get; set; }
+        public OutsourceStepSetting Setting { get; set; }
 
         public ICollection<OutsourceStepRequestDetailOutput> DetailInputs { get; set; }
         public ICollection<long> ProductionStepIds { get; set; }
-        public ICollection<ProductionStepLinkDataRoleModel> Roles { get; set; }
     }
 
     public class OutsourceStepRequestDetailOutput

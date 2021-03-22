@@ -254,6 +254,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.ProductionOrderId });
 
+                entity.Property(e => e.ProductionStepId).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.Productivity).HasColumnType("decimal(18, 5)");
