@@ -53,6 +53,13 @@ namespace VErpApi.Controllers.Accountancy.Data
             return await _calcPeriodService.CalcPeriodInfo<CalcProductPriceGetTableInput, CalcProductPriceGetTableOutput>(EnumCalcPeriodType.CalcProductPrice, calcPeriodId).ConfigureAwait(true);
         }
 
+        [HttpDelete]
+        [Route("CalcProductPriceTablePeriods/{calcPeriodId}")]
+        public async Task<bool> CalcProductPriceTablePeriodsDelete([FromRoute] long calcPeriodId)
+        {
+            return await _calcPeriodService.Delete(EnumCalcPeriodType.CalcProductPrice, calcPeriodId).ConfigureAwait(true);
+        }
+
         [HttpPost]
         [VErpAction(EnumActionType.Update)]
         [Route("CalcProductOutputPrice")]
@@ -92,6 +99,13 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<CalcPeriodView<CalcProfitAndLossInput, CalcProfitAndLossTableOutput>> CalcProfitAndLossPeriodInfo([FromRoute] long calcPeriodId)
         {
             return await _calcPeriodService.CalcPeriodInfo<CalcProfitAndLossInput, CalcProfitAndLossTableOutput>(EnumCalcPeriodType.CalcProfitAndLoss, calcPeriodId).ConfigureAwait(true);
+        }
+
+        [HttpDelete]
+        [Route("CalcProfitAndLossPeriods/{calcPeriodId}")]
+        public async Task<bool> CalcProfitAndLossPeriodDelete([FromRoute] long calcPeriodId)
+        {
+            return await _calcPeriodService.Delete(EnumCalcPeriodType.CalcProfitAndLoss, calcPeriodId).ConfigureAwait(true);
         }
 
     }
