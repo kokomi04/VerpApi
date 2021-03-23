@@ -90,7 +90,5 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
             InventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
             MaterialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
         }
-
     }
-
 }
