@@ -37,6 +37,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.GetProductionAssignments(productionOrderId);
         }
 
+        [HttpGet]
+        [Route("{productionOrderId}/{productionStepId}/{departmentId}")]
+        public async Task<ProductionAssignmentModel> GetProductionAssignment([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId)
+        {
+            return await _productionAssignmentService.GetProductionAssignment(productionOrderId, productionStepId, departmentId);
+        }
+
         [HttpPut]
         [Route("{productionStepId}/{productionOrderId}")]
         public async Task<bool> UpdateProductionAssignment([FromRoute] long productionStepId, [FromRoute] long productionOrderId, [FromBody] ProductionAssignmentInputModel data)
@@ -55,7 +62,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionOrderId}/{productionStepId}/{departmentId}/status/{status}")]
-        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionStepId, [FromRoute] long productionOrderId, [FromRoute] int departmentId, EnumAssignedProgressStatus status)
+        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId, EnumAssignedProgressStatus status)
         {
             return await _productionAssignmentService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId, status);
         }

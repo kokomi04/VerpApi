@@ -26,6 +26,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Commons.Constants;
+using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
@@ -58,6 +59,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .Where(a => a.ProductionOrderId == productionOrderId)
                 .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+        }
+
+        public async Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId)
+        {
+            var assignment = await _manufacturingDBContext.ProductionAssignment
+                .Include(a => a.ProductionAssignmentDetail)
+                .Where(a => a.ProductionOrderId == productionOrderId
+                && a.ProductionStepId == productionStepId
+                && a.DepartmentId == departmentId)
+                .FirstOrDefaultAsync();
+            return _mapper.Map<ProductionAssignmentModel>(assignment);
         }
 
         public async Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data)
@@ -288,8 +300,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 _logger.LogError(ex, "UpdateProductAssignment");
                 throw;
             }
-
-
         }
 
         public async Task<bool> UpdateProductionAssignment(long productionStepId, long productionOrderId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable)
@@ -1070,6 +1080,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             try
             {
                 assignment.AssignedProgressStatus = (int)status;
+                assignment.IsManualFinish = true;
                 _manufacturingDBContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", assignment.JsonSerialize());
                 return true;

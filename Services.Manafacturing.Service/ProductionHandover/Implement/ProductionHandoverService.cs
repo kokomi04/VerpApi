@@ -56,6 +56,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 productionHandover.Status = (int)status;
                 _manufacturingDBContext.SaveChanges();
+
+                if (productionHandover.Status == (int)EnumHandoverStatus.Accepted) await ChangeAssignedProgressStatus(productionOrderId, productionHandover.FromProductionStepId, productionHandover.FromDepartmentId);
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandover.ProductionHandoverId, $"Xác nhận bàn giao công việc", productionHandover.JsonSerialize());
                 return _mapper.Map<ProductionHandoverModel>(productionHandover);
             }
@@ -84,6 +87,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHandover.ProductionOrderId = productionOrderId;
                 _manufacturingDBContext.ProductionHandover.Add(productionHandover);
                 _manufacturingDBContext.SaveChanges();
+                if (productionHandover.Status == (int)EnumHandoverStatus.Accepted) await ChangeAssignedProgressStatus(productionOrderId, productionHandover.FromProductionStepId, productionHandover.FromDepartmentId);
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandover.ProductionHandoverId, $"Tạo bàn giao công việc / yêu cầu xuất kho", data.JsonSerialize());
                 return _mapper.Map<ProductionHandoverModel>(productionHandover);
             }
@@ -106,6 +110,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại bàn giao công việc");
                 productionHandover.IsDeleted = true;
                 _manufacturingDBContext.SaveChanges();
+                if (productionHandover.Status == (int)EnumHandoverStatus.Accepted) await ChangeAssignedProgressStatus(productionHandover.ProductionOrderId, productionHandover.FromProductionStepId, productionHandover.FromDepartmentId);
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandoverId, $"Xoá bàn giao công việc", productionHandover.JsonSerialize());
                 return true;
             }
@@ -299,6 +304,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                     .ToList()
             };
+
             foreach (var inputLinkData in inputLinkDatas)
             {
                 // Nếu có nguồn vào => vật tư được bàn giao từ công đoạn trước
@@ -432,6 +438,36 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
 
             return detail;
+        }
+
+        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId)
+        {
+            var productionAssignment = _manufacturingDBContext.ProductionAssignment
+                   .Where(a => a.ProductionOrderId == productionOrderId
+                   && a.ProductionStepId == productionStepId
+                   && a.DepartmentId == departmentId)
+                   .FirstOrDefault();
+
+            if (productionAssignment?.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish && productionAssignment.IsManualFinish) return true;
+            var departmentHandoverDetail = await GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
+            var inoutDatas = departmentHandoverDetail.InputDatas.Union(departmentHandoverDetail.OutputDatas);
+            var status = inoutDatas.All(d => d.ReceivedQuantity >= d.TotalRequireQuantity) ? EnumAssignedProgressStatus.Finish : EnumAssignedProgressStatus.HandingOver;
+
+            if (productionAssignment.AssignedProgressStatus == (int)status) return true;
+
+            try
+            {
+                productionAssignment.AssignedProgressStatus = (int)status;
+                productionAssignment.IsManualFinish = false;
+                _manufacturingDBContext.SaveChanges();
+                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", productionAssignment.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductAssignment");
+                throw;
+            }
         }
     }
 }
