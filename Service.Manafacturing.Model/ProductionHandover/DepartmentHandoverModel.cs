@@ -27,12 +27,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string InOutType { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
-
+        public EnumAssignedProgressStatus AssignedProgressStatus { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DepartmentHandoverEntity, DepartmentHandoverModel>()
                 .ForMember(m => m.StartDate, v => v.MapFrom(m => m.StartDate.GetUnix()))
-                .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()));
+                .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
+                .ForMember(m => m.AssignedProgressStatus, v => v.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus));
         }
     }
 
@@ -52,6 +53,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string InOutType { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
+
+        public int AssignedProgressStatus { get; set; }
     }
 
 
