@@ -29,5 +29,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public decimal Quantity { get; set; }
         public decimal TotalOutsourceOrderQuantity { get; set; }
         public int RoleType { get; set; }
+        public string ProductionStepTitle { get; set; }
     }
 }

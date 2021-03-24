@@ -138,45 +138,48 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var request = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
                 .Include(x => x.ProductionStep)
+                .ThenInclude(s=>s.Step)
                 .Include(x => x.OutsourceStepRequestData)
                 .FirstOrDefaultAsync(x => x.OutsourceStepRequestId == outsourceStepRequestId);
-
+            var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
+                .Where(x => request.ProductionStep.Select(x => x.ProductionStepId).Contains(x.ProductionStepId))
+                .ToListAsync();
             var arrLinkDataId = request.OutsourceStepRequestData.Select(x => x.ProductionStepLinkDataId).ToArray();
             Dictionary<long, decimal> totalOutsourceOrderQuantityMap = await CalcTotalOutsourceOrderQuantity(arrLinkDataId);
 
-            var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
-                .Where(x => request.ProductionStep.Select(x => x.ProductionStepId).Contains(x.ProductionStepId))
-                .Include(x => x.ProductionStepLinkData)
-
-                .ToListAsync();
-
-            var arrLinkDataInput = roles.GroupBy(r => r.ProductionStepLinkDataId)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.First())
-                .Where(l => l.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
-                .Select(x => x.ProductionStepLinkData);
-
-
-            var arrOutput = request.OutsourceStepRequestData.Select(x => new OutsourceStepRequestDetailOutput
-            {
-                ProductionStepLinkDataId = x.ProductionStepLinkDataId,
-                Quantity = x.Quantity.GetValueOrDefault(),
-                TotalOutsourceOrderQuantity = totalOutsourceOrderQuantityMap.ContainsKey(x.ProductionStepLinkDataId) ? totalOutsourceOrderQuantityMap[x.ProductionStepLinkDataId] : 0,
-                RoleType = (int)EnumProductionStepLinkDataRoleType.Output
+            var arrOutput = request.OutsourceStepRequestData.Select(x => {
+                var role = roles.FirstOrDefault(r => r.ProductionStepLinkDataId == x.ProductionStepLinkDataId && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output);
+                var productionStepInfo = request.ProductionStep.FirstOrDefault(s => s.ProductionStepId == role.ProductionStepId);
+                return new OutsourceStepRequestDetailOutput
+                {
+                    ProductionStepLinkDataId = x.ProductionStepLinkDataId,
+                    Quantity = x.Quantity.GetValueOrDefault(),
+                    TotalOutsourceOrderQuantity = totalOutsourceOrderQuantityMap.ContainsKey(x.ProductionStepLinkDataId) ? totalOutsourceOrderQuantityMap[x.ProductionStepLinkDataId] : 0,
+                    RoleType = (int)EnumProductionStepLinkDataRoleType.Output,
+                    ProductionStepTitle =$"{productionStepInfo.Step.StepName} #({productionStepInfo.ProductionStepId})"
+                };
             }).ToList();
 
-            var ldOutPut = roles.FirstOrDefault(x => x.ProductionStepLinkDataId == arrOutput.FirstOrDefault().ProductionStepLinkDataId).ProductionStepLinkData;
-            decimal rateQuantity = Math.Round(ldOutPut.OutsourceQuantity.GetValueOrDefault() / ldOutPut.QuantityOrigin, 5);
 
-            var arrInput = arrLinkDataInput.Select(x => new OutsourceStepRequestDetailOutput
-            {
-                ProductionStepLinkDataId = x.ProductionStepLinkDataId,
-                Quantity = Math.Round(x.QuantityOrigin * rateQuantity, 5),
-                TotalOutsourceOrderQuantity = Math.Round(Math.Round(arrOutput[0].TotalOutsourceOrderQuantity / arrOutput[0].Quantity, 5) * x.QuantityOrigin, 5),
-                RoleType = (int)EnumProductionStepLinkDataRoleType.Input
-            });
 
-            arrOutput.AddRange(arrInput);
+            //var arrLinkDataInput = roles.GroupBy(r => r.ProductionStepLinkDataId)
+            //    .Where(g => g.Count() == 1)
+            //    .Select(g => g.First())
+            //    .Where(l => l.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+            //    .Select(x => x.ProductionStepLinkData);
+
+            //var ldOutPut = roles.FirstOrDefault(x => x.ProductionStepLinkDataId == arrOutput.FirstOrDefault().ProductionStepLinkDataId).ProductionStepLinkData;
+            //decimal rateQuantity = Math.Round(ldOutPut.OutsourceQuantity.GetValueOrDefault() / ldOutPut.QuantityOrigin, 5);
+
+            //var arrInput = arrLinkDataInput.Select(x => new OutsourceStepRequestDetailOutput
+            //{
+            //    ProductionStepLinkDataId = x.ProductionStepLinkDataId,
+            //    Quantity = Math.Round(x.QuantityOrigin * rateQuantity, 5),
+            //    TotalOutsourceOrderQuantity = Math.Round(Math.Round(arrOutput[0].TotalOutsourceOrderQuantity / arrOutput[0].Quantity, 5) * x.QuantityOrigin, 5),
+            //    RoleType = (int)EnumProductionStepLinkDataRoleType.Input
+            //});
+
+            //arrOutput.AddRange(arrInput);
             return new OutsourceStepRequestOutput
             {
                 OutsourceStepRequestCode = request.OutsourceStepRequestCode,

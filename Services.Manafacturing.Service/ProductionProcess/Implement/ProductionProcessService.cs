@@ -1219,31 +1219,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 indexGroup++;
             }
 
-            foreach (var (key, value) in groupRelationship)
-            {
-                var stepIds = value as IList<long>;
-                var calcTotalOutputMap = roles.Where(x => stepIds.Contains(x.ProductionStepId) && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                    .GroupBy(r => r.ProductionStepId)
-                    .ToDictionary(k => k.Key, v => v.Count());
-                var roleOutside = roles.Where(x => stepIds.Contains(x.ProductionStepId) )
-                    .GroupBy(r => r.ProductionStepLinkDataId)
-                    .Where(g => g.Count() == 1 && g.First().ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                    .SelectMany(r => r)
-                    .GroupBy(r => r.ProductionStepId)
-                    .Where(g => g.Count() < calcTotalOutputMap[g.Key])
-                    .SelectMany(r => r)
-                    .ToArray();
+            //foreach (var (key, value) in groupRelationship)
+            //{
+            //    var stepIds = value as IList<long>;
+            //    var calcTotalOutputMap = roles.Where(x => stepIds.Contains(x.ProductionStepId) && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+            //        .GroupBy(r => r.ProductionStepId)
+            //        .ToDictionary(k => k.Key, v => v.Count());
+            //    var roleOutside = roles.Where(x => stepIds.Contains(x.ProductionStepId) )
+            //        .GroupBy(r => r.ProductionStepLinkDataId)
+            //        .Where(g => g.Count() == 1 && g.First().ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+            //        .SelectMany(r => r)
+            //        .GroupBy(r => r.ProductionStepId)
+            //        .Where(g => g.Count() < calcTotalOutputMap[g.Key])
+            //        .SelectMany(r => r)
+            //        .ToArray();
                
 
-                if (roleOutside.Length > 0 && TraceProductionStepInsideGroupProductionStepToOutsource(roles, stepIds, roleOutside))
-                {
-                    groupRelationship.Remove(key);
-                }
+            //    if (roleOutside.Length > 0 && TraceProductionStepInsideGroupProductionStepToOutsource(roles, stepIds, roleOutside))
+            //    {
+            //        groupRelationship.Remove(key);
+            //    }
 
-            }
+            //}
 
-            if (groupRelationship.Count() == 0)
-                throw new BadRequestException(GeneralCode.InternalError, "Nhóm công đoạn không thể đi gia công do tồn tại công đoạn kết nối trung gian");
+            //if (groupRelationship.Count() == 0)
+            //    throw new BadRequestException(GeneralCode.InternalError, "Nhóm công đoạn không thể đi gia công do tồn tại công đoạn kết nối trung gian");
 
             foreach(var (key, value) in groupRelationship)
             {
