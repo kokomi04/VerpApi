@@ -330,6 +330,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 if (item != null)
                 {
                     item.TotalRequireQuantity += inputLinkData.Quantity;
+                    item.OutsourceQuantity += inputLinkData.OutsourceQuantity;
                 }
                 else
                 {
@@ -366,6 +367,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         ObjectId = inputLinkData.ObjectId,
                         ObjectTypeId = inputLinkData.ObjectTypeId,
                         TotalRequireQuantity = inputLinkData.Quantity,
+                        OutsourceQuantity = inputLinkData.OutsourceQuantity,
                         ReceivedQuantity = receivedQuantity,
                         FromStepTitle = fromStepId.HasValue ? $"{fromStep.StepName}(#{fromStep.ProductionStepId})" : "Kho",
                         FromStepId = fromStepId,
@@ -397,6 +399,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 if (item != null)
                 {
                     item.TotalRequireQuantity += outputLinkData.Quantity;
+                    item.OutsourceQuantity += outputLinkData.OutsourceQuantity;
                 }
                 else
                 {
@@ -431,6 +434,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         ObjectId = outputLinkData.ObjectId,
                         ObjectTypeId = outputLinkData.ObjectTypeId,
                         TotalRequireQuantity = outputLinkData.Quantity,
+                        OutsourceQuantity = outputLinkData.OutsourceQuantity,
                         ReceivedQuantity = receivedQuantity,
                         ToStepTitle = toStepId.HasValue ? $"{toStep.StepName}(#{toStep.ProductionStepId})" : "Kho",
                         ToStepId = toStepId,
