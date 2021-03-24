@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
@@ -25,6 +26,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string BillCode { get; set; }
         public string BillSerial { get; set; }
         public long BillDate { get; set; }
+        public EnumModuleType ModuleTypeId { get; set; }
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
     }
@@ -56,6 +58,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.BillCode, otp => otp.MapFrom(source => source.InventoryRequirement.BillCode))
                 .ForMember(dest => dest.BillSerial, otp => otp.MapFrom(source => source.InventoryRequirement.BillSerial))
                 .ForMember(dest => dest.BillDate, otp => otp.MapFrom(source => source.InventoryRequirement.BillDate.GetUnix()))
+                .ForMember(dest => dest.ModuleTypeId, otp => otp.MapFrom(source => source.InventoryRequirement.ModuleTypeId))
                 .ForMember(dest => dest.InventoryRequirementId, otp => otp.MapFrom(source => source.InventoryRequirement.InventoryRequirementId))
                 .ForMember(dest => dest.CensorByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CensorByUserId))
                 .ForMember(dest => dest.CensorDatetimeUtc, otp => otp.MapFrom(source => source.InventoryRequirement.CensorDatetimeUtc.GetUnix()))
