@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public bool IsManualFinish { get; set; }
-        public EnumAssignedProgressStatus AssignedProgressStatus { get; set; }
+        public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
         public ProductionAssignmentModel()
