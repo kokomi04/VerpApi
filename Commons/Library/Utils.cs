@@ -869,7 +869,18 @@ namespace VErp.Commons.Library
                 foreach (PropertyInfo pro in props)
                 {
                     if (pro.Name == column.ColumnName && dr[column.ColumnName] != DBNull.Value)
-                        pro.SetValue(obj, dr[column.ColumnName], null);
+                    {
+                        try
+                        {
+                            pro.SetValue(obj, dr[column.ColumnName], null);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                       
+                    }
                     else
                         continue;
                 }
