@@ -176,11 +176,81 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             //Tính toán mối quan hệ giữa (stepLink) các công đoạn
             var productionStepLinks = CalcProductionStepLink(roles, productionStepGroupLinkDataRoles);
 
-            return new ProductionProcessInfo
+            var productionProcessInfo = new ProductionProcessInfo
             {
-                ProductionSteps = productionSteps,
+                ProductionSteps = SortProductionProcess(productionSteps, productionStepLinks),
                 ProductionStepLinks = productionStepLinks
             };
+
+            return productionProcessInfo;
+        }
+
+        private List<ProductionStepInfo> SortProductionProcess(List<ProductionStepInfo> productionSteps, List<ProductionStepLinkModel> productionStepLinks)
+        {
+            // Lấy danh sách cần sắp xếp
+            var sortedProductionSteps = new List<ProductionStepInfo>();
+
+            var lstProductionSteps = productionSteps
+                .Where(ps => ps.StepId.HasValue && !ps.IsGroup.GetValueOrDefault() && !ps.IsFinish)
+                .ToList();
+
+            var lstProductionStepIds = lstProductionSteps.Select(ps => ps.ProductionStepId).ToList();
+
+            var lstProductionStepLinks = productionStepLinks
+                .Where(l => lstProductionStepIds.Contains(l.FromStepId) && lstProductionStepIds.Contains(l.ToStepId))
+                .ToList();
+
+            // Lấy danh sách step kết thúc
+            var endProductionSteps = lstProductionSteps
+                .Where(ps => !lstProductionStepLinks.Any(l => l.FromStepId == ps.ProductionStepId))
+                .OrderBy(ps => ps.ProductionStepId)
+                .ToList();
+
+            // Duyệt tất cả step kết thúc
+            foreach(var endProductionStep in endProductionSteps)
+            {
+                sortedProductionSteps.Add(endProductionStep);
+
+                // Lấy danh sách node trước đó và không ra nhiều nhánh
+                IncludePrevProductionStep(endProductionStep.ProductionStepId, ref lstProductionSteps, ref lstProductionStepLinks, ref sortedProductionSteps);
+
+                lstProductionSteps.Remove(endProductionStep);
+                lstProductionStepLinks.RemoveAll(l => l.ToStepId == endProductionStep.ProductionStepId);
+            }
+
+           
+            sortedProductionSteps.Reverse();
+
+            sortedProductionSteps.AddRange(productionSteps
+               .Where(ps => !ps.StepId.HasValue || !ps.IsGroup.GetValueOrDefault() || ps.IsFinish)
+               .ToList());
+
+            return sortedProductionSteps;
+        }
+
+        private void IncludePrevProductionStep(long productionStepId, ref List<ProductionStepInfo> lstProductionSteps, ref List<ProductionStepLinkModel> lstProductionStepLinks, ref List<ProductionStepInfo> sortedProductionSteps)
+        {
+            var lstTempProductionStepLinks = new List<ProductionStepLinkModel>();
+            lstTempProductionStepLinks.AddRange(lstProductionStepLinks);
+
+            // Lấy danh sách node trước đó và không có nhiều nhánh đầu vào
+            var prevProductionStepIds = lstProductionStepLinks
+                .Where(l => l.ToStepId == productionStepId && !lstTempProductionStepLinks.Any(ol => ol.ToStepId != l.ToStepId && ol.FromStepId == l.FromStepId))
+                .Select(l => l.FromStepId)
+                .OrderBy(ps => ps)
+                .ToList();
+
+            foreach (var prevProductionStepId in prevProductionStepIds)
+            {
+                var prevProductionStep = lstProductionSteps.First(ps => ps.ProductionStepId == prevProductionStepId);
+                sortedProductionSteps.Add(prevProductionStep);
+
+                // Tiếp tục lấy danh sách node tiếp theo và không có nhiều nhánh đầu vào
+                IncludePrevProductionStep(prevProductionStep.ProductionStepId, ref lstProductionSteps, ref lstProductionStepLinks, ref sortedProductionSteps);
+
+                lstProductionSteps.Remove(prevProductionStep);
+                lstProductionStepLinks.RemoveAll(l => l.ToStepId == prevProductionStepId);
+            }
         }
 
         public async Task<ProductionProcessModel> GetProductionProcessByContainerId(EnumContainerType containerTypeId, long containerId)
