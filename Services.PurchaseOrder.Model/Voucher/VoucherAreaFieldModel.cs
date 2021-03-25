@@ -16,7 +16,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string FieldName { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
-        public string Title { get; set; }       
+        public string Title { get; set; }
         public string Placeholder { get; set; }
         public int SortOrder { get; set; }
         public EnumDataType DataTypeId { get; set; }
@@ -29,7 +29,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string RefTableTitle { get; set; }
         public bool IsReadOnly { get; set; }
         public ControlStructureModel Structure { get; set; }
-        protected void MappingBase<T>(Profile profile) where T: VoucherFieldInputModel
+        protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {
             profile.CreateMap<VoucherField, T>()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (EnumDataType)f.DataTypeId))
@@ -38,7 +38,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
                 .ReverseMap()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (int)f.DataTypeId))
                 .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId))
-                .ForMember(d => d.Structure, m => m.MapFrom(f => f.Structure == null? string.Empty : JsonConvert.SerializeObject(f.Structure)));
+                .ForMember(d => d.Structure, m => m.MapFrom(f => f.Structure == null ? string.Empty : JsonConvert.SerializeObject(f.Structure)));
 
         }
 
@@ -51,7 +51,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 
     public class VoucherFieldOutputModel : VoucherFieldInputModel
     {
-        public int VoucherFieldId { get; set; }   
+        public int VoucherFieldId { get; set; }
         public new void Mapping(Profile profile)
         {
             MappingBase<VoucherFieldOutputModel>(profile);
@@ -90,6 +90,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string DefaultValue { get; set; }
         public int? IdGencode { get; set; }
         public string RequireFilters { get; set; }
+        public string ReferenceUrl { get; set; }
 
         public bool Compare(VoucherAreaField curField)
         {
@@ -119,7 +120,8 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
                 OnChange == curField.OnChange &&
                 AutoFocus == curField.AutoFocus &&
                 Column == curField.Column &&
-                RequireFilters == curField.RequireFilters;
+                RequireFilters == curField.RequireFilters &&
+                ReferenceUrl == curField.ReferenceUrl;
         }
     }
 
