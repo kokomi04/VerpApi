@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
         public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
+        public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
         public virtual DbSet<ProductStockInfo> ProductStockInfo { get; set; }
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
@@ -538,6 +539,21 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasName("IDX_RootProductId");
 
                 entity.Property(e => e.PathProductIds).IsRequired();
+            });
+
+            modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
+            {
+                entity.Property(e => e.GroupCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.GroupTitle)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.MaterialConsumptionId).HasComment("Id vật tư tiêu hao");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
