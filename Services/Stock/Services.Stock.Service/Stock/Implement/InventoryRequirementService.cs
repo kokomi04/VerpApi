@@ -109,6 +109,25 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             if (entity == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
             var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
 
+            var inventoryRequirementDetailIds = model.InventoryRequirementDetail.Select(d => d.InventoryRequirementDetailId).ToList();
+
+            var inventoryDetailQuantitys = _stockDBContext.InventoryDetail
+                .Include(id => id.Inventory)
+                .Where(id => id.InventoryRequirementDetailId.HasValue && id.Inventory.IsApproved && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
+                .GroupBy(id => id.InventoryRequirementDetailId)
+                .Select(g => new
+                {
+                    InventoryRequirementDetailId = g.Key,
+                    PrimaryQuantity = g.Sum(id => id.PrimaryQuantity)
+                })
+                .ToDictionary(g => g.InventoryRequirementDetailId, g => g.PrimaryQuantity);
+
+            foreach (var inventoryRequirementDetail in model.InventoryRequirementDetail)
+            {
+                if (inventoryDetailQuantitys.ContainsKey(inventoryRequirementDetail.InventoryRequirementDetailId))
+                    inventoryRequirementDetail.InventoryQuantity = inventoryDetailQuantitys[inventoryRequirementDetail.InventoryRequirementDetailId];
+            }
+
             var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
 
             var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
@@ -416,8 +435,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 .Include(r => r.InventoryRequirementFile)
                 .Include(r => r.InventoryRequirementDetail)
                 .ThenInclude(d => d.ProductUnitConversion)
-                .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType 
-                    && r.ProductionOrderId == productionOrderId 
+                .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType
+                    && r.ProductionOrderId == productionOrderId
                     && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete);
 
             var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
