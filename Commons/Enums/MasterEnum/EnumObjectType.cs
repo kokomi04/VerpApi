@@ -243,6 +243,8 @@ namespace VErp.Commons.Enums.MasterEnum
         ActionButton = 101,
         [Description("Yêu cầu vật tư thêm")]
         [GenCodeObject]
-        ProductionMaterialsRequirement = 102
+        ProductionMaterialsRequirement = 102,
+        [Description("Vật tư tiêu hao của mặt hàng")]
+        ProductMaterialsConsumption = 321
     }
 }
