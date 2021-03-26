@@ -27,14 +27,14 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpPut]
         [Route("{productId}")]
-        public async Task<bool> UpdateProductMaterialsConsumptionService([FromRoute] int productId, [FromBody] ICollection<ProductMaterialsConsumptionModel> model)
+        public async Task<bool> UpdateProductMaterialsConsumptionService([FromRoute] int productId, [FromBody] ICollection<ProductMaterialsConsumptionInput> model)
         {
             return await _productMaterialsConsumptionService.UpdateProductMaterialsConsumptionService(productId, model);
         }
 
         [HttpGet]
         [Route("{productId}")]
-        public async Task<IEnumerable<ProductMaterialsConsumptionModel>> GetProductMaterialsConsumptionService([FromRoute] int productId)
+        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService([FromRoute] int productId)
         {
             return await _productMaterialsConsumptionService.GetProductMaterialsConsumptionService(productId);
         }

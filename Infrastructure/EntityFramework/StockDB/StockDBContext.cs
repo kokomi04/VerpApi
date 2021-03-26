@@ -543,16 +543,6 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
             {
-                entity.Property(e => e.GroupCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
-
-                entity.Property(e => e.GroupTitle)
-                    .IsRequired()
-                    .HasMaxLength(256);
-
-                entity.Property(e => e.MaterialConsumptionId).HasComment("Id vật tư tiêu hao");
-
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
             });
 
