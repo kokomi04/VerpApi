@@ -222,7 +222,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             sortedProductionSteps.Reverse();
 
             sortedProductionSteps.AddRange(productionSteps
-               .Where(ps => !ps.StepId.HasValue || !ps.IsGroup.GetValueOrDefault() || ps.IsFinish)
+               .Where(ps => !ps.StepId.HasValue || ps.IsGroup.GetValueOrDefault() || ps.IsFinish)
                .ToList());
 
             return sortedProductionSteps;
