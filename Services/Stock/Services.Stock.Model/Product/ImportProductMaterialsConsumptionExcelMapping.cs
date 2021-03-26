@@ -8,13 +8,6 @@ namespace VErp.Services.Stock.Model.Product
     [Display(Name = "Vật tư tiêu hao")]
     public class ImportProductMaterialsConsumptionExcelMapping
     {
-        [Display(Name = "Mã nhóm vật tư tiêu hao", GroupName = "Thông tin chung")]
-        [Required(ErrorMessage = "Vui lòng nhập mã nhóm vật tư tiêu hao")]
-        public string GroupCode { get; set; }
-        [Display(Name = "Tên nhóm vật tư tiêu hao", GroupName = "Thông tin chung")]
-        [Required(ErrorMessage = "Vui lòng nhập tên nhóm vật tư tiêu hao")]
-        public string GroupTitle { get; set; }
-
         [Display(Name = "Mã mặt hàng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng chính")]
         public string ProductCode { get; set; }
