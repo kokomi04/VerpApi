@@ -739,9 +739,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                        ps.ProductionStepId,
                                        sd.DepartmentId
                                    })
-                                 .ToList()
-                                 .GroupBy(sd => sd.ProductionStepId)
-                                 .ToDictionary(sd => sd.Key, sd => sd.Select(sd => sd.DepartmentId).ToList());
+                                   .ToList()
+                                   .GroupBy(sd => sd.ProductionStepId)
+                                   .ToDictionary(sd => sd.Key, sd => sd.Select(sd => sd.DepartmentId)
+                                   .ToList());
 
             var productionStepIds = productionSteps.Select(ps => ps.ProductionStepId).ToList();
             var departmentIds = departmentIdMap.SelectMany(sd => sd.Value).ToList();
