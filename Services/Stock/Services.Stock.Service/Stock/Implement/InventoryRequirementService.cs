@@ -327,8 +327,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
                 if (inventoryRequirement == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
 
-                if (inventoryRequirement.ProductionOrderId.HasValue)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
+                //if (inventoryRequirement.ProductionOrderId.HasValue)
+                //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
 
                 await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
 

@@ -50,42 +50,88 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int productId)
         {
             var productBom = (await _productBomService.GetBom(productId)).Where(x => !x.IsMaterial);
-
             var productMap = CalcProductBomTotalQuantity(productBom);
 
-            var materialsConsumInheri = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                .Where(x => productMap.Keys.Contains(x.ProductId))
-                .ProjectTo<ProductMaterialsConsumptionInput>(_mapper.ConfigurationProvider)
-                .ToList();
-            materialsConsumInheri.ForEach(x => x.Quantity *= productMap[x.MaterialsConsumptionId]);
-
-            var result =  materialsConsumInheri.GroupBy(x => x.MaterialsConsumptionId)
-                .Select(g => new ProductMaterialsConsumptionOutput
-                {
-                    Quantity = decimal.Zero,
-                    MaterialsConsumptionId = g.Key,
-                    DepartmentId = g.First().DepartmentId,
-                    StepId = g.First().StepId,
-                    TotalQuantityInheritance = g.Sum(x => x.Quantity),
-                    ProductId = productId,
-                }).ToList();
-
-            var materialsConsum = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                .Where(x => x.ProductId == productId)
+            var materialsConsumptionInheri = (_stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+                .Where(x => productBom.Select(x => x.ChildProductId).Contains(x.ProductId))
                 .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
-                .ToList();
+                .ToList());
 
-            foreach(var m in materialsConsum)
+            await FindMaterialsConsumpMissing(productId, materialsConsumptionInheri);
+
+            var materialsConsumption = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+                            .Where(x => x.ProductId == productId)
+                            .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            foreach (var group in materialsConsumption.GroupBy(x => x.ProductMaterialsConsumptionGroupId))
             {
-                var mInheri = materialsConsumInheri.FirstOrDefault(x => x.MaterialsConsumptionId == m.MaterialsConsumptionId);
-                if (mInheri == null)
-                    result.Add(m);
-                else
+                foreach (var m in group)
                 {
-                    mInheri.Quantity = m.Quantity;
-                    mInheri.StepId = m.StepId;
-                    mInheri.DepartmentId = m.DepartmentId;
+                    var boms = productBom.Where(x => x.Level == 1);
+                    m.MaterialsConsumptionInheri = LoopCalcMaterialsConsump(productBom
+                        , boms
+                        , materialsConsumptionInheri
+                        , productMap
+                        , m.MaterialsConsumptionId
+                        , m.ProductMaterialsConsumptionGroupId);
                 }
+            }
+
+            return materialsConsumption.Select(x=>x);
+        }
+
+        private async Task<bool> FindMaterialsConsumpMissing(int productId, List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri)
+        {
+            var materialsConsumption = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+                            .Where(x => x.ProductId == productId)
+                            .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            var newTemp = materialsConsumptionInheri.Where(x => IsCheckNotExistsMaterialsConsumpOrGroup(materialsConsumption, x))
+                .Select(x => new ProductMaterialsConsumption
+                {
+                    ProductId = productId,
+                    MaterialsConsumptionId = x.MaterialsConsumptionId,
+                    Quantity = 0,
+                    ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId
+                })
+                .ToArray();
+
+            await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(newTemp);
+            await _stockDbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        private bool IsCheckNotExistsMaterialsConsumpOrGroup(IEnumerable<ProductMaterialsConsumptionOutput> materials, ProductMaterialsConsumptionOutput item)
+        {
+            return materials.Count() == 0 || materials.Any(x => x.ProductMaterialsConsumptionGroupId != item.ProductMaterialsConsumptionGroupId
+             || x.MaterialsConsumptionId != item.MaterialsConsumptionId);
+        }
+
+        private IList<ProductMaterialsConsumptionOutput> LoopCalcMaterialsConsump(IEnumerable<ProductBomOutput> productBom
+            , IEnumerable<ProductBomOutput> level
+            , IEnumerable<ProductMaterialsConsumptionOutput> materialsConsumptions
+            , Dictionary<int?, decimal> productMap
+            , int consumpId
+            , int groupId)
+        {
+            var result = new List<ProductMaterialsConsumptionOutput>();
+            foreach (var bom in level)
+            {
+                var consump = materialsConsumptions.FirstOrDefault(x => x.ProductId == bom.ChildProductId 
+                        && x.MaterialsConsumptionId == consumpId
+                        && x.ProductMaterialsConsumptionGroupId == groupId);
+                if(consump != null)
+                {
+                    var child = productBom.Where(x => x.ProductId == bom.ChildProductId);
+                    consump.BomQuantity = productMap[bom.ChildProductId];
+                    consump.MaterialsConsumptionInheri = LoopCalcMaterialsConsump(productBom, child, materialsConsumptions, productMap, consumpId, groupId);
+                
+                    result.Add(consump);
+                }
+
             }
 
             return result;
@@ -97,7 +143,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productMap = new Dictionary<int?, decimal>();
             foreach (var bom in level1)
             {
-                var totalQuantity = bom.Quantity * bom.Wastage;
+                var totalQuantity = bom.Quantity; // không có tiêu hao
                 if (productMap.ContainsKey(bom.ChildProductId))
                     productMap[bom.ChildProductId] += totalQuantity;
                 else

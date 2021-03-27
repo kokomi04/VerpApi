@@ -36,6 +36,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
         public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
         public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
+        public virtual DbSet<ProductMaterialsConsumptionGroup> ProductMaterialsConsumptionGroup { get; set; }
         public virtual DbSet<ProductStockInfo> ProductStockInfo { get; set; }
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
@@ -544,6 +545,23 @@ namespace VErp.Infrastructure.EF.StockDB
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
             {
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.ProductMaterialsConsumptionGroup)
+                    .WithMany(p => p.ProductMaterialsConsumption)
+                    .HasForeignKey(d => d.ProductMaterialsConsumptionGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterialsConsumption_ProductMaterialsConsumptionGroup");
+            });
+
+            modelBuilder.Entity<ProductMaterialsConsumptionGroup>(entity =>
+            {
+                entity.Property(e => e.ProductMaterialsConsumptionGroupCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
