@@ -6,10 +6,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Products;
 
@@ -19,10 +22,13 @@ namespace VErpApi.Controllers.Stock.Products
     public class ProductMaterialsConsumptionController : VErpBaseController
     {
         private readonly IProductMaterialsConsumptionService _productMaterialsConsumptionService;
+        private readonly IProductMaterialsConsumptionGroupService _productMaterialsConsumptionGroupService;
 
-        public ProductMaterialsConsumptionController(IProductMaterialsConsumptionService productMaterialsConsumptionService)
+        public ProductMaterialsConsumptionController(IProductMaterialsConsumptionService productMaterialsConsumptionService
+            , IProductMaterialsConsumptionGroupService productMaterialsConsumptionGroupService)
         {
             _productMaterialsConsumptionService = productMaterialsConsumptionService;
+            _productMaterialsConsumptionGroupService = productMaterialsConsumptionGroupService;
         }
 
         [HttpPut]
@@ -56,6 +62,42 @@ namespace VErpApi.Controllers.Stock.Products
             }
 
             return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMapping(productId, JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("groups/search")]
+        public async Task<PageData<ProductMaterialsConsumptionGroupModel>> SearchProductMaterialsConsumptionGroup([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _productMaterialsConsumptionGroupService.SearchProductMaterialsConsumptionGroup(keyword, page, size);
+        }
+
+        [HttpPost]
+        [Route("groups")]
+        public async Task<int> AddProductMaterialsConsumptionGroup([FromBody] ProductMaterialsConsumptionGroupModel model)
+        {
+            return await _productMaterialsConsumptionGroupService.AddProductMaterialsConsumptionGroup(model);
+        }
+
+        [HttpPut]
+        [Route("groups/{groupId}")]
+        public async Task<bool> UpdateProductMaterialsConsumptionGroup([FromRoute] int groupId, [FromBody] ProductMaterialsConsumptionGroupModel model)
+        {
+            return await _productMaterialsConsumptionGroupService.UpdateProductMaterialsConsumptionGroup(groupId, model);
+        }
+
+        [HttpGet]
+        [Route("groups/{groupId}")]
+        public async Task<ProductMaterialsConsumptionGroupModel> GetProductMaterialsConsumptionGroup([FromRoute] int groupId)
+        {
+            return await _productMaterialsConsumptionGroupService.GetProductMaterialsConsumptionGroup(groupId);
+        }
+
+        [HttpDelete]
+        [Route("groups/{groupId}")]
+        public async Task<bool> UpdateProductMaterialsConsumptionGroup([FromRoute]  int groupId)
+        {
+            return await _productMaterialsConsumptionGroupService.DeleteProductMaterialsConsumptionGroup(groupId);
         }
     }
 }

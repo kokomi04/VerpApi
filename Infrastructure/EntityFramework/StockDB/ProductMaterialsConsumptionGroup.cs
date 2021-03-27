@@ -3,15 +3,16 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.StockDB
 {
-    public partial class ProductMaterialsConsumption
+    public partial class ProductMaterialsConsumptionGroup
     {
-        public long ProductMaterialsConsumptionId { get; set; }
+        public ProductMaterialsConsumptionGroup()
+        {
+            ProductMaterialsConsumption = new HashSet<ProductMaterialsConsumption>();
+        }
+
         public int ProductMaterialsConsumptionGroupId { get; set; }
-        public int ProductId { get; set; }
-        public int MaterialsConsumptionId { get; set; }
-        public decimal Quantity { get; set; }
-        public int? StepId { get; set; }
-        public int? DepartmentId { get; set; }
+        public string ProductMaterialsConsumptionGroupCode { get; set; }
+        public string Title { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
@@ -19,6 +20,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual ProductMaterialsConsumptionGroup ProductMaterialsConsumptionGroup { get; set; }
+        public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
     }
 }
