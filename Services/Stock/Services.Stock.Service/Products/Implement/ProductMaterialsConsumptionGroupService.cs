@@ -61,7 +61,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<bool> UpdateProductMaterialsConsumptionGroup(int groupId, ProductMaterialsConsumptionGroupModel model)
         {
             var group = _stockDbContext.ProductMaterialsConsumptionGroup.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId == groupId);
-            if (group != null)
+            if (group == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy vật tư tiêu hao");
 
             if(group.ProductMaterialsConsumptionGroupCode != model.ProductMaterialsConsumptionGroupCode)
@@ -81,7 +81,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<bool> DeleteProductMaterialsConsumptionGroup(int groupId)
         {
             var group = _stockDbContext.ProductMaterialsConsumptionGroup.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId == groupId);
-            if (group != null)
+            if (group == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy vật tư tiêu hao");
             group.IsDeleted = true;
             await _stockDbContext.SaveChangesAsync();
@@ -91,7 +91,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<ProductMaterialsConsumptionGroupModel> GetProductMaterialsConsumptionGroup(int groupId)
         {
             var group = await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().FirstOrDefaultAsync(x => x.ProductMaterialsConsumptionGroupId == groupId);
-            if (group != null)
+            if (group == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy vật tư tiêu hao");
 
             return _mapper.Map<ProductMaterialsConsumptionGroupModel>(group);
