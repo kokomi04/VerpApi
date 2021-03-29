@@ -116,6 +116,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
+                entity.HasIndex(e => new { e.InventoryId, e.ProductId, e.PrimaryQuantity, e.ProductUnitConversionId, e.IsDeleted })
+                    .HasName("IDX_InventoryDetail_Product");
+
                 entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
 
                 entity.Property(e => e.Description).HasMaxLength(512);
@@ -243,6 +246,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.InventoryRequirementCode)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.ModuleTypeId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.Shipper).HasMaxLength(128);
 
@@ -488,11 +493,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Wastage).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Wastage).HasColumnType("decimal(18, 5)");
 
                 entity.HasOne(d => d.ChildProduct)
                     .WithMany(p => p.ProductBomChildProduct)
@@ -545,6 +550,18 @@ namespace VErp.Infrastructure.EF.StockDB
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
             {
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.MaterialsConsumption)
+                    .WithMany(p => p.ProductMaterialsConsumptionMaterialsConsumption)
+                    .HasForeignKey(d => d.MaterialsConsumptionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterialsConsumption_Product1");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductMaterialsConsumptionProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterialsConsumption_Product");
 
                 entity.HasOne(d => d.ProductMaterialsConsumptionGroup)
                     .WithMany(p => p.ProductMaterialsConsumption)

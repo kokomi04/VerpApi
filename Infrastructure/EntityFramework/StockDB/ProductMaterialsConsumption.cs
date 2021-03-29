@@ -19,6 +19,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
+        public virtual Product MaterialsConsumption { get; set; }
+        public virtual Product Product { get; set; }
         public virtual ProductMaterialsConsumptionGroup ProductMaterialsConsumptionGroup { get; set; }
     }
 }

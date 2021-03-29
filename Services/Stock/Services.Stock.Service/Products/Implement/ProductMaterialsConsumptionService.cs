@@ -54,6 +54,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var materialsConsumptionInheri = (_stockDbContext.ProductMaterialsConsumption.AsNoTracking()
                 .Where(x => productBom.Select(x => x.ChildProductId).Contains(x.ProductId))
+                .Include(x => x.MaterialsConsumption)
                 .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
                 .ToList());
 
@@ -198,6 +199,23 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             await _stockDbContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, productId, $"Cập nhật vật tư tiêu hao cho sản phẩm '{product.ProductCode}/ {product.ProductName}'", model.JsonSerialize());
+            return true;
+        }
+
+        public async Task<bool> UpdateProductMaterialsConsumptionService(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
+        {
+            var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
+            if (product == null)
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            var material = _stockDbContext.ProductMaterialsConsumption.AsNoTracking().FirstOrDefault(p => p.ProductMaterialsConsumptionId == productMaterialsConsumptionId);
+            if (material == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            _mapper.Map(model, material);
+
+            await _stockDbContext.SaveChangesAsync();
+            await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, productMaterialsConsumptionId, $"Cập nhật vật tư tiêu hao {productMaterialsConsumptionId}", model.JsonSerialize());
             return true;
         }
 
