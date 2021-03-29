@@ -11,6 +11,7 @@ namespace VErp.Services.Stock.Service.Products
     public interface IProductMaterialsConsumptionService
     {
         Task<bool> UpdateProductMaterialsConsumptionService(int productId, ICollection<ProductMaterialsConsumptionInput> model);
+        Task<bool> UpdateProductMaterialsConsumptionService(int productId, long ProductMaterialsConsumptionId,  ProductMaterialsConsumptionInput model);
         Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int productId);
 
         CategoryNameModel GetCustomerFieldDataForMapping();
