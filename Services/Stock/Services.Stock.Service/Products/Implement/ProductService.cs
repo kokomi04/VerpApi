@@ -740,11 +740,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, Clause filters = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, Clause filters = null)
         {
             var productInternalName = productName.NormalizeAsInternalName();
 
             var products = _stockContext.Product.AsQueryable();
+
+            if(productIds != null && productIds.Count > 0)
+            {
+                products = products.Where(x => productIds.Contains(x.ProductId));
+            }
+
             if (isProductSemi.HasValue)
             {
                 products = products.Where(x => x.IsProductSemi == isProductSemi);
