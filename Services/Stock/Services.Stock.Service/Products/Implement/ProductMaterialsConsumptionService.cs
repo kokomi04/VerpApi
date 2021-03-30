@@ -89,7 +89,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
                             .ToList();
 
-            var newTemp = materialsConsumptionInheri.Where(x => IsCheckNotExistsMaterialsConsumpOrGroup(materialsConsumption, x))
+            var newTemp = (materialsConsumptionInheri.Where(x => IsCheckNotExistsMaterialsConsumpOrGroup(materialsConsumption, x))
                 .Select(x => new ProductMaterialsConsumption
                 {
                     ProductId = productId,
@@ -97,7 +97,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Quantity = 0,
                     ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId
                 })
-                .ToArray();
+                .ToArray()).GroupBy(x => new { x.ProductMaterialsConsumptionGroupId, x.MaterialsConsumptionId })
+                .Select(x => x.First());
 
             await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(newTemp);
             await _stockDbContext.SaveChangesAsync();
@@ -107,8 +108,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private bool IsCheckNotExistsMaterialsConsumpOrGroup(IEnumerable<ProductMaterialsConsumptionOutput> materials, ProductMaterialsConsumptionOutput item)
         {
-            return materials.Count() == 0 || materials.Any(x => x.ProductMaterialsConsumptionGroupId != item.ProductMaterialsConsumptionGroupId
-             || x.MaterialsConsumptionId != item.MaterialsConsumptionId);
+            if (materials.Count() == 0) return true;
+
+            var groups = materials.Where(x => x.ProductMaterialsConsumptionGroupId == item.ProductMaterialsConsumptionGroupId);
+            if (groups.Count() == 0) return true;
+
+            return !groups.Any(x=> x.MaterialsConsumptionId == item.MaterialsConsumptionId);
         }
 
         private IList<ProductMaterialsConsumptionOutput> LoopCalcMaterialsConsump(IEnumerable<ProductBomOutput> productBom
