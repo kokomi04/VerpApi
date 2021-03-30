@@ -25,7 +25,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long EndDate { get; set; }
         public decimal Capacity { get; set; }
         public long CreatedDatetimeUtc { get; set; }
-
+        public string StepName { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public decimal Productivity { get; set; }
+        public decimal OutputQuantity { get; set; }
+        public decimal AssingmentQuantity { get; set; }
         public virtual ICollection<CapacityDetailModel> CapacityDetail { get; set; }
 
         public CapacityModel()

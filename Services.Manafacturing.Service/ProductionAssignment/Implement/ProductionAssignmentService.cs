@@ -159,7 +159,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     decimal totalAssignmentQuantity = 0;
 
-                    if (outSource != null)
+                    if (outSource != null && outSource.ProductionStepLinkData.Quantity > 0)
                     {
                         totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.Value / outSource.ProductionStepLinkData.Quantity;
                     }
@@ -680,6 +680,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var otherAssignment in otherAssignments)
             {
+                var productionStepName = $"{otherAssignment.StepName} (#{otherAssignment.ProductionAssignment.ProductionStepId})";
                 var capacityDepartment = new CapacityModel
                 {
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
@@ -692,7 +693,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
                     {
                         WorkDate = ad.WorkDate.GetUnix(),
-                        StepName = otherAssignment.StepName,
+                        StepName = productionStepName,
                         ProductionOrderCode = otherAssignment.ProductionOrderCode,
                         CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
                                             * ad.QuantityPerDay.Value)
@@ -781,8 +782,30 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     && a.EndDate >= productionTime.StartDate
                 join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
                 join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                join sd in _manufacturingDBContext.StepDetail on new { s.StepId, a.DepartmentId } equals new {sd.StepId, sd.DepartmentId}
                 join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                 join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
+                join ldr in _manufacturingDBContext.ProductionStepLinkDataRole on new 
+                { 
+                    ps.ProductionStepId,
+                    ProductionStepLinkDataRoleTypeId  = (int)EnumProductionStepLinkDataRoleType.Output 
+                } 
+                equals new
+                {
+                    ldr.ProductionStepId,
+                    ldr.ProductionStepLinkDataRoleTypeId
+                }
+                join ld in _manufacturingDBContext.ProductionStepLinkData on new
+                {
+                    ldr.ProductionStepLinkDataId,
+                    d.ObjectId,
+                    d.ObjectTypeId
+                } equals new
+                {
+                    ld.ProductionStepLinkDataId,
+                    ld.ObjectId,
+                    ld.ObjectTypeId
+                }
                 join ad in _manufacturingDBContext.ProductionAssignmentDetail on new { a.ProductionOrderId, a.ProductionStepId, a.DepartmentId } equals new { ad.ProductionOrderId, ad.ProductionStepId, ad.DepartmentId } into ads
                 from ad in ads.DefaultIfEmpty()
                 select new
@@ -790,17 +813,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     ProductionAssignment = a,
                     TotalQuantity = d.Quantity,
                     s.StepName,
+                    Productivity = sd.Quantity,
                     po.ProductionOrderCode,
                     ad.QuantityPerDay,
-                    ad.WorkDate
+                    ad.WorkDate,
+                    OutputQuantity = ld.Quantity
                 }).ToListAsync()
-                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.ProductionOrderCode })
+                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.Productivity, a.ProductionOrderCode })
                  .Select(g => new
                  {
                      g.Key.ProductionAssignment,
                      g.Key.TotalQuantity,
                      g.Key.StepName,
+                     g.Key.Productivity,
                      g.Key.ProductionOrderCode,
+                     OutputQuantity = g.Sum(g => g.OutputQuantity),
                      ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
                      {
                          ad.WorkDate,
@@ -836,10 +863,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     }).ToListAsync();
             }
 
+
             foreach (var otherAssignment in otherAssignments)
             {
+                var productionStepName = $"{otherAssignment.StepName} (#{otherAssignment.ProductionAssignment.ProductionStepId})";
                 var capacityDepartment = new CapacityModel
                 {
+                    ProductionOrderCode = otherAssignment.ProductionOrderCode,
+                    StepName = productionStepName,
+                    Productivity = otherAssignment.Productivity,
+                    AssingmentQuantity = otherAssignment.ProductionAssignment.AssignmentQuantity,
+                    OutputQuantity = otherAssignment.OutputQuantity,
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
                     CreatedDatetimeUtc = otherAssignment.ProductionAssignment.CreatedDatetimeUtc.GetUnix(),
@@ -850,12 +884,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
                     {
                         WorkDate = ad.WorkDate.GetUnix(),
-                        StepName = otherAssignment.StepName,
+                        StepName = productionStepName,
                         ProductionOrderCode = otherAssignment.ProductionOrderCode,
-                        CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
-                                            * ad.QuantityPerDay.Value)
-                                            / (otherAssignment.TotalQuantity
-                                            * otherAssignment.ProductionAssignment.Productivity)
+                        CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId] * ad.QuantityPerDay.Value) 
+                        / (otherAssignment.TotalQuantity * otherAssignment.ProductionAssignment.Productivity)
 
                     }).ToList()
                 };
