@@ -139,6 +139,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .IsRequired()
                     .HasMaxLength(64);
 
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
+
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 
                 entity.Property(e => e.RefTableCode).HasMaxLength(128);
