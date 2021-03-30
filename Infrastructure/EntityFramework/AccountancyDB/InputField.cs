@@ -31,6 +31,11 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string Structure { get; set; }
         public bool IsReadOnly { get; set; }
+        public string OnFocus { get; set; }
+        public string OnKeydown { get; set; }
+        public string OnKeypress { get; set; }
+        public string OnBlur { get; set; }
+        public string OnChange { get; set; }
 
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
     }

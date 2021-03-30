@@ -29,6 +29,13 @@ namespace VErp.Services.Accountancy.Model.Input
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
         public bool IsReadOnly { get; set; }
+
+        public string OnFocus { get; set; }
+        public string OnKeydown { get; set; }
+        public string OnKeypress { get; set; }
+        public string OnBlur { get; set; }
+        public string OnChange { get; set; }
+
         public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
