@@ -182,7 +182,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .Where(x => x.ProductId == productId)
                 .ToListAsync();
 
-            var newMaterials = model.Where(x => x.ProductMaterialsConsumptionId > 0).AsQueryable()
+            var newMaterials = model.Where(x => x.ProductMaterialsConsumptionId == 0).AsQueryable()
                 .ProjectTo<ProductMaterialsConsumption>(_mapper.ConfigurationProvider).ToArray();
 
             foreach(var m in materials)
