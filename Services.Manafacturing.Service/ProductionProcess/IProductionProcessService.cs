@@ -8,6 +8,7 @@ using VErp.Services.Manafacturing.Model.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
@@ -46,7 +47,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         //Task<bool> UpdateMarkInvalidOutsourcePartRequest(long productionOrderId);
         //Task<bool> UpdateMarkInvalidOutsourceStepRequest(long productionOrderId);
 
-        Task<IList<ProductionStepModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId);
+        Task<IList<ProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId);
 
         Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep(EnumContainerType containerType, long containerId, long[] productionStepIds);
     }

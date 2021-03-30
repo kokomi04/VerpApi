@@ -13,6 +13,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -1603,14 +1604,57 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             
         }
 
-        public async Task<IList<ProductionStepModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId)
+        public async Task<IList<ProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                .Include(s => s.Step)
                 .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId && s.IsGroup == false && s.IsFinish == false)
+                .Include(s => s.Step)
+                .Include(x => x.ProductionStepLinkDataRole)
+                .ThenInclude(r => r.ProductionStepLinkData)
                 .ToListAsync();
 
-           return  _mapper.Map<List<ProductionStepModel>>(productionSteps);
+            var roleOutput = productionSteps.SelectMany(x => x.ProductionStepLinkDataRole)
+                .Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output);
+
+            var productIds = roleOutput
+                .Where(x=>x.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                .Select(x => (int)x.ProductionStepLinkData.ObjectId)
+                .Distinct()
+                .ToList();
+            var productSemiIds = roleOutput
+                .Where(x => x.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.ProductSemi)
+                .Select(x => x.ProductionStepLinkData.ObjectId)
+                .Distinct()
+                .ToList();
+
+            var productInfoMap = (await _productHelperService.GetListProducts(productIds)).ToDictionary(k=>k.ProductId, v=> string.Concat(v.ProductCode,"/ " , v.ProductName));
+            var productSemiInfoMap = (await _manufacturingDBContext.ProductSemi.AsNoTracking().Where(x => productSemiIds.Contains(x.ProductSemiId)).ToListAsync())
+                .ToDictionary(k => k.ProductSemiId, v => v.Title);
+
+
+            var data = productionSteps.Select(s =>
+            {
+                var output = s.ProductionStepLinkDataRole.Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                .Select(x =>
+                {
+                    var objectId = x.ProductionStepLinkData.ObjectId;
+                    var objectTypeId = x.ProductionStepLinkData.ObjectTypeId;
+                    if (objectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                        return productInfoMap.ContainsKey((int)objectId) ? productInfoMap[(int)objectId] : "";
+                    else return productSemiInfoMap.ContainsKey(objectId) ? productSemiInfoMap[objectId] : "";
+                });
+
+                return new ProductionStepSimpleModel
+                {
+                    ProductionStepId = s.ProductionStepId,
+                    ProductionStepCode = s.ProductionStepCode,
+                    Title = $"{s.Step.StepName} #({s.ProductionStepId})",
+                    OutputString = $"{string.Join(", ",output)}",
+                    StepId = s.StepId
+                };
+            }).ToList();
+
+            return data;
         }
 
     }
