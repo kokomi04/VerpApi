@@ -15,6 +15,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -66,7 +67,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}/productionStep")]
-        public async Task<IList<ProductionStepModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
+        public async Task<IList<ProductionStepSimpleModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetAllProductionStep(containerTypeId, containerId);
         }
