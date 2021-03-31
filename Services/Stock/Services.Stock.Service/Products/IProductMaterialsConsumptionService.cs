@@ -15,6 +15,6 @@ namespace VErp.Services.Stock.Service.Products
         Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int productId);
 
         CategoryNameModel GetCustomerFieldDataForMapping();
-        Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping importExcelMapping, Stream stream);
+        Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping importExcelMapping, Stream stream, int materialsConsumptionGroupId);
     }
 }
