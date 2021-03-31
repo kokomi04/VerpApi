@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
+        public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
@@ -410,6 +411,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionOrderMaterials_ProductionOrder");
+            });
+
+            modelBuilder.Entity<ProductionOrderMaterialsConsumption>(entity =>
+            {
+                entity.Property(e => e.ConversionRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<ProductionScheduleTurnShift>(entity =>

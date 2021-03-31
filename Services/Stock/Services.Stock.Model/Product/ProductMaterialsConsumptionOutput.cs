@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductMaterialsConsumptionOutput: ProductMaterialsConsumptionBaseModel
     {
-        //public decimal TotalQuantityInheritance { get; set; }
+        public decimal TotalQuantityInheritance { get; set; }
         public decimal BomQuantity { get; set; }
         public int UnitId { get; set; }
 
