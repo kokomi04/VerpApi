@@ -60,6 +60,13 @@ namespace VErpApi.Controllers.Accountancy.Config
         }
 
         [HttpGet]
+        [Route("GetAllConfig")]
+        public async Task<IList<InputTypeFullModel>> GetAllConfig()
+        {
+            return await _inputConfigService.GetAllInputTypes().ConfigureAwait(true);
+        }
+
+        [HttpGet]
         [Route("simpleList")]
         public async Task<IList<InputTypeSimpleModel>> GetSimpleList()
         {
@@ -72,6 +79,7 @@ namespace VErpApi.Controllers.Accountancy.Config
         {
             return await _inputConfigService.GetInputFields(keyword, page, size).ConfigureAwait(true);
         }
+
 
         [HttpPost]
         [Route("fields")]
