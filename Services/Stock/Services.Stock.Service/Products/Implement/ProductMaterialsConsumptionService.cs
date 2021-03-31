@@ -56,19 +56,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productBom = (await _productBomService.GetBom(productId)).Where(x => !x.IsMaterial);
             var productMap = CalcProductBomTotalQuantity(productBom);
 
-            var materialsConsumptionInheri = (_stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+            var materialsConsumptionInheri = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
                 .Where(x => productBom.Select(y => y.ChildProductId).Contains(x.ProductId))
                 .Include(x => x.MaterialsConsumption)
                 .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
-                .ToList());
+                .ToListAsync());
 
             int minLevel = 1;
             var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri, productBom, productBom.Where(x => x.Level == minLevel), productMap);
 
-            var materialsConsumption = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+            var materialsConsumption = await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
                             .Where(x => x.ProductId == productId)
                             .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
-                            .ToList();
+                            .ToListAsync();
 
             var exceptMaterialsConsumption = materialsInheri.Except(materialsConsumption, new ProductMaterialsConsumptionBaseComparer())
                 .Select(x => new ProductMaterialsConsumptionOutput
@@ -77,7 +77,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     MaterialsConsumptionId = x.MaterialsConsumptionId,
                     ProductId = productId,
                     DepartmentId = x.DepartmentId,
-                    StepId = x.StepId
+                    StepId = x.StepId,
+                    UnitId = x.UnitId
                 });
 
             materialsConsumption.AddRange(exceptMaterialsConsumption);
@@ -86,6 +87,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 m.MaterialsConsumptionInheri = materialsInheri.Where(x => x.ProductMaterialsConsumptionGroupId == m.ProductMaterialsConsumptionGroupId
                                 && x.MaterialsConsumptionId == m.MaterialsConsumptionId).ToList();
                 m.BomQuantity = 1;
+                m.TotalQuantityInheritance = m.MaterialsConsumptionInheri.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
             }
 
             return materialsConsumption;
@@ -109,7 +111,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         MaterialsConsumptionId = x.MaterialsConsumptionId,
                         ProductId = bom.ChildProductId.GetValueOrDefault(),
                         DepartmentId = x.DepartmentId,
-                        StepId = x.StepId
+                        StepId = x.StepId,
+                        UnitId = x.UnitId,
                     });
 
                 materials.AddRange(exceptMaterials);
@@ -118,6 +121,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     m.MaterialsConsumptionInheri = materialsInheri.Where(x => x.ProductMaterialsConsumptionGroupId == m.ProductMaterialsConsumptionGroupId
                                     && x.MaterialsConsumptionId == m.MaterialsConsumptionId).ToList();
                     m.BomQuantity = productMap.ContainsKey(m.ProductId) ? productMap[m.ProductId] : 1;
+                    m.TotalQuantityInheritance = m.MaterialsConsumptionInheri.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
                 }
 
                 result.AddRange(materials);
@@ -291,13 +295,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var data = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping, null);
 
             var groups = (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductMaterialsConsumptionGroupCode, v => v.ProductMaterialsConsumptionGroupId);
-            var products = (await _stockDbContext.Product.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductCode, v => v.ProductId);
-            var departments = (await _organizationHelperService.GetAllDepartmentSimples()).ToDictionary(k => k.DepartmentCode, v => v.DepartmentId);
+            
+            var products = (await _stockDbContext.Product.AsNoTracking().ToListAsync())
+                .GroupBy(x=>x.ProductCode).Select(x=>x.First())
+                .ToDictionary(k => k.ProductCode, v => v.ProductId);
+            var departments = (await _organizationHelperService.GetAllDepartmentSimples())
+                .GroupBy(x => x.DepartmentCode).Select(x => x.First())
+                .ToDictionary(k => k.DepartmentCode, v => v.DepartmentId);
+
             var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking().ToListAsync()).Select(k => k.MaterialsConsumptionId);
 
             foreach (var row in data)
             {
-                if (!products.ContainsKey(row.ProductCode) || oldMaterialConsumption.Contains(products[row.ProductCode]) || !departments.ContainsKey(row.ProductCode)) continue;
+                if (!products.ContainsKey(row.ProductCode) || oldMaterialConsumption.Contains(products[row.ProductCode]) || !departments.ContainsKey(row.DepartmentCode)) continue;
 
                 var item = new ProductMaterialsConsumption
                 {
@@ -327,6 +337,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _stockDbContext.ProductMaterialsConsumption.AddAsync(entity);
             await _stockDbContext.SaveChangesAsync();
             return entity.ProductMaterialsConsumptionId;
+        }
+
+        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int[] productIds)
+        {
+            var data = new List<ProductMaterialsConsumptionOutput>();
+            for (int i = 0; i < productIds.Length; i++)
+            {
+                var task = GetProductMaterialsConsumptionService(productIds[i]);
+                data.AddRange(await task);
+            }
+
+            return data;
         }
     }
 }

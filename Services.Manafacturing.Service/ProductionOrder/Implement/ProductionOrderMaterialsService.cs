@@ -47,16 +47,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<ProductionOrderMaterialsModel> GetProductionOrderMaterialsCalc(long productionOrderId)
         {
-            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(o=>o.ProductionOrderId == productionOrderId);
-            if(productionOrder == null)
+            var productionOrder = await _manufacturingDBContext.ProductionOrder.Include(x => x.ProductionOrderDetail).FirstOrDefaultAsync(o => o.ProductionOrderId == productionOrderId);
+            if (productionOrder == null)
                 throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
+            if (productionOrder.IsResetProductionProcess)
+                await ResetProductionOrderMaterials(productionOrderId);
+
+            var productMap = productionOrder.ProductionOrderDetail.ToDictionary(k => k.ProductId, v => v.Quantity + v.ReserveQuantity);
+
+            IList<ProductionOrderMaterialsCalc> materialsMain = await GetProductionOrderMaterialsMainCalc(productionOrderId);
+            IList<ProductionOrderMaterialsConsumptionCalc> materialsConsump = await GetProductionOrderMaterialsConsumptionCalc(productionOrderId, productMap);
+
+            return new ProductionOrderMaterialsModel
+            {
+                IsReset = productionOrder.IsResetProductionProcess,
+                materials = materialsMain.OrderBy(x => x.ProductionStepLinkDataId).ThenBy(x => x.DepartmentId.HasValue).ToList(),
+                materialsConsump = materialsConsump.OrderBy(x => x.ProductId).ThenBy(x => x.DepartmentId.HasValue).ToList()
+            };
+        }
+
+        private async Task<IList<ProductionOrderMaterialsCalc>> GetProductionOrderMaterialsMainCalc(long productionOrderId)
+        {
             var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
-                .Include(x => x.ProductionStep).ThenInclude(s => s.Step)
-                .Include(x => x.ProductionStepLinkData)
-                .Where(x => x.ProductionStep.ContainerId == productionOrderId && x.ProductionStep.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
-                .ToListAsync();
-            if(roles.Count == 0)
+                            .Include(x => x.ProductionStep).ThenInclude(s => s.Step)
+                            .Include(x => x.ProductionStepLinkData)
+                            .Where(x => x.ProductionStep.ContainerId == productionOrderId && x.ProductionStep.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
+                            .ToListAsync();
+            if (roles.Count == 0)
                 throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound, "Quy trình sản xuất chưa được thiết lập");
 
             var roleInputData = roles.GroupBy(x => x.ProductionStepLinkDataId)
@@ -91,7 +109,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                          Quantity = a.RateQuantity * (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                          RateQuantity = a.RateQuantity,
                                          InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
-                                         ConversionRate = 1
+                                         ConversionRate = 1,
                                      }).ToList();
             var calcuTotalAssignmentQuantity = from m in materialsAssigned
                                                group m by new
@@ -121,61 +139,101 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                           Quantity = AssignmentQuantity.HasValue ? AssignmentQuantity.GetValueOrDefault() : (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                           RateQuantity = !AssignmentQuantity.HasValue ? 1 : (AssignmentQuantity.GetValueOrDefault() / (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault())),
                                           InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
-                                          ConversionRate = 1
+                                          ConversionRate = 1,
                                       };
 
             materialsAssigned.AddRange(materialsUnAssigned);
 
-            if (productionOrder.IsResetProductionProcess)
-            {
-                await ResetProductionOrderMaterials(productionOrderId);
-            }
-            else
-            {
-                var materialsDb = await GetProductionOrderMaterials(productionOrderId);
+            var materialsDb = await GetProductionOrderMaterials(productionOrderId);
 
-                var materialsReplacement = new List<ProductionOrderMaterialsCalc>();
-                foreach (var item in materialsAssigned)
+            var materialsReplacement = new List<ProductionOrderMaterialsCalc>();
+            foreach (var item in materialsAssigned)
+            {
+                var m = materialsDb.FirstOrDefault(x => x.DepartmentId.GetValueOrDefault() == item.DepartmentId.GetValueOrDefault()
+                            && x.ProductionStepLinkDataId == item.ProductionStepLinkDataId
+                            && x.IsReplacement == false);
+                if (m == null) continue;
+
+                item.AssignmentQuantity = m.Quantity;
+                item.ProductionOrderMaterialsId = m.ProductionOrderMaterialsId;
+                item.InventoryRequirementStatusId = m.InventoryRequirementStatusId;
+
+                var child = materialsDb.Where(x => x.ParentId.HasValue && x.ParentId == m.ProductionOrderMaterialsId && x.IsReplacement == true)
+                    .Select(r => new ProductionOrderMaterialsCalc
+                    {
+                        AssignmentQuantity = r.Quantity,
+                        ProductId = r.ProductId,
+                        ProductionStepId = item.ProductionStepId,
+                        ProductionStepTitle = item.ProductionStepTitle,
+                        ProductionStepLinkDataId = r.ProductionStepLinkDataId,
+                        Quantity = decimal.Zero,
+                        RateQuantity = 1,
+                        IsReplacement = r.IsReplacement,
+                        ParentId = r.ParentId,
+                        ProductionOrderMaterialsId = r.ProductionOrderMaterialsId,
+                        InventoryRequirementStatusId = r.InventoryRequirementStatusId,
+                        DepartmentId = r.DepartmentId,
+                        ConversionRate = r.ConversionRate,
+                    });
+                materialsReplacement.AddRange(child);
+            }
+
+            materialsAssigned.AddRange(materialsReplacement);
+            return materialsAssigned;
+        }
+
+        public async Task<IList<ProductionOrderMaterialsConsumptionCalc>> GetProductionOrderMaterialsConsumptionCalc(long productionOrderId, Dictionary<int, decimal?> productMap)
+        {
+            var materials = (await _productHelperService.GetProductMaterialsConsumptions(productMap.Keys.ToArray()))
+                .GroupBy(x => new { x.ProductMaterialsConsumptionGroupId, x.MaterialsConsumptionId })
+                .Select(x =>
                 {
-                    var m = materialsDb.FirstOrDefault(x => x.DepartmentId.GetValueOrDefault() == item.DepartmentId.GetValueOrDefault()
-                                && x.ProductionStepLinkDataId == item.ProductionStepLinkDataId
-                                && x.IsReplacement == false);
-                    if (m == null) continue;
+                    var f = x.First();
+                    var quantity = x.Select(x => (x.Quantity + x.TotalQuantityInheritance) * productMap[x.ProductId]).Sum();
 
-                    item.AssignmentQuantity = m.Quantity;
-                    item.ProductionOrderMaterialsId = m.ProductionOrderMaterialsId;
-                    item.InventoryRequirementStatusId = m.InventoryRequirementStatusId;
+                    return new ProductionOrderMaterialsConsumptionCalc
+                    {
+                        DepartmentId = f.DepartmentId,
+                        ProductId = f.MaterialsConsumptionId,
+                        Quantity = quantity.GetValueOrDefault(),
+                        InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
+                        ConversionRate = 1,
+                        AssignmentQuantity = quantity,
+                        ProductMaterialsConsumptionGroupId = f.ProductMaterialsConsumptionGroupId
+                    };
+                }).ToList();
 
-                    var child = materialsDb.Where(x => x.ParentId.HasValue && x.ParentId == m.ProductionOrderMaterialsId && x.IsReplacement == true)
-                        .Select(r => new ProductionOrderMaterialsCalc
-                        {
-                            AssignmentQuantity = r.Quantity,
-                            ProductId = r.ProductId,
-                            ProductionStepId = item.ProductionStepId,
-                            ProductionStepTitle = item.ProductionStepTitle,
-                            ProductionStepLinkDataId = r.ProductionStepLinkDataId,
-                            Quantity = decimal.Zero,
-                            RateQuantity = 1,
-                            IsReplacement = r.IsReplacement,
-                            ParentId = r.ParentId,
-                            ProductionOrderMaterialsId = r.ProductionOrderMaterialsId,
-                            InventoryRequirementStatusId = r.InventoryRequirementStatusId,
-                            DepartmentId = r.DepartmentId,
-                            ConversionRate = r.ConversionRate
-                        });
-                    materialsReplacement.AddRange(child);
-                }
-
-                materialsAssigned.AddRange(materialsReplacement);
-            }
-            
-
-            return new ProductionOrderMaterialsModel
+            var materialsDb = await GetProductionOrderMaterialsConsump(productionOrderId);
+            var materialsReplacement = new List<ProductionOrderMaterialsConsumptionCalc>();
+            foreach (var item in materials)
             {
-                IsReset = productionOrder.IsResetProductionProcess,
-                materials = materialsAssigned.OrderBy(x => x.ProductionStepLinkDataId).ThenBy(x => x.DepartmentId.HasValue).ToList()
-            };
-    }
+                var m = materialsDb.FirstOrDefault(x => x.DepartmentId.GetValueOrDefault() == item.DepartmentId.GetValueOrDefault()
+                            && x.ProductId == item.ProductId && x.ProductMaterialsConsumptionGroupId == item.ProductMaterialsConsumptionGroupId
+                            && x.IsReplacement == false);
+                if (m == null) continue;
+
+                item.ProductionOrderMaterialsConsumptionId = m.ProductionOrderMaterialsConsumptionId;
+                item.InventoryRequirementStatusId = m.InventoryRequirementStatusId;
+
+                var child = materialsDb.Where(x => x.ParentId.HasValue && x.ParentId == m.ProductionOrderMaterialsConsumptionId && x.IsReplacement == true)
+                    .Select(r => new ProductionOrderMaterialsConsumptionCalc
+                    {
+                        AssignmentQuantity = r.Quantity,
+                        ProductId = r.ProductId,
+                        Quantity = decimal.Zero,
+                        IsReplacement = r.IsReplacement,
+                        ParentId = r.ParentId,
+                        InventoryRequirementStatusId = r.InventoryRequirementStatusId,
+                        DepartmentId = r.DepartmentId,
+                        ConversionRate = r.ConversionRate,
+                        ProductMaterialsConsumptionGroupId = r.ProductMaterialsConsumptionGroupId
+                    });
+                materialsReplacement.AddRange(child);
+            }
+
+            materials.AddRange(materialsReplacement);
+            return materials;
+        }
 
         public async Task<bool> UpdateProductionOrderMaterials(long productionOrderId, IList<ProductionOrderMaterialsInput> materials)
         {
@@ -245,6 +303,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var materialsDb = await _manufacturingDBContext.ProductionOrderMaterials.AsNoTracking()
                .Where(x => x.ProductionOrderId == productionOrderId)
                .ProjectTo<ProductionOrderMaterialsOutput>(_mapper.ConfigurationProvider)
+               .ToListAsync();
+
+            return materialsDb;
+        }
+
+        public async Task<IList<ProductionOrderMaterialsConsumptionModel>> GetProductionOrderMaterialsConsump(long productionOrderId)
+        {
+            var materialsDb = await _manufacturingDBContext.ProductionOrderMaterialsConsumption.AsNoTracking()
+               .Where(x => x.ProductionOrderId == productionOrderId)
+               .ProjectTo<ProductionOrderMaterialsConsumptionModel>(_mapper.ConfigurationProvider)
                .ToListAsync();
 
             return materialsDb;
