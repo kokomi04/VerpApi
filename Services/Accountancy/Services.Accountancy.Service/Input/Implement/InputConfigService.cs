@@ -96,6 +96,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return inputType;
         }
 
+
+        public async Task<IList<InputTypeFullModel>> GetAllInputTypes()
+        {
+            return await _accountancyDBContext.InputType
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .ToListAsync();
+        }
+
         public async Task<InputTypeFullModel> GetInputType(string inputTypeCode)
         {
             var inputType = await _accountancyDBContext.InputType
