@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Product
     public class ImportProductMaterialsConsumptionExcelMapping
     {
         [Display(Name = "Mã mặt hàng", GroupName = "Thông tin chung")]
-        [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng chính")]
+        [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng")]
         public string ProductCode { get; set; }
 
         [Display(Name = "Tên mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
@@ -24,8 +24,23 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
         public string Specification { get; set; }
 
+
         [Display(Name = "Số lượng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập số lượng")]
         public decimal Quantity { get; set; }
+
+
+        [Display(Name = "Mã bộ phận", GroupName = "Thông tin chung")]
+        [Required(ErrorMessage = "Vui lòng nhập mã bộ phận")]
+        public string DepartmentCode { get; set; }
+        [Display(Name = "Tên bộ phận (Nếu có)", GroupName = "Thông tin chung")]
+        public string DepartmentName { get; set; }
+
+        //[Display(Name = "Mã nhóm vật tư tiêu hao", GroupName = "Thông tin chung")]
+        //[Required(ErrorMessage = "Vui lòng nhập mã nhóm vật tư tiêu hao")]
+        //public string GroupCode { get; set; }
+
+        //[Display(Name = "Tên nhóm vật tư tiêu hao(Nếu có)", GroupName = "Thông tin chung")]
+        //public string GroupTitle { get; set; }
     }
 }

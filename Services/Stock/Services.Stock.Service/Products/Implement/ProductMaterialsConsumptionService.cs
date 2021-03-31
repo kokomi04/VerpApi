@@ -16,6 +16,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
@@ -31,13 +32,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IMapper _mapper;
 
         private readonly IProductBomService _productBomService;
+        private readonly IOrganizationHelperService _organizationHelperService;
 
         public ProductMaterialsConsumptionService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductBomService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            , IProductBomService productBomService)
+            , IProductBomService productBomService
+            , IOrganizationHelperService organizationHelperService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
@@ -45,6 +48,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _activityLogService = activityLogService;
             _mapper = mapper;
             _productBomService = productBomService;
+            _organizationHelperService = organizationHelperService;
         }
 
         public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int productId)
@@ -213,7 +217,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (product == null)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
-            var material = _stockDbContext.ProductMaterialsConsumption.AsNoTracking().FirstOrDefault(p => p.ProductMaterialsConsumptionId == productMaterialsConsumptionId);
+            var material = _stockDbContext.ProductMaterialsConsumption.FirstOrDefault(p => p.ProductMaterialsConsumptionId == productMaterialsConsumptionId);
             if (material == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
@@ -240,23 +244,27 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream, int materialsConsumptionGroupId)
         {
             var reader = new ExcelReader(stream);
             var data = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping, null);
 
+            var groups = (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductMaterialsConsumptionGroupCode, v => v.ProductMaterialsConsumptionGroupId);
             var products = (await _stockDbContext.Product.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductCode, v => v.ProductId);
+            var departments = (await _organizationHelperService.GetAllDepartmentSimples()).ToDictionary(k => k.DepartmentCode, v => v.DepartmentId);
             var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking().ToListAsync()).Select(k => k.MaterialsConsumptionId);
 
             foreach (var row in data)
             {
-                if (!products.ContainsKey(row.ProductCode) || oldMaterialConsumption.Contains(products[row.ProductCode])) continue;
+                if (!products.ContainsKey(row.ProductCode) || oldMaterialConsumption.Contains(products[row.ProductCode]) || !departments.ContainsKey(row.ProductCode)) continue;
 
                 var item = new ProductMaterialsConsumption
                 {
                     MaterialsConsumptionId = products[row.ProductCode],
                     ProductId = productId,
-                    Quantity = row.Quantity
+                    Quantity = row.Quantity,
+                    DepartmentId = departments[row.DepartmentCode],
+                    ProductMaterialsConsumptionGroupId = materialsConsumptionGroupId
                 };
 
                 _stockDbContext.ProductMaterialsConsumption.Add(item);
