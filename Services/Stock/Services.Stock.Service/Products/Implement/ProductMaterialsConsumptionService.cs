@@ -57,33 +57,73 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productMap = CalcProductBomTotalQuantity(productBom);
 
             var materialsConsumptionInheri = (_stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                .Where(x => productBom.Select(x => x.ChildProductId).Contains(x.ProductId))
+                .Where(x => productBom.Select(y => y.ChildProductId).Contains(x.ProductId))
                 .Include(x => x.MaterialsConsumption)
                 .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
                 .ToList());
 
-            await FindMaterialsConsumpMissing(productId, materialsConsumptionInheri);
+            int minLevel = 1;
+            var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri, productBom, productBom.Where(x => x.Level == minLevel), productMap);
 
             var materialsConsumption = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
                             .Where(x => x.ProductId == productId)
                             .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
                             .ToList();
 
-            foreach (var group in materialsConsumption.GroupBy(x => x.ProductMaterialsConsumptionGroupId))
-            {
-                foreach (var m in group)
+            var exceptMaterialsConsumption = materialsInheri.Except(materialsConsumption, new ProductMaterialsConsumptionBaseComparer())
+                .Select(x => new ProductMaterialsConsumptionOutput
                 {
-                    var boms = productBom.Where(x => x.Level == 1);
-                    m.MaterialsConsumptionInheri = LoopCalcMaterialsConsump(productBom
-                        , boms
-                        , materialsConsumptionInheri
-                        , productMap
-                        , m.MaterialsConsumptionId
-                        , m.ProductMaterialsConsumptionGroupId);
-                }
+                    ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId,
+                    MaterialsConsumptionId = x.MaterialsConsumptionId,
+                    ProductId = productId,
+                    DepartmentId = x.DepartmentId,
+                    StepId = x.StepId
+                });
+
+            materialsConsumption.AddRange(exceptMaterialsConsumption);
+            foreach (var m in materialsConsumption)
+            {
+                m.MaterialsConsumptionInheri = materialsInheri.Where(x => x.ProductMaterialsConsumptionGroupId == m.ProductMaterialsConsumptionGroupId
+                                && x.MaterialsConsumptionId == m.MaterialsConsumptionId).ToList();
+                m.BomQuantity = 1;
             }
 
-            return materialsConsumption.Select(x=>x);
+            return materialsConsumption;
+        }
+
+        private IList<ProductMaterialsConsumptionOutput> LoopGetMaterialConsumInheri(List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri
+            , IEnumerable<ProductBomOutput> productBom
+            , IEnumerable<ProductBomOutput> boms
+            , Dictionary<int?, decimal> productMap)
+        {
+            var result = new List<ProductMaterialsConsumptionOutput>();
+            foreach (var bom in boms)
+            {
+                var materials = materialsConsumptionInheri.Where(x => x.ProductId == bom.ChildProductId).ToList();
+                var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId).ToList();
+                var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri,productBom, childBom, productMap);
+
+                var exceptMaterials = materialsInheri.Except(materials, new ProductMaterialsConsumptionBaseComparer())
+                    .Select(x => new ProductMaterialsConsumptionOutput { 
+                        ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId,
+                        MaterialsConsumptionId = x.MaterialsConsumptionId,
+                        ProductId = bom.ChildProductId.GetValueOrDefault(),
+                        DepartmentId = x.DepartmentId,
+                        StepId = x.StepId
+                    });
+
+                materials.AddRange(exceptMaterials);
+                foreach (var m in materials)
+                {
+                    m.MaterialsConsumptionInheri = materialsInheri.Where(x => x.ProductMaterialsConsumptionGroupId == m.ProductMaterialsConsumptionGroupId
+                                    && x.MaterialsConsumptionId == m.MaterialsConsumptionId).ToList();
+                    m.BomQuantity = productMap.ContainsKey(m.ProductId) ? productMap[m.ProductId] : 1;
+                }
+
+                result.AddRange(materials);
+            }
+
+            return result;
         }
 
         private async Task<bool> FindMaterialsConsumpMissing(int productId, List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri)
@@ -221,6 +261,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (material == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
+            model.ProductId = productId;
             _mapper.Map(model, material);
 
             await _stockDbContext.SaveChangesAsync();
@@ -274,5 +315,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
+        public async Task<long> AddProductMaterialsConsumptionService(int productId, ProductMaterialsConsumptionInput model)
+        {
+            var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
+            if (product == null)
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            var entity = _mapper.Map<ProductMaterialsConsumption>(model);
+            entity.ProductId = productId;
+
+            await _stockDbContext.ProductMaterialsConsumption.AddAsync(entity);
+            await _stockDbContext.SaveChangesAsync();
+            return entity.ProductMaterialsConsumptionId;
+        }
     }
 }

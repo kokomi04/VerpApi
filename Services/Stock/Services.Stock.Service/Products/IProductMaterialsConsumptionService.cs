@@ -13,6 +13,7 @@ namespace VErp.Services.Stock.Service.Products
         Task<bool> UpdateProductMaterialsConsumptionService(int productId, ICollection<ProductMaterialsConsumptionInput> model);
         Task<bool> UpdateProductMaterialsConsumptionService(int productId, long ProductMaterialsConsumptionId,  ProductMaterialsConsumptionInput model);
         Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int productId);
+        Task<long> AddProductMaterialsConsumptionService(int productId, ProductMaterialsConsumptionInput model);
 
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping importExcelMapping, Stream stream, int materialsConsumptionGroupId);
