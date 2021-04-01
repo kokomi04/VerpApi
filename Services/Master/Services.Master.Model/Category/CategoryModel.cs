@@ -27,8 +27,8 @@ namespace VErp.Services.Master.Model.Category
     {
         public CategoryFullModel()
         {
-            CategoryFields = new List<CategoryFieldModel>();
+            CategoryField = new List<CategoryFieldModel>();
         }
-        public ICollection<CategoryFieldModel> CategoryFields { get; set; }
+        public ICollection<CategoryFieldModel> CategoryField { get; set; }
     }
 }
