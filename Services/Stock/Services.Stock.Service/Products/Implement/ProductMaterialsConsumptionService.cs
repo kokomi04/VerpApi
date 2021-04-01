@@ -303,7 +303,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .GroupBy(x => x.DepartmentCode).Select(x => x.First())
                 .ToDictionary(k => k.DepartmentCode, v => v.DepartmentId);
 
-            var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking().ToListAsync()).Select(k => k.MaterialsConsumptionId);
+            var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+                .Where(x=>x.ProductId == productId && x.ProductMaterialsConsumptionGroupId == materialsConsumptionGroupId)
+                .ToListAsync()).Select(k => k.MaterialsConsumptionId);
 
             foreach (var row in data)
             {
