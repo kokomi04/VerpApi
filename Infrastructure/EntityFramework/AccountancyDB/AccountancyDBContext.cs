@@ -262,6 +262,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
             modelBuilder.Entity<ProgramingFunction>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.FunctionBody).IsRequired();
 
                 entity.Property(e => e.ProgramingFunctionName)

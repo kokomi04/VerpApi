@@ -13,6 +13,8 @@ namespace VErp.Services.Accountancy.Model.Programing
         public string FunctionBody { get; set; }
         public int ProgramingLangId { get; set; }
         public int ProgramingLevelId { get; set; }
+
+        public string Description { get; set; }
     }
     public class ProgramingFunctionOutputList : ProgramingFunctionModel
     {
