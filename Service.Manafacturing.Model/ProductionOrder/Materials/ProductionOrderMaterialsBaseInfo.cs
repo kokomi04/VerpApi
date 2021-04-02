@@ -20,6 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public bool IsReplacement { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         public EnumProductionOrderMaterials.EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
+        public int ProductMaterialsConsumptionGroupId { get; set; }
     }
 
     public class ProductionOrderMaterialsInput : ProductionOrderMaterialsBaseInfo

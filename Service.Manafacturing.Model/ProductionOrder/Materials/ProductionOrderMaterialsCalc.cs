@@ -7,16 +7,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 {
     public class ProductionOrderMaterialsCalc: ProductionOrderMaterialsCalcBase
     {
-        public long? ProductionOrderMaterialsId { get; set; }
+        public long? PrivateKeyTable { get; set; }
         public long ProductionStepId { get; set; }
         public string ProductionStepTitle { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         public decimal RateQuantity { get; set; }
-    }
-
-    public class ProductionOrderMaterialsConsumptionCalc : ProductionOrderMaterialsCalcBase
-    {
-        public long? ProductionOrderMaterialsConsumptionId { get; set; }
         public int ProductMaterialsConsumptionGroupId { get; set; }
     }
 
@@ -36,6 +31,5 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
     {
         public bool IsReset { get; set; }
         public IList<ProductionOrderMaterialsCalc> materials { get; set; }
-        public IList<ProductionOrderMaterialsConsumptionCalc> materialsConsump { get; set; }
     }
 }
