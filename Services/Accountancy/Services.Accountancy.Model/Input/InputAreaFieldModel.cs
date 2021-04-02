@@ -6,6 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
 using Newtonsoft.Json;
+using VErp.Commons.Constants;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
@@ -134,5 +135,11 @@ namespace VErp.Services.Accountancy.Model.Input
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
     {
         public InputFieldOutputModel InputField { get; set; }
+
+        public string OnFocusExec => string.IsNullOrWhiteSpace(OnFocus) ? InputField?.OnFocus : OnFocus.Replace(AccountantConstants.SUPER, InputField?.OnFocus);
+        public string OnKeydownExec => string.IsNullOrWhiteSpace(OnKeydown) ? InputField?.OnKeydown : OnKeydown.Replace(AccountantConstants.SUPER, InputField?.OnKeydown);
+        public string OnKeypressExec => string.IsNullOrWhiteSpace(OnKeypress) ? InputField?.OnKeypress : OnKeypress.Replace(AccountantConstants.SUPER, InputField?.OnKeypress);
+        public string OnBlurExec => string.IsNullOrWhiteSpace(OnBlur) ? InputField?.OnBlur : OnBlur.Replace(AccountantConstants.SUPER, InputField?.OnBlur);
+        public string OnChangeExec => string.IsNullOrWhiteSpace(OnChange) ? InputField?.OnChange : OnChange.Replace(AccountantConstants.SUPER, InputField?.OnChange);
     }
 }

@@ -365,7 +365,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 ProductionOrderId = requirement.ProductionOrderId,
                 InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
                 InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
-                Date = DateTime.UtcNow.GetUnix(),
+                Date = DateTime.UtcNow.Date.GetUnix(),
                 Content = requirement.RequirementContent,
 
                 InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel

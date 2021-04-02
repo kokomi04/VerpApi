@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputBill> InputBill { get; set; }
         public virtual DbSet<InputField> InputField { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
+        public virtual DbSet<InputTypeGlobalSetting> InputTypeGlobalSetting { get; set; }
         public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
