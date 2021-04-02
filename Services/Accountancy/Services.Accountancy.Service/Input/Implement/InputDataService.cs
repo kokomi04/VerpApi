@@ -45,6 +45,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
+        private readonly IInputConfigService _inputConfigService;
+
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<InputConfigService> logger
@@ -54,6 +56,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IOutsideMappingHelperService outsideMappingHelperService
+            , IInputConfigService inputConfigService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -64,6 +67,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
+            _inputConfigService = inputConfigService;
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -332,8 +336,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             await ValidateAccountantConfig(data?.Info, null);
 
-            var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+            var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
+
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
             {
@@ -370,7 +374,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumActionType.Add);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Add);
 
                 if (result.Code != 0)
                 {
@@ -393,7 +397,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await CreateBillVersion(inputTypeId, billInfo.FId, 1, data, generateTypeLastValues);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumActionType.Add);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
                 {
@@ -936,8 +940,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data)
         {
-            var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+            var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             // Validate multiRow existed
             if (data.Rows == null || data.Rows.Count == 0)
@@ -1012,7 +1015,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumActionType.Update);
+                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Update);
                 if (result.Code != 0)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin chứng từ không hợp lệ. Mã lỗi {result.Code}" : result.Message);
@@ -1034,7 +1037,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumActionType.Update);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Update);
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -1054,8 +1057,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
-            var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
+            var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             if (fIds.Length == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại chứng từ cần thay đổi");
 
@@ -1241,11 +1244,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return changeFieldIndexes.ToArray();
         }
 
+        private async Task<IInputTypeExecData> GetInputTypExecInfo(int inputTypeId)
+        {
+            var global = await _inputConfigService.GetInputGlobalSetting();
+            var inputTypeInfo = await _accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+            var info = _mapper.Map<InputTypeExecData>(inputTypeInfo);
+            info.GlobalSetting = global;
+            return info;
+        }
+
         public async Task<bool> DeleteBill(int inputTypeId, long inputBill_F_Id)
         {
-            var inputTypeInfo = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-
-            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+            var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
 
@@ -1278,7 +1289,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var infoLst = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
 
                 data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
-                if (!string.IsNullOrEmpty(inputTypeInfo.BeforeSaveAction) || !string.IsNullOrEmpty(inputTypeInfo.AfterSaveAction))
+                if (!string.IsNullOrEmpty(inputTypeInfo.BeforeSaveActionExec) || !string.IsNullOrEmpty(inputTypeInfo.AfterSaveActionExec))
                 {
                     var rowsSQL = new StringBuilder("SELECT ");
                     var multiFields = inputAreaFields.Where(f => f.IsMultiRow).ToList();
@@ -1302,7 +1313,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveAction, data, inputFields, EnumActionType.Delete);
+                await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Delete);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1313,7 +1324,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveAction, data, inputFields, EnumActionType.Delete);
+                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete);
 
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
 
@@ -1742,11 +1753,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
         {
-            var inputType = _accountancyDBContext.InputType.FirstOrDefault(i => i.InputTypeId == inputTypeId);
-            if (inputType == null)
-            {
-                throw new BadRequestException(InputErrorCode.InputTypeNotFound);
-            }
+            var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
+
             var reader = new ExcelReader(stream);
 
             // Lấy thông tin field
@@ -1954,7 +1962,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(inputType.BeforeSaveAction, bill, inputFields, EnumActionType.Add);
+                        await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
 
                         var billInfo = new InputBill()
                         {
@@ -1971,7 +1979,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputType.AfterSaveAction, bill, inputFields, EnumActionType.Add);
+                        await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, bill, inputFields, EnumActionType.Add);
                     }
 
                     await ConfirmCustomGenCode(generateTypeLastValues);

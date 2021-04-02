@@ -102,6 +102,20 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _inputConfigService.DeleteInputField(inputFieldId).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("GlobalSetting")]
+        public async Task<InputTypeGlobalSettingModel> GetInputGlobalSetting()
+        {
+            return await _inputConfigService.GetInputGlobalSetting().ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("GlobalSetting")]
+        public async Task<bool> UpdateInputGlobalSetting([FromBody] InputTypeGlobalSettingModel setting)
+        {
+            return await _inputConfigService.UpdateInputGlobalSetting(setting).ConfigureAwait(true);
+        }
+
         [HttpPost]
         [Route("")]
         public async Task<int> AddInputType([FromBody] InputTypeModel category)
