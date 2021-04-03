@@ -217,17 +217,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         OutsourceOrderId = detail == null ? 0 : detail.OutsourceOrderId,
                         OutsourceOrderPrice = detail == null ? 0 : detail.OutsourceOrderPrice,
                         OutsourceOrderTax = detail == null ? 0 : detail.OutsourceOrderTax,
-                        OutsourceStepRequestCode = data.OutsourceStepRequestCode,
-                        OutsourceStepRequestDataQuantityProcessed = data.OutsourceStepRequestDataQuantityProcessed,
                         OutsourceStepRequestId = data.OutsourceStepRequestId,
                         ProductionStepId = data.ProductionStepId,
                         ProductionStepLinkDataId = data.ProductionStepLinkDataId,
-                        ProductionStepLinkDataQuantity = data.ProductionStepLinkDataQuantity,
                         ProductionStepLinkDataRoleTypeId = data.ProductionStepLinkDataRoleTypeId,
                         ProductionStepLinkDataTitle = data.ProductionStepLinkDataTitle,
                         ProductionStepTitle = data.ProductionStepTitle,
-                        OutsourceStepRequestFinishDate = data.OutsourceStepRequestFinishDate,
-                        ProductionOrderCode = data.ProductionOrderCode
                     });
                 }
                 outsourceOrderDetail.AddRange(lst.OrderBy(x => x.ProductionStepId));

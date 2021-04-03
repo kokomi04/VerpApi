@@ -193,8 +193,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<OutsourceStepRequestData>(entity =>
             {
-                entity.HasKey(e => new { e.OutsourceStepRequestId, e.ProductionStepLinkDataId })
-                    .HasName("PK_RequestOutsourceStepOutput");
+                entity.HasKey(e => new { e.OutsourceStepRequestId, e.ProductionStepId, e.ProductionStepLinkDataId });
+
+                entity.Property(e => e.IsImportant)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment("1: input 2:input");
 
@@ -205,6 +208,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.OutsourceStepRequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceStepRequestData_OutsourceStepRequest");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.OutsourceStepRequestData)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceStepRequestData_ProductionStep");
 
                 entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.OutsourceStepRequestData)

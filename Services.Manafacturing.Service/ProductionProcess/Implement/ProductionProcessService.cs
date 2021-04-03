@@ -1443,17 +1443,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     
                     ld.ProductionStepReceiveTitle = "Kho";
                     ld.ProductionStepSourceTitle = "Kho";
+                    ld.IsImportant = false;
 
                     if (roleInput != null)
                     {
-                        var source = productionSteps.FirstOrDefault(x => x.ProductionStepId == roleInput.ProductionStepId);
-                        ld.ProductionStepReceiveTitle = source.Title;
+                        var step = productionSteps.FirstOrDefault(x => x.ProductionStepId == roleInput.ProductionStepId);
+                        ld.ProductionStepReceiveTitle = step.Title;
+                        ld.IsImportant = true;
+                        ld.ProductionStepReceiveId = step.ProductionStepId;
                     }
 
                     if (roleOutput != null)
                     {
-                        var source = productionSteps.FirstOrDefault(x => x.ProductionStepId == roleOutput.ProductionStepId);
-                        ld.ProductionStepSourceTitle = source.Title;
+                        var step = productionSteps.FirstOrDefault(x => x.ProductionStepId == roleOutput.ProductionStepId);
+                        ld.ProductionStepSourceTitle = step.Title;
+                        ld.ProductionStepSourceId = step.ProductionStepId;
                     }
                 }
             }
