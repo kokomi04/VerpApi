@@ -7,10 +7,11 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
 using Newtonsoft.Json;
 using VErp.Commons.Constants;
+using VErp.Commons.GlobalObject.DynamicBill;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
-    public class InputFieldInputModel : IMapFrom<InputField>
+    public class InputFieldInputModel : IFieldData, IMapFrom<InputField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
@@ -66,7 +67,7 @@ namespace VErp.Services.Accountancy.Model.Input
         }
     }
 
-    public class InputAreaFieldInputModel : IMapFrom<InputAreaField>
+    public class InputAreaFieldInputModel : IFieldData, IMapFrom<InputAreaField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
@@ -132,14 +133,20 @@ namespace VErp.Services.Accountancy.Model.Input
         }
     }
 
-    public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
+    public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel, IFieldExecData
     {
         public InputFieldOutputModel InputField { get; set; }
 
-        public string OnFocusExec => string.IsNullOrWhiteSpace(OnFocus) ? InputField?.OnFocus : OnFocus.Replace(AccountantConstants.SUPER, InputField?.OnFocus);
-        public string OnKeydownExec => string.IsNullOrWhiteSpace(OnKeydown) ? InputField?.OnKeydown : OnKeydown.Replace(AccountantConstants.SUPER, InputField?.OnKeydown);
-        public string OnKeypressExec => string.IsNullOrWhiteSpace(OnKeypress) ? InputField?.OnKeypress : OnKeypress.Replace(AccountantConstants.SUPER, InputField?.OnKeypress);
-        public string OnBlurExec => string.IsNullOrWhiteSpace(OnBlur) ? InputField?.OnBlur : OnBlur.Replace(AccountantConstants.SUPER, InputField?.OnBlur);
-        public string OnChangeExec => string.IsNullOrWhiteSpace(OnChange) ? InputField?.OnChange : OnChange.Replace(AccountantConstants.SUPER, InputField?.OnChange);
+        private ExecCodeCombine<IFieldData> execCodeCombine;
+        public InputAreaFieldOutputFullModel()
+        {
+            execCodeCombine = new ExecCodeCombine<IFieldData>(this);
+        }
+
+        public string OnFocusExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnFocus), InputField);
+        public string OnKeydownExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnKeydown), InputField);
+        public string OnKeypressExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnKeypress), InputField);
+        public string OnBlurExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnBlur), InputField);
+        public string OnChangeExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnChange), InputField);
     }
 }

@@ -5,10 +5,11 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using Newtonsoft.Json;
+using VErp.Commons.GlobalObject.DynamicBill;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-    public class VoucherFieldInputModel : IMapFrom<VoucherField>
+    public class VoucherFieldInputModel : IFieldData, IMapFrom<VoucherField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
@@ -29,6 +30,13 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string RefTableTitle { get; set; }
         public bool IsReadOnly { get; set; }
         public ControlStructureModel Structure { get; set; }
+
+        public string OnFocus { get; set; }
+        public string OnKeydown { get; set; }
+        public string OnKeypress { get; set; }
+        public string OnBlur { get; set; }
+        public string OnChange { get; set; }
+
         protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {
             profile.CreateMap<VoucherField, T>()
@@ -58,7 +66,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         }
     }
 
-    public class VoucherAreaFieldInputModel : IMapFrom<VoucherAreaField>
+    public class VoucherAreaFieldInputModel : IFieldData, IMapFrom<VoucherAreaField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
@@ -125,8 +133,21 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         }
     }
 
-    public class VoucherAreaFieldOutputFullModel : VoucherAreaFieldInputModel
+    public class VoucherAreaFieldOutputFullModel : VoucherAreaFieldInputModel, IFieldExecData
     {
         public VoucherFieldOutputModel VoucherField { get; set; }
+
+        private ExecCodeCombine<IFieldData> execCodeCombine;
+        public VoucherAreaFieldOutputFullModel()
+        {
+            execCodeCombine = new ExecCodeCombine<IFieldData>(this);
+        }
+
+        public string OnFocusExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnFocus), VoucherField);
+        public string OnKeydownExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnKeydown), VoucherField);
+        public string OnKeypressExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnKeypress), VoucherField);
+        public string OnBlurExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnBlur), VoucherField);
+        public string OnChangeExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnChange), VoucherField);
     }
+
 }
