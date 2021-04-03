@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<VoucherBill> VoucherBill { get; set; }
         public virtual DbSet<VoucherField> VoucherField { get; set; }
         public virtual DbSet<VoucherType> VoucherType { get; set; }
+        public virtual DbSet<VoucherTypeGlobalSetting> VoucherTypeGlobalSetting { get; set; }
         public virtual DbSet<VoucherTypeGroup> VoucherTypeGroup { get; set; }
         public virtual DbSet<VoucherTypeView> VoucherTypeView { get; set; }
         public virtual DbSet<VoucherTypeViewField> VoucherTypeViewField { get; set; }
@@ -457,6 +458,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.FieldName)
                     .IsRequired()
                     .HasMaxLength(64);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
 
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 

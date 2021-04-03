@@ -60,6 +60,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
         }
 
         [HttpGet]
+        [Route("GetAllConfig")]
+        public async Task<IList<VoucherTypeFullModel>> GetAllConfig()
+        {
+            return await _voucherConfigService.GetAllVoucherTypes().ConfigureAwait(true);
+        }
+
+        [HttpGet]
         [Route("simpleList")]
         public async Task<IList<VoucherTypeSimpleModel>> GetSimpleList()
         {
@@ -92,6 +99,20 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
         public async Task<bool> DeleteVoucherField([FromRoute] int voucherFieldId)
         {
             return await _voucherConfigService.DeleteVoucherField(voucherFieldId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("GlobalSetting")]
+        public async Task<VoucherTypeGlobalSettingModel> GetInputGlobalSetting()
+        {
+            return await _voucherConfigService.GetVoucherGlobalSetting().ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("GlobalSetting")]
+        public async Task<bool> UpdateInputGlobalSetting([FromBody] VoucherTypeGlobalSettingModel setting)
+        {
+            return await _voucherConfigService.UpdateVoucherGlobalSetting(setting).ConfigureAwait(true);
         }
 
         [HttpPost]

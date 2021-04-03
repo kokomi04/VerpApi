@@ -1,18 +1,15 @@
-﻿
-using AutoMapper;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 
-namespace VErp.Services.Accountancy.Model.Input
+namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
-
-    public class InputTypeGlobalSettingModel : ITypeData, IMapFrom<InputTypeGlobalSetting>
+    public class VoucherTypeGlobalSettingModel : ITypeData, IMapFrom<VoucherTypeGlobalSetting>
     {
-        public InputTypeGlobalSettingModel()
+        public VoucherTypeGlobalSettingModel()
         {
         }
 

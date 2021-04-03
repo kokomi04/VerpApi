@@ -10,11 +10,16 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
     public interface IVoucherConfigService
     {
         // Input type
+        Task<IList<VoucherTypeFullModel>> GetAllVoucherTypes();
+
         Task<VoucherTypeFullModel> GetVoucherType(int voucherTypeId);
         Task<VoucherTypeFullModel> GetVoucherType(string inputTypeCode);
 
         Task<PageData<VoucherTypeModel>> GetVoucherTypes(string keyword, int page, int size);
         Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList();
+
+        Task<VoucherTypeGlobalSettingModel> GetVoucherGlobalSetting();
+        Task<bool> UpdateVoucherGlobalSetting(VoucherTypeGlobalSettingModel data);
 
         Task<int> AddVoucherType(VoucherTypeModel data);
         Task<bool> UpdateVoucherType(int voucherTypeId, VoucherTypeModel data);

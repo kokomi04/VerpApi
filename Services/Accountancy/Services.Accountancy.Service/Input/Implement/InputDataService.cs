@@ -29,6 +29,7 @@ using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using System.IO;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.DynamicBill;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -1244,7 +1245,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return changeFieldIndexes.ToArray();
         }
 
-        private async Task<IInputTypeExecData> GetInputTypExecInfo(int inputTypeId)
+        private async Task<ITypeExecData> GetInputTypExecInfo(int inputTypeId)
         {
             var global = await _inputConfigService.GetInputGlobalSetting();
             var inputTypeInfo = await _accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);

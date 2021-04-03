@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.AccountancyDB;
 
@@ -15,7 +16,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
     }
 
-    public class InputTypeModel : InputTypeSimpleProjectMappingModel
+    public class InputTypeModel : InputTypeSimpleProjectMappingModel, ITypeData
     {
         public InputTypeModel()
         {
@@ -49,30 +50,22 @@ namespace VErp.Services.Accountancy.Model.Input
         }
     }
 
-    public class InputTypeExecData : InputTypeModel, IInputTypeExecData
+    public class InputTypeExecData : InputTypeModel, ITypeExecData
     {
         public InputTypeGlobalSettingModel GlobalSetting { get; set; }
+        private ExecCodeCombine<ITypeData> execCodeCombine;
+        public InputTypeExecData()
+        {
+            execCodeCombine = new ExecCodeCombine<ITypeData>(this);
+        }
 
-        public string PreLoadActionExec => string.IsNullOrWhiteSpace(PreLoadAction) ? GlobalSetting?.PreLoadAction : PreLoadAction.Replace(AccountantConstants.SUPER, GlobalSetting?.PreLoadAction);
-        public string PostLoadActionExec => string.IsNullOrWhiteSpace(PostLoadAction) ? GlobalSetting?.PostLoadAction : PostLoadAction.Replace(AccountantConstants.SUPER, GlobalSetting?.PostLoadAction);
-        public string AfterLoadActionExec => string.IsNullOrWhiteSpace(AfterLoadAction) ? GlobalSetting?.AfterLoadAction : AfterLoadAction.Replace(AccountantConstants.SUPER, GlobalSetting?.AfterLoadAction);
-        public string BeforeSubmitActionExec => string.IsNullOrWhiteSpace(BeforeSubmitAction) ? GlobalSetting?.BeforeSubmitAction : BeforeSubmitAction.Replace(AccountantConstants.SUPER, GlobalSetting?.BeforeSubmitAction);
-        public string BeforeSaveActionExec => string.IsNullOrWhiteSpace(BeforeSaveAction) ? GlobalSetting?.BeforeSaveAction : BeforeSaveAction.Replace(AccountantConstants.SUPER, GlobalSetting?.BeforeSaveAction);
-        public string AfterSaveActionExec => string.IsNullOrWhiteSpace(AfterSaveAction) ? GlobalSetting?.AfterSaveAction : AfterSaveAction.Replace(AccountantConstants.SUPER, GlobalSetting?.AfterSaveAction);
-        public string AfterInsertLinesJsActionExec => string.IsNullOrWhiteSpace(AfterInsertLinesJsAction) ? GlobalSetting?.AfterInsertLinesJsAction : AfterInsertLinesJsAction.Replace(AccountantConstants.SUPER, GlobalSetting?.AfterInsertLinesJsAction);
-
+        public string PreLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PreLoadAction), GlobalSetting);
+        public string PostLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PostLoadAction), GlobalSetting);
+        public string AfterLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterLoadAction), GlobalSetting);
+        public string BeforeSubmitActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSubmitAction), GlobalSetting);
+        public string BeforeSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSaveAction), GlobalSetting);
+        public string AfterSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterSaveAction), GlobalSetting);
+        public string AfterInsertLinesJsActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterInsertLinesJsAction), GlobalSetting);
     }
 
-    public interface IInputTypeExecData
-    {
-        string Title { get; }
-        string PreLoadActionExec { get; }
-        string PostLoadActionExec { get; }
-        string AfterLoadActionExec { get; }
-        string BeforeSubmitActionExec { get; }
-        string BeforeSaveActionExec { get; }
-        string AfterSaveActionExec { get; }
-        string AfterInsertLinesJsActionExec { get; }
-
-    }
 }
