@@ -812,6 +812,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     ProductionAssignment = a,
                     TotalQuantity = d.Quantity,
+                    ps.Workload,
+                    d.ObjectId,
+                    d.ObjectTypeId,
                     s.StepName,
                     Productivity = sd.Quantity,
                     po.ProductionOrderCode,
@@ -819,11 +822,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     ad.WorkDate,
                     OutputQuantity = ld.Quantity
                 }).ToListAsync()
-                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.Productivity, a.ProductionOrderCode })
+                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.Workload, a.ObjectTypeId, a.ObjectId, a.StepName, a.Productivity, a.ProductionOrderCode })
                  .Select(g => new
                  {
                      g.Key.ProductionAssignment,
                      g.Key.TotalQuantity,
+                     g.Key.Workload,
+                     g.Key.ObjectTypeId,
+                     g.Key.ObjectId,
                      g.Key.StepName,
                      g.Key.Productivity,
                      g.Key.ProductionOrderCode,
@@ -872,7 +878,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     ProductionOrderCode = otherAssignment.ProductionOrderCode,
                     StepName = productionStepName,
                     Productivity = otherAssignment.Productivity,
+                    Workload = otherAssignment.Workload.GetValueOrDefault(),
                     AssingmentQuantity = otherAssignment.ProductionAssignment.AssignmentQuantity,
+                    LinkDataQuantity = otherAssignment.TotalQuantity,
                     OutputQuantity = otherAssignment.OutputQuantity,
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
@@ -881,6 +889,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                 * otherAssignment.ProductionAssignment.AssignmentQuantity)
                                 / (otherAssignment.TotalQuantity
                                 * otherAssignment.ProductionAssignment.Productivity),
+                    ObjectId = otherAssignment.ObjectId,
+                    ObjectTypeId = otherAssignment.ObjectTypeId,
                     CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
                     {
                         WorkDate = ad.WorkDate.GetUnix(),
