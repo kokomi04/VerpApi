@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -16,7 +18,7 @@ namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/manufacturing/[controller]")]
     [ApiController]
-    public class ProductionMaterialsRequirementController: VErpBaseController
+    public class ProductionMaterialsRequirementController : VErpBaseController
     {
         private readonly IProductionMaterialsRequirementService _requirementService;
 
@@ -26,9 +28,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("")]
-        public async Task<long> AddProductionMaterialsRequirement([FromBody] ProductionMaterialsRequirementModel model)
+        [Route("department/{departmentId}")]
+        public async Task<long> AddProductionMaterialsRequirement([FromRoute] int departmentId, [FromBody] ProductionMaterialsRequirementModel model)
         {
+            if (model.MaterialsRequirementDetails.Any(d => d.DepartmentId != departmentId)) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép tạo yêu cầu cho đúng tổ được phân công");
             return await _requirementService.AddProductionMaterialsRequirement(model, EnumProductionMaterialsRequirementStatus.Waiting);
         }
 
@@ -40,12 +43,21 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
-        [Route("{productionMaterialsRequirementId}")]
-        public async Task<bool> UpdateProductionMaterialsRequirement([FromRoute]long productionMaterialsRequirementId, [FromBody]ProductionMaterialsRequirementModel model)
+        [Route("department/{departmentId}/{productionMaterialsRequirementId}")]
+        public async Task<bool> UpdateProductionMaterialsRequirement([FromRoute] int departmentId, [FromRoute] long productionMaterialsRequirementId, [FromBody] ProductionMaterialsRequirementModel model)
         {
             if (model != null && model.MaterialsRequirementDetails.Count == 0)
                 return await _requirementService.DeleteProductionMaterialsRequirement(productionMaterialsRequirementId);
+            if (model.MaterialsRequirementDetails.Any(d => d.DepartmentId != departmentId)) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép sửa yêu cầu cho đúng tổ được phân công");
+            return await _requirementService.UpdateProductionMaterialsRequirement(productionMaterialsRequirementId, model);
+        }
 
+        [HttpPut]
+        [Route("{productionMaterialsRequirementId}/manager")]
+        public async Task<bool> UpdateProductionMaterialsRequirementForManager([FromRoute] long productionMaterialsRequirementId, [FromBody] ProductionMaterialsRequirementModel model)
+        {
+            if (model != null && model.MaterialsRequirementDetails.Count == 0)
+                return await _requirementService.DeleteProductionMaterialsRequirement(productionMaterialsRequirementId);
             return await _requirementService.UpdateProductionMaterialsRequirement(productionMaterialsRequirementId, model);
         }
 
@@ -58,7 +70,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productionMaterialsRequirementId}")]
-        public async Task<ProductionMaterialsRequirementModel> GetProductionMaterialsRequirement([FromRoute]long productionMaterialsRequirementId)
+        public async Task<ProductionMaterialsRequirementModel> GetProductionMaterialsRequirement([FromRoute] long productionMaterialsRequirementId)
         {
             return await _requirementService.GetProductionMaterialsRequirement(productionMaterialsRequirementId);
         }
@@ -66,14 +78,14 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [Route("search")]
         [VErpAction(EnumActionType.View)]
-        public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement([FromQuery] long productionOrderId, [FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size,[FromBody] Clause filters)
+        public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement([FromQuery] long productionOrderId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
             return await _requirementService.SearchProductionMaterialsRequirement(productionOrderId, keyword, page, size, filters);
         }
 
         [HttpGet]
         [Route("productionOrder/{productionOrderId}")]
-        public async Task<IList<ProductionMaterialsRequirementDetailListModel>> GetProductionMaterialsRequirementByProductionOrder([FromRoute]long productionOrderId)
+        public async Task<IList<ProductionMaterialsRequirementDetailListModel>> GetProductionMaterialsRequirementByProductionOrder([FromRoute] long productionOrderId)
         {
             return await _requirementService.GetProductionMaterialsRequirementByProductionOrder(productionOrderId);
         }
@@ -91,5 +103,5 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _requirementService.ConfirmInventoryRequirement(productionMaterialsRequirementId, EnumProductionMaterialsRequirementStatus.Accepted);
         }
-    }                                                                                                                         
+    }
 }

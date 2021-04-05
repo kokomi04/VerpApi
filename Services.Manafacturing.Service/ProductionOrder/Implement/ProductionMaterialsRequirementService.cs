@@ -105,7 +105,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
 
                     var requirement = _mapper.Map<ProductionMaterialsRequirement>(model);
-
                     requirement.CensorStatus = (int)status;
 
                     _manufacturingDBContext.ProductionMaterialsRequirement.Add(requirement);
