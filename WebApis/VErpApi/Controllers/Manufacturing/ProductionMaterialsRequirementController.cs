@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
-        [Route("department/{departmentId}/{productionMaterialsRequirementId}")]
+        [Route("{productionMaterialsRequirementId}/department/{departmentId}")]
         public async Task<bool> UpdateProductionMaterialsRequirement([FromRoute] int departmentId, [FromRoute] long productionMaterialsRequirementId, [FromBody] ProductionMaterialsRequirementModel model)
         {
             if (model != null && model.MaterialsRequirementDetails.Count == 0)
