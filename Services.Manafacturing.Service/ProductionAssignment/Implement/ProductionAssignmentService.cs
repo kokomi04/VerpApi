@@ -818,27 +818,38 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     s.StepName,
                     Productivity = sd.Quantity,
                     po.ProductionOrderCode,
+                    po.ProductionOrderId,
                     ad.QuantityPerDay,
                     ad.WorkDate,
                     OutputQuantity = ld.Quantity
                 }).ToListAsync()
-                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.Workload, a.ObjectTypeId, a.ObjectId, a.StepName, a.Productivity, a.ProductionOrderCode })
-                 .Select(g => new
-                 {
-                     g.Key.ProductionAssignment,
-                     g.Key.TotalQuantity,
-                     g.Key.Workload,
-                     g.Key.ObjectTypeId,
-                     g.Key.ObjectId,
-                     g.Key.StepName,
-                     g.Key.Productivity,
-                     g.Key.ProductionOrderCode,
-                     OutputQuantity = g.Sum(g => g.OutputQuantity),
-                     ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
-                     {
-                         ad.WorkDate,
-                         ad.QuantityPerDay
-                     }).ToList()
+                ).GroupBy(a => new { 
+                    a.ProductionAssignment,
+                    a.TotalQuantity,
+                    a.Workload, 
+                    a.ObjectTypeId, 
+                    a.ObjectId, 
+                    a.StepName, 
+                    a.Productivity, 
+                    a.ProductionOrderCode,
+                    a.ProductionOrderId
+                }).Select(g => new 
+                {
+                    g.Key.ProductionAssignment,
+                    g.Key.TotalQuantity,
+                    g.Key.Workload,
+                    g.Key.ObjectTypeId,
+                    g.Key.ObjectId,
+                    g.Key.StepName,
+                    g.Key.Productivity,
+                    g.Key.ProductionOrderCode,
+                    g.Key.ProductionOrderId,
+                    OutputQuantity = g.Sum(g => g.OutputQuantity),
+                    ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
+                    {
+                        ad.WorkDate,
+                        ad.QuantityPerDay
+                    }).ToList()
                  }).ToList();
 
             var includeProductionStepIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionStepId).Distinct().ToList();
@@ -869,10 +880,48 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     }).ToListAsync();
             }
 
+            var otherProductionStepIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionStepId).Distinct().ToList();
+            var otherProductionOrderIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionOrderId).Distinct().ToList();
+
+            var handovers = _manufacturingDBContext.ProductionHandover
+                .Where(h => otherProductionStepIds.Contains(h.FromProductionStepId) && departmentIds.Contains(h.FromDepartmentId) && h.Status == (int)EnumHandoverStatus.Accepted)
+                .ToList();
+
+            var inventoryRequirements = new Dictionary<long, List<ProductionInventoryRequirementModel>>();
+
+            foreach (var otherProductionOrderId in otherProductionOrderIds)
+            {
+                var parammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@ProductionOrderId", otherProductionOrderId)
+                };
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+
+                inventoryRequirements.Add(otherProductionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                    .Where(ir => otherProductionStepIds.Contains(ir.ProductionStepId) && departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int) EnumProductionInventoryRequirementStatus.Accepted )
+                    .AsQueryable()
+                    .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+                    .ToList());
+            }
 
             foreach (var otherAssignment in otherAssignments)
             {
                 var productionStepName = $"{otherAssignment.StepName} (#{otherAssignment.ProductionAssignment.ProductionStepId})";
+                var completedQuantity = handovers
+                    .Where(h => h.FromProductionStepId == otherAssignment.ProductionAssignment.ProductionStepId 
+                    && h.FromDepartmentId == otherAssignment.ProductionAssignment.DepartmentId
+                    && h.ObjectId == otherAssignment.ObjectId
+                    && h.ObjectTypeId == otherAssignment.ObjectTypeId)
+                    .Sum(h => h.HandoverQuantity);
+                if(otherAssignment.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                {
+                    completedQuantity += inventoryRequirements[otherAssignment.ProductionOrderId]
+                        .Where(ir => ir.DepartmentId == otherAssignment.ProductionAssignment.DepartmentId
+                        && ir.ProductionStepId == otherAssignment.ProductionAssignment.ProductionStepId
+                        && ir.ProductId == otherAssignment.ObjectId)
+                        .Sum(ir => ir.ActualQuantity.GetValueOrDefault());
+                }
+
                 var capacityDepartment = new CapacityModel
                 {
                     ProductionOrderCode = otherAssignment.ProductionOrderCode,
@@ -891,6 +940,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                 * otherAssignment.ProductionAssignment.Productivity),
                     ObjectId = otherAssignment.ObjectId,
                     ObjectTypeId = otherAssignment.ObjectTypeId,
+                    CompletedQuantity = completedQuantity,
                     CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
                     {
                         WorkDate = ad.WorkDate.GetUnix(),
