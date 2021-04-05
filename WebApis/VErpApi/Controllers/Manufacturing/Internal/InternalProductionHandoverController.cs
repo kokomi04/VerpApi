@@ -25,7 +25,7 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         }
 
         [HttpPut]
-        [Route("{productionOrderId}/{productionStepId}/{departmentId}/status")]
+        [Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}/status")]
         public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId)
         {
             return await _productionHandoverService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId);
