@@ -99,6 +99,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public int? IdGencode { get; set; }
         public string RequireFilters { get; set; }
         public string ReferenceUrl { get; set; }
+        public bool IsBatchSelect { get; set; }
 
         public bool Compare(VoucherAreaField curField)
         {
@@ -129,7 +130,8 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
                 AutoFocus == curField.AutoFocus &&
                 Column == curField.Column &&
                 RequireFilters == curField.RequireFilters &&
-                ReferenceUrl == curField.ReferenceUrl;
+                ReferenceUrl == curField.ReferenceUrl &&
+                IsBatchSelect == curField.IsBatchSelect;
         }
     }
 

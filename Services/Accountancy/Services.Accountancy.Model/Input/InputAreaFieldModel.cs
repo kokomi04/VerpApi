@@ -100,6 +100,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public int? IdGencode { get; set; }
         public string RequireFilters { get; set; }
         public string ReferenceUrl { get; set; }
+        public bool IsBatchSelect { get; set; }
         public bool Compare(InputAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -129,7 +130,8 @@ namespace VErp.Services.Accountancy.Model.Input
                 AutoFocus == curField.AutoFocus &&
                 Column == curField.Column &&
                 RequireFilters == curField.RequireFilters &&
-                ReferenceUrl == curField.ReferenceUrl;
+                ReferenceUrl == curField.ReferenceUrl &&
+                IsBatchSelect == curField.IsBatchSelect;
         }
     }
 

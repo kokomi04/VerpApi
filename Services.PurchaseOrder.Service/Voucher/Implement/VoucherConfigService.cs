@@ -1149,6 +1149,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         curField.Column = field.Column;
                         curField.RequireFilters = field.RequireFilters;
                         curField.ReferenceUrl = field.ReferenceUrl;
+                        curField.IsBatchSelect = field.IsBatchSelect;
                     }
                 }
 
