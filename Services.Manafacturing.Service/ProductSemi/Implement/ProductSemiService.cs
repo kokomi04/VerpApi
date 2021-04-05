@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductSemi;
@@ -36,20 +37,65 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
         public async Task<long> CreateProductSemi(ProductSemiModel model)
         {
-            var data = _mapper.Map<ProductSemiEntity>(model);
-            await _manuDBContext.ProductSemi.AddAsync(data);
-            await _manuDBContext.SaveChangesAsync();
-            return data.ProductSemiId;
+            var trans = await _manuDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var productSemiEntity = _mapper.Map<ProductSemiEntity>(model);
+                await _manuDBContext.ProductSemi.AddAsync(productSemiEntity);
+                await _manuDBContext.SaveChangesAsync();
+
+                if (model.ProductSemiConversions.Count() > 0)
+                {
+                    foreach (var conversion in model.ProductSemiConversions)
+                    {
+                        conversion.ProductSemiId = productSemiEntity.ProductSemiId;
+                    }
+
+                    var lsConversionEntity = _mapper.Map<ICollection<ProductSemiConversion>>(model.ProductSemiConversions);
+                    await _manuDBContext.ProductSemiConversion.AddRangeAsync(lsConversionEntity);
+                    await _manuDBContext.SaveChangesAsync();
+                }
+
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Tạo mới bán thành phẩm {productSemiEntity.ProductSemiId}", model.JsonSerialize());
+                return productSemiEntity.ProductSemiId;
+
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError("CreateProductSemi", ex);
+                throw;
+            }
+
+
         }
 
         public async Task<bool> DeleteProductSemi(long productSemiId)
         {
-            var data = await _manuDBContext.ProductSemi.FirstOrDefaultAsync(p => p.ProductSemiId == productSemiId);
-            if (data == null)
-                throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
-            data.IsDeleted = true;
-            await _manuDBContext.SaveChangesAsync();
-            return true;
+            var trans = await _manuDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var productSemiEntity = await _manuDBContext.ProductSemi.FirstOrDefaultAsync(p => p.ProductSemiId == productSemiId);
+                if (productSemiEntity == null)
+                    throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
+                var productSemiConversions = await _manuDBContext.ProductSemiConversion.Where(p => p.ProductSemiId == productSemiId).ToListAsync();
+
+                productSemiEntity.IsDeleted = true;
+                productSemiConversions.ForEach(x => x.IsDeleted = true);
+                await _manuDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Xóa bán thành phẩm {productSemiEntity.ProductSemiId}", productSemiEntity.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError("DeleteProductSemi", ex);
+                throw;
+            }
+
         }
 
         public async Task<IList<ProductSemiModel>> GetListProductSemi(long containerId, int containerTypeId)
@@ -83,13 +129,41 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
         public async Task<bool> UpdateProductSemi(long productSemiId, ProductSemiModel model)
         {
-            var source = await _manuDBContext.ProductSemi.FirstOrDefaultAsync(p => p.ProductSemiId == productSemiId);
-            if (source == null)
-                throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
+            var trans = await _manuDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var productSemiEntity = await _manuDBContext.ProductSemi.FirstOrDefaultAsync(p => p.ProductSemiId == productSemiId);
+                if (productSemiEntity == null)
+                    throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
 
-            _mapper.Map(model, source);
-            await _manuDBContext.SaveChangesAsync();
-            return true;
+                if (model.ProductSemiConversions.Count() > 0)
+                {
+                    var productSemiConversions = await _manuDBContext.ProductSemiConversion.Where(p => p.ProductSemiId == productSemiId).ToListAsync();
+                    foreach (var conversion in productSemiConversions)
+                    {
+                        var modify = model.ProductSemiConversions.FirstOrDefault(x => x.ProductSemiConversionId == conversion.ProductSemiConversionId);
+                        if (modify != null)
+                            _mapper.Map(modify, conversion);
+                        else conversion.IsDeleted = true;
+                    }
+
+                    var newConventionEntity = _mapper.Map<IList<ProductSemiConversion>>(model.ProductSemiConversions.Where(x => x.ProductSemiConversionId == 0));
+                    await _manuDBContext.ProductSemiConversion.AddRangeAsync(newConventionEntity);
+                }
+
+                _mapper.Map(model, productSemiEntity);
+                await _manuDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Cập nhật bán thành phẩm {productSemiEntity.ProductSemiId}", model.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError("UpdateProductSemi", ex);
+                throw;
+            }
         }
     }
 }

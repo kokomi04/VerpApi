@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 
 namespace VErp.Services.Manafacturing.Model.ProductSemi
@@ -16,21 +13,14 @@ namespace VErp.Services.Manafacturing.Model.ProductSemi
         public EnumProductionProcess.EnumContainerType ContainerTypeId { get; set; }
         public string Title { get; set; }
         public int UnitId { get; set; }
-        public ProductSemiConversion Conversion { get; set; }
+        public IList<ProductSemiConversionModel> ProductSemiConversions { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductSemiEntity, ProductSemiModel>()
-                .ForMember(m => m.Conversion, v => v.MapFrom(m => m.Conversion.JsonDeserialize<ProductSemiConversion>()))
+                .ForMember(m => m.ProductSemiConversions, v => v.MapFrom(m => m.ProductSemiConversion))
                 .ReverseMap()
-                .ForMember(m => m.Conversion, v => v.MapFrom(m => m.Conversion.JsonSerialize()));
+                .ForMember(m => m.ProductSemiConversion, v => v.Ignore());
         }
-    }
-
-    public class ProductSemiConversion
-    {
-        public long ConversionId { get; set; }
-        public EnumProductionProcess.EnumContainerType ConversionTypeId { get; set; }
-        public decimal ConversionRate { get; set; }
     }
 }
