@@ -5,6 +5,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductSemi
     {
+        public ProductSemi()
+        {
+            ProductSemiConversion = new HashSet<ProductSemiConversion>();
+        }
+
         public long ProductSemiId { get; set; }
         public long ContainerId { get; set; }
         public int ContainerTypeId { get; set; }
@@ -18,5 +23,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
         public string Conversion { get; set; }
+
+        public virtual ICollection<ProductSemiConversion> ProductSemiConversion { get; set; }
     }
 }

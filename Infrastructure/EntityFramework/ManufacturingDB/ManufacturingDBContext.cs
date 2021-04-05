@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
         public virtual DbSet<OutsourceTrack> OutsourceTrack { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
+        public virtual DbSet<ProductSemiConversion> ProductSemiConversion { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual DbSet<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
@@ -249,6 +250,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<ProductSemiConversion>(entity =>
+            {
+                entity.Property(e => e.ConversionRate).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.ProductSemi)
+                    .WithMany(p => p.ProductSemiConversion)
+                    .HasForeignKey(d => d.ProductSemiId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductSemiConversion_ProductSemi");
             });
 
             modelBuilder.Entity<ProductionAssignment>(entity =>

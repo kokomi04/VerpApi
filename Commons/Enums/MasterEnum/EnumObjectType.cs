@@ -245,6 +245,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         ProductionMaterialsRequirement = 102,
         [Description("Vật tư tiêu hao của mặt hàng")]
-        ProductMaterialsConsumption = 321
+        ProductMaterialsConsumption = 321,
+        [Description("Bán thành phẩm")]
+        ProductSemi = 322,
+        [Description("Bán thành phẩm chuyển đổi")]
+        ProductSemiConversion = 323
     }
 }
