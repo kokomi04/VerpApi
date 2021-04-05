@@ -89,7 +89,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        [Route("productivity/general/{productionOrderId}")]
+        [Route("productivity/general/productionOrder/{productionOrderId}")]
         public async Task<IDictionary<long, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments([FromRoute] long productionOrderId)
         {
             return await _productionAssignmentService.GetGeneralProductivityDepartments(productionOrderId);
