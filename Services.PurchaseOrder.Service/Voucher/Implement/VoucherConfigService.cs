@@ -354,7 +354,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     BeforeSubmitAction = sourceVoucherType.BeforeSubmitAction,
                     BeforeSaveAction = sourceVoucherType.BeforeSaveAction,
                     AfterSaveAction = sourceVoucherType.AfterSaveAction,
-                    AfterInsertLinesJsAction = sourceVoucherType.AfterInsertLinesJsAction
+                    AfterUpdateRowsJsAction = sourceVoucherType.AfterUpdateRowsJsAction
                 };
                 await _purchaseOrderDBContext.VoucherType.AddAsync(cloneType);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -455,7 +455,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 voucherType.BeforeSubmitAction = data.BeforeSubmitAction;
                 voucherType.BeforeSaveAction = data.BeforeSaveAction;
                 voucherType.AfterSaveAction = data.AfterSaveAction;
-                voucherType.AfterInsertLinesJsAction = data.AfterInsertLinesJsAction;
+                voucherType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 

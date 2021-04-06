@@ -302,7 +302,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     BeforeSubmitAction = sourceInput.BeforeSubmitAction,
                     BeforeSaveAction = sourceInput.BeforeSaveAction,
                     AfterSaveAction = sourceInput.AfterSaveAction,
-                    AfterInsertLinesJsAction = sourceInput.AfterInsertLinesJsAction,
+                    AfterUpdateRowsJsAction = sourceInput.AfterUpdateRowsJsAction,
                 };
                 await _accountancyDBContext.InputType.AddAsync(cloneType);
                 await _accountancyDBContext.SaveChangesAsync();
@@ -412,7 +412,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.BeforeSubmitAction = data.BeforeSubmitAction;
                 inputType.BeforeSaveAction = data.BeforeSaveAction;
                 inputType.AfterSaveAction = data.AfterSaveAction;
-                inputType.AfterInsertLinesJsAction = data.AfterInsertLinesJsAction;
+                inputType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
