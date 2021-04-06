@@ -36,6 +36,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string OnKeypress { get; set; }
         public string OnBlur { get; set; }
         public string OnChange { get; set; }
+        public string OnClick { get; set; }
 
         public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
     }

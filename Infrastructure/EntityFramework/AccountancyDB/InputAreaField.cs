@@ -40,6 +40,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string RequireFilters { get; set; }
         public string ReferenceUrl { get; set; }
         public bool IsBatchSelect { get; set; }
+        public string OnClick { get; set; }
 
         public virtual InputArea InputArea { get; set; }
         public virtual InputField InputField { get; set; }
