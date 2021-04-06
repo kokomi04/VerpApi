@@ -29,7 +29,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
-        public string AfterInsertLinesJsAction { get; set; }
+        public string AfterUpdateRowsJsAction { get; set; }
 
         //public MenuStyleModel MenuStyle { get; set; }
     }
@@ -65,7 +65,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string BeforeSubmitActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSubmitAction), GlobalSetting);
         public string BeforeSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSaveAction), GlobalSetting);
         public string AfterSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterSaveAction), GlobalSetting);
-        public string AfterInsertLinesJsActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterInsertLinesJsAction), GlobalSetting);
+        public string AfterUpdateRowsJsActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterUpdateRowsJsAction), GlobalSetting);
     }
 
 }

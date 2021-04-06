@@ -15,7 +15,7 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string BeforeSubmitAction { get; set; }
         string BeforeSaveAction { get; set; }
         string AfterSaveAction { get; set; }
-        string AfterInsertLinesJsAction { get; set; }
+        string AfterUpdateRowsJsAction { get; set; }
     }
 
     public interface IFieldData
@@ -39,7 +39,7 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string BeforeSubmitActionExec { get; }
         string BeforeSaveActionExec { get; }
         string AfterSaveActionExec { get; }
-        string AfterInsertLinesJsActionExec { get; }
+        string AfterUpdateRowsJsActionExec { get; }
     }
 
 
