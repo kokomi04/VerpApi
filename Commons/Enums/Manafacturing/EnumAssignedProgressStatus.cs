@@ -10,8 +10,8 @@ namespace VErp.Commons.Enums.Manafacturing
         [Description("Đợi bàn giao")]
         Waiting = 1,
         [Description("Đang bàn giao")]
-        HandingOver = 1,
+        HandingOver = 2,
         [Description("Hoàn thành")]
-        Finish = 2
+        Finish = 3
     }
 }
