@@ -36,6 +36,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnKeypress { get; set; }
         public string OnBlur { get; set; }
         public string OnChange { get; set; }
+        public string OnClick { get; set; }
 
         protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {
@@ -100,7 +101,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string RequireFilters { get; set; }
         public string ReferenceUrl { get; set; }
         public bool IsBatchSelect { get; set; }
-
+        public string OnClick { get; set; }
         public bool Compare(VoucherAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -131,7 +132,8 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
                 Column == curField.Column &&
                 RequireFilters == curField.RequireFilters &&
                 ReferenceUrl == curField.ReferenceUrl &&
-                IsBatchSelect == curField.IsBatchSelect;
+                IsBatchSelect == curField.IsBatchSelect &&
+                OnClick == curField.OnClick;
         }
     }
 
@@ -150,6 +152,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnKeypressExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnKeypress), VoucherField);
         public string OnBlurExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnBlur), VoucherField);
         public string OnChangeExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnChange), VoucherField);
+        public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), VoucherField);
     }
 
 }

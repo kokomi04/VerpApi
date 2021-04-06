@@ -25,6 +25,7 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string OnKeypress { get; set; }
         string OnBlur { get; set; }
         string OnChange { get; set; }
+        string OnClick { get; set; }
     }
 
 
@@ -50,6 +51,7 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string OnKeypressExec { get; }
         string OnBlurExec { get; }
         string OnChangeExec { get; }
+        string OnClickExec { get; }
     }
 
 
