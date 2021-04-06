@@ -31,7 +31,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
-        public string AfterInsertLinesJsAction { get; set; }
         public string AfterUpdateRowsJsAction { get; set; }
 
         public virtual InputTypeGroup InputTypeGroup { get; set; }
