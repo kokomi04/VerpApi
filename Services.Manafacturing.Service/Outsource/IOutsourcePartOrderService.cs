@@ -18,6 +18,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<bool> DeleteOutsourceOrderPart(long outsourceOrderId);
         Task<OutsourceOrderInfo> GetOutsourceOrderPart(long outsourceOrderId);
 
-        Task<IList<OutsourceOrderMaterials>> GetMaterials(long outsourceOrderId);
+        Task<IList<Model.Outsource.Order.OutsourceOrderMaterials>> GetMaterials(long outsourceOrderId);
     }
 }

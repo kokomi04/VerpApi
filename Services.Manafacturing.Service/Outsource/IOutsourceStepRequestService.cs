@@ -21,5 +21,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<bool> DeleteOutsourceStepRequest(long outsourceStepRequestId);
         Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId);
+        Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData(long[] productionStepLinkDataId);
     }
 }

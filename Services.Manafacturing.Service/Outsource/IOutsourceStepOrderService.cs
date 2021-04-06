@@ -10,10 +10,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource
 {
     public interface IOutsourceStepOrderService
     {
-        Task<long> CreateOutsourceStepOrderPart(OutsourceStepOrderModel req);
-        Task<OutsourceStepOrderModel> GetOutsourceStepOrder(long outsourceStepOrderId);
+        Task<long> CreateOutsourceStepOrder(OutsourceStepOrderInput req);
+        Task<OutsourceStepOrderOutput> GetOutsourceStepOrder(long outsourceStepOrderId);
         Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size);
-        Task<bool> UpdateOutsourceStepOrder(long outsourceStepOrderId, OutsourceStepOrderModel req);
+        Task<bool> UpdateOutsourceStepOrder(long outsourceStepOrderId, OutsourceStepOrderOutput req);
         Task<bool> DeleteOutsouceStepOrder(long outsourceStepOrderId);
     }
 }

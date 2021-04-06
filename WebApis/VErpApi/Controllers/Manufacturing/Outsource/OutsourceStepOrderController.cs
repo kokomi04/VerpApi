@@ -24,14 +24,14 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateOutsourceStepOrderPart([FromBody] OutsourceStepOrderModel req)
+        public async Task<long> CreateOutsourceStepOrderPart([FromBody] OutsourceStepOrderInput req)
         {
-            return await _outsourceStepOrderService.CreateOutsourceStepOrderPart(req);
+            return await _outsourceStepOrderService.CreateOutsourceStepOrder(req);
         }
 
         [HttpGet]
         [Route("{outsourceStepOrderId}")]
-        public async Task<OutsourceStepOrderModel> GetOutsourceStepOrderPart([FromRoute] long outsourceStepOrderId)
+        public async Task<OutsourceStepOrderOutput> GetOutsourceStepOrderPart([FromRoute] long outsourceStepOrderId)
         {
             return await _outsourceStepOrderService.GetOutsourceStepOrder(outsourceStepOrderId);
         }
@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPut]
         [Route("{outsourceStepOrderId}")]
-        public async Task<bool> UpdateOutsourceStepOrder([FromRoute]long outsourceStepOrderId,[FromBody] OutsourceStepOrderModel req) {
+        public async Task<bool> UpdateOutsourceStepOrder([FromRoute]long outsourceStepOrderId,[FromBody] OutsourceStepOrderOutput req) {
             return await _outsourceStepOrderService.UpdateOutsourceStepOrder(outsourceStepOrderId, req);
         }
 

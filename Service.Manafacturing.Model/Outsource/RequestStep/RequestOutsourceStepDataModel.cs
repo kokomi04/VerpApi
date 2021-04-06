@@ -32,9 +32,12 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 
     public class OutsourceStepRequestDataExtraInfo: OutsourceStepRequestDataModel
     {
+        public string OutsourceStepRequestCode { get; set; }
         public string ProductionStepTitle { get; set; }
         public string ProductionStepLinkDataTitle { get; set; }
         public int ProductionStepLinkDataUnitId { get; set; }
-        //public decimal? OutsourceStepRequestDataQuantityProcessed { get; set; }
+        public int ProductionStepLinkDataObjectId { get; set; }
+        public decimal? OutsourceStepRequestDataQuantityProcessed { get; set; }
+        public long OutsourceStepRequestFinishDate { get; set; }
     }
 }

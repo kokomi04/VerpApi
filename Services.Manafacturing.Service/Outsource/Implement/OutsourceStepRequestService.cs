@@ -368,6 +368,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ThenInclude(s => s.Step)
                 .ToListAsync();
 
+            var linkDataIds = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId);
+            var quantityProcessedMap = (await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
+                .Include(x => x.OutsourceOrder)
+                .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep && linkDataIds.Contains(x.ObjectId))
+                .ToListAsync())
+                .GroupBy(x => x.ObjectId)
+                .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+
             var lsProductionStepLinkDataId = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId).ToArray();
             var lsProductionStepLinkDataInfo = await GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
 
@@ -386,7 +394,56 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)item.ProductionStepLinkDataRoleTypeId,
                     ProductionStepLinkDataTitle = ldInfo?.ObjectTitle,
                     ProductionStepTitle = stepInfo?.Title,
-                    ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId)
+                    ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId),
+                    ProductionStepLinkDataObjectId = (int)ldInfo.ObjectId,
+                    OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0 
+                };
+
+                results.Add(data);
+            }
+            return results.OrderBy(x => x.IsImportant == true ? 0 : 1).ToList();
+        }
+
+        public async Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData(long[] productionStepLinkDataId)
+        {
+            var lsOutsourceStepRequestDetail = await _manufacturingDBContext.OutsourceStepRequestData.AsNoTracking()
+                .Where(x => productionStepLinkDataId.Contains(x.ProductionStepLinkDataId))
+                .Include(x => x.OutsourceStepRequest)
+                .Include(x => x.ProductionStep)
+                .ThenInclude(s => s.Step)
+                .ToListAsync();
+
+            var linkDataIds = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId);
+            var quantityProcessedMap = (await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
+                .Include(x => x.OutsourceOrder)
+                .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep && linkDataIds.Contains(x.ObjectId))
+                .ToListAsync())
+                .GroupBy(x => x.ObjectId)
+                .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+
+            var lsProductionStepLinkDataId = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId).ToArray();
+            var lsProductionStepLinkDataInfo = await GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
+
+            var results = new List<OutsourceStepRequestDataExtraInfo>();
+            foreach (var item in lsOutsourceStepRequestDetail)
+            {
+                var ldInfo = lsProductionStepLinkDataInfo.FirstOrDefault(x => x.ProductionStepLinkDataId == item.ProductionStepLinkDataId);
+                var stepInfo = _mapper.Map<ProductionStepModel>(item.ProductionStep);
+                var data = new OutsourceStepRequestDataExtraInfo
+                {
+                    IsImportant = item.IsImportant,
+                    ProductionStepLinkDataId = item.ProductionStepLinkDataId,
+                    OutsourceStepRequestDataQuantity = item.Quantity,
+                    OutsourceStepRequestId = item.OutsourceStepRequestId,
+                    ProductionStepId = item.ProductionStepId,
+                    ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)item.ProductionStepLinkDataRoleTypeId,
+                    ProductionStepLinkDataTitle = ldInfo?.ObjectTitle,
+                    ProductionStepTitle = stepInfo?.Title,
+                    ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId),
+                    ProductionStepLinkDataObjectId = (int)ldInfo.ObjectId,
+                    OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0,
+                    OutsourceStepRequestCode = item.OutsourceStepRequest.OutsourceStepRequestCode,
+                    OutsourceStepRequestFinishDate = item.OutsourceStepRequest.OutsourceStepRequestFinishDate.GetUnix()
                 };
 
                 results.Add(data);
@@ -413,7 +470,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ToListAsync();
             foreach (var rq in lsOutsourceRequest)
             {
-                var productionLinkDataIds = rq.OutsourceStepRequestData.Select(x => x.ProductionStepLinkDataId);
+                var data = rq.OutsourceStepRequestData.Where(x => x.IsImportant == true).ToArray();
+                var productionLinkDataIds = data.Select(x => x.ProductionStepLinkDataId);
 
                 var outsourceOrderDetails = await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
                     .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
@@ -438,7 +496,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                     .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
 
                     var isCheckOrder = false;
-                    foreach (var d in rq.OutsourceStepRequestData)
+                    foreach (var d in data)
                     {
                         if (!quantityOrderByRequestDetail.ContainsKey(d.ProductionStepLinkDataId)
                             || (d.Quantity - quantityOrderByRequestDetail[d.ProductionStepLinkDataId]) != 0)

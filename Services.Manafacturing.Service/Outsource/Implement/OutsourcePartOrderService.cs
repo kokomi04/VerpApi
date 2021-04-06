@@ -314,9 +314,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<IList<OutsourceOrderMaterials>> GetMaterials(long outsourceOrderId)
+        public async Task<IList<Model.Outsource.Order.OutsourceOrderMaterials>> GetMaterials(long outsourceOrderId)
         {
-            var results = new List<OutsourceOrderMaterials>();
+            var results = new List<Model.Outsource.Order.OutsourceOrderMaterials>();
             var roleMaps = new Dictionary<long, IList<ProductionStepLinkDataRole>>();
 
             var outsourceOrder = await _manufacturingDBContext.OutsourceOrder.AsNoTracking()
@@ -465,7 +465,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                         .ConvertData<ProductionStepLinkDataInput>();
 
                                 stepLinkDatas.ForEach(ld => {
-                                    results.Add(new OutsourceOrderMaterials
+                                    results.Add(new Model.Outsource.Order.OutsourceOrderMaterials
                                     {
                                         CustomerId = outsourceOrder.CustomerId,
                                         Description = $"Xuất vật tư cho đơn hàng gia công {outsourceOrder.OutsourceOrderCode}",
