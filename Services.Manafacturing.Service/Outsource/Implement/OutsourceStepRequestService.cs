@@ -35,18 +35,20 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-
+        private readonly ICurrentContextService _currentContextService;
         public OutsourceStepRequestService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourceStepRequestService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , ICurrentContextService currentContextService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -120,7 +122,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             if(filters != null)
             {
-                query = query.InternalFilter(filters);
+                query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
             }
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName))

@@ -303,7 +303,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                  }
              );
 
-            query = query.InternalFilter(filters);
+            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
 
             if (customerStatusId.HasValue)
             {

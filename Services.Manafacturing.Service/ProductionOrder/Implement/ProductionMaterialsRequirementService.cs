@@ -262,7 +262,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (filters != null)
             {
-                query = query.InternalFilter(filters);
+                query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
             }
 
             var lst = (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToList();

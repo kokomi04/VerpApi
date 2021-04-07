@@ -329,12 +329,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return query;
         }
 
-        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Clause filters = null)
+        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Clause filters = null, int? timeZoneOffset = null)
         {
             if (filters != null)
             {
                 var param = Expression.Parameter(typeof(T), "s");
-                Expression filterExp = FilterClauseProcess<T>(param, filters, query);
+                Expression filterExp = FilterClauseProcess<T>(param, filters, query, false, timeZoneOffset);
                 query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
             }
             return query;
@@ -363,7 +363,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static Expression FilterClauseProcess<T>(ParameterExpression param, Clause clause, IQueryable<T> query, bool not = false)
+        public static Expression FilterClauseProcess<T>(ParameterExpression param, Clause clause, IQueryable<T> query, bool not = false, int? timeZoneOffset = null)
         {
             Expression exp = null;
             if (clause != null)
@@ -371,7 +371,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 if (clause is SingleClause)
                 {
                     var singleClause = clause as SingleClause;
-                    exp = BuildExpression<T>(param, singleClause);
+                    exp = BuildExpression<T>(param, singleClause, timeZoneOffset);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -382,17 +382,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         if (exp == null)
                         {
-                            exp = FilterClauseProcess<T>(param, item, query, isNot);
+                            exp = FilterClauseProcess<T>(param, item, query, isNot, timeZoneOffset);
                         }
                         else
                         {
                             if (isOr)
                             {
-                                exp = Expression.OrElse(exp, FilterClauseProcess<T>(param, item, query, isNot));
+                                exp = Expression.OrElse(exp, FilterClauseProcess<T>(param, item, query, isNot, timeZoneOffset));
                             }
                             else
                             {
-                                exp = Expression.AndAlso(exp, FilterClauseProcess<T>(param, item, query, isNot));
+                                exp = Expression.AndAlso(exp, FilterClauseProcess<T>(param, item, query, isNot, timeZoneOffset));
                             }
                         }
                     }
@@ -401,7 +401,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return exp;
         }
 
-        private static Expression BuildExpression<T>(ParameterExpression param, SingleClause clause)
+        private static Expression BuildExpression<T>(ParameterExpression param, SingleClause clause, int? timeZoneOffset = null)
         {
             Expression expression = null;
             if (clause != null)
@@ -420,15 +420,15 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.Equal(prop, value);
                         break;
                     case EnumOperator.NotEqual:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.NotEqual(prop, value);
                         break;
                     case EnumOperator.Contains:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         var toStringMethod = prop.Type.GetMethod("ToString");
                         var propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
@@ -441,39 +441,39 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         foreach (var item in ((string)clause.Value).Split(','))
                         {
                             MethodInfo addMethod = constructedListType.GetMethod("Add");
-                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
+                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item, timeZoneOffset) });
                         }
                         method = constructedListType.GetMethod("Contains");
                         expression = Expression.Call(Expression.Constant(instance), method, prop);
                         break;
                     case EnumOperator.StartsWith:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         toStringMethod = prop.Type.GetMethod("ToString");
                         propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
                         expression = Expression.Call(propExpression, method, value);
                         break;
                     case EnumOperator.EndsWith:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         toStringMethod = prop.Type.GetMethod("ToString");
                         propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
                         expression = Expression.Call(propExpression, method, value);
                         break;
                     case EnumOperator.GreaterOrEqual:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.GreaterThanOrEqual(prop, value);
                         break;
                     case EnumOperator.LessThanOrEqual:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.LessThanOrEqual(prop, value);
                         break;
                     case EnumOperator.Greater:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.GreaterThan(prop, value);
                         break;
                     case EnumOperator.LessThan:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.LessThan(prop, value);
                         break;
                     default:

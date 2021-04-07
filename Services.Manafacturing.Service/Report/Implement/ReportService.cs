@@ -35,16 +35,18 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
-
+        private readonly ICurrentContextService _currentContextService;
         public ReportService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ReportService> logger
-            , IMapper mapper)
+            , IMapper mapper
+            , ICurrentContextService currentContextService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _currentContextService = currentContextService;
         }
 
         public async Task<IList<StepModel>> GetSteps(long fromDate, long toDate)
@@ -904,7 +906,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             var queryFilter = reportData.AsQueryable();
             if (filters != null)
-                queryFilter = reportData.AsQueryable().InternalFilter(filters);
+                queryFilter = reportData.AsQueryable().InternalFilter(filters, _currentContextService.TimeZoneOffset);
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName))
                 queryFilter = queryFilter.InternalOrderBy(orderByFieldName, asc);

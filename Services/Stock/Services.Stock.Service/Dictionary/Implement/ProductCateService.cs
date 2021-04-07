@@ -24,18 +24,20 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-
+        private readonly ICurrentContextService _currentContextService;
         public ProductCateService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductCateService> logger
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
             )
         {
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<int> AddProductCate(ProductCateInput req)
@@ -150,7 +152,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                         where c.ProductCateName.Contains(keyword)
                         select c;
             }
-            query = query.InternalFilter(filters);
+            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
             var total = await query.CountAsync();
 
             var lst = query.Select(c => new ProductCateOutput()
