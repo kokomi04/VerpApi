@@ -32,16 +32,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly StockDBContext _stockContext;
         private readonly IActivityLogService _activityLogService;
         private readonly IRoleHelperService _roleHelperService;
-
+        private readonly ICurrentContextService _currentContextService;
         public StockService(
             StockDBSubsidiaryContext stockContext
             , IActivityLogService activityLogService
             , IRoleHelperService roleHelperService
+            , ICurrentContextService currentContextService
             )
         {
             _stockContext = stockContext;
             _activityLogService = activityLogService;
             _roleHelperService = roleHelperService;
+            _currentContextService = currentContextService;
         }
 
 
@@ -194,7 +196,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var query = from p in _stockContext.Stock
                         select p;
 
-
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query
@@ -202,7 +203,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         select q;
             }
             
-            query = query.InternalFilter(filters);
+            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
 
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();

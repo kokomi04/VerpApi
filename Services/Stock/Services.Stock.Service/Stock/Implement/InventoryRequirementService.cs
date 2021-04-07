@@ -86,7 +86,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 || s.InventoryRequirement.Content.Contains(keyword));
             }
 
-            query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
+            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset).InternalOrderBy(orderByFieldName, asc);
 
             var result = query.ProjectTo<InventoryRequirementListModel>(_mapper.ConfigurationProvider);
 

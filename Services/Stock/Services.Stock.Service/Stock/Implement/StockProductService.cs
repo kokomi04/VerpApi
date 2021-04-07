@@ -58,7 +58,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         where q.StockName.Contains(keyword)
                         select q;
             }
-            query = query.InternalFilter(filters);
+            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
             var total = await query.CountAsync();
             var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
