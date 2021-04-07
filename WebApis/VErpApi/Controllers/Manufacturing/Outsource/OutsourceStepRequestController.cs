@@ -60,7 +60,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpGet]
         [Route("{outsourceStepRequestId}/outsourceStepRequestData")]
-        public async Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData([FromRoute]long outsourceStepRequestId)
+        public async Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData([FromRoute]long outsourceStepRequestId)
         {
             return await _outsourceStepRequestService.GetOutsourceStepRequestData(outsourceStepRequestId);
         }
@@ -70,18 +70,6 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         public async Task<IList<OutsourceStepRequestModel>> GetAllOutsourceStepRequest()
         {
             return await _outsourceStepRequestService.GetAllOutsourceStepRequest();
-        }
-
-        /// <summary>
-        /// Lấy toàn bộ thông tin các công đoạn có YCGC
-        /// </summary>
-        /// <param name="productionOrderId">Mã ID lệnh sản xuất</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("listProductionStepOutsourced")]
-        public async Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepInOutsourceStepRequest([FromQuery]long productionOrderId)
-        {
-            return await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(productionOrderId);
         }
 
         [HttpPut]

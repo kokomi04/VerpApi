@@ -9,10 +9,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
 {
     public interface IOutsourceStepRequestService
     {
-        Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId);
         Task<IList<OutsourceStepRequestModel>> GetAllOutsourceStepRequest();
-        Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepHadOutsourceStepRequest(long productionOrderId);
-        Task<IList<ProductionStepInfo>> GeneralOutsourceStepOfProductionOrder(long productionOrderId);
         Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId);
         Task<IList<OutsourceStepRequestDetailOutput>> GetOutsourceStepRequestDatasByProductionOrderId(long productionOrderId);
 
@@ -23,7 +20,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<bool> UpdateOutsourceStepRequest(long outsourceStepRequestId, OutsourceStepRequestInput req);
         Task<bool> DeleteOutsourceStepRequest(long outsourceStepRequestId);
         Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
-
-
+        Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId);
+        Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData(long[] productionStepLinkDataId);
     }
 }

@@ -392,7 +392,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         && outsourcePartRequestDetailIds.Contains(x.ObjectId))
                     .ToListAsync();
 
-                var outsourceOrderIds = outsourceOrderDetails.Select(x => x.OutsourceOrderId);
+                var outsourceOrderIds = outsourceOrderDetails.Select(x => x.OutsourceOrderId).Distinct();
 
                 var totalStatus = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
                     .Where(x => outsourceOrderIds.Contains(x.OutsourceOrderId)

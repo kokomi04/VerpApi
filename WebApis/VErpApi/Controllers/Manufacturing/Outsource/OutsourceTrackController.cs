@@ -14,7 +14,7 @@ using VErp.Services.Manafacturing.Service.Outsource;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {
-    [Route("api/manufacturing/outsourceTrack")]
+    [Route("api/manufacturing/outsourceOrders")]
     [ApiController]
     public class OutsourceTrackController : VErpBaseController
     {
@@ -26,38 +26,38 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         }
 
         [HttpGet]
-        [Route("ofOutsourceOrder/{outsourceOrderId}")]
+        [Route("{outsourceOrderId}/tracks")]
         public async Task<IList<OutsourceTrackModel>> SearchOutsourceTrackByOutsourceOrder([FromRoute] long outsourceOrderId)
         {
             return await _outsourceTrackService.SearchOutsourceTrackByOutsourceOrder(outsourceOrderId);
         }
 
         [HttpPut]
-        [Route("ofOutsourceOrder/{outsourceOrderId}")]
+        [Route("{outsourceOrderId}/tracks")]
         public async Task<bool> UpdateOutsourceTrackByOutsourceOrder([FromRoute] long outsourceOrderId, [FromBody] IList<OutsourceTrackModel> req)
         {
             return await _outsourceTrackService.UpdateOutsourceTrackByOutsourceOrder(outsourceOrderId, req);
         }
 
         [HttpPost]
-        [Route("")]
-        public async Task<long> CreateOutsourceTrack([FromBody] OutsourceTrackModel req)
+        [Route("{outsourceOrderId}/tracks")]
+        public async Task<long> CreateOutsourceTrack([FromRoute] long outsourceOrderId, [FromBody] OutsourceTrackModel req)
         {
-            return await _outsourceTrackService.CreateOutsourceTrack(req);
+            return await _outsourceTrackService.CreateOutsourceTrack(outsourceOrderId, req);
         }
 
         [HttpPut]
-        [Route("{outsourceTrackId}")]
-        public async Task<bool> UpdateOutsourceTrack([FromRoute] long outsourceTrackId, [FromBody] OutsourceTrackModel req)
+        [Route("{outsourceOrderId}/tracks/{outsourceTrackId}")]
+        public async Task<bool> UpdateOutsourceTrack([FromRoute] long outsourceOrderId, [FromRoute] long outsourceTrackId, [FromBody] OutsourceTrackModel req)
         {
-            return await _outsourceTrackService.UpdateOutsourceTrack(outsourceTrackId, req);
+            return await _outsourceTrackService.UpdateOutsourceTrack(outsourceOrderId, outsourceTrackId, req);
         }
 
         [HttpDelete]
-        [Route("{outsourceTrackId}")]
-        public async Task<bool> DeleteOutsourceTrack([FromRoute] long outsourceTrackId)
+        [Route("{outsourceOrderId}/tracks/{outsourceTrackId}")]
+        public async Task<bool> DeleteOutsourceTrack([FromRoute] long outsourceOrderId, [FromRoute] long outsourceTrackId)
         {
-            return await _outsourceTrackService.DeleteOutsourceTrack(outsourceTrackId);
+            return await _outsourceTrackService.DeleteOutsourceTrack(outsourceOrderId, outsourceTrackId);
         }
     }
 }

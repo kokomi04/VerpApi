@@ -21,6 +21,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionStepLinkDataOutsourceStep: ProductionStepLinkDataInput
     {
         public string ProductionStepReceiveTitle { get; set; }
+        public long ProductionStepReceiveId { get; set; }
         public string ProductionStepSourceTitle { get; set; }
+        public long ProductionStepSourceId { get; set; }
+        public bool IsImportant { get; set; }
+        
     }
 }

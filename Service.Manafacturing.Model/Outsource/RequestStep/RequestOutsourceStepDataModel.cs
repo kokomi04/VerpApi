@@ -18,6 +18,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public decimal? OutsourceStepRequestDataQuantity { get; set; }
         [Required]
         public EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
+        public long ProductionStepId { get; set; }
+        public bool? IsImportant { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -28,15 +30,14 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         }
     }
 
-    public class OutsourceStepRequestDataInfo: OutsourceStepRequestDataModel
+    public class OutsourceStepRequestDataExtraInfo: OutsourceStepRequestDataModel
     {
         public string OutsourceStepRequestCode { get; set; }
-        public long ProductionStepId { get; set; }
         public string ProductionStepTitle { get; set; }
-        public decimal ProductionStepLinkDataQuantity { get; set; }
         public string ProductionStepLinkDataTitle { get; set; }
+        public int ProductionStepLinkDataUnitId { get; set; }
+        public int ProductionStepLinkDataObjectId { get; set; }
         public decimal? OutsourceStepRequestDataQuantityProcessed { get; set; }
         public long OutsourceStepRequestFinishDate { get; set; }
-        public string ProductionOrderCode { get; set; }
     }
 }

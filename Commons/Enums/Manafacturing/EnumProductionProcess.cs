@@ -46,7 +46,7 @@ namespace VErp.Commons.Enums.Manafacturing
             Others = 99,
         }
 
-        public enum EnumOutsourceRequestStatusType
+        public enum EnumOutsourceRequestStatusType: int
         {
             [Description("Chưa xử lý")]
             Unprocessed = 1,
