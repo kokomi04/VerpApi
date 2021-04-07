@@ -17,6 +17,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.Track;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 {
@@ -27,48 +28,95 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
+        private readonly IOutsourceStepOrderService _outsourceStepOrderService;
+        private readonly IOutsourcePartOrderService _outsourcePartOrderService;
+
         public OutsourceTrackService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourceTrackService> logger
-            , IMapper mapper)
+            , IMapper mapper
+            , IOutsourceStepOrderService outsourceStepOrderService
+            , IOutsourcePartOrderService outsourcePartOrderService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _outsourceStepOrderService = outsourceStepOrderService;
+            _outsourcePartOrderService = outsourcePartOrderService;
         }
 
-        public async Task<long> CreateOutsourceTrack(OutsourceTrackModel req)
+        public async Task<long> CreateOutsourceTrack(long outsourceOrderId, OutsourceTrackModel req)
         {
-            var entity = _mapper.Map<OutsourceTrack>(req);
-            await _manufacturingDBContext.OutsourceTrack.AddAsync(entity);
-            await _manufacturingDBContext.SaveChangesAsync();
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = _mapper.Map<OutsourceTrack>(req);
+                await _manufacturingDBContext.OutsourceTrack.AddAsync(entity);
+                await _manufacturingDBContext.SaveChangesAsync();
 
-            return entity.OutsourceTrackId;
+                await UpdateOutsourceOrderStatus(outsourceOrderId);
+
+                await trans.CommitAsync();
+                return entity.OutsourceTrackId;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError("CreateOutsourceTrack", ex);
+                throw;
+            }
         }
 
-        public async Task<bool> UpdateOutsourceTrack(long outsourceTrackId, OutsourceTrackModel req)
+        public async Task<bool> UpdateOutsourceTrack(long outsourceOrderId, long outsourceTrackId, OutsourceTrackModel req)
         {
-            var track = await _manufacturingDBContext.OutsourceTrack.FirstOrDefaultAsync(x => x.OutsourceTrackId == outsourceTrackId);
-            if (track == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var track = await _manufacturingDBContext.OutsourceTrack.FirstOrDefaultAsync(x => x.OutsourceTrackId == outsourceTrackId);
+                if (track == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            _mapper.Map(req, track);
-            await _manufacturingDBContext.SaveChangesAsync();
+                _mapper.Map(req, track);
+                await _manufacturingDBContext.SaveChangesAsync();
 
-            return true;
+                await UpdateOutsourceOrderStatus(outsourceOrderId);
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError("UpdateOutsourceTrack", ex);
+                throw;
+            }
+            
         }
 
-        public async Task<bool> DeleteOutsourceTrack(long outsourceTrackId)
+        public async Task<bool> DeleteOutsourceTrack(long outsourceOrderId, long outsourceTrackId)
         {
-            var track = await _manufacturingDBContext.OutsourceTrack.FirstOrDefaultAsync(x => x.OutsourceTrackId == outsourceTrackId);
-            if (track == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var track = await _manufacturingDBContext.OutsourceTrack.FirstOrDefaultAsync(x => x.OutsourceTrackId == outsourceTrackId);
+                if (track == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            track.IsDeleted = true;
-            await _manufacturingDBContext.SaveChangesAsync();
+                track.IsDeleted = true;
+                await _manufacturingDBContext.SaveChangesAsync();
 
-            return true;
+                await UpdateOutsourceOrderStatus(outsourceOrderId);
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError("DeleteOutsourceTrack", ex);
+                throw;
+            }
         }
 
         public async Task<IList<OutsourceTrackModel>> SearchOutsourceTrackByOutsourceOrder(long outsourceOrderId)
@@ -113,6 +161,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 _logger.LogError(ex, "UpdateOutsourceTrackByOutsourceOrder");
                 throw;
             }
+        }
+
+        private async Task<bool> UpdateOutsourceOrderStatus(long outsourceOrderId)
+        {
+            var order = _manufacturingDBContext.OutsourceOrder.AsNoTracking().FirstOrDefault(x => x.OutsourceOrderId == outsourceOrderId);
+            if (order == null)
+                throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
+            if (order.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep)
+                return await _outsourceStepOrderService.UpdateOutsourceStepOrderStatus(outsourceOrderId);
+            else
+                return await _outsourcePartOrderService.UpdateOutsourcePartOrderStatus(outsourceOrderId);
         }
     }
 }

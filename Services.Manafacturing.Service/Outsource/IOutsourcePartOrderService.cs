@@ -19,5 +19,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<OutsourceOrderInfo> GetOutsourceOrderPart(long outsourceOrderId);
 
         Task<IList<Model.Outsource.Order.OutsourceOrderMaterials>> GetMaterials(long outsourceOrderId);
+
+        Task<bool> UpdateOutsourcePartOrderStatus(long outsourceStepOrderId);
     }
 }

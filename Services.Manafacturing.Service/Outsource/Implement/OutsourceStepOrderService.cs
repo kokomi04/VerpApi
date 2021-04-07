@@ -45,7 +45,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IOutsourceStepRequestService outsourceStepRequestService
-            , IOutsourceTrackService outsourceTrackService
             , ICurrentContextService currentContextService
             , IProductHelperService productHelperService)
         {
@@ -55,7 +54,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _outsourceStepRequestService = outsourceStepRequestService;
-            _outsourceTrackService = outsourceTrackService;
             _currentContextService = currentContextService;
             _productHelperService = productHelperService;
         }
@@ -118,17 +116,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
                     // Tạo lịch sử theo dõi lần đầu
-                    await _outsourceTrackService.CreateOutsourceTrack(new OutsourceTrackModel{
-                        OutsourceTrackDate = DateTime.Now.GetUnix(),
-                        OutsourceTrackDescription = "Tạo đơn hàng",
-                        OutsourceTrackStatusId = EnumOutsourceTrackStatus.Created,
-                        OutsourceTrackTypeId = EnumOutsourceTrackType.All,
-                        OutsourceOrderId = order.OutsourceOrderId
-                    });
+                    await CreateOutsourceTrackFirst(order.OutsourceOrderId);
 
                     await _manufacturingDBContext.SaveChangesAsync();
 
-                    //await UpdateOutsourceStepRequestStatus(detail.Select(x => x.ObjectId));
+                    await UpdateOutsourceStepRequestStatus(detail.Select(x => x.ObjectId));
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, order.OutsourceOrderId, $"Thêm mới đơn hàng gia công công đoạn {order.OutsourceOrderCode}", req.JsonSerialize());
 
@@ -145,14 +137,31 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size)
+        private async Task<bool> CreateOutsourceTrackFirst(long outsourceOrderId)
+        {
+            var track = new OutsourceTrackModel
+            {
+                OutsourceTrackDate = DateTime.Now.GetUnix(),
+                OutsourceTrackDescription = "Tạo đơn hàng",
+                OutsourceTrackStatusId = EnumOutsourceTrackStatus.Created,
+                OutsourceTrackTypeId = EnumOutsourceTrackType.All,
+                OutsourceOrderId = outsourceOrderId
+            };
+
+            await _manufacturingDBContext.OutsourceTrack.AddAsync(_mapper.Map<OutsourceTrack>(track));
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             var outsourceStepOrders = (from o in _manufacturingDBContext.OutsourceOrder
                                        join d in _manufacturingDBContext.OutsourceOrderDetail on o.OutsourceOrderId equals d.OutsourceOrderId
                                        join rd in _manufacturingDBContext.OutsourceStepRequestData on d.ObjectId equals rd.ProductionStepLinkDataId
                                        join r in _manufacturingDBContext.OutsourceStepRequest on rd.OutsourceStepRequestId equals r.OutsourceStepRequestId
                                        where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
-                                       group new { o, r, rd, d } by new { o.OutsourceOrderId, o.OutsourceOrderCode, r.OutsourceStepRequestId, r.OutsourceStepRequestCode, o.OutsourceOrderFinishDate } into g
+                                       group new { o, r, rd, d } by new { o.OutsourceOrderId, o.OutsourceOrderCode, r.OutsourceStepRequestId, r.OutsourceStepRequestCode, o.OutsourceOrderFinishDate, o.OutsourceOrderDate } into g
                                        select new OutsourceStepOrderSeach
                                        {
                                            OutsourceOrderFinishDate = g.Key.OutsourceOrderFinishDate.GetUnix(),
@@ -160,6 +169,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                            OutsourceOrderCode = g.Key.OutsourceOrderCode,
                                            OutsourceStepRequestCode = g.Key.OutsourceStepRequestCode,
                                            OutsourceStepRequestId = g.Key.OutsourceStepRequestId,
+                                           OutsourceOrderDate = g.Key.OutsourceOrderDate.GetUnix()
                                        }).ToList();
             var outsourceStepRequests = (await _outsourceStepRequestService.SearchOutsourceStepRequest(string.Empty, 1, -1, string.Empty, true)).List;
 
@@ -175,18 +185,27 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                            OutsourceOrderFinishDate = order.OutsourceOrderFinishDate,
                            OutsourceStepRequestCode = order.OutsourceStepRequestCode,
                            ProductionOrderCode = request.ProductionOrderCode,
-                           /*ProductionStepTitle = String.Join(", ", request.ProductionSteps.Select(x=>x.Title))*/
+                           OutsourceOrderDate = order.OutsourceOrderDate
                        };
 
+            var queryFilter = data.AsQueryable();
+
             if (!string.IsNullOrWhiteSpace(keyword))
-                data = data.Where(x => x.ProductionOrderCode.Contains(keyword)
+                queryFilter = queryFilter.Where(x => x.ProductionOrderCode.Contains(keyword)
                                    || x.OutsourceOrderCode.Contains(keyword)
                                    || x.OutsourceStepRequestCode.Contains(keyword)
                                    || x.OrderCode.Contains(keyword));
 
-            var total = data.Count();
+            if (filters != null)
+                queryFilter = queryFilter.InternalFilter(filters);
 
-            return (data.Skip((page - 1) * size).Take(size).ToList(), total);
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+                queryFilter = queryFilter.InternalOrderBy(orderByFieldName, asc);
+
+            var total = queryFilter.Count();
+            var lst = (size > 0 ? queryFilter.Skip((page - 1) * size).Take(size) : queryFilter).ToList();
+
+            return (lst, total);
         }
 
         public async Task<OutsourceStepOrderOutput> GetOutsourceStepOrder(long outsourceStepOrderId)
@@ -225,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 if (data != null)
                 {
                     d.OutsourceStepRequestCode = data.OutsourceStepRequestCode;
-                    d.OutsourceStepRequestDataQuantity = data.OutsourceStepRequestDataQuantity - data.OutsourceStepRequestDataQuantityProcessed;
+                    d.OutsourceStepRequestDataQuantity = data.OutsourceStepRequestDataQuantity - (data.OutsourceStepRequestDataQuantityProcessed  - d.OutsourceOrderQuantity);
                     d.OutsourceStepRequestId = data.OutsourceStepRequestId;
                     d.ProductionStepLinkDataTitle = data.ProductionStepLinkDataTitle;
                     d.ProductionStepLinkDataUnitId = data.ProductionStepLinkDataUnitId;
@@ -376,13 +395,20 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         }
 
-        private async Task UpdateOutsourceStepRequestStatus(IEnumerable<long> ObjectIds) {
+        private async Task<bool> UpdateOutsourceStepRequestStatus(IEnumerable<long> ObjectIds) {
             var stepIds = await _manufacturingDBContext.OutsourceStepRequestData.AsNoTracking()
                 .Where(x => ObjectIds.Contains(x.ProductionStepLinkDataId))
                 .Select(x => x.OutsourceStepRequestId)
                 .Distinct()
                 .ToArrayAsync();
-            await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(stepIds);
+            return await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(stepIds);
+        }
+
+        public async Task<bool> UpdateOutsourceStepOrderStatus(long outsourceStepOrderId)
+        {
+            var detail = await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
+                .Where(x => x.OutsourceOrderId == outsourceStepOrderId).ToListAsync();
+            return await UpdateOutsourceStepRequestStatus(detail.Select(x => x.ObjectId));
         }
     }
 }

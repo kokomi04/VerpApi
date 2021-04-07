@@ -478,11 +478,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         && productionLinkDataIds.Contains(x.ObjectId))
                     .ToListAsync();
 
-                var outsourceOrderIds = outsourceOrderDetails.Select(x => x.OutsourceOrderId);
+                var outsourceOrderIds = outsourceOrderDetails.Select(x => x.OutsourceOrderId).Distinct();
 
                 var totalStatus = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
-                    .Where(x => outsourceOrderIds.Contains(x.OutsourceOrderId)
-                        && (!x.ObjectId.HasValue || productionLinkDataIds.Contains(x.ObjectId.GetValueOrDefault())))
+                    .Where(x => outsourceOrderIds.Contains(x.OutsourceOrderId) && !x.ObjectId.HasValue)
                     .ToListAsync())
                     .GroupBy(x => x.OutsourceOrderId)
                     .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
@@ -512,7 +511,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     else rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Processing;
                 }
             }
+
             await _manufacturingDBContext.SaveChangesAsync();
+
             return true;
         }
 

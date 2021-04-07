@@ -3,10 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
+using VErp.Services.Manafacturing.Model.Outsource.Track;
 using VErp.Services.Manafacturing.Service.Outsource;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
@@ -38,9 +41,10 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("search")]
-        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size)
+        [VErpAction(EnumActionType.View)]
+        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters)
         {
-            return await _outsourceStepOrderService.SearchOutsourceStepOrder(keyword, page, size);
+            return await _outsourceStepOrderService.SearchOutsourceStepOrder(keyword, page, size, orderByFieldName, asc, filters);
         }
 
         [HttpPut]
