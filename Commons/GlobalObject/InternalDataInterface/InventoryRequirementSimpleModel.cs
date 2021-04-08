@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StockEnum;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionOrderMaterials;
 
@@ -21,6 +22,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string BillCode { get; set; }
         public string BillSerial { get; set; }
         public long BillDate { get; set; }
+        public EnumModuleType ModuleTypeId { get; set; }
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
 
