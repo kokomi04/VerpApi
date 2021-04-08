@@ -37,18 +37,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-
+        private readonly IOrganizationHelperService _organizationHelperService;
         public ProductionAssignmentService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionAssignmentService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , IOrganizationHelperService organizationHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _organizationHelperService = organizationHelperService;
         }
 
 
@@ -266,7 +268,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                             oldProductionAssignment.ProductionAssignmentDetail.Clear();
                         }
                         _manufacturingDBContext.SaveChanges();
-                        _manufacturingDBContext.ProductionAssignment.RemoveRange(oldProductionAssignments);
+                        _manufacturingDBContext.ProductionAssignment.RemoveRange(mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments);
                     }
 
                     // Thêm mới phân công
@@ -302,7 +304,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<bool> UpdateProductionAssignment( long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable)
+        public async Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
             if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
@@ -626,6 +628,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
                 join ad in _manufacturingDBContext.ProductionAssignmentDetail on new { a.ProductionOrderId, a.ProductionStepId, a.DepartmentId } equals new { ad.ProductionOrderId, ad.ProductionStepId, ad.DepartmentId } into ads
                 from ad in ads.DefaultIfEmpty()
+                join tt in _manufacturingDBContext.DepartmentTimeTable on new { a.DepartmentId, ad.WorkDate } equals new { tt.DepartmentId, tt.WorkDate } into tts
+                from tt in tts.DefaultIfEmpty()
+                join psw in _manufacturingDBContext.ProductionStepWorkInfo on ps.ProductionStepId equals psw.ProductionStepId into psws
+                from psw in psws.DefaultIfEmpty()
                 select new
                 {
                     ProductionAssignment = a,
@@ -633,21 +639,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     s.StepName,
                     po.ProductionOrderCode,
                     ad.QuantityPerDay,
-                    ad.WorkDate
+                    ad.WorkDate,
+                    tt.HourPerDay,
+                    psw.MaxHour,
+                    psw.MinHour
                 }).ToListAsync()
-                ).GroupBy(a => new { a.ProductionAssignment, a.TotalQuantity, a.StepName, a.ProductionOrderCode })
-                 .Select(g => new
-                 {
-                     g.Key.ProductionAssignment,
-                     g.Key.TotalQuantity,
-                     g.Key.StepName,
-                     g.Key.ProductionOrderCode,
-                     ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
-                     {
-                         ad.WorkDate,
-                         ad.QuantityPerDay
-                     }).ToList()
-                 }).ToList();
+                ).GroupBy(a => new 
+                { 
+                    a.ProductionAssignment,
+                    a.TotalQuantity,
+                    a.StepName,
+                    a.ProductionOrderCode,
+                    a.MaxHour,
+                    a.MinHour
+                })
+                .Select(g => new
+                {
+                    g.Key.ProductionAssignment,
+                    g.Key.TotalQuantity,
+                    g.Key.StepName,
+                    g.Key.ProductionOrderCode,
+                    g.Key.MinHour,
+                    g.Key.MaxHour,
+                    ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
+                    {
+                        ad.WorkDate,
+                        ad.QuantityPerDay,
+                        ad.HourPerDay
+                    }).ToList()
+                }).ToList();
 
             var productionStepIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionStepId).Distinct().ToList();
             if (!productionStepIds.Contains(productionStepId))
@@ -678,6 +698,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     }).ToListAsync();
             }
 
+            departmentIds = otherAssignments.Select(a => a.ProductionAssignment.DepartmentId).Distinct().ToList();
+            // Lấy thông tin phong ban
+            var workingHoursPerDays = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray())).ToDictionary(d => d.DepartmentId, d => d.WorkingHoursPerDay);
+
             foreach (var otherAssignment in otherAssignments)
             {
                 var productionStepName = $"{otherAssignment.StepName} (#{otherAssignment.ProductionAssignment.ProductionStepId})";
@@ -685,23 +709,49 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
-                    CreatedDatetimeUtc = otherAssignment.ProductionAssignment.CreatedDatetimeUtc.GetUnix(),
-                    Capacity = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
-                                * otherAssignment.ProductionAssignment.AssignmentQuantity)
-                                / (otherAssignment.TotalQuantity
-                                * otherAssignment.ProductionAssignment.Productivity),
-                    CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
-                    {
-                        WorkDate = ad.WorkDate.GetUnix(),
-                        StepName = productionStepName,
-                        ProductionOrderCode = otherAssignment.ProductionOrderCode,
-                        CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
-                                            * ad.QuantityPerDay.Value)
-                                            / (otherAssignment.TotalQuantity
-                                            * otherAssignment.ProductionAssignment.Productivity)
-
-                    }).ToList()
+                    CreatedDatetimeUtc = otherAssignment.ProductionAssignment.CreatedDatetimeUtc.GetUnix()
                 };
+
+                if (workloadMap.ContainsKey(otherAssignment.ProductionAssignment.ProductionStepId) && otherAssignment.ProductionAssignment.Productivity > 0)
+                {
+                    foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
+                    {
+                        capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
+                        {
+                            WorkDate = productionAssignmentDetail.WorkDate.GetUnix(),
+                            StepName = productionStepName,
+                            ProductionOrderCode = otherAssignment.ProductionOrderCode,
+                            CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                            * productionAssignmentDetail.QuantityPerDay.Value)
+                            / (otherAssignment.TotalQuantity
+                            * otherAssignment.ProductionAssignment.Productivity)
+                        });
+                    }
+                }
+                else
+                {
+                    foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
+                    {
+                        var workDateUnix = productionAssignmentDetail.WorkDate.GetUnix();
+                        var workingHour = productionAssignmentDetail.HourPerDay.HasValue ? productionAssignmentDetail.HourPerDay : workingHoursPerDays[otherAssignment.ProductionAssignment.DepartmentId];
+                        var totalHour = capacityDepartments[otherAssignment.ProductionAssignment.DepartmentId]
+                            .SelectMany(c => c.CapacityDetail)
+                            .Where(c => c.WorkDate == workDateUnix)
+                            .Sum(c => c.CapacityPerDay);
+                        var capacityPerDay = workingHour < totalHour ? 0 : workingHour - totalHour;
+                        if (otherAssignment.MinHour.HasValue && capacityPerDay < otherAssignment.MinHour) capacityPerDay = 0;
+                        if (otherAssignment.MaxHour.HasValue && capacityPerDay > otherAssignment.MaxHour) capacityPerDay = otherAssignment.MaxHour;
+
+                        capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
+                        {
+                            WorkDate = workDateUnix,
+                            StepName = productionStepName,
+                            ProductionOrderCode = otherAssignment.ProductionOrderCode,
+                            CapacityPerDay = capacityPerDay
+                        });
+                    }
+                }
+
                 capacityDepartments[otherAssignment.ProductionAssignment.DepartmentId].Add(capacityDepartment);
             }
 
@@ -782,14 +832,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     && a.EndDate >= productionTime.StartDate
                 join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
                 join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
-                join sd in _manufacturingDBContext.StepDetail on new { s.StepId, a.DepartmentId } equals new {sd.StepId, sd.DepartmentId}
+                join sd in _manufacturingDBContext.StepDetail on new { s.StepId, a.DepartmentId } equals new { sd.StepId, sd.DepartmentId }
                 join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                 join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
-                join ldr in _manufacturingDBContext.ProductionStepLinkDataRole on new 
-                { 
+                join ldr in _manufacturingDBContext.ProductionStepLinkDataRole on new
+                {
                     ps.ProductionStepId,
-                    ProductionStepLinkDataRoleTypeId  = (int)EnumProductionStepLinkDataRoleType.Output 
-                } 
+                    ProductionStepLinkDataRoleTypeId = (int)EnumProductionStepLinkDataRoleType.Output
+                }
                 equals new
                 {
                     ldr.ProductionStepId,
@@ -808,6 +858,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
                 join ad in _manufacturingDBContext.ProductionAssignmentDetail on new { a.ProductionOrderId, a.ProductionStepId, a.DepartmentId } equals new { ad.ProductionOrderId, ad.ProductionStepId, ad.DepartmentId } into ads
                 from ad in ads.DefaultIfEmpty()
+                join tt in _manufacturingDBContext.DepartmentTimeTable on new { a.DepartmentId, ad.WorkDate } equals new { tt.DepartmentId, tt.WorkDate } into tts
+                from tt in tts.DefaultIfEmpty()
+                join psw in _manufacturingDBContext.ProductionStepWorkInfo on ps.ProductionStepId equals psw.ProductionStepId into psws
+                from psw in psws.DefaultIfEmpty()
+                orderby a.CreatedDatetimeUtc ascending
                 select new
                 {
                     ProductionAssignment = a,
@@ -821,19 +876,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     po.ProductionOrderId,
                     ad.QuantityPerDay,
                     ad.WorkDate,
-                    OutputQuantity = ld.Quantity
+                    tt.HourPerDay,
+                    OutputQuantity = ld.Quantity,
+                    psw.MinHour,
+                    psw.MaxHour
                 }).ToListAsync()
-                ).GroupBy(a => new { 
+                ).GroupBy(a => new
+                {
                     a.ProductionAssignment,
                     a.TotalQuantity,
-                    a.Workload, 
-                    a.ObjectTypeId, 
-                    a.ObjectId, 
-                    a.StepName, 
-                    a.Productivity, 
+                    a.Workload,
+                    a.ObjectTypeId,
+                    a.ObjectId,
+                    a.StepName,
+                    a.Productivity,
                     a.ProductionOrderCode,
-                    a.ProductionOrderId
-                }).Select(g => new 
+                    a.ProductionOrderId,
+                    a.MinHour,
+                    a.MaxHour
+                }).Select(g => new
                 {
                     g.Key.ProductionAssignment,
                     g.Key.TotalQuantity,
@@ -845,12 +906,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     g.Key.ProductionOrderCode,
                     g.Key.ProductionOrderId,
                     OutputQuantity = g.Sum(g => g.OutputQuantity),
+                    g.Key.MinHour,
+                    g.Key.MaxHour,
                     ProductionAssignmentDetail = g.Where(ad => ad.WorkDate != DateTime.MinValue).Select(ad => new
                     {
                         ad.WorkDate,
-                        ad.QuantityPerDay
+                        ad.QuantityPerDay,
+                        ad.HourPerDay
                     }).ToList()
-                 }).ToList();
+                }).ToList();
 
             var includeProductionStepIds = otherAssignments.Select(a => a.ProductionAssignment.ProductionStepId).Distinct().ToList();
 
@@ -898,22 +962,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
                 inventoryRequirements.Add(otherProductionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
-                    .Where(ir => otherProductionStepIds.Contains(ir.ProductionStepId) && departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int) EnumProductionInventoryRequirementStatus.Accepted )
+                    .Where(ir => otherProductionStepIds.Contains(ir.ProductionStepId) && departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .AsQueryable()
                     .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                     .ToList());
             }
 
+            departmentIds = otherAssignments.Select(a => a.ProductionAssignment.DepartmentId).Distinct().ToList();
+            // Lấy thông tin phong ban
+            var workingHoursPerDays = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray())).ToDictionary(d => d.DepartmentId, d => d.WorkingHoursPerDay);
+
             foreach (var otherAssignment in otherAssignments)
             {
                 var productionStepName = $"{otherAssignment.StepName} (#{otherAssignment.ProductionAssignment.ProductionStepId})";
                 var completedQuantity = handovers
-                    .Where(h => h.FromProductionStepId == otherAssignment.ProductionAssignment.ProductionStepId 
+                    .Where(h => h.FromProductionStepId == otherAssignment.ProductionAssignment.ProductionStepId
                     && h.FromDepartmentId == otherAssignment.ProductionAssignment.DepartmentId
                     && h.ObjectId == otherAssignment.ObjectId
                     && h.ObjectTypeId == otherAssignment.ObjectTypeId)
                     .Sum(h => h.HandoverQuantity);
-                if(otherAssignment.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                if (otherAssignment.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                 {
                     completedQuantity += inventoryRequirements[otherAssignment.ProductionOrderId]
                         .Where(ir => ir.DepartmentId == otherAssignment.ProductionAssignment.DepartmentId
@@ -934,23 +1002,52 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
                     EndDate = otherAssignment.ProductionAssignment.EndDate.GetUnix(),
                     CreatedDatetimeUtc = otherAssignment.ProductionAssignment.CreatedDatetimeUtc.GetUnix(),
-                    Capacity = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
-                                * otherAssignment.ProductionAssignment.AssignmentQuantity)
-                                / (otherAssignment.TotalQuantity
-                                * otherAssignment.ProductionAssignment.Productivity),
                     ObjectId = otherAssignment.ObjectId,
                     ObjectTypeId = otherAssignment.ObjectTypeId,
-                    CompletedQuantity = completedQuantity,
-                    CapacityDetail = otherAssignment.ProductionAssignmentDetail.Select(ad => new CapacityDetailModel
-                    {
-                        WorkDate = ad.WorkDate.GetUnix(),
-                        StepName = productionStepName,
-                        ProductionOrderCode = otherAssignment.ProductionOrderCode,
-                        CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId] * ad.QuantityPerDay.Value) 
-                        / (otherAssignment.TotalQuantity * otherAssignment.ProductionAssignment.Productivity)
-
-                    }).ToList()
+                    CompletedQuantity = completedQuantity
                 };
+
+                if (workloadMap.ContainsKey(otherAssignment.ProductionAssignment.ProductionStepId) && otherAssignment.ProductionAssignment.Productivity > 0)
+                {
+                    foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
+                    {
+                        capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
+                        {
+                            WorkDate = productionAssignmentDetail.WorkDate.GetUnix(),
+                            StepName = productionStepName,
+                            ProductionOrderCode = otherAssignment.ProductionOrderCode,
+                            CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                            * productionAssignmentDetail.QuantityPerDay.Value)
+                            / (otherAssignment.TotalQuantity
+                            * otherAssignment.ProductionAssignment.Productivity)
+                        });
+                    }
+                }
+                else
+                {
+                    foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
+                    {
+                        var workDateUnix = productionAssignmentDetail.WorkDate.GetUnix();
+                        var workingHour = productionAssignmentDetail.HourPerDay.HasValue ? productionAssignmentDetail.HourPerDay : workingHoursPerDays[otherAssignment.ProductionAssignment.DepartmentId];
+                        var totalHour = capacityDepartments[otherAssignment.ProductionAssignment.DepartmentId]
+                            .SelectMany(c => c.CapacityDetail)
+                            .Where(c => c.WorkDate == workDateUnix)
+                            .Sum(c => c.CapacityPerDay);
+
+                        var capacityPerDay = workingHour < totalHour ? 0 : workingHour - totalHour;
+                        if (otherAssignment.MinHour.HasValue && capacityPerDay < otherAssignment.MinHour) capacityPerDay = 0;
+                        if (otherAssignment.MaxHour.HasValue && capacityPerDay > otherAssignment.MaxHour) capacityPerDay = otherAssignment.MaxHour;
+
+                        capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
+                        {
+                            WorkDate = workDateUnix,
+                            StepName = productionStepName,
+                            ProductionOrderCode = otherAssignment.ProductionOrderCode,
+                            CapacityPerDay = capacityPerDay
+                        });
+                    }
+                }
+
                 capacityDepartments[otherAssignment.ProductionAssignment.DepartmentId].Add(capacityDepartment);
             }
 
