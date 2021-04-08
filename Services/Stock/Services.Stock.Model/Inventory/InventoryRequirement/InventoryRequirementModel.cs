@@ -29,6 +29,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public EnumModuleType ModuleTypeId { get; set; }
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
+        public int? ProductMaterialsConsumptionGroupId { get; set; }
     }
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>

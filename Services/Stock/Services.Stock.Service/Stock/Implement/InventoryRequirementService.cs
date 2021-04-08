@@ -429,15 +429,18 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             }
         }
 
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType)
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId)
         {
-            var entity = _stockDBContext.InventoryRequirement
+            var inventoryRequirements = await _stockDBContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementFile)
                 .Include(r => r.InventoryRequirementDetail)
                 .ThenInclude(d => d.ProductUnitConversion)
-                .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType
+                .Where(r => r.InventoryTypeId == (int)inventoryType
                     && r.ProductionOrderId == productionOrderId
-                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete);
+                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete)
+                .ToListAsync();
+
+            var entity = inventoryRequirements.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId.GetValueOrDefault() == productMaterialsConsumptionGroupId);
 
             var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
 
