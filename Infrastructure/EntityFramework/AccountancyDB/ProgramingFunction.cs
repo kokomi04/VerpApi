@@ -11,5 +11,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public int ProgramingLangId { get; set; }
         public int ProgramingLevelId { get; set; }
         public string Description { get; set; }
+        public string Params { get; set; }
     }
 }
