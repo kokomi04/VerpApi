@@ -122,7 +122,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             if(filters != null)
             {
-                query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
+                query = query.InternalFilter(filters);
             }
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName))

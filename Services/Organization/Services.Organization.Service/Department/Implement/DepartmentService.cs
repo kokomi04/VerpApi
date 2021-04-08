@@ -164,7 +164,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             {
                 query = query.Where(d => d.DepartmentCode.Contains(keyword) || d.DepartmentName.Contains(keyword) || d.Description.Contains(keyword));
             }
-            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
+            query = query.InternalFilter(filters);
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).Select(d => new DepartmentModel
             {
                 DepartmentId = d.DepartmentId,

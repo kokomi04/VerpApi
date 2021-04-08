@@ -152,7 +152,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                         where c.ProductCateName.Contains(keyword)
                         select c;
             }
-            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
+            query = query.InternalFilter(filters);
             var total = await query.CountAsync();
 
             var lst = query.Select(c => new ProductCateOutput()

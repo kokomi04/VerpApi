@@ -906,7 +906,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             var queryFilter = reportData.AsQueryable();
             if (filters != null)
-                queryFilter = reportData.AsQueryable().InternalFilter(filters, _currentContextService.TimeZoneOffset);
+                queryFilter = reportData.AsQueryable().InternalFilter(filters);
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName))
                 queryFilter = queryFilter.InternalOrderBy(orderByFieldName, asc);

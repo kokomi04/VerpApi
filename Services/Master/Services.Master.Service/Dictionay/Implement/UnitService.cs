@@ -91,7 +91,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                  }
              );
 
-            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
+            query = query.InternalFilter(filters);
             if (unitStatusId.HasValue)
             {
                 query = from u in query
