@@ -51,7 +51,7 @@ namespace Services.Organization.Service.Department.Implement
             keyword = (keyword ?? "").Trim();
 
             var query = _unAuthorizeOrganizationContext.Subsidiary.ProjectTo<SubsidiaryOutput>(_mapper.ConfigurationProvider);
-            query = query.InternalFilter(filters, _currentContext.TimeZoneOffset);
+            query = query.InternalFilter(filters);
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(d => d.SubsidiaryCode.Contains(keyword) || d.SubsidiaryName.Contains(keyword));

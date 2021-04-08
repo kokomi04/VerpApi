@@ -755,7 +755,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 products = products.Where(x => x.IsProductSemi == isProductSemi);
             }
-            products = products.InternalFilter(filters, _currentContextService.TimeZoneOffset);
+            products = products.InternalFilter(filters);
             if (!string.IsNullOrWhiteSpace(productName))
             {
                 products = products.Where(p => p.ProductInternalName == productInternalName);

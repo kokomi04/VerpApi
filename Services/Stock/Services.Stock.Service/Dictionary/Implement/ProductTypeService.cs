@@ -148,7 +148,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                         select c;
             }
 
-            query = query.InternalFilter(filters, _currentContextService.TimeZoneOffset);
+            query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
 
