@@ -85,9 +85,9 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement")]
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromQuery] long productionOrderId, [FromQuery] EnumInventoryRequirementType requirementType)
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromQuery] long productionOrderId, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int productMaterialsConsumptionGroupId)
         {
-            return await _inventoryRequirementService.GetInventoryRequirementByProductionOrderId(inventoryType, productionOrderId, requirementType);
+            return await _inventoryRequirementService.GetInventoryRequirementByProductionOrderId(inventoryType, productionOrderId, requirementType, productMaterialsConsumptionGroupId);
         }
     }
 }
