@@ -15,6 +15,7 @@ namespace VErp.Services.Accountancy.Model.Programing
         public int ProgramingLevelId { get; set; }
 
         public string Description { get; set; }
+        public string Params { get; set; }
     }
     public class ProgramingFunctionOutputList : ProgramingFunctionModel
     {
