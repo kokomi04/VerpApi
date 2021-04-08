@@ -46,6 +46,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal OutsourceOrderTax { get; set; }
         public long ProductionStepLinkDataId { get; set; }
 
+        public string ProductionStepTitle { get; set; }
         public string OutsourceStepRequestCode { get; set; }
         public decimal? OutsourceStepRequestDataQuantity { get; set; }
         public long OutsourceStepRequestId { get; set; }

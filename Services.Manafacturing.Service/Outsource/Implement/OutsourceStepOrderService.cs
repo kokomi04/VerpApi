@@ -35,7 +35,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IOutsourceStepRequestService _outsourceStepRequestService;
-        private readonly IOutsourceTrackService _outsourceTrackService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductHelperService _productHelperService;
 
@@ -241,6 +240,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             foreach (var d in details)
             {
                 var data = lsOutsourceStepRequestData.FirstOrDefault(x => x.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+
                 if (data != null)
                 {
                     d.OutsourceStepRequestCode = data.OutsourceStepRequestCode;
@@ -250,7 +250,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     d.ProductionStepLinkDataUnitId = data.ProductionStepLinkDataUnitId;
                     d.OutsourceStepRequestFinishDate = data.OutsourceStepRequestFinishDate;
                     d.IsImportant = data.IsImportant;
-
+                    d.ProductionStepTitle = data.ProductionStepTitle;
                 }
             }
 
