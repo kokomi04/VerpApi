@@ -17,12 +17,12 @@ namespace Verp.Services.ReportConfig.Model
         public int? ReportTypeId { get; set; }
         public int ReportTypeGroupId { get; set; }
         public string ReportTypeName { get; set; }
+        public int SortOrder { get; set; }
     }
 
     public class ReportTypeModel : ReportTypeListModel
     {
         public string ReportPath { get; set; }
-        public int SortOrder { get; set; }
 
         public string MainView { get; set; }
         public string Joins { get; set; }
