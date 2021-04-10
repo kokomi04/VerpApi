@@ -266,6 +266,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.Specification).HasMaxLength(128);
+
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(256);
