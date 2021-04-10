@@ -1414,7 +1414,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var parammeters = new List<SqlParameter>();
                 var whereCondition = new StringBuilder();
 
-                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
+                whereCondition.Append("v.ProductionStepLinkDataTypeId = 0 AND v.ProductionStepLinkDataId IN ( ");
                 for (int i = 0; i < lsProductionStepLinkDataId.Count; i++)
                 {
                     var number = lsProductionStepLinkDataId[i];
