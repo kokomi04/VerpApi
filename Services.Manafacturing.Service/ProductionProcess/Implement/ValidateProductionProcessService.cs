@@ -229,6 +229,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             IList<ProductionProcessWarningMessage> lsWarning = new List<ProductionProcessWarningMessage>();
 
+            if (productionProcess.ProductionSteps.Count() > 0 && productionProcess.ProductionSteps.Any(x => x.IsGroup == false && x.IsFinish == false && !x.StepId.HasValue))
+            {
+
+                lsWarning.Add(new ProductionProcessWarningMessage
+                {
+                    Message = $"Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.",
+                    GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
+                    WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                });
+            }
+
             var groupRole = productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
             foreach (var group in groupRole)
             {

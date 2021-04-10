@@ -1042,6 +1042,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
+            if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == false && x.IsFinish == false && !x.StepId.HasValue))
+                throw new BadRequestException(GeneralCode.GeneralError, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
             //Cập nhật, xóa và tạo mới steplinkdata
             var lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
@@ -1682,7 +1684,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<IList<ProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId && s.IsGroup == false && s.IsFinish == false)
+                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId && s.IsGroup == false && s.IsFinish == false && s.StepId.HasValue)
                 .Include(s => s.Step)
                 .Include(x => x.ProductionStepLinkDataRole)
                 .ThenInclude(r => r.ProductionStepLinkData)
