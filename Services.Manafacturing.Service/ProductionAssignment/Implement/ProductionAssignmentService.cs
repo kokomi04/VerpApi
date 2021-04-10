@@ -146,7 +146,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToDictionary(r => r.ProductionStepLinkDataId,
                 r =>
                 {
-                    return Math.Round(r.ProductionStepLinkData.Quantity, 5);
+                    return Math.Round(r.ProductionStepLinkData.QuantityOrigin - r.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault(), 5);
                 });
 
                 if (productionStepAssignments.ProductionAssignments.Any(d => d.AssignmentQuantity <= 0))
@@ -161,9 +161,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     decimal totalAssignmentQuantity = 0;
 
-                    if (outSource != null && outSource.ProductionStepLinkData.Quantity > 0)
+                    if (outSource != null && (outSource.ProductionStepLinkData.QuantityOrigin - outSource.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault()) > 0)
                     {
-                        totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.Value / outSource.ProductionStepLinkData.Quantity;
+                        totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() / (outSource.ProductionStepLinkData.QuantityOrigin - outSource.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault());
                     }
 
                     foreach (var assignment in productionStepAssignments.ProductionAssignments)
@@ -351,7 +351,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToDictionary(r => r.ProductionStepLinkDataId,
                 r =>
                 {
-                    return Math.Round(r.ProductionStepLinkData.Quantity, 5);
+                    return Math.Round(r.ProductionStepLinkData.QuantityOrigin - r.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault(), 5);
                 });
 
             if (data.Any(d => d.AssignmentQuantity <= 0))
@@ -368,7 +368,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 if (outSource != null)
                 {
-                    totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.Value / outSource.ProductionStepLinkData.Quantity;
+                    totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() 
+                        / (outSource.ProductionStepLinkData.QuantityOrigin - outSource.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault());
                 }
 
                 foreach (var assignment in data)
