@@ -635,7 +635,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 select new
                 {
                     ProductionAssignment = a,
-                    TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity??0,
+                    TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity ?? 0,
                     s.StepName,
                     po.ProductionOrderCode,
                     ad.QuantityPerDay,
@@ -644,8 +644,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     psw.MaxHour,
                     psw.MinHour
                 }).ToListAsync()
-                ).GroupBy(a => new 
-                { 
+                ).GroupBy(a => new
+                {
                     a.ProductionAssignment,
                     a.TotalQuantity,
                     a.StepName,
@@ -716,15 +716,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
                     {
+                        var capacityPerDay = otherAssignment.TotalQuantity > 0 ? (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                            * productionAssignmentDetail.QuantityPerDay.Value)
+                            / (otherAssignment.TotalQuantity
+                            * otherAssignment.ProductionAssignment.Productivity) : 0;
                         capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
                         {
                             WorkDate = productionAssignmentDetail.WorkDate.GetUnix(),
                             StepName = productionStepName,
                             ProductionOrderCode = otherAssignment.ProductionOrderCode,
-                            CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
-                            * productionAssignmentDetail.QuantityPerDay.Value)
-                            / (otherAssignment.TotalQuantity
-                            * otherAssignment.ProductionAssignment.Productivity)
+                            CapacityPerDay = capacityPerDay
                         });
                     }
                 }
@@ -1011,15 +1012,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
                     {
+                        var capacityPerDay = otherAssignment.TotalQuantity > 0 ? (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
+                            * productionAssignmentDetail.QuantityPerDay.Value)
+                            / (otherAssignment.TotalQuantity
+                            * otherAssignment.ProductionAssignment.Productivity) : 0;
                         capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
                         {
                             WorkDate = productionAssignmentDetail.WorkDate.GetUnix(),
                             StepName = productionStepName,
                             ProductionOrderCode = otherAssignment.ProductionOrderCode,
-                            CapacityPerDay = (workloadMap[otherAssignment.ProductionAssignment.ProductionStepId]
-                            * productionAssignmentDetail.QuantityPerDay.Value)
-                            / (otherAssignment.TotalQuantity
-                            * otherAssignment.ProductionAssignment.Productivity)
+                            CapacityPerDay = capacityPerDay
                         });
                     }
                 }
