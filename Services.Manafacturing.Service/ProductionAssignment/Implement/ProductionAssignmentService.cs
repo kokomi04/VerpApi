@@ -635,7 +635,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 select new
                 {
                     ProductionAssignment = a,
-                    TotalQuantity = d.Quantity,
+                    TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity??0,
                     s.StepName,
                     po.ProductionOrderCode,
                     ad.QuantityPerDay,
@@ -866,7 +866,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 select new
                 {
                     ProductionAssignment = a,
-                    TotalQuantity = d.Quantity,
+                    TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity ?? 0,
                     ps.Workload,
                     d.ObjectId,
                     d.ObjectTypeId,
