@@ -89,10 +89,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 @$";WITH tmp AS (
                     SELECT ");
 
-            if (size < 0)
-            {
-                sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
-            }
+            
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+            
 
             sql.Append(@" g.ProductionOrderId
                         FROM(
@@ -138,10 +137,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 SELECT v.* FROM tmp t
                 LEFT JOIN vProductionOrderDetail v ON t.ProductionOrderId = v.ProductionOrderId ");
 
-            if (size < 0)
-            {
-                sql.Append(" ORDER BY t.RowNum");
-            }
+            sql.Append(" ORDER BY t.RowNum");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
