@@ -1613,9 +1613,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             {
                                 ContainerId = toContainerId,
                                 ContainerTypeId = p.ContainerTypeId,
-                                Conversion = p.Conversion,
                                 Title = p.Title,
                                 UnitId = p.UnitId,
+                                Specification = p.Specification,
+                                Note = p.Note
                             };
 
                             _manufacturingDBContext.ProductSemi.Add(entityProductSemi);

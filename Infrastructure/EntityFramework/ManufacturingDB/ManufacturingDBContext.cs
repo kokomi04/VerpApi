@@ -239,11 +239,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasDefaultValueSql("((1))")
                     .HasComment("1-SP 2-LSX");
 
-                entity.Property(e => e.Conversion).HasMaxLength(512);
-
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Note).HasMaxLength(512);
 
                 entity.Property(e => e.Specification).HasMaxLength(128);
 
