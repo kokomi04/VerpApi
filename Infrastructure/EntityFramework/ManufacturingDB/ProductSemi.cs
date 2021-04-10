@@ -14,6 +14,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ContainerId { get; set; }
         public int ContainerTypeId { get; set; }
         public string Title { get; set; }
+        public string Specification { get; set; }
         public int UnitId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }

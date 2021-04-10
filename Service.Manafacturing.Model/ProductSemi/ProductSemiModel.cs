@@ -12,6 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductSemi
         public long ContainerId { get; set; }
         public EnumProductionProcess.EnumContainerType ContainerTypeId { get; set; }
         public string Title { get; set; }
+        public string Specification { get; set; }
         public int UnitId { get; set; }
         public IList<ProductSemiConversionModel> ProductSemiConversions { get; set; }
 
