@@ -38,6 +38,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string RequireFilters { get; set; }
+        public string ReferenceUrl { get; set; }
+        public bool IsBatchSelect { get; set; }
+        public string OnClick { get; set; }
 
         public virtual VoucherArea VoucherArea { get; set; }
         public virtual VoucherField VoucherField { get; set; }

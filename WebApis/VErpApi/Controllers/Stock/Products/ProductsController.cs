@@ -62,9 +62,9 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool isProductSemi = false)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null)
         {
-            return await _productService.GetList(keyword, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi);
+            return await _productService.GetList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi);
         }
 
 
@@ -122,6 +122,14 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _productService.AddProductDefault(product);
         }
+
+        [HttpPost]
+        [Route("{parentProductId}/SemiProduct")]
+        public async Task<ProductDefaultModel> AddProductSemiProduct([FromRoute] int parentProductId, [FromBody] ProductDefaultModel product)
+        {
+            return await _productService.ProductAddProductSemi(parentProductId, product);
+        }
+
 
         /// <summary>
         /// Lấy thông tin sản phẩm

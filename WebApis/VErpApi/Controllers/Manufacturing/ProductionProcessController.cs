@@ -12,6 +12,10 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Commons.GlobalObject;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -63,7 +67,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}/productionStep")]
-        public async Task<IList<ProductionStepModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
+        public async Task<IList<ProductionStepSimpleModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetAllProductionStep(containerTypeId, containerId);
         }
@@ -162,10 +166,10 @@ namespace VErpApi.Controllers.Manufacturing
         /// <param name="productionOrderId">Mã lệnh sản xuất</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("productionStep/groupRelationship")]
-        public async Task<NonCamelCaseDictionary> GroupProductionStepRelationShip([FromBody] IList<long> productionOrderId)
+        [Route("{containerTypeId}/{containerId}/groupProductionStepToOutsource")]
+        public async Task<IList<GroupProductionStepToOutsource>> GroupProductionStepToOutsource([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] long[] productionOrderId)
         {
-            return await _productionProcessService.GroupProductionStepRelationShip(productionOrderId);
+            return await _productionProcessService.GroupProductionStepToOutsource(containerTypeId, containerId, productionOrderId);
         }
         /// <summary>
         /// Sét khối lượng công việc cho công đoạn
@@ -184,6 +188,14 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
         {
             return await _productionProcessService.CopyProductionProcess(containerTypeId, fromContainerId, toContainerId);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{containerTypeId}/{containerId}/productionProcessOutsourceStep")]
+        public async Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep([FromRoute]EnumContainerType containerTypeId, [FromRoute]  long containerId, [FromBody] long[] productionStepIds)
+        {
+            return await _productionProcessService.GetProductionProcessOutsourceStep(containerTypeId, containerId, productionStepIds);
         }
     }
 }

@@ -109,6 +109,25 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             if (entity == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
             var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
 
+            var inventoryRequirementDetailIds = model.InventoryRequirementDetail.Select(d => d.InventoryRequirementDetailId).ToList();
+
+            var inventoryDetailQuantitys = _stockDBContext.InventoryDetail
+                .Include(id => id.Inventory)
+                .Where(id => id.InventoryRequirementDetailId.HasValue && id.Inventory.IsApproved && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
+                .GroupBy(id => id.InventoryRequirementDetailId)
+                .Select(g => new
+                {
+                    InventoryRequirementDetailId = g.Key,
+                    PrimaryQuantity = g.Sum(id => id.PrimaryQuantity)
+                })
+                .ToDictionary(g => g.InventoryRequirementDetailId, g => g.PrimaryQuantity);
+
+            foreach (var inventoryRequirementDetail in model.InventoryRequirementDetail)
+            {
+                if (inventoryDetailQuantitys.ContainsKey(inventoryRequirementDetail.InventoryRequirementDetailId))
+                    inventoryRequirementDetail.InventoryQuantity = inventoryDetailQuantitys[inventoryRequirementDetail.InventoryRequirementDetailId];
+            }
+
             var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
 
             var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
@@ -308,8 +327,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
                 if (inventoryRequirement == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
 
-                if (inventoryRequirement.ProductionOrderId.HasValue)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
+                //if (inventoryRequirement.ProductionOrderId.HasValue)
+                //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
 
                 await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
 
@@ -410,15 +429,18 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             }
         }
 
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType)
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId)
         {
-            var entity = _stockDBContext.InventoryRequirement
+            var inventoryRequirements = await _stockDBContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementFile)
                 .Include(r => r.InventoryRequirementDetail)
                 .ThenInclude(d => d.ProductUnitConversion)
-                .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType 
-                    && r.ProductionOrderId == productionOrderId 
-                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete);
+                .Where(r => r.InventoryTypeId == (int)inventoryType
+                    && r.ProductionOrderId == productionOrderId
+                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete)
+                .ToListAsync();
+
+            var entity = inventoryRequirements.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId.GetValueOrDefault() == productMaterialsConsumptionGroupId);
 
             var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
 

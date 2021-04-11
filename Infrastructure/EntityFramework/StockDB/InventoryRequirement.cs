@@ -37,6 +37,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public string BillCode { get; set; }
         public string BillSerial { get; set; }
         public DateTime? BillDate { get; set; }
+        public int ModuleTypeId { get; set; }
+        public int? ProductMaterialsConsumptionGroupId { get; set; }
 
         public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
         public virtual ICollection<InventoryRequirementFile> InventoryRequirementFile { get; set; }

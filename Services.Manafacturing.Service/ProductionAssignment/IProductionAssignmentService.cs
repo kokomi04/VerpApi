@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
@@ -12,7 +13,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
     public interface IProductionAssignmentService
     {
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId);
-        Task<bool> UpdateProductionAssignment(long productionStepId, long productionOrderId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable);
+        Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId);
+
+        Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable);
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc);
 
@@ -29,6 +32,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId);
 
-        Task<bool> FinishProductionAssignment(long productionStepId, long productionOrderId, int departmentId);
+        Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, EnumAssignedProgressStatus status);
+
     }
 }

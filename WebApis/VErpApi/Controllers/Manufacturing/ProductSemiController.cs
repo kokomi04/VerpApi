@@ -14,10 +14,12 @@ namespace VErpApi.Controllers.Manufacturing
     public class ProductSemiController: VErpBaseController
     {
         private readonly IProductSemiService _productSemiService;
+        private readonly IProductSemiConversionService _productSemiConversionService;
 
-        public ProductSemiController(IProductSemiService productSemiService)
+        public ProductSemiController(IProductSemiService productSemiService, IProductSemiConversionService productSemiConversionService)
         {
             _productSemiService = productSemiService;
+            _productSemiConversionService = productSemiConversionService;
         }
 
         [HttpGet]
@@ -67,6 +69,36 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<IList<ProductSemiModel>> GetListProductSemiByListContainerId(IList<long> lstContainerId)
         {
             return await _productSemiService.GetListProductSemiByListContainerId(lstContainerId);
+        }
+
+        [HttpPost]
+        [Route("{productSemiId}/conversions")]
+        public async Task<long> AddProductSemiConversion([FromRoute] long productSemiId, [FromBody]ProductSemiConversionModel model)
+        {
+            model.ProductSemiId = productSemiId;
+            return await _productSemiConversionService.AddProductSemiConversion(model);
+        }
+
+        [HttpPut]
+        [Route("{productSemiId}/conversions/{conversionId}")]
+        public async Task<bool> UpdateProductSemiConversion([FromRoute] long productSemiId, [FromRoute] long conversionId, [FromBody] ProductSemiConversionModel model)
+        {
+            model.ProductSemiId = productSemiId;
+            return await _productSemiConversionService.UpdateProductSemiConversion(conversionId, model);
+        }
+
+        [HttpDelete]
+        [Route("{productSemiId}/conversions/{conversionId}")]
+        public async Task<bool> DeleteProductSemiConversion([FromRoute] long productSemiId, [FromRoute] long conversionId)
+        {
+            return await _productSemiConversionService.DeleteProductSemiConversion(conversionId);
+        }
+
+        [HttpGet]
+        [Route("{productSemiId}/conversions")]
+        public async Task<ICollection<ProductSemiConversionModel>> GetAllProductSemiConversionsByProductSemi([FromRoute] long productSemiId)
+        {
+            return await _productSemiConversionService.GetAllProductSemiConversionsByProductSemi(productSemiId);
         }
     }
 }

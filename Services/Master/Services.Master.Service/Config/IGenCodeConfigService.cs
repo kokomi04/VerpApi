@@ -16,6 +16,8 @@ namespace VErp.Services.Master.Service.Config
 
         Task<CustomGenCodeOutputModel> GetInfo(int customGenCodeId, long? fId, string code, long? date);
 
+        Task<PageData<CustomGenCodeBaseValueModel>> GetBaseValues(int customGenCodeId, long? fId, string code, long? date, int page, int size);
+
         Task<bool> Update(int customGenCodeId, CustomGenCodeInputModel model);
 
         Task<bool> SetLastValue(int customGenCodeId, CustomGenCodeBaseValueModel model);

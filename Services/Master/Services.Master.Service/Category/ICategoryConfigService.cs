@@ -12,6 +12,7 @@ namespace VErp.Services.Master.Service.Category
 {
     public interface ICategoryConfigService
     {
+        Task<IList<CategoryFullModel>> GetAllCategoryConfig();
         Task<int> GetCategoryIdByCode(string categoryCode);
         Task<IList<CategoryListModel>> GetDynamicCates();
         Task<CategoryFullModel> GetCategory(int categoryId);

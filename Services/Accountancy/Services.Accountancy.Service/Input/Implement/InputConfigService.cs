@@ -74,6 +74,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<InputTypeFullModel> GetInputType(int inputTypeId)
         {
+            var globalSetting = await GetInputGlobalSetting();
+
             var inputType = await _accountancyDBContext.InputType
            .Where(i => i.InputTypeId == inputTypeId)
            .Include(t => t.InputArea)
@@ -89,15 +91,40 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
             inputType.InputAreas = inputType.InputAreas.OrderBy(f => f.SortOrder).ToList();
-            foreach(var item in inputType.InputAreas)
+            foreach (var item in inputType.InputAreas)
             {
                 item.InputAreaFields = item.InputAreaFields.OrderBy(f => f.SortOrder).ToList();
             }
+
+            inputType.GlobalSetting = globalSetting;
             return inputType;
+        }
+
+
+        public async Task<IList<InputTypeFullModel>> GetAllInputTypes()
+        {
+            var globalSetting = await GetInputGlobalSetting();
+
+            var lst = await _accountancyDBContext.InputType
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .ToListAsync();
+            foreach (var item in lst)
+            {
+                item.GlobalSetting = globalSetting;
+            }
+            return lst;
         }
 
         public async Task<InputTypeFullModel> GetInputType(string inputTypeCode)
         {
+            var globalSetting = await GetInputGlobalSetting();
+
             var inputType = await _accountancyDBContext.InputType
            .Where(i => i.InputTypeCode == inputTypeCode)
            .Include(t => t.InputArea)
@@ -112,11 +139,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
+
+            inputType.GlobalSetting = globalSetting;
             return inputType;
         }
 
         public async Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size)
         {
+            var globalSetting = await GetInputGlobalSetting();
             keyword = (keyword ?? "").Trim();
 
             var query = _accountancyDBContext.InputType.AsQueryable();
@@ -133,6 +163,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             var lst = await query.ProjectTo<InputTypeModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+
             return (lst, total);
         }
 
@@ -270,7 +301,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     AfterLoadAction = sourceInput.AfterLoadAction,
                     BeforeSubmitAction = sourceInput.BeforeSubmitAction,
                     BeforeSaveAction = sourceInput.BeforeSaveAction,
-                    AfterSaveAction = sourceInput.AfterSaveAction
+                    AfterSaveAction = sourceInput.AfterSaveAction,
+                    AfterUpdateRowsJsAction = sourceInput.AfterUpdateRowsJsAction,
                 };
                 await _accountancyDBContext.InputType.AddAsync(cloneType);
                 await _accountancyDBContext.SaveChangesAsync();
@@ -380,6 +412,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.BeforeSubmitAction = data.BeforeSubmitAction;
                 inputType.BeforeSaveAction = data.BeforeSaveAction;
                 inputType.AfterSaveAction = data.AfterSaveAction;
+                inputType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -421,6 +454,48 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return true;
         }
 
+        public async Task<InputTypeGlobalSettingModel> GetInputGlobalSetting()
+        {
+            var inputTypeSetting = await _accountancyDBContext.InputTypeGlobalSetting.FirstOrDefaultAsync();
+            if (inputTypeSetting == null)
+            {
+                inputTypeSetting = new InputTypeGlobalSetting();
+            }
+
+            return _mapper.Map<InputTypeGlobalSettingModel>(inputTypeSetting);
+        }
+
+        public async Task<bool> UpdateInputGlobalSetting(InputTypeGlobalSettingModel data)
+        {
+            var inputTypeSetting = await _accountancyDBContext.InputTypeGlobalSetting.FirstOrDefaultAsync();
+            if (inputTypeSetting == null)
+            {
+                inputTypeSetting = new InputTypeGlobalSetting();
+            }
+
+            using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                _mapper.Map(data, inputTypeSetting);
+                if (inputTypeSetting.InputTypeGlobalSettingId <= 0)
+                {
+                    _accountancyDBContext.InputTypeGlobalSetting.Add(inputTypeSetting);
+                }
+
+                await _accountancyDBContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.InputType, 0, $"Cập nhật cấu hình chung chứng từ kế toán", data.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "UpdateInputSetting");
+                throw;
+            }
+        }
 
         #region InputTypeView
         public async Task<IList<InputTypeViewModelList>> InputTypeViewList(int inputTypeId)
@@ -884,7 +959,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
             }
 
-            
+
             return inputAreaField;
         }
 
@@ -1067,6 +1142,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
                         curField.RequireFilters = field.RequireFilters;
+                        curField.ReferenceUrl = field.ReferenceUrl;
+                        curField.IsBatchSelect = field.IsBatchSelect;
+                        curField.OnClick = field.OnClick;
                     }
                 }
 

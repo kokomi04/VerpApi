@@ -51,17 +51,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
-        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
-        {
-            var sql = new StringBuilder($"EXEC {procedureName}");
-            foreach (var param in parammeters)
-            {
-                sql.Append($" {param.ParameterName} = {param.ParameterName}");
-                if (param.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
-                sql.Append(",");
-            }
-            sql.Append($" {SubIdParam} = {SubIdParam},");
-            return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
+        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
+        {          
+            return await QueryDataTable(dbContext, procedureName, parammeters, CommandType.StoredProcedure, timeout);
         }
 
         public static async Task<int> ExecuteNoneQueryProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
@@ -111,6 +103,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.Parameters.Clear();
                     foreach (var param in parammeters)
                     {
+                        if (param.Value.IsNullObject())
+                        {
+                            param.Value = DBNull.Value;
+                        }
                         command.Parameters.Add(param);
                     }
 

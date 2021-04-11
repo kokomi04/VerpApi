@@ -27,12 +27,14 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string InOutType { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
-
+        public string ProductQuantity { get; set; }
+        public EnumAssignedProgressStatus AssignedProgressStatus { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DepartmentHandoverEntity, DepartmentHandoverModel>()
                 .ForMember(m => m.StartDate, v => v.MapFrom(m => m.StartDate.GetUnix()))
-                .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()));
+                .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
+                .ForMember(m => m.AssignedProgressStatus, v => v.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus));
         }
     }
 
@@ -52,6 +54,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string InOutType { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
+
+        public int AssignedProgressStatus { get; set; }
+        public string ProductQuantity { get; set; }
     }
 
 
@@ -74,6 +79,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int ObjectTypeId { get; set; }
         public decimal ReceivedQuantity { get; set; }
         public decimal TotalRequireQuantity { get; set; }
+        public decimal? OutsourceQuantity { get; set; }
         public string FromStepTitle { get; set; }
         public long? FromStepId { get; set; }
         public string ToStepTitle { get; set; }
@@ -90,7 +96,5 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
             InventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
             MaterialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
         }
-
     }
-
 }

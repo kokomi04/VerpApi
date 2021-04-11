@@ -57,6 +57,24 @@ namespace VErp.Services.Master.Service.Category
         }
 
         #region Category
+
+        public async Task<IList<CategoryFullModel>> GetAllCategoryConfig()
+        {
+            var v =  await _masterContext.Category
+               .Include(c => c.OutSideDataConfig)
+               .ThenInclude(o => o.OutsideDataFieldConfig)
+               .Include(c => c.CategoryField)
+               .ToListAsync();
+
+            var categories = await _masterContext.Category
+                .Include(c => c.OutSideDataConfig)
+                .ThenInclude(o => o.OutsideDataFieldConfig)
+                .Include(c => c.CategoryField)
+                .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            return categories;
+        }
+
         public async Task<CategoryFullModel> GetCategory(int categoryId)
         {
             var category = await _masterContext.Category

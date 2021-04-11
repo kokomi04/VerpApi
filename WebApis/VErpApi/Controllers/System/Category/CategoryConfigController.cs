@@ -72,6 +72,14 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryConfigService.AddCategory(category);
         }
 
+        
+        [HttpGet]
+        [Route("GetAllCategoryConfig")]
+        public async Task<IList<CategoryFullModel>> GetAllCategoryConfig()
+        {
+            return await _categoryConfigService.GetAllCategoryConfig();
+        }
+
         [HttpGet]
         [Route("{categoryId}")]
         public async Task<CategoryFullModel> GetCategory([FromRoute] int categoryId)

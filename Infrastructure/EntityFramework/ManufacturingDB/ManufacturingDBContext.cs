@@ -18,12 +18,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<DepartmentTimeTable> DepartmentTimeTable { get; set; }
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
+        public virtual DbSet<OutsourceOrderMaterials> OutsourceOrderMaterials { get; set; }
         public virtual DbSet<OutsourcePartRequest> OutsourcePartRequest { get; set; }
         public virtual DbSet<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }
         public virtual DbSet<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual DbSet<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
         public virtual DbSet<OutsourceTrack> OutsourceTrack { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
+        public virtual DbSet<ProductSemiConversion> ProductSemiConversion { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual DbSet<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
@@ -34,6 +36,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
+        public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
@@ -124,6 +127,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasConstraintName("FK_OutsourceOrderDetail_OutsourceOrder");
             });
 
+            modelBuilder.Entity<OutsourceOrderMaterials>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.OutsourceOrder)
+                    .WithMany(p => p.OutsourceOrderMaterials)
+                    .HasForeignKey(d => d.OutsourceOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceOrderMaterials_OutsourceOrder");
+            });
+
             modelBuilder.Entity<OutsourcePartRequest>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
@@ -192,8 +206,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<OutsourceStepRequestData>(entity =>
             {
-                entity.HasKey(e => new { e.OutsourceStepRequestId, e.ProductionStepLinkDataId })
-                    .HasName("PK_RequestOutsourceStepOutput");
+                entity.HasKey(e => new { e.OutsourceStepRequestId, e.ProductionStepId, e.ProductionStepLinkDataId });
+
+                entity.Property(e => e.IsImportant)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment("1: input 2:input");
 
@@ -204,6 +221,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.OutsourceStepRequestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceStepRequestData_OutsourceStepRequest");
+
+                entity.HasOne(d => d.ProductionStep)
+                    .WithMany(p => p.OutsourceStepRequestData)
+                    .HasForeignKey(d => d.ProductionStepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceStepRequestData_ProductionStep");
 
                 entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.OutsourceStepRequestData)
@@ -237,11 +260,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasDefaultValueSql("((1))")
                     .HasComment("1-SP 2-LSX");
 
-                entity.Property(e => e.Conversion).HasMaxLength(512);
-
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Note).HasMaxLength(512);
+
+                entity.Property(e => e.Specification).HasMaxLength(128);
 
                 entity.Property(e => e.Title)
                     .IsRequired()
@@ -250,9 +275,22 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
+            modelBuilder.Entity<ProductSemiConversion>(entity =>
+            {
+                entity.Property(e => e.ConversionRate).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.ProductSemi)
+                    .WithMany(p => p.ProductSemiConversion)
+                    .HasForeignKey(d => d.ProductSemiId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductSemiConversion_ProductSemi");
+            });
+
             modelBuilder.Entity<ProductionAssignment>(entity =>
             {
                 entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.ProductionOrderId });
+
+                entity.Property(e => e.ProductionStepId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(18, 5)");
 
@@ -408,6 +446,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionOrderMaterials_ProductionOrder");
+            });
+
+            modelBuilder.Entity<ProductionOrderMaterialsConsumption>(entity =>
+            {
+                entity.Property(e => e.ConversionRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<ProductionScheduleTurnShift>(entity =>

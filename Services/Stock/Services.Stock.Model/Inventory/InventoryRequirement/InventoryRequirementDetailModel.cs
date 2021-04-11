@@ -26,5 +26,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
     public class InventoryRequirementDetailOutputModel : InventoryRequirementDetailInputModel
     {
         public ProductUnitConversion ProductUnitConversion { set; get; }
+
+        public decimal InventoryQuantity { get; set; }
     }
 }

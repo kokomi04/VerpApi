@@ -105,7 +105,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
 
                     var requirement = _mapper.Map<ProductionMaterialsRequirement>(model);
-
                     requirement.CensorStatus = (int)status;
 
                     _manufacturingDBContext.ProductionMaterialsRequirement.Add(requirement);
@@ -360,12 +359,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         private async Task AddInventoryRequirement(ProductionMaterialsRequirementModel requirement)
         {
+            
             var inventoryRequirementModel = new InventoryRequirementSimpleModel
             {
                 ProductionOrderId = requirement.ProductionOrderId,
                 InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
                 InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
-                Date = DateTime.UtcNow.GetUnix(),
+                Date = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset),
                 Content = requirement.RequirementContent,
 
                 InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel

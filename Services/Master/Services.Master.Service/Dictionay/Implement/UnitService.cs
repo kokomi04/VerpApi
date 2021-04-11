@@ -28,17 +28,20 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICurrentContextService _currentContextService;
 
         public UnitService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<UnitService> logger
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
             )
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<int> AddUnit(UnitInput data)
