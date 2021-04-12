@@ -154,7 +154,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 // Lấy thông tin outsource
                 var outSource = step.ProductionStepLinkDataRole
-                    .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input && r.ProductionStepLinkData.OutsourceQuantity.HasValue)
+                    .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.OutsourceQuantity.HasValue)
                     .FirstOrDefault();
 
                 foreach (var linkData in linkDatas)
@@ -277,6 +277,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         var newEntities = mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.AsQueryable()
                            .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
                            .ToList();
+                        foreach(var newEntitie in newEntities)
+                        {
+                            newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
+                        }
                         _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
                     }
 
@@ -359,7 +363,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             // Lấy thông tin outsource
             var outSource = step.ProductionStepLinkDataRole
-                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input && r.ProductionStepLinkData.OutsourceQuantity.HasValue)
+                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.OutsourceQuantity.HasValue)
                 .FirstOrDefault();
 
             foreach (var linkData in linkDatas)
@@ -500,6 +504,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 var newEntities = newAssignments.AsQueryable()
                     .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
                     .ToList();
+                foreach (var newEntitie in newEntities)
+                {
+                    newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
+                }
                 _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
                 // Cập nhật phân công
                 foreach (var tuple in updateAssignments)
