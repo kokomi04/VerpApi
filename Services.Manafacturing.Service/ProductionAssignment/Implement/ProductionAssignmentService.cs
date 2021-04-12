@@ -277,6 +277,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         var newEntities = mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.AsQueryable()
                            .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
                            .ToList();
+                        foreach(var newEntitie in newEntities)
+                        {
+                            newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
+                        }
                         _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
                     }
 
@@ -500,6 +504,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 var newEntities = newAssignments.AsQueryable()
                     .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
                     .ToList();
+                foreach (var newEntitie in newEntities)
+                {
+                    newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
+                }
                 _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
                 // Cập nhật phân công
                 foreach (var tuple in updateAssignments)
