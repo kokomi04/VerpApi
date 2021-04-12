@@ -26,7 +26,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string BillCode { get; set; }
         public string BillSerial { get; set; }
         public long BillDate { get; set; }
-        public EnumModuleType ModuleTypeId { get; set; }
+        public int? ModuleTypeId { get; set; }
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
