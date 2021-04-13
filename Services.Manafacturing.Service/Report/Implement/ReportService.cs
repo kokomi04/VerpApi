@@ -808,47 +808,32 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
         {
             var reportData = new List<OutsourceStepRequestReportModel>();
 
-            var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking();
-
-            var outsourceStepRequests = await query.ProjectTo<OutsourceStepRequestModel>(_mapper.ConfigurationProvider)
-                 .ToListAsync();
-
-            var roleMap = (await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
+            var query = await _manufacturingDBContext.OutsourceStepRequest
                 .Include(x => x.ProductionStep)
-                .Where(x => x.ProductionStep.ContainerTypeId == (int)EnumProductionProcess.EnumContainerType.ProductionOrder
-                    && outsourceStepRequests.Select(s => s.ProductionOrderId).Contains(x.ProductionStep.ContainerId))
-                .ToListAsync())
-                .GroupBy(x => x.ProductionStep.ContainerId)
-                .ToDictionary(k => k.Key, v => v.AsQueryable().ProjectTo<ProductionStepLinkDataRoleModel>(_mapper.ConfigurationProvider).ToList());
+                .ThenInclude(x => x.Step)
+                .Include(x => x.OutsourceStepRequestData)
+                .Include(x => x.ProductionOrder)
+                .AsNoTracking()
+                .ToListAsync();
 
-            foreach (var rq in outsourceStepRequests)
+            foreach (var rq in query)
             {
-                if (!roleMap.ContainsKey(rq.ProductionOrderId))
-                    continue;
+                var productionStep = string.Join(", ", (_mapper.Map<IList<ProductionStepModel>>(rq.ProductionStep)).Select(x => x.Title));
 
-                var lsStepId = FoundProductionStepInOutsourceStepRequest(rq.OutsourceStepRequestData, roleMap[rq.ProductionOrderId]);
-                var lsStepTitle = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                    .Where(x => lsStepId.Contains(x.ProductionStepId))
-                    .ProjectTo<ProductionStepModel>(_mapper.ConfigurationProvider)
-                    .Select(x => x.Title)
-                    .ToArrayAsync();
-
-                var data = rq.OutsourceStepRequestData.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                var data = rq.OutsourceStepRequestData.Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && x.IsImportant == true)
                     .Select(d => new OutsourceStepRequestReportModel
                     {
                         OutsourceStepRequestId = rq.OutsourceStepRequestId,
-                        OutsourcePartRequestFinishDate = rq.OutsourceStepRequestFinishDate,
+                        OutsourcePartRequestFinishDate = rq.OutsourceStepRequestFinishDate.GetUnix(),
                         OutsourceStepRequestCode = rq.OutsourceStepRequestCode,
-                        ProductionOrderCode = rq.ProductionOrderCode,
+                        ProductionOrderCode = rq.ProductionOrder.ProductionOrderCode,
                         ProductionOrderId = rq.ProductionOrderId,
-                        ProductionStepArrayString = string.Join(", ", lsStepTitle),
+                        ProductionStepArrayString = productionStep,
                         ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                        Quantity = d.OutsourceStepRequestDataQuantity.GetValueOrDefault()
+                        Quantity = d.Quantity
                     });
                 reportData.AddRange(data);
             }
-
-
 
             if (reportData.Count > 0)
             {
@@ -906,7 +891,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             var queryFilter = reportData.AsQueryable();
             if (filters != null)
-                queryFilter = reportData.AsQueryable().InternalFilter(filters);
+                queryFilter = queryFilter.AsQueryable().InternalFilter(filters);
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName))
                 queryFilter = queryFilter.InternalOrderBy(orderByFieldName, asc);
@@ -917,59 +902,5 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             return (lst, total);
         }
-
-        private IList<long> FoundProductionStepInOutsourceStepRequest(IList<OutsourceStepRequestDataModel> outsourceStepRequestDatas, List<ProductionStepLinkDataRoleModel> roles)
-        {
-            var outputData = outsourceStepRequestDatas
-                .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                .Select(x => x.ProductionStepLinkDataId)
-                .ToList();
-
-            var inputData = outsourceStepRequestDatas
-                .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                .Select(x => x.ProductionStepLinkDataId)
-                .ToList();
-
-            var productionStepStartCode = roles.Where(x => inputData.Contains(x.ProductionStepLinkDataId)
-                   && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                .Select(x => x.ProductionStepId)
-                .Distinct()
-                .ToList();
-            var productionStepEndCode = roles.Where(x => outputData.Contains(x.ProductionStepLinkDataId)
-                     && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                .Select(x => x.ProductionStepId)
-                .Distinct()
-                .ToList();
-
-            var lsProductionStepCCode = new List<long>();
-            foreach (var id in productionStepEndCode)
-                FindTraceProductionStep(inputData, roles, productionStepStartCode, lsProductionStepCCode, id);
-
-            return lsProductionStepCCode
-                    .Union(productionStepEndCode)
-                    .Union(productionStepStartCode)
-                    .Distinct()
-                    .ToList();
-        }
-
-        private void FindTraceProductionStep(List<long> inputLinkData, List<ProductionStepLinkDataRoleModel> roles, List<long> productionStepStartId, List<long> result, long productionStepId)
-        {
-            var roleInput = roles.Where(x => x.ProductionStepId == productionStepId
-                    && !inputLinkData.Contains(x.ProductionStepLinkDataId)
-                    && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                .ToList();
-            foreach (var input in roleInput)
-            {
-                var roleOutput = roles.Where(x => x.ProductionStepLinkDataId == input.ProductionStepLinkDataId
-                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                    .FirstOrDefault();
-
-                if (roleOutput == null) continue;
-
-                result.Add(roleOutput.ProductionStepId);
-                FindTraceProductionStep(inputLinkData, roles, productionStepStartId, result, roleOutput.ProductionStepId);
-            }
-        }
-
     }
 }

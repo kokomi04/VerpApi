@@ -14,7 +14,6 @@ namespace VErp.Services.Manafacturing.Model.Report
         public string OutsourceStepRequestCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public long ProductionOrderId { get; set; }
-        public string ProductionProcessTitle { get; set; }
         public string ProductionStepArrayString { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         public string ProductionStepLinkDataTitle { get; set; }

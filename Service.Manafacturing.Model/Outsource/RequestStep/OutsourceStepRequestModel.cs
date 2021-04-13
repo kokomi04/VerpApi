@@ -43,30 +43,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         }
     }
 
-    public class OutsourceStepRequestInfo : OutsourceStepRequestModel, IMapFrom<OutsourceStepRequest>
-    {
-        public IList<ProductionStepModel> ProductionSteps { get; set; }
-        public IList<ProductionStepLinkDataRoleModel> roles { get; set; }
-        public string OrderCode { get; set; }
-        public string ProductTitle { get; set; }
-        public string OutsourceStepRequestStatus { get; set; }
-
-        public new  void Mapping(Profile profile)
-        {
-            profile.CreateMap<OutsourceStepRequest, OutsourceStepRequestInfo>()
-                .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.GetUnix()))
-                .ForMember(m => m.OutsourceStepRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
-                .ForMember(m => m.OutsourceStepRequestData, v => v.MapFrom(m => m.OutsourceStepRequestData))
-                .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrder.ProductionOrderCode))
-                .ReverseMap()
-                .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
-                .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
-                .ForMember(m => m.OutsourceStepRequestData, v => v.Ignore())
-                .ForMember(m => m.ProductionOrder, v => v.Ignore());
-
-        }
-    }
-
     public class OutsourceStepRequestPrivateKey
     {
         public long OutsourceStepRequestId { get; set; }
