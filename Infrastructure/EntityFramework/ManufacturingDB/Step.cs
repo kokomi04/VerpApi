@@ -16,6 +16,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SortOrder { get; set; }
         public int StepGroupId { get; set; }
         public int UnitId { get; set; }
+        public decimal ShrinkageRate { get; set; }
+        public int HandoverTypeId { get; set; }
         public bool IsHide { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

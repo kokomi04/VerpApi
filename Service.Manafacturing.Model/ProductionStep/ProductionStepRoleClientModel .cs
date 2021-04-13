@@ -12,4 +12,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public int ContainerTypeId { get; set; }
         public string ClientData { get; set; }
     }
+
+    public class RoleClientData
+    {
+        public string key { get; set; }
+        public bool value { get; set; }
+        public float pos_x { get; set; }
+        public float pos_y { get; set; }
+    }
 }

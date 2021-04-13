@@ -54,5 +54,6 @@ namespace VErp.Services.Accountancy.Model.Input
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public bool IsRequire { get; set; }
     }
 }

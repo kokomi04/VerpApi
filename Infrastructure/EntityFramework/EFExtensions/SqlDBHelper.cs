@@ -51,17 +51,38 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
-        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
+        {          
+            return await QueryDataTable(dbContext, procedureName, parammeters, CommandType.StoredProcedure, timeout);
+        }
+
+        public static async Task<int> ExecuteNoneQueryProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
         {
-            var sql = new StringBuilder($"EXEC {procedureName}");
+            var ps = new List<SqlParameter>();
             foreach (var param in parammeters)
+            {
+                ps.Add(param);
+            }
+
+            if (dbContext is ISubsidiayRequestDbContext requestDbContext)
+            {
+                ps.Add(requestDbContext.CreateSubSqlParam());
+            }
+
+            var sql = new StringBuilder($"EXEC {procedureName}");
+            foreach (var param in ps)
             {
                 sql.Append($" {param.ParameterName} = {param.ParameterName}");
                 if (param.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
                 sql.Append(",");
             }
-            sql.Append($" {SubIdParam} = {SubIdParam},");
-            return await QueryDataTable(dbContext, sql.ToString().TrimEnd(','), parammeters, cmdType, timeout);
+
+            if (timeout.HasValue)
+            {
+                dbContext.Database.SetCommandTimeout(timeout.Value);
+            }
+
+            return await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), ps);
         }
 
         public static async Task ChangeDatabase(this DbContext dbContext, string dbName)
@@ -82,6 +103,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.Parameters.Clear();
                     foreach (var param in parammeters)
                     {
+                        if (param.Value.IsNullObject())
+                        {
+                            param.Value = DBNull.Value;
+                        }
                         command.Parameters.Add(param);
                     }
 
@@ -568,6 +593,27 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     var row = table.NewRow();
                     row[keyColumn] = item.Key;
                     row[valueColumn] = item.Value;
+                    table.Rows.Add(row);
+                }
+            }
+            return new SqlParameter(parameterName, SqlDbType.Structured) { Value = table, TypeName = type };
+        }
+
+        public static SqlParameter ToDecimalKeyValueSqlParameter(this NonCamelCaseDictionary<decimal?> values, string parameterName)
+        {
+            var type = "_DECIMAL_KEY_VALUES";
+            var keyColumn = "Key";
+            var valueColumn = "Value";
+            var table = new DataTable(type);
+            table.Columns.Add(new DataColumn(keyColumn, typeof(string)));
+            table.Columns.Add(new DataColumn(valueColumn, typeof(decimal)));
+            if (values != null)
+            {
+                foreach (var item in values)
+                {
+                    var row = table.NewRow();
+                    row[keyColumn] = item.Key;
+                    row[valueColumn] = item.Value.HasValue ? (object)item.Value.Value : DBNull.Value;
                     table.Rows.Add(row);
                 }
             }

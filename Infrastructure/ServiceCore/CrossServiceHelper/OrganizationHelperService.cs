@@ -17,6 +17,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<BaseCustomerModel> CustomerInfo(int customerId);
 
         Task<BusinessInfoModel> BusinessInfo();
+        Task<IList<DepartmentSimpleModel>> GetDepartmentSimples(int[] departmentId);
+        Task<IList<DepartmentSimpleModel>> GetAllDepartmentSimples();
     }
 
 
@@ -84,5 +86,14 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Get<BusinessInfoModel>($"api/internal/InternalBussiness/businessInfo");
         }
 
+        public async Task<IList<DepartmentSimpleModel>> GetDepartmentSimples(int[] departmentIds)
+        {
+            return await _httpCrossService.Post<IList<DepartmentSimpleModel>>($"api/internal/InternalDepartment/GetByIds", departmentIds);
+        }
+
+        public async Task<IList<DepartmentSimpleModel>> GetAllDepartmentSimples()
+        {
+            return (await _httpCrossService.Post<PageData<DepartmentSimpleModel>>($"api/internal/InternalDepartment", new { })).List;
+        }
     }
 }

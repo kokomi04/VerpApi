@@ -14,7 +14,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class ProductionAssignmentModel : IMapFrom<ProductionAssignmentEntity>
     {
         public long? ProductionStepId { get; set; }
-        public long ScheduleTurnId { get; set; }
+        public long ProductionOrderId { get; set; }
         public int DepartmentId { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public int CompletedQuantity { get; set; }
@@ -23,7 +23,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
-
+        public bool IsManualFinish { get; set; }
+        public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
         public ProductionAssignmentModel()
@@ -37,10 +38,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.GetUnix()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.GetUnix()))
                 .ForMember(s => s.CreatedDatetimeUtc, d => d.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
+                .ForMember(s => s.AssignedProgressStatus, d => d.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus))
                 .ReverseMap()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.UnixToDateTime()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
-                .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore());
+                .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore())
+                .ForMember(s => s.IsManualFinish, d => d.Ignore())
+                .ForMember(s => s.AssignedProgressStatus, d => d.Ignore());
         }
 
         public bool IsChange(ProductionAssignmentEntity entity)
@@ -80,6 +84,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public ProductionAssignmentModel[] ProductionAssignments { get; set; }
         public ProductionStepWorkInfoInputModel ProductionStepWorkInfo { get; set; }
 
+        public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
+    }
+
+    public class GeneralProductionStepAssignmentModel
+    {
+        public long ProductionStepId { get; set; }
+        public ProductionAssignmentModel[] ProductionAssignments { get; set; }
+        public ProductionStepWorkInfoInputModel ProductionStepWorkInfo { get; set; }
+    }
+
+    public class GeneralAssignmentModel
+    {
+        public GeneralProductionStepAssignmentModel[] ProductionStepAssignment { get; set; }
         public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
     }
 }

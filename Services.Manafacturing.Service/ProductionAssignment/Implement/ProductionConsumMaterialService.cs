@@ -35,7 +35,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         }
 
 
-        public async Task<long> CreateConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, ProductionConsumMaterialModel model)
+        public async Task<long> CreateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, ProductionConsumMaterialModel model)
         {
             var materials = model?.Details?.Where(d => d.Key > 0 && d.Value?.Values?.Count() > 0)?.ToList();
             if (materials == null || materials.Count() == 0)
@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập ít nhất một loại vật tư tiêu hao");
             }
 
-            var assignmentInfo = _manufacturingDBContext.ProductionAssignment.FirstOrDefault(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ScheduleTurnId == scheduleTurnId);
+            var assignmentInfo = _manufacturingDBContext.ProductionAssignment.FirstOrDefault(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ProductionOrderId == productionOrderId);
             if (assignmentInfo == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy phân công của công đoạn cho bộ phận này!");
@@ -51,7 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var consumMaterial = _mapper.Map<ProductionConsumMaterial>(model);
             consumMaterial.DepartmentId = departmentId;
-            consumMaterial.ScheduleTurnId = scheduleTurnId;
+            consumMaterial.ProductionOrderId = productionOrderId;
             consumMaterial.ProductionStepId = productionStepId;
 
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
@@ -80,7 +80,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                      new
                      {
                          departmentId,
-                         scheduleTurnId,
+                         productionOrderId,
                          productionStepId,
                          model
                      }.JsonSerialize());
@@ -88,11 +88,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials(int departmentId, long scheduleTurnId, long productionStepId)
+        public async Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials(int departmentId, long productionOrderId, long productionStepId)
         {
             var consumMaterials = await _manufacturingDBContext.ProductionConsumMaterial
                 .Include(c => c.ProductionConsumMaterialDetail)
-                .Where(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ScheduleTurnId == scheduleTurnId)
+                .Where(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ProductionOrderId == productionOrderId)
                 .ToListAsync();
 
             return consumMaterials.Select(c =>
@@ -112,7 +112,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }).ToList();
         }
 
-        public async Task<bool> UpdateConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, long productionConsumMaterialId, ProductionConsumMaterialModel model)
+        public async Task<bool> UpdateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, long productionConsumMaterialId, ProductionConsumMaterialModel model)
         {
             var materials = model?.Details?.Where(d => d.Key > 0 && d.Value?.Values?.Count() > 0)?.ToList();
             if (materials == null || materials.Count() == 0)
@@ -126,7 +126,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy khai báo vật tư tiêu hao trong hệ thống");
             }
 
-            if (consumMaterial.DepartmentId != departmentId || consumMaterial.ScheduleTurnId != scheduleTurnId || consumMaterial.ProductionStepId != productionStepId)
+            if (consumMaterial.DepartmentId != departmentId || consumMaterial.ProductionOrderId != productionOrderId || consumMaterial.ProductionStepId != productionStepId)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
@@ -173,7 +173,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         }
 
 
-        public async Task<bool> DeleteConsumMaterial(int departmentId, long scheduleTurnId, long productionStepId, long productionConsumMaterialId)
+        public async Task<bool> DeleteConsumMaterial(int departmentId, long productionOrderId, long productionStepId, long productionConsumMaterialId)
         {
 
             var consumMaterial = await _manufacturingDBContext.ProductionConsumMaterial
@@ -184,7 +184,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
 
-            if (consumMaterial.DepartmentId != departmentId || consumMaterial.ScheduleTurnId != scheduleTurnId || consumMaterial.ProductionStepId != productionStepId)
+            if (consumMaterial.DepartmentId != departmentId || consumMaterial.ProductionOrderId != productionOrderId || consumMaterial.ProductionStepId != productionStepId)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
@@ -212,13 +212,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<bool> DeleteMaterial(int departmentId, long scheduleTurnId, long productionStepId, int objectTypeId, long objectId)
+        public async Task<bool> DeleteMaterial(int departmentId, long productionOrderId, long productionStepId, int objectTypeId, long objectId)
         {
             var consumMaterialDetails = (from sd in _manufacturingDBContext.ProductionConsumMaterialDetail
                                          join s in _manufacturingDBContext.ProductionConsumMaterial
                                          on sd.ProductionConsumMaterialId equals s.ProductionConsumMaterialId
                                          where s.DepartmentId == departmentId
-                                         && s.ScheduleTurnId == scheduleTurnId
+                                         && s.ProductionOrderId == productionOrderId
                                          && s.ProductionStepId == productionStepId
                                          && sd.ObjectTypeId == objectTypeId
                                          && sd.ObjectId == objectId
@@ -231,7 +231,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     new
                     {
                         departmentId,
-                        scheduleTurnId,
+                        productionOrderId,
                         productionStepId,
                         objectTypeId,
                         objectId

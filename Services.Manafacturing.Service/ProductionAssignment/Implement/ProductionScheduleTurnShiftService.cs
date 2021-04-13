@@ -35,7 +35,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         }
 
 
-        public async Task<long> CreateShift(int departmentId, long scheduleTurnId, long productionStepId, ProductionScheduleTurnShiftModel model)
+        public async Task<long> CreateShift(int departmentId, long productionOrderId, long productionStepId, ProductionScheduleTurnShiftModel model)
         {
             var userModels = model.Users?.Where(u => u.Key > 0)?.ToList();
             if (userModels == null || userModels.Count() == 0)
@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập ít nhất một người dùng");
             }
 
-            var assignmentInfo = _manufacturingDBContext.ProductionAssignment.FirstOrDefault(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ScheduleTurnId == scheduleTurnId);
+            var assignmentInfo = _manufacturingDBContext.ProductionAssignment.FirstOrDefault(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ProductionOrderId == productionOrderId);
             if (assignmentInfo == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy phân công của công đoạn cho bộ phận này!");
@@ -51,7 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var shift = _mapper.Map<ProductionScheduleTurnShift>(model);
             shift.DepartmentId = departmentId;
-            shift.ScheduleTurnId = scheduleTurnId;
+            shift.ProductionOrderId = productionOrderId;
             shift.ProductionStepId = productionStepId;
 
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
@@ -76,7 +76,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                      new
                      {
                          departmentId,
-                         scheduleTurnId,
+                         productionOrderId,
                          productionStepId,
                          model
                      }.JsonSerialize());
@@ -84,9 +84,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<IList<ProductionScheduleTurnShiftModel>> GetShifts(int departmentId, long scheduleTurnId, long productionStepId)
+        public async Task<IList<ProductionScheduleTurnShiftModel>> GetShifts(int departmentId, long productionOrderId, long productionStepId)
         {
-            var shifts = await _manufacturingDBContext.ProductionScheduleTurnShift.Include(s => s.ProductionScheduleTurnShiftUser).Where(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ScheduleTurnId == scheduleTurnId)
+            var shifts = await _manufacturingDBContext.ProductionScheduleTurnShift.Include(s => s.ProductionScheduleTurnShiftUser).Where(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ProductionOrderId == productionOrderId)
                   .ToListAsync();
 
             return shifts.Select(s =>
@@ -102,7 +102,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }).ToList();
         }
 
-        public async Task<bool> UpdateShift(int departmentId, long scheduleTurnId, long productionStepId, long productionScheduleTurnShiftId, ProductionScheduleTurnShiftModel model)
+        public async Task<bool> UpdateShift(int departmentId, long productionOrderId, long productionStepId, long productionScheduleTurnShiftId, ProductionScheduleTurnShiftModel model)
         {
             var userModels = model.Users?.Where(u => u.Key > 0)?.ToList();
             if (userModels == null || userModels.Count() == 0)
@@ -116,7 +116,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy ca trong hệ thống");
             }
 
-            if (shiftInfo.DepartmentId != departmentId || shiftInfo.ScheduleTurnId != scheduleTurnId || shiftInfo.ProductionStepId != productionStepId)
+            if (shiftInfo.DepartmentId != departmentId || shiftInfo.ProductionOrderId != productionOrderId || shiftInfo.ProductionStepId != productionStepId)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
@@ -156,7 +156,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         }
 
 
-        public async Task<bool> DeleteShift(int departmentId, long scheduleTurnId, long productionStepId, long productionScheduleTurnShiftId)
+        public async Task<bool> DeleteShift(int departmentId, long productionOrderId, long productionStepId, long productionScheduleTurnShiftId)
         {
 
             var shiftInfo = await _manufacturingDBContext.ProductionScheduleTurnShift.FirstOrDefaultAsync(s => s.ProductionScheduleTurnShiftId == productionScheduleTurnShiftId);
@@ -166,7 +166,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
 
-            if (shiftInfo.DepartmentId != departmentId || shiftInfo.ScheduleTurnId != scheduleTurnId || shiftInfo.ProductionStepId != productionStepId)
+            if (shiftInfo.DepartmentId != departmentId || shiftInfo.ProductionOrderId != productionOrderId || shiftInfo.ProductionStepId != productionStepId)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }

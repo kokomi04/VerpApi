@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionStepLinkData()
         {
             OutsourceStepRequestData = new HashSet<OutsourceStepRequestData>();
+            ProductionAssignment = new HashSet<ProductionAssignment>();
             ProductionStepLinkDataRole = new HashSet<ProductionStepLinkDataRole>();
         }
 
@@ -20,6 +21,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public decimal QuantityOrigin { get; set; }
         public decimal? OutsourceQuantity { get; set; }
         public decimal? ExportOutsourceQuantity { get; set; }
+        public decimal? OutsourcePartQuantity { get; set; }
         public int SortOrder { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
@@ -30,8 +32,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
         public long? OutsourceRequestDetailId { get; set; }
         public int ProductionStepLinkTypeId { get; set; }
+        public long? ConverterId { get; set; }
 
         public virtual ICollection<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
+        public virtual ICollection<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
     }
 }

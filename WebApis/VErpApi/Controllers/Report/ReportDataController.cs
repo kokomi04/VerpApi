@@ -29,7 +29,7 @@ namespace VErpApi.Controllers.Report
         [Route("view/{reportId}")]
         public async Task<ReportDataModel> ReportView([FromRoute] int reportId, [FromBody] ReportFilterModel model)
         {
-            return await _accountancyReportService.Report(reportId, model)
+            return await _accountancyReportService.Report(reportId, model, model?.Page ?? 0, model?.Size ?? 0)
                 .ConfigureAwait(true);
         }
 
@@ -52,5 +52,5 @@ namespace VErpApi.Controllers.Report
         }
     }
 
-   
+
 }

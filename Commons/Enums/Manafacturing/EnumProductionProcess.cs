@@ -43,9 +43,10 @@ namespace VErp.Commons.Enums.Manafacturing
             StepLinkDataOutsourcePart = 1,
             [Description("LinkData gia công công đoạn")]
             StepLinkDataOutsourceStep = 2,
+            Others = 99,
         }
 
-        public enum EnumOutsourceRequestStatusType
+        public enum EnumOutsourceRequestStatusType: int
         {
             [Description("Chưa xử lý")]
             Unprocessed = 1,

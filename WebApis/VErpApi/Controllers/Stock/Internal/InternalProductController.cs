@@ -35,9 +35,9 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<ProductListOutput>> Search([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] string productName,  [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<PageData<ProductListOutput>> Search([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null)
         {
-            return await _productService.GetList(keyword, productName, productTypeIds, productCateIds, page, size, filters);
+            return await _productService.GetList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi, filters);
         }
 
 
@@ -71,5 +71,11 @@ namespace VErpApi.Controllers.Stock.Internal
             return await _productService.GetListProductsByIds(productIds);
         }
 
+        [HttpPut]
+        [Route("{productId}/coefficient")]
+        public async Task<bool> UpdateProductCoefficientManual([FromRoute] int productId, [FromQuery] int coefficient)
+        {
+            return await _productService.UpdateProductCoefficientManual(productId, coefficient);
+        }
     }
 }

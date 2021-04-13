@@ -7,6 +7,9 @@ namespace VErp.Commons.Enums.ErrorCodes
 {
     public enum ProductSemiErrorCode
     {
-        NotFoundProductSemi = 1
+        [Description("Không tìm thấy bán thành phẩm")]
+        NotFoundProductSemi = 1,
+        [Description("Không tìm thấy bán thành phẩm chuyển đổi")]
+        NotFoundProductSemiConversion = 2
     }
 }

@@ -174,6 +174,12 @@ namespace VErp.Commons.Library
             return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(obj);
         }
 
+        public static long GetUnixUtc(this DateTime dateTime, int? timezoneOffset)
+        {
+            dateTime = dateTime.AddMinutes(timezoneOffset?? 0);
+            return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+        }
+
         public static long GetUnix(this DateTime dateTime)
         {
             return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
@@ -563,7 +569,7 @@ namespace VErp.Commons.Library
             return true;
         }
 
-        public static object GetSqlValue(this EnumDataType dataType, object value)
+        public static object GetSqlValue(this EnumDataType dataType, object value, int? timeZoneOffset = null)
         {
             if (value.IsNullObject()) return DBNull.Value;
 
@@ -589,7 +595,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
-                    long dateValue;
+                    long? dateValue;
                     try
                     {
                         dateValue = Convert.ToInt64(value);
@@ -600,7 +606,7 @@ namespace VErp.Commons.Library
                     }
 
                     if (dateValue == 0) return DBNull.Value;
-                    return dateValue.UnixToDateTime().Value;
+                    return dateValue.UnixToDateTime(timeZoneOffset).Value;
 
                 case EnumDataType.PhoneNumber: return value?.ToString();
                 case EnumDataType.Email: return value?.ToString();
@@ -657,10 +663,11 @@ namespace VErp.Commons.Library
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
 
-                case EnumDataType.Percentage:
                 case EnumDataType.BigInt:
                 case EnumDataType.Decimal:
                     return EnumExcelType.Number;
+                case EnumDataType.Percentage:
+                    return EnumExcelType.Percentage;
                 case EnumDataType.Date:
                     return EnumExcelType.DateTime;
                 case EnumDataType.Text:
@@ -861,10 +868,25 @@ namespace VErp.Commons.Library
 
             foreach (DataColumn column in dr.Table.Columns)
             {
-                foreach (PropertyInfo pro in temp.GetProperties())
+                var props = from p in temp.GetProperties()
+                            group p by p.Name into g
+                            select g.OrderByDescending(t => t.DeclaringType == typeof(T)).First();
+
+                foreach (PropertyInfo pro in props)
                 {
                     if (pro.Name == column.ColumnName && dr[column.ColumnName] != DBNull.Value)
-                        pro.SetValue(obj, dr[column.ColumnName], null);
+                    {
+                        try
+                        {
+                            pro.SetValue(obj, dr[column.ColumnName], null);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                       
+                    }
                     else
                         continue;
                 }

@@ -42,6 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IProductionOrderHelperService _productionOrderHelperService;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -53,6 +54,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IProductHelperService productHelperService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , IProductionOrderHelperService productionOrderHelperService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -64,6 +66,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _productHelperService = productHelperService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _productionOrderHelperService = productionOrderHelperService;
         }
 
 
@@ -499,7 +502,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
-
                 return true;
             }
         }
@@ -834,6 +836,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
             }
+        }
+
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId(long productionOrderId)
+        {
+            var info = await _purchaseOrderDBContext
+                .PurchasingRequest
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ProductionOrderId == productionOrderId);
+
+            if (info == null) return null;
+
+            var details = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking()
+                .Where(d => d.PurchasingRequestId == info.PurchasingRequestId)
+                .ToListAsync();
+
+            var data = _mapper.Map<PurchasingRequestOutput>(info);
+
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+
+            return data;
         }
 
     }

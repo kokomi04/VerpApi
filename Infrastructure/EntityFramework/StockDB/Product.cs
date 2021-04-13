@@ -12,6 +12,8 @@ namespace VErp.Infrastructure.EF.StockDB
             ProductAttachment = new HashSet<ProductAttachment>();
             ProductBomChildProduct = new HashSet<ProductBom>();
             ProductBomProduct = new HashSet<ProductBom>();
+            ProductMaterialsConsumptionMaterialsConsumption = new HashSet<ProductMaterialsConsumption>();
+            ProductMaterialsConsumptionProduct = new HashSet<ProductMaterialsConsumption>();
             ProductStockValidation = new HashSet<ProductStockValidation>();
             ProductUnitConversion = new HashSet<ProductUnitConversion>();
         }
@@ -48,6 +50,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public string ProductNameEng { get; set; }
         public decimal? Quantitative { get; set; }
         public int? QuantitativeUnitTypeId { get; set; }
+        public bool IsProductSemi { get; set; }
+        public int Coefficient { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }
@@ -58,6 +62,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual ICollection<ProductAttachment> ProductAttachment { get; set; }
         public virtual ICollection<ProductBom> ProductBomChildProduct { get; set; }
         public virtual ICollection<ProductBom> ProductBomProduct { get; set; }
+        public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionMaterialsConsumption { get; set; }
+        public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionProduct { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual ICollection<ProductUnitConversion> ProductUnitConversion { get; set; }
     }

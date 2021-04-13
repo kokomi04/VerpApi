@@ -6,7 +6,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
     public partial class ProductionHandover
     {
         public long ProductionHandoverId { get; set; }
-        public long ScheduleTurnId { get; set; }
         public int FromDepartmentId { get; set; }
         public decimal HandoverQuantity { get; set; }
         public long ObjectId { get; set; }
@@ -23,6 +22,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int ToDepartmentId { get; set; }
         public long ToProductionStepId { get; set; }
         public DateTime? HandoverDatetime { get; set; }
+        public long ProductionOrderId { get; set; }
+        public string Note { get; set; }
 
         public virtual ProductionAssignment ProductionAssignment { get; set; }
         public virtual ProductionAssignment ProductionAssignmentNavigation { get; set; }

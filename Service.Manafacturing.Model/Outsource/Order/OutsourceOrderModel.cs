@@ -64,14 +64,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public long OutsourceOrderId { get; set; }
         public EnumOutsourceType OutsourceTypeId { get; set; }
         public string OutsourceOrderCode { get; set; }
-        public string ProviderName { get; set; }
-        public string ProviderReceiver { get; set; }
-        public string ProviderAddress { get; set; }
-        public string ProviderPhone { get; set; }
-        public string TransportToReceiver { get; set; }
-        public string TransportToCompany { get; set; }
-        public string TransportToAddress { get; set; }
-        public string TransportToPhone { get; set; }
         public string OutsourceRequired { get; set; }
         public string Note { get; set; }
         public decimal FreightCost { get; set; }

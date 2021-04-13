@@ -15,6 +15,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long Date { get; set; }
         public string Content { get; set; }
+        public long? ProductionOrderId { get; set; }
 
         public List<PurchasingRequestInputDetail> Details { set; get; }
 

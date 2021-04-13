@@ -13,7 +13,9 @@ namespace VErp.Services.Manafacturing.Service.Step
         public Task<int> CreateStep(StepModel req);
         public Task<bool> UpdateStep(int stepId, StepModel req);
         public Task<bool> DeleteStep(int stepId);
+        public Task<StepModel> GetStep(int stepId);
         public Task<PageData<StepModel>> GetListStep(string keyword, int page, int size);
-       
+
+        public Task<IList<StepModel>> GetStepByArrayId(int[] arrayId);
     }
 }

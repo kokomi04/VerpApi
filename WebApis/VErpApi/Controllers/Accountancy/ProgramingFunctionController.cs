@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.Accountancy
         }
 
         [HttpGet("{programingFunctionId}")]
-        public Task<ProgramingFunctionModel> UpdateFunction([FromRoute] int programingFunctionId)
+        public Task<ProgramingFunctionModel> GetFunctionInfo([FromRoute] int programingFunctionId)
         {
             return _programingFunctionService.GetFunctionInfo(programingFunctionId);
         }

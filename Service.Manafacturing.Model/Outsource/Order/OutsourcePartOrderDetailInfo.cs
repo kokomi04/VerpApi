@@ -9,18 +9,18 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
     public class OutsourcePartOrderDetailInfo: OutsourcePartOrderDetailExtractInfoBase, IMapFrom<OutsourcePartOrderDetailExtractInfo>
     {
-        public long OutsourcePartRequestFinishDate { get; set; }
+        public long OutsourcePartRequestDetailFinishDate { get; set; }
         public long OutsourceOrderDate { get; set; }
         public long OutsourceOrderFinishDate { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourcePartOrderDetailExtractInfo, OutsourcePartOrderDetailInfo>()
-                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.GetUnix()))
+                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.GetUnix()))
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
                 .ReverseMap()
-                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.UnixToDateTime()))
+                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.UnixToDateTime()))
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.UnixToDateTime()))
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()));
         }
@@ -28,7 +28,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
 
     public class OutsourcePartOrderDetailExtractInfo: OutsourcePartOrderDetailExtractInfoBase
     {
-        public DateTime OutsourcePartRequestFinishDate { get; set; }
+        public DateTime OutsourcePartRequestDetailFinishDate { get; set; }
         public DateTime OutsourceOrderDate { get; set; }
         public DateTime OutsourceOrderFinishDate { get; set; }
     }

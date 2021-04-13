@@ -46,20 +46,21 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateRequestOutsourceStep(OutsourceStepRequestModel req)
+        public async Task<OutsourceStepRequestPrivateKey> CreateRequestOutsourceStep(OutsourceStepRequestInput req)
         {
-            return await _outsourceStepRequestService.CreateOutsourceStepRequest(req);
+            return await _outsourceStepRequestService.AddOutsourceStepRequest(req);
         }
 
         [HttpPut]
         [Route("{outsourceStepRequestId}")]
-        public async Task<bool> UpdateRequestOutsourceStep([FromRoute]long outsourceStepRequestId, OutsourceStepRequestModel req)
+        public async Task<bool> UpdateRequestOutsourceStep([FromRoute]long outsourceStepRequestId, OutsourceStepRequestInput req)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequest(outsourceStepRequestId, req);
         }
+
         [HttpGet]
         [Route("{outsourceStepRequestId}/outsourceStepRequestData")]
-        public async Task<IList<OutsourceStepRequestDataInfo>> GetOutsourceStepRequestData([FromRoute]long outsourceStepRequestId)
+        public async Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData([FromRoute]long outsourceStepRequestId)
         {
             return await _outsourceStepRequestService.GetOutsourceStepRequestData(outsourceStepRequestId);
         }
@@ -71,22 +72,18 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             return await _outsourceStepRequestService.GetAllOutsourceStepRequest();
         }
 
-        /// <summary>
-        /// Lấy toàn bộ thông tin các công đoạn có YCGC
-        /// </summary>
-        /// <param name="productionOrderId">Mã ID lệnh sản xuất</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("listProductionStepOutsourced")]
-        public async Task<IList<ProductionStepInOutsourceStepRequest>> GetProductionStepInOutsourceStepRequest([FromQuery]long productionOrderId)
-        {
-            return await _outsourceStepRequestService.GetProductionStepHadOutsourceStepRequest(productionOrderId);
-        }
         [HttpPut]
         [Route("status")]
         public async Task<bool> UpdateOutsourceStepRequestStatus([FromBody]long[] outsourceStepRequestId)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(outsourceStepRequestId);
+        }
+
+        [HttpGet]
+        [Route("detail/byProductionOrder")]
+        public async Task<IList<OutsourceStepRequestDetailOutput>> GetOutsourceStepRequestDatasByProductionOrderId([FromQuery] long productionOrderId)
+        {
+            return await _outsourceStepRequestService.GetOutsourceStepRequestDatasByProductionOrderId(productionOrderId);
         }
 
     }

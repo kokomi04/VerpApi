@@ -57,7 +57,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
                 await trans.CommitAsync();
 
-                return entity.StepGroupId;
+                return entity.StepId;
             }
             catch (Exception ex)
             {
@@ -117,6 +117,24 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             var data = await query.ProjectTo<StepModel>(_mapper.ConfigurationProvider)
                             .ToListAsync();
             return (data, total);
+        }
+
+        public async Task<StepModel> GetStep(int stepId)
+        {
+            var step = await _manufacturingDBContext.Step.AsNoTracking()
+                .ProjectTo<StepModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(x => x.StepId == stepId);
+            if (step == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            return step;
+        }
+
+        public async Task<IList<StepModel>> GetStepByArrayId(int[] arrayId)
+        {
+           return await _manufacturingDBContext.Step.AsNoTracking()
+                .Where(x=> arrayId.Contains(x.StepId))
+                .ProjectTo<StepModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         public async Task<bool> UpdateStep(int stepId, StepModel req)

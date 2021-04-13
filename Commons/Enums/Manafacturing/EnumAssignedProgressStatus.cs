@@ -5,13 +5,13 @@ using System.ComponentModel;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
-    public enum EnumProcessStatus : int
+    public enum EnumAssignedProgressStatus : int
     {
-        [Description("Chưa taọ")]
+        [Description("Đợi bàn giao")]
         Waiting = 1,
-        [Description("Dở dang")]
-        Incomplete = 2,
+        [Description("Đang bàn giao")]
+        HandingOver = 2,
         [Description("Hoàn thành")]
-        Complete = 3
+        Finish = 3
     }
 }

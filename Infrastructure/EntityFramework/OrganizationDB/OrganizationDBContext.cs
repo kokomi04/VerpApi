@@ -114,6 +114,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<CustomerBankAccount>(entity =>
             {
+                entity.Property(e => e.AccountName).HasMaxLength(255);
+
                 entity.Property(e => e.AccountNumber)
                     .IsRequired()
                     .HasMaxLength(32)
@@ -135,6 +137,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.BankName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.Province).HasMaxLength(255);
 
                 entity.Property(e => e.SwiffCode)
                     .IsRequired()

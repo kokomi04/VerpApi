@@ -17,12 +17,12 @@ namespace Verp.Services.ReportConfig.Model
         public int? ReportTypeId { get; set; }
         public int ReportTypeGroupId { get; set; }
         public string ReportTypeName { get; set; }
+        public int SortOrder { get; set; }
     }
 
     public class ReportTypeModel : ReportTypeListModel
     {
         public string ReportPath { get; set; }
-        public int SortOrder { get; set; }
 
         public string MainView { get; set; }
         public string Joins { get; set; }
@@ -50,7 +50,7 @@ namespace Verp.Services.ReportConfig.Model
         public long? TemplateFileId { get; set; }
         public IList<ReportColumnModel> Columns { get; set; }
         public bool IsBsc { get; set; }
-        public BscConfigModel BscConfig { get; set; }      
+        public BscConfigModel BscConfig { get; set; }
 
         public List<ReportColumnModel> ParseColumns(string column)
         {

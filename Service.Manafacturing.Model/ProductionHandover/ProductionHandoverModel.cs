@@ -35,7 +35,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int ToDepartmentId { get; set; }
         public long ToProductionStepId { get; set; }
         public long? HandoverDatetime { get; set; }
-
+        public string Note { get; set; }
         public virtual void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionHandoverInputModel, ProductionHandoverEntity>()

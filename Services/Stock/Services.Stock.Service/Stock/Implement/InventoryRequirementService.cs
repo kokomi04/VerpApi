@@ -28,6 +28,8 @@ using VErp.Services.Stock.Model.FileResources;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using System.Data;
+using System.Reflection;
+using VErp.Commons.Enums.StockEnum;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
@@ -42,6 +44,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         private readonly IFileService _fileService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
+        private readonly IProductionOrderHelperService _productionOrderHelperService;
 
         public InventoryRequirementService(StockDBContext stockDBContext
             , IActivityLogService activityLogService
@@ -52,6 +55,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , IFileService fileService
             , ICurrentContextService currentContextService
             , IOutsideMappingHelperService outsideMappingHelperService
+            , IProductionOrderHelperService productionOrderHelperService
             )
         {
             _stockDBContext = stockDBContext;
@@ -63,6 +67,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _fileService = fileService;
             _currentContextService = currentContextService;
             _outsideMappingHelperService = outsideMappingHelperService;
+            _productionOrderHelperService = productionOrderHelperService;
         }
 
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -81,22 +86,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 || s.InventoryRequirement.Content.Contains(keyword));
             }
 
+            query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
+
             var result = query.ProjectTo<InventoryRequirementListModel>(_mapper.ConfigurationProvider);
-
-            result = result.InternalFilter(filters);
-
-            if (!string.IsNullOrWhiteSpace(orderByFieldName))
-            {
-                string command = asc ? "OrderBy" : "OrderByDescending";
-                var type = typeof(InventoryRequirementListModel);
-                var property = type.GetProperty(orderByFieldName);
-                var parameter = Expression.Parameter(type, "s");
-                var propertyAccess = Expression.MakeMemberAccess(parameter, property);
-                var orderByExpression = Expression.Lambda(propertyAccess, parameter);
-                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, property.PropertyType },
-                                              query.Expression, Expression.Quote(orderByExpression));
-                result = result.Provider.CreateQuery<InventoryRequirementListModel>(resultExpression);
-            }
 
             var lst = await (size > 0 ? result.Skip((page - 1) * size).Take(size) : result)
                 .ToListAsync();
@@ -116,6 +108,25 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
             if (entity == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
             var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
+
+            var inventoryRequirementDetailIds = model.InventoryRequirementDetail.Select(d => d.InventoryRequirementDetailId).ToList();
+
+            var inventoryDetailQuantitys = _stockDBContext.InventoryDetail
+                .Include(id => id.Inventory)
+                .Where(id => id.InventoryRequirementDetailId.HasValue && id.Inventory.IsApproved && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
+                .GroupBy(id => id.InventoryRequirementDetailId)
+                .Select(g => new
+                {
+                    InventoryRequirementDetailId = g.Key,
+                    PrimaryQuantity = g.Sum(id => id.PrimaryQuantity)
+                })
+                .ToDictionary(g => g.InventoryRequirementDetailId, g => g.PrimaryQuantity);
+
+            foreach (var inventoryRequirementDetail in model.InventoryRequirementDetail)
+            {
+                if (inventoryDetailQuantitys.ContainsKey(inventoryRequirementDetail.InventoryRequirementDetailId))
+                    inventoryRequirementDetail.InventoryQuantity = inventoryDetailQuantitys[inventoryRequirementDetail.InventoryRequirementDetailId];
+            }
 
             var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
 
@@ -162,7 +173,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 }
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => d.ProductId).Any(g => g.Count() > 1))
+                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại sản phẩm trùng nhau trong phiếu yêu cầu");
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
@@ -232,11 +243,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi mã phiếu yêu cầu");
 
-                if (inventoryRequirement.ScheduleTurnId.HasValue)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
+                //if (inventoryRequirement.ProductionOrderId.HasValue)
+                //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => d.ProductId).Any(g => g.Count() > 1))
+                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại sản phẩm trùng nhau trong phiếu yêu cầu");
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), inventoryRequirement.Date);
@@ -316,8 +327,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
                 if (inventoryRequirement == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
 
-                if (inventoryRequirement.ScheduleTurnId.HasValue)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
+                //if (inventoryRequirement.ProductionOrderId.HasValue)
+                //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được xóa phiếu yêu cầu từ sản xuất");
 
                 await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
 
@@ -416,6 +427,40 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 if (!(result.Value as bool?).GetValueOrDefault())
                     throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
             }
+        }
+
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId)
+        {
+            var inventoryRequirements = await _stockDBContext.InventoryRequirement
+                .Include(r => r.InventoryRequirementFile)
+                .Include(r => r.InventoryRequirementDetail)
+                .ThenInclude(d => d.ProductUnitConversion)
+                .Where(r => r.InventoryTypeId == (int)inventoryType
+                    && r.ProductionOrderId == productionOrderId
+                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete)
+                .ToListAsync();
+
+            var entity = inventoryRequirements.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId.GetValueOrDefault() == productMaterialsConsumptionGroupId);
+
+            var type = inventoryType == EnumInventoryType.Input ? "nhập kho" : "xuất kho";
+
+            if (entity == null)
+                return null;
+
+            var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
+
+            var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
+
+            var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
+
+            if (attachedFiles == null)
+                attachedFiles = new List<FileToDownloadInfo>();
+
+            foreach (var item in model.InventoryRequirementFile)
+            {
+                item.FileToDownloadInfo = attachedFiles.FirstOrDefault(f => f.FileId == item.FileId);
+            }
+            return model;
         }
     }
 }

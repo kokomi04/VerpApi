@@ -116,7 +116,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             result.AddRange(await vourcherTask);
             result.AddRange(await inputTask);
-            result.AddRange(await manufactureTask);
+            result.AddRange(manufactureTask);
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -130,7 +130,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             return (result.Skip((page - 1) * size).Take(size).ToList(), total);
         }
 
-        private async Task<IList<ObjectPrintConfigSearch>> ManufactureMappingTypeModels()
+        private IList<ObjectPrintConfigSearch> ManufactureMappingTypeModels()
         {
             IList<ObjectPrintConfigSearch> result = new List<ObjectPrintConfigSearch>();
 

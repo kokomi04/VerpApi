@@ -12,11 +12,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
     {
         Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId);
-        Task<ProductionOrderOutputModel> GetProductionOrder(int productionOrderId);
-        Task<ProductionOrderInputModel> UpdateProductionOrder(int productionOrderId, ProductionOrderInputModel data);
+        Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId);
+        Task<ProductionOrderInputModel> UpdateProductionOrder(long productionOrderId, ProductionOrderInputModel data);
         Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data);
-        Task<bool> DeleteProductionOrder(int productionOrderId);
+        Task<bool> DeleteProductionOrder(long productionOrderId);
         Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
         Task<IList<ProductOrderModel>> GetProductionOrders();
+
+        Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
+        Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
     }
 }

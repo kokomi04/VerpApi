@@ -10,7 +10,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
-    public class OutsourceStepOrderDetailModel: OutsourceStepRequestDataInfo, IMapFrom<OutsourceOrderDetail>
+    public class OutsourceStepOrderDetailModel: OutsourceStepRequestDataExtraInfo, IMapFrom<OutsourceOrderDetail>
     {
         public long OutsourceOrderDetailId { get; set; }
         [Required]

@@ -74,6 +74,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<InputTypeFullModel> GetInputType(int inputTypeId)
         {
+            var globalSetting = await GetInputGlobalSetting();
+
             var inputType = await _accountancyDBContext.InputType
            .Where(i => i.InputTypeId == inputTypeId)
            .Include(t => t.InputArea)
@@ -88,11 +90,41 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
+            inputType.InputAreas = inputType.InputAreas.OrderBy(f => f.SortOrder).ToList();
+            foreach (var item in inputType.InputAreas)
+            {
+                item.InputAreaFields = item.InputAreaFields.OrderBy(f => f.SortOrder).ToList();
+            }
+
+            inputType.GlobalSetting = globalSetting;
             return inputType;
+        }
+
+
+        public async Task<IList<InputTypeFullModel>> GetAllInputTypes()
+        {
+            var globalSetting = await GetInputGlobalSetting();
+
+            var lst = await _accountancyDBContext.InputType
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .Include(t => t.InputArea)
+           .ThenInclude(a => a.InputAreaField)
+           .ThenInclude(af => af.InputField)
+           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
+           .ToListAsync();
+            foreach (var item in lst)
+            {
+                item.GlobalSetting = globalSetting;
+            }
+            return lst;
         }
 
         public async Task<InputTypeFullModel> GetInputType(string inputTypeCode)
         {
+            var globalSetting = await GetInputGlobalSetting();
+
             var inputType = await _accountancyDBContext.InputType
            .Where(i => i.InputTypeCode == inputTypeCode)
            .Include(t => t.InputArea)
@@ -107,11 +139,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
+
+            inputType.GlobalSetting = globalSetting;
             return inputType;
         }
 
         public async Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size)
         {
+            var globalSetting = await GetInputGlobalSetting();
             keyword = (keyword ?? "").Trim();
 
             var query = _accountancyDBContext.InputType.AsQueryable();
@@ -128,6 +163,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             var lst = await query.ProjectTo<InputTypeModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+
             return (lst, total);
         }
 
@@ -265,7 +301,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     AfterLoadAction = sourceInput.AfterLoadAction,
                     BeforeSubmitAction = sourceInput.BeforeSubmitAction,
                     BeforeSaveAction = sourceInput.BeforeSaveAction,
-                    AfterSaveAction = sourceInput.AfterSaveAction
+                    AfterSaveAction = sourceInput.AfterSaveAction,
+                    AfterUpdateRowsJsAction = sourceInput.AfterUpdateRowsJsAction,
                 };
                 await _accountancyDBContext.InputType.AddAsync(cloneType);
                 await _accountancyDBContext.SaveChangesAsync();
@@ -277,7 +314,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         InputTypeId = cloneType.InputTypeId,
                         InputAreaCode = area.InputAreaCode,
                         Title = area.Title,
+                        Description = area.Description,
                         IsMultiRow = area.IsMultiRow,
+                        IsAddition = area.IsAddition,
                         Columns = area.Columns,
                         SortOrder = area.SortOrder
                     };
@@ -373,6 +412,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.BeforeSubmitAction = data.BeforeSubmitAction;
                 inputType.BeforeSaveAction = data.BeforeSaveAction;
                 inputType.AfterSaveAction = data.AfterSaveAction;
+                inputType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
 
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -414,6 +454,48 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return true;
         }
 
+        public async Task<InputTypeGlobalSettingModel> GetInputGlobalSetting()
+        {
+            var inputTypeSetting = await _accountancyDBContext.InputTypeGlobalSetting.FirstOrDefaultAsync();
+            if (inputTypeSetting == null)
+            {
+                inputTypeSetting = new InputTypeGlobalSetting();
+            }
+
+            return _mapper.Map<InputTypeGlobalSettingModel>(inputTypeSetting);
+        }
+
+        public async Task<bool> UpdateInputGlobalSetting(InputTypeGlobalSettingModel data)
+        {
+            var inputTypeSetting = await _accountancyDBContext.InputTypeGlobalSetting.FirstOrDefaultAsync();
+            if (inputTypeSetting == null)
+            {
+                inputTypeSetting = new InputTypeGlobalSetting();
+            }
+
+            using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                _mapper.Map(data, inputTypeSetting);
+                if (inputTypeSetting.InputTypeGlobalSettingId <= 0)
+                {
+                    _accountancyDBContext.InputTypeGlobalSetting.Add(inputTypeSetting);
+                }
+
+                await _accountancyDBContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.InputType, 0, $"Cập nhật cấu hình chung chứng từ kế toán", data.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "UpdateInputSetting");
+                throw;
+            }
+        }
 
         #region InputTypeView
         public async Task<IList<InputTypeViewModelList>> InputTypeViewList(int inputTypeId)
@@ -445,7 +527,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     DefaultValue = af.DefaultValue,
                     RefTableCode = f.RefTableCode,
                     RefTableField = f.RefTableField,
-                    RefTableTitle = f.RefTableTitle
+                    RefTableTitle = f.RefTableTitle,
+                    IsRequire = af.IsRequire
 
                 }).ToListAsync();
 
@@ -744,6 +827,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> UpdateInputArea(int inputTypeId, int inputAreaId, InputAreaInputModel data)
         {
+            data.InputTypeId = inputTypeId;
+            data.InputAreaId = inputAreaId;
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             var inputArea = await _accountancyDBContext.InputArea.FirstOrDefaultAsync(a => a.InputTypeId == inputTypeId && a.InputAreaId == inputAreaId);
             if (inputArea == null)
@@ -772,12 +858,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
             {
-                inputArea.InputAreaCode = data.InputAreaCode;
-                inputArea.Title = data.Title;
-                inputArea.IsMultiRow = data.IsMultiRow;
-                inputArea.Columns = data.Columns;
-                inputArea.ColumnStyles = data.ColumnStyles;
-                inputArea.SortOrder = data.SortOrder;
+                //inputArea.InputAreaCode = data.InputAreaCode;
+                //inputArea.Title = data.Title;
+                //inputArea.Description = data.Description;
+                //inputArea.IsMultiRow = data.IsMultiRow;
+                //inputArea.IsAddition = data.IsAddition;
+                //inputArea.Columns = data.Columns;
+                //inputArea.ColumnStyles = data.ColumnStyles;
+                //inputArea.SortOrder = data.SortOrder;
+                _mapper.Map(data, inputArea);
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -849,6 +938,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             var total = await query.CountAsync();
 
+            query = query.OrderBy(f => f.SortOrder);
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
@@ -868,6 +958,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
             }
+
 
             return inputAreaField;
         }
@@ -1051,6 +1142,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
                         curField.RequireFilters = field.RequireFilters;
+                        curField.ReferenceUrl = field.ReferenceUrl;
+                        curField.IsBatchSelect = field.IsBatchSelect;
+                        curField.OnClick = field.OnClick;
                     }
                 }
 

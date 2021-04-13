@@ -35,19 +35,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Location = 11,
 
-        //[Description("Phiếu xuất/nhập kho")]
-        //Inventory = 12,
-        [Description("Phiếu YC nhập kho")]
-        RequestInventoryInput = 300,
-
-        [Description("Phiếu YC xuất kho")]
-        RequestInventoryOutput = 301,
-
-        [Description("Phiếu nhập kho")]
-        InventoryInput = 30,
-
-        [Description("Phiếu xuất kho")]
-        InventoryOutput = 31,
+     
 
         [Description("Xuất/nhập kho chi tiết")]
         InventoryDetail = 13,
@@ -108,9 +96,22 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Department = 29,
 
+        //[Description("Phiếu xuất/nhập kho")]
+        //Inventory = 12,
+        [Description("Phiếu YC nhập kho")]
+        RequestInventoryInput = 300,
+
+        [Description("Phiếu YC xuất kho")]
+        RequestInventoryOutput = 301,
+
+        [Description("Phiếu nhập kho")]
+        InventoryInput = 30,
+
+        [Description("Phiếu xuất kho")]
+        InventoryOutput = 31,
 
         [Description("Nhóm danh mục")]
-        CategoryGroup = 31,
+        CategoryGroup = 320,
 
         [Description("Loại danh mục")]
         Category = 32,
@@ -239,6 +240,15 @@ namespace VErp.Commons.Enums.MasterEnum
         ActionType = 100,
 
         [Description("ActionButton")]
-        ActionButton = 101
+        ActionButton = 101,
+        [Description("Yêu cầu vật tư thêm")]
+        [GenCodeObject]
+        ProductionMaterialsRequirement = 102,
+        [Description("Vật tư tiêu hao của mặt hàng")]
+        ProductMaterialsConsumption = 321,
+        [Description("Bán thành phẩm")]
+        ProductSemi = 322,
+        [Description("Bán thành phẩm chuyển đổi")]
+        ProductSemiConversion = 323
     }
 }

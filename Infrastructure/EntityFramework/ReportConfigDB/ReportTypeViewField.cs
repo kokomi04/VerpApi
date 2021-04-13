@@ -23,6 +23,9 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string RegularExpression { get; set; }
         public string ExtraFilter { get; set; }
         public int? Column { get; set; }
+        public string TitleStyleJson { get; set; }
+        public string InputStyleJson { get; set; }
+        public string HelpText { get; set; }
 
         public virtual ReportTypeView ReportTypeView { get; set; }
     }

@@ -25,7 +25,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string BaseFormat { get; set; }
         public string CodeFormat { get; set; }
 
-        public IList<CustomGenCodeBaseValueModel> LastValues { get; set; }
+        //public IList<CustomGenCodeBaseValueModel> LastValues { get; set; }
         public CustomGenCodeBaseValueModel CurrentLastValue { get; set; }
     }
 

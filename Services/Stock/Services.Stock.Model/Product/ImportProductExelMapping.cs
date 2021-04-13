@@ -39,6 +39,10 @@ namespace VErp.Services.Stock.Model.Product
         public string Unit { get; set; }
         [Display(Name = "Giá ước tính", GroupName = "Thông tin chung")]
         public decimal? EstimatePrice { get; set; }
+        [Display(Name = "Bán thành phẩm", GroupName = "Thông tin chung")]
+        public bool? IsProductSemi { get; set; }
+        [Display(Name = "Cơ số sản phẩm", GroupName = "Thông tin chung")]
+        public int Coefficient { get; set; }
 
         // Extra info
         [Display(Name = "Quy cách", GroupName = "Thông tin bổ sung")]

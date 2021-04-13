@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.MasterDB;
@@ -86,7 +87,11 @@ namespace MasterTests
                     return _roleInfo;
                 }
 
-                var userInfo = _unAuthorizeMasterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
+                var userInfo = _unAuthorizeMasterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == UserId);
+
+                if (userInfo == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
+
                 var roleInfo = (
                     from r in _unAuthorizeMasterDBContext.Role
                     where r.RoleId == userInfo.RoleId

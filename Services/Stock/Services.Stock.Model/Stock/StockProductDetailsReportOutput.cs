@@ -54,6 +54,9 @@ namespace VErp.Services.Stock.Model.Stock
         public decimal EndOfPerdiodPrimaryQuantity { set; get; }
         public decimal EndOfPerdiodProductUnitConversionQuantity { set; get; }
 
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string Pocode { get; set; }
         public ProductUnitConversion ProductUnitConversion { set; get; }
 
     }

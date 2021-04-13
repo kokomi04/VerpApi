@@ -69,11 +69,57 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _actionButtonHelperService = actionButtonHelperService;
         }
 
+
+        public async Task<VoucherTypeGlobalSettingModel> GetVoucherGlobalSetting()
+        {
+            var inputTypeSetting = await _purchaseOrderDBContext.VoucherTypeGlobalSetting.FirstOrDefaultAsync();
+            if (inputTypeSetting == null)
+            {
+                inputTypeSetting = new VoucherTypeGlobalSetting();
+            }
+
+            return _mapper.Map<VoucherTypeGlobalSettingModel>(inputTypeSetting);
+        }
+
+        public async Task<bool> UpdateVoucherGlobalSetting(VoucherTypeGlobalSettingModel data)
+        {
+            var inputTypeSetting = await _purchaseOrderDBContext.VoucherTypeGlobalSetting.FirstOrDefaultAsync();
+            if (inputTypeSetting == null)
+            {
+                inputTypeSetting = new VoucherTypeGlobalSetting();
+            }
+
+            using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                _mapper.Map(data, inputTypeSetting);
+                if (inputTypeSetting.VoucherTypeGlobalSettingId <= 0)
+                {
+                    _purchaseOrderDBContext.VoucherTypeGlobalSetting.Add(inputTypeSetting);
+                }
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.InputType, 0, $"Cập nhật cấu hình chung chứng từ bán hàng", data.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "UpdateVoucherGlobalSetting");
+                throw;
+            }
+        }
+
         #region InputType
 
         public async Task<VoucherTypeFullModel> GetVoucherType(int voucherTypeId)
         {
-            var inputType = await _purchaseOrderDBContext.VoucherType
+            var globalSetting = await GetVoucherGlobalSetting();
+
+            var voucherType = await _purchaseOrderDBContext.VoucherType
            .Where(i => i.VoucherTypeId == voucherTypeId)
            .Include(t => t.VoucherArea)
            .ThenInclude(a => a.VoucherAreaField)
@@ -83,16 +129,55 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
            .ThenInclude(af => af.VoucherField)
            .ProjectTo<VoucherTypeFullModel>(_mapper.ConfigurationProvider)
            .FirstOrDefaultAsync();
-            if (inputType == null)
+            if (voucherType == null)
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
             }
-            return inputType;
+
+            voucherType.VoucherAreas = voucherType.VoucherAreas.OrderBy(f => f.SortOrder).ToList();
+            foreach (var item in voucherType.VoucherAreas)
+            {
+                item.VoucherAreaFields = item.VoucherAreaFields.OrderBy(f => f.SortOrder).ToList();
+            }
+
+            voucherType.GlobalSetting = globalSetting;
+
+            return voucherType;
+        }
+
+        public async Task<IList<VoucherTypeFullModel>> GetAllVoucherTypes()
+        {
+            var globalSetting = await GetVoucherGlobalSetting();
+
+            var voucherTypes = await _purchaseOrderDBContext.VoucherType
+           .Include(t => t.VoucherArea)
+           .ThenInclude(a => a.VoucherAreaField)
+           .ThenInclude(af => af.VoucherField)
+           .Include(t => t.VoucherArea)
+           .ThenInclude(a => a.VoucherAreaField)
+           .ThenInclude(af => af.VoucherField)
+           .ProjectTo<VoucherTypeFullModel>(_mapper.ConfigurationProvider)
+           .ToListAsync();
+
+            foreach (var voucherType in voucherTypes)
+            {
+                voucherType.VoucherAreas = voucherType.VoucherAreas.OrderBy(f => f.SortOrder).ToList();
+                foreach (var item in voucherType.VoucherAreas)
+                {
+                    item.VoucherAreaFields = item.VoucherAreaFields.OrderBy(f => f.SortOrder).ToList();
+                }
+
+                voucherType.GlobalSetting = globalSetting;
+            }
+
+            return voucherTypes;
         }
 
         public async Task<VoucherTypeFullModel> GetVoucherType(string voucherTypeCode)
         {
-            var inputType = await _purchaseOrderDBContext.VoucherType
+            var globalSetting = await GetVoucherGlobalSetting();
+
+            var voucherType = await _purchaseOrderDBContext.VoucherType
            .Where(i => i.VoucherTypeCode == voucherTypeCode)
            .Include(t => t.VoucherArea)
            .ThenInclude(a => a.VoucherAreaField)
@@ -102,11 +187,21 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
            .ThenInclude(af => af.VoucherField)
            .ProjectTo<VoucherTypeFullModel>(_mapper.ConfigurationProvider)
            .FirstOrDefaultAsync();
-            if (inputType == null)
+            if (voucherType == null)
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
             }
-            return inputType;
+
+            voucherType.VoucherAreas = voucherType.VoucherAreas.OrderBy(f => f.SortOrder).ToList();
+            foreach (var item in voucherType.VoucherAreas)
+            {
+                item.VoucherAreaFields = item.VoucherAreaFields.OrderBy(f => f.SortOrder).ToList();
+            }
+
+
+            voucherType.GlobalSetting = globalSetting;
+
+            return voucherType;
         }
 
         public async Task<PageData<VoucherTypeModel>> GetVoucherTypes(string keyword, int page, int size)
@@ -258,7 +353,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     AfterLoadAction = sourceVoucherType.AfterLoadAction,
                     BeforeSubmitAction = sourceVoucherType.BeforeSubmitAction,
                     BeforeSaveAction = sourceVoucherType.BeforeSaveAction,
-                    AfterSaveAction = sourceVoucherType.AfterSaveAction
+                    AfterSaveAction = sourceVoucherType.AfterSaveAction,
+                    AfterUpdateRowsJsAction = sourceVoucherType.AfterUpdateRowsJsAction
                 };
                 await _purchaseOrderDBContext.VoucherType.AddAsync(cloneType);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -326,12 +422,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<bool> UpdateVoucherType(int voucherTypeId, VoucherTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(voucherTypeId));
-            var inputType = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(i => i.VoucherTypeId == voucherTypeId);
-            if (inputType == null)
+            var voucherType = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(i => i.VoucherTypeId == voucherTypeId);
+            if (voucherType == null)
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
             }
-            if (inputType.VoucherTypeCode != data.VoucherTypeCode || inputType.Title != data.Title)
+            if (voucherType.VoucherTypeCode != data.VoucherTypeCode || voucherType.Title != data.Title)
             {
                 var existedInput = await _purchaseOrderDBContext.VoucherType
                     .FirstOrDefaultAsync(i => i.VoucherTypeId != voucherTypeId && (i.VoucherTypeCode == data.VoucherTypeCode || i.Title == data.Title));
@@ -349,28 +445,29 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
-                inputType.VoucherTypeCode = data.VoucherTypeCode;
-                inputType.Title = data.Title;
-                inputType.SortOrder = data.SortOrder;
-                inputType.VoucherTypeGroupId = data.VoucherTypeGroupId;
-                inputType.PreLoadAction = data.PreLoadAction;
-                inputType.PostLoadAction = data.PostLoadAction;
-                inputType.AfterLoadAction = data.AfterLoadAction;
-                inputType.BeforeSubmitAction = data.BeforeSubmitAction;
-                inputType.BeforeSaveAction = data.BeforeSaveAction;
-                inputType.AfterSaveAction = data.AfterSaveAction;
+                voucherType.VoucherTypeCode = data.VoucherTypeCode;
+                voucherType.Title = data.Title;
+                voucherType.SortOrder = data.SortOrder;
+                voucherType.VoucherTypeGroupId = data.VoucherTypeGroupId;
+                voucherType.PreLoadAction = data.PreLoadAction;
+                voucherType.PostLoadAction = data.PostLoadAction;
+                voucherType.AfterLoadAction = data.AfterLoadAction;
+                voucherType.BeforeSubmitAction = data.BeforeSubmitAction;
+                voucherType.BeforeSaveAction = data.BeforeSaveAction;
+                voucherType.AfterSaveAction = data.AfterSaveAction;
+                voucherType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, inputType.VoucherTypeId, $"Cập nhật chứng từ {inputType.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Cập nhật loại chứng từ bán hàng {voucherType.Title}", data.JsonSerialize());
                 return true;
             }
             catch (Exception ex)
             {
                 trans.TryRollbackTransaction();
-                _logger.LogError(ex, "Update");
+                _logger.LogError(ex, "UpdateVoucherType");
                 throw;
             }
         }
@@ -398,7 +495,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 _logger.LogError(ex, $"DeleteActionButtonsByType ({voucherTypeId})");
             }
 
-            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Xóa chứng từ {voucherType.Title}", voucherType.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Xóa loại chứng từ bán hàng {voucherType.Title}", voucherType.JsonSerialize());
             return true;
         }
 
@@ -433,7 +530,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     DefaultValue = af.DefaultValue,
                     RefTableCode = f.RefTableCode,
                     RefTableField = f.RefTableField,
-                    RefTableTitle = f.RefTableTitle
+                    RefTableTitle = f.RefTableTitle,
+                    IsRequire = af.IsRequire
 
                 }).ToListAsync();
 
@@ -1050,6 +1148,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
                         curField.RequireFilters = field.RequireFilters;
+                        curField.ReferenceUrl = field.ReferenceUrl;
+                        curField.IsBatchSelect = field.IsBatchSelect;
+                        curField.OnClick = field.OnClick;
                     }
                 }
 

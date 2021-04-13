@@ -45,7 +45,7 @@ namespace VErp.Services.Manafacturing.Model.Report
         public string StepName { get; set; }
     }
 
-    public class ProductionScheduleInfoModel : IMapFrom<ProductionScheduleEntity>
+    public class ProductionScheduleInfoModel 
     {
         public long ProductionScheduleId { get; set; }
         public string ProductionOrderCode { get; set; }
@@ -57,11 +57,5 @@ namespace VErp.Services.Manafacturing.Model.Report
         public int UnitId { get; set; }
         public string UnitName { get; set; }
         public decimal ProductionScheduleQuantity { get; set; }
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<ProductionScheduleEntity, ProductionScheduleInfoModel>()
-                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()));
-        }
     }
 }

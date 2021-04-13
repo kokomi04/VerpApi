@@ -11,23 +11,22 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     public class OutsourcePartRequestDetailInfo : OutsourcePartRequestDetailBase, IMapFrom<OutsourcePartRequestDetailExtractInfo>
     {
         public long OutsourcePartRequestDate { get; set; }
-        public long OutsourcePartRequestFinishDate { get; set; }
 
         public new void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourcePartRequestDetailExtractInfo, OutsourcePartRequestDetailInfo>()
                 .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.OutsourcePartRequestDate.GetUnix()))
-                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.GetUnix()))
+                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.GetUnix()))
                 .ReverseMap()
                 .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.OutsourcePartRequestDate.UnixToDateTime()))
-                .ForMember(m => m.OutsourcePartRequestFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestFinishDate.UnixToDateTime()));
+                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.UnixToDateTime()));
         }
     }
 
     public class OutsourcePartRequestDetailExtractInfo : OutsourcePartRequestDetailBase
     {
         public DateTime OutsourcePartRequestDate { get; set; }
-        public DateTime OutsourcePartRequestFinishDate { get; set; }
+        public new DateTime OutsourcePartRequestDetailFinishDate { get; set; }
     }
 
     public class OutsourcePartRequestDetailBase : RequestOutsourcePartDetailModel

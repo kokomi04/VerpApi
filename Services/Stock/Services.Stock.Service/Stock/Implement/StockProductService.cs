@@ -24,6 +24,7 @@ using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Constants;
+using Microsoft.Data.SqlClient;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -32,18 +33,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly MasterDBContext _masterDBContext;
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly StockDBContext _stockContext;
-
+        private readonly ICurrentContextService _currentContextService;
         public StockProductService(
             MasterDBContext masterDBContext,
             OrganizationDBContext organizationDBContext,
-            StockDBContext stockContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<StockService> logger
+            StockDBContext stockContext,
+            ICurrentContextService currentContextService
             )
         {
             _organizationDBContext = organizationDBContext;
             _masterDBContext = masterDBContext;
             _stockContext = stockContext;
+            _currentContextService = currentContextService;
         }
 
         public async Task<PageData<StockOutput>> StockGetListByPermission(string keyword, int page, int size, Clause filters = null)
@@ -318,23 +319,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<Dictionary<int, RemainStock[]>> GetRemainStockByProducts(int[] productIds)
         {
 
-            var remainStocks = _stockContext.StockProduct.Where(sp => productIds.Contains(sp.ProductId))
-                .GroupBy(sp => new { sp.ProductId, sp.StockId })
-                .Select(g => new
-                {
-                    g.Key.ProductId,
-                    g.Key.StockId,
-                    PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
-                })
-                .Where(s => s.PrimaryQuantityRemaining > 0)
-                .Join(_stockContext.Stock, rs => rs.StockId, s => s.StockId, (rs, s) => new
-                {
-                    rs.StockId,
-                    rs.ProductId,
-                    rs.PrimaryQuantityRemaining,
-                    s.StockName
-                })
-                .ToList()
+            var remainStocks = (
+                await _stockContext.StockProduct.Where(sp => productIds.Contains(sp.ProductId))
+                    .GroupBy(sp => new { sp.ProductId, sp.StockId })
+                    .Select(g => new
+                    {
+                        g.Key.ProductId,
+                        g.Key.StockId,
+                        PrimaryQuantityRemaining = g.Sum(q => q.PrimaryQuantityRemaining)
+                    })
+                    .Where(s => s.PrimaryQuantityRemaining > 0)
+                    .Join(_stockContext.Stock, rs => rs.StockId, s => s.StockId, (rs, s) => new
+                    {
+                        rs.StockId,
+                        rs.ProductId,
+                        rs.PrimaryQuantityRemaining,
+                        s.StockName
+                    })
+                    .ToListAsync()
+                )
                 .GroupBy(s => s.ProductId)
                 .ToDictionary(g => g.Key, g => g.Select(s => new RemainStock
                 {
@@ -400,7 +403,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 PackageId = pk.PackageId,
                 PackageCode = pk.PackageCode,
-                
+
                 LocationId = pk.LocationId,
                 LocationName = pk.LocationName,
                 Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
@@ -416,7 +419,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 RefObjectId = null,
                 RefObjectCode = "",
                 OrderCode = pk.OrderCode,
-                POCode=pk.Pocode,
+                POCode = pk.Pocode,
                 ProductionOrderCode = pk.ProductionOrderCode
             })
             .ToList();
@@ -579,7 +582,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                        p.ProductId,
                                        p.ProductCode,
                                        p.ProductName,
-                                       Specifications = pe != null ? pe.Specification : string.Empty,
+                                       Specification = pe != null ? pe.Specification : string.Empty,
                                        p.UnitId,
                                        p.ProductTypeId,
                                        p.ProductCateId,
@@ -623,7 +626,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = pi.ProductId,
                     ProductCode = pi.ProductCode,
                     ProductName = pi.ProductName,
-                    Specifications = pi.Specifications,
+                    Specification = pi.Specification,
                     PrimaryUnitId = pi.UnitId,
                     PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
                     AmountWarningMin = pi.AmountWarningMin ?? 0,
@@ -791,7 +794,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             return (data, total);
         }
-
+        /*
         /// <summary>
         /// Báo cáo chi tiết nhập xuất sp trong kỳ
         /// </summary>
@@ -940,7 +943,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return resultData;
         }
-
+        */
         public async Task<StockProductDetailsReportOutput> StockProductDetailsReport(int productId, IList<int> stockIds, long bTime, long eTime)
         {
             if (productId <= 0)
@@ -1038,7 +1041,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                   id.RefObjectCode,
                   id.PrimaryQuantity,
                   id.ProductUnitConversionQuantity,
-                  id.ProductUnitConversionId
+                  id.ProductUnitConversionId,
+                  id.OrderCode,
+                  id.ProductionOrderCode,
+                  id.Pocode
               }).ToList();
 
             var productUnitConversionIdsList = inPeriodData.Where(q => q.ProductUnitConversionId > 0).Select(q => q.ProductUnitConversionId).ToList();
@@ -1060,7 +1066,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o.TotalProductUnitConversion);
             var totalPrimary = openingStockQuery.Sum(o => o.TotalPrimaryUnit);
 
-            foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.CreatedDatetimeUtc).ToList())
+            foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.InventoryTypeId).ThenBy(q => q.InventoryDetailId).ToList())
             {
                 var productUnitConversionObj = productUnitConversionData.FirstOrDefault(q => q.ProductUnitConversionId == item.ProductUnitConversionId);
                 var secondaryUnitObj = unitData.FirstOrDefault(q => q.UnitId == item.ProductUnitConversionId);
@@ -1103,6 +1109,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversion = productUnitConversionObj,
                     EndOfPerdiodPrimaryQuantity = totalPrimary,
                     EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId],
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                    Pocode = item.Pocode
                 });
             }
             #endregion
@@ -1120,9 +1129,79 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
+        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
         {
 
+            IList<int> allowStockIds = stockIds?.Where(stockId => _currentContextService.StockIds.Contains(stockId))?.ToList();
+            if(stockIds==null || stockIds.Count == 0)
+            {
+                allowStockIds = _currentContextService.StockIds;
+            }
+
+            var data = (await _stockContext.ExecuteDataProcedure("asp_Inventory_ReportProductConversion",
+                new[] {
+                    new SqlParameter("@Keyword",keyword),
+                    allowStockIds.ToSqlParameter("@StockIds"),
+                    productTypeIds.ToSqlParameter("@ProductTypeIds"),
+                    productCateIds.ToSqlParameter("@ProductCateIds"),
+                    new SqlParameter("@FromDate",bTime.UnixToDateTime()),
+                    new SqlParameter("@ToDate",eTime.UnixToDateTime()),
+                    new SqlParameter("@Page",page),
+                    new SqlParameter("@Size",size),
+                })
+                ).ConvertData<StockSumaryReportForm3Data>();
+
+            var lstData = new List<StockSumaryReportForm03Output>();
+            var groupData = data.GroupBy(d => new { d.ProductId, d.ProductCode, d.ProductName }).ToList();
+            foreach (var g in groupData)
+            {
+                lstData.Add(new StockSumaryReportForm03Output()
+                {
+                    RankNumber = g.FirstOrDefault()?.RankNumber ?? 0,
+                    ProductId = g.Key.ProductId,
+                    ProductCode = g.Key.ProductCode,
+                    ProductName = g.Key.ProductName,
+                    // UnitId = 0,
+
+                    // UnitName = "",
+
+                    SumPrimaryQuantityBefore = g.Sum(p => p.StartPrimaryRemaing) ?? 0,
+                    SumPrimaryQuantityInput = g.Sum(p => p.InPrimary) ?? 0,
+                    SumPrimaryQuantityOutput = g.Sum(p => p.OutPrimaryRemaing) ?? 0,
+                    SumPrimaryQuantityAfter = g.Sum(p => p.PrimaryRemaing) ?? 0,
+
+                    PakageIdNotExport = 0,
+                    PakageCodeNotExport = "",
+
+                    PakageDateNotExport = g.Min(p => p.MaxInputDate).GetUnix() ?? 0,
+
+                    ProductAltSummaryList = g.Select(p => new ProductAltSummary()
+                    {
+                        RankNumber = p.RankNumber,
+                        ProductId = g.Key.ProductId,
+
+                        UnitId = 0,
+                        PrimaryQuantityBefore = p.StartPrimaryRemaing ?? 0,
+                        PrimaryQuantityInput = p.InPrimary ?? 0,
+                        PrimaryQuantityOutput = p.OutPrimaryRemaing ?? 0,
+                        PrimaryQuantityAfter = p.PrimaryRemaing ?? 0,
+
+
+                        ProductUnitConversionId = p.ProductUnitConversionId,
+                        ProductUnitCoversionName = p.ProductUnitConversionName,
+
+                        //ConversionDescription = "",
+
+                        ProductUnitConversionQuantityBefore = p.StartProductUnitConversionRemaining ?? 0,
+                        ProductUnitConversionQuantityInput = p.InProductUnitConversion ?? 0,
+                        ProductUnitConversionQuantityOutput = p.OutProductUnitConversion ?? 0,
+                        ProductUnitConversionQuantityAfter = p.ProductUnitConversionRemaining ?? 0
+                    }).ToList()
+                });
+            }
+            return (lstData, Convert.ToInt32(data.FirstOrDefault()?.TotalRecord ?? 0));
+
+            /*
             DateTime fromDate = DateTime.Now.AddMonths(-3);
             DateTime toDate = DateTime.Now;
 
@@ -1362,7 +1441,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                      ProductUnitConversionId = p.ProductUnitConversionId,
                      UnitId = c.SecondaryUnitId,
                      ProductUnitCoversionName = c.ProductUnitConversionName,
-                     ConversionDescription = c.ConversionDescription,
+                     //ConversionDescription = c.ConversionDescription,
                      ProductUnitConversionQuantityBefore = b == null ? 0 : b.Total,
                      ProductUnitConversionQuantityInput = a == null ? 0 : a.TotalInput,
                      ProductUnitConversionQuantityOutput = a == null ? 0 : a.TotalOutput,
@@ -1382,8 +1461,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = p.ProductId,
                     ProductCode = p.ProductCode,
                     ProductName = p.ProductName,
-                    UnitId = p.UnitId,
-                    UnitName = u.UnitName,
+                   // UnitId = p.UnitId,
+                   // UnitName = u.UnitName,
                     SumPrimaryQuantityBefore = b == null ? 0 : b.Total,
                     SumPrimaryQuantityInput = a == null ? 0 : a.TotalInput,
                     SumPrimaryQuantityOutput = a == null ? 0 : a.TotalOutput,
@@ -1416,7 +1495,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 List = resultData,
                 Total = total
             };
-
+            */
         }
 
         /// <summary>

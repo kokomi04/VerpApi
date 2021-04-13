@@ -15,12 +15,14 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
-        //public virtual DbSet<InputAction> InputAction { get; set; }
+        public virtual DbSet<CalcPeriod> CalcPeriod { get; set; }
+        public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
         public virtual DbSet<InputField> InputField { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
+        public virtual DbSet<InputTypeGlobalSetting> InputTypeGlobalSetting { get; set; }
         public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
@@ -34,6 +36,13 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CalcPeriod>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(512);
+            });
+
             modelBuilder.Entity<InputAction>(entity =>
             {
                 entity.Property(e => e.IconName).HasMaxLength(25);
@@ -130,6 +139,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.FieldName)
                     .IsRequired()
                     .HasMaxLength(64);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
 
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 
@@ -252,6 +263,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
             modelBuilder.Entity<ProgramingFunction>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.FunctionBody).IsRequired();
 
                 entity.Property(e => e.ProgramingFunctionName)

@@ -24,6 +24,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime UpdatedTime { get; set; }
         public bool IsProduction { get; set; }
         public decimal? WorkingHoursPerDay { get; set; }
+        public long? ImageFileId { get; set; }
 
         public virtual Department Parent { get; set; }
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }

@@ -11,6 +11,7 @@ using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -19,10 +20,14 @@ namespace VErpApi.Controllers.Manufacturing
     public class ProductOrderController : VErpBaseController
     {
         private readonly IProductionOrderService _productionOrderService;
+        private readonly IProductionOrderMaterialsService _productionOrderMaterialsService;
+        private readonly IValidateProductionOrderService _validateProductionOrderService;
 
-        public ProductOrderController(IProductionOrderService productionOrderService)
+        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService, IValidateProductionOrderService validateProductionOrderService)
         {
             _productionOrderService = productionOrderService;
+            _productionOrderMaterialsService = productionOrderMaterialsService;
+            _validateProductionOrderService = validateProductionOrderService;
         }
 
         [HttpPost]
@@ -34,7 +39,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionOrderId}")]
-        public async Task<ProductionOrderInputModel> UpdateProductionOrder([FromRoute] int productionOrderId, [FromBody] ProductionOrderInputModel req)
+        public async Task<ProductionOrderInputModel> UpdateProductionOrder([FromRoute] long productionOrderId, [FromBody] ProductionOrderInputModel req)
         {
             return await _productionOrderService.UpdateProductionOrder(productionOrderId, req);
         }
@@ -49,7 +54,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productionOrderId}")]
-        public async Task<ProductionOrderOutputModel> GetProductionOrder([FromRoute] int productionOrderId)
+        public async Task<ProductionOrderOutputModel> GetProductionOrder([FromRoute] long productionOrderId)
         {
             return await _productionOrderService.GetProductionOrder(productionOrderId);
         }
@@ -63,7 +68,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpDelete]
         [Route("{productionOrderId}")]
-        public async Task<bool> DeleteProductionOrder([FromRoute] int productionOrderId)
+        public async Task<bool> DeleteProductionOrder([FromRoute] long productionOrderId)
         {
             return await _productionOrderService.DeleteProductionOrder(productionOrderId);
         }
@@ -80,6 +85,41 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<IList<ProductOrderModel>> GetProductionOrders()
         {
             return await _productionOrderService.GetProductionOrders();
+        }
+
+        [HttpPut]
+        [Route("{productionOrderId}/status")]
+        public async Task<bool> UpdateManualProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] ProductionOrderStatusModel status)
+        {
+            return await _productionOrderService.UpdateManualProductionOrderStatus(productionOrderId, status);
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/materials-calc")]
+        public async Task<ProductionOrderMaterialsModel> GetProductionOrderMaterials([FromRoute] int productionOrderId)
+        {
+            return await _productionOrderMaterialsService.GetProductionOrderMaterialsCalc(productionOrderId);
+        }
+
+        [HttpPut]
+        [Route("{productionOrderId}/materials")]
+        public async Task<bool> UpdateProductionOrderMaterials([FromRoute] long productionOrderId, [FromBody] IList<ProductionOrderMaterialsInput> materials)
+        {
+            return await _productionOrderMaterialsService.UpdateProductionOrderMaterials(productionOrderId, materials);
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/materials")]
+        public async Task<IList<ProductionOrderMaterialsOutput>> GetProductionOrderMaterials(long productionOrderId)
+        {
+            return await _productionOrderMaterialsService.GetProductionOrderMaterials(productionOrderId);
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/warnings")]
+        public async Task<IList<string>> GetWarnings([FromRoute] int productionOrderId)
+        {
+            return await _validateProductionOrderService.ValidateProductionOrder(productionOrderId);
         }
 
     }

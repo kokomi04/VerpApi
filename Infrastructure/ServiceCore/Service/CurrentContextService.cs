@@ -19,6 +19,7 @@ using System.Security.Principal;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.EF.OrganizationDB;
 using OpenXmlPowerTools;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -58,8 +59,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly UnAuthorizeMasterDBContext _masterDBContext;
-        private readonly UnAuthorizeOrganizationContext _organizationDBContext;
+        private readonly Func<UnAuthorizeMasterDBContext> _masterDBContext;
+        private readonly Func<UnAuthorizeOrganizationContext> _organizationDBContext;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         private int _userId = 0;
         private string _userName = "";
@@ -74,8 +76,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
-            , UnAuthorizeMasterDBContext masterDBContext
-            , UnAuthorizeOrganizationContext organizationDBContext
+            , Func<UnAuthorizeMasterDBContext> masterDBContext
+            , Func<UnAuthorizeOrganizationContext> organizationDBContext
+           , IServiceScopeFactory serviceScopeFactory
             )
         {
             _appSetting = appSetting.Value;
@@ -83,6 +86,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _httpContextAccessor = httpContextAccessor;
             _masterDBContext = masterDBContext;
             _organizationDBContext = organizationDBContext;
+            _serviceScopeFactory = serviceScopeFactory;
             CrossServiceLogin();
         }
 
@@ -161,7 +165,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 if (!string.IsNullOrEmpty(_userName)) return _userName;
 
-                var userInfo = _masterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
+                var userInfo = _masterDBContext().User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
                 if (userInfo != null)
                 {
                     _userName = userInfo.UserName;
@@ -243,9 +247,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     return null;
                 }
 
-                var userInfo = _masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
+                var masterDBContext = _masterDBContext();
+
+                var userInfo = masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
                 var roleInfo = (
-                    from r in _masterDBContext.Role
+                    from r in masterDBContext.Role
                     where r.RoleId == userInfo.RoleId
                     select new
                     {
@@ -265,7 +271,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     roleInfo.IsModulePermissionInherit,
                     roleInfo.RoleName
                 );
-
 
                 return _roleInfo;
             }
@@ -292,12 +297,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     roleIds.AddRange(roleInfo.ChildrenRoleIds);
                 }
 
-                _stockIds = _masterDBContext.RoleDataPermission
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
+
+                    _stockIds = masterDBContext.RoleDataPermission
                     .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && roleIds.Contains(d.RoleId))
                     .Select(d => d.ObjectId)
                     .ToList()
                     .Select(d => (int)d)
                     .ToArray();
+                }
 
                 return _stockIds;
             }
@@ -307,7 +317,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             get
             {
-                var subdiaryInfo = _organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
+
+                var subdiaryInfo = _organizationDBContext().Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
 
                 if (subdiaryInfo == null) return false;
 

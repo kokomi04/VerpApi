@@ -18,6 +18,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string BankCode { get; set; }
         public string BankBranch { get; set; }
         public string BankAddress { get; set; }
+        public string AccountName { get; set; }
+        public int? CurrencyId { get; set; }
+        public string Province { get; set; }
 
         public virtual Customer Customer { get; set; }
     }

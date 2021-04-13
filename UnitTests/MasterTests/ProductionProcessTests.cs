@@ -10,6 +10,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Inventory;
@@ -26,11 +27,13 @@ namespace MasterTests
     public class ProductionProcessTests : BaseDevelopmentUnitStartup
     {
         private readonly IProductionProcessService productionProcessService;
+        private readonly IProductionOrderMaterialsService productOrderMaterialsService;
 
         public ProductionProcessTests()
-            : base(subsidiaryId: 2, userId: 1)
+            : base(subsidiaryId: 2, userId: 2)
         {
             productionProcessService = webHost.Services.GetService<IProductionProcessService>();
+            productOrderMaterialsService = webHost.Services.GetService<IProductionOrderMaterialsService>();
         }
 
         [Fact]
@@ -46,9 +49,21 @@ namespace MasterTests
 
                 throw;
             }
-
-
         }
-        
+
+        [Fact]
+        public async Task TestGetProductionOrderMaterials()
+        {
+            var productionOrderId = 10045;
+            try
+            {
+                var data = await productOrderMaterialsService.GetProductionOrderMaterialsCalc(productionOrderId);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
     }
 }
