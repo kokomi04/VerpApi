@@ -413,6 +413,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     prop = Expression.PropertyOrField(prop, propertyName);
                 }
 
+                if(clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
+                    clause.DataType = EnumDataType.BigInt;
+
                 //var prop = Expression.Property(param, clause.FieldName);
                 // Check value
                 ConstantExpression value;
