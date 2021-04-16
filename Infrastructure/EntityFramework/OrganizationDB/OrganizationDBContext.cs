@@ -171,8 +171,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<Department>(entity =>
             {
-                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
-
                 entity.Property(e => e.DepartmentCode)
                     .IsRequired()
                     .HasMaxLength(32);
@@ -182,8 +180,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.Description).HasMaxLength(128);
-
-                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
 
                 entity.Property(e => e.WorkingHoursPerDay).HasColumnType("decimal(4, 2)");
 
