@@ -129,6 +129,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Include(s => s.Step)
+                .Include(s => s.OutsourceStepRequest)
                 .Include(s => s.ProductionStepLinkDataRole)
                 .ThenInclude(r => r.ProductionStepLinkData)
                 .Where(s => s.ContainerId == productionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder)

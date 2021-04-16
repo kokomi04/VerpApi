@@ -57,6 +57,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.UnitId, a => a.MapFrom(s => s.Step.UnitId))
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
+                .ForMember(m => m.OutsourceStepRequestCode, a => a.MapFrom(s => s.OutsourceStepRequest.OutsourceStepRequestCode))
                 .ReverseMap()
                 .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore())
                 .ForMember(m => m.Step, v => v.Ignore());

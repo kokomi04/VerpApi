@@ -22,6 +22,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int? DepartmentId { get; set; }
         public string Content { get; set; }
         public string InventoryCode { get; set; }
+        public long InventoryId { get; set; }
     }
 
     public class ProductionInventoryRequirementModel : ProductionInventoryRequirementBaseModel, IMapFrom<ProductionInventoryRequirementEntity>
