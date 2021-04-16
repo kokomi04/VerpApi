@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.Report;
 
 namespace Verp.Services.ReportConfig.Model
 {
@@ -22,6 +23,11 @@ namespace Verp.Services.ReportConfig.Model
         public bool IsGroupRow { get; set; }
         public string VAlign { get; set; }
         public string HAlign { get; set; }
+
+        public EnumReportDetailOpenType? DetailOpenTypeId { get; set; }
+        public EnumReportDetailTarget? DetailTargetId { get; set; }
+        public int? DetailReportId { get; set; }
+        public string DetailReportParams { get; set; }
 
     }
 }

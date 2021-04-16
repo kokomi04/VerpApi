@@ -34,6 +34,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string GroupColumns { get; set; }
         public string Sign { get; set; }
         public string HtmlTemplate { get; set; }
+        public int? DetailOpenTypeId { get; set; }
+        public int? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
         public string OnLoadJsCode { get; set; }
