@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.Report;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
@@ -38,8 +39,12 @@ namespace Verp.Services.ReportConfig.Model
         public string GroupColumns { get; set; }
         public string Sign { get; set; }
         public string HtmlTemplate { get; set; }
+       
+        public EnumReportDetailOpenType? DetailOpenTypeId { get; set; }
+        public EnumReportDetailTarget? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
+
         public string OnLoadJsCode { get; set; }
         public string PreLoadDataJsCode { get; set; }
         public string AfterLoadDataJsCode { get; set; }

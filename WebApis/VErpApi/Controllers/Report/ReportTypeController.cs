@@ -41,14 +41,7 @@ namespace VErpApi.Controllers.Report
             return await _reportConfigService
                 .ReportTypeGroupCreate(model)
                 .ConfigureAwait(true);
-        }
-
-        [HttpPost]
-        [Route("DecryptExtraFilter")]
-        public CipherFilterModel DecryptExtraFilter([FromBody] CipherFilterModel cipherFilter)
-        {
-            return _reportConfigService.DecryptExtraFilter(cipherFilter);
-        }
+        }     
 
         [HttpPut]
         [Route("Groups/{reportTypeGroupId}")]
