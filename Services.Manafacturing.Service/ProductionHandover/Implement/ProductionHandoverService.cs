@@ -57,7 +57,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHandover.Status = (int)status;
                 _manufacturingDBContext.SaveChanges();
 
-                if (productionHandover.Status == (int)EnumHandoverStatus.Accepted) {
+                if (productionHandover.Status == (int)EnumHandoverStatus.Accepted)
+                {
                     await ChangeAssignedProgressStatus(productionOrderId, productionHandover.FromProductionStepId, productionHandover.FromDepartmentId);
                     await ChangeAssignedProgressStatus(productionOrderId, productionHandover.ToProductionStepId, productionHandover.ToDepartmentId);
                 }
@@ -242,6 +243,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         public async Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId)
         {
             var productionStep = _manufacturingDBContext.ProductionStep
+                .Include(ps => ps.OutsourceStepRequest)
                 .Include(ps => ps.ProductionStepLinkDataRole)
                 .ThenInclude(ldr => ldr.ProductionStepLinkData)
                 .First(ps => ps.ContainerId == productionOrderId && ps.ProductionStepId == productionStepId && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder);
@@ -268,9 +270,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var stepMap = _manufacturingDBContext.ProductionStepLinkDataRole
                 .Include(ldr => ldr.ProductionStep)
+                .ThenInclude(ps => ps.OutsourceStepRequest)
+                .Include(ldr => ldr.ProductionStep)
                 .ThenInclude(ps => ps.Step)
                 .Where(ldr => !ldr.ProductionStep.IsFinish && ldr.ProductionStepId != productionStepId && linkDataIds.Contains(ldr.ProductionStepLinkDataId))
-                .Select(ldr => new { ldr.ProductionStepLinkDataId, ldr.ProductionStep.ProductionStepId, ldr.ProductionStep.Step.StepName })
+                .Select(ldr => new { ldr.ProductionStepLinkDataId, ldr.ProductionStep.ProductionStepId, ldr.ProductionStep.Step.StepName, ldr.ProductionStep.OutsourceStepRequest.OutsourceStepRequestId, ldr.ProductionStep.OutsourceStepRequest.OutsourceStepRequestCode })
                 .ToList()
                 .GroupBy(ldr => ldr.ProductionStepLinkDataId)
                 .ToDictionary(g => g.Key, g => g.First());
@@ -321,16 +325,39 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 // Nếu không có nguồn vào => vật tư được xuất từ kho
                 var fromStep = stepMap.ContainsKey(inputLinkData.ProductionStepLinkDataId) ? stepMap[inputLinkData.ProductionStepLinkDataId] : null;
                 long? fromStepId = fromStep?.ProductionStepId ?? null;
+               
+                // Nếu công đoạn có nhận đầu vào từ gia công và không cùng gia công với công đoạn trước
+                if (inputLinkData.OutsourceQuantity > 0 && fromStep != null && fromStep.OutsourceStepRequestId != (productionStep.OutsourceStepRequest?.OutsourceStepRequestId??0))
+                {
+                    var ousourceInput = detail.InputDatas
+                        .Where(d => d.ObjectId == inputLinkData.ObjectId && d.ObjectTypeId == inputLinkData.ObjectTypeId && d.FromStepId == fromStepId && d.OutsourceStepRequestId == fromStep.OutsourceStepRequestId)
+                        .FirstOrDefault();
+
+                    if (ousourceInput == null)
+                    {
+                        detail.InputDatas.Add(new StepInOutData
+                        {
+                            ObjectId = inputLinkData.ObjectId,
+                            ObjectTypeId = inputLinkData.ObjectTypeId,
+                            TotalRequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity ?? 0,
+                            ReceivedQuantity = 0,
+                            FromStepTitle = $"{fromStep.StepName}(#{fromStep.ProductionStepId}) - {fromStep.OutsourceStepRequestCode}",
+                            FromStepId = fromStepId,
+                            HandoverHistories = new List<ProductionHandoverModel>(),
+                            InventoryRequirementHistories = new List<ProductionInventoryRequirementModel>(),
+                            MaterialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>(),
+                            OutsourceStepRequestId = fromStep.OutsourceStepRequestId
+                        });
+                    }
+                }
+
                 var item = detail.InputDatas
-                    .Where(d => d.ObjectId == inputLinkData.ObjectId
-                    && d.ObjectTypeId == inputLinkData.ObjectTypeId
-                    && d.ToStepId == fromStepId)
+                    .Where(d => d.ObjectId == inputLinkData.ObjectId && d.ObjectTypeId == inputLinkData.ObjectTypeId && d.FromStepId == fromStepId && !d.OutsourceStepRequestId.HasValue)
                     .FirstOrDefault();
 
                 if (item != null)
                 {
-                    item.TotalRequireQuantity += inputLinkData.Quantity;
-                    item.OutsourceQuantity += inputLinkData.OutsourceQuantity;
+                    item.TotalRequireQuantity += inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity ?? 0;
                 }
                 else
                 {
@@ -366,8 +393,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     {
                         ObjectId = inputLinkData.ObjectId,
                         ObjectTypeId = inputLinkData.ObjectTypeId,
-                        TotalRequireQuantity = inputLinkData.Quantity,
-                        OutsourceQuantity = inputLinkData.OutsourceQuantity,
+                        TotalRequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity ?? 0,
                         ReceivedQuantity = receivedQuantity,
                         FromStepTitle = fromStepId.HasValue ? $"{fromStep.StepName}(#{fromStep.ProductionStepId})" : "Kho",
                         FromStepId = fromStepId,
@@ -390,16 +416,40 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 // Nếu không có nguồn ra => vật tư được nhập vào kho
                 var toStep = stepMap.ContainsKey(outputLinkData.ProductionStepLinkDataId) ? stepMap[outputLinkData.ProductionStepLinkDataId] : null;
                 long? toStepId = toStep?.ProductionStepId ?? null;
+
+
+                // Nếu công đoạn có đầu ra từ gia công và không cùng gia công với công đoạn sau
+                if (outputLinkData.OutsourceQuantity > 0 && toStep != null && toStep.OutsourceStepRequestId != (productionStep.OutsourceStepRequest?.OutsourceStepRequestId ?? 0))
+                {
+                    var ousourceOutput = detail.OutputDatas
+                        .Where(d => d.ObjectId == outputLinkData.ObjectId && d.ObjectTypeId == outputLinkData.ObjectTypeId && d.ToStepId == toStepId && d.OutsourceStepRequestId == toStep.OutsourceStepRequestId)
+                        .FirstOrDefault();
+
+                    if (ousourceOutput == null)
+                    {
+                        detail.InputDatas.Add(new StepInOutData
+                        {
+                            ObjectId = outputLinkData.ObjectId,
+                            ObjectTypeId = outputLinkData.ObjectTypeId,
+                            TotalRequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity ?? 0,
+                            ReceivedQuantity = 0,
+                            ToStepTitle = $"{toStep.StepName}(#{toStep.ProductionStepId}) - {toStep.OutsourceStepRequestCode}",
+                            ToStepId = toStepId,
+                            HandoverHistories = new List<ProductionHandoverModel>(),
+                            InventoryRequirementHistories = new List<ProductionInventoryRequirementModel>(),
+                            MaterialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>(),
+                            OutsourceStepRequestId = toStep.OutsourceStepRequestId
+                        });
+                    }
+                }
+
                 var item = detail.OutputDatas
-                    .Where(d => d.ObjectId == outputLinkData.ObjectId
-                    && d.ObjectTypeId == outputLinkData.ObjectTypeId
-                    && d.FromStepId == toStepId)
+                    .Where(d => d.ObjectId == outputLinkData.ObjectId && d.ObjectTypeId == outputLinkData.ObjectTypeId && d.ToStepId == toStepId)
                     .FirstOrDefault();
 
                 if (item != null)
                 {
-                    item.TotalRequireQuantity += outputLinkData.Quantity;
-                    item.OutsourceQuantity += outputLinkData.OutsourceQuantity;
+                    item.TotalRequireQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity ?? 0;
                 }
                 else
                 {
@@ -419,7 +469,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                     if (!toStepId.HasValue)
                     {
-                        inventoryRequirementHistories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
+                        inventoryRequirementHistories = inventoryRequirements
+                            .Where(h => h.DepartmentId == departmentId
                             && h.ProductionStepId == productionStepId
                             && h.InventoryTypeId == EnumInventoryType.Input
                             && h.ProductId == outputLinkData.ObjectId)
@@ -433,8 +484,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     {
                         ObjectId = outputLinkData.ObjectId,
                         ObjectTypeId = outputLinkData.ObjectTypeId,
-                        TotalRequireQuantity = outputLinkData.Quantity,
-                        OutsourceQuantity = outputLinkData.OutsourceQuantity,
+                        TotalRequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity ?? 0,
                         ReceivedQuantity = receivedQuantity,
                         ToStepTitle = toStepId.HasValue ? $"{toStep.StepName}(#{toStep.ProductionStepId})" : "Kho",
                         ToStepId = toStepId,

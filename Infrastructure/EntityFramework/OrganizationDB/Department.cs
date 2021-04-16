@@ -19,12 +19,14 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int? ParentId { get; set; }
         public bool IsActived { get; set; }
         public bool IsDeleted { get; set; }
-        public int UpdatedUserId { get; set; }
-        public DateTime CreatedTime { get; set; }
-        public DateTime UpdatedTime { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsProduction { get; set; }
         public decimal? WorkingHoursPerDay { get; set; }
         public long? ImageFileId { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual Department Parent { get; set; }
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
