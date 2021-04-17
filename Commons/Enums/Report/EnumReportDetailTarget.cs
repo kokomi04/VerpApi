@@ -11,6 +11,8 @@ namespace VErp.Commons.Enums.Report
         SaleBill = 3,
         InventoryInput = 4,
         InventoryOutput = 5,
-        Inventory = 6
+        Inventory = 6,
+        ProductionOrder = 7,
+        InventoryProduct = 8,
     }
 }
