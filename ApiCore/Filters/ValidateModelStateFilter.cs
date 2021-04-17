@@ -17,12 +17,13 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             if (context.ModelState.IsValid)
             {
-                if (!ValidateEnum(context.ActionArguments.Select(a => a.Value)).IsSuccess())
+                string errorPropName;
+                if (!ValidateEnum(context.ActionArguments.Select(a => a.Value), string.Empty, out errorPropName).IsSuccess())
                 {
                     var invalidParams = new ServiceResult()
                     {
                         Code = GeneralCode.InvalidParams,
-                        Message = GeneralCode.InvalidParams.GetEnumDescription()
+                        Message = GeneralCode.InvalidParams.GetEnumDescription() + " " + errorPropName
                     };
 
                     context.Result = new BadRequestObjectResult(invalidParams);
@@ -48,7 +49,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             context.Result = new BadRequestObjectResult(invalidModels);
         }
 
-        private Enum ValidateEnum(dynamic objs)
+        private Enum ValidateEnum(dynamic objs, string propName, out string errorPropName)
         {
             foreach (object obj in objs)
             {
@@ -66,6 +67,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     {
                         if (!type.IsEnumDefined(obj))
                         {
+                            errorPropName = propName + "=" + obj;
                             return GeneralCode.InvalidParams;
                         }
                     }
@@ -74,7 +76,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 {
                     if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
                     {
-                        if (!ValidateEnum(obj).IsSuccess())
+                        if (!ValidateEnum(obj, propName, out errorPropName).IsSuccess())
                         {
                             return GeneralCode.InvalidParams;
                         }
@@ -105,7 +107,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                                     }
                                 }
-                                if (!ValidateEnum(new List<object>() { v }).IsSuccess())
+                                if (!ValidateEnum(new List<object>() { v }, propName + ">" + p.Name, out errorPropName).IsSuccess())
                                 {
                                     return GeneralCode.InvalidParams;
                                 }
@@ -114,6 +116,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     }
                 }
             }
+            errorPropName = "";
             return GeneralCode.Success;
         }
     }
