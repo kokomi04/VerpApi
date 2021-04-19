@@ -193,6 +193,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     _stockDBContext.InventoryRequirementFile.Add(inventoryRequirementFile);
                 }
 
+                // Validate product
+                var productIds = req.InventoryRequirementDetail.Select(d => d.ProductId).Distinct().ToList();
+                if (_stockDBContext.Product.Where(p => productIds.Contains(p.ProductId)).Count() != productIds.Count)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Sản phẩm yêu cầu xuất/nhập kho là bán thành phẩm");
+
                 // Tạo detail
                 foreach (var item in req.InventoryRequirementDetail)
                 {

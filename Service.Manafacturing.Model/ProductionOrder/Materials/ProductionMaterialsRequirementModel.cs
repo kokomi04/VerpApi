@@ -21,7 +21,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public EnumProductionMaterialsRequirementStatus CensorStatus { get; set; }
         public int CreatedByUserId { get; set; }
         public long? CreatedDatetimeUtc { get; set; }
-
         public IList<ProductionMaterialsRequirementDetailModel> MaterialsRequirementDetails { get; set; }
 
         public void Mapping(Profile profile)
@@ -50,7 +49,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public int DepartmentId { get; set; }
         public long ProductionStepId { get; set; }
         public long ProductionOrderId { get; set; }
-
+        public long? OutsourceStepRequestId { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailListModel>()

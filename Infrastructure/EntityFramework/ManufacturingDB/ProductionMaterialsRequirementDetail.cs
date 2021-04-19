@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public long? OutsourceStepRequestId { get; set; }
 
         public virtual ProductionMaterialsRequirement ProductionMaterialsRequirement { get; set; }
         public virtual ProductionStep ProductionStep { get; set; }

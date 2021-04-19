@@ -42,7 +42,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public string StockName { get; set; }
-
+        public long? OutsourceStepRequestId { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementDetail, InventoryRequirementListModel>()
