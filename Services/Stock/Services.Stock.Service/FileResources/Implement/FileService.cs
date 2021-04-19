@@ -42,6 +42,27 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private readonly IDataProtectionProvider _dataProtectionProvider;
 
+        private static readonly Dictionary<string, EnumFileType> FileExtensionTypesNotAccepted = new Dictionary<string, EnumFileType>()
+        {
+            { ".sh", EnumFileType.Other },
+            { ".cmd", EnumFileType.Other },
+            { ".bash", EnumFileType.Other },
+            { ".exe"  , EnumFileType.Other },
+
+            { ".asp" , EnumFileType.Other },
+            { ".dll" , EnumFileType.Other },
+            { ".ahx", EnumFileType.Other },
+            { ".apx", EnumFileType.Other },
+            { ".ini", EnumFileType.Other },
+
+            { ".cs" , EnumFileType.Other },
+            { ".py" , EnumFileType.Other },
+            { ".h", EnumFileType.Other },
+            { ".jar", EnumFileType.Other },
+            { ".java", EnumFileType.Other },
+            { ".js", EnumFileType.Other },
+            { ".ts", EnumFileType.Other },
+        };
 
         private static readonly Dictionary<string, EnumFileType> FileExtensionTypes = new Dictionary<string, EnumFileType>()
         {
@@ -435,7 +456,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var ext = Path.GetExtension(uploadFile.FileName).ToLower();
 
-            if (!FileExtensionTypes.ContainsKey(ext))
+            if (FileExtensionTypesNotAccepted.ContainsKey(ext))
             {
                 return (FileErrorCode.InvalidFileType, null);
             }
