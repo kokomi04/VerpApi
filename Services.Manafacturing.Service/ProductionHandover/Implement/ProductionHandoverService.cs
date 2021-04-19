@@ -351,18 +351,38 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     }
                     else
                     {
+                        var inventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
+                        var materialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
+
+                        inventoryRequirementHistories = inventoryRequirements
+                            .Where(i => i.DepartmentId == departmentId
+                            && i.ProductionStepId == productionStepId
+                            && i.InventoryTypeId == EnumInventoryType.Output
+                            && i.ProductId == inputLinkData.ObjectId
+                            && i.OutsourceStepRequestId.HasValue
+                            && i.OutsourceStepRequestId.Value == fromStep.OutsourceStepRequestId)
+                            .ToList();
+
+                        materialsRequirementHistories = materialRequirements
+                            .Where(mr => mr.ProductId == inputLinkData.ObjectId
+                            && mr.OutsourceStepRequestId.HasValue
+                            && mr.OutsourceStepRequestId.Value == fromStep.OutsourceStepRequestId)
+                            .ToList();
+
+                        var receivedQuantity = inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+
                         detail.InputDatas.Add(new StepInOutData
                         {
                             ObjectId = inputLinkData.ObjectId,
                             ObjectTypeId = inputLinkData.ObjectTypeId,
                             RequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault() - inputLinkData.ExportOutsourceQuantity.GetValueOrDefault(),
                             TotalQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
-                            ReceivedQuantity = 0,
+                            ReceivedQuantity = receivedQuantity,
                             FromStepTitle = $"{fromStep.StepName}(#{fromStep.ProductionStepId}) - {fromStep.OutsourceStepRequestCode}",
                             FromStepId = fromStepId,
                             HandoverHistories = new List<ProductionHandoverModel>(),
-                            InventoryRequirementHistories = new List<ProductionInventoryRequirementModel>(),
-                            MaterialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>(),
+                            InventoryRequirementHistories = inventoryRequirementHistories,
+                            MaterialsRequirementHistories = materialsRequirementHistories,
                             OutsourceStepRequestId = fromStep.OutsourceStepRequestId
                         });
                     }
@@ -393,16 +413,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var inventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
                     var materialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
 
-                    if (!fromStepId.HasValue)
-                    {
-                        inventoryRequirementHistories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
-                            && h.ProductionStepId == productionStepId
-                            && h.InventoryTypeId == EnumInventoryType.Output
-                            && h.ProductId == inputLinkData.ObjectId)
-                            .ToList();
+                    
+                    inventoryRequirementHistories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
+                        && h.ProductionStepId == productionStepId
+                        && h.InventoryTypeId == EnumInventoryType.Output
+                        && h.ProductId == inputLinkData.ObjectId
+                        && !h.OutsourceStepRequestId.HasValue)
+                        .ToList();
 
-                        materialsRequirementHistories = materialRequirements.Where(mr => mr.ProductId == inputLinkData.ObjectId).ToList();
-                    }
+                    materialsRequirementHistories = materialRequirements
+                        .Where(mr => mr.ProductId == inputLinkData.ObjectId && !mr.OutsourceStepRequestId.HasValue)
+                        .ToList();
 
                     var receivedQuantity = handoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
                         + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
@@ -452,17 +473,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     }
                     else
                     {
+                        var inventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
+
+                        inventoryRequirementHistories = inventoryRequirements
+                            .Where(i => i.DepartmentId == departmentId
+                            && i.ProductionStepId == productionStepId
+                            && i.InventoryTypeId == EnumInventoryType.Input
+                            && i.ProductId == outputLinkData.ObjectId
+                            && i.OutsourceStepRequestId.HasValue
+                            && i.OutsourceStepRequestId.Value == toStep.OutsourceStepRequestId)
+                            .ToList();
+
+                        var receivedQuantity = inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+
+
                         detail.OutputDatas.Add(new StepInOutData
                         {
                             ObjectId = outputLinkData.ObjectId,
                             ObjectTypeId = outputLinkData.ObjectTypeId,
                             RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault() - outputLinkData.OutsourceQuantity.GetValueOrDefault(),
                             TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
-                            ReceivedQuantity = 0,
+                            ReceivedQuantity = receivedQuantity,
                             ToStepTitle = $"{toStep.StepName}(#{toStep.ProductionStepId}) - {toStep.OutsourceStepRequestCode}",
                             ToStepId = toStepId,
                             HandoverHistories = new List<ProductionHandoverModel>(),
-                            InventoryRequirementHistories = new List<ProductionInventoryRequirementModel>(),
+                            InventoryRequirementHistories = inventoryRequirementHistories,
                             MaterialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>(),
                             OutsourceStepRequestId = toStep.OutsourceStepRequestId
                         });
@@ -494,15 +529,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var inventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
                     var materialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
 
-                    if (!toStepId.HasValue)
-                    {
-                        inventoryRequirementHistories = inventoryRequirements
-                            .Where(h => h.DepartmentId == departmentId
-                            && h.ProductionStepId == productionStepId
-                            && h.InventoryTypeId == EnumInventoryType.Input
-                            && h.ProductId == outputLinkData.ObjectId)
-                            .ToList();
-                    }
+                    inventoryRequirementHistories = inventoryRequirements
+                        .Where(h => h.DepartmentId == departmentId
+                        && h.ProductionStepId == productionStepId
+                        && h.InventoryTypeId == EnumInventoryType.Input
+                        && h.ProductId == outputLinkData.ObjectId
+                        && !h.OutsourceStepRequestId.HasValue)
+                        .ToList();
 
                     var receivedQuantity = handoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
                         + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
