@@ -18,7 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public int DepartmentId { get; set; }
         public long ProductionStepId { get; set; }
         public string ProductionStepTitle { get; set; }
-
+        public long? OutsourceStepRequestId { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailModel>()

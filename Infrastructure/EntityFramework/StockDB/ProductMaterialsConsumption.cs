@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int ProductId { get; set; }
         public int MaterialsConsumptionId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal? TotalQuantityInheritance { get; set; }
         public int? StepId { get; set; }
         public int? DepartmentId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

@@ -110,6 +110,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     _manufacturingDBContext.ProductionMaterialsRequirement.Add(requirement);
                     await _manufacturingDBContext.SaveChangesAsync();
 
+                    // Validate product
+                    var productIds = model.MaterialsRequirementDetails.Select(d => d.ProductId).Distinct().ToList();
+                    var products = await _productHelperService.GetListProducts(productIds);
+                    if (products.Count() != productIds.Count)
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Sản phẩm yêu cầu thêm là bán thành phẩm");
+
                     foreach (var item in model.MaterialsRequirementDetails)
                     {
                         item.ProductionMaterialsRequirementId = requirement.ProductionMaterialsRequirementId;

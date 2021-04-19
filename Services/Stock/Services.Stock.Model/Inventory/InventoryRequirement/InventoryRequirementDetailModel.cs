@@ -21,6 +21,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string OrderCode { get; set; }
         public int? DepartmentId { get; set; }
         public long? ProductionStepId { get; set; }
+
+        public long? OutsourceStepRequestId { get; set; }
     }
 
     public class InventoryRequirementDetailOutputModel : InventoryRequirementDetailInputModel

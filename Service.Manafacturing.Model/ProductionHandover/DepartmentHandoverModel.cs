@@ -78,9 +78,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         public decimal ReceivedQuantity { get; set; }
-        public decimal TotalRequireQuantity { get; set; }
-        //public decimal? OutsourceQuantity { get; set; }
-        //public decimal? ExportOutsourceQuantity { get; set; }
+        public decimal RequireQuantity { get; set; }
+        public decimal TotalQuantity { get; set; }
         public string FromStepTitle { get; set; }
         public long? FromStepId { get; set; }
         public string ToStepTitle { get; set; }
