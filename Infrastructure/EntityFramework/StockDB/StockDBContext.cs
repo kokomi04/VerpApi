@@ -551,8 +551,6 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TotalQuantityInheritance).HasColumnType("decimal(18, 5)");
-
                 entity.HasOne(d => d.MaterialsConsumption)
                     .WithMany(p => p.ProductMaterialsConsumptionMaterialsConsumption)
                     .HasForeignKey(d => d.MaterialsConsumptionId)
