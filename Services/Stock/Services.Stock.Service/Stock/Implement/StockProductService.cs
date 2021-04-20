@@ -60,7 +60,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             query = query.InternalFilter(filters);
             var total = await query.CountAsync();
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstData = size > 0 ? await query.Skip((page - 1) * size).Take(size).ToListAsync() : await query.ToListAsync();
 
             var pagedData = new List<StockOutput>();
             foreach (var item in lstData)
@@ -265,7 +265,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             };
 
             var total = await queryData.CountAsync();
-            var lstData = await queryData.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstData = size > 0 ? await queryData.Skip((page - 1) * size).Take(size).ToListAsync() : await queryData.ToListAsync();
             var productIds = lstData.Select(p => p.ProductId).ToList();
 
             if (productIds.Count == 0)
@@ -1133,7 +1133,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
 
             IList<int> allowStockIds = stockIds?.Where(stockId => _currentContextService.StockIds.Contains(stockId))?.ToList();
-            if(stockIds==null || stockIds.Count == 0)
+            if (stockIds == null || stockIds.Count == 0)
             {
                 allowStockIds = _currentContextService.StockIds;
             }

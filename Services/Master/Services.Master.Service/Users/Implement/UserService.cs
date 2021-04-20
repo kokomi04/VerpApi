@@ -524,7 +524,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                                 || u.Email.Contains(keyword)
                                 select u;
                     }
-                    var userList = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+                    var userList = pageSize > 0 ? query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList() : query.ToList();
 
                     await EnrichDepartments(userList);
 

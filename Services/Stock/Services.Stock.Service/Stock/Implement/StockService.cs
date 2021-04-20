@@ -202,11 +202,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         where q.StockName.Contains(keyword)
                         select q;
             }
-            
+
             query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstData = size > 0 ? await query.Skip((page - 1) * size).Take(size).ToListAsync() : await query.ToListAsync();
 
             var pagedData = new List<StockOutput>();
             foreach (var item in lstData)
@@ -228,7 +228,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         #endregion
 
-      
+
 
 
         public async Task<PageData<StockOutput>> GetListByUserId(int userId, string keyword, int page, int size)
