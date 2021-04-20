@@ -315,11 +315,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .Include(mrd => mrd.ProductionMaterialsRequirement)
                 .Where(mrd => mrd.ProductionMaterialsRequirement.ProductionOrderId == productionOrderId
                 && mrd.ProductionStepId == productionStepId
-                && mrd.DepartmentId == departmentId)
+                && mrd.DepartmentId == departmentId
+                && mrd.ProductionMaterialsRequirement.CensorStatus != (int)EnumProductionMaterialsRequirementStatus.Accepted)
                 .ProjectTo<ProductionMaterialsRequirementDetailListModel>(_mapper.ConfigurationProvider)
                 .ToList();
 
-            var quantity = outputLinkDatas.Where(ld => ld.ProductionStepLinkDataId == productionAssignment.ProductionStepLinkDataId).FirstOrDefault()?.Quantity ?? 0;
+            var outputLink = outputLinkDatas.Where(ld => ld.ProductionStepLinkDataId == productionAssignment.ProductionStepLinkDataId).FirstOrDefault();
+            var quantity = outputLink != null ? outputLink.QuantityOrigin - outputLink.OutsourcePartQuantity.GetValueOrDefault() : 0;
             if (quantity == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Dữ liệu đầu ra dùng để phân công không còn tồn tại trong quy trình");
 
             var detail = new DepartmentHandoverDetailModel
@@ -346,7 +348,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                     if (ousourceInput != null)
                     {
-                        ousourceInput.RequireQuantity += inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault() - inputLinkData.ExportOutsourceQuantity.GetValueOrDefault();
+                        ousourceInput.RequireQuantity += inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault();
                         ousourceInput.TotalQuantity += inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault();
                     }
                     else
@@ -375,7 +377,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         {
                             ObjectId = inputLinkData.ObjectId,
                             ObjectTypeId = inputLinkData.ObjectTypeId,
-                            RequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault() - inputLinkData.ExportOutsourceQuantity.GetValueOrDefault(),
+                            RequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             TotalQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             ReceivedQuantity = receivedQuantity,
                             FromStepTitle = $"{fromStep.StepName}(#{fromStep.ProductionStepId}) - {fromStep.OutsourceStepRequestCode}",
@@ -432,7 +434,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     {
                         ObjectId = inputLinkData.ObjectId,
                         ObjectTypeId = inputLinkData.ObjectTypeId,
-                        RequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault() - inputLinkData.ExportOutsourceQuantity.GetValueOrDefault(),
+                        RequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                         TotalQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                         ReceivedQuantity = receivedQuantity,
                         FromStepTitle = fromStepId.HasValue ? $"{fromStep.StepName}(#{fromStep.ProductionStepId})" : "Kho",
@@ -468,7 +470,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                     if (ousourceOutput != null)
                     {
-                        ousourceOutput.RequireQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault() - outputLinkData.OutsourceQuantity.GetValueOrDefault();
+                        ousourceOutput.RequireQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
                         ousourceOutput.TotalQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
                     }
                     else
@@ -491,7 +493,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         {
                             ObjectId = outputLinkData.ObjectId,
                             ObjectTypeId = outputLinkData.ObjectTypeId,
-                            RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault() - outputLinkData.OutsourceQuantity.GetValueOrDefault(),
+                            RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             ReceivedQuantity = receivedQuantity,
                             ToStepTitle = $"{toStep.StepName}(#{toStep.ProductionStepId}) - {toStep.OutsourceStepRequestCode}",
@@ -510,7 +512,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 if (item != null)
                 {
-                    item.RequireQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault() - outputLinkData.OutsourceQuantity.GetValueOrDefault();
+                    item.RequireQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
                     item.TotalQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
                 }
                 else
@@ -544,7 +546,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     {
                         ObjectId = outputLinkData.ObjectId,
                         ObjectTypeId = outputLinkData.ObjectTypeId,
-                        RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault() - outputLinkData.OutsourceQuantity.GetValueOrDefault(),
+                        RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                         TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                         ReceivedQuantity = receivedQuantity,
                         ToStepTitle = toStepId.HasValue ? $"{toStep.StepName}(#{toStep.ProductionStepId})" : "Kho",
