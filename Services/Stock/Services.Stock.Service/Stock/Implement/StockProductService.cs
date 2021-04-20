@@ -397,7 +397,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     break;
             }
 
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstData = size > 0 ? await query.Skip((page - 1) * size).Take(size).ToListAsync() : await query.ToListAsync();
 
             var data = lstData.Select(pk => new StockProductPackageDetail()
             {
