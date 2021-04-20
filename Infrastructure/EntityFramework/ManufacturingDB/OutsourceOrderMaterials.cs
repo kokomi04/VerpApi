@@ -13,6 +13,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
+        public long? OutsourceRequestId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
+
 
         public virtual OutsourceOrder OutsourceOrder { get; set; }
     }

@@ -28,6 +28,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? DepartmentId { get; set; }
         public long? ProductionStepId { get; set; }
         public long? OutsourceStepRequestId { get; set; }
+        public string OutsourceStepRequestCode { get; set; }
 
         public virtual Stock AssignStock { get; set; }
         public virtual InventoryRequirement InventoryRequirement { get; set; }
