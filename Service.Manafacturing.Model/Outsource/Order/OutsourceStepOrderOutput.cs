@@ -36,6 +36,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
     {
         public string ProductTitle { get; set; }
         public int UnitId { get; set; }
+        public decimal? QuantityRequirement { get; set; }
+        public string OutsourceRequestCode { get; set; }
     }
     public class OutsourceStepOrderDetailOutput : IMapFrom<OutsourceOrderDetail>
     {
