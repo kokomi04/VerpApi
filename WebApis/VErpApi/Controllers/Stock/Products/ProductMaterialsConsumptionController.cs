@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}/materialsConsumption")]
         public async Task<bool> UpdateProductMaterialsConsumptionService([FromRoute] int productId, [FromBody] ICollection<ProductMaterialsConsumptionInput> model)
         {
-            return await _productMaterialsConsumptionService.UpdateProductMaterialsConsumptionService(productId, model);
+            return await _productMaterialsConsumptionService.UpdateProductMaterialsConsumption(productId, model);
         }
 
 
@@ -43,21 +43,21 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}/materialsConsumption/{productMaterialsConsumptionId}")]
         public async Task<bool> UpdateProductMaterialsConsumptionService([FromRoute] int productId, [FromRoute] int productMaterialsConsumptionId, [FromBody] ProductMaterialsConsumptionInput model)
         {
-            return await _productMaterialsConsumptionService.UpdateProductMaterialsConsumptionService(productId, productMaterialsConsumptionId, model);
+            return await _productMaterialsConsumptionService.UpdateProductMaterialsConsumption(productId, productMaterialsConsumptionId, model);
         }
 
         [HttpPost]
         [Route("{productId}/materialsConsumption")]
         public async Task<long> AddProductMaterialsConsumptionService([FromRoute] int productId, [FromBody] ProductMaterialsConsumptionInput model)
         {
-            return await _productMaterialsConsumptionService.AddProductMaterialsConsumptionService(productId, model);
+            return await _productMaterialsConsumptionService.AddProductMaterialsConsumption(productId, model);
         }
 
         [HttpGet]
         [Route("{productId}/materialsConsumption")]
         public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService([FromRoute] int productId)
         {
-            return await _productMaterialsConsumptionService.GetProductMaterialsConsumptionService(productId);
+            return await _productMaterialsConsumptionService.GetProductMaterialsConsumption(productId);
         }
 
         [HttpGet]
@@ -77,6 +77,16 @@ namespace VErpApi.Controllers.Stock.Products
             }
 
             return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMapping(productId, JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), materialsConsumptionGroupId).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{productId}/materialsConsumption/exports")]
+        public async Task<IActionResult> ExportProductMaterialsConsumption([FromRoute] int productId)
+        {
+            var (stream, fileName, contentType) = await _productMaterialsConsumptionService.ExportProductMaterialsConsumption(productId);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
         [HttpPost]

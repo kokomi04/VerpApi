@@ -35,9 +35,9 @@ namespace VErpApi.Controllers.Stock.Internal
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService([FromBody] int[] productIds)
+        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption([FromBody] int[] productIds)
         {
-            return await _productMaterialsConsumptionService.GetProductMaterialsConsumptionService(productIds);
+            return await _productMaterialsConsumptionService.GetProductMaterialsConsumption(productIds);
         }
     }
 }

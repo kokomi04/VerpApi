@@ -20,10 +20,11 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
-    public class ProductMaterialsConsumptionService: IProductMaterialsConsumptionService
+    public class ProductMaterialsConsumptionService : IProductMaterialsConsumptionService
     {
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
@@ -33,6 +34,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private readonly IProductBomService _productBomService;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
 
         public ProductMaterialsConsumptionService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -40,7 +42,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IActivityLogService activityLogService
             , IMapper mapper
             , IProductBomService productBomService
-            , IOrganizationHelperService organizationHelperService)
+            , IOrganizationHelperService organizationHelperService
+            , IManufacturingHelperService manufacturingHelperService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
@@ -49,9 +52,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _mapper = mapper;
             _productBomService = productBomService;
             _organizationHelperService = organizationHelperService;
+            _manufacturingHelperService = manufacturingHelperService;
         }
 
-        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int productId)
+        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int productId)
         {
             var productBom = (await _productBomService.GetBom(productId)).Where(x => !x.IsMaterial);
             var productMap = CalcProductBomTotalQuantity(productBom);
@@ -103,10 +107,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 var materials = materialsConsumptionInheri.Where(x => x.ProductId == bom.ChildProductId).ToList();
                 var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId).ToList();
-                var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri,productBom, childBom, productMap);
+                var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri, productBom, childBom, productMap);
 
                 var exceptMaterials = materialsInheri.Except(materials, new ProductMaterialsConsumptionBaseComparer())
-                    .Select(x => new ProductMaterialsConsumptionOutput { 
+                    .Select(x => new ProductMaterialsConsumptionOutput
+                    {
                         ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId,
                         MaterialsConsumptionId = x.MaterialsConsumptionId,
                         ProductId = bom.ChildProductId.GetValueOrDefault(),
@@ -161,7 +166,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var groups = materials.Where(x => x.ProductMaterialsConsumptionGroupId == item.ProductMaterialsConsumptionGroupId);
             if (groups.Count() == 0) return true;
 
-            return !groups.Any(x=> x.MaterialsConsumptionId == item.MaterialsConsumptionId);
+            return !groups.Any(x => x.MaterialsConsumptionId == item.MaterialsConsumptionId);
         }
 
         private IList<ProductMaterialsConsumptionOutput> LoopCalcMaterialsConsump(IEnumerable<ProductBomOutput> productBom
@@ -174,15 +179,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var result = new List<ProductMaterialsConsumptionOutput>();
             foreach (var bom in level)
             {
-                var consump = materialsConsumptions.FirstOrDefault(x => x.ProductId == bom.ChildProductId 
+                var consump = materialsConsumptions.FirstOrDefault(x => x.ProductId == bom.ChildProductId
                         && x.MaterialsConsumptionId == consumpId
                         && x.ProductMaterialsConsumptionGroupId == groupId);
-                if(consump != null)
+                if (consump != null)
                 {
                     var child = productBom.Where(x => x.ProductId == bom.ChildProductId);
                     consump.BomQuantity = productMap[bom.ChildProductId];
                     consump.MaterialsConsumptionInheri = LoopCalcMaterialsConsump(productBom, child, materialsConsumptions, productMap, consumpId, groupId);
-                
+
                     result.Add(consump);
                 }
 
@@ -225,10 +230,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<bool> UpdateProductMaterialsConsumptionService(int productId, ICollection<ProductMaterialsConsumptionInput> model)
+        public async Task<bool> UpdateProductMaterialsConsumption(int productId, ICollection<ProductMaterialsConsumptionInput> model)
         {
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
-            if (product == null) 
+            if (product == null)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             var materials = await _stockDbContext.ProductMaterialsConsumption
@@ -238,7 +243,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var newMaterials = model.Where(x => x.ProductMaterialsConsumptionId == 0).AsQueryable()
                 .ProjectTo<ProductMaterialsConsumption>(_mapper.ConfigurationProvider).ToArray();
 
-            foreach(var m in materials)
+            foreach (var m in materials)
             {
                 var s = model.FirstOrDefault(x => x.ProductMaterialsConsumptionId == m.ProductMaterialsConsumptionId);
                 if (s != null)
@@ -255,7 +260,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
-        public async Task<bool> UpdateProductMaterialsConsumptionService(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
+        public async Task<bool> UpdateProductMaterialsConsumption(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
         {
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
@@ -295,16 +300,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var data = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping, null);
 
             var groups = (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductMaterialsConsumptionGroupCode, v => v.ProductMaterialsConsumptionGroupId);
-            
+
             var products = (await _stockDbContext.Product.AsNoTracking().ToListAsync())
-                .GroupBy(x=>x.ProductCode).Select(x=>x.First())
+                .GroupBy(x => x.ProductCode).Select(x => x.First())
                 .ToDictionary(k => k.ProductCode, v => v.ProductId);
             var departments = (await _organizationHelperService.GetAllDepartmentSimples())
                 .GroupBy(x => x.DepartmentCode).Select(x => x.First())
                 .ToDictionary(k => k.DepartmentCode, v => v.DepartmentId);
 
             var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                .Where(x=>x.ProductId == productId && x.ProductMaterialsConsumptionGroupId == materialsConsumptionGroupId)
+                .Where(x => x.ProductId == productId && x.ProductMaterialsConsumptionGroupId == materialsConsumptionGroupId)
                 .ToListAsync()).Select(k => k.MaterialsConsumptionId);
 
             foreach (var row in data)
@@ -327,7 +332,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
-        public async Task<long> AddProductMaterialsConsumptionService(int productId, ProductMaterialsConsumptionInput model)
+        public async Task<long> AddProductMaterialsConsumption(int productId, ProductMaterialsConsumptionInput model)
         {
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
@@ -341,16 +346,28 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return entity.ProductMaterialsConsumptionId;
         }
 
-        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int[] productIds)
+        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int[] productIds)
         {
             var data = new List<ProductMaterialsConsumptionOutput>();
             for (int i = 0; i < productIds.Length; i++)
             {
-                var task = GetProductMaterialsConsumptionService(productIds[i]);
+                var task = GetProductMaterialsConsumption(productIds[i]);
                 data.AddRange(await task);
             }
 
             return data;
+        }
+
+        public async Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumption(int productId)
+        {
+            var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
+            if (product == null)
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            var materialsConsum = await GetProductMaterialsConsumption(productId);
+            var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsum, _organizationHelperService, _manufacturingHelperService);
+
+            return await exportFacade.Export(product.ProductCode);
         }
     }
 }
