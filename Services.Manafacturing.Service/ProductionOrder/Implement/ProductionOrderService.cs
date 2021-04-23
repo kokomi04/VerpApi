@@ -125,7 +125,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
             }
 
-            if (size >= 0)
+            if (size > 0)
             {
                 sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
