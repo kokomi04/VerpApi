@@ -94,12 +94,13 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productionMaterialsRequirementId}/reject")]
         public async Task<bool> RejectInventoryRequirement([FromRoute] long productionMaterialsRequirementId)
         {
-            return await _requirementService.ConfirmInventoryRequirement(productionMaterialsRequirementId, EnumProductionMaterialsRequirementStatus.Rejected);
+            await _requirementService.ConfirmInventoryRequirement(productionMaterialsRequirementId, EnumProductionMaterialsRequirementStatus.Rejected);
+            return true;
         }
 
         [HttpPut]
         [Route("{productionMaterialsRequirementId}/accpet")]
-        public async Task<bool> AcceptInventoryRequirement([FromRoute] long productionMaterialsRequirementId)
+        public async Task<long> AcceptInventoryRequirement([FromRoute] long productionMaterialsRequirementId)
         {
             return await _requirementService.ConfirmInventoryRequirement(productionMaterialsRequirementId, EnumProductionMaterialsRequirementStatus.Accepted);
         }
