@@ -35,6 +35,7 @@ using System.Text.Json;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Middleware;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using static IdentityModel.OidcConstants;
@@ -91,6 +92,7 @@ namespace VErp.Infrastructure.ApiCore
 
             services.AddControllers(options =>
             {
+                options.ModelBinderProviders.Insert(0, new CustomModelBinderProvider());
                 options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
                 options.AllowEmptyInputInBodyModelBinding = true;
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));

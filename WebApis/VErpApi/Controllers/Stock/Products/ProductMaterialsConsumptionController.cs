@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Products;
@@ -69,14 +70,14 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpPost]
         [Route("{productId}/materialsConsumption/importFromMapping")]
-        public async Task<bool> ImportMaterialsConsumptionFromMapping([FromRoute] int productId, [FromForm] string mapping, [FromForm] IFormFile file, [FromQuery] int materialsConsumptionGroupId)
+        public async Task<bool> ImportMaterialsConsumptionFromMapping([FromRoute] int productId, [FromFormString] ImportExcelMapping mapping, [FromForm] IFormFile file, [FromQuery] int materialsConsumptionGroupId)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
-            return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMapping(productId, JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), materialsConsumptionGroupId).ConfigureAwait(true);
+            return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMapping(productId, mapping, file.OpenReadStream(), materialsConsumptionGroupId).ConfigureAwait(true);
         }
 
         [HttpPost]

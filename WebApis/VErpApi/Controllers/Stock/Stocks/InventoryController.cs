@@ -12,6 +12,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
@@ -298,13 +299,13 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<long> ImportFromMapping([FromForm] string mapping, [FromForm] string info, [FromForm] IFormFile file)
+        public async Task<long> ImportFromMapping([FromFormString] ImportExcelMapping mapping, [FromFormString] InventoryOpeningBalanceModel info, [FromForm] IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inventoryService.InventoryImport(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), JsonConvert.DeserializeObject<InventoryOpeningBalanceModel>(info)).ConfigureAwait(true);
+            return await _inventoryService.InventoryImport(mapping, file.OpenReadStream(), info).ConfigureAwait(true);
         }
 
 
@@ -317,13 +318,13 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("{inventoryTypeId}/ParseExcel")]
-        public IAsyncEnumerable<InventoryDetailRowValue> InputExcelParse([FromRoute] EnumInventoryType inventoryTypeId, [FromForm] string mapping, [FromForm] IFormFile file)
+        public IAsyncEnumerable<InventoryDetailRowValue> InputExcelParse([FromRoute] EnumInventoryType inventoryTypeId, [FromFormString] ImportExcelMapping mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return _inventoryService.ParseExcel(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), inventoryTypeId);
+            return _inventoryService.ParseExcel(mapping, file.OpenReadStream(), inventoryTypeId);
         }
 
     }

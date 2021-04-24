@@ -21,6 +21,7 @@ using VErp.Services.Master.Model.Category;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 
 namespace VErpApi.Controllers.System.Category
 {
@@ -105,13 +106,13 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpPost]
         [Route("{categoryId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] CategoryImportExelMapping mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<CategoryImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

@@ -11,6 +11,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
@@ -119,13 +120,13 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchasingRequestInputDetail> parseDetailsFromExcelMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        public IAsyncEnumerable<PurchasingRequestInputDetail> parseDetailsFromExcelMapping([FromFormString] SingleInvoicePurchasingRequestExcelMappingModel mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return _purchasingRequestService.ParseInvoiceDetails(JsonConvert.DeserializeObject<SingleInvoicePurchasingRequestExcelMappingModel>(mapping), file.OpenReadStream());
+            return _purchasingRequestService.ParseInvoiceDetails(mapping, file.OpenReadStream());
         }
 
         /// <summary>

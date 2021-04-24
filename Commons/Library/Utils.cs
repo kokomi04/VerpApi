@@ -171,12 +171,25 @@ namespace VErp.Commons.Library
         public static T JsonDeserialize<T>(this string obj)
         {
             if (string.IsNullOrWhiteSpace(obj)) return default(T);
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(obj);
+            return JsonConvert.DeserializeObject<T>(obj);
+        }
+
+        public static object JsonDeserialize(this string obj, Type type)
+        {
+            if (string.IsNullOrWhiteSpace(obj))
+            {
+                if (type.IsValueType)
+                {
+                    return Activator.CreateInstance(type);
+                }
+                return null;
+            }
+            return JsonConvert.DeserializeObject(obj, type);
         }
 
         public static long GetUnixUtc(this DateTime dateTime, int? timezoneOffset)
         {
-            dateTime = dateTime.AddMinutes(timezoneOffset?? 0);
+            dateTime = dateTime.AddMinutes(timezoneOffset ?? 0);
             return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
 
@@ -885,7 +898,7 @@ namespace VErp.Commons.Library
 
                             throw;
                         }
-                       
+
                     }
                     else
                         continue;
@@ -1062,7 +1075,7 @@ namespace VErp.Commons.Library
 
                     MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
                     MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, null);
+                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null });
 
                     fileMapping.RefCategory = new CategoryNameModel()
                     {

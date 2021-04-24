@@ -27,6 +27,7 @@ using Verp.Services.PurchaseOrder.Model;
 using VErp.Services.Stock.Model;
 using VErp.Services.Manafacturing.Model;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 
 namespace VErpApi.Controllers.System
 {
@@ -65,21 +66,16 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("{printConfigId}")]
-        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromForm] string data, [FromForm] IFormFile file)
+        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromFormString] PrintConfigModel data, [FromForm] IFormFile file)
         {
-            return await _printConfigService.UpdatePrintConfig(printConfigId, JsonConvert.DeserializeObject<PrintConfigModel>(data, new JsonSerializerSettings{ 
-                NullValueHandling = NullValueHandling.Ignore
-            }), file);
+            return await _printConfigService.UpdatePrintConfig(printConfigId, data, file);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<int> AddPrintConfig([FromForm] string data, [FromForm] IFormFile file)
+        public async Task<int> AddPrintConfig([FromFormString] PrintConfigModel data, [FromForm] IFormFile file)
         {
-            return await _printConfigService.AddPrintConfig(JsonConvert.DeserializeObject<PrintConfigModel>(data, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            }), file);
+            return await _printConfigService.AddPrintConfig(data, file);
         }
 
         [HttpDelete]
