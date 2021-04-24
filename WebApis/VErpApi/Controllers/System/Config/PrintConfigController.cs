@@ -117,6 +117,13 @@ namespace VErpApi.Controllers.System
         {
             return await _printConfigService.RollbackPrintConfig(printConfigId);
         }
-        
+
+        [HttpPost]
+        [Route("{printConfigId}/addPrintTemplate")]
+        public async Task<bool> AddPrintTemplate([FromRoute] int printConfigId, [FromForm] IFormFile file)
+        {
+            return await _printConfigService.AddPrintTemplate(printConfigId, file);
+        }
+
     }
 }
