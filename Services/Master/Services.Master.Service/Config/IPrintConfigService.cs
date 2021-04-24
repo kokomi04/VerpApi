@@ -20,7 +20,7 @@ namespace VErp.Services.Master.Service.Config
         Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, PrintTemplateInput templateModel);
         Task<IList<EntityField>> GetSuggestionField(int moduleTypeId);
         Task<IList<EntityField>> GetSuggestionField(Assembly assembly);
-        Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId);
+        Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId, bool isOrigin);
         Task<bool> RollbackPrintConfig(long printConfigId);
 
         Task<bool> AddPrintTemplate(int printConfigId, IFormFile file);

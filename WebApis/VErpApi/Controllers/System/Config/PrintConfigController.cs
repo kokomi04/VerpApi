@@ -64,16 +64,16 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("{printConfigId}")]
-        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromBody] PrintConfigModel data,[FromForm] IFormFile file)
+        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromForm] string data, [FromForm] IFormFile file)
         {
-            return await _printConfigService.UpdatePrintConfig(printConfigId, data, file);
+            return await _printConfigService.UpdatePrintConfig(printConfigId, JsonConvert.DeserializeObject<PrintConfigModel>(data), file);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<int> AddPrintConfig([FromBody] PrintConfigModel data, [FromForm] IFormFile file)
+        public async Task<int> AddPrintConfig([FromForm] string data, [FromForm] IFormFile file)
         {
-            return await _printConfigService.AddPrintConfig(data, file);
+            return await _printConfigService.AddPrintConfig(JsonConvert.DeserializeObject<PrintConfigModel>(data), file);
         }
 
         [HttpDelete]
@@ -85,9 +85,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{printConfigId}/getPrintTemplate")]
-        public async Task<IActionResult> GetPrintConfigTemplateFile([FromRoute] int printConfigId)
+        public async Task<IActionResult> GetPrintConfigTemplateFile([FromRoute] int printConfigId, [FromQuery] bool isOrigin)
         {
-            var r = await _printConfigService.GetPrintConfigTemplateFile(printConfigId);
+            var r = await _printConfigService.GetPrintConfigTemplateFile(printConfigId, isOrigin);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }

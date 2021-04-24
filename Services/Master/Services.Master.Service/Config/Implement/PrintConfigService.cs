@@ -436,13 +436,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             return (GeneralCode.Success, FileExtensionTypes[ext]);
         }
 
-        public async Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId)
+        public async Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId, bool isOrigin)
         {
             var printConfigExtract = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
                 .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
 
+            printConfigExtract.PrintConfigDetailModel = printConfigExtract.PrintConfigDetailModel.Where(x => x.IsOrigin = isOrigin).ToList();
             var printConfig = _mapper.Map<PrintConfigModel>(printConfigExtract);
 
             if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
