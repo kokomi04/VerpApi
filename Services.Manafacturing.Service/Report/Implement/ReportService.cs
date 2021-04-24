@@ -147,9 +147,6 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 {
                     var productionStepId = productionStepProgressModel.Key;
 
-                    if (!data.ContainsKey(productionStepId)) continue;
-                    var stepData = data[productionStepId];
-
                     foreach (var stepProductionOrderProgress in productionStepProgressModel.GroupBy(s => s.ProductionOrderId))
                     {
                         var productionOrderId = stepProductionOrderProgress.Key;
@@ -160,7 +157,10 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             ProductIds = productMap.ContainsKey(productionOrderId) ? productMap[productionOrderId] : Array.Empty<int>()
                         };
 
-                        stepProductionProgressModel.InputData = stepData
+                        if (data.ContainsKey(productionStepId))
+                        {
+                            var stepData = data[productionStepId];
+                            stepProductionProgressModel.InputData = stepData
                             .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
                             .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
                             .Select(g => new StepProgressDataModel
@@ -170,50 +170,50 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - (d.ExportOutsourceQuantity ?? d.OutsourceQuantity.GetValueOrDefault()))
                             }).ToList();
 
-                        stepProductionProgressModel.OutputData = stepData
-                            .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
-                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
-                            .Select(g => new StepProgressDataModel
+                            stepProductionProgressModel.OutputData = stepData
+                                .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                                .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                                .Select(g => new StepProgressDataModel
+                                {
+                                    ObjectId = g.Key.ObjectId,
+                                    ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                    TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - d.OutsourceQuantity.GetValueOrDefault())
+                                }).ToList();
+
+                            var stepInputHandovers = handovers
+                                .Where(h => h.ProductionOrderId == productionOrderId && h.ToProductionStepId == productionStepId)
+                                .ToList();
+
+                            var stepOutputHandovers = handovers
+                                .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
+                                .ToList();
+
+                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
+                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
+
+                            foreach (var input in stepProductionProgressModel.InputData)
                             {
-                                ObjectId = g.Key.ObjectId,
-                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
-                                TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - d.OutsourceQuantity.GetValueOrDefault())
-                            }).ToList();
-
-                        var stepInputHandovers = handovers
-                            .Where(h => h.ProductionOrderId == productionOrderId && h.ToProductionStepId == productionStepId)
-                            .ToList();
-
-                        var stepOutputHandovers = handovers
-                            .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
-                            .ToList();
-
-                        var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
-                        var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
-
-                        foreach (var input in stepProductionProgressModel.InputData)
-                        {
-                            var receivedQuantity = stepInputHandovers.Where(h => h.ObjectId == input.ObjectId && h.ObjectTypeId == (int)input.ObjectTypeId).Sum(h => h.HandoverQuantity);
-                            if (input.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
-                            {
-                                receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                var receivedQuantity = stepInputHandovers.Where(h => h.ObjectId == input.ObjectId && h.ObjectTypeId == (int)input.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                                if (input.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                                {
+                                    receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                }
+                                input.ReceivedQuantity = receivedQuantity;
                             }
-                            input.ReceivedQuantity = receivedQuantity;
-                        }
 
-                        foreach (var output in stepProductionProgressModel.OutputData)
-                        {
-                            var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
-                            if (output.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                            foreach (var output in stepProductionProgressModel.OutputData)
                             {
-                                receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                                if (output.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                                {
+                                    receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                }
+                                output.ReceivedQuantity = receivedQuantity;
+
+                                if (output.TotalQuantity > 0 && output.ReceivedQuantity * 100 / output.TotalQuantity > stepProductionProgressModel.ProgressPercent)
+                                    stepProductionProgressModel.ProgressPercent = Math.Round(output.ReceivedQuantity * 100 / output.TotalQuantity, 2);
                             }
-                            output.ReceivedQuantity = receivedQuantity;
-
-                            if (output.TotalQuantity > 0 && output.ReceivedQuantity * 100 / output.TotalQuantity > stepProductionProgressModel.ProgressPercent)
-                                stepProductionProgressModel.ProgressPercent = Math.Round(output.ReceivedQuantity * 100 / output.TotalQuantity, 2);
                         }
-
                         stepProgressModel.StepProgress.Add(stepProductionProgressModel);
                     }
                 }
@@ -279,7 +279,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         })
                         .ToList()
                         .GroupBy(d => d.ProductionStepId)
-                        .ToDictionary(g => g.Key, g => g.ToList()); 
+                        .ToDictionary(g => g.Key, g => g.ToList());
 
             var handovers = _manufacturingDBContext.ProductionHandover
                 .Where(h => productionOrderIds.Contains(h.ProductionOrderId))
@@ -316,16 +316,14 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 foreach (var productionStepProgressModel in stepProgress.GroupBy(s => s.ProductionStepId))
                 {
                     var productionStepId = productionStepProgressModel.Key;
-                    if(!data.ContainsKey(productionStepId)) continue;
-
-                    var stepData = data[productionStepId];
-                    
 
                     foreach (var stepProductionOrderProgress in productionStepProgressModel.GroupBy(s => s.ProductionOrderId))
                     {
                         var productionOrderId = stepProductionOrderProgress.Key;
-
-                        var inputData = stepData
+                        if (data.ContainsKey(productionStepId))
+                        {
+                            var stepData = data[productionStepId];
+                            var inputData = stepData
                             .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
                             .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
                             .Select(g => new StepProgressDataModel
@@ -335,60 +333,61 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - (d.ExportOutsourceQuantity ?? d.OutsourceQuantity.GetValueOrDefault()))
                             }).ToList();
 
-                        var outputData = stepData
-                            .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
-                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
-                            .Select(g => new StepProgressDataModel
+                            var outputData = stepData
+                                .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                                .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                                .Select(g => new StepProgressDataModel
+                                {
+                                    ObjectId = g.Key.ObjectId,
+                                    ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                    TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - d.OutsourceQuantity.GetValueOrDefault())
+                                }).ToList();
+
+                            var stepInputHandovers = handovers
+                                .Where(h => h.ProductionOrderId == productionOrderId && h.ToProductionStepId == productionStepId)
+                                .ToList();
+
+                            var stepOutputHandovers = handovers
+                                .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
+                                .ToList();
+
+                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
+                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
+
+                            foreach (var input in inputData)
                             {
-                                ObjectId = g.Key.ObjectId,
-                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
-                                TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - d.OutsourceQuantity.GetValueOrDefault())
-                            }).ToList();
-
-                        var stepInputHandovers = handovers
-                            .Where(h => h.ProductionOrderId == productionOrderId && h.ToProductionStepId == productionStepId)
-                            .ToList();
-
-                        var stepOutputHandovers = handovers
-                            .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
-                            .ToList();
-
-                        var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
-                        var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
-
-                        foreach (var input in inputData)
-                        {
-                            var receivedQuantity = stepInputHandovers.Where(h => h.ObjectId == input.ObjectId && h.ObjectTypeId == (int)input.ObjectTypeId).Sum(h => h.HandoverQuantity);
-                            if (input.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
-                            {
-                                receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                var receivedQuantity = stepInputHandovers.Where(h => h.ObjectId == input.ObjectId && h.ObjectTypeId == (int)input.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                                if (input.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                                {
+                                    receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                }
+                                input.ReceivedQuantity = receivedQuantity;
                             }
-                            input.ReceivedQuantity = receivedQuantity;
-                        }
 
-                        decimal progressPercent = 0;
+                            decimal progressPercent = 0;
 
-                        foreach (var output in outputData)
-                        {
-                            var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
-                            if (output.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                            foreach (var output in outputData)
                             {
-                                receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
+                                if (output.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                                {
+                                    receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity.GetValueOrDefault());
+                                }
+                                output.ReceivedQuantity = receivedQuantity;
+
+                                if (output.TotalQuantity > 0 && output.ReceivedQuantity * 100 / output.TotalQuantity > progressPercent)
+                                    progressPercent = Math.Round(output.ReceivedQuantity * 100 / output.TotalQuantity, 2);
                             }
-                            output.ReceivedQuantity = receivedQuantity;
 
-                            if (output.TotalQuantity > 0 && output.ReceivedQuantity * 100 / output.TotalQuantity > progressPercent)
-                                progressPercent = Math.Round(output.ReceivedQuantity * 100 / output.TotalQuantity, 2);
-                        }
-
-                        foreach (var item in stepProductionOrderProgress)
-                        {
-                            report.ProductionOrderStepProgress[stepProgress.Key][item.ProductionOrderId].Add(new ProductionOrderStepProgressModel
+                            foreach (var item in stepProductionOrderProgress)
                             {
-                                InputData = inputData,
-                                OutputData = outputData,
-                                ProgressPercent = progressPercent
-                            });
+                                report.ProductionOrderStepProgress[stepProgress.Key][item.ProductionOrderId].Add(new ProductionOrderStepProgressModel
+                                {
+                                    InputData = inputData,
+                                    OutputData = outputData,
+                                    ProgressPercent = progressPercent
+                                });
+                            }
                         }
                     }
                 }
