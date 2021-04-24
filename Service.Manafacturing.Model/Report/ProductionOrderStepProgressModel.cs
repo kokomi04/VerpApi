@@ -14,14 +14,14 @@ namespace VErp.Services.Manafacturing.Model.Report
     public class ProductionOrderStepModel 
     {
         public IList<StepInfoModel> Steps { get; set; }
-        public IList<ProductionScheduleInfoModel> ProductionSchedules { get; set; }
+        public IList<ProductionOrderInfoModel> ProductionOrderDetails { get; set; }
 
         public IDictionary<int, Dictionary<long, List<ProductionOrderStepProgressModel>>> ProductionOrderStepProgress { get; set; }
 
         public ProductionOrderStepModel()
         {
             Steps = new List<StepInfoModel>();
-            ProductionSchedules = new List<ProductionScheduleInfoModel>();
+            ProductionOrderDetails = new List<ProductionOrderInfoModel>();
             ProductionOrderStepProgress = new Dictionary<int, Dictionary<long, List<ProductionOrderStepProgressModel>>>();
         }
 
@@ -30,12 +30,12 @@ namespace VErp.Services.Manafacturing.Model.Report
     public class ProductionOrderStepProgressModel
     {
         public decimal ProgressPercent { get; set; }
-        public IList<StepScheduleProgressDataModel> InputData { get; set; }
-        public IList<StepScheduleProgressDataModel> OutputData { get; set; }
+        public IList<StepProgressDataModel> InputData { get; set; }
+        public IList<StepProgressDataModel> OutputData { get; set; }
         public ProductionOrderStepProgressModel()
         {
-            InputData = new List<StepScheduleProgressDataModel>();
-            OutputData = new List<StepScheduleProgressDataModel>();
+            InputData = new List<StepProgressDataModel>();
+            OutputData = new List<StepProgressDataModel>();
         }
     }
 
@@ -45,9 +45,9 @@ namespace VErp.Services.Manafacturing.Model.Report
         public string StepName { get; set; }
     }
 
-    public class ProductionScheduleInfoModel 
+    public class ProductionOrderInfoModel : IMapFrom<ProductionOrderListEntity>
     {
-        public long ProductionScheduleId { get; set; }
+        public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
@@ -56,6 +56,13 @@ namespace VErp.Services.Manafacturing.Model.Report
         public string ProductTitle { get; set; }
         public int UnitId { get; set; }
         public string UnitName { get; set; }
-        public decimal ProductionScheduleQuantity { get; set; }
+        public decimal Quantity { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<ProductionOrderListEntity, ProductionOrderInfoModel>()
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
+                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()));
+        }
     }
 }
