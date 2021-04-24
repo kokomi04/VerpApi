@@ -367,26 +367,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         private async Task<long> AddInventoryRequirement(ProductionMaterialsRequirementModel requirement)
         {
-            
-            var inventoryRequirementModel = new InventoryRequirementSimpleModel
+            try
             {
-                ProductionOrderId = requirement.ProductionOrderId,
-                InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
-                InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
-                Date = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset),
-                Content = requirement.RequirementContent,
-
-                InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel
+                var inventoryRequirementModel = new InventoryRequirementSimpleModel
                 {
-                    DepartmentId = x.DepartmentId,
-                    ProductId = x.ProductId,
-                    PrimaryQuantity = x.Quantity,
-                    ProductionStepId = x.ProductionStepId,
-                    ProductionOrderCode = requirement.ProductionOrderCode
-                }).ToList()
-            };
+                    ProductionOrderId = requirement.ProductionOrderId,
+                    InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
+                    InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
+                    Date = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset),
+                    Content = requirement.RequirementContent,
+                    InventoryRequirementCode = requirement.RequirementCode,
 
-            return await _inventoryRequirementHelperService.AddInventoryRequirement(EnumInventoryType.Output, inventoryRequirementModel);
+                    InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel
+                    {
+                        DepartmentId = x.DepartmentId,
+                        ProductId = x.ProductId,
+                        PrimaryQuantity = x.Quantity,
+                        ProductionStepId = x.ProductionStepId,
+                        ProductionOrderCode = requirement.ProductionOrderCode
+                    }).ToList()
+                };
+
+                return await _inventoryRequirementHelperService.AddInventoryRequirement(EnumInventoryType.Output, inventoryRequirementModel);
+            }
+            catch (Exception ex)
+            {
+                throw new BadRequestException(GeneralCode.InternalError, $"Yêu cầu xuất kho - {ex.Message}");
+            }
         }
     }
 }
