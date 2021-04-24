@@ -531,7 +531,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     RefTableCode = f.RefTableCode,
                     RefTableField = f.RefTableField,
                     RefTableTitle = f.RefTableTitle,
-                    IsRequire = af.IsRequire
+                    IsRequire = af.IsRequire,
+                    decimalPlace = f.DecimalPlace,
 
                 }).ToListAsync();
 
