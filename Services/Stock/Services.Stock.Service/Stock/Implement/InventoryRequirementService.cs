@@ -122,10 +122,28 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 })
                 .ToDictionary(g => g.InventoryRequirementDetailId, g => g.PrimaryQuantity);
 
+            var inventoryMap = _stockDBContext.InventoryDetail
+                .Include(id => id.Inventory)
+                .Where(id => id.InventoryRequirementDetailId.HasValue && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
+                .Select(id => new
+                {
+                    id.InventoryRequirementDetailId,
+                    id.Inventory.InventoryCode,
+                    id.Inventory.InventoryId
+                })
+                .ToList()
+                .GroupBy(id => id.InventoryRequirementDetailId)
+                .ToDictionary(g => g.Key, g => g.Select(id => new InventorySimpleInfo
+                {
+                    InventoryId = id.InventoryId,
+                    InventoryCode = id.InventoryCode
+                }).ToList());
+
             foreach (var inventoryRequirementDetail in model.InventoryRequirementDetail)
             {
                 if (inventoryDetailQuantitys.ContainsKey(inventoryRequirementDetail.InventoryRequirementDetailId))
                     inventoryRequirementDetail.InventoryQuantity = inventoryDetailQuantitys[inventoryRequirementDetail.InventoryRequirementDetailId];
+                if (inventoryMap.ContainsKey(inventoryRequirementDetail.InventoryRequirementDetailId)) inventoryRequirementDetail.InventoryInfo = inventoryMap[inventoryRequirementDetail.InventoryRequirementDetailId];
             }
 
             var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
