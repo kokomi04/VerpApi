@@ -254,7 +254,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, PrintTemplateInput templateModel)
+        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, NonCamelCaseDictionary templateModel)
         {
             var printConfigExtract = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
@@ -443,7 +443,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
 
-            printConfigExtract.PrintConfigDetailModel = printConfigExtract.PrintConfigDetailModel.Where(x => x.IsOrigin = isOrigin).ToList();
+            printConfigExtract.PrintConfigDetailModel = printConfigExtract.PrintConfigDetailModel.Where(x => x.IsOrigin == isOrigin).ToList();
             var printConfig = _mapper.Map<PrintConfigModel>(printConfigExtract);
 
             if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
