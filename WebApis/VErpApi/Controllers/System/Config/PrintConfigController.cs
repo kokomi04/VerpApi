@@ -26,6 +26,7 @@ using System.Reflection;
 using Verp.Services.PurchaseOrder.Model;
 using VErp.Services.Stock.Model;
 using VErp.Services.Manafacturing.Model;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.System
 {
@@ -66,14 +67,19 @@ namespace VErpApi.Controllers.System
         [Route("{printConfigId}")]
         public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromForm] string data, [FromForm] IFormFile file)
         {
-            return await _printConfigService.UpdatePrintConfig(printConfigId, JsonConvert.DeserializeObject<PrintConfigModel>(data), file);
+            return await _printConfigService.UpdatePrintConfig(printConfigId, JsonConvert.DeserializeObject<PrintConfigModel>(data, new JsonSerializerSettings{ 
+                NullValueHandling = NullValueHandling.Ignore
+            }), file);
         }
 
         [HttpPost]
         [Route("")]
         public async Task<int> AddPrintConfig([FromForm] string data, [FromForm] IFormFile file)
         {
-            return await _printConfigService.AddPrintConfig(JsonConvert.DeserializeObject<PrintConfigModel>(data), file);
+            return await _printConfigService.AddPrintConfig(JsonConvert.DeserializeObject<PrintConfigModel>(data, new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            }), file);
         }
 
         [HttpDelete]
@@ -94,7 +100,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("{printConfigId}/generatePrintTemplate")]
-        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, PrintTemplateInput templateModel)
+        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromBody] NonCamelCaseDictionary templateModel)
         {
             var r = await _printConfigService.GeneratePrintTemplate(printConfigId, templateModel);
 

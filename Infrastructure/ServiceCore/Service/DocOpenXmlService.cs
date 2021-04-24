@@ -31,11 +31,13 @@ namespace VErp.Infrastructure.ServiceCore.Service
     {
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
+        private readonly ICurrentContextService _currentContextService;
 
-        public DocOpenXmlService(ILogger<DocOpenXmlService> logger, IOptionsSnapshot<AppSetting> appSetting)
+        public DocOpenXmlService(ILogger<DocOpenXmlService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContextService)
         {
             _logger = logger;
             _appSetting = appSetting.Value;
+            _currentContextService = currentContextService;
         }
 
         public async Task<(string filePath, string contentType, string fileName)> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext)
@@ -97,7 +99,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                                             if (field.StartsWith(RegexDocExpression.StartWithFuntion))
                                             {
                                                 var sqlParam = new SqlParameter("@data", (new[] { data }).JsonSerialize());
-                                                var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
+                                                var timeZone = new SqlParameter("@timeZone", Math.Abs(_currentContextService.TimeZoneOffset.GetValueOrDefault() * 60));
+                                                var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
                                                 rs = tbl.Rows[0][0].ToString();
                                             }
                                             else
@@ -131,7 +134,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         if (field.StartsWith(RegexDocExpression.StartWithFuntion))
                         {
                             var sqlParam = new SqlParameter("@data", jsonString);
-                            var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
+                            var timeZone = new SqlParameter("@timeZone", Math.Abs(_currentContextService.TimeZoneOffset.GetValueOrDefault() * 60));
+                            var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
                             rs = tbl.Rows[0][0].ToString();
                         }
                         else
