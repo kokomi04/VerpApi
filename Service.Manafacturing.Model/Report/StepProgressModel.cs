@@ -12,10 +12,10 @@ namespace VErp.Services.Manafacturing.Model.Report
     {
         public int StepId { get; set; }
 
-        public IList<StepProductionOrderProgressModel> StepScheduleProgress { get; set; }
+        public IList<StepProductionOrderProgressModel> StepProgress { get; set; }
         public StepProgressModel()
         {
-            StepScheduleProgress = new List<StepProductionOrderProgressModel>();
+            StepProgress = new List<StepProductionOrderProgressModel>();
         }
 
     }
@@ -26,17 +26,17 @@ namespace VErp.Services.Manafacturing.Model.Report
         public int[] ProductIds { get; set; }
 
         public decimal ProgressPercent { get; set; }
-        public IList<StepScheduleProgressDataModel> InputData { get; set; }
-        public IList<StepScheduleProgressDataModel> OutputData { get; set; }
+        public IList<StepProgressDataModel> InputData { get; set; }
+        public IList<StepProgressDataModel> OutputData { get; set; }
         public StepProductionOrderProgressModel()
         {
-            InputData = new List<StepScheduleProgressDataModel>();
-            OutputData = new List<StepScheduleProgressDataModel>();
+            InputData = new List<StepProgressDataModel>();
+            OutputData = new List<StepProgressDataModel>();
         }
 
     }
 
-    public class StepScheduleProgressDataModel
+    public class StepProgressDataModel
     {
         public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public long ObjectId { get; set; }
