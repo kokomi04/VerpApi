@@ -22,5 +22,7 @@ namespace VErp.Services.Master.Service.Config
         Task<IList<EntityField>> GetSuggestionField(Assembly assembly);
         Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId);
         Task<bool> RollbackPrintConfig(long printConfigId);
+
+        Task<bool> AddPrintTemplate(int printConfigId, IFormFile file);
     }
 }
