@@ -25,5 +25,12 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         {
             return await _stepService.GetStepByArrayId(arrayId);
         }
+
+        [HttpGet]
+        [Route("steps")]
+        public async Task<IList<StepModel>> GetSteps()
+        {
+            return (await _stepService.GetListStep("", -1, -1)).List;
+        }
     }
 }

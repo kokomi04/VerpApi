@@ -19,7 +19,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 7;
+        private int maxColumnIndex = 10;
 
         private IEnumerable<ProductMaterialsConsumptionOutput> materialsConsumps;
 
@@ -85,13 +85,19 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
             sheet.EnsureCell(fRow, 3).SetCellValue($"ĐVT");
 
-            sheet.EnsureCell(fRow, 4).SetCellValue($"Quy cách");
+            sheet.EnsureCell(fRow, 4).SetCellValue($"Loại mã NVL");
 
-            sheet.EnsureCell(fRow, 5).SetCellValue($"Số lượng");
+            sheet.EnsureCell(fRow, 5).SetCellValue($"Quy cách NVL");
 
-            sheet.EnsureCell(fRow, 6).SetCellValue($"Công đoạn");
+            sheet.EnsureCell(fRow, 6).SetCellValue($"Danh mục NVL");
 
-            sheet.EnsureCell(fRow, 7).SetCellValue($"Bộ phận");
+            sheet.EnsureCell(fRow, 7).SetCellValue($"Số lượng");
+
+            sheet.EnsureCell(fRow, 8).SetCellValue($"Công đoạn");
+
+            sheet.EnsureCell(fRow, 9).SetCellValue($"Mã bộ phận");
+
+            sheet.EnsureCell(fRow, 10).SetCellValue($"Bộ phận");
 
 
 
@@ -119,10 +125,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             var stepInfos = (await _manufacturingHelperService.GetStepByArrayId(materialsConsumps.Select(x => x.StepId.GetValueOrDefault()).ToArray()))
                 .ToDictionary(k => k.StepId, v => v.StepName);
             var departmentInfos = (await _organizationHelperService.GetDepartmentSimples(materialsConsumps.Select(x => x.DepartmentId.GetValueOrDefault()).ToArray()))
-                .ToDictionary(k => k.DepartmentId, v => v.DepartmentName); ;
+                .ToDictionary(k => k.DepartmentId, v => new { v.DepartmentCode , v.DepartmentName}); ;
 
             var productInfos = (await (
                 from p in _stockDbContext.Product
+                join t in _stockDbContext.ProductType on p.ProductTypeId equals t.ProductTypeId into lt
+                from t in lt.DefaultIfEmpty()
+                join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId into lc
+                from c in lc.DefaultIfEmpty()
                 join d in _stockDbContext.ProductExtraInfo on p.ProductId equals d.ProductId
                 join u in _stockDbContext.ProductUnitConversion.Where(pu => pu.IsDefault) on p.ProductId equals u.ProductId
                 select new
@@ -131,7 +141,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     p.ProductCode,
                     p.ProductName,
                     u.ProductUnitConversionName,
-                    d.Specification
+                    d.Specification,
+                    c.ProductCateName,
+                    t.ProductTypeName
                 }).ToListAsync()
                 ).GroupBy(p => p.ProductId)
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
@@ -148,20 +160,26 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 {
                     productInfos.TryGetValue(m.MaterialsConsumptionId, out var productInfo);
 
-                    if (productInfo != null)
+                        if (productInfo != null)
                     {
                         sheet.EnsureCell(currentRow, 1, styleText).SetCellValue(productInfo.ProductCode);
                         sheet.EnsureCell(currentRow, 2, styleText).SetCellValue(productInfo.ProductName);
                         sheet.EnsureCell(currentRow, 3, styleText).SetCellValue(productInfo.ProductUnitConversionName);
-                        sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(productInfo.Specification);
+                        sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(productInfo.ProductTypeName);
+                        sheet.EnsureCell(currentRow, 5, styleText).SetCellValue(productInfo.Specification);
+                        sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(productInfo.ProductCateName);
                     }
-                    sheet.EnsureCell(currentRow, 5, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity + m.TotalQuantityInheritance));
+                    sheet.EnsureCell(currentRow, 7, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity + m.TotalQuantityInheritance));
 
                     if (m.StepId.HasValue && stepInfos.ContainsKey((int)m.StepId))
-                        sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(stepInfos[(int)m.StepId]);
+                        sheet.EnsureCell(currentRow, 8, styleText).SetCellValue(stepInfos[(int)m.StepId]);
 
                     if (m.DepartmentId.HasValue && departmentInfos.ContainsKey((int)m.DepartmentId))
-                        sheet.EnsureCell(currentRow, 7, styleText).SetCellValue(departmentInfos[(int)m.DepartmentId]);
+                    {
+                        var department = departmentInfos[(int)m.DepartmentId];
+                        sheet.EnsureCell(currentRow, 9, styleText).SetCellValue(department.DepartmentCode);
+                        sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(department.DepartmentName);
+                    }
 
                     currentRow++;
                 }
