@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     public interface IManufacturingHelperService
     {
         Task<IList<StepSimpleInfo>> GetStepByArrayId(int[] arrayId);
+        Task<IList<StepSimpleInfo>> GetSteps();
     }
     public class ManufacturingHelperService: IManufacturingHelperService
     {
@@ -32,6 +33,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<StepSimpleInfo>> GetStepByArrayId(int[] arrayId)
         {
             return await _httpCrossService.Post<IList<StepSimpleInfo>>($"api/internal/InternalManufacturing/steps/array", arrayId);
+        }
+
+        public async Task<IList<StepSimpleInfo>> GetSteps()
+        {
+            return await _httpCrossService.Get<IList<StepSimpleInfo>>($"api/internal/InternalManufacturing/steps");
         }
     }
 }
