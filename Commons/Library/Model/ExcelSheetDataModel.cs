@@ -8,6 +8,6 @@ namespace VErp.Commons.Library.Model
     public class ExcelSheetDataModel
     {
         public string SheetName { get; set; }
-        public NonCamelCaseDictionary[] Rows { get; set; }
+        public NonCamelCaseDictionary<string>[] Rows { get; set; }
     }
 }

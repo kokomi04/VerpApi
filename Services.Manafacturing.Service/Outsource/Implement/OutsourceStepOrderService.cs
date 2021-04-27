@@ -224,16 +224,31 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ProjectTo<OutsourceStepOrderDetailOutput>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
+            var lsLinkDataId = details.Select(x => x.ProductionStepLinkDataId).ToList();
+            lsLinkDataId.AddRange(materials.Select(x => x.ProductionStepLinkDataId.GetValueOrDefault()));
+
             var lsProductInfo = await _productHelperService.GetListProducts(materials.Select(x => (int)x.ProductId).ToList());
-            var lsOutsourceStepRequestData = await _outsourceStepRequestService.GetOutsourceStepRequestData(details.Select(x => x.ProductionStepLinkDataId).ToArray());
+            var lsOutsourceStepRequestData = await _outsourceStepRequestService.GetOutsourceStepRequestData(lsLinkDataId.Where(x => x > 0).ToArray());
 
             foreach (var m in materials)
             {
                 var productInfo = lsProductInfo.FirstOrDefault(x => x.ProductId == m.ProductId);
+                var data = lsOutsourceStepRequestData.FirstOrDefault(x => x.ProductionStepLinkDataId == m.ProductionStepLinkDataId);
                 if (productInfo != null)
                 {
                     m.ProductTitle = $"{productInfo.ProductCode}/ {productInfo.ProductName}";
                     m.UnitId = productInfo.UnitId;
+                }
+
+                if (data != null)
+                {
+                    m.OutsourceRequestCode = data.OutsourceStepRequestCode;
+                    m.QuantityRequirement = data.OutsourceStepRequestDataQuantity;
+                }
+                else
+                {
+                    var request = lsOutsourceStepRequestData.FirstOrDefault(x => x.OutsourceStepRequestId == m.OutsourceRequestId);
+                    m.OutsourceRequestCode = request != null ? request.OutsourceStepRequestCode : string.Empty;
                 }
             }
 

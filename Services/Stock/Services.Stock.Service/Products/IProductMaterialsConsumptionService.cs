@@ -10,14 +10,15 @@ namespace VErp.Services.Stock.Service.Products
 {
     public interface IProductMaterialsConsumptionService
     {
-        Task<bool> UpdateProductMaterialsConsumptionService(int productId, ICollection<ProductMaterialsConsumptionInput> model);
-        Task<bool> UpdateProductMaterialsConsumptionService(int productId, long ProductMaterialsConsumptionId,  ProductMaterialsConsumptionInput model);
-        Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int productId);
-        Task<long> AddProductMaterialsConsumptionService(int productId, ProductMaterialsConsumptionInput model);
+        Task<bool> UpdateProductMaterialsConsumption(int productId, ICollection<ProductMaterialsConsumptionInput> model);
+        Task<bool> UpdateProductMaterialsConsumption(int productId, long ProductMaterialsConsumptionId,  ProductMaterialsConsumptionInput model);
+        Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int productId);
+        Task<long> AddProductMaterialsConsumption(int productId, ProductMaterialsConsumptionInput model);
 
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping importExcelMapping, Stream stream, int materialsConsumptionGroupId);
 
-        Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumptionService(int[] productIds);
+        Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int[] productIds);
+        Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumption(int productId);
     }
 }

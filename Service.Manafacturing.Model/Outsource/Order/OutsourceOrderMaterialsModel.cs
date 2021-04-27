@@ -12,5 +12,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public long OutsourceOrderId { get; set; }
         public long ProductId { get; set; }
         public decimal Quantity { get; set; }
+        public long? OutsourceRequestId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
     }
 }

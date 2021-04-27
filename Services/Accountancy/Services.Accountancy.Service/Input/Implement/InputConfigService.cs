@@ -528,7 +528,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     RefTableCode = f.RefTableCode,
                     RefTableField = f.RefTableField,
                     RefTableTitle = f.RefTableTitle,
-                    IsRequire = af.IsRequire
+                    IsRequire = af.IsRequire,
+                    DecimalPlace = f.DecimalPlace,
 
                 }).ToListAsync();
 

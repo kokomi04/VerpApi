@@ -26,6 +26,8 @@ using System.Reflection;
 using Verp.Services.PurchaseOrder.Model;
 using VErp.Services.Stock.Model;
 using VErp.Services.Manafacturing.Model;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 
 namespace VErpApi.Controllers.System
 {
@@ -64,14 +66,14 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("{printConfigId}")]
-        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromBody] PrintConfigModel data,[FromForm] IFormFile file)
+        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromFormString] PrintConfigModel data, [FromForm] IFormFile file)
         {
             return await _printConfigService.UpdatePrintConfig(printConfigId, data, file);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<int> AddPrintConfig([FromBody] PrintConfigModel data, [FromForm] IFormFile file)
+        public async Task<int> AddPrintConfig([FromFormString] PrintConfigModel data, [FromForm] IFormFile file)
         {
             return await _printConfigService.AddPrintConfig(data, file);
         }
@@ -85,16 +87,16 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{printConfigId}/getPrintTemplate")]
-        public async Task<IActionResult> GetPrintConfigTemplateFile([FromRoute] int printConfigId)
+        public async Task<IActionResult> GetPrintConfigTemplateFile([FromRoute] int printConfigId, [FromQuery] bool isOrigin)
         {
-            var r = await _printConfigService.GetPrintConfigTemplateFile(printConfigId);
+            var r = await _printConfigService.GetPrintConfigTemplateFile(printConfigId, isOrigin);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }
 
         [HttpPost]
         [Route("{printConfigId}/generatePrintTemplate")]
-        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, PrintTemplateInput templateModel)
+        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromBody] NonCamelCaseDictionary templateModel)
         {
             var r = await _printConfigService.GeneratePrintTemplate(printConfigId, templateModel);
 
@@ -117,6 +119,13 @@ namespace VErpApi.Controllers.System
         {
             return await _printConfigService.RollbackPrintConfig(printConfigId);
         }
-        
+
+        [HttpPost]
+        [Route("{printConfigId}/addPrintTemplate")]
+        public async Task<bool> AddPrintTemplate([FromRoute] int printConfigId, [FromForm] IFormFile file)
+        {
+            return await _printConfigService.AddPrintTemplate(printConfigId, file);
+        }
+
     }
 }

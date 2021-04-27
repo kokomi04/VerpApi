@@ -133,6 +133,7 @@ namespace VErp.Commons.Library
             var fromRowIndex = fromRow - 1;
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
 
+
             for (int i = 0; i < hssfwb.NumberOfSheets; i++)
             {
 
@@ -154,7 +155,7 @@ namespace VErp.Commons.Library
                     }
                 }
 
-                var sheetData = new List<NonCamelCaseDictionary>();
+                var sheetData = new List<NonCamelCaseDictionary<string>>();
 
                 var columns = new HashSet<string>();
 
@@ -203,18 +204,22 @@ namespace VErp.Commons.Library
                 var continuousEmpty = 0;
                 for (int row = fromRowIndex; row < maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
-                    var rowData = new NonCamelCaseDictionary();
+
+                    var rowData = new NonCamelCaseDictionary<string>();
                     if (sheet.GetRow(row) == null) //null is when the row only contains empty cells 
                     {
                         continuousEmpty++;
                         //continue;
+                        if (continuousEmpty > 100) break;
                     }
                     else
                     {
-                        continuousEmpty = 0;
 
+                        continuousEmpty = 0;
+                        var continuousColumnEmpty = 0;
                         foreach (var col in sheet.GetRow(row).Cells)
                         {
+
                             var columnName = GetExcelColumnName(col.ColumnIndex + 1);
                             if (!columns.Contains(columnName))
                             {
@@ -249,6 +254,15 @@ namespace VErp.Commons.Library
                             {
                                 rowData.Add(columnName, cell.StringCellValue.ToString());
 
+                            }
+                            if (string.IsNullOrWhiteSpace(rowData[columnName]))
+                            {
+                                continuousColumnEmpty++;
+                                if (continuousColumnEmpty > 100) break;
+                            }
+                            else
+                            {
+                                continuousColumnEmpty = 0;
                             }
 
                         }

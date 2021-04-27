@@ -127,7 +127,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
             var total = result.Count;
 
-            return (result.Skip((page - 1) * size).Take(size).ToList(), total);
+            if (size > 0)
+            {
+                result = result.Skip((page - 1) * size).Take(size).ToList();
+            }
+            return (result, total);
         }
 
         private IList<ObjectPrintConfigSearch> ManufactureMappingTypeModels()

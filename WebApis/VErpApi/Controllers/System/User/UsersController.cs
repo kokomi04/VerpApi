@@ -13,6 +13,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Model.Users;
@@ -182,14 +183,14 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
-            return await _userService.ImportUserFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _userService.ImportUserFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
     }

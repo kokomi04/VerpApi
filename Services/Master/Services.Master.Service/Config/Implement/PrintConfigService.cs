@@ -254,13 +254,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
         }
 
-        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, PrintTemplateInput templateModel)
+        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, NonCamelCaseDictionary templateModel)
         {
-            var printConfig = await _masterDBContext.PrintConfig
+            var printConfigExtract = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
                 .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
-                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
+
+            var printConfig = _mapper.Map<PrintConfigModel>(printConfigExtract);
 
             if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
@@ -435,13 +436,15 @@ namespace VErp.Services.Master.Service.Config.Implement
             return (GeneralCode.Success, FileExtensionTypes[ext]);
         }
 
-        public async Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId)
+        public async Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId, bool isOrigin)
         {
-            var printConfig = await _masterDBContext.PrintConfig
+            var printConfigExtract = await _masterDBContext.PrintConfig
                 .Where(p => p.PrintConfigId == printConfigId)
                 .ProjectTo<PrintConfigExtract>(_mapper.ConfigurationProvider)
-                .ProjectTo<PrintConfigModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
+
+            printConfigExtract.PrintConfigDetailModel = printConfigExtract.PrintConfigDetailModel.Where(x => x.IsOrigin == isOrigin).ToList();
+            var printConfig = _mapper.Map<PrintConfigModel>(printConfigExtract);
 
             if (printConfig == null) throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             if (string.IsNullOrWhiteSpace(printConfig.TemplateFilePath))
@@ -452,6 +455,41 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             return (File.OpenRead(GetPhysicalFilePath(printConfig.TemplateFilePath)), printConfig.ContentType, printConfig.TemplateFileName);
         }
+
+        public async Task<bool> AddPrintTemplate(int printConfigId, IFormFile file)
+        {
+            var prints = await _masterDBContext.PrintConfigDetail.Where(p => p.PrintConfigId == printConfigId).ToListAsync();
+            if (prints.Count == 0)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+
+            var trans = await _masterDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                if (file != null)
+                {
+                    var fileInfo = await Upload(EnumObjectType.PrintConfig, EnumFileType.Document, file);
+                    prints.ForEach(d =>
+                    {
+                        d.TemplateFileName = fileInfo.FileName;
+                        d.TemplateFilePath = fileInfo.FilePath;
+                        d.ContentType = fileInfo.ContentType;
+                    });
+                }
+
+                await _masterDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(EnumObjectType.InputType, printConfigId, $"Thêm mẫu phiếu in chứng từ {printConfigId} ", prints.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "AddPrintTemplate");
+                throw;
+            }
+        }
+
     }
 }
 

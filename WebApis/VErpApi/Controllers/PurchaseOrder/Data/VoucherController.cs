@@ -16,6 +16,7 @@ using VErp.Services.PurchaseOrder.Service.Voucher;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 
 namespace VErpApi.Controllers.PurchaseOrder.Data
 {
@@ -91,13 +92,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpPost]
         [Route("{voucherTypeId}/importFromMapping")]
-        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] ImportBillExelMapping mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _voucherDataService.ImportVoucherBillFromMapping(voucherTypeId, JsonConvert.DeserializeObject<ImportBillExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _voucherDataService.ImportVoucherBillFromMapping(voucherTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
         [HttpGet]

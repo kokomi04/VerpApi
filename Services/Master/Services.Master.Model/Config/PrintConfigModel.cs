@@ -62,5 +62,6 @@ namespace VErp.Services.Master.Model.Config
     public class PrintTemplateInput
     {
         public List<NonCamelCaseDictionary> data { get; set; }
+        public NonCamelCaseDictionary info { get; set; }
     }
 }

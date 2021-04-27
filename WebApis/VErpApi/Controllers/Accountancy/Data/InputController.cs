@@ -17,6 +17,7 @@ using VErp.Services.Accountancy.Service.Input;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -95,13 +96,13 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpPost]
         [Route("{inputTypeId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportBillExelMapping mapping, [FromForm] IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inputDataService.ImportBillFromMapping(inputTypeId, JsonConvert.DeserializeObject<ImportBillExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _inputDataService.ImportBillFromMapping(inputTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
         [HttpGet]

@@ -110,6 +110,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     _manufacturingDBContext.ProductionMaterialsRequirement.Add(requirement);
                     await _manufacturingDBContext.SaveChangesAsync();
 
+                    // Validate product
+                    var productIds = model.MaterialsRequirementDetails.Select(d => d.ProductId).Distinct().ToList();
+                    var products = await _productHelperService.GetListProducts(productIds);
+                    if (products.Count() != productIds.Count)
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Sản phẩm yêu cầu thêm là bán thành phẩm");
+
                     foreach (var item in model.MaterialsRequirementDetails)
                     {
                         item.ProductionMaterialsRequirementId = requirement.ProductionMaterialsRequirementId;
@@ -123,14 +129,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                     await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
+                    long resultId = requirement.ProductionMaterialsRequirementId;
                     if (status == EnumProductionMaterialsRequirementStatus.Accepted)
-                        await AddInventoryRequirement(model);
+                        resultId = await AddInventoryRequirement(model);
 
                     await trans.CommitAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Thêm mới yêu cầu vật tư thêm", requirement.JsonSerialize());
 
-                    return requirement.ProductionMaterialsRequirementId;
+                    return resultId;
                 }
                 catch (Exception ex)
                 {
@@ -325,7 +332,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> ConfirmInventoryRequirement(long requirementId, EnumProductionMaterialsRequirementStatus status)
+        public async Task<long> ConfirmInventoryRequirement(long requirementId, EnumProductionMaterialsRequirementStatus status)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -342,11 +349,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 requirement.CensorDatetimeUtc = DateTime.UtcNow;
                 await _manufacturingDBContext.SaveChangesAsync();
 
+                long inventoryRequirmentId = 0;
                 if(status == EnumProductionMaterialsRequirementStatus.Accepted)
-                    await AddInventoryRequirement(_mapper.Map<ProductionMaterialsRequirementModel>(requirement));
+                    inventoryRequirmentId = await AddInventoryRequirement(_mapper.Map<ProductionMaterialsRequirementModel>(requirement));
 
                 await trans.CommitAsync();
-                return true;
+                return status == EnumProductionMaterialsRequirementStatus.Accepted ? inventoryRequirmentId : -1;
             }
             catch (Exception ex)
             {
@@ -357,28 +365,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         }
 
-        private async Task AddInventoryRequirement(ProductionMaterialsRequirementModel requirement)
+        private async Task<long> AddInventoryRequirement(ProductionMaterialsRequirementModel requirement)
         {
-            
-            var inventoryRequirementModel = new InventoryRequirementSimpleModel
+            try
             {
-                ProductionOrderId = requirement.ProductionOrderId,
-                InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
-                InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
-                Date = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset),
-                Content = requirement.RequirementContent,
-
-                InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel
+                var inventoryRequirementModel = new InventoryRequirementSimpleModel
                 {
-                    DepartmentId = x.DepartmentId,
-                    ProductId = x.ProductId,
-                    PrimaryQuantity = x.Quantity,
-                    ProductionStepId = x.ProductionStepId,
-                    ProductionOrderCode = requirement.ProductionOrderCode
-                }).ToList()
-            };
+                    ProductionOrderId = requirement.ProductionOrderId,
+                    InventoryRequirementTypeId = EnumInventoryRequirementType.Additional,
+                    InventoryOutsideMappingTypeId = EnumInventoryOutsideMappingType.ProductionOrder,
+                    Date = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset),
+                    Content = requirement.RequirementContent,
+                    InventoryRequirementCode = requirement.RequirementCode,
 
-            await _inventoryRequirementHelperService.AddInventoryRequirement(EnumInventoryType.Output, inventoryRequirementModel);
+                    InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel
+                    {
+                        DepartmentId = x.DepartmentId,
+                        ProductId = x.ProductId,
+                        PrimaryQuantity = x.Quantity,
+                        ProductionStepId = x.ProductionStepId,
+                        ProductionOrderCode = requirement.ProductionOrderCode
+                    }).ToList()
+                };
+
+                return await _inventoryRequirementHelperService.AddInventoryRequirement(EnumInventoryType.Output, inventoryRequirementModel);
+            }
+            catch (Exception ex)
+            {
+                throw new BadRequestException(GeneralCode.InternalError, $"Yêu cầu xuất kho - {ex.Message}");
+            }
         }
     }
 }

@@ -1628,7 +1628,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var total = await query.CountAsync();
 
-            var packageData = await query.AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync();
+            var packageData = size > 0 ? await query.AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync() : await query.AsNoTracking().ToListAsync();
 
             var locationIdList = packageData.Select(q => q.LocationId).ToList();
             var productUnitConversionIdList = packageData.Select(q => q.ProductUnitConversionId).ToList();

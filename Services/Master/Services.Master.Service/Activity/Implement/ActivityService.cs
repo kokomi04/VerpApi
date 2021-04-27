@@ -111,7 +111,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             var query = _activityLogContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
 
             var total = query.Count();
-            var ualDataList = query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList();
+            var ualDataList = pageSize > 0 ? query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList() : query.AsNoTracking().ToList();
 
             var userIds = ualDataList.Select(q => q.UserId).ToList();
 

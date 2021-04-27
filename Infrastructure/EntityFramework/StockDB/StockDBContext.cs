@@ -260,6 +260,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(64)
                     .IsUnicode(false);
 
+                entity.Property(e => e.OutsourceStepRequestCode).HasMaxLength(64);
+
                 entity.Property(e => e.Pocode)
                     .HasColumnName("POCode")
                     .HasMaxLength(64)
