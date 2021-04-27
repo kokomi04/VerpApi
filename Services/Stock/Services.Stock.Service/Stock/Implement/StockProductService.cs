@@ -582,6 +582,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                        p.ProductId,
                                        p.ProductCode,
                                        p.ProductName,
+                                       p.MainImageFileId,
                                        Specification = pe != null ? pe.Specification : string.Empty,
                                        p.UnitId,
                                        p.ProductTypeId,
@@ -630,7 +631,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryUnitId = pi.UnitId,
                     PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
                     AmountWarningMin = pi.AmountWarningMin ?? 0,
-                    AmountWarningMax = pi.AmountWarningMax ?? 0
+                    AmountWarningMax = pi.AmountWarningMax ?? 0,
+                    MainImageFileId = pi.MainImageFileId
                 };
                 item.StockProductQuantityList = spList;
                 item.TotalPrimaryQuantityRemaining = spList.Count > 0 ? item.StockProductQuantityList.Sum(q => q.PrimaryQuantityRemaining) : 0;
