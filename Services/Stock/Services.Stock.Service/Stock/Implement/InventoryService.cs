@@ -338,6 +338,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     .ToDictionary(p => p.PackageId, p => p);
 
                 var listInventoryDetailsOutput = new List<InventoryDetailOutput>(inventoryDetails.Count);
+
+                var inventoryRequirementDetailIds = inventoryDetails
+                    .Where(d => d.InventoryRequirementDetailId.HasValue)
+                    .Select(d => d.InventoryRequirementDetailId)
+                    .ToList();
+
+                var inventoryRequirementMap = _stockDbContext.InventoryRequirementDetail
+                    .Include(id => id.InventoryRequirement)
+                    .Where(id => inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId))
+                    .Select(id => new
+                    {
+                        id.InventoryRequirementDetailId,
+                        id.InventoryRequirement.InventoryRequirementCode,
+                        id.InventoryRequirement.InventoryRequirementId
+                    })
+                    .ToList()
+                    .GroupBy(id => id.InventoryRequirementDetailId)
+                    .ToDictionary(g => g.Key, g => g.Select(id => new InventoryRequirementSimpleInfo
+                    {
+                        InventoryRequirementId = id.InventoryRequirementId,
+                        InventoryRequirementCode = id.InventoryRequirementCode
+                    }).ToList());
+
                 foreach (var details in inventoryDetails)
                 {
                     ProductListOutput productOutput = null;
@@ -375,7 +398,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     productUnitConversions.TryGetValue(details.ProductUnitConversionId, out var productUnitConversionInfo);
 
-                    listInventoryDetailsOutput.Add(new InventoryDetailOutput
+                    var detail = new InventoryDetailOutput
                     {
                         InventoryId = details.InventoryId,
                         InventoryDetailId = details.InventoryDetailId,
@@ -406,7 +429,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Description = details.Description,
                         AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                         InventoryRequirementDetailId = details.InventoryRequirementDetailId
-                    });
+                    };
+
+                    if(detail.InventoryRequirementDetailId.HasValue && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
+                    {
+                        detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
+                    }
+
+                    listInventoryDetailsOutput.Add(detail);
                 }
                 #endregion
 
