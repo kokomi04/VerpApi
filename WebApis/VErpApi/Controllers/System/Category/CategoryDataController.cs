@@ -106,7 +106,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpPost]
         [Route("{categoryId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] CategoryImportExelMapping mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] CategoryImportExelMapping mapping, IFormFile file)
         {
             if (file == null)
             {

@@ -162,7 +162,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {

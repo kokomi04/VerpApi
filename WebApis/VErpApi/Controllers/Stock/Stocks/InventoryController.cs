@@ -299,7 +299,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<long> ImportFromMapping([FromFormString] ImportExcelMapping mapping, [FromFormString] InventoryOpeningBalanceModel info, [FromForm] IFormFile file)
+        public async Task<long> ImportFromMapping([FromFormString] ImportExcelMapping mapping, InventoryOpeningBalanceModel info, IFormFile file)
         {
             if (file == null)
             {
@@ -318,7 +318,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("{inventoryTypeId}/ParseExcel")]
-        public IAsyncEnumerable<InventoryDetailRowValue> InputExcelParse([FromRoute] EnumInventoryType inventoryTypeId, [FromFormString] ImportExcelMapping mapping, [FromForm] IFormFile file)
+        public IAsyncEnumerable<InventoryDetailRowValue> InputExcelParse([FromRoute] EnumInventoryType inventoryTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
