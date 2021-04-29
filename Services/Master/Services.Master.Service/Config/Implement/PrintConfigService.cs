@@ -40,7 +40,6 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private static readonly Dictionary<string, EnumFileType> FileExtensionTypes = new Dictionary<string, EnumFileType>()
         {
-
             { ".doc" , EnumFileType.Document },
             { ".docx", EnumFileType.Document },
         };
@@ -84,9 +83,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 .FirstOrDefaultAsync();
 
             if (printConfig == null)
-            {
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
-            }
 
             printConfig.PrintConfigDetailModel = printConfig.PrintConfigDetailModel.Where(x => x.IsOrigin == isOrigin).ToList();
             return _mapper.Map<PrintConfigModel>(printConfig);
@@ -125,6 +122,18 @@ namespace VErp.Services.Master.Service.Config.Implement
                     data.TemplateFileName = fileInfo.FileName;
                     data.TemplateFilePath = fileInfo.FilePath;
                     data.ContentType = fileInfo.ContentType;
+                }
+                else if (!string.IsNullOrWhiteSpace(data.TemplateFilePath))
+                {
+                    var filePath = await CopyFile(data.TemplateFileName, data.TemplateFilePath);
+                    if (!string.IsNullOrWhiteSpace(filePath))
+                    {
+                        data.TemplateFilePath = await CopyFile(data.TemplateFileName, data.TemplateFilePath);
+                    }
+                    else
+                    {
+                        data.TemplateFileName = data.TemplateFilePath = data.ContentType = string.Empty;
+                    }
                 }
 
                 var configExtract = _mapper.Map<PrintConfigExtract>(data);
@@ -458,7 +467,23 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task DeleteFile(string fielPath)
         {
-            File.Delete(GetPhysicalFilePath(fielPath));
+            if (File.Exists(GetPhysicalFilePath(fielPath)))
+            {
+                File.Delete(GetPhysicalFilePath(fielPath));
+            }
+        }
+
+        public async Task<string> CopyFile(string fileName, string sourceFile)
+        {
+            string filePath = "";
+            if (File.Exists(GetPhysicalFilePath(sourceFile)))
+            {
+                filePath = GenerateTempFilePath(fileName);
+            
+                File.Copy(GetPhysicalFilePath(sourceFile), GetPhysicalFilePath(filePath));
+            }
+
+            return filePath;
         }
 
         public async Task<bool> AddPrintTemplate(int printConfigId, IFormFile file)
