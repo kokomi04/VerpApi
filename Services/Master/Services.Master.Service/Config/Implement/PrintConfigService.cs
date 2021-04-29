@@ -236,8 +236,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     var detail = details[i];
                     detail.IsDeleted = true;
-                    if (detail.TemplateFileId != null && detail.TemplateFileId.HasValue)
-                        await _physicalFileService.DeleteFile(detail.TemplateFileId.Value);
+                    if (!string.IsNullOrWhiteSpace(detail.TemplateFilePath))
+                        await DeleteFile(detail.TemplateFilePath);
                 }
 
                 await _masterDBContext.SaveChangesAsync();
@@ -454,6 +454,11 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(FileErrorCode.FileNotFound);
 
             return (File.OpenRead(GetPhysicalFilePath(printConfig.TemplateFilePath)), printConfig.ContentType, printConfig.TemplateFileName);
+        }
+
+        public async Task DeleteFile(string fielPath)
+        {
+            File.Delete(GetPhysicalFilePath(fielPath));
         }
 
         public async Task<bool> AddPrintTemplate(int printConfigId, IFormFile file)
