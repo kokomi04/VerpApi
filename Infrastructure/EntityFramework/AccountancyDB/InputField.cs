@@ -37,6 +37,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string OnBlur { get; set; }
         public string OnChange { get; set; }
         public string OnClick { get; set; }
+        public string ReferenceUrl { get; set; }
 
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
     }
