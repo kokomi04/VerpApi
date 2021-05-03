@@ -58,6 +58,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".cs" , EnumFileType.Other },
             { ".py" , EnumFileType.Other },
             { ".h", EnumFileType.Other },
+            { ".cpp", EnumFileType.Other },
             { ".jar", EnumFileType.Other },
             { ".java", EnumFileType.Other },
             { ".js", EnumFileType.Other },
@@ -466,7 +467,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             //    return FileErrorCode.InvalidFileExtension;
             //}
 
-            return (GeneralCode.Success, FileExtensionTypes[ext]);
+            return (GeneralCode.Success, FileExtensionTypes.ContainsKey(ext)? FileExtensionTypes[ext] : EnumFileType.Other);
         }
 
 
