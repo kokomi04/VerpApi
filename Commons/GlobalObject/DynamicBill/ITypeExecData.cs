@@ -26,6 +26,7 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string OnBlur { get; set; }
         string OnChange { get; set; }
         string OnClick { get; set; }
+        string ReferenceUrl { get; set; }
     }
 
 
@@ -33,7 +34,7 @@ namespace VErp.Commons.GlobalObject.DynamicBill
     public interface ITypeExecData
     {
         string Title { get; }
-      
+
         string PreLoadActionExec { get; }
         string PostLoadActionExec { get; }
         string AfterLoadActionExec { get; }
@@ -52,6 +53,8 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string OnBlurExec { get; }
         string OnChangeExec { get; }
         string OnClickExec { get; }
+
+        string ReferenceUrlExec { get; }
     }
 
 

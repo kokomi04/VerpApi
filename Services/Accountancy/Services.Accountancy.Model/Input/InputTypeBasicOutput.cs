@@ -56,5 +56,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string RefTableTitle { get; set; }
         public bool IsRequire { get; set; }
         public int? DecimalPlace { get; set; }
+
+        public string ReferenceUrlExec { get; set; }
     }
 }
