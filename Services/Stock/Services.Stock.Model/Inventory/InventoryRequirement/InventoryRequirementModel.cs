@@ -38,6 +38,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public int? CensorByUserId { get; set; }
         public long? CensorDatetimeUtc { get; set; }
         public EnumInventoryRequirementStatus CensorStatus { get; set; }
+        public int ProductId { get; set; }
         public string ProductTitle { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }

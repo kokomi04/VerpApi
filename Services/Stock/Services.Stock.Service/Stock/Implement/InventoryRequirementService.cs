@@ -83,7 +83,17 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(s => s.InventoryRequirement.InventoryRequirementCode.Contains(keyword)
-                || s.InventoryRequirement.Content.Contains(keyword));
+                || s.InventoryRequirement.Content.Contains(keyword)
+                || s.OrderCode.Contains(keyword)
+                || s.ProductionOrderCode.Contains(keyword)
+                || s.OutsourceStepRequestCode.Contains(keyword)
+                || s.Pocode.Contains(keyword)
+                || s.Product.ProductCode.Contains(keyword)
+                || s.Product.ProductName.Contains(keyword)
+                || s.Product.ProductNameEng.Contains(keyword)
+
+                );
+
             }
 
             query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);

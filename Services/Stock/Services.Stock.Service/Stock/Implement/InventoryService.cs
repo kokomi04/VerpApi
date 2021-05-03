@@ -135,6 +135,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
+                var inventoryIdsQuery = from p in _stockDbContext.Product
+                                        join d in _stockDbContext.InventoryDetail on p.ProductId equals d.ProductId
+                                        where p.ProductCode.Contains(keyword)
+                                        || p.ProductName.Contains(keyword)
+                                        || p.ProductNameEng.Contains(keyword)
+                                        || d.OrderCode.Contains(keyword)
+                                        || d.ProductionOrderCode.Contains(keyword)                                        
+                                        || d.Pocode.Contains(keyword)
+                                        || d.Description.Contains(keyword)
+                                        || d.RefObjectCode.Contains(keyword)
+                                        select d.InventoryId;
+
                 inventoryQuery = inventoryQuery.Where(q => q.InventoryCode.Contains(keyword)
                 || q.Shipper.Contains(keyword)
                 || q.Content.Contains(keyword)
@@ -142,6 +154,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 || q.BillForm.Contains(keyword)
                 || q.BillCode.Contains(keyword)
                 || q.BillSerial.Contains(keyword)
+                || inventoryIdsQuery.Contains(q.InventoryId)
                 );
             }
 
@@ -431,7 +444,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryRequirementDetailId = details.InventoryRequirementDetailId
                     };
 
-                    if(detail.InventoryRequirementDetailId.HasValue && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
+                    if (detail.InventoryRequirementDetailId.HasValue && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
                     {
                         detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
                     }
