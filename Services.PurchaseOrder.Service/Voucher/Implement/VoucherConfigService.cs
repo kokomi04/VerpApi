@@ -533,6 +533,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     RefTableTitle = f.RefTableTitle,
                     IsRequire = af.IsRequire,
                     decimalPlace = f.DecimalPlace,
+                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl
 
                 }).ToListAsync();
 

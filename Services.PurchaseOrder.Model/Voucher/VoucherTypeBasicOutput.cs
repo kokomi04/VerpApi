@@ -56,5 +56,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string RefTableTitle { get; set; }
         public bool IsRequire { get; set; }
         public int? decimalPlace { get; set; }
+
+        public string ReferenceUrlExec { get; set; }
     }
 }
