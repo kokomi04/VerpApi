@@ -533,53 +533,50 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
         }
 
 
-        //public async Task<IList<ProcessingReportListModel>> GetProcessingScheduleList()
-        //{
-        //    var sql = @$"SELECT 
-        //            v.ProductionScheduleId,
-        //            v.ScheduleTurnId,
-        //            v.ProductTitle,
-        //            v.StartDate,
-        //            v.EndDate  
-        //        FROM vProductionSchedule v 
-        //        WHERE v.ProductionScheduleStatus = {(int)EnumScheduleStatus.Processing} OR v.ProductionScheduleStatus = {(int)EnumScheduleStatus.OverDeadline}";
+        public async Task<IList<ProcessingOrderListModel>> GetProcessingOrderList()
+        {
+            var sql = @$"SELECT 
+                    v.ProductionOrderId,
+                    v.ProductionOrderCode,
+                    v.ProductTitle,
+                    v.StartDate,
+                    v.EndDate  
+                FROM vProductionOrder v 
+                WHERE v.ProductionOrderStatus = {(int)EnumProductionStatus.Processing} OR v.ProductionOrderStatus = {(int)EnumProductionStatus.OverDeadline}";
 
-        //    var resultData = await _manufacturingDBContext.QueryDataTable(sql, Array.Empty<SqlParameter>());
-        //    var lst = resultData
-        //        .ConvertData<ProcessingScheduleListEntity>()
-        //        .AsQueryable()
-        //        .ProjectTo<ProcessingScheduleListModel>(_mapper.ConfigurationProvider)
-        //        .ToList();
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql, Array.Empty<SqlParameter>());
+            var lst = resultData
+                .ConvertData<ProcessingOrderListEntity>()
+                .AsQueryable()
+                .ProjectTo<ProcessingOrderListModel>(_mapper.ConfigurationProvider)
+                .ToList();
 
-        //    var scheduleTurnIds = lst.Select(s => s.ScheduleTurnId).Distinct().ToList();
+            var productionOrderIds = lst.Select(s => s.ProductionOrderId).Distinct().ToList();
 
-        //    var steps = (from s in _manufacturingDBContext.Step
-        //                 join ps in _manufacturingDBContext.ProductionStep on s.StepId equals ps.StepId
-        //                 join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
-        //                 join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
-        //                 join sh in _manufacturingDBContext.ProductionSchedule on pod.ProductionOrderDetailId equals sh.ProductionOrderDetailId
-        //                 where scheduleTurnIds.Contains(sh.ScheduleTurnId)
-        //                 select new
-        //                 {
-        //                     s.StepId,
-        //                     s.StepName,
-        //                     sh.ScheduleTurnId
-        //                 })
-        //                 .ToList()
-        //                 .GroupBy(s => s.ScheduleTurnId)
-        //                 .ToDictionary(g => g.Key, g => g.Select(s => new StepListModel
-        //                 {
-        //                     StepId = s.StepId,
-        //                     StepName = s.StepName
-        //                 }).Distinct().ToList());
-        //    foreach (var item in lst)
-        //    {
-        //        if (steps.ContainsKey(item.ScheduleTurnId))
-        //            item.Steps = steps[item.ScheduleTurnId];
-        //    }
+            var steps = (from ps in _manufacturingDBContext.ProductionStep 
+                         join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                         where productionOrderIds.Contains(ps.ContainerId) && ps.ContainerTypeId == (int) EnumContainerType.ProductionOrder
+                         select new
+                         {
+                             s.StepId,
+                             s.StepName,
+                             ProductionOrderId = ps.ContainerId
+                         })
+                         .ToList()
+                         .GroupBy(s => s.ProductionOrderId)
+                         .ToDictionary(g => g.Key, g => g.Select(s => new StepListModel
+                         {
+                             StepId = s.StepId,
+                             StepName = s.StepName
+                         }).Distinct().ToList());
+            foreach (var item in lst)
+            {
+                if (steps.ContainsKey(item.ProductionOrderId))
+                    item.Steps = steps[item.ProductionOrderId];
+            }
 
-        //    return lst;
-        //}
+            return lst;
+        }
 
         public async Task<IList<StepReportModel>> GetProcessingStepReport(long productionOrderId, int[] stepIds)
         {
