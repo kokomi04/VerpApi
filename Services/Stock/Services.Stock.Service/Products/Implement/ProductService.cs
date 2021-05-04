@@ -802,7 +802,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.EstimatePrice,
                   p.IsProductSemi,
                   p.Coefficient, 
-                  p.IsProduct
+                  p.IsProduct,
+                  p.Height,
+                  p.Long,
+                  p.Width
               });
 
             if (productTypeIds != null && productTypeIds.Length > 0)
@@ -860,7 +863,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     EstimatePrice = item.EstimatePrice,
                     IsProductSemi = item.IsProductSemi,
                     Coefficient = item.Coefficient,
-                    IsProduct = item.IsProduct ?? false
+                    IsProduct = item.IsProduct ?? false,
+                    Long = item.Long,
+                    Width = item.Width,
+                    Height = item.Height,
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -903,7 +909,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.EstimatePrice,
                     p.IsProductSemi,
                     p.Coefficient,
-                    p.IsProduct
+                    p.IsProduct,
+                    p.Height,
+                    p.Long,
+                    p.Width
                 });
 
             var lstData = await query.ToListAsync();
@@ -942,7 +951,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
                         ProductUnitConversionId = q.ProductUnitConversionId,
                         ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
-                    }).ToList()
+                    }).ToList(),
+                    Long = item.Long,
+                    Width = item.Width,
+                    Height = item.Height,
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
