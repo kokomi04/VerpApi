@@ -26,6 +26,7 @@ namespace VErpApi.Controllers.Report
 
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("view/{reportId}")]
         public async Task<ReportDataModel> ReportView([FromRoute] int reportId, [FromBody] ReportFilterModel model)
         {
@@ -34,6 +35,7 @@ namespace VErpApi.Controllers.Report
         }
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("view/{reportId}/asDocument")]
         public async Task<IActionResult> ASDocument([FromRoute] int reportId, [FromBody] ReportDataModel dataModel)
         {
@@ -43,6 +45,7 @@ namespace VErpApi.Controllers.Report
         }
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("view/{reportId}/asExcel")]
         public async Task<FileStreamResult> AsExcel([FromRoute] int reportId, [FromBody] ReportFacadeModel model)
         {
