@@ -147,15 +147,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         || d.RefObjectCode.Contains(keyword)
                                         select d.InventoryId;
 
-                inventoryQuery = inventoryQuery.Where(q => q.InventoryCode.Contains(keyword)
-                || q.Shipper.Contains(keyword)
-                || q.Content.Contains(keyword)
-                || q.Department.Contains(keyword)
-                || q.BillForm.Contains(keyword)
-                || q.BillCode.Contains(keyword)
-                || q.BillSerial.Contains(keyword)
-                || inventoryIdsQuery.Contains(q.InventoryId)
-                );
+                inventoryQuery = from q in inventoryQuery
+                                 join c in _stockDbContext.RefCustomerBasic on q.CustomerId equals c.CustomerId into cs
+                                 from c in cs.DefaultIfEmpty()
+                                 where q.InventoryCode.Contains(keyword)
+                                    || q.Shipper.Contains(keyword)
+                                    || q.Content.Contains(keyword)
+                                    || q.Department.Contains(keyword)
+                                    || q.BillForm.Contains(keyword)
+                                    || q.BillCode.Contains(keyword)
+                                    || q.BillSerial.Contains(keyword)
+                                    || c.CustomerCode.Contains(keyword)
+                                    || c.CustomerName.Contains(keyword)
+                                    || inventoryIdsQuery.Contains(q.InventoryId)
+                                 select q;
             }
 
             if (isApproved.HasValue)
