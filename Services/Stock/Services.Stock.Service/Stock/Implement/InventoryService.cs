@@ -1538,7 +1538,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             // update trạng thái cho phân công công việc
             var assignments = requirementDetails
-                .Where(rd => rd.InventoryRequirement.ProductionOrderId.HasValue && rd.DepartmentId.HasValue && rd.ProductionStepId.HasValue)
+                .Where(rd => rd.InventoryRequirement.ProductionOrderId.GetValueOrDefault() > 0 && rd.DepartmentId.GetValueOrDefault() > 0 && rd.ProductionStepId.GetValueOrDefault() > 0)
                 .Select(rd => new
                 {
                     ProductionOrderId = rd.InventoryRequirement.ProductionOrderId.Value,
