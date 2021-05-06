@@ -831,11 +831,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
         {
 
-            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().Include(x => x.ReportTypeGroup).FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
+            if(!reportInfo.TemplateFileId.HasValue) throw new BadRequestException(FileErrorCode.FileNotFound, "Chưa thiết lập mẫu in cho báo cáo");
 
             var fileInfo = await _physicalFileService.GetSimpleFileInfo(reportInfo.TemplateFileId.Value);
 

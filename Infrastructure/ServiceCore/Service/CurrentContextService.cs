@@ -18,7 +18,6 @@ using System.Security.Claims;
 using System.Security.Principal;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.EF.OrganizationDB;
-using OpenXmlPowerTools;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace VErp.Infrastructure.ServiceCore.Service

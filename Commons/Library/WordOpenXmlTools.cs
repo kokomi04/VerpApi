@@ -30,6 +30,8 @@ namespace VErp.Commons.Library
                 memoryStream.Write(byteArray, 0, byteArray.Length);
                 using (WordprocessingDocument wDoc = WordprocessingDocument.Open(memoryStream, true))
                 {
+                    var t = wDoc.MainDocumentPart.Document.Body.Elements().Where(x => x.InnerXml.Contains(@"<w:br type="));
+
                     var destFileName = new FileInfo(fi.Name.Replace(".docx", ".html"));
                     if (outputDirectory != null && outputDirectory != string.Empty)
                     {
