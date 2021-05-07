@@ -70,6 +70,7 @@ namespace VErpApi.Controllers.System
         [HttpPost]
         [Route("GetByIds")]
         [VErpAction(EnumActionType.View)]
+        [GlobalApi]
         public async Task<IList<CustomerListOutput>> GetListByIds([FromBody] IList<int> customerIds)
         {
             return (await _customerService.GetListByIds(customerIds)).ToList();
