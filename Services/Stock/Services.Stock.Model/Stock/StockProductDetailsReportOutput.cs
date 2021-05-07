@@ -27,6 +27,8 @@ namespace VErp.Services.Stock.Model.Stock
     public class StockProductDetailsModel
     {
         public long InventoryId { get; set; }
+        public int? CustomerId { get; set; }
+        public int? DepartmentId { get; set; }
         public int StockId { get; set; }
         public string StockName { get; set; }
 

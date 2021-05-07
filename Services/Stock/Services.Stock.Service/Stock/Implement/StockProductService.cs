@@ -1033,6 +1033,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
               select new
               {
                   i.InventoryId,
+                  i.CustomerId,
+                  i.DepartmentId,
                   i.StockId,
                   i.Date,
                   i.CreatedDatetimeUtc,
@@ -1094,6 +1096,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 resultData.Details.Add(new StockProductDetailsModel
                 {
                     InventoryId = item.InventoryId,
+                    CustomerId = item.CustomerId,
+                    DepartmentId = item.DepartmentId,
                     StockId = item.StockId,
                     StockName = stocks.FirstOrDefault(s => s.StockId == item.StockId)?.StockName,
                     IssuedDate = item.Date.GetUnix(),
