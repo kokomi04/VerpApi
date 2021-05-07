@@ -34,6 +34,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("GetByIds")]
+        [GlobalApi]
         public async Task<IList<DepartmentModel>> GetByIds([FromQuery] IList<int> departmentIds)
         {
             return await _departmentService.GetListByIds(departmentIds);
