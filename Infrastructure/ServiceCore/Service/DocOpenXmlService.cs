@@ -49,9 +49,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             await GenerateWordFromTemplate((fileInfo.FileName, outDirectory, physicalFilePath), jsonString, dbContext);
 
-            WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{fileInfo.FileName}", $"{outDirectory}/{file}.pdf");
+            WordOpenXmlTools.ConvertToHtml($"{outDirectory}/{fileInfo.FileName}", outDirectory);
+            //WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{fileInfo.FileName}", $"{outDirectory}/{file}.pdf");
 
-            return ($"{outDirectory}/{file}.pdf", "application/pdf", $"{file}.pdf");
+            //return ($"{outDirectory}/{file}.pdf", "application/pdf", $"{file}.pdf");
+            return ($"{outDirectory}/{file}.html", "text/html", $"{file}.html");
         }
 
         public async Task<bool> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo,
