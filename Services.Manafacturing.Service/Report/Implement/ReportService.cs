@@ -480,6 +480,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 foreach (var productionStep in productionOrderSteps[productionOrderId])
                 {
                     if (!outputData.ContainsKey(productionStep.ProductionStepId)) continue;
+                    if (stepTitle.StringContains(productionStep.StepName)) continue;
                     var outputStepData = outputData[productionStep.ProductionStepId];
 
                     var output = outputStepData
