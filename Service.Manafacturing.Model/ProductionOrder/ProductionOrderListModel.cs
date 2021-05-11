@@ -21,6 +21,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public EnumProductionStatus ProductionOrderStatus { get; set; }
         public decimal UnitPrice { get; set; }
         public bool HasAssignment { get; set; }
+        public bool IsInvalid { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionOrderListEntity, ProductionOrderListModel>()
@@ -45,5 +46,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int ProductionOrderStatus { get; set; }
         public decimal UnitPrice { get; set; }
         public bool HasAssignment { get; set; }
+        public bool IsInvalid { get; set; }
     }
 }
