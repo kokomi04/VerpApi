@@ -45,6 +45,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private IDictionary<string, SimpleProduct> _existedProducts;
         private IDictionary<string, ProductType> _productTypes;
         private IDictionary<string, ProductCate> _productCates;
+        private IList<DepartmentSimpleModel> _departments;
+        private IList<StepSimpleInfo> _steps;
 
         public ProductMaterialsConsumptionInportFacade SetService(IUnitService unitService)
         {
@@ -71,7 +73,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int productId, int materialsConsumptionGroupId)
         {
             ReadExcelData(mapping, stream);
-
+            await ValiExcelData();
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 using (var logBath = _activityLogService.BeginBatchLog())
@@ -88,6 +90,33 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             return true;
         }
 
+        private async Task ValiExcelData()
+        {
+            var hasTwoProduct = _importData
+                .Where(x => !string.IsNullOrWhiteSpace(x.ProductCode))
+                .GroupBy(x => x.ProductCode)
+                .Where(x => x.Count() > 1)
+                .Select(x => x.Key);
+            if (hasTwoProduct.Count() > 0)
+                throw new BadRequestException(GeneralCode.InternalError, $"Xuất hiện hơn 1 sản phẩm trở lên trong file import. Chi tiết các mã sản phẩm: \"{string.Join(", ", hasTwoProduct)}\"");
+
+            _departments = await _organizationHelperService.GetAllDepartmentSimples();
+            _steps = await _manufacturingHelperService.GetSteps();
+
+            foreach (var row in _importData)
+            {
+                if (string.IsNullOrWhiteSpace(row.DepartmentName) || string.IsNullOrWhiteSpace(row.DepartmentCode) || string.IsNullOrWhiteSpace(row.StepName))
+                    continue;
+
+                var department = _departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
+                if (department == null)
+                    throw new BadRequestException(GeneralCode.InternalError, $"Không tìm thấy bộ phận của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
+                var step = _steps.FirstOrDefault(x => x.StepName == row.StepName);
+                if (step == null)
+                    throw new BadRequestException(GeneralCode.InternalError, $"Không tìm thấy công đoạn của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
+            }
+        }
+
         private void ReadExcelData(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
@@ -98,8 +127,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         {
             var groups = (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductMaterialsConsumptionGroupCode, v => v.ProductMaterialsConsumptionGroupId);
 
-            var departments = await _organizationHelperService.GetAllDepartmentSimples();
-            var steps = await _manufacturingHelperService.GetSteps();
+            
 
             var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
                 .Where(x => x.ProductId == productId && x.ProductMaterialsConsumptionGroupId == materialsConsumptionGroupId)
@@ -109,8 +137,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             {
                 if (!_existedProducts.ContainsKey(row.ProductCode.NormalizeAsInternalName()) || oldMaterialConsumption.Contains(_existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId)) continue;
 
-                var department = departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
-                var step = steps.FirstOrDefault(x => x.StepName == row.StepName);
+                var department = _departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
+                var step = _steps.FirstOrDefault(x => x.StepName == row.StepName);
                 var item = new ProductMaterialsConsumption
                 {
                     MaterialsConsumptionId = _existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId,
