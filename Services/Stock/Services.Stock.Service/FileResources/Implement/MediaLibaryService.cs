@@ -34,12 +34,14 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".bmp", EnumFileType.Image },
             { ".png"  , EnumFileType.Image },
 
-            //{ ".doc" , EnumFileType.Document },
-            //{ ".pdf" , EnumFileType.Document },
-            //{ ".docx", EnumFileType.Document },
-            //{ ".xls", EnumFileType.Document },
-            //{ ".xlsx" , EnumFileType.Document },
-            //{ ".csv" , EnumFileType.Document },
+            { ".doc" , EnumFileType.Document },
+            { ".pdf" , EnumFileType.Document },
+            { ".docx", EnumFileType.Document },
+            { ".xls", EnumFileType.Document },
+            { ".xlsx" , EnumFileType.Document },
+            { ".csv" , EnumFileType.Document },
+            { ".ppt" , EnumFileType.Document },
+            { ".pptx" , EnumFileType.Document },
         };
 
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
@@ -55,6 +57,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".xls","application/vnd.ms-excel" },
             { ".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
             { ".csv", "text/csv" },
+            { ".ppt" , "application/vnd.ms-powerpoint" },
+            { ".pptx" , "application/vnd.openxmlformats-officedocument.presentationml.presentation" },
         };
 
         private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(t => t.Key, t => t.Select(v => v.Key).ToArray());

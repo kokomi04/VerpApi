@@ -180,7 +180,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("File/{fileTypeId}")]
         public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
-            return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
+            return await _fileService.Upload(EnumObjectType.Product, string.Empty, file);
         }
     }
 }
