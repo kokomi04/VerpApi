@@ -21,8 +21,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? Type { get; set; }
         public int? Status { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
+        public int CreatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ICollection<Inventory> Inventory { get; set; }
         public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }

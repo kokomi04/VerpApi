@@ -39,13 +39,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IOutsourcePartRequestService _outsourcePartRequestService;
+        private readonly ICurrentContextService _currentContextService;
 
         public OutsourcePartOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourcePartOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOutsourcePartRequestService outsourcePartRequestService)
+            , IOutsourcePartRequestService outsourcePartRequestService, ICurrentContextService currentContextService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -53,6 +54,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _outsourcePartRequestService = outsourcePartRequestService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<long> CreateOutsourceOrderPart(OutsourceOrderInfo req)
@@ -88,7 +90,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     }
                     if (!req.OutsourceOrderDate.HasValue)
                     {
-                        req.OutsourceOrderDate = DateTime.UtcNow.GetUnix();
+                        req.OutsourceOrderDate = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset);
                     }
 
                     var order = _mapper.Map<OutsourceOrder>(req as OutsourceOrderModel);

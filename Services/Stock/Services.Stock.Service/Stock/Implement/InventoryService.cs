@@ -701,9 +701,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false,
                     IsApproved = false
                 };
                 await _stockDbContext.AddAsync(inventoryObj);
@@ -804,9 +801,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false,
                     IsApproved = false
                 };
 
@@ -994,7 +988,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.BillDate = req.BillDate?.UnixToDateTime();
             inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
             inventoryObj.UpdatedByUserId = _currentContextService.UserId;
-            inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
             inventoryObj.TotalMoney = totalMoney;
         }
 
@@ -1074,7 +1067,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.IsApproved = false;
                         inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
@@ -1172,8 +1164,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         inventoryObj.IsDeleted = true;
                         //inventoryObj.IsApproved = false;
-                        inventoryObj.UpdatedByUserId = _currentContextService.UserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
                         foreach (var item in inventoryDetails)
@@ -1238,8 +1228,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //update status after rollback
                         inventoryObj.IsDeleted = true;
                         //inventoryObj.IsApproved = false;
-                        inventoryObj.UpdatedByUserId = _currentContextService.UserId;
-                        inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         await _stockDbContext.SaveChangesAsync();
 
@@ -1311,7 +1299,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //inventoryObj.UpdatedByUserId = currentUserId;
                         //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
                         inventoryObj.CensorByUserId = _currentContextService.UserId;
-                        inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
+                        inventoryObj.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset).UnixToDateTime();
 
                         await _stockDbContext.SaveChangesAsync();
 
@@ -1400,7 +1388,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //inventoryObj.UpdatedByUserId = currentUserId;
                         //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
                         inventoryObj.CensorByUserId = _currentContextService.UserId;
-                        inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
+                        inventoryObj.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset).UnixToDateTime();
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
 
@@ -2221,9 +2209,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryId = inventory.InventoryId,
                     ProductId = details.ProductId,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false,
                     RequestPrimaryQuantity = details.RequestPrimaryQuantity,
                     PrimaryQuantity = primaryQualtity,
                     UnitPrice = details.UnitPrice,
@@ -2277,7 +2262,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQuantityRemaining = 0,
                     ProductUnitConversionWaitting = 0,
                     ProductUnitConversionRemaining = 0,
-                    UpdatedDatetimeUtc = DateTime.UtcNow
                 };
                 await _stockDbContext.StockProduct.AddAsync(stockProductInfo);
                 await _stockDbContext.SaveChangesAsync();
@@ -2316,7 +2300,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             packageInfo.PrimaryQuantityRemaining += detail.PrimaryQuantity;
             //packageInfo.ProductUnitConversionQuantity += detail.ProductUnitConversionQuantity;
             packageInfo.ProductUnitConversionRemaining += detail.ProductUnitConversionQuantity;
-            packageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             return GeneralCode.Success;
         }
 
@@ -2349,9 +2332,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionRemaining = 0,
                     Date = billDate,
                     ExpiryTime = null,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    IsDeleted = false
                 };
 
                 await _stockDbContext.Package.AddAsync(ensureDefaultPackage);
@@ -2389,9 +2369,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductUnitConversionRemaining = detail.ProductUnitConversionQuantity,
                 Date = date,
                 ExpiryTime = null,
-                CreatedDatetimeUtc = DateTime.UtcNow,
-                UpdatedDatetimeUtc = DateTime.UtcNow,
-                IsDeleted = false
             };
             await _stockDbContext.Package.AddAsync(newPackage);
             await _stockDbContext.SaveChangesAsync();
@@ -2436,11 +2413,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ValidatePackage(fromPackageInfo);
                 ValidateStockProduct(stockProductInfo);
 
-                fromPackageInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-                stockProductInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-
                 detail.IsDeleted = true;
-                detail.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
 
             await _stockDbContext.SaveChangesAsync();

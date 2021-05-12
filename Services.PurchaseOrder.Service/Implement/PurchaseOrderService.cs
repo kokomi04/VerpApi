@@ -1128,7 +1128,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.IsChecked = true;
 
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Checked;
-                info.CheckedDatetimeUtc = DateTime.UtcNow;
+                info.CheckedDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CheckedByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -1162,7 +1162,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.IsChecked = false;
 
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Checked;
-                info.CheckedDatetimeUtc = DateTime.UtcNow;
+                info.CheckedDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CheckedByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -1201,7 +1201,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.IsApproved = true;
 
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Censored;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -1241,7 +1241,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.IsApproved = false;
 
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Censored;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
