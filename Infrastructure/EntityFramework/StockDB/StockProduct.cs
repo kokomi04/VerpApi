@@ -14,5 +14,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal ProductUnitConversionWaitting { get; set; }
         public decimal ProductUnitConversionRemaining { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public int CreatedByUserId { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
     }
 }

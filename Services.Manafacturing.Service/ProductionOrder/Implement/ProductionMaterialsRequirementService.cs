@@ -69,7 +69,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     if (!model.RequirementDate.HasValue)
                     {
-                        model.RequirementDate = DateTime.UtcNow.GetUnix();
+                        model.RequirementDate = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset);
                     }
 
                     CustomGenCodeOutputModel currentConfig = null;
@@ -346,7 +346,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 requirement.CensorStatus = (int)status;
                 requirement.CensorByUserId = _currentContextService.UserId;
-                requirement.CensorDatetimeUtc = DateTime.UtcNow;
+                requirement.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset).UnixToDateTime();
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 long inventoryRequirmentId = 0;

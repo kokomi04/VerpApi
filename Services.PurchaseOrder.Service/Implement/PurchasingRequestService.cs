@@ -335,7 +335,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
                     purchasingRequest.IsApproved = true;                    
                     purchasingRequest.CensorByUserId = _currentContext.UserId;
-                    purchasingRequest.CensorDatetimeUtc = DateTime.UtcNow;
+                    purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 }
 
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
@@ -760,7 +760,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.IsApproved = true;
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -791,7 +791,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.RejectCount++;
 
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
