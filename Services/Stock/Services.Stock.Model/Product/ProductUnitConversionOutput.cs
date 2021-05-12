@@ -14,5 +14,6 @@
         public string ConversionDescription { get; set; }
 
         public bool IsDefault { get; set; }
+        public int DecimalPlace { get; set; }
     }
 }
