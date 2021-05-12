@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public string ConversionDescription { get; set; }
         public bool? IsFreeStyle { get; set; }
         public bool IsDefault { get; set; }
+        public int DecimalPlace { get; set; }
 
         public virtual Product Product { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }

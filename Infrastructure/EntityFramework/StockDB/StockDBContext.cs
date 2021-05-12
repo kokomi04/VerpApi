@@ -667,6 +667,8 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.Property(e => e.ConversionDescription).HasMaxLength(512);
 
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
+
                 entity.Property(e => e.FactorExpression)
                     .IsRequired()
                     .HasMaxLength(256);

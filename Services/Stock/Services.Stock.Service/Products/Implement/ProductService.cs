@@ -33,6 +33,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class ProductService : IProductService
     {
+        public const int DECIMAL_PLACE_DEFAULT = 12;
+
         private readonly StockDBContext _stockContext;
         private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
@@ -148,7 +150,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = "1",
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
-                    IsFreeStyle = false
+                    IsFreeStyle = false,
+                    DecimalPlace = DECIMAL_PLACE_DEFAULT
                 };
                 _stockContext.ProductUnitConversion.Add(unitConverion);
 
@@ -225,7 +228,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = "1",
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
-                    IsFreeStyle = false
+                    IsFreeStyle = false,
+                    DecimalPlace = DECIMAL_PLACE_DEFAULT
                 };
                 _stockContext.ProductUnitConversion.Add(unitConverion);
 
@@ -360,7 +364,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = u.FactorExpression,
                     ConversionDescription = u.ConversionDescription,
                     IsDefault = false,
-                    IsFreeStyle = u.IsFreeStyle
+                    IsFreeStyle = u.IsFreeStyle,
+                    DecimalPlace = u.DecimalPlace < 0 ? DECIMAL_PLACE_DEFAULT: u.DecimalPlace
                 })
             .ToList();
 
@@ -378,7 +383,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = "1",
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
-                    IsFreeStyle = false
+                    IsFreeStyle = false,
+                    DecimalPlace = DECIMAL_PLACE_DEFAULT
                 }
             );
 
@@ -547,7 +553,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             FactorExpression = u.FactorExpression,
                             ConversionDescription = u.ConversionDescription,
                             IsDefault = false,
-                            IsFreeStyle = u.IsFreeStyle
+                            IsFreeStyle = u.IsFreeStyle,
+                            DecimalPlace = u.DecimalPlace
                         });
 
 
@@ -567,6 +574,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             db.FactorExpression = u.FactorExpression;
                             db.ConversionDescription = u.ConversionDescription;
                             db.IsFreeStyle = u.IsFreeStyle;
+                            db.DecimalPlace = u.DecimalPlace;
                         }
                     }
                     var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
@@ -576,6 +584,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         defaultUnitConversion.IsDefault = true;
                         defaultUnitConversion.IsFreeStyle = false;
                         defaultUnitConversion.ProductUnitConversionName = unitInfo.UnitName;
+                        defaultUnitConversion.DecimalPlace = DECIMAL_PLACE_DEFAULT;
                     }
 
                     await _stockContext.SaveChangesAsync();
@@ -1076,7 +1085,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             IsDefault = c.IsDefault,
                             IsFreeStyle = c.IsFreeStyle ?? false,
                             FactorExpression = c.FactorExpression,
-                            ConversionDescription = c.ConversionDescription
+                            ConversionDescription = c.ConversionDescription,
+                            DecimalPlace = c.DecimalPlace
                         }).ToList()
                     } : null
                 });
@@ -1150,6 +1160,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unit01Text = nameof(ProductImportModel.SecondaryUnit01);
             var exp01Text = nameof(ProductImportModel.FactorExpression01);
+            var decimalPlace01Text = nameof(ProductImportModel.DecimalPlace01);
             Type typeInfo = typeof(ProductImportModel);
 
             foreach (var row in data)
@@ -1331,7 +1342,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 FactorExpression = "1",
                                 ConversionDescription = "Mặc định",
                                 IsDefault = true,
-                                IsFreeStyle = false
+                                IsFreeStyle = false,
+                                DecimalPlace = DECIMAL_PLACE_DEFAULT
                             }
                         };
 
@@ -1339,8 +1351,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
                         var expText = suffix > 1 ? new StringBuilder(exp01Text).Remove(exp01Text.Length - 2, 2).Append($"0{suffix}").ToString() : exp01Text;
+                        var decimalPlaceText = suffix > 1 ? new StringBuilder(decimalPlace01Text).Remove(decimalPlace01Text.Length - 2, 2).Append($"0{suffix}").ToString() : decimalPlace01Text;
                         var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
                         var exp = typeInfo.GetProperty(expText).GetValue(row) as string;
+                        int.TryParse(typeInfo.GetProperty(decimalPlaceText).GetValue(row) as string, out int decimalPlace);
                         if (!string.IsNullOrEmpty(unit))
                         {
                             try
@@ -1363,7 +1377,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 SecondaryUnitId = units[unit.NormalizeAsInternalName()],
                                 FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
                                 IsDefault = false,
-                                IsFreeStyle = false
+                                IsFreeStyle = false,
+                                DecimalPlace = decimalPlace > 0 ? decimalPlace : DECIMAL_PLACE_DEFAULT
                             });
                         }
                     }

@@ -96,26 +96,36 @@ namespace VErp.Services.Stock.Model.Product
         public string SecondaryUnit01 { get; set; }
         [Display(Name = "ĐVT1 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
         public string FactorExpression01 { get; set; }
+        [Display(Name = "ĐVT1 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        public int DecimalPlace01 { get; set; }
 
         [Display(Name = "ĐVT2 - Tên", GroupName = "Đơn vị chuyển đổi")]
         public string SecondaryUnit02 { get; set; }
         [Display(Name = "ĐVT2 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
         public string FactorExpression02 { get; set; }
+        [Display(Name = "ĐVT2 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        public int DecimalPlace02 { get; set; }
 
         [Display(Name = "ĐVT3 - Tên", GroupName = "Đơn vị chuyển đổi")]
         public string SecondaryUnit03 { get; set; }
         [Display(Name = "ĐVT3 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
         public string FactorExpression03 { get; set; }
+        [Display(Name = "ĐVT3 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        public int DecimalPlace03 { get; set; }
 
         [Display(Name = "ĐVT4 - Tên", GroupName = "Đơn vị chuyển đổi")]
         public string SecondaryUnit04 { get; set; }
         [Display(Name = "ĐVT4 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
         public string FactorExpression04 { get; set; }
+        [Display(Name = "ĐVT4 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        public int DecimalPlace04 { get; set; }
 
         [Display(Name = "ĐVT5 - Tên", GroupName = "Đơn vị chuyển đổi")]
         public string SecondaryUnit05 { get; set; }
         [Display(Name = "ĐVT5 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
         public string FactorExpression05 { get; set; }
+        [Display(Name = "ĐVT5 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        public int DecimalPlace05 { get; set; }
 
 
         public ProductImportModel()
