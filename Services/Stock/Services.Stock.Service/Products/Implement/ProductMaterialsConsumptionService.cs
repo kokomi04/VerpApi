@@ -36,12 +36,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
 
+        private readonly IProductService _productService;
+        private readonly IUnitService _unitService;
+
         public ProductMaterialsConsumptionService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductBomService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , IProductBomService productBomService
+            , IProductService productService
+            , IUnitService unitService
             , IOrganizationHelperService organizationHelperService
             , IManufacturingHelperService manufacturingHelperService)
         {
@@ -53,6 +58,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _productBomService = productBomService;
             _organizationHelperService = organizationHelperService;
             _manufacturingHelperService = manufacturingHelperService;
+            _productService = productService;
+            _unitService = unitService;
         }
 
         public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int productId)
@@ -296,40 +303,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream, int materialsConsumptionGroupId)
         {
-            var reader = new ExcelReader(stream);
-            var data = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping, null);
+            var facade = new ProductMaterialsConsumptionInportFacade(_stockDbContext
+                , _organizationHelperService
+                , _manufacturingHelperService
+                , _activityLogService)
+                .SetService(_productService)
+                .SetService(_unitService);
 
-            var groups = (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductMaterialsConsumptionGroupCode, v => v.ProductMaterialsConsumptionGroupId);
-
-            var products = (await _stockDbContext.Product.AsNoTracking().ToListAsync())
-                .GroupBy(x => x.ProductCode).Select(x => x.First())
-                .ToDictionary(k => k.ProductCode, v => v.ProductId);
-            var departments = (await _organizationHelperService.GetAllDepartmentSimples())
-                .GroupBy(x => x.DepartmentCode).Select(x => x.First())
-                .ToDictionary(k => k.DepartmentCode, v => v.DepartmentId);
-
-            var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                .Where(x => x.ProductId == productId && x.ProductMaterialsConsumptionGroupId == materialsConsumptionGroupId)
-                .ToListAsync()).Select(k => k.MaterialsConsumptionId);
-
-            foreach (var row in data)
-            {
-                if (!products.ContainsKey(row.ProductCode) || oldMaterialConsumption.Contains(products[row.ProductCode]) || !departments.ContainsKey(row.DepartmentCode)) continue;
-
-                var item = new ProductMaterialsConsumption
-                {
-                    MaterialsConsumptionId = products[row.ProductCode],
-                    ProductId = productId,
-                    Quantity = row.Quantity,
-                    DepartmentId = departments[row.DepartmentCode],
-                    ProductMaterialsConsumptionGroupId = materialsConsumptionGroupId
-                };
-
-                _stockDbContext.ProductMaterialsConsumption.Add(item);
-            }
-
-            await _stockDbContext.SaveChangesAsync();
-            return true;
+            return await facade.ProcessData(mapping, stream, productId,materialsConsumptionGroupId);
         }
 
         public async Task<long> AddProductMaterialsConsumption(int productId, ProductMaterialsConsumptionInput model)

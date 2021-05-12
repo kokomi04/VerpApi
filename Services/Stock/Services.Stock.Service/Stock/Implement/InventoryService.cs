@@ -135,14 +135,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                inventoryQuery = inventoryQuery.Where(q => q.InventoryCode.Contains(keyword)
-                || q.Shipper.Contains(keyword)
-                || q.Content.Contains(keyword)
-                || q.Department.Contains(keyword)
-                || q.BillForm.Contains(keyword)
-                || q.BillCode.Contains(keyword)
-                || q.BillSerial.Contains(keyword)
-                );
+                var inventoryIdsQuery = from p in _stockDbContext.Product
+                                        join d in _stockDbContext.InventoryDetail on p.ProductId equals d.ProductId
+                                        where p.ProductCode.Contains(keyword)
+                                        || p.ProductName.Contains(keyword)
+                                        || p.ProductNameEng.Contains(keyword)
+                                        || d.OrderCode.Contains(keyword)
+                                        || d.ProductionOrderCode.Contains(keyword)
+                                        || d.Pocode.Contains(keyword)
+                                        || d.Description.Contains(keyword)
+                                        || d.RefObjectCode.Contains(keyword)
+                                        select d.InventoryId;
+
+                inventoryQuery = from q in inventoryQuery
+                                 join c in _stockDbContext.RefCustomerBasic on q.CustomerId equals c.CustomerId into cs
+                                 from c in cs.DefaultIfEmpty()
+                                 where q.InventoryCode.Contains(keyword)
+                                    || q.Shipper.Contains(keyword)
+                                    || q.Content.Contains(keyword)
+                                    || q.Department.Contains(keyword)
+                                    || q.BillForm.Contains(keyword)
+                                    || q.BillCode.Contains(keyword)
+                                    || q.BillSerial.Contains(keyword)
+                                    || c.CustomerCode.Contains(keyword)
+                                    || c.CustomerName.Contains(keyword)
+                                    || inventoryIdsQuery.Contains(q.InventoryId)
+                                 select q;
             }
 
             if (isApproved.HasValue)
@@ -338,6 +356,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     .ToDictionary(p => p.PackageId, p => p);
 
                 var listInventoryDetailsOutput = new List<InventoryDetailOutput>(inventoryDetails.Count);
+
+                var inventoryRequirementDetailIds = inventoryDetails
+                    .Where(d => d.InventoryRequirementDetailId.HasValue)
+                    .Select(d => d.InventoryRequirementDetailId)
+                    .ToList();
+
+                var inventoryRequirementMap = _stockDbContext.InventoryRequirementDetail
+                    .Include(id => id.InventoryRequirement)
+                    .Where(id => inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId))
+                    .Select(id => new
+                    {
+                        id.InventoryRequirementDetailId,
+                        id.InventoryRequirement.InventoryRequirementCode,
+                        id.InventoryRequirement.InventoryRequirementId
+                    })
+                    .ToList()
+                    .GroupBy(id => id.InventoryRequirementDetailId)
+                    .ToDictionary(g => g.Key, g => g.Select(id => new InventoryRequirementSimpleInfo
+                    {
+                        InventoryRequirementId = id.InventoryRequirementId,
+                        InventoryRequirementCode = id.InventoryRequirementCode
+                    }).ToList());
+
                 foreach (var details in inventoryDetails)
                 {
                     ProductListOutput productOutput = null;
@@ -375,7 +416,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     productUnitConversions.TryGetValue(details.ProductUnitConversionId, out var productUnitConversionInfo);
 
-                    listInventoryDetailsOutput.Add(new InventoryDetailOutput
+                    var detail = new InventoryDetailOutput
                     {
                         InventoryId = details.InventoryId,
                         InventoryDetailId = details.InventoryDetailId,
@@ -406,7 +447,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Description = details.Description,
                         AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                         InventoryRequirementDetailId = details.InventoryRequirementDetailId
-                    });
+                    };
+
+                    if (detail.InventoryRequirementDetailId.HasValue && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
+                    {
+                        detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
+                    }
+
+                    listInventoryDetailsOutput.Add(detail);
                 }
                 #endregion
 
@@ -1279,41 +1327,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
+                        try
+                        {
+                            await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Lỗi cập nhật trạng thái lệnh sản xuất");
+                            throw new Exception("Lỗi cập nhật trạng thái lệnh sản xuất: " + ex.Message, ex);
+                        }
+
+
                         trans.Commit();
-
-                        // update trạng thái cho lệnh sản xuất
-                        var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
-                        var requirementDetails = _stockDbContext.InventoryRequirementDetail
-                            .Include(rd => rd.InventoryRequirement)
-                            .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId))
-                            .ToList();
-                        var productionOrderIds = requirementDetails
-                            .Where(rd => rd.InventoryRequirement.ProductionOrderId.HasValue)
-                            .Select(rd => rd.InventoryRequirement.ProductionOrderId.Value)
-                            .Distinct()
-                            .ToList();
-                        foreach (var productionOrderId in productionOrderIds)
-                        {
-                            await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, EnumProductionStatus.Finished);
-                        }
-
-                        // update trạng thái cho phân công công việc
-                        var assignments = requirementDetails
-                            .Where(rd => rd.InventoryRequirement.ProductionOrderId.HasValue && rd.DepartmentId.HasValue && rd.ProductionStepId.HasValue)
-                            .Select(rd => new
-                            {
-                                ProductionOrderId = rd.InventoryRequirement.ProductionOrderId.Value,
-                                ProductionStepId = rd.ProductionStepId.Value,
-                                DepartmentId = rd.DepartmentId.Value
-                            })
-                            .Distinct()
-                            .ToList();
-
-                        foreach (var assignment in assignments)
-                        {
-                            await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderId, assignment.ProductionStepId, assignment.DepartmentId);
-                        }
-
 
                         var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
                         await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
@@ -1329,6 +1354,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
         }
+
+      
 
         /// <summary>
         /// Duyệt phiếu xuất kho
@@ -1463,40 +1490,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
+                      
+                        try
+                        {
+                            await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Processing);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Lỗi cập nhật trạng thái lệnh sản xuất");
+                            throw new Exception("Lỗi cập nhật trạng thái lệnh sản xuất: " + ex.Message, ex);
+                        }
+
                         trans.Commit();
-
-                        // update trạng thái cho lệnh sản xuất
-                        var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
-                        var requirementDetails = _stockDbContext.InventoryRequirementDetail
-                            .Include(rd => rd.InventoryRequirement)
-                            .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId))
-                            .ToList();
-                        var productionOrderIds = requirementDetails
-                            .Where(rd => rd.InventoryRequirement.ProductionOrderId.HasValue)
-                            .Select(rd => rd.InventoryRequirement.ProductionOrderId.Value)
-                            .Distinct()
-                            .ToList();
-                        foreach (var productionOrderId in productionOrderIds)
-                        {
-                            await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, EnumProductionStatus.Processing);
-                        }
-
-                        // update trạng thái cho phân công công việc
-                        var assignments = requirementDetails
-                            .Where(rd => rd.InventoryRequirement.ProductionOrderId.HasValue && rd.DepartmentId.HasValue && rd.ProductionStepId.HasValue)
-                            .Select(rd => new
-                            {
-                                ProductionOrderId = rd.InventoryRequirement.ProductionOrderId.Value,
-                                ProductionStepId = rd.ProductionStepId.Value,
-                                DepartmentId = rd.DepartmentId.Value
-                            })
-                            .Distinct()
-                            .ToList();
-
-                        foreach (var assignment in assignments)
-                        {
-                            await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderId, assignment.ProductionStepId, assignment.DepartmentId);
-                        }
 
                         var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
                         await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
@@ -1510,6 +1515,42 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         throw;
                     }
                 }
+            }
+        }
+
+        private async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status)
+        {           
+            // update trạng thái cho lệnh sản xuất
+            var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
+            var requirementDetails = _stockDbContext.InventoryRequirementDetail
+                .Include(rd => rd.InventoryRequirement)
+                .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId))
+                .ToList();
+            var productionOrderIds = requirementDetails
+                .Where(rd => rd.InventoryRequirement.ProductionOrderId.HasValue)
+                .Select(rd => rd.InventoryRequirement.ProductionOrderId.Value)
+                .Distinct()
+                .ToList();
+            foreach (var productionOrderId in productionOrderIds)
+            {
+                await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, status);
+            }
+
+            // update trạng thái cho phân công công việc
+            var assignments = requirementDetails
+                .Where(rd => rd.InventoryRequirement.ProductionOrderId.GetValueOrDefault() > 0 && rd.DepartmentId.GetValueOrDefault() > 0 && rd.ProductionStepId.GetValueOrDefault() > 0)
+                .Select(rd => new
+                {
+                    ProductionOrderId = rd.InventoryRequirement.ProductionOrderId.Value,
+                    ProductionStepId = rd.ProductionStepId.Value,
+                    DepartmentId = rd.DepartmentId.Value
+                })
+                .Distinct()
+                .ToList();
+
+            foreach (var assignment in assignments)
+            {
+                await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderId, assignment.ProductionStepId, assignment.DepartmentId);
             }
         }
 

@@ -37,6 +37,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnBlur { get; set; }
         public string OnChange { get; set; }
         public string OnClick { get; set; }
+        public string ReferenceUrl { get; set; }
 
         protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {
@@ -153,6 +154,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnBlurExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnBlur), VoucherField);
         public string OnChangeExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnChange), VoucherField);
         public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), VoucherField);
+        public string ReferenceUrlExec => execCodeCombine.GetExecCode(nameof(IFieldData.ReferenceUrl), VoucherField);
     }
 
 }

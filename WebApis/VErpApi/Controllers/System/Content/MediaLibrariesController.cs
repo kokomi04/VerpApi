@@ -91,7 +91,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("files/upload")]
-        public async Task<bool> UploadFiles([FromForm] string directory, [FromForm] List<IFormFile> files)
+        public async Task<bool> UploadFiles([FromForm] string directory, List<IFormFile> files)
         {
             return await _mediaService.UploadFiles(directory, files);
         }

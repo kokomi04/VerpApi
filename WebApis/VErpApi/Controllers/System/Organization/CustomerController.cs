@@ -70,6 +70,7 @@ namespace VErpApi.Controllers.System
         [HttpPost]
         [Route("GetByIds")]
         [VErpAction(EnumActionType.View)]
+        [GlobalApi]
         public async Task<IList<CustomerListOutput>> GetListByIds([FromBody] IList<int> customerIds)
         {
             return (await _customerService.GetListByIds(customerIds)).ToList();
@@ -162,7 +163,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {

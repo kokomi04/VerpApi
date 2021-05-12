@@ -66,14 +66,14 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("{printConfigId}")]
-        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromFormString] PrintConfigModel data, [FromForm] IFormFile file)
+        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromFormString] PrintConfigModel data, IFormFile file)
         {
             return await _printConfigService.UpdatePrintConfig(printConfigId, data, file);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<int> AddPrintConfig([FromFormString] PrintConfigModel data, [FromForm] IFormFile file)
+        public async Task<int> AddPrintConfig([FromFormString] PrintConfigModel data, IFormFile file)
         {
             return await _printConfigService.AddPrintConfig(data, file);
         }
@@ -122,7 +122,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("{printConfigId}/addPrintTemplate")]
-        public async Task<bool> AddPrintTemplate([FromRoute] int printConfigId, [FromForm] IFormFile file)
+        public async Task<bool> AddPrintTemplate([FromRoute] int printConfigId, IFormFile file)
         {
             return await _printConfigService.AddPrintTemplate(printConfigId, file);
         }

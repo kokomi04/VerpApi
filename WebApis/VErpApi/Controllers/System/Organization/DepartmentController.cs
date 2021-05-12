@@ -10,6 +10,7 @@ using VErp.Services.Organization.Service.Department;
 using VErp.Services.Organization.Model.Department;
 using System.Collections.Generic;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Infrastructure.ApiCore.Attributes;
 
 namespace VErpApi.Controllers.System
 {
@@ -34,6 +35,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("GetByIds")]
+        [GlobalApi]
         public async Task<IList<DepartmentModel>> GetByIds([FromQuery] IList<int> departmentIds)
         {
             return await _departmentService.GetListByIds(departmentIds);

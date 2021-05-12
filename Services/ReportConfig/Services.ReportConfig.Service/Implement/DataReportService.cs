@@ -485,10 +485,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var data = table.ConvertData();
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
+
             foreach (var column in calSumColumns)
             {
                 totals.Add(column.Alias, 0M);
             }
+
+            var groupColumAlias = columns.Where(c => c.IsGroupRow).Select(c => c.Alias).ToHashSet();
+            var isSumByGroup = groupColumAlias.Count > 0;
+            var groupTokenSums = new GroupTokenSum();
 
             for (var i = 0; i < data.Count; i++)
             {
@@ -496,15 +501,51 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 if (row != null)
                 {
-                    foreach (var column in calSumColumns)
+                    if (isSumByGroup)
                     {
-                        var colData = row[column.Alias];
-                        if (!colData.IsNullObject())
+                        string token = string.Join("|", groupColumAlias.Select(columnAlias => row[columnAlias]));
+                        if (!groupTokenSums.TryGetValue(token, out var groupTokenSum))
                         {
-                            totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
+                            groupTokenSum = new ColumnGroupHasBeenSum();
+                            groupTokenSums.Add(token, groupTokenSum);
+                        }
+
+                        foreach (var column in calSumColumns)
+                        {
+                            var colData = row[column.Alias];
+
+                            if (!colData.IsNullObject())
+                            {
+                                var decimalValue = Convert.ToDecimal(colData);
+                                if (!groupColumAlias.Contains(column.Alias))
+                                {
+                                    totals[column.Alias] = (decimal)totals[column.Alias] + decimalValue;
+                                }
+                                else
+                                {
+                                    if (!groupTokenSum.Contains(column.Alias))
+                                    {
+                                        totals[column.Alias] = (decimal)totals[column.Alias] + decimalValue;
+                                        groupTokenSum.Add(column.Alias);
+                                    }
+                                }
+
+                            }
+                        }
+
+                    }
+                    else
+                    {
+                        foreach (var column in calSumColumns)
+                        {
+                            var colData = row[column.Alias];
+
+                            if (!colData.IsNullObject())
+                            {
+                                totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(row[column.Alias]);
+                            }
                         }
                     }
-
                 }
 
             }
@@ -512,6 +553,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var pagedData = size > 0 ? data.Skip((page - 1) * size).Take(size).ToList() : data;
 
             return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
+
+        }
+
+        class ColumnGroupHasBeenSum : HashSet<string>
+        {
+
+        }
+
+        class GroupTokenSum : Dictionary<string, ColumnGroupHasBeenSum>
+        {
 
         }
 
@@ -780,11 +831,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
         {
 
-            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
+            var reportInfo = await _reportConfigDBContext.ReportType.AsNoTracking().Include(x => x.ReportTypeGroup).FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
+            if(!reportInfo.TemplateFileId.HasValue) throw new BadRequestException(FileErrorCode.FileNotFound, "Chưa thiết lập mẫu in cho báo cáo");
 
             var fileInfo = await _physicalFileService.GetSimpleFileInfo(reportInfo.TemplateFileId.Value);
 

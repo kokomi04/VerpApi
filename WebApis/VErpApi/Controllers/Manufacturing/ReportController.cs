@@ -53,19 +53,19 @@ namespace VErpApi.Controllers.Manufacturing
             return await _reportService.GetProductionOrderReport(fromDate, toDate);
         }
 
-        //[HttpGet]
-        //[Route("ProcessingScheduleList")]
-        //public async Task<IList<ProductionProcessingListModel>> GetProcessingScheduleList()
-        //{
-        //    return await _reportService.GetProcessingScheduleList();
-        //}
+        [HttpGet]
+        [Route("ProcessingOrderList")]
+        public async Task<IList<ProcessingOrderListModel>> GetProcessingScheduleList()
+        {
+            return await _reportService.GetProcessingOrderList();
+        }
 
-        //[HttpPost]
-        //[Route("ProductionProgress/{scheduleTurnId}")]
-        //public async Task<IList<StepReportModel>> GetProcessingStepReport([FromRoute] long scheduleTurnId, [FromBody] int[] stepIds)
-        //{
-        //    return await _reportService.GetProcessingStepReport(scheduleTurnId, stepIds);
-        //}
+        [HttpPost]
+        [Route("ProductionProgress/{productionOrderId}")]
+        public async Task<IList<StepReportModel>> GetProcessingStepReport([FromRoute] long productionOrderId, [FromBody] int[] stepIds)
+        {
+            return await _reportService.GetProcessingStepReport(productionOrderId, stepIds);
+        }
 
         [HttpGet]
         [Route("OutsourcePartRequest")]

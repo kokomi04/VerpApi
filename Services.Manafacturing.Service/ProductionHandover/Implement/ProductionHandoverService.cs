@@ -257,9 +257,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .Include(ps => ps.OutsourceStepRequest)
                 .Include(ps => ps.ProductionStepLinkDataRole)
                 .ThenInclude(ldr => ldr.ProductionStepLinkData)
-                .First(ps => ps.ContainerId == productionOrderId && ps.ProductionStepId == productionStepId && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder);
+                .FirstOrDefault(ps => ps.ContainerId == productionOrderId && ps.ProductionStepId == productionStepId && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder);
 
-            if (productionStep == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại bàn công đoạn");
+            if (productionStep == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại công đoạn");
 
             var productionAssignment = _manufacturingDBContext.ProductionAssignment
                 .Where(a => a.ProductionOrderId == productionOrderId

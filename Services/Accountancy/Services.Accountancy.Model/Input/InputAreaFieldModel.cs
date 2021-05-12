@@ -38,6 +38,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnBlur { get; set; }
         public string OnChange { get; set; }
         public string OnClick { get; set; }
+        public string ReferenceUrl { get; set; }
 
         public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
@@ -154,5 +155,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnBlurExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnBlur), InputField);
         public string OnChangeExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnChange), InputField);
         public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), InputField);
+
+        public string ReferenceUrlExec => execCodeCombine.GetExecCode(nameof(IFieldData.ReferenceUrl), InputField);
     }
 }

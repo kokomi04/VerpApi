@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -412,6 +412,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
+
                 entity.Property(e => e.RegularExpression).HasMaxLength(256);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
@@ -468,6 +470,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.RefTableField).HasMaxLength(128);
 
                 entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
             });

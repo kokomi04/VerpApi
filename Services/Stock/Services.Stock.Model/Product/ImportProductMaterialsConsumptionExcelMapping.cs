@@ -25,16 +25,22 @@ namespace VErp.Services.Stock.Model.Product
         public string Specification { get; set; }
 
 
+        [Display(Name = "Danh mục mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
+        public string ProductCateName { get; set; }
+
+
         [Display(Name = "Số lượng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập số lượng")]
         public decimal Quantity { get; set; }
 
 
-        [Display(Name = "Mã bộ phận", GroupName = "Thông tin chung")]
-        [Required(ErrorMessage = "Vui lòng nhập mã bộ phận")]
+        [Display(Name = "Mã bộ phận (Nếu có)", GroupName = "Thông tin chung")]
         public string DepartmentCode { get; set; }
         [Display(Name = "Tên bộ phận (Nếu có)", GroupName = "Thông tin chung")]
         public string DepartmentName { get; set; }
+
+        [Display(Name = "Tên công đoạn (Nếu có)", GroupName = "Thông tin chung")]
+        public string StepName { get; set; }
 
         //[Display(Name = "Mã nhóm vật tư tiêu hao", GroupName = "Thông tin chung")]
         //[Required(ErrorMessage = "Vui lòng nhập mã nhóm vật tư tiêu hao")]

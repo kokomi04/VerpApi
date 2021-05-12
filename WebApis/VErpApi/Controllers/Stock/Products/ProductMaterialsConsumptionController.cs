@@ -70,7 +70,7 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpPost]
         [Route("{productId}/materialsConsumption/importFromMapping")]
-        public async Task<bool> ImportMaterialsConsumptionFromMapping([FromRoute] int productId, [FromFormString] ImportExcelMapping mapping, [FromForm] IFormFile file, [FromQuery] int materialsConsumptionGroupId)
+        public async Task<bool> ImportMaterialsConsumptionFromMapping([FromRoute] int productId, [FromFormString] ImportExcelMapping mapping, IFormFile file, [FromQuery] int materialsConsumptionGroupId)
         {
             if (file == null)
             {

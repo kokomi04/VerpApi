@@ -83,7 +83,17 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(s => s.InventoryRequirement.InventoryRequirementCode.Contains(keyword)
-                || s.InventoryRequirement.Content.Contains(keyword));
+                || s.InventoryRequirement.Content.Contains(keyword)
+                || s.OrderCode.Contains(keyword)
+                || s.ProductionOrderCode.Contains(keyword)
+                || s.OutsourceStepRequestCode.Contains(keyword)
+                || s.Pocode.Contains(keyword)
+                || s.Product.ProductCode.Contains(keyword)
+                || s.Product.ProductName.Contains(keyword)
+                || s.Product.ProductNameEng.Contains(keyword)
+
+                );
+
             }
 
             query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
@@ -113,7 +123,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
             var inventoryDetailQuantitys = _stockDBContext.InventoryDetail
                 .Include(id => id.Inventory)
-                .Where(id => id.InventoryRequirementDetailId.HasValue && id.Inventory.IsApproved && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
+                .Where(id => id.InventoryRequirementDetailId.HasValue && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
                 .GroupBy(id => id.InventoryRequirementDetailId)
                 .Select(g => new
                 {

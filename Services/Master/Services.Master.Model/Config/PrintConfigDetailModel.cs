@@ -8,7 +8,7 @@ namespace VErp.Services.Master.Model.Config
 {
     public class PrintConfigDetailModel : IMapFrom<PrintConfigDetail>
     {
-        public int PrintConfigId { get; set; }
+        public int? PrintConfigId { get; set; }
         public string BodyTable { get; set; }
         public string GenerateCode { get; set; }
         public int? PaperSize { get; set; }

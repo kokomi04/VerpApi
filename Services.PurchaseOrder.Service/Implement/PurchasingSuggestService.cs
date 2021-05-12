@@ -40,6 +40,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IPurchasingRequestService _purchasingRequestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly ICurrentContextService _currentContextService;
 
         public PurchasingSuggestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -52,6 +53,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IPurchasingRequestService purchasingRequestService
             , IProductHelperService productHelperService
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , ICurrentContextService currentContextService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -64,6 +66,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _purchasingRequestService = purchasingRequestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _currentContextService = currentContextService;
         }
 
 
@@ -165,13 +168,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (fromDate.HasValue)
             {
                 var time = fromDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc >= time);
+                query = query.Where(q => q.Date >= time || q.CensorDatetimeUtc >= time);
             }
 
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+                query = query.Where(q => q.Date <= time || q.CensorDatetimeUtc <= time);
             }
 
             var total = await query.CountAsync();
@@ -276,13 +279,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (fromDate.HasValue)
             {
                 var time = fromDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc >= time);
+                query = query.Where(q => q.Date >= time || q.CensorDatetimeUtc >= time);
             }
 
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+                query = query.Where(q => q.Date <= time || q.CensorDatetimeUtc <= time);
             }
 
             var total = await query.CountAsync();
@@ -634,7 +637,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.IsApproved = true;
                 info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Censored;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorDatetimeUtc = (DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset)).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -676,7 +679,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.RejectCount++;
 
                 info.PurchasingSuggestStatusId = (int)EnumPurchasingSuggestStatus.Censored;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorDatetimeUtc = (DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset)).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();

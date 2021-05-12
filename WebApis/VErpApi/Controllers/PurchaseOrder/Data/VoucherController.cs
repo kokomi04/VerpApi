@@ -92,7 +92,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpPost]
         [Route("{voucherTypeId}/importFromMapping")]
-        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] ImportBillExelMapping mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] ImportBillExelMapping mapping, IFormFile file)
         {
             if (file == null)
             {

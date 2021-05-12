@@ -96,7 +96,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpPost]
         [Route("{inputTypeId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportBillExelMapping mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportBillExelMapping mapping, IFormFile file)
         {
             if (file == null)
             {

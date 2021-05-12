@@ -582,6 +582,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                        p.ProductId,
                                        p.ProductCode,
                                        p.ProductName,
+                                       p.MainImageFileId,
                                        Specification = pe != null ? pe.Specification : string.Empty,
                                        p.UnitId,
                                        p.ProductTypeId,
@@ -630,7 +631,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryUnitId = pi.UnitId,
                     PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
                     AmountWarningMin = pi.AmountWarningMin ?? 0,
-                    AmountWarningMax = pi.AmountWarningMax ?? 0
+                    AmountWarningMax = pi.AmountWarningMax ?? 0,
+                    MainImageFileId = pi.MainImageFileId
                 };
                 item.StockProductQuantityList = spList;
                 item.TotalPrimaryQuantityRemaining = spList.Count > 0 ? item.StockProductQuantityList.Sum(q => q.PrimaryQuantityRemaining) : 0;
@@ -1031,6 +1033,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
               select new
               {
                   i.InventoryId,
+                  i.CustomerId,
+                  i.DepartmentId,
                   i.StockId,
                   i.Date,
                   i.CreatedDatetimeUtc,
@@ -1092,6 +1096,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 resultData.Details.Add(new StockProductDetailsModel
                 {
                     InventoryId = item.InventoryId,
+                    CustomerId = item.CustomerId,
+                    DepartmentId = item.DepartmentId,
                     StockId = item.StockId,
                     StockName = stocks.FirstOrDefault(s => s.StockId == item.StockId)?.StockName,
                     IssuedDate = item.Date.GetUnix(),

@@ -118,6 +118,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductCateId = defaultProductCate.ProductCateId,
                     UnitId = req.UnitId,
                     IsProductSemi = false,
+                    IsProduct = true,
                     Coefficient = 1
                 };
 
@@ -194,7 +195,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductCateId = defaultProductCate.ProductCateId,
                     UnitId = req.UnitId,
                     IsProductSemi = true,
-                    Coefficient = 1
+                    Coefficient = 1,
+                    IsProduct = false
                 };
 
                 await _stockContext.AddAsync(productInfo);
@@ -297,6 +299,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 ProductDescription = req.ProductDescription,
                 ProductNameEng = req.ProductNameEng,
                 IsProductSemi = req.IsProductSemi,
+                IsProduct = req.IsProduct,
                 Coefficient = req.Coefficient < 1 ? 1 : req.Coefficient
             };
 
@@ -498,6 +501,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productInfo.ProductDescription = req.ProductDescription;
                     productInfo.ProductNameEng = req.ProductNameEng;
                     productInfo.IsProductSemi = req.IsProductSemi;
+                    productInfo.IsProduct = req.IsProduct;
                     productInfo.Coefficient = req.Coefficient < 1 ? 1 : req.Coefficient;
 
                     //Product extra info
@@ -740,7 +744,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, Clause filters = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, Clause filters = null)
         {
             var productInternalName = productName.NormalizeAsInternalName();
 
@@ -751,10 +755,23 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(x => productIds.Contains(x.ProductId));
             }
 
-            if (isProductSemi.HasValue)
+            if (isProductSemi.HasValue && isProduct.HasValue)
             {
-                products = products.Where(x => x.IsProductSemi == isProductSemi);
+                products = products.Where(x => x.IsProductSemi == isProductSemi || x.IsProduct == isProduct);
+            }else
+            {
+
+                if (isProductSemi.HasValue)
+                {
+                    products = products.Where(x => x.IsProductSemi == isProductSemi);
+                }
+                if (isProduct.HasValue)
+                {
+                    products = products.Where(x => x.IsProduct == isProduct);
+                }
             }
+
+
             products = products.InternalFilter(filters);
             if (!string.IsNullOrWhiteSpace(productName))
             {
@@ -784,7 +801,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.UnitId,
                   p.EstimatePrice,
                   p.IsProductSemi,
-                  p.Coefficient
+                  p.Coefficient, 
+                  p.IsProduct,
+                  p.Height,
+                  p.Long,
+                  p.Width
               });
 
             if (productTypeIds != null && productTypeIds.Length > 0)
@@ -841,7 +862,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     UnitId = item.UnitId,
                     EstimatePrice = item.EstimatePrice,
                     IsProductSemi = item.IsProductSemi,
-                    Coefficient = item.Coefficient
+                    Coefficient = item.Coefficient,
+                    IsProduct = item.IsProduct ?? false,
+                    Long = item.Long,
+                    Width = item.Width,
+                    Height = item.Height,
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -883,7 +908,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.UnitId,
                     p.EstimatePrice,
                     p.IsProductSemi,
-                    p.Coefficient
+                    p.Coefficient,
+                    p.IsProduct,
+                    p.Height,
+                    p.Long,
+                    p.Width
                 });
 
             var lstData = await query.ToListAsync();
@@ -912,6 +941,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     UnitId = item.UnitId,
                     EstimatePrice = item.EstimatePrice,
                     IsProductSemi = item.IsProductSemi,
+                    IsProduct = item.IsProduct ?? false,
                     Coefficient = item.Coefficient,
                     StockProductModelList = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
                     {
@@ -921,7 +951,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
                         ProductUnitConversionId = q.ProductUnitConversionId,
                         ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
-                    }).ToList()
+                    }).ToList(),
+                    Long = item.Long,
+                    Width = item.Width,
+                    Height = item.Height,
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -1016,6 +1049,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductDescription = productInfo.ProductDescription,
                     ProductNameEng = productInfo.ProductNameEng,
                     IsProductSemi = productInfo.IsProductSemi,
+                    IsProduct = productInfo.IsProduct ?? false,
                     Coefficient = productInfo.Coefficient,
 
                     Extra = productExtra != null ? new ProductModelExtra()
@@ -1264,6 +1298,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
                         IsProductSemi = row.IsProductSemi ?? false,
+                        IsProduct = row.IsProduct ?? false,
                         Coefficient = row.Coefficient,
 
                         ProductExtraInfo = new ProductExtraInfo()
