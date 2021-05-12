@@ -476,7 +476,7 @@ namespace VErp.Commons.Library
                     }
                     else
                     {
-                        return cell.NumericCellValue.ToString();
+                        return Convert.ToDecimal(cell.NumericCellValue).ToString();
                     }
             }
 
