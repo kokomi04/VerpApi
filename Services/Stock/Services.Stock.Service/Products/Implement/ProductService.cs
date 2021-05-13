@@ -73,7 +73,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<int> AddProduct(ProductModel req)
         {
-            var customGenCode = await GenerateProductCode(null, req);
+            //var customGenCode = await GenerateProductCode(null, req);
+            var ctx = await GenerateProductCode(null, req);
 
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -81,7 +82,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
 
-                await ConfirmProductCode(customGenCode);
+                //await ConfirmProductCode(customGenCode);
+                await ctx.ConfirmCode();
 
                 return productId;
             }
@@ -99,7 +101,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không tồn tại");
                 }
-                var customGenCode = await GenerateProductCode(null, req);
+                //var customGenCode = await GenerateProductCode(null, req);
+                var ctx = await GenerateProductCode(null, req);
+
 
                 var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
@@ -159,7 +163,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
-                await ConfirmProductCode(customGenCode);
+                //await ConfirmProductCode(customGenCode);
+                await ctx.ConfirmCode();
+
                 req.ProductCode = productInfo.ProductCode;
                 req.ProductId = productInfo.ProductId;
                 return req;
@@ -176,7 +182,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     req.ProductTypeId = defaultProductType?.ProductTypeId;
                 }
-                var customGenCode = await ProductGenerateProductSemiCode(parentProductId, null, req);
+                //var customGenCode = await ProductGenerateProductSemiCode(parentProductId, null, req);
+                var ctx = await ProductGenerateProductSemiCode(parentProductId, null, req);
 
                 var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
@@ -237,7 +244,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới chi tiết mặt hàng {req.ProductName}", req.JsonSerialize());
-                await ConfirmProductCode(customGenCode);
+                await ctx.ConfirmCode();// ConfirmProductCode(customGenCode);
                 req.ProductCode = productInfo.ProductCode;
                 req.ProductId = productInfo.ProductId;
                 return req;
@@ -365,7 +372,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ConversionDescription = u.ConversionDescription,
                     IsDefault = false,
                     IsFreeStyle = u.IsFreeStyle,
-                    DecimalPlace = u.DecimalPlace < 0 ? DECIMAL_PLACE_DEFAULT: u.DecimalPlace
+                    DecimalPlace = u.DecimalPlace < 0 ? DECIMAL_PLACE_DEFAULT : u.DecimalPlace
                 })
             .ToList();
 
@@ -437,7 +444,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 try
                 {
-                    var customGenCode = await GenerateProductCode(productId, req);
+                    //var customGenCode = await GenerateProductCode(productId, req);
+                    var ctx = await GenerateProductCode(productId, req);
 
                     //Getdata
                     var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -594,7 +602,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật mặt hàng {productInfo.ProductName}", req.JsonSerialize());
 
-                    await ConfirmProductCode(customGenCode);
+                    await ctx.ConfirmCode();// ConfirmProductCode(customGenCode);
                 }
                 catch (Exception)
                 {
@@ -615,11 +623,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        private async Task<CustomGenCodeBaseValueModel> GenerateProductCode(int? productId, ProductGenCodeModel model)
+        private async Task<GenerateCodeContext> GenerateProductCode(int? productId, ProductGenCodeModel model)
         {
-            int customGenCodeId = 0;
             model.ProductCode = (model.ProductCode ?? "").Trim();
 
+            var productTypeInfo = await _stockContext.ProductType.FirstOrDefaultAsync(t => t.ProductTypeId == model.ProductTypeId);
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, model.ProductTypeId ?? 0)
+                .SetConfigData(productId ?? 0, null, productTypeInfo?.IdentityCode)
+                .TryValidateAndGenerateCode(_stockContext.Product, model.ProductCode, (s, code) => s.ProductId != productId && s.ProductCode == code);
+
+            model.ProductCode = code;
+
+            return ctx;
+
+            /*
             Product existedItem = null;
             if (!string.IsNullOrWhiteSpace(model.ProductCode))
             {
@@ -643,12 +664,29 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     dem++;
                 } while (existedItem != null && dem < 10);
                 return config.CurrentLastValue;
-            }
+            }*/
         }
 
 
-        private async Task<CustomGenCodeBaseValueModel> ProductGenerateProductSemiCode(int parentProductId, int? productId, ProductGenCodeModel model)
+        private async Task<GenerateCodeContext> ProductGenerateProductSemiCode(int parentProductId, int? productId, ProductGenCodeModel model)
         {
+            model.ProductCode = (model.ProductCode ?? "").Trim();
+
+            var parentProductInfo = await _stockContext.Product.FirstOrDefaultAsync(t => t.ProductId == parentProductId);
+
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, 0)
+                .SetConfigData(productId ?? 0, null, parentProductInfo?.ProductCode)
+                .TryValidateAndGenerateCode(_stockContext.Product, model.ProductCode, (s, code) => s.ProductId != productId && s.ProductCode == code);
+
+            model.ProductCode = code;
+
+            return ctx;
+
+            /*
             int customGenCodeId = 0;
             model.ProductCode = (model.ProductCode ?? "").Trim();
 
@@ -675,15 +713,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     dem++;
                 } while (existedItem != null && dem < 10);
                 return config.CurrentLastValue;
-            }
+            }*/
         }
 
-        private async Task<bool> ConfirmProductCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
-        {
-            if (customGenCodeBaseValue.IsNullObject()) return true;
+        //private async Task<bool> ConfirmProductCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
+        //{
+        //    if (customGenCodeBaseValue.IsNullObject()) return true;
 
-            return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
-        }
+        //    return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
+        //}
 
         public async Task<bool> DeleteProduct(int productId)
         {
@@ -759,7 +797,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var products = _stockContext.Product.AsQueryable();
 
-            if(productIds != null && productIds.Count > 0)
+            if (productIds != null && productIds.Count > 0)
             {
                 products = products.Where(x => productIds.Contains(x.ProductId));
             }
@@ -767,7 +805,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (isProductSemi.HasValue && isProduct.HasValue)
             {
                 products = products.Where(x => x.IsProductSemi == isProductSemi || x.IsProduct == isProduct);
-            }else
+            }
+            else
             {
 
                 if (isProductSemi.HasValue)
@@ -810,7 +849,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.UnitId,
                   p.EstimatePrice,
                   p.IsProductSemi,
-                  p.Coefficient, 
+                  p.Coefficient,
                   p.IsProduct,
                   p.Height,
                   p.Long,

@@ -4,15 +4,11 @@ using System.Text;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
-    public class InventoryOutModel
+    public class InventoryOutModel: InventoryModelBase
     {       
-        public int StockId { get; set; }
-     
-        public string InventoryCode { get; set; }
-        
         public string Shipper { get; set; }
         public string Content { get; set; }
-        public long Date { get; set; }
+        
         public int? CustomerId { get; set; }
         public int? DepartmentId { get; set; }
         public string Department { get; set; }

@@ -42,7 +42,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IProductionOrderHelperService _productionOrderHelperService;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -54,7 +53,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IProductHelperService productHelperService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionOrderHelperService productionOrderHelperService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -66,7 +64,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _productHelperService = productHelperService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
-            _productionOrderHelperService = productionOrderHelperService;
         }
 
 
@@ -312,7 +309,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             await ValidateProductUnitConversion(model);
 
 
-            var customGenCodeLastValue = await GeneratePurchasingRequestCode(null, model);
+            var ctx = await GeneratePurchasingRequestCode(null, model);
 
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
@@ -333,7 +330,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (requestType == EnumPurchasingRequestType.OrderMaterial)
                 {
                     purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
-                    purchasingRequest.IsApproved = true;                    
+                    purchasingRequest.IsApproved = true;
                     purchasingRequest.CensorByUserId = _currentContext.UserId;
                     purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 }
@@ -360,7 +357,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequest.PurchasingRequestId, $"Thêm mới phiếu yêu cầu VTHH  {purchasingRequest.PurchasingRequestCode}", model.JsonSerialize());
 
-                await ConfirmPurchasingRequestCode(customGenCodeLastValue);
+                //await ConfirmPurchasingRequestCode(customGenCodeLastValue);
+                await ctx.ConfirmCode();
 
                 return purchasingRequest.PurchasingRequestId;
             }
@@ -373,7 +371,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockPoRequest()))
             {
 
-                var customGenCodeBaseValueModel = await GeneratePurchasingRequestCode(purchasingRequestId, model);
+                //var customGenCodeBaseValueModel = await GeneratePurchasingRequestCode(purchasingRequestId, model);
+                var ctx = await GeneratePurchasingRequestCode(purchasingRequestId, model);
 
                 if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
                 {
@@ -434,15 +433,31 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", model.JsonSerialize());
 
-                    await ConfirmPurchasingRequestCode(customGenCodeBaseValueModel);
+                    //await ConfirmPurchasingRequestCode(customGenCodeBaseValueModel);
+                    await ctx.ConfirmCode();
 
                     return true;
                 }
             }
         }
 
-        private async Task<CustomGenCodeBaseValueModel> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
-        {         
+        private async Task<GenerateCodeContext> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
+        {
+            model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
+
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.PurchasingRequest)
+                .SetConfigData(purchasingRequestId ?? 0, model.Date)
+                .TryValidateAndGenerateCode(_purchaseOrderDBContext.PurchasingRequest, model.PurchasingRequestCode, (s, code) => s.PurchasingRequestId != purchasingRequestId && s.PurchasingRequestCode == code);
+
+            model.PurchasingRequestCode = code;
+
+            return ctx;
+
+            /*
             model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
 
             PurchasingRequest existedItem = null;
@@ -465,14 +480,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     dem++;
                 } while (existedItem != null && dem < 10);
                 return config.CurrentLastValue;
-            }                      
+            }*/
         }
 
-        private async Task<bool> ConfirmPurchasingRequestCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
-        {
-            if (customGenCodeBaseValue == null) return true;
-            return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
-        }
+        //private async Task<bool> ConfirmPurchasingRequestCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
+        //{
+        //    if (customGenCodeBaseValue == null) return true;
+        //    return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
+        //}
 
         public async Task<bool> Delete(long? orderDetailId, long purchasingRequestId)
         {
