@@ -38,6 +38,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IPurchasingSuggestService _purchasingSuggestService;
         private readonly IProductHelperService _productHelperService;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
            , IOptions<AppSetting> appSetting
@@ -48,6 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IObjectGenCodeService objectGenCodeService
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
+           , ICustomGenCodeHelperService customGenCodeHelperService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -59,6 +62,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _objectGenCodeService = objectGenCodeService;
             _purchasingSuggestService = purchasingSuggestService;
             _productHelperService = productHelperService;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
@@ -498,6 +502,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 throw new BadRequestException(validate);
             }
 
+            var ctx = await GeneratePurchaseOrderCode(null, model);
+
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var poAssignmentDetailIds = model.Details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
@@ -601,9 +607,27 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, po.PurchaseOrderId, $"Tạo PO {po.PurchaseOrderCode}", model.JsonSerialize());
 
+                await ctx.ConfirmCode();
+
                 return po.PurchaseOrderId;
             }
 
+        }
+
+        private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
+        {
+            model.PurchaseOrderCode = (model.PurchaseOrderCode ?? "").Trim();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.PurchaseOrder)
+                .SetConfigData(purchaseOrderId ?? 0, model.Date)
+                .TryValidateAndGenerateCode(_purchaseOrderDBContext.PurchaseOrder, model.PurchaseOrderCode, (s, code) => s.PurchaseOrderId != purchaseOrderId && s.PurchaseOrderCode == code);
+
+            model.PurchaseOrderCode = code;
+
+            return ctx;
         }
 
         public async Task<bool> Update(long purchaseOrderId, PurchaseOrderInput model)
@@ -1366,10 +1390,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var existedItem = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(r => r.PurchaseOrderCode == model.PurchaseOrderCode && r.PurchaseOrderId != poId);
                 if (existedItem != null) return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
             }
-            else
-            {
-                return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
-            }
+            //else
+            //{
+            //    return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
+            //}
+
 
             PurchaseOrderModel poInfo = null;
 

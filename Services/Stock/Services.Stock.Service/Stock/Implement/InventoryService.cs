@@ -587,6 +587,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var insertedData = new Dictionary<long, (string inventoryCode, object data)>();
 
+            var genCodeContexts = new List<GenerateCodeContext>();
             long inventoryId = 0;
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -603,6 +604,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     foreach (var item in inventoryData)
                     {
+                        genCodeContexts.Add(await GenerateInventoryCode(model.Type, item));
+
                         inventoryId = await AddInventoryInputDB(item);
                         insertedData.Add(inventoryId, (item.InventoryCode, item));
                     }
@@ -613,6 +616,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     foreach (var item in inventoryData)
                     {
+                        genCodeContexts.Add(await GenerateInventoryCode(model.Type, item));
+
                         inventoryId = await AddInventoryOutputDb(item);
                         insertedData.Add(inventoryId, (item.InventoryCode, item));
                     }
@@ -621,6 +626,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 await trans.CommitAsync();
             }
+
 
             foreach (var item in insertedData)
             {
@@ -633,6 +639,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Xuất tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
                 }
             }
+
+            foreach (var item in genCodeContexts)
+            {
+                await item.ConfirmCode();
+            }
+
             return inventoryId;
         }
 
@@ -644,16 +656,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<long> AddInventoryInput(InventoryInModel req)
         {
+            var ctx = await GenerateInventoryCode(EnumInventoryType.Input, req);
+
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 var inventoryId = await AddInventoryInputDB(req);
                 await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Thêm mới phiếu nhập kho, mã: {req.InventoryCode}", req.JsonSerialize());
+
+                await ctx.ConfirmCode();
+
                 return inventoryId;
             }
-        }
 
+        }
 
         private async Task<long> AddInventoryInputDB(InventoryInModel req)
         {
@@ -666,9 +683,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             req.InventoryCode = req.InventoryCode.Trim();
 
+            var stockInfo = await _stockDbContext.Stock.AsNoTracking().FirstOrDefaultAsync(s => s.StockId == req.StockId);
+            if (stockInfo == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy kho");
+            }
+
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                await ValidateInventoryCode(null, req.InventoryCode);
+
+                //await ValidateInventoryCode(null, req.InventoryCode);
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
@@ -753,14 +777,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<long> AddInventoryOutput(InventoryOutModel req)
         {
+            var ctx = await GenerateInventoryCode(EnumInventoryType.Output, req);
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 var inventoryId = await AddInventoryOutputDb(req);
                 await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryId, $"Thêm mới phiếu xuất kho, mã: {req.InventoryCode}", req.JsonSerialize());
+
+                await ctx.ConfirmCode();
                 return inventoryId;
             }
+        }
+
+        private async Task<GenerateCodeContext> GenerateInventoryCode(EnumInventoryType inventoryTypeId, InventoryModelBase req)
+        {
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.InventoryOutput, EnumObjectType.Stock, req.StockId)
+                .SetConfigData(0, req.Date)
+                .TryValidateAndGenerateCode(_stockDbContext.Inventory, req.InventoryCode, (s, code) => s.InventoryTypeId == (int)inventoryTypeId && s.InventoryCode == code);
+
+            req.InventoryCode = code;
+            return ctx;
         }
 
         private async Task<long> AddInventoryOutputDb(InventoryOutModel req)
@@ -1343,7 +1383,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-      
+
 
         /// <summary>
         /// Duyệt phiếu xuất kho
@@ -1478,7 +1518,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
-                      
+
                         try
                         {
                             await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Processing);
@@ -1507,7 +1547,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
         private async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status)
-        {           
+        {
             // update trạng thái cho lệnh sản xuất
             var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
             var requirementDetails = _stockDbContext.InventoryRequirementDetail

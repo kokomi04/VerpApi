@@ -82,7 +82,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình sinh mã cho {targetObjectTypeId.GetEnumDescription()} {(configObjectId > 0 ? (long?)configObjectId : null)}");
             }
 
-            return await _genCodeConfigService.GetInfo(obj.CustomGenCodeId, fId, code,date);
+            return await _genCodeConfigService.GetInfo(obj.CustomGenCodeId, fId, code, date);
         }
 
         //public PageData<ObjectType> GetAllObjectType()
@@ -260,10 +260,27 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private async Task<IList<ObjectGenCodeMappingTypeModel>> StockMappingTypeModels()
         {
+            var result = new List<ObjectGenCodeMappingTypeModel>();
+
+            result.Add(
+                     GetObjectGenCodeMappingTypeModel(
+                     moduleTypeId: EnumModuleType.Stock,
+                     targeObjectTypeId: EnumObjectType.RequestInventoryInput,                    
+                     fieldName: "Mã yêu cầu nhập kho")
+                 );
+            result.Add(
+                   GetObjectGenCodeMappingTypeModel(
+                   moduleTypeId: EnumModuleType.Stock,
+                   targeObjectTypeId: EnumObjectType.RequestInventoryOutput,                
+                   fieldName: "Mã yêu cầu xuất kho")
+               );
+
+
+
             var productTypesTask = _productHelperService.GetAllProductType();
             var stocksTask = _stockHelperService.GetAllStock();
 
-            var result = new List<ObjectGenCodeMappingTypeModel>();
+
             foreach (var stock in await stocksTask)
             {
                 result.Add(

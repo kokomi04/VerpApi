@@ -194,7 +194,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            
+
             var pagedData = await query
                 .Select(l => new CustomGenCodeBaseValueModel
                 {
@@ -543,22 +543,24 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<bool> ConfirmCode(int customGenCodeId, string baseValue)
         {
-            if (string.IsNullOrWhiteSpace(baseValue)) baseValue = string.Empty;
-
-            var config = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(m => m.CustomGenCodeId == customGenCodeId && m.BaseValue == baseValue);
-
-            if (config == null)
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockGenerateCodeCustomKey(customGenCodeId)))
             {
-                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
-            }
-            if (config.TempValue.HasValue && config.TempValue.Value != config.LastValue)
-            {
-                config.LastValue = config.TempValue.Value;
-                config.LastCode = config.TempCode;
-                await _masterDbContext.SaveChangesAsync();
-            }
-            return true;
+                if (string.IsNullOrWhiteSpace(baseValue)) baseValue = string.Empty;
 
+                var config = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(m => m.CustomGenCodeId == customGenCodeId && m.BaseValue == baseValue);
+
+                if (config == null)
+                {
+                    throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
+                }
+                if (config.TempValue.HasValue && config.TempValue.Value != config.LastValue)
+                {
+                    config.LastValue = config.TempValue.Value;
+                    config.LastCode = config.TempCode;
+                    await _masterDbContext.SaveChangesAsync();
+                }
+                return true;
+            }
         }
 
 
