@@ -32,7 +32,6 @@ using VErp.Infrastructure.ApiCore.ModelBinders;
 namespace VErpApi.Controllers.System
 {
     [Route("api/printConfig")]
-
     public class PrintConfigController : VErpBaseController
     {
         private readonly IPrintConfigService _printConfigService;
@@ -51,81 +50,15 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet]
-        [Route("")]
-        public async Task<ICollection<PrintConfigModel>> Get([FromQuery] int moduleTypeId)
-        {
-            return await _printConfigService.GetPrintConfigs(moduleTypeId);
-        }
-
-        [HttpGet]
-        [Route("{printConfigId}")]
-        public async Task<PrintConfigModel> GetPrintConfig([FromRoute] int printConfigId, [FromQuery] bool isOrigin = false)
-        {
-            return await _printConfigService.GetPrintConfig(printConfigId, isOrigin);
-        }
-
-        [HttpPut]
-        [Route("{printConfigId}")]
-        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigId, [FromFormString] PrintConfigModel data, IFormFile file)
-        {
-            return await _printConfigService.UpdatePrintConfig(printConfigId, data, file);
-        }
-
-        [HttpPost]
-        [Route("")]
-        public async Task<int> AddPrintConfig([FromFormString] PrintConfigModel data, IFormFile file)
-        {
-            return await _printConfigService.AddPrintConfig(data, file);
-        }
-
-        [HttpDelete]
-        [Route("{printConfigId}")]
-        public async Task<bool> DeletePrintConfig([FromRoute] int printConfigId)
-        {
-            return await _printConfigService.DeletePrintConfig(printConfigId);
-        }
-
-        [HttpGet]
-        [Route("{printConfigId}/getPrintTemplate")]
-        public async Task<IActionResult> GetPrintConfigTemplateFile([FromRoute] int printConfigId, [FromQuery] bool isOrigin)
-        {
-            var r = await _printConfigService.GetPrintConfigTemplateFile(printConfigId, isOrigin);
-
-            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
-        }
-
-        [HttpPost]
-        [Route("{printConfigId}/generatePrintTemplate")]
-        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromBody] NonCamelCaseDictionary templateModel)
-        {
-            var r = await _printConfigService.GeneratePrintTemplate(printConfigId, templateModel);
-
-            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
-        }
-
-        [HttpGet]
         [Route("suggestionField")]
         public async Task<IList<EntityField>> GetSuggestionField([FromQuery] int moduleTypeId)
         {
             var fields = await _printConfigService.GetSuggestionField(moduleTypeId);
+
             if (fields.Count == 0 && AssemblyModuleModel.ContainsKey((EnumModuleType)moduleTypeId))
                 fields = await _printConfigService.GetSuggestionField(AssemblyModuleModel[(EnumModuleType)moduleTypeId]);
+
             return fields;
         }
-
-        [HttpPut]
-        [Route("rollback")]
-        public async Task<bool> RollbackAllPrintConfig([FromQuery] long printConfigId)
-        {
-            return await _printConfigService.RollbackPrintConfig(printConfigId);
-        }
-
-        [HttpPost]
-        [Route("{printConfigId}/addPrintTemplate")]
-        public async Task<bool> AddPrintTemplate([FromRoute] int printConfigId, IFormFile file)
-        {
-            return await _printConfigService.AddPrintTemplate(printConfigId, file);
-        }
-
     }
 }

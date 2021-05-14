@@ -2,16 +2,13 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -32,13 +29,15 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
 
+        private readonly ICurrentContextService _currentContextService;
+
         public ObjectPrintConfigService(MasterDBContext masterDbContext
             , ILogger<ObjectGenCodeService> logger
             , IActivityLogService activityLogService
             , IInputTypeHelperService inputTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IMapper mapper
-        )
+            , ICurrentContextService currentContextService)
         {
             _masterDbContext = masterDbContext;
             _mapper = mapper;
@@ -46,6 +45,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _activityLogService = activityLogService;
             _inputTypeHelperService = inputTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<ObjectPrintConfig> GetObjectPrintConfigMapping(EnumObjectType objectTypeId, int objectId)
@@ -56,7 +56,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 ObjectId = objectId,
                 ObjectTypeId = objectTypeId,
-                PrintConfigIds = maps.Select(x => x.PrintConfigId).ToArray()
+                PrintConfigIds = maps.Select(x => x.PrintConfigCustomId).ToArray()
             };
         }
 
@@ -65,28 +65,10 @@ namespace VErp.Services.Master.Service.Config.Implement
             var trans = await _masterDbContext.Database.BeginTransactionAsync();
             try
             {
-                var mappingModels = mapping.PrintConfigIds
-                .Select(printConfigId => new ObjectPrintConfigMappingModel
-                {
-                    ObjectId = mapping.ObjectId,
-                    ObjectTypeId = mapping.ObjectTypeId,
-                    PrintConfigId = printConfigId
-                })
-                .AsQueryable()
-                .ProjectTo<ObjectPrintConfigMappingEntity>(_mapper.ConfigurationProvider)
-                .ToArray();
+                await MapObjectPrintConfigCustom(mapping);
+                await MapObjectPrintConfigStandard(mapping);
 
-                var oldObjectPrintConfigs = await _masterDbContext.ObjectPrintConfigMapping
-                    .Where(x => x.ObjectTypeId == (int)mapping.ObjectTypeId
-                        && x.ObjectId == mapping.ObjectId)
-                    .ToArrayAsync();
-                _masterDbContext.ObjectPrintConfigMapping.RemoveRange(oldObjectPrintConfigs);
-                await _masterDbContext.SaveChangesAsync();
-
-                await _masterDbContext.ObjectPrintConfigMapping.AddRangeAsync(mappingModels);
-                await _masterDbContext.SaveChangesAsync();
                 await trans.CommitAsync();
-
                 return true;
             }
             catch (Exception ex)
@@ -99,13 +81,67 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
+        public async Task MapObjectPrintConfigCustom(ObjectPrintConfig mapping)
+        {
+            var mappingModels = mapping.PrintConfigIds
+                .Select(printConfigId => new ObjectPrintConfigMappingModel
+                {
+                    ObjectId = mapping.ObjectId,
+                    ObjectTypeId = mapping.ObjectTypeId,
+                    PrintConfigId = printConfigId
+                })
+                .AsQueryable()
+                .ProjectTo<ObjectPrintConfigMappingEntity>(_mapper.ConfigurationProvider)
+                .ToArray();
+
+            var oldObjectPrintConfigs = await _masterDbContext.ObjectPrintConfigMapping
+                .Where(x => x.ObjectTypeId == (int)mapping.ObjectTypeId && x.ObjectId == mapping.ObjectId && mapping.PrintConfigIds.Contains(x.PrintConfigCustomId))
+                .ToArrayAsync();
+            _masterDbContext.ObjectPrintConfigMapping.RemoveRange(oldObjectPrintConfigs);
+            await _masterDbContext.SaveChangesAsync();
+
+            await _masterDbContext.ObjectPrintConfigMapping.AddRangeAsync(mappingModels);
+            await _masterDbContext.SaveChangesAsync();
+
+        }
+
+        public async Task MapObjectPrintConfigStandard(ObjectPrintConfig mapping)
+        {
+            if (_currentContextService.IsDeveloper)
+            {
+                var printConfigStandardIdMap = (await _masterDbContext.PrintConfigCustom.AsNoTracking()
+                   .Where(x => mapping.PrintConfigIds.Contains(x.PrintConfigCustomId) && x.PrintConfigStandardId.HasValue && x.PrintConfigStandardId.Value > 0)
+                   .ToListAsync())
+                   .ToDictionary(k => k.PrintConfigCustomId, v => v.PrintConfigStandardId);
+
+                var mappingModels = mapping.PrintConfigIds
+                .Where(printConfigId => printConfigStandardIdMap.Keys.Contains(printConfigId))
+                .Select(printConfigId => new ObjectPrintConfigStandardMapping
+                {
+                    ObjectId = mapping.ObjectId,
+                    ObjectTypeId = (int)mapping.ObjectTypeId,
+                    PrintConfigStandardId = (int)printConfigStandardIdMap[printConfigId]
+                })
+                .ToArray();
+
+                var oldObjectPrintConfigs = await _masterDbContext.ObjectPrintConfigStandardMapping
+                    .Where(x => x.ObjectTypeId == (int)mapping.ObjectTypeId && x.ObjectId == mapping.ObjectId)
+                    .ToArrayAsync();
+                _masterDbContext.ObjectPrintConfigStandardMapping.RemoveRange(oldObjectPrintConfigs);
+                await _masterDbContext.SaveChangesAsync();
+
+                await _masterDbContext.ObjectPrintConfigStandardMapping.AddRangeAsync(mappingModels);
+                await _masterDbContext.SaveChangesAsync();
+            }
+        }
+
         private IList<ObjectPrintConfigMappingEntity> _objectPrintConfigMappings;
-        private IList<PrintConfig> _printConfigs;
+        private IList<PrintConfigCustom> _printConfigs;
         public async Task<PageData<ObjectPrintConfigSearch>> GetObjectPrintConfigSearch(string keyword, int page, int size)
         {
             keyword = keyword?.ToLower();
             _objectPrintConfigMappings = await _masterDbContext.ObjectPrintConfigMapping.AsNoTracking().ToListAsync();
-            _printConfigs = await _masterDbContext.PrintConfig.AsNoTracking().ToListAsync();
+            _printConfigs = await _masterDbContext.PrintConfigCustom.AsNoTracking().ToListAsync();
 
             var result = new List<ObjectPrintConfigSearch>();
 
@@ -121,8 +157,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 result = result.Where(c =>
-                 c.ObjectTypeName?.Contains(keyword) == true
-                 || c.ObjectTitle?.Contains(keyword) == true
+                 c.ObjectTypeName?.ToLower().Contains(keyword) == true
+                 || c.ObjectTitle?.ToLower().Contains(keyword) == true
                 ).ToList();
             }
             var total = result.Count;
@@ -216,7 +252,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             EnumObjectType objectTypeId, int objectId = 0, string objectTitle = "")
         {
             var mapping = _objectPrintConfigMappings.Where(m => m.ObjectTypeId == (int)objectTypeId && m.ObjectId == objectId).ToList();
-            var printConfig = _printConfigs.Where(c => mapping?.Select(x => x.PrintConfigId).Contains(c.PrintConfigId) == true).Select(x => x.PrintConfigId).ToArray();
+            var printConfig = _printConfigs.Where(c => mapping?.Select(x => x.PrintConfigCustomId).Contains(c.PrintConfigCustomId) == true).Select(x => x.PrintConfigCustomId).ToArray();
 
             return new ObjectPrintConfigSearch()
             {
