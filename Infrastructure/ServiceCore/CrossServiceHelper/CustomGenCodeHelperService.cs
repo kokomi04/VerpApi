@@ -265,11 +265,12 @@ public class GenerateCodeConfigData
     /// <returns></returns>
     public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
     {
-        object existedItem = null;
+        TSource existedItem;
 
         if (!string.IsNullOrWhiteSpace(currentCode))
         {
-            existedItem = await query.Where(s => checkExisted.Compile().Invoke(s, currentCode)).FirstOrDefaultAsync();
+
+            existedItem = await GetExistedItem(query, currentCode, checkExisted);
             if (existedItem != null) throw new BadRequestException(GeneralCode.ItemCodeExisted);
             return currentCode;
         }
@@ -290,17 +291,39 @@ public class GenerateCodeConfigData
 
             configOption.Ctx.SetconfigBaseValue(config.CurrentLastValue);
 
+            var lastValue = config.CurrentLastValue.LastValue;
+
             int dem = 0;
-            string code = string.Empty;
+            string code;
             do
             {
-                code = (await customGenCodeHelper.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, fId, refCode, date))?.CustomCode;
+                code = (await customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, fId, refCode, date))?.CustomCode;
 
-                existedItem = await query.Where(s => checkExisted.Compile().Invoke(s, currentCode)).FirstOrDefaultAsync();
+                existedItem = await GetExistedItem(query, code, checkExisted);
+                lastValue++;
                 dem++;
+                if (dem == 10)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sinh mã hoặc cấu hình sinh mã chưa đúng!");
+                }
             } while (existedItem != null && dem < 10);
             return code;
         }
+
     }
+
+    private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
+    {
+        var entityParameter = Expression.Parameter(typeof(TSource), "p");
+
+        //Expression<Func<string>> codeFunction = () => code;
+        //var codeParametter = Expression.Invoke(codeFunction);
+        var codeParametter = Expression.Property(Expression.Constant(new { code }), "code");
+
+        Expression<Func<TSource, bool>> conditionExpression = Expression.Lambda<Func<TSource, bool>>(Expression.Invoke(checkExisted, entityParameter, codeParametter), entityParameter);
+
+        return await query.Where(conditionExpression).FirstOrDefaultAsync();
+    }
+
 
 }
