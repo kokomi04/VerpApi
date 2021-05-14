@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Services.Master.Model.Config
+namespace VErp.Infrastructure.EF.MasterDB
 {
-    public class PrintConfigDetailModel : IMapFrom<PrintConfigDetail>
+    public partial class PrintConfigStandard
     {
-        public int? PrintConfigId { get; set; }
+        public int PrintConfigStandardId { get; set; }
+        public string PrintConfigName { get; set; }
+        public string Title { get; set; }
         public string BodyTable { get; set; }
         public string GenerateCode { get; set; }
         public int? PaperSize { get; set; }
@@ -19,12 +18,15 @@ namespace VErp.Services.Master.Model.Config
         public bool? StickyHeadTable { get; set; }
         public bool? HasTable { get; set; }
         public string Background { get; set; }
-        public long? TemplateFileId { get; set; }
+        public string GenerateToString { get; set; }
         public string TemplateFilePath { get; set; }
         public string TemplateFileName { get; set; }
         public string ContentType { get; set; }
-        public string GenerateToString { get; set; }
-        public bool IsOrigin { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
     }
-
 }

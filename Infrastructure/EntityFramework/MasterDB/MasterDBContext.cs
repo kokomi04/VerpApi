@@ -37,13 +37,14 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
+        public virtual DbSet<ObjectPrintConfigStandardMapping> ObjectPrintConfigStandardMapping { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
-        public virtual DbSet<PrintConfig> PrintConfig { get; set; }
-        public virtual DbSet<PrintConfigDetail> PrintConfigDetail { get; set; }
+        public virtual DbSet<PrintConfigCustom> PrintConfigCustom { get; set; }
+        public virtual DbSet<PrintConfigStandard> PrintConfigStandard { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -419,8 +420,16 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<ObjectPrintConfigMapping>(entity =>
             {
-                entity.HasKey(e => new { e.PrintConfigId, e.ObjectTypeId, e.ObjectId })
+                entity.HasKey(e => new { e.PrintConfigCustomId, e.ObjectTypeId, e.ObjectId })
                     .HasName("PK_ObjectPrintConfigMapping_1");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<ObjectPrintConfigStandardMapping>(entity =>
+            {
+                entity.HasKey(e => new { e.ObjectId, e.ObjectTypeId, e.PrintConfigStandardId })
+                    .HasName("PK__ObjectPr__33C2DE8ADACC08E6");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
@@ -521,28 +530,26 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasConstraintName("FK_AccountancyOutsiteMappingObject_AccountancyOutsiteMappingFunction");
             });
 
-            modelBuilder.Entity<PrintConfig>(entity =>
-            {
-                entity.Property(e => e.PrintConfigName)
-                    .IsRequired()
-                    .HasMaxLength(255);
-
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(255);
-            });
-
-            modelBuilder.Entity<PrintConfigDetail>(entity =>
+            modelBuilder.Entity<PrintConfigCustom>(entity =>
             {
                 entity.Property(e => e.ContentType).HasMaxLength(128);
 
+                entity.Property(e => e.PrintConfigName).HasMaxLength(255);
+
                 entity.Property(e => e.TemplateFileName).HasMaxLength(128);
 
-                entity.HasOne(d => d.PrintConfig)
-                    .WithMany(p => p.PrintConfigDetail)
-                    .HasForeignKey(d => d.PrintConfigId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_PrintConfigDetail_PrintConfig");
+                entity.Property(e => e.Title).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<PrintConfigStandard>(entity =>
+            {
+                entity.Property(e => e.ContentType).HasMaxLength(128);
+
+                entity.Property(e => e.PrintConfigName).HasMaxLength(255);
+
+                entity.Property(e => e.TemplateFileName).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(255);
             });
 
             modelBuilder.Entity<Role>(entity =>

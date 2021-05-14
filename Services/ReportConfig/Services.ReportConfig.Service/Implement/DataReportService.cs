@@ -846,7 +846,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
-                return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
+                return (newFile, "application/pdf", Path.GetFileNameWithoutExtension(fileInfo.FileName) + ".pdf");
             }
             catch (Exception ex)
             {

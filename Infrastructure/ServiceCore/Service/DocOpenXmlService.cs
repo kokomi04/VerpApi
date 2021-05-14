@@ -24,8 +24,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IDocOpenXmlService
     {
-        Task<(string filePath, string contentType, string fileName)> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext);
-        Task<bool> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo, string jsonString, DbContext dbContext);
+        Task<Stream> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext);
+        Task<string> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo, string jsonString, DbContext dbContext);
     }
     public class DocOpenXmlService : IDocOpenXmlService
     {
@@ -40,26 +40,21 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _currentContextService = currentContextService;
         }
 
-        public async Task<(string filePath, string contentType, string fileName)> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext)
+        public async Task<Stream> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string data, DbContext dbContext)
         {
-            string file = Path.GetFileNameWithoutExtension(fileInfo.FileName);
             string outDirectory = GeneratePhysicalFolder();
+            var fileTempatePath = GetPhysicalFilePath(fileInfo.FilePath);
 
-            var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
+            await GenerateWordFromTemplate(fileInfo: (fileInfo.FileName, outDirectory, fileTempatePath), data, dbContext);
 
-            await GenerateWordFromTemplate((fileInfo.FileName, outDirectory, physicalFilePath), jsonString, dbContext);
-
-            WordOpenXmlTools.ConvertToHtml($"{outDirectory}/{fileInfo.FileName}", outDirectory);
-            //WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{fileInfo.FileName}", $"{outDirectory}/{file}.pdf");
-
-            //return ($"{outDirectory}/{file}.pdf", "application/pdf", $"{file}.pdf");
-            return ($"{outDirectory}/{file}.html", "text/html", $"{file}.html");
+            return await WordOpenXmlTools.ConvertToPdf(fileDocPath: $"{outDirectory}/{fileInfo.FileName}", _appSetting);
         }
 
-        public async Task<bool> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo,
-            string jsonString, DbContext dbContext)
+        public async Task<string> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo,
+            string jsonData, DbContext dbContext)
         {
-            JObject jObject = JObject.Parse(jsonString);
+            string fileName = $"{fileInfo.outDirectory}/{fileInfo.file}";
+            JObject jObject = JObject.Parse(jsonData);
 
             using (var document = WordprocessingDocument.CreateFromTemplate(fileInfo.fileTemplate))
             {
@@ -135,7 +130,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         string rs = string.Empty;
                         if (field.StartsWith(RegexDocExpression.StartWithFuntion))
                         {
-                            var sqlParam = new SqlParameter("@data", jsonString);
+                            var sqlParam = new SqlParameter("@data", jsonData);
                             var timeZone = new SqlParameter("@timeZone", Math.Abs(_currentContextService.TimeZoneOffset.GetValueOrDefault() * 60));
                             var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
                             rs = tbl.Rows[0][0].ToString();
@@ -148,10 +143,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 }
                 #endregion
 
-                document.SaveAs($"{fileInfo.outDirectory}/{fileInfo.file}").Close();
+                
+                document.SaveAs(fileName).Close();
                 document.Close();
             }
-            return true;
+            return fileName;
         }
 
         private string GeneratePhysicalFolder()
