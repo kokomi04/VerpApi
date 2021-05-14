@@ -61,7 +61,7 @@ namespace VErpApi.Controllers.System.Config
             return _printConfigStandardService.DeletePrintConfigStandard(printConfigId);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("{printConfigId}/template")]
         public async Task<IActionResult> GetPrintConfigTemplateFile([FromRoute] int printConfigId)
         {
@@ -69,8 +69,8 @@ namespace VErpApi.Controllers.System.Config
             return new FileStreamResult(file.file, !string.IsNullOrWhiteSpace(file.contentType) ? file.contentType : "application/octet-stream") { FileDownloadName = file.fileName };
         }
 
-        [HttpGet]
-        [Route("{printConfigId}/tempalte/fillData")]
+        [HttpPost]
+        [Route("{printConfigId}/template/fillData")]
         public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromBody] NonCamelCaseDictionary templateModel)
         {
             var r = await _printConfigStandardService.GeneratePrintTemplate(printConfigId, templateModel);

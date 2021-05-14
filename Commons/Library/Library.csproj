@@ -13,10 +13,10 @@
 
   <ItemGroup>
     <PackageReference Include="CoreCLR-NCalc" Version="2.2.80" />
-    <PackageReference Include="DocumentFormat.OpenXml" Version="2.11.3" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NPOI" Version="2.5.1" />
-    <PackageReference Include="Select.HtmlToPdf.NetCore" Version="20.1.0" />
+    <PackageReference Include="OpenXmlPowerToolsStandard" Version="5.0.89" />
+    <PackageReference Include="PuppeteerSharp" Version="4.0.0" />
     <PackageReference Include="Sodium.Core" Version="1.2.3" />
   </ItemGroup>
 
@@ -25,12 +25,6 @@
     <ProjectReference Include="..\Constants\Constants.csproj" />
     <ProjectReference Include="..\Enums\Enums.csproj" />
     <ProjectReference Include="..\GlobalObject\GlobalObject.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="OpenXmlPowerTools">
-      <HintPath>OpenXmlPowerTools.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

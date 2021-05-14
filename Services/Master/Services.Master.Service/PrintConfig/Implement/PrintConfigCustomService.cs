@@ -212,8 +212,10 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                     FileName = printConfig.TemplateFileName,
                     FilePath = printConfig.TemplateFilePath
                 };
+
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
-                return (File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
+
+                return (newFile, "application/pdf", Path.GetFileNameWithoutExtension(fileInfo.FileName) + ".pdf");
             }
             catch (Exception ex)
             {
