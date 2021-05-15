@@ -25,5 +25,6 @@ namespace VErp.Services.Stock.Model.Stock
         public EnumPackageType PackageTypeId { get; set; }
         public long? RefObjectId { get; set; }
         public string RefObjectCode { get; set; }
+        public int DecimalPlace { get; set; }
     }
 }
