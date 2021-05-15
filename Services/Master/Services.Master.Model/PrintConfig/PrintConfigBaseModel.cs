@@ -25,6 +25,7 @@ namespace VErp.Services.Master.Model.PrintConfig
         public string TemplateFilePath { get; set; }
         public string TemplateFileName { get; set; }
         public string ContentType { get; set; }
+        public int ModuleTypeId { get; set; }
     }
 
     public class PrintConfigRollbackModel: PrintConfigBaseModel, IMapFrom<PrintConfigStandard>

@@ -21,9 +21,9 @@ namespace VErp.Commons.Library
 {
     public static class WordOpenXmlTools
     {
-        public static async Task<Stream> ConvertToPdf(string fileDocPath, AppSetting appSetting)
+        public static async Task<Stream> ConvertToPdf(string fileDocPath, PuppeteerPdfSetting puppeteerPdfSetting)
         {
-           return await ConvertHtmlToPdf(ConvertToHtml(fileDocPath), appSetting) ;
+           return await ConvertHtmlToPdf(ConvertToHtml(fileDocPath), puppeteerPdfSetting) ;
         }
 
         public static string ConvertToHtml(string fileDocPath)
@@ -98,16 +98,14 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static async Task<Stream> ConvertHtmlToPdf(string fileHtmlPath, AppSetting appSetting)
+        public static async Task<Stream> ConvertHtmlToPdf(string fileHtmlPath, PuppeteerPdfSetting puppeteerSetting)
         {
-            var puppeteerSetting = appSetting.PuppeteerPdf;
-
             var product = puppeteerSetting?.Product == null ? Product.Chrome : (Product)puppeteerSetting?.Product;
             var executablePath = puppeteerSetting?.ExecutablePath;
 
             if (string.IsNullOrWhiteSpace(executablePath))
             {
-                string path = puppeteerSetting?.Path;
+                string path = Path.Combine(puppeteerSetting?.Path, product == Product.Chrome? "chrome" : "firefox");
                 int version = !string.IsNullOrWhiteSpace(puppeteerSetting?.Version) ? int.Parse(puppeteerSetting?.Version, CultureInfo.CurrentCulture.NumberFormat) : BrowserFetcher.DefaultRevision;
                 string host = puppeteerSetting?.Host;
 

@@ -30,5 +30,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int? ModuleTypeId { get; set; }
     }
 }

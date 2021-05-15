@@ -123,12 +123,15 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             return _mapper.Map<PrintConfigStandardModel>(config);
         }
 
-        public async Task<PageData<PrintConfigStandardModel>> Search(string keyword, int page, int size, string orderByField, bool asc)
+        public async Task<PageData<PrintConfigStandardModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc)
         {
             var query = _masterDBContext.PrintConfigStandard.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(x => x.PrintConfigName.Contains(keyword));
+
+            if(moduleTypeId > 0)
+                query = query.Where(x => x.ModuleTypeId.Equals(moduleTypeId));
 
             var total = await query.CountAsync();
             var lst = await (size > 0 ? (query.Skip((page - 1) * size)).Take(size) : query)
