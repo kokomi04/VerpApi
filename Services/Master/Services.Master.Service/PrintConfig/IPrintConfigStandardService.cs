@@ -12,7 +12,7 @@ namespace VErp.Services.Master.Service.PrintConfig
 {
     public interface IPrintConfigStandardService
     {
-        Task<PageData<PrintConfigStandardModel>> Search(string keyword, int page, int size, string orderByField, bool asc);
+        Task<PageData<PrintConfigStandardModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc);
 
         Task<PrintConfigStandardModel> GetPrintConfigStandard(int printConfigId);
         Task<int> AddPrintConfigStandard(PrintConfigStandardModel model, IFormFile file);

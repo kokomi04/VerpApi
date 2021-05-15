@@ -28,9 +28,9 @@ namespace VErpApi.Controllers.System.Config
         [HttpPost]
         [Route("search")]
         [VErpAction(EnumActionType.View)]
-        public Task<PageData<PrintConfigCustomModel>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByField, [FromQuery] bool asc)
+        public Task<PageData<PrintConfigCustomModel>> Search([FromQuery] int moduleTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByField, [FromQuery] bool asc)
         {
-            return _printConfigCustomService.Search(keyword, page, size, orderByField, asc);
+            return _printConfigCustomService.Search(moduleTypeId, keyword, page, size, orderByField, asc);
         }
 
         [HttpGet]

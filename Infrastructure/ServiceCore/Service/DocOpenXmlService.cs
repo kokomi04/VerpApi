@@ -47,7 +47,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             await GenerateWordFromTemplate(fileInfo: (fileInfo.FileName, outDirectory, fileTempatePath), data, dbContext);
 
-            return await WordOpenXmlTools.ConvertToPdf(fileDocPath: $"{outDirectory}/{fileInfo.FileName}", _appSetting);
+            return await WordOpenXmlTools.ConvertToPdf(fileDocPath: $"{outDirectory}/{fileInfo.FileName}", _appSetting.PuppeteerPdf);
         }
 
         public async Task<string> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo,

@@ -25,7 +25,8 @@ BEGIN TRY
 		UpdatedDatetimeUtc,
 		IsDeleted,
 		DeletedDatetimeUtc,
-		SubsidiaryId)
+		SubsidiaryId,
+        ModuleTypeId)
       SELECT
         v.PrintConfigStandardId,
         v.PrintConfigName,
@@ -51,7 +52,8 @@ BEGIN TRY
         v.UpdatedDatetimeUtc,
         v.IsDeleted,
         v.DeletedDatetimeUtc,
-        v.SubsidiaryId
+        v.SubsidiaryId,
+        v.ModuleTypeId
       FROM (SELECT
         p.PrintConfigStandardId,
         p.PrintConfigName,
@@ -77,7 +79,8 @@ BEGIN TRY
         p.UpdatedDatetimeUtc,
         p.IsDeleted,
         p.DeletedDatetimeUtc,
-        s.SubsidiaryId
+        s.SubsidiaryId,
+        s.ModuleTypeId
       FROM MasterDB.dbo.PrintConfigStandard p
       CROSS APPLY (SELECT
         s.SubsidiaryId
