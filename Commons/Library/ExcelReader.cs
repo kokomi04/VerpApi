@@ -139,7 +139,10 @@ namespace VErp.Commons.Library
 
                 var sheet = hssfwb.GetSheetAt(i);
 
-                if (!string.IsNullOrWhiteSpace(sheetName) && sheet.SheetName != sheetName)
+                var sName = (sheet.SheetName ?? "").Trim();
+                sheetName = (sheetName ?? "").Trim();
+
+                if (!string.IsNullOrWhiteSpace(sheetName) && !sName.Equals(sheetName))
                     continue;
 
                 var maxrowsCount = maxrows;
