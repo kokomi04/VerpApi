@@ -25,7 +25,9 @@ namespace VErp.Services.Stock.Model.Product
         public string UnitName { get; set; }
         public int UnitId { get; set; }
         public bool IsMaterial { get; set; }
-        public string NumberOrder { get; set; }        
+        public string NumberOrder { get; set; }      
+        public int ProductUnitConversionId { get; set; }
+        public int DecimalPlace { get; set; }
     }
 
    

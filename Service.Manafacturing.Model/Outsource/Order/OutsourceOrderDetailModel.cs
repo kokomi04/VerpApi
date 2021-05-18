@@ -33,6 +33,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string OutsourcePartRequestCode { get; set; }
         public long OutsourcePartRequestId{ get; set; }
         public long OutsourcePartRequestDetailFinishDate { get; set; }
+        public int DecimalPlace { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -49,6 +50,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
                 .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate))
                 .ForMember(m => m.UnitName, v => v.MapFrom(m => m.UnitName))
                 .ForMember(m => m.Quantity, v => v.MapFrom(m => m.Quantity))
+                .ForMember(m => m.DecimalPlace, v => v.MapFrom(m => m.DecimalPlace))
                 .ReverseMap();
         }
     }
