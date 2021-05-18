@@ -321,6 +321,11 @@ namespace VErp.Commons.Library
 
         }
 
+        public static decimal Round(this decimal value, int decimalPlace = 11)
+        {
+            return Math.Round(value, decimalPlace, MidpointRounding.AwayFromZero);
+        }
+
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
         {
             return $"{((int)objectTypeId)}_{objectId}";
@@ -370,9 +375,9 @@ namespace VErp.Commons.Library
             {
                 var c = a + b;
                 if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
-                return c;
+                return c.Round();
             }
-            return a + b;
+            return (a + b).Round();
         }
 
         public static decimal SubDecimal(this decimal a, decimal b)
@@ -381,9 +386,9 @@ namespace VErp.Commons.Library
             {
                 var c = a - b;
                 if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
-                return c;
+                return c.Round();
             }
-            return a - b;
+            return (a - b).Round();
         }
 
         public static decimal SubProductionDecimal(this decimal a, decimal b)
