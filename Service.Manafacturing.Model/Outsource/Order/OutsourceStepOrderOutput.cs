@@ -38,6 +38,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public int UnitId { get; set; }
         public decimal? QuantityRequirement { get; set; }
         public string OutsourceRequestCode { get; set; }
+        public int? DecimalPlace { get; set; }
     }
     public class OutsourceStepOrderDetailOutput : IMapFrom<OutsourceOrderDetail>
     {
@@ -56,6 +57,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public int ProductionStepLinkDataUnitId { get; set; }
         public long OutsourceStepRequestFinishDate { get; set; }
         public bool? IsImportant { get; set; }
+        public int DecimalPlace { get; set; }
 
         public void Mapping(Profile profile)
         {

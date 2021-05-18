@@ -939,6 +939,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 from pt in pts.DefaultIfEmpty()
                 join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
                 from pc in pcs.DefaultIfEmpty()
+                join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new  {ucs.ProductId,UnitId = ucs.SecondaryUnitId } into gucs
+                from ucs in gucs.DefaultIfEmpty()
                 where productIds.Contains(p.ProductId)
                 select new
                 {
@@ -960,7 +962,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.IsProduct,
                     p.Height,
                     p.Long,
-                    p.Width
+                    p.Width,
+                    ucs.ProductUnitConversionId,
+                    ucs.DecimalPlace
                 });
 
             var lstData = await query.ToListAsync();
@@ -1003,6 +1007,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Long = item.Long,
                     Width = item.Width,
                     Height = item.Height,
+                    DecimalPlace = item.DecimalPlace
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);

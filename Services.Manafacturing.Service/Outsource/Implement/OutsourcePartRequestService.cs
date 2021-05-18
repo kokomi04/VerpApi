@@ -90,11 +90,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 //Check valid với quy trinh san xuat
                 request.MarkInvalid = await MarkValidateOutsourcePartRequest(req.ProductionOrderId, requestDetails);
-
-                //valid productionOrder
-                var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(x => x.ProductionOrderId == req.ProductionOrderId);
-                productionOrder.IsInvalid = request.MarkInvalid;
-
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 if (customGenCodeId > 0)
@@ -433,5 +428,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             await _manufacturingDBContext.SaveChangesAsync();
             return true;
         }
+
     }
 }

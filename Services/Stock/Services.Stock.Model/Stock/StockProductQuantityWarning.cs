@@ -30,6 +30,7 @@ namespace VErp.Services.Stock.Model.Stock
 
         public List<StockProductQuantity> StockProductQuantityList { set; get; }
         public long? MainImageFileId { get; set; }
+        public int DecimalPlace { get; set; }
     }
 
     public class StockProductQuantity

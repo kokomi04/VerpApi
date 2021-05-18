@@ -16,16 +16,12 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public long OutsourcePartRequestDetailId { get; set; }
         public long OutsourcePartRequestId { get; set; }
 
-        [Required(ErrorMessage = "Mã chi tiết là bắt buộc")]
         public int ProductPartId { get; set; }
 
-        [Required(ErrorMessage = "Vị trí của chi tiết trong BOM là bắt buộc")]
         public string PathProductIdInBom { get; set; }
 
-        [Required(ErrorMessage ="Giá trị số lượng là bắt buộc")]
         public decimal Quantity { get; set; }
 
-        [Required(ErrorMessage = "Thời hạn hoàn thành là bắt buộc")]
         public long? OutsourcePartRequestDetailFinishDate { get; set; }
 
         public void Mapping(Profile profile)

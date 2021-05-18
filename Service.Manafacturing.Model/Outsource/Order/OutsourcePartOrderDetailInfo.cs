@@ -50,5 +50,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal Quantity { get; set; }
         public decimal QuantityOrigin { get; set; }
         public decimal QuantityProcessed { get; set; }
+        public int DecimalPlace { get; set; }
     }
 }

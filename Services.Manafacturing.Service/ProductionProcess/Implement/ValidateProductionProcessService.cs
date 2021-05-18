@@ -45,6 +45,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<IList<ProductionProcessWarningMessage>> ValidateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel productionProcess)
         {
+            if (productionProcess != null && productionProcess.ProductionStepLinkDataRoles.Count == 0)
+            {
+                var warningCode = containerTypeId == EnumContainerType.ProductionOrder ? EnumProductionProcessWarningCode.WarningProductionStep : EnumProductionProcessWarningCode.WarningProduct;
+                return new[] { new ProductionProcessWarningMessage {
+                    Message = "Chưa thiết lập quy trình sản xuất",
+                    WarningCode = warningCode,
+                    GroupName = warningCode.GetEnumDescription()
+                } };
+            }
+
             var lsWarning = new List<ProductionProcessWarningMessage>();
 
             var warningProductionStep = await ValidateProductionStep(productionProcess);
