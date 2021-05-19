@@ -143,6 +143,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(reportInfo.GroupTitleSql))
+            {
+                var data = await _dbContext.QueryDataTable(reportInfo.GroupTitleSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                result.GroupTitle = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
+            }
+
             var suffix = 0;
             var filterCondition = new StringBuilder();
             if (model.ColumnsFilters != null)

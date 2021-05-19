@@ -548,7 +548,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     od.ProductId,
                     o.StartDate,
                     o.EndDate,
-                    TotalQuantity = od.Quantity + od.ReserveQuantity
+                    TotalQuantity = od.Quantity + od.ReserveQuantity,
+                    o.ProductionOrderStatus
                 })
                 .Distinct();
             if (productionOrderId.HasValue)
@@ -572,7 +573,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 ProductId = d.ProductId,
                 StartDate = d.StartDate.GetUnix(),
                 EndDate = d.EndDate.GetUnix(),
-                ProductionScheduleQuantity = d.TotalQuantity.Value
+                ProductQuantity = d.TotalQuantity.Value,
+                ProductionOrderStatus = d.ProductionOrderStatus
             }).ToList(), total);
         }
 

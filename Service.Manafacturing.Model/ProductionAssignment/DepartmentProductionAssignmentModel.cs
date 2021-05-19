@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public int ProductId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
-        public decimal ProductionScheduleQuantity { get; set; }
+        public decimal ProductQuantity { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
     }    
 }
