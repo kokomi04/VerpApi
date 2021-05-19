@@ -53,6 +53,8 @@ namespace Verp.Services.ReportConfig.Model
         public string OnCellChangeValueJsCode { get; set; }
         public string HeadPrint { get; set; }
         public long? TemplateFileId { get; set; }
+        public string GroupTitleSql { get; set; }
+
         public IList<ReportColumnModel> Columns { get; set; }
         public bool IsBsc { get; set; }
         public BscConfigModel BscConfig { get; set; }
