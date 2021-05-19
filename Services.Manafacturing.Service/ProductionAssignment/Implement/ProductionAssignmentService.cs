@@ -277,7 +277,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         var newEntities = mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.AsQueryable()
                            .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
                            .ToList();
-                        foreach(var newEntitie in newEntities)
+                        foreach (var newEntitie in newEntities)
                         {
                             newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
                         }
@@ -372,7 +372,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 if (outSource != null)
                 {
-                    totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() 
+                    totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()
                         / (outSource.ProductionStepLinkData.QuantityOrigin - outSource.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault());
                 }
 
@@ -574,7 +574,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 StartDate = d.StartDate.GetUnix(),
                 EndDate = d.EndDate.GetUnix(),
                 ProductQuantity = d.TotalQuantity.Value,
-                ProductionOrderStatus = d.ProductionOrderStatus
+                ProductionOrderStatus = (EnumProductionStatus)d.ProductionOrderStatus
             }).ToList(), total);
         }
 
