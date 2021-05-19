@@ -1271,21 +1271,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             // Validate unique product code
             var productCodes = data.Select(p => p.ProductCode).ToList();
+            var existsProduct = await _stockContext.Product.AsNoTracking()
+                .Where(p => productCodes.Contains(p.ProductCode)).Select(p => p.ProductCode).ToListAsync();
 
             var dupCodes = productCodes.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            dupCodes.AddRange(_stockContext.Product
-                .Where(p => productCodes.Contains(p.ProductCode))
-                .Select(p => p.ProductCode)
-                .ToList());
-            dupCodes = dupCodes.Distinct().ToList();
-
-            if (dupCodes.Count > 0 && !mapping.IgnoreDuplicate)
+            if (!mapping.IgnoreDuplicate)
             {
-                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", dupCodes)} đã tồn tại");
+                if (dupCodes.Count > 0)
+                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Tồn tại nhiều mặt hàng {string.Join(",", dupCodes)} trong file import");
+                if (existsProduct.Count > 0)
+                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", existsProduct)} đã tồn tại trong hệ thống");
             }
             else
             {
-                data = data.Where(x => !dupCodes.Contains(x.ProductCode)).ToList();
+                data = data.Where(x => !existsProduct.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
             }
 
             // Validate required product name
@@ -1294,24 +1293,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập tên mặt hàng có mã: {string.Join(",", emptyNameProducts)}");
             }
-
-            //var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
-            // Validate unique product name
-            //var dupNames = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            //var dupNameCodes = data.Where(r => dupCodes.Contains(r.ProductName.NormalizeAsInternalName())).Select(r => r.ProductCode).ToList();
-            //var dupNameProducts = _stockContext.Product
-            //   .Where(p => productNames.Contains(p.ProductInternalName)).ToList();
-
-            //dupNames.AddRange(dupNameProducts.Select(p => p.ProductInternalName).ToList());
-            //dupNameCodes.AddRange(dupNameProducts.Select(p => p.ProductCode).ToList());
-
-            //dupNames = dupNames.Distinct().ToList();
-            //dupNameCodes = dupNameCodes.Distinct().ToList();
-
-            //if (dupNameProducts.Count > 0)
-            //{
-            //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNames)} của các mã {string.Join(",", dupNameCodes)} đã tồn tại");
-            //}
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
