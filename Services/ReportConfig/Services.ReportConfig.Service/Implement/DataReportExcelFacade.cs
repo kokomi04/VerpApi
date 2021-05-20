@@ -30,7 +30,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private ISheet sheet = null;
         private ExcelWriter xssfwb = null;
         private int currentRow = 0;
-        private int maxCloumn = 15;
+        private int numberOfColumns = 15;
         private ReportFacadeModel _model;
         private IList<ReportColumnModel> columns = null;
 
@@ -76,19 +76,30 @@ namespace Verp.Services.ReportConfig.Service.Implement
             xssfwb = new ExcelWriter();
             sheet = xssfwb.GetSheet(sheetName);
 
-            maxCloumn = columns.Count;
+            numberOfColumns = columns.Count;
 
             await WriteHeader();
 
             WriteBody(reportInfo);
             WriteFooter();
 
-            for (var i = 0; i <= maxCloumn; i++)
+            if (sheet.LastRowNum < 1000)
             {
-                sheet.AutoSizeColumn(i, true);
+                for (var i = 0; i < numberOfColumns; i++)
+                {
+                    sheet.AutoSizeColumn(i, false);
+                }
+            }
+            else
+            {
+                for (var i = 0; i < numberOfColumns; i++)
+                {
+                    sheet.ManualResize(i, maxColumnCharLengths[i]);
+                }
             }
 
-            for (var i = 0; i <= maxCloumn; i++)
+
+            for (var i = 0; i < numberOfColumns; i++)
             {
                 var c = sheet.GetColumnWidth(i);
                 if (c < 2600)
@@ -123,7 +134,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sheet.CreateRow(3).Height = 400;
 
                 var fCol = 0;
-                var lCol = maxCloumn - 1;
+                var lCol = numberOfColumns - 1;
 
                 if (_model.Header.fLogoId > 0)
                 {
@@ -198,7 +209,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 if (!string.IsNullOrEmpty(_model.Body.Title))
                 {
                     int fRow = currentRow;
-                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, maxCloumn - 1));
+                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, numberOfColumns - 1));
                     sheet.EnsureCell(fRow, 0).SetCellValue(_model.Body.Title);
                     sheet.SetCellStyle(fRow, 0, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center, fontSize: 18, isBold: true);
                 }
@@ -208,7 +219,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var info in _model.Body.HeadDetails)
                     {
                         int row = currentRow + i;
-                        sheet.AddMergedRegion(new CellRangeAddress(row, row, 0, maxCloumn - 1));
+                        sheet.AddMergedRegion(new CellRangeAddress(row, row, 0, numberOfColumns - 1));
                         sheet.EnsureCell(row, 0).SetCellValue(info.Value);
                         sheet.SetCellStyle(row, 0, vAlign: VerticalAlignment.Top, hAlign: drTextAlign[info.TextAlign]);
                         i++;
@@ -219,6 +230,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
         }
 
+        Dictionary<int, int> maxColumnCharLengths = new Dictionary<int, int>();
         private void GenerateHeadTable(ReportType reportInfo)
         {
             int fRow, sRow;
@@ -257,6 +269,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 for (int i = 0; i < columns.Count; i++)
                 {
+                    maxColumnCharLengths.Add(i, columns[i].Name?.Length ?? 0);
+
                     if (gColumns.Any(x => x.fCol == columns[i].SortOrder
                         || x.lCol == columns[i].SortOrder
                         || (x.lCol > columns[i].SortOrder && x.fCol < columns[i].SortOrder)))
@@ -283,6 +297,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 for (int i = 0; i < columns.Count; i++)
                 {
+                    maxColumnCharLengths.Add(i, columns[i].Name?.Length ?? 0);
+
                     sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
                     sheet.SetCellStyle(fRow, i,
                         vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
@@ -340,6 +356,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var field in columns)
                 {
+                    var charLengths = row[field.Alias]?.ToString()?.Length;
+                    if (charLengths > maxColumnCharLengths[columnIndx])
+                    {
+                        maxColumnCharLengths[columnIndx] = charLengths.Value;
+                    }
 
                     var cellStyleStr = "";
                     if (row.ContainsKey("$" + field.Alias + "_CSS_STYLE"))
@@ -726,12 +747,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 int fRow = currentRow + 3;
 
-                var rCol = (int)maxCloumn / signs.Length;
+                var rCol = (int)numberOfColumns / signs.Length;
                 for (int i = 0; i < signs.Length; i++)
                 {
                     var fCol = i > 0 ? (i * rCol) : 0;
                     var lCol = (i + 1) * rCol - 1;
-                    if (i == signs.Length - 1 && maxCloumn > (signs.Length * rCol)) lCol += (maxCloumn - (signs.Length * rCol));
+                    if (i == signs.Length - 1 && numberOfColumns > (signs.Length * rCol)) lCol += (numberOfColumns - (signs.Length * rCol));
                     sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
                     sheet.EnsureCell(fRow, fCol).SetCellValue(signs[i].Replace("/", $"\r\n"));
                     sheet.SetSignatureCellStyle(fRow, fCol);
@@ -750,7 +771,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             else if (!string.IsNullOrEmpty(_model.Footer.RDateText))
             {
                 int fRow = currentRow + 2;
-                sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, maxCloumn));
+                sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, numberOfColumns - 1));
                 sheet.EnsureCell(fRow, 0).SetCellValue(_model.Footer.RDateText);
                 sheet.SetCellStyle(fRow, 0, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center);
             }

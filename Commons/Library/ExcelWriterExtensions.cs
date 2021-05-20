@@ -109,7 +109,12 @@ namespace VErp.Commons.Library
             return style;
         }
 
-       
+        public static void ManualResize(this ISheet sheet, int column, int maxNumCharacters)
+        {
+            int width = ((int)(maxNumCharacters * 1.14388)) * 256;
+            sheet.SetColumnWidth(column, width);
+        }
+
         public static VerticalAlignment? GetVerticalAlignment(this string vAlign)
         {
             if (string.IsNullOrWhiteSpace(vAlign)) return null;
