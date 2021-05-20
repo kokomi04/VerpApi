@@ -384,7 +384,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 throw new BadRequestException(RoleErrorCode.RoleNotFound);
             }
 
-            if (!roleInfo.IsEditable)
+            if (!roleInfo.IsEditable && !_currentContextService.IsDeveloper)
             {
                 throw new BadRequestException(RoleErrorCode.RoleIsReadonly);
             }
