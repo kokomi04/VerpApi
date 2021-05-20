@@ -8,7 +8,9 @@ namespace VErp.Commons.Enums.MasterEnum
     {
         Me = 101,
         Home = 102,
-        
+
+        ReportView = 605,
+
         CategoryData = 702,
 
         Input = 802,
