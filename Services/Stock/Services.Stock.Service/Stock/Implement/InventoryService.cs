@@ -1648,9 +1648,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockId = q.StockId,
                         ProductId = q.ProductId,
                         PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.Round(),
                         ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.Round()
                     }).ToList()
                 });
             }
@@ -1731,10 +1731,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Description = item.Description,
                     PrimaryUnitId = item.UnitId,
                     ProductUnitConversionId = item.ProductUnitConversionId,
-                    PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
-                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
-                    ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
-                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
+                    PrimaryQuantityWaiting = item.PrimaryQuantityWaiting.Round(),
+                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining.Round(),
+                    ProductUnitConversionWaitting = item.ProductUnitConversionWaitting.Round(),
+                    ProductUnitConversionRemaining =  item.ProductUnitConversionRemaining.Round(),
 
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
@@ -1840,9 +1840,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockId = q.StockId,
                         ProductId = q.ProductId,
                         PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.Round(),
                         ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.Round()
                     }).ToList()
                 });
             }
