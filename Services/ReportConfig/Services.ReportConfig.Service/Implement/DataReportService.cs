@@ -474,11 +474,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 orderBy += $"{orderByFieldName}" + (asc ? "" : " DESC");
             }
 
-            if (string.IsNullOrWhiteSpace(orderBy))
-            {
-                orderBy = "1";
-            }
-
             if (!string.IsNullOrWhiteSpace(orderBy))
             {
                 sql += " ORDER BY " + orderBy;
