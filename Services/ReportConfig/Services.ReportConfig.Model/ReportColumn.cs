@@ -5,6 +5,7 @@ using VErp.Commons.Enums.Report;
 
 namespace Verp.Services.ReportConfig.Model
 {
+    [Serializable]
     public class ReportColumnModel
     {
         public int SortOrder { get; set; }
@@ -25,6 +26,9 @@ namespace Verp.Services.ReportConfig.Model
         public bool IsGroupRow { get; set; }
         public string VAlign { get; set; }
         public string HAlign { get; set; }
+
+        public string SuffixKey { get; set; }
+        public string OriginValue { get; set; }
 
         public EnumReportDetailOpenType? DetailOpenTypeId { get; set; }
         public EnumReportDetailTarget? DetailTargetId { get; set; }

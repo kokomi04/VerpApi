@@ -33,6 +33,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private int numberOfColumns = 15;
         private ReportFacadeModel _model;
         private IList<ReportColumnModel> columns = null;
+        private ReportDataModel dataTable = null;
 
         private readonly string sheetName = "Data";
 
@@ -70,9 +71,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
-            columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
-
             _model = model;
+
+            columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
+            dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
+            columns = RepeatColumnUtils.RepeatColumnProcess(columns, dataTable.Rows.List);
+
             xssfwb = new ExcelWriter();
             sheet = xssfwb.GetSheet(sheetName);
 
@@ -255,15 +259,27 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var col in gColumns)
                 {
-                    var fCol = columns.IndexOf(columns.FirstOrDefault(x => x.SortOrder == col.fCol));
-                    var lCol = columns.IndexOf(columns.FirstOrDefault(x => x.SortOrder == col.lCol));
-                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
-                    sheet.EnsureCell(fRow, fCol).SetCellValue(col.value);
-                    for (int i = fCol; i <= lCol; i++)
+                    var fColumns = columns.Where(x => x.SortOrder == col.fCol).ToList();
+                    var lColumns = columns.Where(x => x.SortOrder == col.lCol).ToList();
+
+                    foreach(var fColumn in fColumns)
                     {
-                        sheet.SetCellStyle(fRow, i,
-                            vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                        var lColumn = lColumns.FirstOrDefault(c => c.SuffixKey == fColumn.SuffixKey);
+                        var fCol = columns.IndexOf(fColumn);
+                        var lCol = columns.IndexOf(lColumn);
+                        sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
+                        var title = col.value;
+                        if(fColumn.IsRepeat.HasValue && fColumn.IsRepeat.Value && !string.IsNullOrEmpty(fColumn.SuffixKey) && dataTable.GroupTitle.ContainsKey(fColumn.SuffixKey))
+                        {
+                            title = dataTable.GroupTitle[fColumn.SuffixKey].ToString();
+                        }
+                        sheet.EnsureCell(fRow, fCol).SetCellValue(title);
+                        for (int i = fCol; i <= lCol; i++)
+                        {
+                            sheet.SetCellStyle(fRow, i,
+                                vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
+                                rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                        }
                     }
                 }
 
@@ -321,7 +337,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 table.Columns.Add($"Col-{index}");
             }
             var sumCalc = new Dictionary<int, ReportColumnModel>();
-            var dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
 
             int? firstGroupDataRow = null;
             int? lastGroupDataRow = null;
