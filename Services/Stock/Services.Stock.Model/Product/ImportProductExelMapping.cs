@@ -37,6 +37,8 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Đơn vị chính", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng chọn đơn vị chính")]
         public string Unit { get; set; }
+        [Display(Name = "Độ chính xác", GroupName = "Thông tin chung")]
+        public int DecimalPlaceDefault { get; set; }
         [Display(Name = "Giá ước tính", GroupName = "Thông tin chung")]
         public decimal? EstimatePrice { get; set; }
         [Display(Name = "Bán thành phẩm", GroupName = "Thông tin chung")]
@@ -92,6 +94,9 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Danh sách kho", GroupName = "Thông tin kho")]
         public ICollection<int> StockIds { get; set; }
 
+        // UnitConversion
+        
+
         [Display(Name = "ĐVT1 - Tên", GroupName = "Đơn vị chuyển đổi")]
         public string SecondaryUnit01 { get; set; }
         [Display(Name = "ĐVT1 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
@@ -126,6 +131,7 @@ namespace VErp.Services.Stock.Model.Product
         public string FactorExpression05 { get; set; }
         [Display(Name = "ĐVT5 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
         public int DecimalPlace05 { get; set; }
+
 
 
         public ProductImportModel()

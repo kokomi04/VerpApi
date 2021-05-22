@@ -391,7 +391,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
                     IsFreeStyle = false,
-                    DecimalPlace = DECIMAL_PLACE_DEFAULT
+                    DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT
                 }
             );
 
@@ -592,7 +592,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         defaultUnitConversion.IsDefault = true;
                         defaultUnitConversion.IsFreeStyle = false;
                         defaultUnitConversion.ProductUnitConversionName = unitInfo.UnitName;
-                        defaultUnitConversion.DecimalPlace = DECIMAL_PLACE_DEFAULT;
+                        defaultUnitConversion.DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.ProductUnitConversionId == defaultUnitConversion.ProductUnitConversionId || u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT;
                     }
 
                     await _stockContext.SaveChangesAsync();
@@ -1368,7 +1368,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 ConversionDescription = "Mặc định",
                                 IsDefault = true,
                                 IsFreeStyle = false,
-                                DecimalPlace = DECIMAL_PLACE_DEFAULT
+                                DecimalPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault : DECIMAL_PLACE_DEFAULT
                             }
                         };
 
@@ -1403,7 +1403,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
                                 IsDefault = false,
                                 IsFreeStyle = false,
-                                DecimalPlace = decimalPlace > 0 ? decimalPlace : DECIMAL_PLACE_DEFAULT
+                                DecimalPlace = decimalPlace >= 0 ? decimalPlace : DECIMAL_PLACE_DEFAULT
                             });
                         }
                     }
