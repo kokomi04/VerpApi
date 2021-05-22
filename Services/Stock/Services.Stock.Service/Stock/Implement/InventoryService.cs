@@ -104,7 +104,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
         {
             keyword = keyword?.Trim();
             accountancyAccountNumber = accountancyAccountNumber?.Trim();
@@ -133,10 +133,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryQuery = inventoryQuery.Where(q => q.Date <= endDate);
             }
 
+
+
             if (!string.IsNullOrWhiteSpace(keyword))
             {
+                var inventoryDetails = _stockDbContext.InventoryDetail.AsQueryable();
+                if (productIds != null && productIds.Count > 0)
+                {
+                    inventoryDetails = inventoryDetails.Where(d => productIds.Contains(d.ProductId));
+
+                }
                 var inventoryIdsQuery = from p in _stockDbContext.Product
-                                        join d in _stockDbContext.InventoryDetail on p.ProductId equals d.ProductId
+                                        join d in inventoryDetails on p.ProductId equals d.ProductId
                                         where p.ProductCode.Contains(keyword)
                                         || p.ProductName.Contains(keyword)
                                         || p.ProductNameEng.Contains(keyword)
@@ -1734,7 +1742,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQuantityWaiting = item.PrimaryQuantityWaiting.Round(),
                     PrimaryQuantityRemaining = item.PrimaryQuantityRemaining.Round(),
                     ProductUnitConversionWaitting = item.ProductUnitConversionWaitting.Round(),
-                    ProductUnitConversionRemaining =  item.ProductUnitConversionRemaining.Round(),
+                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining.Round(),
 
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
