@@ -365,7 +365,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ConversionDescription = u.ConversionDescription,
                     IsDefault = false,
                     IsFreeStyle = u.IsFreeStyle,
-                    DecimalPlace = u.DecimalPlace < 0 ? DECIMAL_PLACE_DEFAULT: u.DecimalPlace
+                    DecimalPlace = u.DecimalPlace < 0 ? DECIMAL_PLACE_DEFAULT : u.DecimalPlace
                 })
             .ToList();
 
@@ -384,7 +384,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
                     IsFreeStyle = false,
-                    DecimalPlace = DECIMAL_PLACE_DEFAULT
+                    DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT
                 }
             );
 
@@ -584,7 +584,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         defaultUnitConversion.IsDefault = true;
                         defaultUnitConversion.IsFreeStyle = false;
                         defaultUnitConversion.ProductUnitConversionName = unitInfo.UnitName;
-                        defaultUnitConversion.DecimalPlace = DECIMAL_PLACE_DEFAULT;
+                        defaultUnitConversion.DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.ProductUnitConversionId == defaultUnitConversion.ProductUnitConversionId || u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT;
                     }
 
                     await _stockContext.SaveChangesAsync();
@@ -759,7 +759,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var products = _stockContext.Product.AsQueryable();
 
-            if(productIds != null && productIds.Count > 0)
+            if (productIds != null && productIds.Count > 0)
             {
                 products = products.Where(x => productIds.Contains(x.ProductId));
             }
@@ -767,7 +767,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (isProductSemi.HasValue && isProduct.HasValue)
             {
                 products = products.Where(x => x.IsProductSemi == isProductSemi || x.IsProduct == isProduct);
-            }else
+            }
+            else
             {
 
                 if (isProductSemi.HasValue)
@@ -810,7 +811,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.UnitId,
                   p.EstimatePrice,
                   p.IsProductSemi,
-                  p.Coefficient, 
+                  p.Coefficient,
                   p.IsProduct,
                   p.Height,
                   p.Long,
@@ -1343,7 +1344,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 ConversionDescription = "Mặc định",
                                 IsDefault = true,
                                 IsFreeStyle = false,
-                                DecimalPlace = DECIMAL_PLACE_DEFAULT
+                                DecimalPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault : DECIMAL_PLACE_DEFAULT
                             }
                         };
 
@@ -1378,7 +1379,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
                                 IsDefault = false,
                                 IsFreeStyle = false,
-                                DecimalPlace = decimalPlace > 0 ? decimalPlace : DECIMAL_PLACE_DEFAULT
+                                DecimalPlace = decimalPlace >= 0 ? decimalPlace : DECIMAL_PLACE_DEFAULT
                             });
                         }
                     }
