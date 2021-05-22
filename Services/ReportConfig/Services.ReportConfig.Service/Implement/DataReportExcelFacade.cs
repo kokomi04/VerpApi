@@ -235,11 +235,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
         Dictionary<int, int> maxColumnCharLengths = new Dictionary<int, int>();
+        readonly byte[] headerRgb = new byte[3] { 221, 229, 239 };
         private void GenerateHeadTable(ReportType reportInfo)
         {
             int fRow, sRow;
             fRow = sRow = 0;
-            byte[] headerRgb = new byte[3] { 221, 229, 239 };
 
             if (!string.IsNullOrEmpty(reportInfo.GroupColumns)) sRow = 1;
             fRow = currentRow;
@@ -262,14 +262,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     var fColumns = columns.Where(x => x.SortOrder == col.fCol).ToList();
                     var lColumns = columns.Where(x => x.SortOrder == col.lCol).ToList();
 
-                    foreach(var fColumn in fColumns)
+                    foreach (var fColumn in fColumns)
                     {
                         var lColumn = lColumns.FirstOrDefault(c => c.SuffixKey == fColumn.SuffixKey);
                         var fCol = columns.IndexOf(fColumn);
                         var lCol = columns.IndexOf(lColumn);
                         sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
                         var title = col.value;
-                        if(fColumn.IsRepeat.HasValue && fColumn.IsRepeat.Value && !string.IsNullOrEmpty(fColumn.SuffixKey) && dataTable.GroupTitle.ContainsKey(fColumn.SuffixKey))
+                        if (fColumn.IsRepeat.HasValue && fColumn.IsRepeat.Value && !string.IsNullOrEmpty(fColumn.SuffixKey) && dataTable.GroupTitle.ContainsKey(fColumn.SuffixKey))
                         {
                             title = dataTable.GroupTitle[fColumn.SuffixKey].ToString();
                         }
@@ -474,8 +474,23 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         Value = $"SUM({columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()})",
                         Type = EnumExcelType.Formula,
-                        CellStyle = GetCellStyle(sheet, column)
+                        CellStyle = GetCellStyle(sheet, column, true)
                     };
+                }
+                var columnIndx = 0;
+                foreach (var field in columns)
+                {
+                    if (!sumCalc.ContainsKey(columnIndx))
+                    {
+                        sumRow[columnIndx] = new ExcelCell
+                        {
+                            Value = $"",
+                            Type = EnumExcelType.String,
+                            CellStyle = GetCellStyle(sheet, field, true)
+                        };
+                    }
+                    columnIndx++;
+
                 }
                 sumRow.FillAllRow();
                 table.Rows.Add(sumRow);
@@ -587,11 +602,19 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         Dictionary<string, ICellStyle> dataTypeStyles = new Dictionary<string, ICellStyle>();
 
-        private ICellStyle GetCellStyle(ISheet sheet, ReportColumnModel column)
+        private ICellStyle GetCellStyle(ISheet sheet, ReportColumnModel column, bool isHeader = false)
         {
-            if (dataTypeStyles.ContainsKey(column.Alias))
+            var keyCached = column.Alias + "|" + isHeader;
+            if (dataTypeStyles.ContainsKey(keyCached))
             {
-                return dataTypeStyles[column.Alias];
+                return dataTypeStyles[keyCached];
+            }
+            byte[] bgColor = null;
+            bool isBold = false;
+            if (isHeader)
+            {
+                bgColor = headerRgb;
+                isBold = true;
             }
             var type = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
 
@@ -602,8 +625,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             switch (type)
             {
                 case EnumDataType.Boolean:
-                    style = sheet.GetCellStyle(vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Left, isWrap: true, isBorder: true);
-                    dataTypeStyles.Add(column.Alias, style);
+                    style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                    dataTypeStyles.Add(keyCached, style);
                     return style;
                 case EnumDataType.Int:
                 case EnumDataType.Year:
@@ -623,13 +646,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 format.Append("#");
                             }
                         }
-                        style = sheet.GetCellStyle(vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
-                        dataTypeStyles.Add(column.Alias, style);
+                        style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, rgb: bgColor, dataFormat: format.ToString());
+                        dataTypeStyles.Add(keyCached, style);
                         return style;
                     }
                 case EnumDataType.Date:
-                    style = sheet.GetCellStyle(vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
-                    dataTypeStyles.Add(column.Alias, style);
+                    style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, rgb: bgColor, dataFormat: "dd/mm/yyyy");
+                    dataTypeStyles.Add(keyCached, style);
                     return style;
                 case EnumDataType.Percentage:
                     {
@@ -643,16 +666,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             }
                         }
                         format.Append(" %");
-                        style = sheet.GetCellStyle(vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
-                        dataTypeStyles.Add(column.Alias, style);
+                        style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, rgb: bgColor, dataFormat: format.ToString());
+                        dataTypeStyles.Add(keyCached, style);
                         return style;
                     }
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
                 default:
-                    style = sheet.GetCellStyle(vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Left, isWrap: true, isBorder: true);
-                    dataTypeStyles.Add(column.Alias, style);
+                    style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Left, isWrap: true, isBorder: true, rgb: bgColor);
+                    dataTypeStyles.Add(keyCached, style);
                     return style;
             }
         }
