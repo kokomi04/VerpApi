@@ -37,30 +37,34 @@ namespace VErpApi.Controllers.Stock.Inventory
             _fileProcessDataService = fileProcessDataService;
         }
 
+       
         /// <summary>
         /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
-        /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
-        /// <param name="stockId">Id kho</param>
-        /// <param name="isApproved"></param>
-        /// <param name="type">Loại InventoryTypeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>        
-        /// <param name="beginTime"></param>
-        /// <param name="endTime"></param>
-        /// <param name="isExistedInputBill"></param>
-        /// <param name="mappingFunctionKeys"></param>
-        /// <param name="sortBy">sort by column (default: date) </param>
-        /// <param name="asc">true/false (default: false. It mean sort desc)</param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
+        /// <param name="keyword">Từ khóa</param>
+        /// <param name="customerId">ID khách hàng</param>
+        /// <param name="productIds">Danh sách ID mặt hàng</param>
+        /// <param name="accountancyAccountNumber">Tài khoản kế toán</param>
+        /// <param name="stockId">ID kho</param>
+        /// <param name="isApproved">Đã duyệt hay chưa</param>
+        /// <param name="type">Loại (1: Nhập kho, 2: Xuất kho)</param>
+        /// <param name="beginTime">Từ ngày</param>
+        /// <param name="endTime">Đến ngày</param>
+        /// <param name="isExistedInputBill">Đã tạo CTGS hay chưa</param>
+        /// <param name="mappingFunctionKeys">(Deprecated) Các loại chứng từ kiểm tra</param>
+        /// <param name="sortBy">Cột sắp xếp</param>
+        /// <param name="asc">Tăng dần hay giảm dần</param>
+        /// <param name="page">Trang</param>
+        /// <param name="size">Số bản ghi/trang</param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] IList<string> mappingFunctionKeys, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] IList<string> mappingFunctionKeys, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, customerId, accountancyAccountNumber, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, mappingFunctionKeys, sortBy, asc, page, size).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, productIds, accountancyAccountNumber, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, mappingFunctionKeys, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
 
