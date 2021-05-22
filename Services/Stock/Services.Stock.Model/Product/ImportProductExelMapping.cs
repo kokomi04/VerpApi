@@ -37,7 +37,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Đơn vị chính", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng chọn đơn vị chính")]
         public string Unit { get; set; }
-        [Display(Name = "Độ chính xác", GroupName = "Thông tin chung")]
+        [Display(Name = "Độ chính xác (đơn vị chính)", GroupName = "Thông tin chung")]
         public int DecimalPlaceDefault { get; set; }
         [Display(Name = "Giá ước tính", GroupName = "Thông tin chung")]
         public decimal? EstimatePrice { get; set; }
@@ -95,41 +95,39 @@ namespace VErp.Services.Stock.Model.Product
         public ICollection<int> StockIds { get; set; }
 
         // UnitConversion
-        
-
-        [Display(Name = "ĐVT1 - Tên", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT1 - Tên", GroupName = "Đơn vị chuyển đổi 1")]
         public string SecondaryUnit01 { get; set; }
-        [Display(Name = "ĐVT1 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT1 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi 1")]
         public string FactorExpression01 { get; set; }
-        [Display(Name = "ĐVT1 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT1 - Độ chính xác", GroupName = "Đơn vị chuyển đổi 1")]
         public int DecimalPlace01 { get; set; }
 
-        [Display(Name = "ĐVT2 - Tên", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT2 - Tên", GroupName = "Đơn vị chuyển đổi 2")]
         public string SecondaryUnit02 { get; set; }
-        [Display(Name = "ĐVT2 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT2 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi 2")]
         public string FactorExpression02 { get; set; }
-        [Display(Name = "ĐVT2 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT2 - Độ chính xác", GroupName = "Đơn vị chuyển đổi 2")]
         public int DecimalPlace02 { get; set; }
 
-        [Display(Name = "ĐVT3 - Tên", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT3 - Tên", GroupName = "Đơn vị chuyển đổi 3")]
         public string SecondaryUnit03 { get; set; }
-        [Display(Name = "ĐVT3 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT3 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi 3")]
         public string FactorExpression03 { get; set; }
-        [Display(Name = "ĐVT3 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT3 - Độ chính xác", GroupName = "Đơn vị chuyển đổi 3")]
         public int DecimalPlace03 { get; set; }
 
-        [Display(Name = "ĐVT4 - Tên", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT4 - Tên", GroupName = "Đơn vị chuyển đổi 4")]
         public string SecondaryUnit04 { get; set; }
-        [Display(Name = "ĐVT4 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT4 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi 4")]
         public string FactorExpression04 { get; set; }
-        [Display(Name = "ĐVT4 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT4 - Độ chính xác", GroupName = "Đơn vị chuyển đổi 4")]
         public int DecimalPlace04 { get; set; }
 
-        [Display(Name = "ĐVT5 - Tên", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT5 - Tên", GroupName = "Đơn vị chuyển đổi 5")]
         public string SecondaryUnit05 { get; set; }
-        [Display(Name = "ĐVT5 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT5 - Tỷ lệ", GroupName = "Đơn vị chuyển đổi 5")]
         public string FactorExpression05 { get; set; }
-        [Display(Name = "ĐVT5 - Dấu phẩy", GroupName = "Đơn vị chuyển đổi")]
+        [Display(Name = "ĐVT5 - Độ chính xác", GroupName = "Đơn vị chuyển đổi 5")]
         public int DecimalPlace05 { get; set; }
 
 
