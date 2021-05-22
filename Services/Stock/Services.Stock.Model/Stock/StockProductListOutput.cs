@@ -17,5 +17,6 @@ namespace VErp.Services.Stock.Model.Stock
         public int ProductUnitConversionId { get; set; }
         public string ProductUnitConversionName { get; set; }
         public decimal ProductUnitConversionRemaining { get; set; }
+        public int DecimalPlace { get; set; }
     }
 }

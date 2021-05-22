@@ -5,20 +5,19 @@ using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
-    public class InventoryInModel
+    public class InventoryModelBase
+    {
+        public int StockId { get; set; }
+        public string InventoryCode { get; set; }
+        public long Date { get; set; }
+    }
+    public class InventoryInModel: InventoryModelBase
     {        
         //public long InventoryId { get; set; }
-
-        public int StockId { get; set; }
-
-        /// <summary>
-        /// Mã code phiếu nhập / xuất kho
-        /// </summary>
-        public string InventoryCode { get; set; }
               
         public string Shipper { get; set; }
         public string Content { get; set; }
-        public long Date { get; set; }
+        
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }

@@ -428,5 +428,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             await _manufacturingDBContext.SaveChangesAsync();
             return true;
         }
+
     }
 }

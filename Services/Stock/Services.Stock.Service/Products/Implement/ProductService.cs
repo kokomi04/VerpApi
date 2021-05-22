@@ -33,6 +33,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class ProductService : IProductService
     {
+        public const int DECIMAL_PLACE_DEFAULT = 12;
+
         private readonly StockDBContext _stockContext;
         private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
@@ -71,7 +73,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<int> AddProduct(ProductModel req)
         {
-            var customGenCode = await GenerateProductCode(null, req);
+            //var customGenCode = await GenerateProductCode(null, req);
+            var ctx = await GenerateProductCode(null, req);
 
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -79,7 +82,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
 
-                await ConfirmProductCode(customGenCode);
+                //await ConfirmProductCode(customGenCode);
+                await ctx.ConfirmCode();
 
                 return productId;
             }
@@ -97,7 +101,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không tồn tại");
                 }
-                var customGenCode = await GenerateProductCode(null, req);
+                //var customGenCode = await GenerateProductCode(null, req);
+                var ctx = await GenerateProductCode(null, req);
+
 
                 var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
@@ -148,7 +154,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = "1",
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
-                    IsFreeStyle = false
+                    IsFreeStyle = false,
+                    DecimalPlace = DECIMAL_PLACE_DEFAULT
                 };
                 _stockContext.ProductUnitConversion.Add(unitConverion);
 
@@ -156,7 +163,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
-                await ConfirmProductCode(customGenCode);
+                //await ConfirmProductCode(customGenCode);
+                await ctx.ConfirmCode();
+
                 req.ProductCode = productInfo.ProductCode;
                 req.ProductId = productInfo.ProductId;
                 return req;
@@ -173,7 +182,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     req.ProductTypeId = defaultProductType?.ProductTypeId;
                 }
-                var customGenCode = await ProductGenerateProductSemiCode(parentProductId, null, req);
+                //var customGenCode = await ProductGenerateProductSemiCode(parentProductId, null, req);
+                var ctx = await ProductGenerateProductSemiCode(parentProductId, null, req);
 
                 var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
@@ -225,7 +235,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = "1",
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
-                    IsFreeStyle = false
+                    IsFreeStyle = false,
+                    DecimalPlace = DECIMAL_PLACE_DEFAULT
                 };
                 _stockContext.ProductUnitConversion.Add(unitConverion);
 
@@ -233,7 +244,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới chi tiết mặt hàng {req.ProductName}", req.JsonSerialize());
-                await ConfirmProductCode(customGenCode);
+                await ctx.ConfirmCode();// ConfirmProductCode(customGenCode);
                 req.ProductCode = productInfo.ProductCode;
                 req.ProductId = productInfo.ProductId;
                 return req;
@@ -360,7 +371,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = u.FactorExpression,
                     ConversionDescription = u.ConversionDescription,
                     IsDefault = false,
-                    IsFreeStyle = u.IsFreeStyle
+                    IsFreeStyle = u.IsFreeStyle,
+                    DecimalPlace = u.DecimalPlace < 0 ? DECIMAL_PLACE_DEFAULT : u.DecimalPlace
                 })
             .ToList();
 
@@ -378,7 +390,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     FactorExpression = "1",
                     ConversionDescription = "Mặc định",
                     IsDefault = true,
-                    IsFreeStyle = false
+                    IsFreeStyle = false,
+                    DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT
                 }
             );
 
@@ -431,7 +444,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 try
                 {
-                    var customGenCode = await GenerateProductCode(productId, req);
+                    //var customGenCode = await GenerateProductCode(productId, req);
+                    var ctx = await GenerateProductCode(productId, req);
 
                     //Getdata
                     var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -547,7 +561,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             FactorExpression = u.FactorExpression,
                             ConversionDescription = u.ConversionDescription,
                             IsDefault = false,
-                            IsFreeStyle = u.IsFreeStyle
+                            IsFreeStyle = u.IsFreeStyle,
+                            DecimalPlace = u.DecimalPlace
                         });
 
 
@@ -567,6 +582,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             db.FactorExpression = u.FactorExpression;
                             db.ConversionDescription = u.ConversionDescription;
                             db.IsFreeStyle = u.IsFreeStyle;
+                            db.DecimalPlace = u.DecimalPlace;
                         }
                     }
                     var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
@@ -576,6 +592,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         defaultUnitConversion.IsDefault = true;
                         defaultUnitConversion.IsFreeStyle = false;
                         defaultUnitConversion.ProductUnitConversionName = unitInfo.UnitName;
+                        defaultUnitConversion.DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.ProductUnitConversionId == defaultUnitConversion.ProductUnitConversionId || u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT;
                     }
 
                     await _stockContext.SaveChangesAsync();
@@ -585,7 +602,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật mặt hàng {productInfo.ProductName}", req.JsonSerialize());
 
-                    await ConfirmProductCode(customGenCode);
+                    await ctx.ConfirmCode();// ConfirmProductCode(customGenCode);
                 }
                 catch (Exception)
                 {
@@ -606,11 +623,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        private async Task<CustomGenCodeBaseValueModel> GenerateProductCode(int? productId, ProductGenCodeModel model)
+        private async Task<GenerateCodeContext> GenerateProductCode(int? productId, ProductGenCodeModel model)
         {
-            int customGenCodeId = 0;
             model.ProductCode = (model.ProductCode ?? "").Trim();
 
+            var productTypeInfo = await _stockContext.ProductType.FirstOrDefaultAsync(t => t.ProductTypeId == model.ProductTypeId);
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, model.ProductTypeId ?? 0)
+                .SetConfigData(productId ?? 0, null, productTypeInfo?.IdentityCode)
+                .TryValidateAndGenerateCode(_stockContext.Product, model.ProductCode, (s, code) => s.ProductId != productId && s.ProductCode == code);
+
+            model.ProductCode = code;
+
+            return ctx;
+
+            /*
             Product existedItem = null;
             if (!string.IsNullOrWhiteSpace(model.ProductCode))
             {
@@ -634,12 +664,29 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     dem++;
                 } while (existedItem != null && dem < 10);
                 return config.CurrentLastValue;
-            }
+            }*/
         }
 
 
-        private async Task<CustomGenCodeBaseValueModel> ProductGenerateProductSemiCode(int parentProductId, int? productId, ProductGenCodeModel model)
+        private async Task<GenerateCodeContext> ProductGenerateProductSemiCode(int parentProductId, int? productId, ProductGenCodeModel model)
         {
+            model.ProductCode = (model.ProductCode ?? "").Trim();
+
+            var parentProductInfo = await _stockContext.Product.FirstOrDefaultAsync(t => t.ProductId == parentProductId);
+
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, 0)
+                .SetConfigData(productId ?? 0, null, parentProductInfo?.ProductCode)
+                .TryValidateAndGenerateCode(_stockContext.Product, model.ProductCode, (s, code) => s.ProductId != productId && s.ProductCode == code);
+
+            model.ProductCode = code;
+
+            return ctx;
+
+            /*
             int customGenCodeId = 0;
             model.ProductCode = (model.ProductCode ?? "").Trim();
 
@@ -666,15 +713,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     dem++;
                 } while (existedItem != null && dem < 10);
                 return config.CurrentLastValue;
-            }
+            }*/
         }
 
-        private async Task<bool> ConfirmProductCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
-        {
-            if (customGenCodeBaseValue.IsNullObject()) return true;
+        //private async Task<bool> ConfirmProductCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
+        //{
+        //    if (customGenCodeBaseValue.IsNullObject()) return true;
 
-            return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
-        }
+        //    return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
+        //}
 
         public async Task<bool> DeleteProduct(int productId)
         {
@@ -750,7 +797,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var products = _stockContext.Product.AsQueryable();
 
-            if(productIds != null && productIds.Count > 0)
+            if (productIds != null && productIds.Count > 0)
             {
                 products = products.Where(x => productIds.Contains(x.ProductId));
             }
@@ -758,7 +805,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (isProductSemi.HasValue && isProduct.HasValue)
             {
                 products = products.Where(x => x.IsProductSemi == isProductSemi || x.IsProduct == isProduct);
-            }else
+            }
+            else
             {
 
                 if (isProductSemi.HasValue)
@@ -801,7 +849,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.UnitId,
                   p.EstimatePrice,
                   p.IsProductSemi,
-                  p.Coefficient, 
+                  p.Coefficient,
                   p.IsProduct,
                   p.Height,
                   p.Long,
@@ -891,6 +939,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 from pt in pts.DefaultIfEmpty()
                 join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
                 from pc in pcs.DefaultIfEmpty()
+                join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new  {ucs.ProductId,UnitId = ucs.SecondaryUnitId } into gucs
+                from ucs in gucs.DefaultIfEmpty()
                 where productIds.Contains(p.ProductId)
                 select new
                 {
@@ -912,7 +962,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     p.IsProduct,
                     p.Height,
                     p.Long,
-                    p.Width
+                    p.Width,
+                    ucs.ProductUnitConversionId,
+                    ucs.DecimalPlace
                 });
 
             var lstData = await query.ToListAsync();
@@ -955,6 +1007,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Long = item.Long,
                     Width = item.Width,
                     Height = item.Height,
+                    DecimalPlace = item.DecimalPlace
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -1076,7 +1129,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             IsDefault = c.IsDefault,
                             IsFreeStyle = c.IsFreeStyle ?? false,
                             FactorExpression = c.FactorExpression,
-                            ConversionDescription = c.ConversionDescription
+                            ConversionDescription = c.ConversionDescription,
+                            DecimalPlace = c.DecimalPlace
                         }).ToList()
                     } : null
                 });
@@ -1150,6 +1204,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unit01Text = nameof(ProductImportModel.SecondaryUnit01);
             var exp01Text = nameof(ProductImportModel.FactorExpression01);
+            var decimalPlace01Text = nameof(ProductImportModel.DecimalPlace01);
             Type typeInfo = typeof(ProductImportModel);
 
             foreach (var row in data)
@@ -1216,21 +1271,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             // Validate unique product code
             var productCodes = data.Select(p => p.ProductCode).ToList();
+            var existsProduct = await _stockContext.Product.AsNoTracking()
+                .Where(p => productCodes.Contains(p.ProductCode)).Select(p => p.ProductCode).ToListAsync();
 
             var dupCodes = productCodes.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            dupCodes.AddRange(_stockContext.Product
-                .Where(p => productCodes.Contains(p.ProductCode))
-                .Select(p => p.ProductCode)
-                .ToList());
-            dupCodes = dupCodes.Distinct().ToList();
-
-            if (dupCodes.Count > 0 && !mapping.IgnoreDuplicate)
+            if (!mapping.IgnoreDuplicate)
             {
-                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", dupCodes)} đã tồn tại");
+                if (dupCodes.Count > 0)
+                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Tồn tại nhiều mặt hàng {string.Join(",", dupCodes)} trong file import");
+                if (existsProduct.Count > 0)
+                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", existsProduct)} đã tồn tại trong hệ thống");
             }
             else
             {
-                data = data.Where(x => !dupCodes.Contains(x.ProductCode)).ToList();
+                data = data.Where(x => !existsProduct.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
             }
 
             // Validate required product name
@@ -1239,24 +1293,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập tên mặt hàng có mã: {string.Join(",", emptyNameProducts)}");
             }
-
-            //var productNames = data.Select(r => r.ProductName.NormalizeAsInternalName()).ToList();
-            // Validate unique product name
-            //var dupNames = productNames.GroupBy(n => n).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            //var dupNameCodes = data.Where(r => dupCodes.Contains(r.ProductName.NormalizeAsInternalName())).Select(r => r.ProductCode).ToList();
-            //var dupNameProducts = _stockContext.Product
-            //   .Where(p => productNames.Contains(p.ProductInternalName)).ToList();
-
-            //dupNames.AddRange(dupNameProducts.Select(p => p.ProductInternalName).ToList());
-            //dupNameCodes.AddRange(dupNameProducts.Select(p => p.ProductCode).ToList());
-
-            //dupNames = dupNames.Distinct().ToList();
-            //dupNameCodes = dupNameCodes.Distinct().ToList();
-
-            //if (dupNameProducts.Count > 0)
-            //{
-            //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng {string.Join(",", dupNames)} của các mã {string.Join(",", dupNameCodes)} đã tồn tại");
-            //}
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
@@ -1331,7 +1367,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 FactorExpression = "1",
                                 ConversionDescription = "Mặc định",
                                 IsDefault = true,
-                                IsFreeStyle = false
+                                IsFreeStyle = false,
+                                DecimalPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault : DECIMAL_PLACE_DEFAULT
                             }
                         };
 
@@ -1339,8 +1376,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
                         var expText = suffix > 1 ? new StringBuilder(exp01Text).Remove(exp01Text.Length - 2, 2).Append($"0{suffix}").ToString() : exp01Text;
+                        var decimalPlaceText = suffix > 1 ? new StringBuilder(decimalPlace01Text).Remove(decimalPlace01Text.Length - 2, 2).Append($"0{suffix}").ToString() : decimalPlace01Text;
                         var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
                         var exp = typeInfo.GetProperty(expText).GetValue(row) as string;
+                        int.TryParse(typeInfo.GetProperty(decimalPlaceText).GetValue(row) as string, out int decimalPlace);
                         if (!string.IsNullOrEmpty(unit))
                         {
                             try
@@ -1363,7 +1402,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 SecondaryUnitId = units[unit.NormalizeAsInternalName()],
                                 FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
                                 IsDefault = false,
-                                IsFreeStyle = false
+                                IsFreeStyle = false,
+                                DecimalPlace = decimalPlace >= 0 ? decimalPlace : DECIMAL_PLACE_DEFAULT
                             });
                         }
                     }

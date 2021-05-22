@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Magick.NET.Core-Q8" Version="7.0.5.900" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="3.1.8" />
-    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
 
   <ItemGroup>

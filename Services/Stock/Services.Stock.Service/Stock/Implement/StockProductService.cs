@@ -261,7 +261,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 sp.PrimaryQuantityRemaining,
                                 sp.ProductUnitConversionId,
                                 c.ProductUnitConversionName,
-                                sp.ProductUnitConversionRemaining
+                                sp.ProductUnitConversionRemaining,
+                                c.DecimalPlace
                             };
 
             var total = await queryData.CountAsync();
@@ -309,7 +310,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     ProductUnitConversionId = item.ProductUnitConversionId ?? 0,
                     ProductUnitConversionName = item.ProductUnitConversionName,
-                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining
+                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
+                    DecimalPlace = item.DecimalPlace
                 };
                 pagedData.Add(stockInfo);
             }
@@ -378,7 +380,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     PackageTypeId = (EnumPackageType)pk.PackageTypeId,
-                    RefObjectCode = ""
+                    RefObjectCode = "",
+                    c.DecimalPlace
                 }
                 );
             var total = await query.CountAsync();
@@ -420,7 +423,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 RefObjectCode = "",
                 OrderCode = pk.OrderCode,
                 POCode = pk.Pocode,
-                ProductionOrderCode = pk.ProductionOrderCode
+                ProductionOrderCode = pk.ProductionOrderCode,
+                DecimalPlace = pk.DecimalPlace
             })
             .ToList();
 
@@ -469,7 +473,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     PackageTypeId = (EnumPackageType)pk.PackageTypeId,
-                    RefObjectCode = ""
+                    RefObjectCode = "",
+                    c.DecimalPlace
                 }
                 );
             var total = await query.CountAsync();
@@ -494,7 +499,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
                 RefObjectId = null,
                 PackageTypeId = (EnumPackageType)pk.PackageTypeId,
-                RefObjectCode = ""
+                RefObjectCode = "",
+                DecimalPlace = pk.DecimalPlace
 
             }).ToList();
 
@@ -577,6 +583,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                    join ps in productStockInfoQuery on p.ProductId equals ps.ProductId
                                    join pe in productExtraInfoQuery on p.ProductId equals pe.ProductId into pse
                                    from pe in pse.DefaultIfEmpty()
+                                   join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new { ucs.ProductId, UnitId = ucs.SecondaryUnitId } into gucs
+                                   from ucs in gucs.DefaultIfEmpty()
                                    select new
                                    {
                                        p.ProductId,
@@ -589,6 +597,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                        p.ProductCateId,
                                        ps.AmountWarningMin,
                                        ps.AmountWarningMax,
+                                       ucs.ProductUnitConversionId,
+                                       ucs.DecimalPlace
                                    };
 
             var total = productInfoQuery.Count();
@@ -608,7 +618,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             sp.ProductId,
                                             sp.PrimaryQuantityRemaining,
                                             sp.ProductUnitConversionId,
-                                            sp.ProductUnitConversionRemaining
+                                            sp.ProductUnitConversionRemaining,
                                         }).ToList();
 
             var result = new List<StockProductQuantityWarning>(total);
@@ -632,7 +642,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
                     AmountWarningMin = pi.AmountWarningMin ?? 0,
                     AmountWarningMax = pi.AmountWarningMax ?? 0,
-                    MainImageFileId = pi.MainImageFileId
+                    MainImageFileId = pi.MainImageFileId,
+                    DecimalPlace = pi.DecimalPlace
                 };
                 item.StockProductQuantityList = spList;
                 item.TotalPrimaryQuantityRemaining = spList.Count > 0 ? item.StockProductQuantityList.Sum(q => q.PrimaryQuantityRemaining) : 0;

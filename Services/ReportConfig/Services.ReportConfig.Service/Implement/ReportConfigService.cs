@@ -33,7 +33,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly ILogger _logger;
         private readonly IMenuHelperService _menuHelperService;
         private readonly IDataProtectionProvider _protectionProvider;
-
+        private readonly IRoleHelperService _roleHelperService;
         public ReportConfigService(ReportConfigDBContext reportConfigContext
             , IOptions<AppSetting> appSetting
             , ILogger<ReportConfigService> logger
@@ -41,6 +41,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             , IMapper mapper
             , IMenuHelperService menuHelperService
             , IDataProtectionProvider protectionProvider
+            , IRoleHelperService roleHelperService
             )
         {
             _reportConfigContext = reportConfigContext;
@@ -50,6 +51,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _menuHelperService = menuHelperService;
             _protectionProvider = protectionProvider;
             _appSetting = appSetting.Value;
+            _roleHelperService = roleHelperService;
         }
 
         public async Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId, bool isConfig = false)
@@ -334,6 +336,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
               
 
                 await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data.JsonSerialize());
+
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.ReportView, EnumObjectType.ReportType, report.ReportTypeId);
+
                 return report.ReportTypeId;
             }
             catch (Exception ex)

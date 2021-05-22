@@ -24,6 +24,7 @@ namespace VErp.Services.Stock.Model.Product
         public decimal? Long { get; set; }
         public decimal? Height { get; set; }
         public decimal? Width { get; set; }
+        public int DecimalPlace { get; set; }
 
         public List<StockProductOutput> StockProductModelList { set; get; }
     }

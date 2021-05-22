@@ -31,6 +31,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     {
         public string ObjectTitle { get; set; }
         public int UnitId { get; set; }
+        public int ProductUnitConversion { get; set; }
+        public int DecimalPlace { get; set; }
     }
 
     public class ProductionStepLinkDataInfo : ProductionStepLinkDataModel, IMapFrom<ProductionStepLinkDataRole>

@@ -33,6 +33,10 @@ namespace VErp.Commons.Library
             }
             return sheet;
         }
+        public IWorkbook GetWorkbook()
+        {
+            return hssfwb;
+        }
 
         public void WriteToSheet((string, byte[])[][] dataInRows, string sheetName, int startCollumn = 0, int startRow = 0)
         {
@@ -158,7 +162,7 @@ namespace VErp.Commons.Library
                     {
                         row[indx].Value = string.Empty;
                         row[indx].Type = EnumExcelType.String;
-                        row[indx].CellStyle = nullStyle;
+                        //row[indx].CellStyle = nullStyle;
                     }
 
                     switch (row[indx].Type)
@@ -193,6 +197,7 @@ namespace VErp.Commons.Library
                             cell.CellStyle = row[indx].CellStyle;
                             break;
                         default:
+                            cell.CellStyle = row[indx].CellStyle;
                             break;
                     }
 
@@ -272,6 +277,31 @@ namespace VErp.Commons.Library
             }
             return row;
         }
+
+
+        public VerticalAlignment? GetVAlign(string vAlign)
+        {
+            if (string.IsNullOrWhiteSpace(vAlign)) return null;
+
+            if (vAlign.Contains("top", StringComparison.OrdinalIgnoreCase)) return VerticalAlignment.Top;
+            if (vAlign.Contains("middle", StringComparison.OrdinalIgnoreCase)) return VerticalAlignment.Center;
+            if (vAlign.Contains("bottom", StringComparison.OrdinalIgnoreCase)) return VerticalAlignment.Bottom;
+            if (vAlign.Contains("baseline", StringComparison.OrdinalIgnoreCase)) return VerticalAlignment.Justify;
+            return null;
+        }
+
+        public HorizontalAlignment? GetHAlign(string hAlign)
+        {
+            if (string.IsNullOrWhiteSpace(hAlign)) return null;
+
+            if (hAlign.Contains("left", StringComparison.OrdinalIgnoreCase)) return HorizontalAlignment.Left;
+            if (hAlign.Contains("center", StringComparison.OrdinalIgnoreCase)) return HorizontalAlignment.Center;
+            if (hAlign.Contains("right", StringComparison.OrdinalIgnoreCase)) return HorizontalAlignment.Right;
+            if (hAlign.Contains("justify", StringComparison.OrdinalIgnoreCase)) return HorizontalAlignment.Justify;
+            return null;
+        }
+
+
     }
 
     public class ExcelRow

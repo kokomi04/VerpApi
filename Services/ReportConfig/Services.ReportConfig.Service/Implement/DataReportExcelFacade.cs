@@ -1,13 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.Util;
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.AccountantEnum;
@@ -26,9 +30,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private ISheet sheet = null;
         private ExcelWriter xssfwb = null;
         private int currentRow = 0;
-        private int maxCloumn = 15;
+        private int numberOfColumns = 15;
         private ReportFacadeModel _model;
         private IList<ReportColumnModel> columns = null;
+        private ReportDataModel dataTable = null;
 
         private readonly string sheetName = "Data";
 
@@ -66,25 +71,39 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
-            columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
-
             _model = model;
+
+            columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
+            dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
+            columns = RepeatColumnUtils.RepeatColumnProcess(columns, dataTable.Rows.List);
+
             xssfwb = new ExcelWriter();
             sheet = xssfwb.GetSheet(sheetName);
 
-            maxCloumn = columns.Count;
+            numberOfColumns = columns.Count;
 
             await WriteHeader();
 
             WriteBody(reportInfo);
             WriteFooter();
 
-            for (var i = 0; i <= maxCloumn; i++)
+            if (sheet.LastRowNum < 1000)
             {
-                sheet.AutoSizeColumn(i, true);
+                for (var i = 0; i < numberOfColumns; i++)
+                {
+                    sheet.AutoSizeColumn(i, false);
+                }
+            }
+            else
+            {
+                for (var i = 0; i < numberOfColumns; i++)
+                {
+                    sheet.ManualResize(i, maxColumnCharLengths[i]);
+                }
             }
 
-            for (var i = 0; i <= maxCloumn; i++)
+
+            for (var i = 0; i < numberOfColumns; i++)
             {
                 var c = sheet.GetColumnWidth(i);
                 if (c < 2600)
@@ -119,7 +138,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sheet.CreateRow(3).Height = 400;
 
                 var fCol = 0;
-                var lCol = maxCloumn - 1;
+                var lCol = numberOfColumns - 1;
 
                 if (_model.Header.fLogoId > 0)
                 {
@@ -194,7 +213,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 if (!string.IsNullOrEmpty(_model.Body.Title))
                 {
                     int fRow = currentRow;
-                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, maxCloumn - 1));
+                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, numberOfColumns - 1));
                     sheet.EnsureCell(fRow, 0).SetCellValue(_model.Body.Title);
                     sheet.SetCellStyle(fRow, 0, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center, fontSize: 18, isBold: true);
                 }
@@ -204,7 +223,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var info in _model.Body.HeadDetails)
                     {
                         int row = currentRow + i;
-                        sheet.AddMergedRegion(new CellRangeAddress(row, row, 0, maxCloumn - 1));
+                        sheet.AddMergedRegion(new CellRangeAddress(row, row, 0, numberOfColumns - 1));
                         sheet.EnsureCell(row, 0).SetCellValue(info.Value);
                         sheet.SetCellStyle(row, 0, vAlign: VerticalAlignment.Top, hAlign: drTextAlign[info.TextAlign]);
                         i++;
@@ -215,11 +234,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
         }
 
+        Dictionary<int, int> maxColumnCharLengths = new Dictionary<int, int>();
+        readonly byte[] headerRgb = new byte[3] { 221, 229, 239 };
         private void GenerateHeadTable(ReportType reportInfo)
         {
             int fRow, sRow;
             fRow = sRow = 0;
-            byte[] headerRgb = new byte[3] { 107, 150, 207 };
 
             if (!string.IsNullOrEmpty(reportInfo.GroupColumns)) sRow = 1;
             fRow = currentRow;
@@ -239,20 +259,34 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var col in gColumns)
                 {
-                    var fCol = columns.IndexOf(columns.FirstOrDefault(x => x.SortOrder == col.fCol));
-                    var lCol = columns.IndexOf(columns.FirstOrDefault(x => x.SortOrder == col.lCol));
-                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
-                    sheet.EnsureCell(fRow, fCol).SetCellValue(col.value);
-                    for (int i = fCol; i <= lCol; i++)
+                    var fColumns = columns.Where(x => x.SortOrder == col.fCol).ToList();
+                    var lColumns = columns.Where(x => x.SortOrder == col.lCol).ToList();
+
+                    foreach (var fColumn in fColumns)
                     {
-                        sheet.SetCellStyle(fRow, i,
-                            vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                        var lColumn = lColumns.FirstOrDefault(c => c.SuffixKey == fColumn.SuffixKey);
+                        var fCol = columns.IndexOf(fColumn);
+                        var lCol = columns.IndexOf(lColumn);
+                        sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
+                        var title = col.value;
+                        if (fColumn.IsRepeat.HasValue && fColumn.IsRepeat.Value && !string.IsNullOrEmpty(fColumn.SuffixKey) && dataTable.GroupTitle.ContainsKey(fColumn.SuffixKey))
+                        {
+                            title = dataTable.GroupTitle[fColumn.SuffixKey].ToString();
+                        }
+                        sheet.EnsureCell(fRow, fCol).SetCellValue(title);
+                        for (int i = fCol; i <= lCol; i++)
+                        {
+                            sheet.SetCellStyle(fRow, i,
+                                vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
+                                rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                        }
                     }
                 }
 
                 for (int i = 0; i < columns.Count; i++)
                 {
+                    maxColumnCharLengths.Add(i, columns[i].Name?.Length ?? 0);
+
                     if (gColumns.Any(x => x.fCol == columns[i].SortOrder
                         || x.lCol == columns[i].SortOrder
                         || (x.lCol > columns[i].SortOrder && x.fCol < columns[i].SortOrder)))
@@ -279,6 +313,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 for (int i = 0; i < columns.Count; i++)
                 {
+                    maxColumnCharLengths.Add(i, columns[i].Name?.Length ?? 0);
+
                     sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
                     sheet.SetCellStyle(fRow, i,
                         vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
@@ -288,6 +324,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             currentRow = sRow;
         }
+
 
         private void GenerateDataTable(ReportType reportInfo)
         {
@@ -300,27 +337,132 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 table.Columns.Add($"Col-{index}");
             }
             var sumCalc = new Dictionary<int, ReportColumnModel>();
-            var dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
-            foreach (var row in dataTable.Rows.List)
+
+            int? firstGroupDataRow = null;
+            int? lastGroupDataRow = null;
+            string currentMergeValue = null;
+
+            _mergeRows = new bool[dataTable.Rows.List.Count][];
+            cellStyles = new ICellStyle[dataTable.Rows.List.Count + currentRow][];
+
+            var mergeRanges = new List<CellRangeAddress>();
+            for (var i = 0; i < dataTable.Rows.List.Count; i++)
             {
+                var row = dataTable.Rows.List[i];
+
                 ExcelRow tbRow = table.NewRow();
                 int columnIndx = 0;
+                var mergeValue = "";
+                var isMergeRow = false;
+
+                _mergeRows[i] = new bool[columns.Count];
+                Array.Fill(_mergeRows[i], false);
+
+                //customCellStyles
+                ICellStyle rowStyle = null;
+                var rowStyleStr = "";
+                if (row.ContainsKey("$ROW_CSS_STYLE"))
+                {
+                    rowStyleStr = row["$ROW_CSS_STYLE"]?.ToString();
+                    rowStyle = ParseCellStyle(sheet, null, rowStyleStr);
+                }
+                cellStyles[i + currentRow] = new ICellStyle[columns.Count];
+                Array.Fill(cellStyles[i + currentRow], rowStyle);
+
                 foreach (var field in columns)
                 {
+                    var charLengths = row[field.Alias]?.ToString()?.Length;
+                    if (charLengths > maxColumnCharLengths[columnIndx])
+                    {
+                        maxColumnCharLengths[columnIndx] = charLengths.Value;
+                    }
+
+                    var cellStyleStr = "";
+                    if (row.ContainsKey("$" + field.Alias + "_CSS_STYLE"))
+                    {
+                        cellStyleStr = row["$" + field.Alias + "_CSS_STYLE"]?.ToString();
+                    }
+
+                    ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
+
                     if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx)) sumCalc.Add(columnIndx, field);
                     var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
+
+                    cellStyles[i + currentRow][columnIndx] = cellStyle;
+
                     if (row.ContainsKey(field.Alias))
+                    {
                         tbRow[columnIndx] = new ExcelCell
                         {
                             Value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset),
                             Type = dataType.GetExcelType(),
-                            CellStyle = GetCellStyle(sheet, dataType, field)
+                            CellStyle = cellStyle
                         };
+                    }
+
+                    if (field.IsGroupRow)
+                    {
+                        mergeValue += "|" + row[field.Alias];
+                        isMergeRow = true;
+
+                    }
                     columnIndx++;
+                }
+
+
+                if (isMergeRow)
+                {
+                    if (currentMergeValue == mergeValue)
+                    {
+                        lastGroupDataRow = i;
+                    }
+                    else
+                    {
+                        if (firstGroupDataRow.HasValue)
+                        {
+                            columnIndx = 0;
+                            foreach (var field in columns)
+                            {
+                                if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
+                                {
+                                    for (var s = firstGroupDataRow.Value; s <= lastGroupDataRow.Value; s++)
+                                    {
+                                        _mergeRows[s][columnIndx] = true;
+                                    }
+                                    mergeRanges.Add(new CellRangeAddress(firstGroupDataRow.Value + currentRow, lastGroupDataRow.Value + currentRow, columnIndx, columnIndx));
+                                }
+
+                                columnIndx++;
+                            }
+                        }
+
+                        firstGroupDataRow = i;
+                        lastGroupDataRow = i;
+                        currentMergeValue = mergeValue;
+                    }
                 }
                 tbRow.FillAllRow();
                 table.Rows.Add(tbRow);
             }
+            if (firstGroupDataRow.HasValue)
+            {
+                var columnIndx = 0;
+                foreach (var field in columns)
+                {
+                    if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
+                    {
+                        for (var s = firstGroupDataRow.Value; s <= lastGroupDataRow.Value; s++)
+                        {
+                            _mergeRows[s][columnIndx] = true;
+                        }
+                        mergeRanges.Add(new CellRangeAddress(firstGroupDataRow.Value + currentRow, lastGroupDataRow.Value + currentRow, columnIndx, columnIndx));
+                    }
+                    columnIndx++;
+                }
+            }
+
+            mergeRanges.AddRange(MergeColumn(table, dataTable));
+
             if (sumCalc.Count > 0)
             {
                 ExcelRow sumRow = table.NewRow();
@@ -332,29 +474,159 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         Value = $"SUM({columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()})",
                         Type = EnumExcelType.Formula,
-                        CellStyle = GetCellStyle(sheet, dataType, column)
+                        CellStyle = GetCellStyle(sheet, column, true)
                     };
+                }
+                var columnIndx = 0;
+                foreach (var field in columns)
+                {
+                    if (!sumCalc.ContainsKey(columnIndx))
+                    {
+                        sumRow[columnIndx] = new ExcelCell
+                        {
+                            Value = $"",
+                            Type = EnumExcelType.String,
+                            CellStyle = GetCellStyle(sheet, field, true)
+                        };
+                    }
+                    columnIndx++;
+
                 }
                 sumRow.FillAllRow();
                 table.Rows.Add(sumRow);
             }
 
             xssfwb.WriteToSheet(sheet, table, out currentRow, startCollumn: 0, startRow: currentRow);
+            var wb = xssfwb.GetWorkbook();
+            mergeRanges.ForEach(m =>
+            {
+                sheet.AddMergedRegionUnsafe(m);
+                RegionUtil.SetBorderBottom(1, m, sheet);
+                RegionUtil.SetBorderLeft(1, m, sheet);
+                RegionUtil.SetBorderRight(1, m, sheet);
+                RegionUtil.SetBorderTop(1, m, sheet);
+                if (cellStyles.Length > m.FirstRow && cellStyles[m.FirstRow] != null)
+                    sheet.SetCellStyle(m.FirstRow, m.FirstColumn, cellStyles[m.FirstRow][m.FirstColumn]);
+            });
         }
 
-        Dictionary<EnumDataType, ICellStyle> cellStyles = new Dictionary<EnumDataType, ICellStyle>();
-        private ICellStyle GetCellStyle(ISheet sheet, EnumDataType type, ReportColumnModel column)
+        private bool[][] _mergeRows = null;
+        private ICellStyle[][] cellStyles = null;
+        private List<CellRangeAddress> MergeColumn(ExcelData table, ReportDataModel dataTable)
         {
-            if (cellStyles.ContainsKey(type))
+            var mergeRanges = new List<CellRangeAddress>();
+            for (var i = 0; i < _mergeRows.Length; i++)
             {
-                return cellStyles[type];
+                var row = dataTable.Rows.List[i];
+
+                int columnIndx = 0;
+
+                var isGroupColumn = false;
+                var groupColumns = new Dictionary<int, (string[] columns, string value)>();
+                if (row.ContainsKey("$GROUP_COLUMN"))
+                {
+                    isGroupColumn = !string.IsNullOrWhiteSpace(row["$GROUP_COLUMN"]?.ToString());
+                    if (isGroupColumn)
+                    {
+                        var groups = row["$GROUP_COLUMN"]?.ToString().Split('|');
+                        for (var j = 0; j < groups.Length; j++)
+                        {
+                            var groupConfig = groups[j].Split('=');
+                            var columns = groupConfig[0].Split(',').Select(c => c.Trim()).ToArray();
+                            var value = groupConfig.Length > 1 ? groups[j].Split('=')[1] : "";
+                            groupColumns.Add(j, (columns, value));
+                        }
+                    }
+                }
+                int? firstGroupDataColumn = null;
+                int? lastGroupDataColumn = null;
+                int? currentMergeColumnValue = null;
+                string dataValue = "";
+
+                foreach (var field in columns)
+                {
+                    if (!_mergeRows[i][columnIndx])
+                    {
+                        int? mergeColumnValue = null;
+                        foreach (var g in groupColumns)
+                        {
+                            foreach (var c in g.Value.columns)
+                            {
+                                if (c == field.Alias || c == "*")
+                                {
+                                    mergeColumnValue = g.Key;
+                                    dataValue = g.Value.value;
+                                }
+                            }
+                        }
+
+                        if (mergeColumnValue == currentMergeColumnValue)
+                        {
+                            lastGroupDataColumn = columnIndx;
+                        }
+                        else
+                        {
+                            if (currentMergeColumnValue != null && firstGroupDataColumn.HasValue && lastGroupDataColumn > firstGroupDataColumn)
+                            {
+                                mergeRanges.Add(new CellRangeAddress(i + currentRow, i + currentRow, firstGroupDataColumn.Value, lastGroupDataColumn.Value));
+                                if (row.ContainsKey(dataValue))
+                                {
+                                    var rowCell = table.Rows[i];
+                                    rowCell[firstGroupDataColumn.Value] = new ExcelCell() { Value = row[dataValue]?.ToString() };
+
+                                }
+                            }
+
+                            currentMergeColumnValue = mergeColumnValue;
+                            firstGroupDataColumn = columnIndx;
+                            lastGroupDataColumn = columnIndx;
+
+                        }
+                    }
+
+                    columnIndx++;
+                }
+                if (currentMergeColumnValue != null && firstGroupDataColumn.HasValue && lastGroupDataColumn > firstGroupDataColumn)
+                {
+                    mergeRanges.Add(new CellRangeAddress(i + currentRow, i + currentRow, firstGroupDataColumn.Value, lastGroupDataColumn.Value));
+                    if (row.ContainsKey(dataValue))
+                    {
+                        var rowCell = table.Rows[i];
+                        rowCell[firstGroupDataColumn.Value] = new ExcelCell() { Value = row[dataValue]?.ToString() };
+                    }
+                }
             }
+
+            return mergeRanges;
+        }
+
+        Dictionary<string, ICellStyle> dataTypeStyles = new Dictionary<string, ICellStyle>();
+
+        private ICellStyle GetCellStyle(ISheet sheet, ReportColumnModel column, bool isHeader = false)
+        {
+            var keyCached = column.Alias + "|" + isHeader;
+            if (dataTypeStyles.ContainsKey(keyCached))
+            {
+                return dataTypeStyles[keyCached];
+            }
+            byte[] bgColor = null;
+            bool isBold = false;
+            if (isHeader)
+            {
+                bgColor = headerRgb;
+                isBold = true;
+            }
+            var type = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
+
+            var vAlign = column.VAlign?.GetVerticalAlignment();
+            var hAlign = column.HAlign?.GetHorizontalAlignment();
+
             ICellStyle style;
             switch (type)
             {
                 case EnumDataType.Boolean:
-                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
-                    cellStyles.Add(type, style);
+                    style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Left, isWrap: true, isBorder: true);
+                    dataTypeStyles.Add(keyCached, style);
                     return style;
                 case EnumDataType.Int:
                 case EnumDataType.Year:
@@ -374,13 +646,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 format.Append("#");
                             }
                         }
-                        style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
-                        cellStyles.Add(type, style);
+                        style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, rgb: bgColor, dataFormat: format.ToString());
+                        dataTypeStyles.Add(keyCached, style);
                         return style;
                     }
                 case EnumDataType.Date:
-                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: "dd/mm/yyyy");
-                    cellStyles.Add(type, style);
+                    style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, rgb: bgColor, dataFormat: "dd/mm/yyyy");
+                    dataTypeStyles.Add(keyCached, style);
                     return style;
                 case EnumDataType.Percentage:
                     {
@@ -394,19 +666,116 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             }
                         }
                         format.Append(" %");
-                        style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: true, dataFormat: format.ToString());
-                        cellStyles.Add(type, style);
+                        style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Right, isWrap: true, isBorder: true, rgb: bgColor, dataFormat: format.ToString());
+                        dataTypeStyles.Add(keyCached, style);
                         return style;
                     }
                 case EnumDataType.Text:
                 case EnumDataType.PhoneNumber:
                 case EnumDataType.Email:
                 default:
-                    style = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: true);
-                    cellStyles.Add(type, style);
+                    style = sheet.GetCellStyle(isBold: isBold, vAlign: vAlign ?? VerticalAlignment.Top, hAlign: hAlign ?? HorizontalAlignment.Left, isWrap: true, isBorder: true, rgb: bgColor);
+                    dataTypeStyles.Add(keyCached, style);
                     return style;
             }
         }
+
+        Dictionary<string, ICellStyle> customCellStyles = new Dictionary<string, ICellStyle>();
+        private ICellStyle ParseCellStyle(ISheet sheet, ReportColumnModel column, params string[] styleConfigs)
+        {
+            ICellStyle defaultColumnStyle = null;
+            if (column != null)
+            {
+                defaultColumnStyle = GetCellStyle(sheet, column);
+            }
+
+            if (styleConfigs == null || styleConfigs.All(s => string.IsNullOrWhiteSpace(s)))
+            {
+                return defaultColumnStyle;
+            }
+
+            var cached = string.Join("", styleConfigs) + "|" + column?.Alias;
+            if (customCellStyles.ContainsKey(cached))
+            {
+                return customCellStyles[cached];
+            }
+
+            var defaultFont = defaultColumnStyle?.GetFont(sheet.Workbook);
+
+            int fontSize = (int?)defaultFont?.FontHeightInPoints ?? 11;
+            bool isBold = defaultFont?.IsBold ?? false;
+            bool isItalic = defaultFont?.IsItalic ?? false;
+            byte[] bgColor = null;
+            byte[] color = null;
+            VerticalAlignment? vAlign = defaultColumnStyle?.VerticalAlignment;
+            HorizontalAlignment? hAlign = defaultColumnStyle?.Alignment;
+            string format = defaultColumnStyle?.GetDataFormatString();
+            foreach (var styleConfig in styleConfigs)
+            {
+                if (string.IsNullOrWhiteSpace(styleConfig)) continue;
+
+                var cfgs = JObject.Parse(styleConfig);
+
+                if (cfgs.ContainsKey("fontSize"))
+                {
+                    var value = cfgs.Value<string>("fontSize");
+
+                    if (value.Contains("px") || value.Contains("pt"))
+                    {
+                        var v = new Regex("[^0-9]");
+                        var nunber = v.Replace(value, "");
+                        int.TryParse(nunber, out fontSize);
+                    }
+                }
+                if (cfgs.ContainsKey("fontWeight"))
+                {
+                    var value = cfgs.Value<string>("fontWeight");
+                    isBold = value.Contains("bold", StringComparison.OrdinalIgnoreCase);
+                }
+                if (cfgs.ContainsKey("fontStyle"))
+                {
+                    var value = cfgs.Value<string>("fontWeight");
+                    isBold = value.Contains("italic", StringComparison.OrdinalIgnoreCase);
+                }
+
+                if (cfgs.ContainsKey("verticalAlign"))
+                {
+                    var value = cfgs.Value<string>("verticalAlign");
+                    vAlign = value?.GetVerticalAlignment();
+                }
+
+                if (cfgs.ContainsKey("textAlign"))
+                {
+                    var value = cfgs.Value<string>("textAlign");
+
+                    hAlign = value?.GetHorizontalAlignment();
+                }
+
+                if (cfgs.ContainsKey("background"))
+                {
+                    var value = cfgs.Value<string>("background");
+                    bgColor = value?.HexadecimalToRGB();
+                }
+
+                if (cfgs.ContainsKey("color"))
+                {
+                    var value = cfgs.Value<string>("color");
+                    color = value?.HexadecimalToRGB();
+                }
+
+                if (cfgs.ContainsKey("format"))
+                {
+                    format = cfgs.Value<string>("format");
+                }
+
+            }
+
+            var style = sheet.GetCellStyle(fontSize, isBold, isItalic, vAlign, hAlign, isBorder: true, rgb: bgColor, color: color, dataFormat: format);
+            customCellStyles.Add(cached, style);
+            return style;
+        }
+
+
 
         private void WriteFooter()
         {
@@ -416,12 +785,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 int fRow = currentRow + 3;
 
-                var rCol = (int)maxCloumn / signs.Length;
+                var rCol = (int)numberOfColumns / signs.Length;
                 for (int i = 0; i < signs.Length; i++)
                 {
                     var fCol = i > 0 ? (i * rCol) : 0;
                     var lCol = (i + 1) * rCol - 1;
-                    if (i == signs.Length - 1 && maxCloumn > (signs.Length * rCol)) lCol += (maxCloumn - (signs.Length * rCol));
+                    if (i == signs.Length - 1 && numberOfColumns > (signs.Length * rCol)) lCol += (numberOfColumns - (signs.Length * rCol));
                     sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
                     sheet.EnsureCell(fRow, fCol).SetCellValue(signs[i].Replace("/", $"\r\n"));
                     sheet.SetSignatureCellStyle(fRow, fCol);
@@ -440,7 +809,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             else if (!string.IsNullOrEmpty(_model.Footer.RDateText))
             {
                 int fRow = currentRow + 2;
-                sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, maxCloumn));
+                sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, 0, numberOfColumns - 1));
                 sheet.EnsureCell(fRow, 0).SetCellValue(_model.Footer.RDateText);
                 sheet.SetCellStyle(fRow, 0, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center);
             }

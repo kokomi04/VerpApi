@@ -31,5 +31,7 @@ namespace VErp.Services.Stock.Model.Stock
         public string POCode { get; set; }
 
         public string ProductionOrderCode { get; set; }
+
+        public int DecimalPlace { get; set; }
     }
 }

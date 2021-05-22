@@ -398,7 +398,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     ProductionStepTitle = stepInfo?.Title,
                     ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId),
                     ProductionStepLinkDataObjectId = (int)ldInfo.ObjectId,
-                    OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0 
+                    OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0,
+                    DecimalPlace = ldInfo.DecimalPlace
                 };
 
                 results.Add(data);
@@ -445,7 +446,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     ProductionStepLinkDataObjectId = (int)ldInfo.ObjectId,
                     OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0,
                     OutsourceStepRequestCode = item.OutsourceStepRequest.OutsourceStepRequestCode,
-                    OutsourceStepRequestFinishDate = item.OutsourceStepRequest.OutsourceStepRequestFinishDate.GetUnix()
+                    OutsourceStepRequestFinishDate = item.OutsourceStepRequest.OutsourceStepRequestFinishDate.GetUnix(),
+                    DecimalPlace = ldInfo.DecimalPlace,
                 };
 
                 results.Add(data);

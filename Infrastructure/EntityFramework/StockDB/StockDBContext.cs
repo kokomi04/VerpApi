@@ -122,6 +122,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
 
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
@@ -163,6 +165,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.HasOne(d => d.FromPackage)
                     .WithMany(p => p.InventoryDetailFromPackage)
                     .HasForeignKey(d => d.FromPackageId)
@@ -199,14 +203,28 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
 
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.OldPrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.OldPuConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<InventoryDetailToPackage>(entity =>
             {
                 entity.HasKey(e => new { e.InventoryDetailId, e.ToPackageId });
+
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.InventoryDetail)
                     .WithMany(p => p.InventoryDetailToPackage)
@@ -319,6 +337,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Location>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Description)
@@ -331,11 +351,15 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Status).HasDefaultValueSql("((0))");
 
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<Package>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
@@ -366,6 +390,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.ProductionOrderCode).HasMaxLength(64);
 
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.Location)
@@ -390,9 +416,17 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.HasKey(e => new { e.PackageId, e.RefPackageId });
 
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.Package)
                     .WithMany(p => p.PackageRefPackage)
@@ -516,9 +550,13 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductCate>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.ProductCateName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
                 entity.HasOne(d => d.ParentProductCate)
                     .WithMany(p => p.InverseParentProductCate)
@@ -629,6 +667,8 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.Property(e => e.ConversionDescription).HasMaxLength(512);
 
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
+
                 entity.Property(e => e.FactorExpression)
                     .IsRequired()
                     .HasMaxLength(256);
@@ -675,6 +715,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Stock>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.Status).HasDefaultValueSql("((0))");
@@ -686,6 +728,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.Type).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
             });
 
             modelBuilder.Entity<StockProduct>(entity =>
@@ -694,6 +738,10 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasName("idx_StockProduct_StockId_ProductId_ProductUnitConversionId")
                     .IsUnique();
 
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(32, 16)");
@@ -701,6 +749,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });

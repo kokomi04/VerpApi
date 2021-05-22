@@ -78,7 +78,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     SecondaryUnitName = unitObj != null ? unitObj.UnitName : null,
                     FactorExpression = item.FactorExpression,
                     ConversionDescription = item.ConversionDescription,
-                    IsDefault = item.IsDefault
+                    IsDefault = item.IsDefault,
+                    DecimalPlace = item.DecimalPlace
                 };
                 resultList.Add(p);
             }
@@ -104,6 +105,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             ConversionDescription = c.ConversionDescription,
                             IsFreeStyle = c.IsFreeStyle,
                             IsDefault = c.IsDefault,
+                            DecimalPlace = c.DecimalPlace
                         };
 
             var total = query.Count();

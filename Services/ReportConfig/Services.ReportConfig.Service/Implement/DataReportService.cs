@@ -143,6 +143,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+            if (!string.IsNullOrWhiteSpace(reportInfo.GroupTitleSql))
+            {
+                var data = await _dbContext.QueryDataTable(reportInfo.GroupTitleSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                result.GroupTitle = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
+            }
+
             var suffix = 0;
             var filterCondition = new StringBuilder();
             if (model.ColumnsFilters != null)
@@ -451,8 +457,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
-            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
-
             var sql = reportInfo.BodySql;
 
             if (!string.IsNullOrEmpty(filterCondition))
@@ -468,11 +472,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 orderBy += $"{orderByFieldName}" + (asc ? "" : " DESC");
             }
 
-            if (string.IsNullOrWhiteSpace(orderBy))
-            {
-                orderBy = "1";
-            }
-
             if (!string.IsNullOrWhiteSpace(orderBy))
             {
                 sql += " ORDER BY " + orderBy;
@@ -483,6 +482,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var totals = new NonCamelCaseDictionary();
 
             var data = table.ConvertData();
+
+            IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
+            columns = RepeatColumnUtils.RepeatColumnProcess(columns, data);
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
 
@@ -837,7 +839,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
-            if(!reportInfo.TemplateFileId.HasValue) throw new BadRequestException(FileErrorCode.FileNotFound, "Chưa thiết lập mẫu in cho báo cáo");
+            if (!reportInfo.TemplateFileId.HasValue) throw new BadRequestException(FileErrorCode.FileNotFound, "Chưa thiết lập mẫu in cho báo cáo");
 
             var fileInfo = await _physicalFileService.GetSimpleFileInfo(reportInfo.TemplateFileId.Value);
 
@@ -846,7 +848,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
-                return (System.IO.File.OpenRead(newFile.filePath), newFile.contentType, newFile.fileName);
+                return (newFile, "application/pdf", Path.GetFileNameWithoutExtension(fileInfo.FileName) + ".pdf");
             }
             catch (Exception ex)
             {

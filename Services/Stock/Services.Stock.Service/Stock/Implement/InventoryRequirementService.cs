@@ -176,29 +176,32 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             try
             {
                 var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
-                CustomGenCodeOutputModel currentConfig = null;
-                if (string.IsNullOrEmpty(req.InventoryRequirementCode))
-                {
-                    currentConfig = await _customGenCodeHelperService.CurrentConfig(objectType, objectType, 0, null, null, req.Date);
-                    if (currentConfig == null)
-                    {
-                        throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
-                    }
-                    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, null, req.Date);
-                    if (generated == null)
-                    {
-                        throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
-                    }
+
+                var ctx = await GenerateInventoryRequirementCode(inventoryType, objectType, req);
+
+                //CustomGenCodeOutputModel currentConfig = null;
+                //if (string.IsNullOrEmpty(req.InventoryRequirementCode))
+                //{
+                //    currentConfig = await _customGenCodeHelperService.CurrentConfig(objectType, objectType, 0, null, null, req.Date);
+                //    if (currentConfig == null)
+                //    {
+                //        throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
+                //    }
+                //    var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, null, req.Date);
+                //    if (generated == null)
+                //    {
+                //        throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
+                //    }
 
 
-                    req.InventoryRequirementCode = generated.CustomCode;
-                }
-                else
-                {
-                    // Validate unique
-                    if (_stockDBContext.InventoryRequirement.Any(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementCode == req.InventoryRequirementCode))
-                        throw new BadRequestException(GeneralCode.InternalError, "Mã yêu cầu đã tồn tại");
-                }
+                //    req.InventoryRequirementCode = generated.CustomCode;
+                //}
+                //else
+                //{
+                //    // Validate unique
+                //    if (_stockDBContext.InventoryRequirement.Any(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementCode == req.InventoryRequirementCode))
+                //        throw new BadRequestException(GeneralCode.InternalError, "Mã yêu cầu đã tồn tại");
+                //}
 
                 // validate product duplicate
                 if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
@@ -238,8 +241,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 trans.Commit();
 
 
+                await ctx.ConfirmCode();
 
-                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+                //await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
                 await _activityLogService.CreateLog(objectType, inventoryRequirement.InventoryRequirementId, $"Thêm mới dữ liệu yêu cầu xuất/nhập kho {inventoryRequirement.InventoryRequirementCode}", req.JsonSerialize());
 
                 if (!string.IsNullOrWhiteSpace(req?.OutsideImportMappingData?.MappingFunctionKey))
@@ -256,6 +260,20 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 _logger.LogError(ex, "CreateInventoryRequirement");
                 throw;
             }
+        }
+
+
+        private async Task<GenerateCodeContext> GenerateInventoryRequirementCode(EnumInventoryType inventoryType, EnumObjectType objectTypeId, InventoryRequirementInputModel req)
+        {
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(objectTypeId)
+                .SetConfigData(0, req.Date)
+                .TryValidateAndGenerateCode(_stockDBContext.InventoryRequirement, req.InventoryRequirementCode, (s, code) => s.InventoryTypeId == (int)inventoryType && s.InventoryRequirementCode == code);
+
+            req.InventoryRequirementCode = code;
+            return ctx;
         }
 
         public async Task<long> UpdateInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, InventoryRequirementInputModel req)

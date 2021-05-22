@@ -238,6 +238,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     m.ProductTitle = $"{productInfo.ProductCode}/ {productInfo.ProductName}";
                     m.UnitId = productInfo.UnitId;
+                    m.DecimalPlace = productInfo.StockInfo?.UnitConversions?.FirstOrDefault()?.DecimalPlace;
                 }
 
                 if (data != null)
@@ -266,6 +267,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     d.OutsourceStepRequestFinishDate = data.OutsourceStepRequestFinishDate;
                     d.IsImportant = data.IsImportant;
                     d.ProductionStepTitle = data.ProductionStepTitle;
+                    d.DecimalPlace = data.DecimalPlace;
                 }
             }
 
