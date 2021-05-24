@@ -2375,6 +2375,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await _customGenCodeHelperService.ConfirmCode(config.CurrentLastValue);
 
+            await _activityLogService.CreateLog(EnumObjectType.Package, newPackage.PackageId, "Tạo thông tin kiện", newPackage.JsonSerialize());
+
             return newPackage;
         }
 

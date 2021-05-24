@@ -165,7 +165,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 await _stockDbContext.PackageRef.AddRangeAsync(packageRefs);
                 await _stockDbContext.SaveChangesAsync();
+
                 trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.Package, packageId, "Tách thông tin kiện", packageRefs.JsonSerialize());
             }
             return true;
         }
@@ -254,6 +257,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _stockDbContext.PackageRef.AddRangeAsync(packageRefs);
                 await _stockDbContext.SaveChangesAsync();
                 trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.Package, defaultPackage.PackageId, "Gộp thông tin kiện", packageRefs.JsonSerialize());
+
                 return newPackage.PackageId;
             }
         }
