@@ -11,7 +11,6 @@ BEGIN TRY
       FROM MasterDB.dbo.PrintConfigCustom c
       INNER JOIN MasterDB.dbo.ObjectPrintConfigStandardMapping sm
         ON c.PrintConfigStandardId = sm.PrintConfigStandardId
-        AND c.SubsidiaryId = sm.SubsidiaryId
       WHERE c.PrintConfigCustomId NOT IN (SELECT DISTINCT
         PrintConfigCustomId
       FROM MasterDB.dbo.ObjectPrintConfigMapping)

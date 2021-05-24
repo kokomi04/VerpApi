@@ -8,7 +8,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int PrintConfigStandardId { get; set; }
         public int ObjectTypeId { get; set; }
         public int ObjectId { get; set; }
-        public int SubsidiaryId { get; set; }
         public int UpdateByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
     }
