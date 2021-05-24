@@ -802,8 +802,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
+            var objectTypeId = inventoryTypeId == EnumInventoryType.Input ? EnumObjectType.InventoryInput : EnumObjectType.InventoryOutput;
             var code = await ctx
-                .SetConfig(EnumObjectType.InventoryOutput, EnumObjectType.Stock, req.StockId)
+                .SetConfig(objectTypeId, EnumObjectType.Stock, req.StockId)
                 .SetConfigData(0, req.Date)
                 .TryValidateAndGenerateCode(_stockDbContext.Inventory, req.InventoryCode, (s, code) => s.InventoryTypeId == (int)inventoryTypeId && s.InventoryCode == code);
 
