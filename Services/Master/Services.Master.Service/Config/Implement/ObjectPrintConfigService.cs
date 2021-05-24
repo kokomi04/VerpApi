@@ -122,6 +122,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     ObjectTypeId = (int)mapping.ObjectTypeId,
                     PrintConfigStandardId = (int)printConfigStandardIdMap[printConfigId]
                 })
+                .GroupBy(x=>x.PrintConfigStandardId)
+                .Select(x=>x.FirstOrDefault())
                 .ToArray();
 
                 var oldObjectPrintConfigs = await _masterDbContext.ObjectPrintConfigStandardMapping
