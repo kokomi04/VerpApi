@@ -465,7 +465,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         var removeConversionIds = toRemoveUnitConversions.Select(c => (int?)c.ProductUnitConversionId).ToList();
 
 
-                        var usedUnitConvertion = _stockContext.InventoryDetail.FirstOrDefaultAsync(d => removeConversionIds.Contains(d.ProductUnitConversionId));
+                        var usedUnitConvertion = await _stockContext.InventoryDetail.FirstOrDefaultAsync(d => removeConversionIds.Contains(d.ProductUnitConversionId));
                         if (usedUnitConvertion != null)
                         {
                             trans.Rollback();
