@@ -38,6 +38,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
     public class ProductionStepLinkDataInfo : ProductionStepLinkDataModel, IMapFrom<ProductionStepLinkDataRole>
     {
         public EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
+        public string ProductionStepLinkDataGroup { get; set; }
         public long ProductionStepId { get; set; }
         public string ObjectTitle { get; set; }
         public int UnitId { get; set; }
@@ -60,9 +61,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.ProductionStepLinkTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkTypeId))
                 .ForMember(m => m.ConverterId, v => v.MapFrom(m => m.ProductionStepLinkData.ConverterId))
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId))
+                .ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup))
                 .ReverseMap()
                 .ForMember(m => m.ProductionStepLinkData, v => v.Ignore())
-                .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (int)m.ProductionStepLinkDataRoleTypeId));
+                .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (int)m.ProductionStepLinkDataRoleTypeId))
+                .ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup));
         }
     }
 
