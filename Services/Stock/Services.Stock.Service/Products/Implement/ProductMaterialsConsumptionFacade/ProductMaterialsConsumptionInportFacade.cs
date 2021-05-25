@@ -98,7 +98,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 .Where(x => x.Count() > 1)
                 .Select(x => x.Key);
             if (hasTwoProduct.Count() > 0)
-                throw new BadRequestException(GeneralCode.InternalError, $"Xuất hiện hơn 1 sản phẩm trở lên trong file import. Chi tiết các mã sản phẩm: \"{string.Join(", ", hasTwoProduct)}\"");
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Xuất hiện hơn 1 sản phẩm trở lên trong file import. Chi tiết các mã sản phẩm: \"{string.Join(", ", hasTwoProduct)}\"");
 
             _departments = await _organizationHelperService.GetAllDepartmentSimples();
             _steps = await _manufacturingHelperService.GetSteps();
@@ -110,14 +110,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
                 var department = _departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
                 if (department == null)
-                    throw new BadRequestException(GeneralCode.InternalError, $"Không tìm thấy bộ phận của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy bộ phận \"{row.DepartmentCode} {row.DepartmentName}\" của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
 
                 if (string.IsNullOrWhiteSpace(row.StepName))
                     continue;
 
                 var step = _steps.FirstOrDefault(x => x.StepName == row.StepName);
                 if (step == null)
-                    throw new BadRequestException(GeneralCode.InternalError, $"Không tìm thấy công đoạn của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy công đoạn \"{row.StepName}\" của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
             }
         }
 
