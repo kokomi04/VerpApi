@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams);
 
             var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
-            if (packageInfo == null) 
+            if (packageInfo == null)
                 throw new BadRequestException(PackageErrorCode.PackageNotFound);
 
             if (packageInfo.ProductUnitConversionWaitting > 0 || packageInfo.PrimaryQuantityWaiting > 0)
@@ -77,12 +77,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             ProductUnitConversion unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == packageInfo.ProductUnitConversionId);
 
-            if (unitConversionInfo == null) 
+            if (unitConversionInfo == null)
                 throw new BadRequestException(ProductUnitConversionErrorCode.ProductUnitConversionNotFound);
 
 
             var totalSecondaryInput = req.ToPackages.Sum(p => p.ProductUnitConversionQuantity);
-            if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining) 
+            if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining)
                 throw new BadRequestException(PackageErrorCode.QualtityOfProductInPackageNotEnough);
 
             var newPackages = new List<PackageModel>();
@@ -168,7 +168,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Package, packageId, "Tách thông tin kiện", packageRefs.JsonSerialize());
+                var message = $"Tách kiện {packageInfo.PackageCode} thành {string.Join(", ", req.ToPackages.Select(p => p.PackageCode))}";
+
+                await _activityLogService.CreateLog(EnumObjectType.Package, packageId, message, packageRefs.JsonSerialize());
+                foreach (var newPackage in newPackages)
+                {
+                    await _activityLogService.CreateLog(EnumObjectType.Package, newPackage.PackageId, message, packageRefs.JsonSerialize());
+                }
             }
             return true;
         }
@@ -258,7 +264,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _stockDbContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Package, defaultPackage.PackageId, "Gộp thông tin kiện", packageRefs.JsonSerialize());
+
+                var message = $"Gộp kiện {string.Join(", ", fromPackages.Select(p => p.PackageCode))} thành {req.PackageCode}";
+
+                await _activityLogService.CreateLog(EnumObjectType.Package, newPackage.PackageId, message, packageRefs.JsonSerialize());
+
+                foreach (var p in fromPackages)
+                {
+                    await _activityLogService.CreateLog(EnumObjectType.Package, p.PackageId, message, packageRefs.JsonSerialize());
+                }
 
                 return newPackage.PackageId;
             }
@@ -379,7 +393,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     LocationOutputModel = locationOutputModel,
 
                     POCode = item.Package.Pocode,
-                    ProductionOrderCode= item.Package.ProductionOrderCode,
+                    ProductionOrderCode = item.Package.ProductionOrderCode,
                     OrderCode = item.Package.OrderCode
                 };
                 resultList.Add(model);
