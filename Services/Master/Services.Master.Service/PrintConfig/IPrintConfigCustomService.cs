@@ -20,7 +20,7 @@ namespace VErp.Services.Master.Service.PrintConfig
         Task<bool> DeletePrintConfigCustom(int printConfigId);
 
         Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId);
-        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, NonCamelCaseDictionary templateModel);
+        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, NonCamelCaseDictionary templateModel, bool isDoc);
 
         Task<bool> RollbackPrintConfigCustom(int printConfigId);
     }

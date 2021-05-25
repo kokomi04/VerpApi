@@ -2,30 +2,29 @@ BEGIN TRY
   BEGIN TRAN
 
     INSERT INTO MasterDB.dbo.PrintConfigCustom (PrintConfigStandardId,
-		PrintConfigName,
-		Title,
-		BodyTable,
-		GenerateCode,
-		PaperSize,
-		Layout,
-		HeadTable,
-		FootTable,
-		StickyFootTable,
-		StickyHeadTable,
-		HasTable,
-		Background,
-		TemplateFileId,
-		GenerateToString,
-		TemplateFilePath,
-		TemplateFileName,
-		ContentType,
-		CreatedByUserId,
-		CreatedDatetimeUtc,
-		UpdatedByUserId,
-		UpdatedDatetimeUtc,
-		IsDeleted,
-		DeletedDatetimeUtc,
-		SubsidiaryId,
+        PrintConfigName,
+        Title,
+        BodyTable,
+        GenerateCode,
+        PaperSize,
+        Layout,
+        HeadTable,
+        FootTable,
+        StickyFootTable,
+        StickyHeadTable,
+        HasTable,
+        Background,
+        GenerateToString,
+        TemplateFilePath,
+        TemplateFileName,
+        ContentType,
+        CreatedByUserId,
+        CreatedDatetimeUtc,
+        UpdatedByUserId,
+        UpdatedDatetimeUtc,
+        IsDeleted,
+        DeletedDatetimeUtc,
+        SubsidiaryId,
         ModuleTypeId)
       SELECT
         v.PrintConfigStandardId,
@@ -41,7 +40,6 @@ BEGIN TRY
         v.StickyHeadTable,
         v.HasTable,
         v.Background,
-        v.TemplateFileId,
         v.GenerateToString,
         v.TemplateFilePath,
         v.TemplateFileName,
@@ -68,7 +66,6 @@ BEGIN TRY
         p.StickyHeadTable,
         p.HasTable,
         p.Background,
-        p.TemplateFileId,
         p.GenerateToString,
         p.TemplateFilePath,
         p.TemplateFileName,
@@ -80,7 +77,7 @@ BEGIN TRY
         p.IsDeleted,
         p.DeletedDatetimeUtc,
         s.SubsidiaryId,
-        s.ModuleTypeId
+        p.ModuleTypeId
       FROM MasterDB.dbo.PrintConfigStandard p
       CROSS APPLY (SELECT
         s.SubsidiaryId
@@ -89,7 +86,7 @@ BEGIN TRY
       WHERE p.IsDeleted = 0) v
       LEFT JOIN MasterDB.dbo.PrintConfigCustom c
         ON c.PrintConfigStandardId = v.PrintConfigStandardId and v.SubsidiaryId = c.SubsidiaryId and c.IsDeleted = 0
-	  WHERE c.PrintConfigCustomId is null
+      WHERE c.PrintConfigCustomId is null
 
   COMMIT TRAN -- Transaction Success!
 END TRY
