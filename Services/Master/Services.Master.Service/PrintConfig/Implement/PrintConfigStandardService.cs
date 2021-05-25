@@ -194,10 +194,10 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             return (_uploadTemplate.GetFileStream(printConfig.TemplateFilePath), printConfig.ContentType, printConfig.TemplateFileName);
         }
 
-        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, NonCamelCaseDictionary templateModel)
+        public async Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, NonCamelCaseDictionary templateModel, bool isDoc)
         {
-            var printConfig = await _masterDBContext.PrintConfigCustom
-                .Where(p => p.PrintConfigCustomId == printConfigId)
+            var printConfig = await _masterDBContext.PrintConfigStandard
+                .Where(p => p.PrintConfigStandardId == printConfigId)
                 .FirstOrDefaultAsync();
 
             if (printConfig == null)
@@ -215,9 +215,16 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                     FilePath = printConfig.TemplateFilePath
                 };
 
-                var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
+                if (!isDoc)
+                {
+                    var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
 
-                return (newFile, "application/pdf", Path.GetFileNameWithoutExtension(fileInfo.FileName) + ".pdf");
+                    return (newFile, "application/pdf", Path.GetFileNameWithoutExtension(fileInfo.FileName) + ".pdf");
+                }
+
+                var filePath = await _docOpenXmlService.GenerateWordFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
+                return (File.OpenRead(filePath), "", fileInfo.FileName);
+
             }
             catch (Exception ex)
             {

@@ -25,7 +25,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
     public interface IDocOpenXmlService
     {
         Task<Stream> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext);
-        Task<string> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo, string jsonString, DbContext dbContext);
+        Task<string> GenerateWordFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext);
     }
     public class DocOpenXmlService : IDocOpenXmlService
     {
@@ -42,21 +42,20 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public async Task<Stream> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string data, DbContext dbContext)
         {
-            string outDirectory = GeneratePhysicalFolder();
-            var fileTempatePath = GetPhysicalFilePath(fileInfo.FilePath);
-
-            await GenerateWordFromTemplate(fileInfo: (fileInfo.FileName, outDirectory, fileTempatePath), data, dbContext);
-
-            return await WordOpenXmlTools.ConvertToPdf(fileDocPath: $"{outDirectory}/{fileInfo.FileName}", _appSetting.PuppeteerPdf);
+            var fileDocPath =  await GenerateWordFromTemplate(fileInfo, data, dbContext);
+            return await WordOpenXmlTools.ConvertToPdf(fileDocPath, _appSetting.PuppeteerPdf);
         }
 
-        public async Task<string> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo,
+        public async Task<string> GenerateWordFromTemplate(SimpleFileInfo fileTemplate,
             string jsonData, DbContext dbContext)
         {
-            string fileName = $"{fileInfo.outDirectory}/{fileInfo.file}";
+            string outDirectory = GeneratePhysicalFolder();
+            var fileTempatePath = GetPhysicalFilePath(fileTemplate.FilePath);
+
+            string fileName = $"{outDirectory}/{fileTemplate.FileName}";
             JObject jObject = JObject.Parse(jsonData);
 
-            using (var document = WordprocessingDocument.CreateFromTemplate(fileInfo.fileTemplate))
+            using (var document = WordprocessingDocument.CreateFromTemplate(fileTempatePath))
             {
                 var body = document.MainDocumentPart.Document.Body;
 

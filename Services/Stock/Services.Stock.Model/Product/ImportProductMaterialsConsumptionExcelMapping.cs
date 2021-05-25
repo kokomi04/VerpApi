@@ -8,24 +8,24 @@ namespace VErp.Services.Stock.Model.Product
     [Display(Name = "Vật tư tiêu hao")]
     public class ImportProductMaterialsConsumptionExcelMapping
     {
-        [Display(Name = "Mã mặt hàng", GroupName = "Thông tin chung")]
+        [Display(Name = "Mã mặt hàng", GroupName = "Thông tin mặt hàng")]
         [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng")]
         public string ProductCode { get; set; }
 
-        [Display(Name = "Tên mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Tên mặt hàng (Nếu có)", GroupName = "Thông tin mặt hàng")]
         public string ProductName { get; set; }
 
-        [Display(Name = "Đơn vị mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Đơn vị mặt hàng (Nếu có)", GroupName = "Thông tin mặt hàng")]
         public string UnitName { get; set; }
 
-        [Display(Name = "Định danh loại mã mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Định danh loại mã mặt hàng (Nếu có)", GroupName = "Thông tin mặt hàng")]
         public string ProductTypeCode { get; set; }
 
-        [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = "Thông tin mặt hàng")]
         public string Specification { get; set; }
 
 
-        [Display(Name = "Danh mục mặt hàng (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Danh mục mặt hàng (Nếu có)", GroupName = "Thông tin mặt hàng")]
         public string ProductCateName { get; set; }
 
 
@@ -34,12 +34,12 @@ namespace VErp.Services.Stock.Model.Product
         public decimal Quantity { get; set; }
 
 
-        [Display(Name = "Mã bộ phận (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Mã bộ phận (Nếu có)", GroupName = "Thông tin bộ phận")]
         public string DepartmentCode { get; set; }
-        [Display(Name = "Tên bộ phận (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Tên bộ phận (Nếu có)", GroupName = "Thông tin bộ phận")]
         public string DepartmentName { get; set; }
 
-        [Display(Name = "Tên công đoạn (Nếu có)", GroupName = "Thông tin chung")]
+        [Display(Name = "Tên công đoạn (Nếu có)", GroupName = "Thông tin công đoạn")]
         public string StepName { get; set; }
 
         //[Display(Name = "Mã nhóm vật tư tiêu hao", GroupName = "Thông tin chung")]
