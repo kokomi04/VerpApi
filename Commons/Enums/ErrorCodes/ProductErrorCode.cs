@@ -23,6 +23,8 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Tên mặt hàng đã tồn tại")]
         ProductNameAlreadyExisted = 7,
         [Description("Lỗi không thể tính toán biểu thức đơn vị chuyển đổi")]
-        InvalidUnitConversionExpression = 8
+        InvalidUnitConversionExpression = 8,
+        [Description("Mặt hàng đang được sử dụng")]
+        ProductInUsed = 9
     }
 }
