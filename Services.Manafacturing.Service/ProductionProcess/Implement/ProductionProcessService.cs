@@ -19,14 +19,11 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
-using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
-using VErp.Services.Manafacturing.Service.Outsource;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using ProductSemiEnity =  VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
+using ProductSemiEnity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 {
@@ -144,7 +141,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepCode = s.ProductionStepCode,
                 ProductionStepLinkDataCode = d.ProductionStepLinkDataCode,
                 ProductionStepLinkDataRoleTypeId = d.ProductionStepLinkDataRoleTypeId,
-                ProductionStepLinkTypeId = (int)d.ProductionStepLinkTypeId
+                ProductionStepLinkTypeId = (int)d.ProductionStepLinkTypeId,
+                ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup
             }).ToList();
 
             var stepInfos = productionSteps.Select(s => (ProductionStepModel)s).ToList();
@@ -276,7 +274,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepCode = s.ProductionStepCode,
                 ProductionStepLinkDataCode = d.ProductionStepLinkData.ProductionStepLinkDataCode,
                 ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
-                ProductionStepLinkTypeId = d.ProductionStepLinkData.ProductionStepLinkTypeId
+                ProductionStepLinkTypeId = d.ProductionStepLinkData.ProductionStepLinkTypeId,
+                ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup
             }).ToList();
 
             //Lấy thông tin dữ liệu của steplinkdata
@@ -358,7 +357,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ProductionStepCode = groupStep.ProductionStepCode,
                         ProductionStepLinkDataCode = r.ProductionStepLinkDataCode,
                         ProductionStepLinkDataRoleTypeId = r.ProductionStepLinkDataRoleTypeId,
-                        ProductionStepLinkTypeId = r.ProductionStepLinkTypeId
+                        ProductionStepLinkTypeId = r.ProductionStepLinkTypeId,
+                        ProductionStepLinkDataGroup = r.ProductionStepLinkDataGroup
                     })
                     .ToList();
 
@@ -1044,7 +1044,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
             if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == false && x.IsFinish == false && !x.StepId.HasValue))
-                throw new BadRequestException(GeneralCode.GeneralError, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
+                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
             //Cập nhật, xóa và tạo mới steplinkdata
             var lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
@@ -1110,7 +1110,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         {
                             ProductionStepId = s.ProductionStepId,
                             ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                            ProductionStepLinkDataRoleTypeId = (int)r.ProductionStepLinkDataRoleTypeId
+                            ProductionStepLinkDataRoleTypeId = (int)r.ProductionStepLinkDataRoleTypeId,
+                            ProductionStepLinkDataGroup = r.ProductionStepLinkDataGroup
                         };
             var oldRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(x => newStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId)).ToList();
 

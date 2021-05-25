@@ -581,6 +581,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepLinkDataId, e.ProductionStepId })
                     .HasName("PK_InOutStepMapping");
 
+                entity.Property(e => e.ProductionStepLinkDataGroup).HasMaxLength(50);
+
                 entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment(@"1: Input
 2: Output");
 
