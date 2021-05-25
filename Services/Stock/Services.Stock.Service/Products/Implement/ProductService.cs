@@ -28,6 +28,8 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using System.Text;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -462,11 +464,25 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var toRemoveUnitConversions = unitConverions.Where(c => !keepIds.Contains(c.ProductUnitConversionId) && !c.IsDefault).ToList();
                     if (toRemoveUnitConversions.Count > 0)
                     {
-                        var removeConversionIds = toRemoveUnitConversions.Select(c => (int?)c.ProductUnitConversionId).ToList();
+                        var removeConversionIds = toRemoveUnitConversions.Select(c => c.ProductUnitConversionId).ToList();
 
+                        //var usedUnitConvertion = await _stockContext.InventoryDetail.FirstOrDefaultAsync(d => removeConversionIds.Contains(d.ProductUnitConversionId));
+                        //if (usedUnitConvertion != null)
+                        //{
+                        //    trans.Rollback();
+                        //    throw new BadRequestException(ProductErrorCode.SomeProductUnitConversionInUsed);
+                        //}
 
-                        var usedUnitConvertion = await _stockContext.InventoryDetail.FirstOrDefaultAsync(d => removeConversionIds.Contains(d.ProductUnitConversionId));
-                        if (usedUnitConvertion != null)
+                        var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                        var checkParams = new[]
+                        {
+                            removeConversionIds.ToSqlParameter("@ProductUnitConverionIds"),
+                            isInUsed
+                        };
+
+                        await _stockContext.ExecuteStoreProcedure("asp_ProductUnitConversion_CheckUsed", checkParams);
+
+                        if (isInUsed.Value as bool? == true)
                         {
                             trans.Rollback();
                             throw new BadRequestException(ProductErrorCode.SomeProductUnitConversionInUsed);
@@ -732,6 +748,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                new SqlParameter("@ProductId",productId),
+                isInUsed
+            };
+
+            await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+            if (isInUsed.Value as bool? == true)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductInUsed, "Không thể xóa mặt hàng do mặt hàng đang được sử dụng");
+            }
+
             var productExtra = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
 
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -939,7 +969,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 from pt in pts.DefaultIfEmpty()
                 join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
                 from pc in pcs.DefaultIfEmpty()
-                join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new  {ucs.ProductId,UnitId = ucs.SecondaryUnitId } into gucs
+                join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new { ucs.ProductId, UnitId = ucs.SecondaryUnitId } into gucs
                 from ucs in gucs.DefaultIfEmpty()
                 where productIds.Contains(p.ProductId)
                 select new
