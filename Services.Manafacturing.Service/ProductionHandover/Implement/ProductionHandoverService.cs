@@ -81,9 +81,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         {
             try
             {
-                if(data.FromDepartmentId == STOCK_DEPARTMENT_ID && data.ToDepartmentId == STOCK_DEPARTMENT_ID)
+                if (data.FromDepartmentId == STOCK_DEPARTMENT_ID && data.ToDepartmentId == STOCK_DEPARTMENT_ID)
                 {
-                    if(!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == data.FromProductionStepId))
+                    if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == data.FromProductionStepId))
                         throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không có gia công công đoạn");
                     if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == data.ToProductionStepId))
                         throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn nhận không có gia công công đoạn");
@@ -95,7 +95,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == data.ToProductionStepId && a.DepartmentId == data.ToDepartmentId && a.ProductionOrderId == productionOrderId))
                         throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn nhận không tồn tại phân công công việc cho tổ nhận");
                 }
-               
+
                 var productionHandover = _mapper.Map<ProductionHandoverEntity>(data);
                 productionHandover.Status = (int)status;
                 productionHandover.ProductionOrderId = productionOrderId;
@@ -251,7 +251,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         }
 
 
-        public async Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId)
+        public async Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId, IList<ProductionInventoryRequirementEntity> inventories = null)
         {
             var productionStep = _manufacturingDBContext.ProductionStep
                 .Include(ps => ps.OutsourceStepRequest)
@@ -299,13 +299,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ToList();
 
             // Lấy thông tin xuất nhập kho
-            var parammeters = new SqlParameter[]
+            if (inventories == null)
             {
+                var parammeters = new SqlParameter[]
+               {
                 new SqlParameter("@ProductionOrderId", productionOrderId)
-            };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+               };
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-            var inventoryRequirements = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>();
+            }
+
+            var inventoryRequirements = inventories
                 .AsQueryable()
                 .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                 .ToList();
@@ -415,7 +420,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var inventoryRequirementHistories = new List<ProductionInventoryRequirementModel>();
                     var materialsRequirementHistories = new List<ProductionMaterialsRequirementDetailListModel>();
 
-                    
+
                     inventoryRequirementHistories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
                         && h.ProductionStepId == productionStepId
                         && h.InventoryTypeId == EnumInventoryType.Output
@@ -568,7 +573,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return detail;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId)
+        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, IList<ProductionInventoryRequirementEntity> inventories = null)
         {
             var productionAssignment = _manufacturingDBContext.ProductionAssignment
                    .Where(a => a.ProductionOrderId == productionOrderId
@@ -577,7 +582,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                    .FirstOrDefault();
 
             if (productionAssignment?.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish && productionAssignment.IsManualFinish) return true;
-            var departmentHandoverDetail = await GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
+            var departmentHandoverDetail = await GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId, inventories);
             var inoutDatas = departmentHandoverDetail.InputDatas.Union(departmentHandoverDetail.OutputDatas);
             var status = inoutDatas.All(d => d.ReceivedQuantity >= d.RequireQuantity) ? EnumAssignedProgressStatus.Finish : EnumAssignedProgressStatus.HandingOver;
 

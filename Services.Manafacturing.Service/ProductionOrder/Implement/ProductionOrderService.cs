@@ -475,7 +475,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return rs;
         }
 
-        public async Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status)
+        public async Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .Include(po => po.ProductionOrderDetail)
@@ -486,16 +486,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             try
             {
-                if (status.ProductionOrderStatus == EnumProductionStatus.Finished)
+                if (data.ProductionOrderStatus == EnumProductionStatus.Finished)
                 {
                     // Check nhận đủ số lượng đầu ra
-                    var parammeters = new SqlParameter[]
-                    {
-                        new SqlParameter("@ProductionOrderId", productionOrderId)
-                    };
-                    var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
-
-                    var inputInventories = resultData.ConvertData<ProductionInventoryRequirementEntity>();
+                  
+                    var inputInventories = data.Inventories;
 
                     bool isFinish = true;
 
@@ -513,17 +508,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                     if (isFinish)
                     {
-                        productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, status, isManual = false }.JsonSerialize());
+                        productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false }.JsonSerialize());
                     }
                 }
                 else
                 {
 
-                    if (productionOrder.ProductionOrderStatus < (int)status.ProductionOrderStatus)
+                    if (productionOrder.ProductionOrderStatus < (int)data.ProductionOrderStatus)
                     {
-                        productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, status, isManual = false }.JsonSerialize());
+                        productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false }.JsonSerialize());
                     }
                 }
                 _manufacturingDBContext.SaveChanges();
@@ -536,7 +531,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status)
+        public async Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
             if (productionOrder == null)
