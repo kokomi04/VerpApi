@@ -7,6 +7,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 using VErp.Commons.Library;
+using VErp.Services.Manafacturing.Model.ProductionHandover;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
@@ -56,8 +57,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public EnumProductionStatus ProductionOrderStatus { get; set; }
     }
 
-    public class ProductionOrderStatusModel
+    public class ProductionOrderStatusDataModel
     {
         public EnumProductionStatus ProductionOrderStatus { get; set; }
+        public IList<ProductionInventoryRequirementEntity> Inventories { get; set; }
     }
 }

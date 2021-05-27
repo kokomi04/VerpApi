@@ -10,6 +10,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
 
 namespace VErpApi.Controllers.Manufacturing.Internal
@@ -26,9 +27,9 @@ namespace VErpApi.Controllers.Manufacturing.Internal
 
         [HttpPut]
         [Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}/status")]
-        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId)
+        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId, [FromBody] IList<ProductionInventoryRequirementEntity> inventories)
         {
-            return await _productionHandoverService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId);
+            return await _productionHandoverService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId, inventories);
         }
     }
 }

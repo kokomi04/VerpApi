@@ -1568,9 +1568,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 .Select(rd => rd.InventoryRequirement.ProductionOrderId.Value)
                 .Distinct()
                 .ToList();
+
+            Dictionary<long, DataTable> inventoryMap = new Dictionary<long, DataTable>();
+
             foreach (var productionOrderId in productionOrderIds)
             {
-                await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, status);
+                var parammeters = new SqlParameter[]
+                {
+                        new SqlParameter("@ProductionOrderId", productionOrderId)
+                };
+                var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+                inventoryMap.Add(productionOrderId, resultData);
+                await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderId, resultData, status);
             }
 
             // update trạng thái cho phân công công việc
@@ -1587,7 +1596,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var assignment in assignments)
             {
-                await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderId, assignment.ProductionStepId, assignment.DepartmentId);
+                await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderId, assignment.ProductionStepId, assignment.DepartmentId, inventoryMap[assignment.ProductionOrderId]);
             }
         }
 

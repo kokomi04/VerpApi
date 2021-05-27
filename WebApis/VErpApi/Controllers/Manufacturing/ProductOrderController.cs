@@ -89,7 +89,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionOrderId}/status")]
-        public async Task<bool> UpdateManualProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] ProductionOrderStatusModel status)
+        public async Task<bool> UpdateManualProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] ProductionOrderStatusDataModel status)
         {
             return await _productionOrderService.UpdateManualProductionOrderStatus(productionOrderId, status);
         }
