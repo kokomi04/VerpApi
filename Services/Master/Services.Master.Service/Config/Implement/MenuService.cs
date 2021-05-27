@@ -66,7 +66,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     Icon = item.Icon,
                     Param = item.Param,
                     SortOrder = item.SortOrder,
-                    IsGroup = item.IsGroup
+                    IsGroup = item.IsGroup,
+                    IsAlwaysShowTopMenu = item.IsAlwaysShowTopMenu
                 };
                 lstMenu.Add(info);
             }
@@ -91,7 +92,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     Icon = item.Icon,
                     Param = item.Param,
                     SortOrder = item.SortOrder,
-                    IsGroup = item.IsGroup
+                    IsGroup = item.IsGroup,
+                    IsAlwaysShowTopMenu = item.IsAlwaysShowTopMenu
                 };
                 lstMenu.Add(info);
             }
@@ -119,6 +121,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.UpdatedByUserId = _currentContextService.UserId;
             obj.SortOrder = model.SortOrder;
             obj.IsGroup = model.IsGroup;
+            obj.IsAlwaysShowTopMenu = model.IsAlwaysShowTopMenu;
             obj.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
 
@@ -164,7 +167,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
                 SortOrder = model.SortOrder,
-                IsGroup = model.IsGroup
+                IsGroup = model.IsGroup,
+                IsAlwaysShowTopMenu = model.IsAlwaysShowTopMenu
             };
             _masterDbContext.Menu.Add(entity);
             await _masterDbContext.SaveChangesAsync();
@@ -194,7 +198,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                 Icon = obj.Icon,
                 Param = obj.Param,
                 SortOrder = obj.SortOrder,
-                IsGroup = obj.IsGroup
+                IsGroup = obj.IsGroup,
+                IsAlwaysShowTopMenu = obj.IsAlwaysShowTopMenu
             };
         }
     }
