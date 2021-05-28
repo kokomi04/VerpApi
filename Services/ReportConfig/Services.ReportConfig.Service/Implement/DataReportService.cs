@@ -143,12 +143,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(reportInfo.GroupTitleSql))
-            {
-                var data = await _dbContext.QueryDataTable(reportInfo.GroupTitleSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
-                result.GroupTitle = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
-            }
-
             var suffix = 0;
             var filterCondition = new StringBuilder();
             if (model.ColumnsFilters != null)
@@ -484,7 +478,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var data = table.ConvertData();
 
             IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
-            columns = RepeatColumnUtils.RepeatColumnProcess(columns, data);
+            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, data);
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
 
