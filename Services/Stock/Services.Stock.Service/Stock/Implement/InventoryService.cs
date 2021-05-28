@@ -593,67 +593,71 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model)
         {
-            var insertedData = new Dictionary<long, (string inventoryCode, object data)>();
-
-            var genCodeContexts = new List<GenerateCodeContext>();
-            long inventoryId = 0;
-
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(model.StockId)))
             {
-                var inventoryExport = new InventoryImportFacade();
-                inventoryExport.SetProductService(_productService);
-                inventoryExport.SetMasterDBContext(_masterDBContext);
-                inventoryExport.SetStockDBContext(_stockDbContext);
-                await inventoryExport.ProcessExcelFile(mapping, stream, model);
+                var insertedData = new Dictionary<long, (string inventoryCode, object data)>();
 
-                if (model.Type == EnumInventoryType.Input)
+                var genCodeContexts = new List<GenerateCodeContext>();
+                var baseValueChains = new Dictionary<string, int>();
+                long inventoryId = 0;
+
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var inventoryData = inventoryExport.GetInputInventoryModels();
+                    var inventoryExport = new InventoryImportFacade();
+                    inventoryExport.SetProductService(_productService);
+                    inventoryExport.SetMasterDBContext(_masterDBContext);
+                    inventoryExport.SetStockDBContext(_stockDbContext);
+                    await inventoryExport.ProcessExcelFile(mapping, stream, model);
 
-                    foreach (var item in inventoryData)
+                    if (model.Type == EnumInventoryType.Input)
                     {
-                        genCodeContexts.Add(await GenerateInventoryCode(model.Type, item));
+                        var inventoryData = inventoryExport.GetInputInventoryModels();
 
-                        inventoryId = await AddInventoryInputDB(item);
-                        insertedData.Add(inventoryId, (item.InventoryCode, item));
+                        foreach (var item in inventoryData)
+                        {
+                            genCodeContexts.Add(await GenerateInventoryCode(model.Type, item, baseValueChains));
+
+                            inventoryId = await AddInventoryInputDB(item);
+                            insertedData.Add(inventoryId, (item.InventoryCode, item));
+                        }
+                    }
+                    else
+                    {
+                        var inventoryData = await inventoryExport.GetOutputInventoryModels();
+
+                        foreach (var item in inventoryData)
+                        {
+                            genCodeContexts.Add(await GenerateInventoryCode(model.Type, item, baseValueChains));
+
+                            inventoryId = await AddInventoryOutputDb(item);
+                            insertedData.Add(inventoryId, (item.InventoryCode, item));
+                        }
+
+                    }
+
+                    await trans.CommitAsync();
+                }
+
+
+                foreach (var item in insertedData)
+                {
+                    if (model.Type == EnumInventoryType.Input)
+                    {
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Nhập tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
+                    }
+                    else
+                    {
+                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Xuất tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
                     }
                 }
-                else
+
+                foreach (var item in genCodeContexts)
                 {
-                    var inventoryData = await inventoryExport.GetOutputInventoryModels();
-
-                    foreach (var item in inventoryData)
-                    {
-                        genCodeContexts.Add(await GenerateInventoryCode(model.Type, item));
-
-                        inventoryId = await AddInventoryOutputDb(item);
-                        insertedData.Add(inventoryId, (item.InventoryCode, item));
-                    }
-
+                    await item.ConfirmCode();
                 }
 
-                await trans.CommitAsync();
+                return inventoryId;
             }
-
-
-            foreach (var item in insertedData)
-            {
-                if (model.Type == EnumInventoryType.Input)
-                {
-                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Nhập tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
-                }
-                else
-                {
-                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Xuất tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
-                }
-            }
-
-            foreach (var item in genCodeContexts)
-            {
-                await item.ConfirmCode();
-            }
-
-            return inventoryId;
         }
 
 
@@ -664,18 +668,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<long> AddInventoryInput(InventoryInModel req)
         {
-            var ctx = await GenerateInventoryCode(EnumInventoryType.Input, req);
-
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                var inventoryId = await AddInventoryInputDB(req);
-                await trans.CommitAsync();
+                var ctx = await GenerateInventoryCode(EnumInventoryType.Input, req);
 
-                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Thêm mới phiếu nhập kho, mã: {req.InventoryCode}", req.JsonSerialize());
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                {
+                    var inventoryId = await AddInventoryInputDB(req);
+                    await trans.CommitAsync();
 
-                await ctx.ConfirmCode();
+                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Thêm mới phiếu nhập kho, mã: {req.InventoryCode}", req.JsonSerialize());
 
-                return inventoryId;
+                    await ctx.ConfirmCode();
+
+                    return inventoryId;
+                }
             }
 
         }
@@ -697,10 +704,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy kho");
             }
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
+            //using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
 
-                //await ValidateInventoryCode(null, req.InventoryCode);
+                await ValidateInventoryCode(null, req.InventoryCode);
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
@@ -785,22 +792,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<long> AddInventoryOutput(InventoryOutModel req)
         {
-            var ctx = await GenerateInventoryCode(EnumInventoryType.Output, req);
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
-                var inventoryId = await AddInventoryOutputDb(req);
-                await trans.CommitAsync();
+                var ctx = await GenerateInventoryCode(EnumInventoryType.Output, req);
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                {
+                    var inventoryId = await AddInventoryOutputDb(req);
+                    await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryId, $"Thêm mới phiếu xuất kho, mã: {req.InventoryCode}", req.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryId, $"Thêm mới phiếu xuất kho, mã: {req.InventoryCode}", req.JsonSerialize());
 
-                await ctx.ConfirmCode();
-                return inventoryId;
+                    await ctx.ConfirmCode();
+                    return inventoryId;
+                }
             }
         }
 
-        private async Task<GenerateCodeContext> GenerateInventoryCode(EnumInventoryType inventoryTypeId, InventoryModelBase req)
+        private async Task<GenerateCodeContext> GenerateInventoryCode(EnumInventoryType inventoryTypeId, InventoryModelBase req, Dictionary<string, int> baseValueChains = null)
         {
-            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
             var objectTypeId = inventoryTypeId == EnumInventoryType.Input ? EnumObjectType.InventoryInput : EnumObjectType.InventoryOutput;
             var code = await ctx
@@ -823,7 +833,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             req.InventoryCode = req.InventoryCode.Trim();
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
+            //using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
                 await ValidateInventoryCode(null, req.InventoryCode);
 
@@ -1348,7 +1358,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //inventoryObj.UpdatedByUserId = currentUserId;
                         //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
                         inventoryObj.CensorByUserId = _currentContextService.UserId;
-                        inventoryObj.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset).UnixToDateTime();
+                        inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
 
                         await _stockDbContext.SaveChangesAsync();
 
@@ -1437,7 +1447,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //inventoryObj.UpdatedByUserId = currentUserId;
                         //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
                         inventoryObj.CensorByUserId = _currentContextService.UserId;
-                        inventoryObj.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset).UnixToDateTime();
+                        inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToList();
 
