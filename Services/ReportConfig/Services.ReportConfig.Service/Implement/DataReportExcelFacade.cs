@@ -32,6 +32,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private int currentRow = 0;
         private int numberOfColumns = 15;
         private ReportFacadeModel _model;
+        private IList<ReportColumnModel> allColumns = null;
+        private IList<ReportColumnModel> groupRowColumns = null;
+        private bool isMergeRow = false;
         private IList<ReportColumnModel> columns = null;
         private ReportDataModel dataTable = null;
 
@@ -73,9 +76,17 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             _model = model;
 
-            columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
+            allColumns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+
+            groupRowColumns = allColumns.Where(c => c.IsGroupRow).ToList();
+
+            isMergeRow = groupRowColumns.Any(c => !c.IsHidden);
+
+            columns = allColumns.Where(col => !col.IsHidden).ToList();
+
             dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
-            columns = RepeatColumnUtils.RepeatColumnProcess(columns, dataTable.Rows.List);
+
+            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, dataTable.Rows.List);
 
             xssfwb = new ExcelWriter();
             sheet = xssfwb.GetSheet(sheetName);
@@ -198,10 +209,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             GenerateBodyInfo();
             currentRow += 2;
-            int startRow = currentRow;
             GenerateHeadTable(reportInfo);
             GenerateDataTable(reportInfo);
-            int endRow = currentRow;
         }
 
         private void GenerateBodyInfo()
@@ -241,71 +250,63 @@ namespace Verp.Services.ReportConfig.Service.Implement
             int fRow, sRow;
             fRow = sRow = 0;
 
-            if (!string.IsNullOrEmpty(reportInfo.GroupColumns)) sRow = 1;
+            var groupColumns = columns
+                .GroupBy(c => new { c.ColGroupId, c.SuffixKey })
+                .OrderBy(g => g.Key.ColGroupId)
+                .ThenBy(g => g.Key.SuffixKey);
+            var isGroup = groupColumns.Any(g => g.Count() > 1);
+
+            if (isGroup) sRow = 1;
+
             fRow = currentRow;
             sRow = fRow + sRow;
-            if (!string.IsNullOrEmpty(reportInfo.GroupColumns))
+
+            if (isGroup)
             {
-                var gColumns = reportInfo.GroupColumns.Split("@").Select(x =>
+
+                var columnIndex = 0;
+                var headStyle = sheet.GetCellStyle(12, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, true, true, headerRgb);
+
+                foreach (var group in groupColumns)
                 {
-                    var value = x.Substring(0, x.IndexOf("("));
-                    var pivot = x.Substring(x.IndexOf("(") + 1, x.IndexOf(")") - x.IndexOf("(") - 1).Split(",");
-
-                    int.TryParse(pivot[0], out int fCol);
-                    int.TryParse(pivot[pivot.Length - 1], out int lCol);
-
-                    return new { value, fCol, lCol };
-                });
-
-                foreach (var col in gColumns)
-                {
-                    var fColumns = columns.Where(x => x.SortOrder == col.fCol).ToList();
-                    var lColumns = columns.Where(x => x.SortOrder == col.lCol).ToList();
-
-                    foreach (var fColumn in fColumns)
+                    if (group.Count() == 1)
                     {
-                        var lColumn = lColumns.FirstOrDefault(c => c.SuffixKey == fColumn.SuffixKey);
-                        var fCol = columns.IndexOf(fColumn);
-                        var lCol = columns.IndexOf(lColumn);
-                        sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
-                        var title = col.value;
-                        if (fColumn.IsRepeat.HasValue && fColumn.IsRepeat.Value && !string.IsNullOrEmpty(fColumn.SuffixKey) && dataTable.GroupTitle.ContainsKey(fColumn.SuffixKey))
-                        {
-                            title = dataTable.GroupTitle[fColumn.SuffixKey].ToString();
-                        }
-                        sheet.EnsureCell(fRow, fCol).SetCellValue(title);
-                        for (int i = fCol; i <= lCol; i++)
-                        {
-                            sheet.SetCellStyle(fRow, i,
-                                vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                                rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
-                        }
-                    }
-                }
+                        var cell = sheet.EnsureCell(fRow, columnIndex);
+                        cell.SetCellValue(group.FirstOrDefault()?.Name);
+                        cell.CellStyle = headStyle;
 
-                for (int i = 0; i < columns.Count; i++)
-                {
-                    maxColumnCharLengths.Add(i, columns[i].Name?.Length ?? 0);
+                        var mergeRegion = new CellRangeAddress(fRow, fRow + 1, columnIndex, columnIndex);
+                        sheet.AddMergedRegion(mergeRegion);
 
-                    if (gColumns.Any(x => x.fCol == columns[i].SortOrder
-                        || x.lCol == columns[i].SortOrder
-                        || (x.lCol > columns[i].SortOrder && x.fCol < columns[i].SortOrder)))
-                    {
-                        sheet.EnsureCell(sRow, i).SetCellValue(columns[i].Name);
-                        sheet.SetCellStyle(sRow, i,
-                            vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                        RegionUtil.SetBorderBottom(1, mergeRegion, sheet);
+                        RegionUtil.SetBorderLeft(1, mergeRegion, sheet);
+                        RegionUtil.SetBorderRight(1, mergeRegion, sheet);
+                        RegionUtil.SetBorderTop(1, mergeRegion, sheet);
+
+                        columnIndex++;
                     }
                     else
                     {
-                        sheet.AddMergedRegion(new CellRangeAddress(fRow, sRow, i, i));
-                        sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
-                        sheet.SetCellStyle(fRow, i,
-                            vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
-                        sheet.SetCellStyle(sRow, i,
-                            vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
-                            rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
+                        var cols = group.OrderBy(c => c.SortOrder);
+
+                        var cell0 = sheet.EnsureCell(fRow, columnIndex);
+                        cell0.SetCellValue(group.FirstOrDefault()?.ColGroupName);
+                        cell0.CellStyle = headStyle;
+
+                        var mergeRegion = new CellRangeAddress(fRow, fRow, columnIndex, columnIndex + cols.Count() - 1);
+                        sheet.AddMergedRegion(mergeRegion);
+                        RegionUtil.SetBorderBottom(1, mergeRegion, sheet);
+                        RegionUtil.SetBorderLeft(1, mergeRegion, sheet);
+                        RegionUtil.SetBorderRight(1, mergeRegion, sheet);
+                        RegionUtil.SetBorderTop(1, mergeRegion, sheet);
+
+                        foreach (var child in cols)
+                        {
+                            var cell1 = sheet.EnsureCell(fRow + 1, columnIndex);
+                            cell1.SetCellValue(child.Name);
+                            cell1.CellStyle = headStyle;
+                            columnIndex++;
+                        }
                     }
                 }
             }
@@ -322,6 +323,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var nameLength = columns[i].Name?.Length ?? 0;
+                var groupLength = columns[i].ColGroupName?.Length ?? 0;
+                maxColumnCharLengths.Add(i, Math.Max(nameLength, groupLength));
+            }
             currentRow = sRow;
         }
 
@@ -352,8 +359,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 ExcelRow tbRow = table.NewRow();
                 int columnIndx = 0;
-                var mergeValue = "";
-                var isMergeRow = false;
 
                 _mergeRows[i] = new bool[columns.Count];
                 Array.Fill(_mergeRows[i], false);
@@ -400,18 +405,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         };
                     }
 
-                    if (field.IsGroupRow)
-                    {
-                        mergeValue += "|" + row[field.Alias];
-                        isMergeRow = true;
-
-                    }
                     columnIndx++;
                 }
 
 
+
                 if (isMergeRow)
                 {
+                    var mergeValue = string.Join('|', groupRowColumns.Select(c => row[c.Alias]));
+
                     if (currentMergeValue == mergeValue)
                     {
                         lastGroupDataRow = i;
