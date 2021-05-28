@@ -182,5 +182,12 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _fileService.Upload(EnumObjectType.Product, string.Empty, file);
         }
+
+        [HttpPost]
+        [Route("Copy")]
+        public async Task<long> CopyProduct([FromQuery] int sourceProductId, [FromBody] ProductModel product)
+        {
+            return await _productService.CopyProduct(product, sourceProductId);
+        }
     }
 }

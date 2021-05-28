@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
@@ -14,6 +15,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     {
         Task<IList<StepSimpleInfo>> GetStepByArrayId(int[] arrayId);
         Task<IList<StepSimpleInfo>> GetSteps();
+        Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId);
     }
     public class ManufacturingHelperService: IManufacturingHelperService
     {
@@ -28,6 +30,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _httpCrossService = httpCrossService;
             _appSetting = appSetting.Value;
             _logger = logger;
+        }
+
+        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
+        {
+            return await _httpCrossService.Post<bool>($"api/internal/InternalManufacturing/productionProcess/copy?containerTypeId={containerTypeId}&fromContainerId={fromContainerId}&toContainerId={toContainerId}", new {});
         }
 
         public async Task<IList<StepSimpleInfo>> GetStepByArrayId(int[] arrayId)
