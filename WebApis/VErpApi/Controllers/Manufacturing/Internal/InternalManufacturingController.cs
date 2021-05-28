@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.Step;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
 using VErp.Services.Manafacturing.Service.Step;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing.Internal
 {
@@ -14,9 +16,12 @@ namespace VErpApi.Controllers.Manufacturing.Internal
     public class InternalManufacturingController: CrossServiceBaseController
     {
         private readonly IStepService _stepService;
-        public InternalManufacturingController(IStepService stepService)
+        private readonly IProductionProcessService _productionProcessService;
+
+        public InternalManufacturingController(IStepService stepService, IProductionProcessService productionProcessService)
         {
             _stepService = stepService;
+            _productionProcessService = productionProcessService;
         }
 
         [HttpPost]
@@ -31,6 +36,13 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         public async Task<IList<StepModel>> GetSteps()
         {
             return (await _stepService.GetListStep("", -1, -1)).List;
+        }
+
+        [HttpPost]
+        [Route("productionProcess/copy")]
+        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
+        {
+            return await _productionProcessService.CopyProductionProcess(containerTypeId, fromContainerId, toContainerId);
         }
     }
 }

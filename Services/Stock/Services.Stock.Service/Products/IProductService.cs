@@ -34,5 +34,7 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<bool> UpdateProductCoefficientManual(int productId, int coefficient);
 
+        Task<int> CopyProduct(ProductModel req, int sourceProductId);
+
     }
 }

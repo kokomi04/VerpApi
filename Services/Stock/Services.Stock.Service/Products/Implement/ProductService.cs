@@ -30,6 +30,7 @@ using System.Text;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using Microsoft.Data.SqlClient;
 using System.Data;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -47,6 +48,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
 
         public ProductService(
             StockDBContext stockContext
@@ -59,7 +61,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IAsyncRunnerService asyncRunner
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
-            )
+            , IManufacturingHelperService manufacturingHelperService)
         {
             _masterDBContext = masterDBContext;
             _stockContext = stockContext;
@@ -71,6 +73,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _asyncRunner = asyncRunner;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
+            _manufacturingHelperService = manufacturingHelperService;
         }
 
         public async Task<int> AddProduct(ProductModel req)
@@ -1511,6 +1514,42 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             await _stockContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<int> CopyProduct(ProductModel req, int sourceProductId)
+        {
+            var ctx = await GenerateProductCode(null, req);
+
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var productId = await AddProductToDb(req);
+
+                    var parammeters = new[]
+                    {
+                        new SqlParameter("@SourceProductId", sourceProductId),
+                        new SqlParameter("@DestProductId", productId),
+                    };
+
+                    await _stockContext.ExecuteStoreProcedure("asp_CopySourceProductInfoDestinationProduct", parammeters);
+
+                    await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
+                    await ctx.ConfirmCode();
+
+                    await trans.CommitAsync();
+
+                    await _manufacturingHelperService.CopyProductionProcess(EnumContainerType.Product, sourceProductId, productId);
+                    return productId;
+                }
+                catch (Exception ex)
+                {
+                    await trans.TryRollbackTransactionAsync();
+                    _logger.LogError("CopyProduct", ex);
+                    throw;
+                }
+                
+            }
         }
     }
 }
