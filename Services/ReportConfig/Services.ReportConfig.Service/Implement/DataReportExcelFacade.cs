@@ -109,7 +109,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 for (var i = 0; i < numberOfColumns; i++)
                 {
-                    sheet.ManualResize(i, maxColumnCharLengths[i]);
+                    sheet.ManualResize(i, maxColumnLineLengths[i]);
                 }
             }
 
@@ -243,7 +243,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
         }
 
-        Dictionary<int, int> maxColumnCharLengths = new Dictionary<int, int>();
+        Dictionary<int, int> maxColumnLineLengths = new Dictionary<int, int>();
         readonly byte[] headerRgb = new byte[3] { 221, 229, 239 };
         private void GenerateHeadTable(ReportType reportInfo)
         {
@@ -253,8 +253,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var groupColumns = columns
                 .GroupBy(c => new { c.ColGroupId, c.SuffixKey })
                 .OrderBy(g => g.Key.ColGroupId)
-                .ThenBy(g => g.Key.SuffixKey);
-            var isGroup = groupColumns.Any(g => g.Count() > 1);
+                .ThenBy(g => g.Key.SuffixKey)
+                .ToList();
+            var isGroup = groupColumns.Any(g => g.Count() > 1 || g.First().IsColGroup);
 
             if (isGroup) sRow = 1;
 
@@ -269,7 +270,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var group in groupColumns)
                 {
-                    if (group.Count() == 1)
+                    if (group.Count() == 1 && !group.First().IsColGroup)
                     {
                         var cell = sheet.EnsureCell(fRow, columnIndex);
                         cell.SetCellValue(group.FirstOrDefault()?.Name);
@@ -314,7 +315,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 for (int i = 0; i < columns.Count; i++)
                 {
-                    maxColumnCharLengths.Add(i, columns[i].Name?.Length ?? 0);
+                    maxColumnLineLengths.Add(i, columns[i].Name?.Length ?? 0);
 
                     sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
                     sheet.SetCellStyle(fRow, i,
@@ -325,9 +326,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             for (int i = 0; i < columns.Count; i++)
             {
-                var nameLength = columns[i].Name?.Length ?? 0;
-                var groupLength = columns[i].ColGroupName?.Length ?? 0;
-                maxColumnCharLengths.Add(i, Math.Max(nameLength, groupLength));
+                var nameLineLength = columns[i].Name?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
+                var groupLineLength = columns[i].ColGroupName?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
+                maxColumnLineLengths.Add(i, Math.Max(nameLineLength, groupLineLength));
             }
             currentRow = sRow;
         }
@@ -377,9 +378,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 foreach (var field in columns)
                 {
                     var charLengths = row[field.Alias]?.ToString()?.Length;
-                    if (charLengths > maxColumnCharLengths[columnIndx])
+                    if (charLengths > maxColumnLineLengths[columnIndx])
                     {
-                        maxColumnCharLengths[columnIndx] = charLengths.Value;
+                        maxColumnLineLengths[columnIndx] = charLengths.Value;
                     }
 
                     var cellStyleStr = "";
