@@ -31,7 +31,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         //Task<bool> ConfirmCode(int? customGenCodeId, string baseValue);
         Task<bool> ConfirmCode(CustomGenCodeBaseValueModel lastBaseValue);
 
-        GenerateCodeContext CreateGenerateCodeContext();
+        GenerateCodeContext CreateGenerateCodeContext(Dictionary<string, int> baseValueChains = null);
     }
 
     public class CustomGenCodeHelperService : ICustomGenCodeHelperService
@@ -160,7 +160,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
 
 
-        public GenerateCodeContext CreateGenerateCodeContext()
+        public GenerateCodeContext CreateGenerateCodeContext(Dictionary<string, int> baseValueChains = null)
         {
             return new GenerateCodeContext(this, _currentContextService);
         }
@@ -178,11 +178,12 @@ public class GenerateCodeContext
     internal EnumObjectType TargetObjectTypeId { get; private set; }
     internal EnumObjectType ConfigObjectTypeId { get; private set; }
     internal long ConfigObjectId { get; private set; }
-
-    internal GenerateCodeContext(ICustomGenCodeHelperService customGenCodeHelper, ICurrentContextService currentContextService)
+    public Dictionary<string, int> BaseValueChains { get; private set; }
+    internal GenerateCodeContext(ICustomGenCodeHelperService customGenCodeHelper, ICurrentContextService currentContextService, Dictionary<string, int> baseValueChains = null)
     {
         CustomGenCodeHelper = customGenCodeHelper;
         CurrentContextService = currentContextService;
+        BaseValueChains = baseValueChains;
     }
 
     /// <summary>
@@ -292,15 +293,35 @@ public class GenerateCodeConfigData
             configOption.Ctx.SetconfigBaseValue(config.CurrentLastValue);
 
             var lastValue = config.CurrentLastValue.LastValue;
+            var genChainKey = config.CustomGenCodeId + "|" + config.CurrentLastValue.BaseValue;
+
+            var baseValueChains = configOption.Ctx.BaseValueChains;
+            if (baseValueChains?.ContainsKey(genChainKey) == true)
+            {
+                lastValue = baseValueChains[genChainKey];
+            }
 
             int dem = 0;
             string code;
             do
             {
                 code = (await customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, fId, refCode, date))?.CustomCode;
-
                 existedItem = await GetExistedItem(query, code, checkExisted);
+
                 lastValue++;
+
+                if (baseValueChains != null)
+                {
+                    if (baseValueChains.ContainsKey(genChainKey))
+                    {
+                        baseValueChains[genChainKey] = lastValue;
+                    }
+                    else
+                    {
+                        baseValueChains.Add(genChainKey, lastValue);
+                    }
+                }
+
                 dem++;
                 if (dem == 10)
                 {
