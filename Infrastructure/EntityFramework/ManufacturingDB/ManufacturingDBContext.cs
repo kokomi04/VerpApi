@@ -654,6 +654,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.WorkingHours).HasColumnType("decimal(18, 5)");
+
                 entity.HasOne(d => d.Step)
                     .WithMany(p => p.StepDetail)
                     .HasForeignKey(d => d.StepId)
