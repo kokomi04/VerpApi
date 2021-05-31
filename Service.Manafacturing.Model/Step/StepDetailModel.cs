@@ -12,5 +12,7 @@ namespace VErp.Services.Manafacturing.Model.Step
         public int StepId { get; set; }
         public int DepartmentId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal WorkingHours { get; set; }
+        public int NumberOfPerson { get; set; }
     }
 }
