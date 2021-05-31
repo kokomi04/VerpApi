@@ -47,7 +47,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<ProductionOrderMaterialsModel> GetProductionOrderMaterialsCalc(long productionOrderId)
         {
-            var productionOrder = await _manufacturingDBContext.ProductionOrder.Include(x => x.ProductionOrderDetail).FirstOrDefaultAsync(o => o.ProductionOrderId == productionOrderId);
+            var productionOrder = await _manufacturingDBContext.ProductionOrder.AsNoTracking().Include(x => x.ProductionOrderDetail).FirstOrDefaultAsync(o => o.ProductionOrderId == productionOrderId);
             if (productionOrder == null)
                 throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
@@ -56,12 +56,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var productMap = productionOrder.ProductionOrderDetail.ToDictionary(k => k.ProductId, v => v.Quantity);
 
-            var materialsMain = GetProductionOrderMaterialsMainCalc(productionOrderId);
-            var materialsConsump = GetProductionOrderMaterialsConsumptionCalc(productionOrderId, productMap);
+            var materialsMain = await GetProductionOrderMaterialsMainCalc(productionOrderId);
+            var materialsConsump = await GetProductionOrderMaterialsConsumptionCalc(productionOrderId, productMap);
 
             var materials = new List<ProductionOrderMaterialsCalc>();
-            materials.AddRange(await materialsMain);
-            materials.AddRange(await materialsConsump);
+            materials.AddRange(materialsMain);
+            materials.AddRange(materialsConsump);
+
+           
             return new ProductionOrderMaterialsModel
             {
                 IsReset = productionOrder.IsResetProductionProcess,
