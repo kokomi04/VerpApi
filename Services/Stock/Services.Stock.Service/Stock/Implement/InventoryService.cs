@@ -1484,9 +1484,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             if (fromPackageInfo == null) throw new BadRequestException(PackageErrorCode.PackageNotFound);
 
                             fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
-                            fromPackageInfo.PrimaryQuantityRemaining = fromPackageInfo.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
                             fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
+                            if (fromPackageInfo.PrimaryQuantityWaiting == 0)
+                            {
+                                fromPackageInfo.ProductUnitConversionWaitting = 0;
+                            }
+                            if (fromPackageInfo.ProductUnitConversionWaitting == 0)
+                            {
+                                fromPackageInfo.PrimaryQuantityWaiting = 0;
+                            }
+
+                            fromPackageInfo.PrimaryQuantityRemaining = fromPackageInfo.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
                             fromPackageInfo.ProductUnitConversionRemaining = fromPackageInfo.ProductUnitConversionRemaining.SubDecimal(detail.ProductUnitConversionQuantity);
+                            if (fromPackageInfo.PrimaryQuantityRemaining == 0)
+                            {
+                                fromPackageInfo.ProductUnitConversionRemaining = 0;
+                            }
+                            if (fromPackageInfo.ProductUnitConversionRemaining == 0)
+                            {
+                                fromPackageInfo.PrimaryQuantityRemaining = 0;
+                            }
 
                             if (fromPackageInfo.PrimaryQuantityRemaining < 0)
                             {
@@ -1526,9 +1543,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             var stockProduct = await EnsureStockProduct(inventoryObj.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
                             stockProduct.PrimaryQuantityWaiting = stockProduct.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
-                            stockProduct.PrimaryQuantityRemaining = stockProduct.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
                             stockProduct.ProductUnitConversionWaitting = stockProduct.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
+                            if (stockProduct.PrimaryQuantityWaiting == 0)
+                            {
+                                stockProduct.ProductUnitConversionWaitting = 0;
+                            }
+                            if (stockProduct.ProductUnitConversionWaitting == 0)
+                            {
+                                stockProduct.PrimaryQuantityWaiting = 0;
+                            }
+
+                            stockProduct.PrimaryQuantityRemaining = stockProduct.PrimaryQuantityRemaining.SubDecimal(detail.PrimaryQuantity);
                             stockProduct.ProductUnitConversionRemaining = stockProduct.ProductUnitConversionRemaining.SubDecimal(detail.ProductUnitConversionQuantity);
+                            if (stockProduct.PrimaryQuantityRemaining == 0)
+                            {
+                                stockProduct.ProductUnitConversionRemaining = 0;
+                            }
+                            if (stockProduct.ProductUnitConversionRemaining == 0)
+                            {
+                                stockProduct.PrimaryQuantityRemaining = 0;
+                            }
 
                             ValidateStockProduct(stockProduct);
                         }
@@ -1996,13 +2030,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private void ValidatePackage(Package package)
         {
 
-            if (package.PrimaryQuantityWaiting < 0) throw new Exception("Negative PrimaryQuantityWaiting!");
+            if (package.PrimaryQuantityWaiting < 0) throw new Exception("Package Negative PrimaryQuantityWaiting! " + package.PackageId);
 
-            if (package.PrimaryQuantityRemaining < 0) throw new Exception("Negative PrimaryQuantityRemaining!");
+            if (package.PrimaryQuantityRemaining < 0) throw new Exception("Package Negative PrimaryQuantityRemaining! " + package.PackageId);
 
-            if (package.ProductUnitConversionWaitting < 0) throw new Exception("Negative ProductUnitConversionWaitting!");
+            if (package.ProductUnitConversionWaitting < 0) throw new Exception("Package Negative ProductUnitConversionWaitting! " + package.PackageId);
 
-            if (package.ProductUnitConversionRemaining < 0) throw new Exception("Negative ProductUnitConversionRemaining!");
+            if (package.ProductUnitConversionRemaining < 0)
+            {
+                throw new Exception("Package Negative ProductUnitConversionRemaining! " + package.PackageId);
+            }
 
 
         }
@@ -2010,13 +2047,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private void ValidateStockProduct(StockProduct stockProduct)
         {
 
-            if (stockProduct.PrimaryQuantityWaiting < 0) throw new Exception("Negative PrimaryQuantityWaiting!");
+            if (stockProduct.PrimaryQuantityWaiting < 0) throw new Exception("Stock Negative PrimaryQuantityWaiting! " + stockProduct.StockProductId);
 
-            if (stockProduct.PrimaryQuantityRemaining < 0) throw new Exception("Negative PrimaryQuantityRemaining!");
+            if (stockProduct.PrimaryQuantityRemaining < 0) throw new Exception("Stock Negative PrimaryQuantityRemaining! " + stockProduct.StockProductId);
 
-            if (stockProduct.ProductUnitConversionWaitting < 0) throw new Exception("Negative ProductUnitConversionWaitting!");
+            if (stockProduct.ProductUnitConversionWaitting < 0) throw new Exception("Stock Negative ProductUnitConversionWaitting! " + stockProduct.StockProductId);
 
-            if (stockProduct.ProductUnitConversionRemaining < 0) throw new Exception("Negative ProductUnitConversionRemaining!");
+            if (stockProduct.ProductUnitConversionRemaining < 0) throw new Exception("Stock Negative ProductUnitConversionRemaining! " + stockProduct.StockProductId);
 
         }
 

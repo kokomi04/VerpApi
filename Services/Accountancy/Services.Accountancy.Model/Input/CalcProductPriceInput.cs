@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
-    public class CalcProductPriceWeightedAverageInput
+    public class CalcProductPriceInput
     {
         public long Date { get; set; }
         public IList<int> ProductIds { get; set; }
