@@ -72,11 +72,19 @@ namespace VErpApi.Controllers.Accountancy.Data
         [VErpAction(EnumActionType.View)]
         [GlobalApi]
         [Route("GetWeightedAverageProductPrice")]
-        public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice([FromBody] CalcProductPriceWeightedAverageInput req)
+        public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice([FromBody] CalcProductPriceInput req)
         {
             return await _calcProductPriceService.GetWeightedAverageProductPrice(req).ConfigureAwait(true);
         }
 
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        [Route("GetProductPriceBuyLastest")]
+        public async Task<IList<NonCamelCaseDictionary>> GetProductPriceBuyLastest([FromBody] CalcProductPriceInput req)
+        {
+            return await _calcProductPriceService.GetProductPriceBuyLastest(req).ConfigureAwait(true);
+        }
 
         [HttpPost]
         [VErpAction(EnumActionType.Update)]

@@ -14,8 +14,8 @@ namespace VErp.Services.Accountancy.Service.Input
     {
         Task<CalcProductPriceGetTableOutput> CalcProductPriceTable(CalcProductPriceGetTableInput req);
         Task<CalcProductOutputPriceModel> CalcProductOutputPrice(CalcProductOutputPriceInput req);
-        Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceWeightedAverageInput req);
-
+        Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceInput req);
+        Task<IList<NonCamelCaseDictionary>> GetProductPriceBuyLastest(CalcProductPriceInput req);
         Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req);
        
     }
