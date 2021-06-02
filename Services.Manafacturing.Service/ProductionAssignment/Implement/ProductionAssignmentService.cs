@@ -701,7 +701,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                     select new ZeroWorkloadModel
                     {
-                        StepName = $"{s.StepName} (#{ps.ProductionStepId})",
+                        StepName = $"{s.StepName}",
                         UnitId = s.UnitId,
                         ProductionOrderCode = po.ProductionOrderCode,
                         ProductionStepId = ps.ProductionStepId,
@@ -715,7 +715,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var otherAssignment in otherAssignments)
             {
-                var productionStepName = $"{otherAssignment.StepName} (#{otherAssignment.ProductionAssignment.ProductionStepId})";
+                var productionStepName = $"{otherAssignment.StepName}";
                 var capacityDepartment = new CapacityModel
                 {
                     StartDate = otherAssignment.ProductionAssignment.StartDate.GetUnix(),
@@ -948,7 +948,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                     select new ZeroWorkloadModel
                     {
-                        StepName = $"{s.StepName} (#{ps.ProductionStepId})",
+                        StepName = $"{s.StepName}",
                         UnitId = s.UnitId,
                         ProductionOrderCode = po.ProductionOrderCode,
                         ProductionStepId = ps.ProductionStepId,
@@ -986,7 +986,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var otherAssignment in otherAssignments)
             {
-                var productionStepName = $"{otherAssignment.StepName} (#{otherAssignment.ProductionAssignment.ProductionStepId})";
+                var productionStepName = $"{otherAssignment.StepName}";
                 var completedQuantity = handovers
                     .Where(h => h.FromProductionStepId == otherAssignment.ProductionAssignment.ProductionStepId
                     && h.FromDepartmentId == otherAssignment.ProductionAssignment.DepartmentId
