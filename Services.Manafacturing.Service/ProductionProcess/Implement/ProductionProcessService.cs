@@ -191,7 +191,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var sortedProductionSteps = new List<ProductionStepInfo>();
 
             var lstProductionSteps = productionSteps
-                .Where(ps => ps.StepId.HasValue && !ps.IsGroup.GetValueOrDefault() && !ps.IsFinish)
+                .Where(ps => ps.StepId.HasValue && ps.IsGroup.GetValueOrDefault() && !ps.IsFinish)
                 .ToList();
 
             var lstProductionStepIds = lstProductionSteps.Select(ps => ps.ProductionStepId).ToList();
@@ -207,7 +207,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .ToList();
 
             // Duyệt tất cả step kết thúc
-            foreach(var endProductionStep in endProductionSteps)
+            foreach (var endProductionStep in endProductionSteps)
             {
                 sortedProductionSteps.Add(endProductionStep);
 
@@ -218,11 +218,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 lstProductionStepLinks.RemoveAll(l => l.ToStepId == endProductionStep.ProductionStepId);
             }
 
-           
+
             sortedProductionSteps.Reverse();
 
             sortedProductionSteps.AddRange(productionSteps
-               .Where(ps => !ps.StepId.HasValue || ps.IsGroup.GetValueOrDefault() || ps.IsFinish)
+               .Where(ps => !ps.StepId.HasValue || !ps.IsGroup.GetValueOrDefault() || ps.IsFinish)
                .ToList());
 
             return sortedProductionSteps;
@@ -232,10 +232,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             var lstTempProductionStepLinks = new List<ProductionStepLinkModel>();
             lstTempProductionStepLinks.AddRange(lstProductionStepLinks);
+            var lstTempProductionSteps = new List<ProductionStepInfo>();
+            lstTempProductionSteps.AddRange(lstProductionSteps);
 
-            // Lấy danh sách node trước đó và không có nhiều nhánh đầu vào
+            // Kiểm tra có tồn tại node trước đó ra nhiều nhánh
+            var isMultiple = lstProductionStepLinks
+                .Any(l => l.ToStepId == productionStepId
+                && lstTempProductionStepLinks.Any(ol => ol.ToStepId != l.ToStepId && ol.FromStepId == l.FromStepId)
+                && lstTempProductionSteps.Any(ps => ps.ProductionStepId == l.FromStepId));
+
+            // Lấy danh sách node trước đó và không có nhiều nhánh đầu ra
             var prevProductionStepIds = lstProductionStepLinks
-                .Where(l => l.ToStepId == productionStepId && !lstTempProductionStepLinks.Any(ol => ol.ToStepId != l.ToStepId && ol.FromStepId == l.FromStepId))
+                .Where(l => l.ToStepId == productionStepId
+                && !lstTempProductionStepLinks.Any(ol => ol.ToStepId != l.ToStepId && ol.FromStepId == l.FromStepId)
+                && lstTempProductionSteps.Any(ps => ps.ProductionStepId == l.FromStepId))
                 .Select(l => l.FromStepId)
                 .OrderBy(ps => ps)
                 .ToList();
@@ -245,11 +255,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var prevProductionStep = lstProductionSteps.First(ps => ps.ProductionStepId == prevProductionStepId);
                 sortedProductionSteps.Add(prevProductionStep);
 
-                // Tiếp tục lấy danh sách node tiếp theo và không có nhiều nhánh đầu vào
+                // Tiếp tục lấy danh sách node tiếp theo và không có nhiều nhánh đầu ra
                 IncludePrevProductionStep(prevProductionStep.ProductionStepId, ref lstProductionSteps, ref lstProductionStepLinks, ref sortedProductionSteps);
 
                 lstProductionSteps.Remove(prevProductionStep);
                 lstProductionStepLinks.RemoveAll(l => l.ToStepId == prevProductionStepId);
+            }
+
+            if (isMultiple && prevProductionStepIds.Count > 0)
+            {
+                IncludePrevProductionStep(productionStepId, ref lstProductionSteps, ref lstProductionStepLinks, ref sortedProductionSteps);
             }
         }
 
