@@ -118,30 +118,6 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             }, ServiceLifetime.Scoped);
         }
 
-        public static IServiceCollection AddScopedServices(this IServiceCollection services, Assembly assembly)
-        {
-            return services
-                .AddScopedInferfaces("Service", assembly);
-        }
-
-        public static IServiceCollection AddScopedInferfaces(this IServiceCollection services, string interfaceSurfix, Assembly assembly)
-        {
-            var classTypes = assembly.GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith(interfaceSurfix))
-                .ToArray();
-
-            foreach (var classType in classTypes)
-            {
-                var interfaceType = classType.GetInterface("I" + classType.Name);
-                if (interfaceType != null)
-                {
-                    services.AddScoped(interfaceType, classType);
-                }
-            }
-
-            return services;
-        }
-
         public static IApplicationBuilder UseEndpointsGrpcService(this IApplicationBuilder app, Assembly assembly)
         {
             app.UseEndpoints(opt =>

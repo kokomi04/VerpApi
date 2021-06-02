@@ -33,6 +33,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductAttachment> ProductAttachment { get; set; }
         public virtual DbSet<ProductBom> ProductBom { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
+        public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
         public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
         public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
@@ -119,6 +120,9 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.HasIndex(e => new { e.InventoryId, e.ProductId, e.PrimaryQuantity, e.ProductUnitConversionId, e.IsDeleted })
                     .HasName("IDX_InventoryDetail_Product");
+
+                entity.HasIndex(e => new { e.ProductId, e.RefObjectCode, e.OrderCode, e.Pocode, e.ProductionOrderCode, e.InventoryId, e.IsDeleted, e.SubsidiaryId })
+                    .HasName("IDX_InventoryDetail_Search");
 
                 entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
 
@@ -457,6 +461,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasDefaultValueSql("((1))")
                     .HasComment("Cơ số sản phẩm");
 
+                entity.Property(e => e.Color).HasMaxLength(128);
+
                 entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
 
                 entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
@@ -562,6 +568,17 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.InverseParentProductCate)
                     .HasForeignKey(d => d.ParentProductCateId)
                     .HasConstraintName("FK_ProductCate_ProductCate");
+            });
+
+            modelBuilder.Entity<ProductCustomer>(entity =>
+            {
+                entity.Property(e => e.CustomerProductCode).HasMaxLength(128);
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductCustomer)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductCustomer_Product");
             });
 
             modelBuilder.Entity<ProductExtraInfo>(entity =>
