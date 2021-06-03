@@ -33,7 +33,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class ProductService : IProductService
     {
-        public const int DECIMAL_PLACE_DEFAULT = 12;
+        public const int DECIMAL_PLACE_DEFAULT = 11;
 
         private readonly StockDBContext _stockContext;
         private readonly MasterDBContext _masterDBContext;
