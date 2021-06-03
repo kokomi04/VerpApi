@@ -187,12 +187,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         private List<ProductionStepInfo> SortProductionProcess(List<ProductionStepInfo> productionSteps, List<ProductionStepLinkModel> productionStepLinks)
         {
-            // Lấy danh sách cần sắp xếp
-            var sortedProductionSteps = new List<ProductionStepInfo>();
-
-            var lstProductionSteps = productionSteps
+            var result = new List<ProductionStepInfo>();
+            var lstProductionStepGroups = productionSteps
                 .Where(ps => ps.StepId.HasValue && ps.IsGroup.GetValueOrDefault() && !ps.IsFinish)
                 .ToList();
+
+            var lstProductionStepGroupIds = lstProductionStepGroups.Select(ps => ps.ProductionStepId).ToList();
+
+            var lstProductionStepGroupLinks = productionStepLinks
+                .Where(l => lstProductionStepGroupIds.Contains(l.FromStepId) && lstProductionStepGroupIds.Contains(l.ToStepId))
+                .ToList();
+
+            result.AddRange(SortProductionSteps(lstProductionStepGroups, lstProductionStepGroupLinks));
+
+            var lstProductionSteps = productionSteps
+               .Where(ps => ps.StepId.HasValue && !ps.IsGroup.GetValueOrDefault() && !ps.IsFinish)
+               .ToList();
 
             var lstProductionStepIds = lstProductionSteps.Select(ps => ps.ProductionStepId).ToList();
 
@@ -200,6 +210,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(l => lstProductionStepIds.Contains(l.FromStepId) && lstProductionStepIds.Contains(l.ToStepId))
                 .ToList();
 
+            result.AddRange(SortProductionSteps(lstProductionSteps, lstProductionStepLinks));
+
+            result.AddRange(productionSteps
+               .Where(ps => !ps.StepId.HasValue || ps.IsFinish)
+               .ToList());
+
+            return result;
+        }
+
+        private List<ProductionStepInfo> SortProductionSteps(List<ProductionStepInfo> lstProductionSteps, List<ProductionStepLinkModel> lstProductionStepLinks)
+        {
+            // Lấy danh sách cần sắp xếp
+            var sortedProductionSteps = new List<ProductionStepInfo>();
             // Lấy danh sách step kết thúc
             var endProductionSteps = lstProductionSteps
                 .Where(ps => !lstProductionStepLinks.Any(l => l.FromStepId == ps.ProductionStepId))
@@ -217,16 +240,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 lstProductionSteps.Remove(endProductionStep);
                 lstProductionStepLinks.RemoveAll(l => l.ToStepId == endProductionStep.ProductionStepId);
             }
-
-
             sortedProductionSteps.Reverse();
-
-            sortedProductionSteps.AddRange(productionSteps
-               .Where(ps => !ps.StepId.HasValue || !ps.IsGroup.GetValueOrDefault() || ps.IsFinish)
-               .ToList());
-
             return sortedProductionSteps;
         }
+
+
+
 
         private void IncludePrevProductionStep(long productionStepId, ref List<ProductionStepInfo> lstProductionSteps, ref List<ProductionStepLinkModel> lstProductionStepLinks, ref List<ProductionStepInfo> sortedProductionSteps)
         {
@@ -538,7 +557,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         {
                             parentIdUpdater.Add(step);
                         }
-                        
+
                         _manufacturingDBContext.ProductionStep.Add(newStep);
                         stepMap.Add(step.ProductionStepId, newStep);
                     }
@@ -922,8 +941,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var info = await _manufacturingDBContext.ProductionStepRoleClient
                 .Where(x => x.ContainerId == containerId && x.ContainerTypeId == containerTypeId)
                 .FirstOrDefaultAsync();
-            
-            return info == null? "" : info.ClientData;
+
+            return info == null ? "" : info.ClientData;
         }
 
         public async Task<long> CreateProductionStepGroup(ProductionStepGroupModel req)
@@ -1014,7 +1033,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     if (containerTypeId == EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0 || dest.ExportOutsourceQuantity.GetValueOrDefault() > 0))
                     {
-                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, 
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData,
                             $"Không thể xóa chi tiết liên quan đến YCGC công đoạn");
                     }
                     dest.IsDeleted = true;
@@ -1082,7 +1101,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
-           
+
             if (containerTypeId == EnumContainerType.ProductionOrder)
             {
                 await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
@@ -1202,7 +1221,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .ToListAsync();
 
             var groupbyLinkDataRole = roles
-                .Where(x=> arrProductionStepId.Contains(x.ProductionStepId))
+                .Where(x => arrProductionStepId.Contains(x.ProductionStepId))
                 .GroupBy(r => r.ProductionStepLinkDataId)
                 .Where(g => g.Count() == 2)
                 .ToList();
@@ -1259,7 +1278,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             //        .Where(g => g.Count() < calcTotalOutputMap[g.Key])
             //        .SelectMany(r => r)
             //        .ToArray();
-               
+
 
             //    if (roleOutside.Length > 0 && TraceProductionStepInsideGroupProductionStepToOutsource(roles, stepIds, roleOutside))
             //    {
@@ -1271,11 +1290,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             //if (groupRelationship.Count() == 0)
             //    throw new BadRequestException(GeneralCode.InternalError, "Nhóm công đoạn không thể đi gia công do tồn tại công đoạn kết nối trung gian");
 
-            foreach(var (key, value) in groupRelationship)
+            foreach (var (key, value) in groupRelationship)
             {
                 var stepIds = value as IList<long>;
 
-                GroupProductionStepToOutsource item = GetGroupProductionStepToOutsource(roles, stepIds,  key);
+                GroupProductionStepToOutsource item = GetGroupProductionStepToOutsource(roles, stepIds, key);
 
                 data.Add(item);
             }
@@ -1306,12 +1325,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return item;
         }
 
-        private  bool TraceProductionStepInsideGroupProductionStepToOutsource(List<ProductionStepLinkDataRoleModel> roles, IList<long> stepIds, ProductionStepLinkDataRoleModel[] roleOutside)
+        private bool TraceProductionStepInsideGroupProductionStepToOutsource(List<ProductionStepLinkDataRoleModel> roles, IList<long> stepIds, ProductionStepLinkDataRoleModel[] roleOutside)
         {
-                foreach (var role in roleOutside)
+            foreach (var role in roleOutside)
             {
                 var roleInput = roles.FirstOrDefault(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input && x.ProductionStepLinkDataId == role.ProductionStepLinkDataId);
-                
+
                 if (roleInput == null) continue;
 
                 if (stepIds.Contains(roleInput.ProductionStepId))
@@ -1319,7 +1338,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 var roleOutput = roles.Where(x => x.ProductionStepId == roleInput.ProductionStepId && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output).ToArray();
 
-                if(TraceProductionStepInsideGroupProductionStepToOutsource(roles, stepIds, roleOutput)) return true;
+                if (TraceProductionStepInsideGroupProductionStepToOutsource(roles, stepIds, roleOutput)) return true;
             }
 
             return false;
@@ -1361,7 +1380,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .ProjectTo<ProductionStepModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            var lsProductionStepLinkDataId = roles.Where(x=>productionStepIds.Contains(x.ProductionStepId)).Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
+            var lsProductionStepLinkDataId = roles.Where(x => productionStepIds.Contains(x.ProductionStepId)).Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
             var stepLinkDatas = new List<ProductionStepLinkDataOutsourceStep>();
             if (lsProductionStepLinkDataId.Count > 0)
             {
@@ -1391,11 +1410,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
                         .ConvertData<ProductionStepLinkDataOutsourceStep>();
 
-                foreach(var ld in stepLinkDatas)
+                foreach (var ld in stepLinkDatas)
                 {
                     var roleInput = roles.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
                     var roleOutput = roles.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
-                    
+
                     ld.ProductionStepReceiveTitle = "Kho";
                     ld.ProductionStepSourceTitle = "Kho";
                     ld.IsImportant = false;
@@ -1554,15 +1573,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .ToListAsync();
 
                 process.ProductionSteps.ForEach(x => { x.ProductionStepId = 0; x.ContainerId = toContainerId; });
-                process.ProductionStepLinkDatas.ForEach(x => { 
-                    x.ProductionStepLinkDataId = 0; 
-                    if(x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                process.ProductionStepLinkDatas.ForEach(x =>
+                {
+                    x.ProductionStepLinkDataId = 0;
+                    if (x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                     {
                         var p = lsProductSemi.FirstOrDefault(s => s.ProductSemiId == x.ObjectId);
                         if (p == null)
                             throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemi);
                         var pf = lsProductionSemiFinal.FirstOrDefault(x => x.Title.ToLower().Equals(p.Title.ToLower()));
-                        if(pf != null)
+                        if (pf != null)
                         {
                             x.ObjectId = pf.ProductSemiId;
                         }
@@ -1584,7 +1604,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             x.ObjectId = entityProductSemi.ProductSemiId;
                             lsProductionSemiFinal.Add(entityProductSemi);
                         }
-                        
+
                     }
                 });
                 process.ProductionStepLinkDataRoles.ForEach(r => { r.ProductionStepId = 0; r.ProductionStepLinkDataId = 0; });
@@ -1631,7 +1651,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 _logger.LogError("CopyProductionProcess", ex);
                 throw;
             }
-            
+
         }
 
         public async Task<IList<ProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId)
@@ -1647,7 +1667,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output);
 
             var productIds = roleOutput
-                .Where(x=>x.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                .Where(x => x.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                 .Select(x => (int)x.ProductionStepLinkData.ObjectId)
                 .Distinct()
                 .ToList();
@@ -1657,7 +1677,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Distinct()
                 .ToList();
 
-            var productInfoMap = (await _productHelperService.GetListProducts(productIds)).ToDictionary(k=>k.ProductId, v=> string.Concat(v.ProductCode,"/ " , v.ProductName));
+            var productInfoMap = (await _productHelperService.GetListProducts(productIds)).ToDictionary(k => k.ProductId, v => string.Concat(v.ProductCode, "/ ", v.ProductName));
             var productSemiInfoMap = (await _manufacturingDBContext.ProductSemi.AsNoTracking().Where(x => productSemiIds.Contains(x.ProductSemiId)).ToListAsync())
                 .ToDictionary(k => k.ProductSemiId, v => v.Title);
 
@@ -1679,7 +1699,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ProductionStepId = s.ProductionStepId,
                     ProductionStepCode = s.ProductionStepCode,
                     Title = $"{s.Step.StepName} #({s.ProductionStepId})",
-                    OutputString = $"{string.Join(", ",output)}",
+                    OutputString = $"{string.Join(", ", output)}",
                     StepId = s.StepId
                 };
             }).ToList();
