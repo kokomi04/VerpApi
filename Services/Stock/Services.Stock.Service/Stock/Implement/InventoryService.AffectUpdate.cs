@@ -181,7 +181,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await ApprovedInputDataUpdateAction_Normalize(req, products);
             var issuedDate = req.Inventory.Date.UnixToDateTime().Value;
-            
+
             //need to update before validate quantity order by time
             inventoryInfo.Date = issuedDate;
 
@@ -465,7 +465,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             totalOutProductUnitConversionQuantity += child.NewTransferProductUnitConversionQuantity;
                         }
                     }
-                    if (totalOutPrimaryQuantity > totalInPrimaryQuantity || totalOutProductUnitConversionQuantity > totalInProductUnitConversionQuantity)
+                    if (totalOutPrimaryQuantity.SubDecimal(totalInPrimaryQuantity) > 0 || totalOutProductUnitConversionQuantity.SubDecimal(totalInProductUnitConversionQuantity) > 0)
                     {
                         throw new BadRequestException(InventoryErrorCode.InOuputAffectObjectsInvalid);
                     }
@@ -761,7 +761,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
-           // await _stockDbContext.SaveChangesAsync();
+            // await _stockDbContext.SaveChangesAsync();
 
             //foreach (var output in validateOutputDetails)
             //{

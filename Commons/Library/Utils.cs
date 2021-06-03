@@ -246,41 +246,23 @@ namespace VErp.Commons.Library
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
             return Eval(expression);
         }
-
-        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression, decimal inputData)
-        {
-            var expression = $"({productUnitConversionQuantity})/({factorExpression})";
-            var value = Eval(expression);
-            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
-            {
-                return (true, inputData);
-            }
-
-            if (inputData == 0)
-            {
-                return (true, value);
-            }
-            else
-            {
-                return (false, value);
-            }
-        }
+      
 
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
         {
             var value = productUnitConversionQuantity / factorExpression;
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData);
+                return (true, inputData.Round());
             }
 
             if (inputData == 0)
             {
-                return (true, value);
+                return (true, value.Round());
             }
             else
             {
-                return (false, value);
+                return (false, value.Round());
             }
         }
 
@@ -290,16 +272,16 @@ namespace VErp.Commons.Library
             var value = Eval(expression);
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData);
+                return (true, inputData.Round());
             }
 
             if (inputData == 0)
             {
-                return (true, value);
+                return (true, value.Round());
             }
             else
             {
-                return (false, value);
+                return (false, value.Round());
             }
 
         }
@@ -309,16 +291,16 @@ namespace VErp.Commons.Library
             var value = primaryQuantity * factorExpression;
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData);
+                return (true, inputData.Round());
             }
 
             if (inputData == 0)
             {
-                return (true, value);
+                return (true, value.Round());
             }
             else
             {
-                return (false, value);
+                return (false, value.Round());
             }
 
         }
