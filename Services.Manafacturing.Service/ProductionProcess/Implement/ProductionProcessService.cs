@@ -198,19 +198,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(l => lstProductionStepGroupIds.Contains(l.FromStepId) && lstProductionStepGroupIds.Contains(l.ToStepId))
                 .ToList();
 
-            result.AddRange(SortProductionSteps(lstProductionStepGroups, lstProductionStepGroupLinks));
+            var sortGroups = SortProductionSteps(lstProductionStepGroups, lstProductionStepGroupLinks);
+            var sortGroupIds = sortGroups.Select(g => g.ProductionStepId).ToList();
+            result.AddRange(sortGroups);
 
-            var lstProductionSteps = productionSteps
-               .Where(ps => ps.StepId.HasValue && !ps.IsGroup.GetValueOrDefault() && !ps.IsFinish)
-               .ToList();
+            foreach(var group in sortGroups)
+            {
+                var childProductionSteps = productionSteps
+                    .Where(ps => ps.StepId.HasValue && !ps.IsGroup.GetValueOrDefault() && ps.ParentId == group.ProductionStepId && !ps.IsFinish)
+                    .ToList();
+                result.AddRange(childProductionSteps);
+            }
 
-            var lstProductionStepIds = lstProductionSteps.Select(ps => ps.ProductionStepId).ToList();
-
-            var lstProductionStepLinks = productionStepLinks
-                .Where(l => lstProductionStepIds.Contains(l.FromStepId) && lstProductionStepIds.Contains(l.ToStepId))
-                .ToList();
-
-            result.AddRange(SortProductionSteps(lstProductionSteps, lstProductionStepLinks));
+            result.AddRange(productionSteps
+               .Where(ps => ps.StepId.HasValue && !ps.IsGroup.GetValueOrDefault() && (!ps.ParentId.HasValue || !sortGroupIds.Contains(ps.ParentId.Value)) && !ps.IsFinish)
+               .ToList());
 
             result.AddRange(productionSteps
                .Where(ps => !ps.StepId.HasValue || ps.IsFinish)
