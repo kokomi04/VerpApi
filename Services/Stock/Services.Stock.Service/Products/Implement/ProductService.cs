@@ -89,90 +89,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<ProductDefaultModel> AddProductDefault(ProductDefaultModel req)
-        {
-            using (var trans = await _stockContext.Database.BeginTransactionAsync())
-            {
-                if (!req.ProductTypeId.HasValue)
-                {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không được phép để trống");
-                }
-                if (!_stockContext.ProductType.Any(p => p.ProductTypeId == req.ProductTypeId))
-                {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại mặt hàng không tồn tại");
-                }
-                //var customGenCode = await GenerateProductCode(null, req);
-                var ctx = await GenerateProductCode(null, req);
-
-
-                var defaultProductCate = _stockContext.ProductCate.FirstOrDefault(c => c.IsDefault);
-                if (defaultProductCate == null)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Danh mục mặt hàng mặc định không tồn tại");
-                var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
-                if (unitInfo == null)
-                {
-                    throw new BadRequestException(UnitErrorCode.UnitNotFound, $"Mặt hàng {req.ProductCode}, đơn vị tính không tìm thấy ");
-                }
-                var productInfo = new Product()
-                {
-                    ProductCode = req.ProductCode,
-                    ProductName = req.ProductName ?? req.ProductCode,
-                    ProductTypeId = req.ProductTypeId,
-                    ProductInternalName = req.ProductName.NormalizeAsInternalName(),
-                    IsCanBuy = false,
-                    IsCanSell = false,
-                    ProductCateId = defaultProductCate.ProductCateId,
-                    UnitId = req.UnitId,
-                    IsProductSemi = false,
-                    IsProduct = true,
-                    Coefficient = 1
-                };
-
-                await _stockContext.AddAsync(productInfo);
-                await _stockContext.SaveChangesAsync();
-
-                var productStockInfo = new ProductStockInfo()
-                {
-                    ProductId = productInfo.ProductId,
-                    StockOutputRuleId = (int)EnumStockOutputRule.None
-                };
-
-                await _stockContext.AddAsync(productStockInfo);
-
-                var productExtra = new ProductExtraInfo()
-                {
-                    ProductId = productInfo.ProductId,
-                    Specification = req.Specification
-                };
-
-                await _stockContext.AddAsync(productExtra);
-                var unitConverion = new ProductUnitConversion()
-                {
-                    ProductId = productInfo.ProductId,
-                    ProductUnitConversionName = unitInfo.UnitName,
-                    SecondaryUnitId = req.UnitId,
-                    FactorExpression = "1",
-                    ConversionDescription = "Mặc định",
-                    IsDefault = true,
-                    IsFreeStyle = false,
-                    DecimalPlace = DECIMAL_PLACE_DEFAULT
-                };
-                _stockContext.ProductUnitConversion.Add(unitConverion);
-
-                await _stockContext.SaveChangesAsync();
-
-                await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
-                //await ConfirmProductCode(customGenCode);
-                await ctx.ConfirmCode();
-
-                req.ProductCode = productInfo.ProductCode;
-                req.ProductId = productInfo.ProductId;
-                return req;
-            }
-        }
-
-
         public async Task<ProductDefaultModel> ProductAddProductSemi(int parentProductId, ProductDefaultModel req)
         {
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
@@ -678,7 +594,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var code = await ctx
-                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, 0)
+                .SetConfig(EnumObjectType.Product, EnumObjectType.Product, 0)
                 .SetConfigData(productId ?? 0, null, parentProductInfo?.ProductCode)
                 .TryValidateAndGenerateCode(_stockContext.Product, model.ProductCode, (s, code) => s.ProductId != productId && s.ProductCode == code);
 
