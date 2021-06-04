@@ -701,7 +701,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                     select new ZeroWorkloadModel
                     {
-                        StepName = $"{s.StepName}",
+                        StepName = string.IsNullOrEmpty(ps.Title) ? s.StepName : ps.Title,
                         UnitId = s.UnitId,
                         ProductionOrderCode = po.ProductionOrderCode,
                         ProductionStepId = ps.ProductionStepId,
@@ -948,7 +948,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                     select new ZeroWorkloadModel
                     {
-                        StepName = $"{s.StepName}",
+                        StepName = string.IsNullOrEmpty(ps.Title) ? s.StepName : ps.Title,
                         UnitId = s.UnitId,
                         ProductionOrderCode = po.ProductionOrderCode,
                         ProductionStepId = ps.ProductionStepId,

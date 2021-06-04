@@ -1719,12 +1719,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         return productInfoMap.ContainsKey((int)objectId) ? productInfoMap[(int)objectId] : "";
                     else return productSemiInfoMap.ContainsKey(objectId) ? productSemiInfoMap[objectId] : "";
                 });
-
+                var title = string.IsNullOrEmpty(s.Title) ? s.Step?.StepName : s.Title;
                 return new ProductionStepSimpleModel
                 {
                     ProductionStepId = s.ProductionStepId,
                     ProductionStepCode = s.ProductionStepCode,
-                    Title = $"{s.Step.StepName} #({s.ProductionStepId})",
+                    Title = title,
                     OutputString = $"{string.Join(", ", output)}",
                     StepId = s.StepId
                 };
