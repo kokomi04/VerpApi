@@ -197,5 +197,17 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionProcessService.GetProductionProcessOutsourceStep(containerTypeId, containerId, productionStepIds);
         }
+
+        /// <summary>
+        /// Trả về các nhóm đầu vào, đầu ra gia công
+        /// </summary>
+        /// <param name="productionOrderId">Mã lệnh sản xuất</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("{containerTypeId}/{containerId}/groupProductionStepInOutToOutsource")]
+        public async Task<IList<GroupProductionStepToOutsource>> GroupProductionStepInOutToOutsource([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] long[] productionOrderId)
+        {
+            return await _productionProcessService.GroupProductionStepInOutToOutsource(containerTypeId, containerId, productionOrderId);
+        }
     }
 }
