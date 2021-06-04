@@ -104,7 +104,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             var userId = 0;
             var action = EnumActionType.View;
-            var subsidiaryId = 0;
+          
             if (headers.TryGetValue(Headers.UserId, out var strUserId))
             {
                 userId = int.Parse(strUserId);
@@ -117,15 +117,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             if (headers.TryGetValue(Headers.SubsidiaryId, out var strSubsidiaryId))
             {
-                subsidiaryId = int.Parse(strSubsidiaryId);
+                _subsidiaryId = int.Parse(strSubsidiaryId);
             }
 
 
             if (userId > 0)
             {
+                _userId = userId;
                 var claims = new List<Claim>() {
                     new Claim(UserClaimConstants.UserId, userId + ""),
-                    new Claim(UserClaimConstants.SubsidiaryId, subsidiaryId + "")
+                    new Claim(UserClaimConstants.SubsidiaryId, _subsidiaryId + "")
                 };
 
                 var user = new GenericPrincipal(new ClaimsIdentity(claims), null);

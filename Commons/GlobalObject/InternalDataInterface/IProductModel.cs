@@ -91,7 +91,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 
         public class ProductModelCustomer
         {
-            public int CustomerId { get; set; }
+            public int? CustomerId { get; set; }
             public string CustomerProductCode { get; set; }
         }
     }

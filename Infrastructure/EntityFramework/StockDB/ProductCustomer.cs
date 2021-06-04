@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.StockDB
     {
         public long ProductCustomerId { get; set; }
         public int ProductId { get; set; }
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
         public string CustomerProductCode { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }

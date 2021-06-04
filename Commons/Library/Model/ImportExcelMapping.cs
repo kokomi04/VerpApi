@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library.Model
 {
@@ -10,7 +11,7 @@ namespace VErp.Commons.Library.Model
         public string SheetName { get; set; }
         public int FromRow { get; set; }
         public int ToRow { get; set; }
-        public bool IgnoreDuplicate { get; set; }
+        public EnumImportDuplicateOption? ImportDuplicateOptionId { get; set; }
         public IList<ImportExcelMappingField> MappingFields { get; set; }
     }
 

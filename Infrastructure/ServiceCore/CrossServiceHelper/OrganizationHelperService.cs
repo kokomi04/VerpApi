@@ -14,11 +14,13 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
     public interface IOrganizationHelperService
     {
+        Task<IList<BasicCustomerListModel>> AllCustomers();
         Task<BaseCustomerModel> CustomerInfo(int customerId);
 
         Task<BusinessInfoModel> BusinessInfo();
         Task<IList<DepartmentSimpleModel>> GetDepartmentSimples(int[] departmentId);
         Task<IList<DepartmentSimpleModel>> GetAllDepartmentSimples();
+
     }
 
 
@@ -39,11 +41,16 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _organizationClient = organizationClient;
         }
 
+        public async Task<IList<BasicCustomerListModel>> AllCustomers()
+        {
+            return (await _httpCrossService.Post<PageData<BasicCustomerListModel>>($"api/internal/InternalCustomer", new { }))?.List;
+        }
+
         public async Task<BaseCustomerModel> CustomerInfo(int customerId)
         {
             if (_appSetting.GrpcInternal?.Address?.Contains("https") == true)
             {
-                var result = await _organizationClient.CustomerInfoAsync(new CustomerInfoRequest{ CustomerId = customerId });
+                var result = await _organizationClient.CustomerInfoAsync(new CustomerInfoRequest { CustomerId = customerId });
                 return new BaseCustomerModel
                 {
                     Address = result.Address,
@@ -60,7 +67,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                     PhoneNumber = result.PhoneNumber,
                     TaxIdNo = result.TaxIdNo,
                     Website = result.Website
-                    
+
                 };
             }
             return await _httpCrossService.Get<BaseCustomerModel>($"api/internal/InternalCustomer/{customerId}");

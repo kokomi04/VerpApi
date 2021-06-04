@@ -80,4 +80,11 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 
         public EnumCustomerStatus CustomerStatusId { get; set; }
     }
+
+    public class BasicCustomerListModel
+    {
+        public int CustomerId { get; set; }
+        public string CustomerCode { get; set; }
+        public string CustomerName { get; set; }
+    }
 }
