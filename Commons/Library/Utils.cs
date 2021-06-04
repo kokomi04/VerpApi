@@ -556,6 +556,45 @@ namespace VErp.Commons.Library
             return false;
         }
 
+        public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, TMember value)
+        {
+            if (!value.IsNullObject())
+            {
+                var members = member.Body.ToString().Split('.');
+
+                object target = obj;
+
+                var prop = (member.Body as MemberExpression).Member as PropertyInfo;
+
+                for (var i = 1; i < members.Length - 1; i++)
+                {
+                    var child = Expression.PropertyOrField(Expression.Constant(target), members[i]).Member as PropertyInfo;
+
+                    target = child.GetValue(target);
+                }
+
+                prop.SetValue(target, value);
+            }
+        }
+
+        public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, IDictionary<string, TMember> dics, string key)
+        {
+            if (dics.ContainsKey(key))
+            {
+                obj.UpdateIfAvaiable(member, dics[key]);
+            }
+        }
+
+        public static void UpdateIfAvaiable<T, TMember, TDic>(this T obj, Expression<Func<T, TMember>> member, IDictionary<string, TDic> dics, string key, Expression<Func<TDic, TMember>> divValue)
+        {
+            if (dics.ContainsKey(key))
+            {
+                var v = divValue.Compile().Invoke(dics[key]);
+                obj.UpdateIfAvaiable(member, v);
+            }
+        }
+
+
         public static bool IsTimeType(this EnumDataType type)
         {
             return AccountantConstants.TIME_TYPES.Contains(type);
@@ -1102,6 +1141,64 @@ namespace VErp.Commons.Library
                 formatter.Serialize(stream, a);
                 stream.Position = 0;
                 return (T)formatter.Deserialize(stream);
+            }
+        }
+
+
+        public static T MergeData<T>(this IList<T> items) where T : class
+        {
+            var result = Activator.CreateInstance<T>();
+
+            foreach (var item in items)
+            {
+                result.CopyValuesFrom(item);
+            }
+
+            return result;
+        }
+
+        public static void CopyValuesFrom<T>(this T target, T source, bool appendList = true, bool copyObject = true)
+        {
+            Type t = typeof(T);
+
+            var properties = t.GetProperties().Where(prop => prop.CanRead && prop.CanWrite);
+
+            foreach (var prop in properties)
+            {
+                var value = prop.GetValue(source, null);
+                var targetValue = prop.GetValue(target, null);
+
+                bool isPrimitiveType = prop.PropertyType.IsPrimitive || prop.PropertyType.IsValueType || (prop.PropertyType == typeof(string));
+
+                if (appendList && !isPrimitiveType && (prop.PropertyType.IsArray || typeof(IEnumerable).IsAssignableFrom(prop.PropertyType)))
+                {
+
+                    if (targetValue.IsNullObject())
+                    {
+                        targetValue = Activator.CreateInstance(prop.PropertyType);
+                    }
+
+                    if (!value.IsNullObject())
+                    {
+                        foreach (var newVal in value as IEnumerable)
+                        {
+                            targetValue = (targetValue as IEnumerable).Cast<object>().Concat(new[] { newVal });
+                        }
+                    }
+
+                    prop.SetValue(target, targetValue, null);
+
+                }
+                else if (!value.IsNullObject())
+                {
+
+
+                    if ((copyObject || isPrimitiveType) && targetValue != value)
+                    {
+                        prop.SetValue(target, value, null);
+                    }
+
+                }
             }
         }
     }

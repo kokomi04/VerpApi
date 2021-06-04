@@ -9,7 +9,7 @@ namespace VErp.Commons.GlobalObject
 {
     public interface IMapFrom<T>
     {
-        void Mapping(Profile profile) => profile.CreateMap(typeof(T), GetType()).ReverseMap();
+       void Mapping(Profile profile) => profile.CreateMap(typeof(T), GetType()).ReverseMap();
     }
     public interface ICustomMapping
     {

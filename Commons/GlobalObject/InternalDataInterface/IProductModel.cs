@@ -37,11 +37,15 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
 
         public bool IsProductSemi { get; set; }
-        public bool IsProduct { get; set; }
+        public bool? IsProduct { get; set; }
         public int Coefficient { get; set; }
+        public string Color { get; set; }
 
+        public IList<ProductModelCustomer> ProductCustomers { get; set; }
         public ProductModelExtra Extra { get; set; }
         public ProductModelStock StockInfo { get; set; }
+
+
 
         public class ProductModelExtra
         {
@@ -82,7 +86,13 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
             public bool IsFreeStyle { get; set; }
             public string FactorExpression { get; set; }
             public string ConversionDescription { get; set; }
-            public int DecimalPlace { get; set; }
+            public int DecimalPlace { get; set; }           
+        }
+
+        public class ProductModelCustomer
+        {
+            public int? CustomerId { get; set; }
+            public string CustomerProductCode { get; set; }
         }
     }
 
@@ -102,3 +112,4 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int? ProductTypeId { get; set; }
     }
 }
+
