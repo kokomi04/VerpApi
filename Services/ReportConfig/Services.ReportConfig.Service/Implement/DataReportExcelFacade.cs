@@ -786,6 +786,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (signs != null && signs.Length > 0)
             {
+                if (signs.Length > numberOfColumns) return;
+
                 int fRow = currentRow + 3;
 
                 var rCol = (int)numberOfColumns / signs.Length;
@@ -794,14 +796,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     var fCol = i > 0 ? (i * rCol) : 0;
                     var lCol = (i + 1) * rCol - 1;
                     if (i == signs.Length - 1 && numberOfColumns > (signs.Length * rCol)) lCol += (numberOfColumns - (signs.Length * rCol));
-                    sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
+                    if (lCol > fCol)
+                        sheet.AddMergedRegion(new CellRangeAddress(fRow, fRow, fCol, lCol));
                     sheet.EnsureCell(fRow, fCol).SetCellValue(signs[i].Replace("/", $"\r\n"));
                     sheet.SetSignatureCellStyle(fRow, fCol);
 
                     if (i == signs.Length - 1 && !string.IsNullOrEmpty(_model.Footer.RDateText))
                     {
                         var rIndex = fRow - 1;
-                        sheet.AddMergedRegion(new CellRangeAddress(rIndex, rIndex, fCol, lCol));
+                        if (lCol > fCol)
+                            sheet.AddMergedRegion(new CellRangeAddress(rIndex, rIndex, fCol, lCol));
                         sheet.EnsureCell(rIndex, fCol).SetCellValue(_model.Footer.RDateText);
                         sheet.SetCellStyle(rIndex, fCol, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center);
                     }
