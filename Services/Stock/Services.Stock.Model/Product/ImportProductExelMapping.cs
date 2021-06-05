@@ -82,31 +82,31 @@ namespace VErp.Services.Stock.Model.Product
 
 
 
-        [Display(Name = "Định lượng", GroupName = "TT đo đạc")]
+        [Display(Name = "Định lượng", GroupName = "Thông số")]
         public decimal? Quantitative { get; set; }
 
-        [Display(Name = "Đơn vị Định lượng(g/m2, g/m3)", GroupName = "TT đo đạc")]
+        [Display(Name = "Đơn vị Định lượng(g/m2, g/m3)", GroupName = "Thông số")]
         public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
 
-        [Display(Name = "Dài (mm)", GroupName = "TT đo đạc")]
+        [Display(Name = "Dài (mm)", GroupName = "Thông số")]
         public decimal? Long { get; set; }
 
-        [Display(Name = "Rộng (mm)", GroupName = "TT đo đạc")]
+        [Display(Name = "Rộng (mm)", GroupName = "Thông số")]
         public decimal? Width { get; set; }
 
-        [Display(Name = "Cao (mm)", GroupName = "TT đo đạc")]
+        [Display(Name = "Cao (mm)", GroupName = "Thông số")]
         public decimal? Height { get; set; }
 
-        [Display(Name = "Thể tích (m3)", GroupName = "TT đo đạc")]
+        [Display(Name = "Thể tích (m3)", GroupName = "Thông số")]
         public decimal? Measurement { get; set; }
 
-        [Display(Name = "Trọng lượng tịnh (g)", GroupName = "TT đo đạc")]
+        [Display(Name = "Trọng lượng tịnh (g)", GroupName = "Thông số")]
         public decimal? NetWeight { get; set; }
 
-        [Display(Name = "Tổng trọng lượng (g)", GroupName = "TT đo đạc")]
+        [Display(Name = "Tổng trọng lượng (g)", GroupName = "Thông số")]
         public decimal? GrossWeight { get; set; }
 
-        [Display(Name = "Tải trọng (g)", GroupName = "TT đo đạc")]
+        [Display(Name = "Tải trọng (g)", GroupName = "Thông số")]
         public decimal? LoadAbility { get; set; }
 
 
