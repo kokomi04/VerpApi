@@ -24,6 +24,7 @@ using VErp.Commons.GlobalObject;
 using Newtonsoft.Json;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Services.Stock.Model.Product.Partial;
 
 namespace VErpApi.Controllers.Stock.Products
 {
@@ -33,23 +34,16 @@ namespace VErpApi.Controllers.Stock.Products
     {
         private readonly IProductService _productService;
         private readonly IFileService _fileService;
-        private readonly IObjectGenCodeService _objectGenCodeService;
-        private readonly IProductTypeService _productTypeService;
-        private readonly IGenCodeConfigService _genCodeConfigService;
-
+        private readonly IProductPartialService _productPartialService;
         public ProductsController(
             IProductService productService
             , IFileService fileService
-            , IObjectGenCodeService objectGenCodeService
-            , IProductTypeService productTypeService
-            , IGenCodeConfigService genCodeConfigService
+            , IProductPartialService productPartialService
             )
         {
             _productService = productService;
             _fileService = fileService;
-            _objectGenCodeService = objectGenCodeService;
-            _productTypeService = productTypeService;
-            _genCodeConfigService = genCodeConfigService;
+            _productPartialService = productPartialService;
         }
 
         /// <summary>
@@ -132,6 +126,49 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<ProductModel> GetProduct([FromRoute] int productId)
         {
             return await _productService.ProductInfo(productId);
+        }
+
+        [HttpGet]
+        [Route("{productId}/GeneralInfo")]
+        public async Task<ProductPartialGeneralModel> GeneralInfo([FromRoute] int productId)
+        {
+            return await _productPartialService.GeneralInfo(productId);
+        }
+
+        [HttpPut]
+        [Route("{productId}/GeneralInfo")]
+        public async Task<bool> UpdateGeneralInfo([FromRoute] int productId, [FromBody] ProductPartialGeneralModel model)
+        {
+            return await _productPartialService.UpdateGeneralInfo(productId, model);
+        }
+
+        [HttpGet]
+        [Route("{productId}/StockInfo")]
+        public async Task<ProductPartialStockModel> StockInfo([FromRoute] int productId)
+        {
+            return await _productPartialService.StockInfo(productId);
+        }
+
+        [HttpPut]
+        [Route("{productId}/StockInfo")]
+        public async Task<bool> UpdateStockInfo([FromRoute] int productId, [FromBody] ProductPartialStockModel model)
+        {
+            return await _productPartialService.UpdateStockInfo(productId, model);
+        }
+
+
+        [HttpGet]
+        [Route("{productId}/SellInfo")]
+        public async Task<ProductPartialSellModel> SellInfo([FromRoute] int productId)
+        {
+            return await _productPartialService.SellInfo(productId);
+        }
+
+        [HttpPut]
+        [Route("{productId}/SellInfo")]
+        public async Task<bool> UpdateSellInfo([FromRoute] int productId, [FromBody] ProductPartialSellModel model)
+        {
+            return await _productPartialService.UpdateSellInfo(productId, model);
         }
 
         /// <summary>
