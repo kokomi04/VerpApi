@@ -171,7 +171,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 OutsourceStepRequestCode = request.OutsourceStepRequestCode,
                 OutsourceStepRequestFinishDate = request.OutsourceStepRequestFinishDate.GetUnix(),
                 ProductionOrderId = request.ProductionOrderId,
-                ProductionStepIds = request.ProductionStep.Select(x => x.ProductionStepId).ToArray(),
+                ProductionStepIds = request.ProductionStep.Where(x=>x.IsGroup == false).Select(x => x.ProductionStepId).ToArray(),
                 OutsourceStepRequestId = request.OutsourceStepRequestId,
                 OutsourceStepRequestDate = request.CreatedDatetimeUtc.GetUnix(),
                 DetailInputs = arrOutput,

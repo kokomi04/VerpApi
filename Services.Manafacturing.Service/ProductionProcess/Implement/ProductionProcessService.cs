@@ -1015,7 +1015,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
-            if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == false && x.IsFinish == false && !x.StepId.HasValue))
+            if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
             //Cập nhật, xóa và tạo mới steplinkdata
@@ -1304,8 +1304,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 var stepIds = value as IList<long>;
 
-                GroupProductionStepToOutsource item = GetGroupProductionStepToOutsource(roles, stepIds, key);
-
+                var item = GetGroupProductionStepToOutsource(roles, stepIds, key);
                 data.Add(item);
             }
             return data;
@@ -1796,14 +1795,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 indexGroup++;
             }
 
-            foreach (var (key, value) in groupRelationship)
-            {
+            foreach (var (key, value) in groupRelationship) {
                 var stepIds = value as IList<long>;
 
-                GroupProductionStepToOutsource item = GetGroupProductionStepToOutsource(roles, stepIds, key);
-
+                var item = GetGroupProductionStepToOutsource(roles, stepIds, key);
                 data.Add(item);
             }
+
             return data;
         }
 

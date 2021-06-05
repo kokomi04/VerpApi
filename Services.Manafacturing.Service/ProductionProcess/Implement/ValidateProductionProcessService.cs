@@ -268,6 +268,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
 
             var groupRole = productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
+
+            var productionStepInOutNoRoles =  productionStepInOuts.Where(x => !groupRole.Any(g => g.Key.Equals(x.ProductionStepCode))).ToList();
+
+            foreach(var p in productionStepInOutNoRoles) {
+                var step = productionSteps.FirstOrDefault(x => x.ProductionStepId == p.ParentId);
+                if (step == null || step.IsFinish) {
+                    continue;
+                }
+
+                lsWarning.Add(new ProductionProcessWarningMessage {
+                    Message = $"Công đoạn {step.Title} có nhóm (đầu ra đầu vào) không có đầu ra đầu vào",
+                    GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
+                    WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                });
+            }
+
             foreach (var group in groupRole)
             {
                 var inOutOfStep = productionStepInOuts.FirstOrDefault(x => x.ProductionStepCode == group.Key);
