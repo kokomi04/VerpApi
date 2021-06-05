@@ -203,7 +203,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var sql = new StringBuilder(
                 @";WITH tmp AS (
-                    SELECT g.ProductionOrderId, g.ProductionStepId
+                    SELECT g.ProductionOrderId, g.GroupId
                     FROM(
                         SELECT * FROM vProductionDepartmentHandover v");
 
@@ -211,7 +211,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 @"SELECT 
                     COUNT(*) Total 
                 FROM (
-                    SELECT v.ProductionOrderId, v.ProductionStepId FROM vProductionDepartmentHandover v ");
+                    SELECT v.ProductionOrderId, v.GroupId FROM vProductionDepartmentHandover v ");
             if (whereCondition.Length > 0)
             {
                 totalSql.Append(" WHERE ");
@@ -221,11 +221,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 sql.Append(whereCondition);
             }
 
-            totalSql.Append(" GROUP BY v.ProductionOrderId, v.ProductionStepId ) g");
+            totalSql.Append(" GROUP BY v.ProductionOrderId, v.GroupId ) g");
             sql.Append(
                     @") g
-	                GROUP BY g.ProductionOrderId, g.ProductionStepId
-                    ORDER BY g.ProductionOrderId, g.ProductionStepId");
+	                GROUP BY g.ProductionOrderId, g.GroupId
+                    ORDER BY g.ProductionOrderId, g.GroupId");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -242,7 +242,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
             sql.Append(@")
                 SELECT v.* FROM tmp t
-                LEFT JOIN vProductionDepartmentHandover v ON t.ProductionOrderId = v.ProductionOrderId AND t.ProductionStepId = v.ProductionStepId");
+                LEFT JOIN vProductionDepartmentHandover v ON t.ProductionOrderId = v.ProductionOrderId AND t.GroupId = v.GroupId");
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<DepartmentHandoverEntity>().AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
