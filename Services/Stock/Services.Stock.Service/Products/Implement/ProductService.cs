@@ -33,6 +33,7 @@ using System.Data;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using AutoMapper;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
+using VErp.Services.Stock.Model.Product.Partial;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -298,8 +299,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             return (await EnrichToProductModel(new[] { productInfo })).FirstOrDefault();
         }
-
-
+    
 
         public async Task<bool> UpdateProduct(int productId, ProductModel req)
         {
@@ -940,6 +940,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productStockInfoData = await _stockContext.ProductStockInfo.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
             var stockValidationData = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
             var unitConverionData = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+            var productCustomersData = await _stockContext.ProductCustomer.AsNoTracking().Where(p => productIds.Contains(p.ProductId)).ToListAsync();
 
             var result = new List<ProductModel>();
             foreach (var productInfo in products)
@@ -948,7 +949,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 var productStockInfo = productStockInfoData.FirstOrDefault(p => p.ProductId == productInfo.ProductId);
                 var stockValidations = stockValidationData.Where(p => p.ProductId == productInfo.ProductId);
                 var unitConverions = unitConverionData.Where(p => p.ProductId == productInfo.ProductId);
-
+                var productCustomers = productCustomersData.Where(p => p.ProductId == productInfo.ProductId);
                 var productModel = _mapper.Map<ProductModel>(productInfo);
                 productModel.IsProduct = productInfo.IsProduct ?? false;
 
@@ -962,6 +963,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 productModel.StockInfo.StockIds = stockValidations?.Select(s => s.StockId).ToList();
                 productModel.StockInfo.UnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(unitConverions);
+
+                productModel.ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers);
+
                 result.Add(productModel);
             }
 
