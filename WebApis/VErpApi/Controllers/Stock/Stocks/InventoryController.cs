@@ -303,13 +303,13 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<long> ImportFromMapping([FromFormString] ImportExcelMapping mapping, InventoryOpeningBalanceModel info, IFormFile file)
+        public async Task<long> ImportFromMapping([FromFormString] InventoryOpeningImportModel data, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inventoryService.InventoryImport(mapping, file.OpenReadStream(), info).ConfigureAwait(true);
+            return await _inventoryService.InventoryImport(data.Mapping, file.OpenReadStream(), data.Info).ConfigureAwait(true);
         }
 
 
