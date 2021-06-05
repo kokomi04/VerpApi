@@ -17,8 +17,6 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Product;
-using VErp.Commons.Library;
-
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 {
@@ -48,9 +46,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         IDictionary<string, int> units = null;
         IDictionary<int, Unit> unitInfos = null;
 
-        string unit01Text = nameof(ProductImportModel.SecondaryUnit01);
-        string exp01Text = nameof(ProductImportModel.FactorExpression01);
-        string decimalPlace01Text = nameof(ProductImportModel.DecimalPlace01);
+        string unit02Text = nameof(ProductImportModel.SecondaryUnit02);
+        string exp02Text = nameof(ProductImportModel.FactorExpression02);
+        string decimalPlace02Text = nameof(ProductImportModel.DecimalPlace02);
 
         Type typeInfo = typeof(ProductImportModel);
 
@@ -79,6 +77,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                .GroupBy(c => c.Name)
                .ToDictionary(c => c.Key, c => (int?)c.First().CustomerId);
 
+            var stockRules = EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
+            var timeTypes = EnumExtensions.GetEnumMembers<EnumTimeType>();
+            var quantitativeUnitTypes = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
@@ -88,11 +89,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         if (barcodeConfigs.ContainsKey(value)) entity.BarcodeConfigId = barcodeConfigs[value];
                         return true;
                     case nameof(ProductImportModel.StockOutputRuleId):
-                        var rule = EnumExtensions.GetEnumMembers<EnumStockOutputRule>().FirstOrDefault(r => r.Description == value);
+                        var rule = stockRules.FirstOrDefault(r =>  r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
                         if (rule != null) entity.StockOutputRuleId = rule.Enum;
                         return true;
                     case nameof(ProductImportModel.ExpireTimeTypeId):
-                        var timeType = EnumExtensions.GetEnumMembers<EnumTimeType>().FirstOrDefault(r => r.Description == value);
+                        var timeType = timeTypes.FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
                         if (timeType != null) entity.ExpireTimeTypeId = timeType.Enum;
                         return true;
                     case nameof(ProductImportModel.StockIds):
@@ -102,7 +103,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         if (stockIds.Count > 0) entity.StockIds = stockIds;
                         return true;
                     case nameof(ProductImportModel.QuantitativeUnitTypeId):
-                        var quantitativeUnitTypeId = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>().FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
+                        var quantitativeUnitTypeId = quantitativeUnitTypes.FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
                         if (quantitativeUnitTypeId != null) entity.QuantitativeUnitTypeId = quantitativeUnitTypeId.Enum;
                         return true;
 
@@ -164,7 +165,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                 }
 
-                var decimalPlacePropPrefix = nameof(ProductImportModel.DecimalPlace01)[..^2];
+                var decimalPlacePropPrefix = nameof(ProductImportModel.DecimalPlace02)[..^2];
 
                 if (propertyName == nameof(ProductImportModel.DecimalPlaceDefault) || propertyName.StartsWith(decimalPlacePropPrefix))
                 {
@@ -196,9 +197,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         UnitStatusId = (int)EnumUnitStatus.Using
                     });
                 }
-                for (int suffix = 1; suffix <= 5; suffix++)
+                for (int suffix = 2; suffix <= 5; suffix++)
                 {
-                    var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
+                    var unitText = suffix > 2 ? new StringBuilder(unit02Text).Remove(unit02Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit02Text;
                     var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
                     if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == unit.NormalizeAsInternalName()))
                     {
@@ -577,11 +578,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             }
                         };
 
-            for (int suffix = 1; suffix <= 5; suffix++)
+            for (int suffix = 2; suffix <= 5; suffix++)
             {
-                var unitText = suffix > 1 ? new StringBuilder(unit01Text).Remove(unit01Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit01Text;
-                var expText = suffix > 1 ? new StringBuilder(exp01Text).Remove(exp01Text.Length - 2, 2).Append($"0{suffix}").ToString() : exp01Text;
-                var decimalPlaceText = suffix > 1 ? new StringBuilder(decimalPlace01Text).Remove(decimalPlace01Text.Length - 2, 2).Append($"0{suffix}").ToString() : decimalPlace01Text;
+                var unitText = suffix > 1 ? new StringBuilder(unit02Text).Remove(unit02Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit02Text;
+                var expText = suffix > 1 ? new StringBuilder(exp02Text).Remove(exp02Text.Length - 2, 2).Append($"0{suffix}").ToString() : exp02Text;
+                var decimalPlaceText = suffix > 1 ? new StringBuilder(decimalPlace02Text).Remove(decimalPlace02Text.Length - 2, 2).Append($"0{suffix}").ToString() : decimalPlace02Text;
                 var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
                 var exp = typeInfo.GetProperty(expText).GetValue(row) as string;
                 int? decimalPlace = null;

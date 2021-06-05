@@ -535,7 +535,12 @@ namespace VErp.Commons.Library
             typeof(int),  typeof(double),  typeof(decimal),
             typeof(long), typeof(short),   typeof(sbyte),
             typeof(byte), typeof(ulong),   typeof(ushort),
-            typeof(uint), typeof(float)
+            typeof(uint), typeof(float),
+
+            typeof(int?),  typeof(double?),  typeof(decimal?),
+            typeof(long?), typeof(short?),   typeof(sbyte?),
+            typeof(byte?), typeof(ulong?),   typeof(ushort?),
+            typeof(uint?), typeof(float?)
         };
         public static bool IsNumber(this Type objectType)
         {
