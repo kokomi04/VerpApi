@@ -253,6 +253,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             foreach (var u in lstUnitConverions)
             {
+                u.ProductId = productInfo.ProductId;
+                u.ProductUnitConversionId = 0;
                 u.DecimalPlace = u.DecimalPlace < 0 ? DECIMAL_PLACE_DEFAULT : u.DecimalPlace;
             }
 
@@ -407,11 +409,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var lstNewUnitConverions = req.StockInfo?.UnitConversions?
                         .Where(c => c.ProductUnitConversionId <= 0)?
-                        .Select(u => _mapper.Map<ProductUnitConversion>(u));
+                        .Select(u => _mapper.Map<ProductUnitConversion>(u))
+                        .ToList();
 
                     if (lstNewUnitConverions != null)
                     {
-                        await _stockContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
+                        foreach (var u in lstNewUnitConverions)
+                        {
+                            u.ProductId = productId;
+                            u.ProductUnitConversionId = 0;
+                        }
+                        await _stockDbContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                     }
 
                     foreach (var productUnitConversionId in keepPuIds)
