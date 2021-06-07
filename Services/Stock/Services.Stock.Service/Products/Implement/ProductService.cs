@@ -279,6 +279,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 c.ProductId = productInfo.ProductId;
             }
+            await _stockContext.ProductCustomer.AddRangeAsync(productCustomers);
 
             await _stockContext.SaveChangesAsync();
 
@@ -454,7 +455,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         }
                         else
                         {
-                            await _stockContext.ProductCustomer.AddAsync(_mapper.Map<ProductCustomer>(c));
+                            var pCustomerentity = _mapper.Map<ProductCustomer>(c);
+                            pCustomerentity.ProductId = productId;
+                             await _stockContext.ProductCustomer.AddAsync(pCustomerentity);
                         }
                     }
 
