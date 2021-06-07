@@ -116,11 +116,26 @@ namespace Verp.Services.ReportConfig.Service.Implement
             };
 
 
-            var firstRowData = dataTable[0];
+            var firstRow = new NonCamelCaseDictionary();
+            foreach (var row in dataTable)
+            {
+                foreach (var (k, v) in row)
+                {
+                    if (!firstRow.ContainsKey(k))
+                    {
+                        firstRow.Add(k, v);
+                    }
+                    else if (firstRow[k].IsNullObject())
+                    {
+                        firstRow[k] = v;
+                    }
+
+                }
+            }
 
 
             var dynamicColumns = new List<ReportColumnModel>();
-            foreach (var (key, _) in dataTable[0])
+            foreach (var (key, _) in firstRow)
             {
                 foreach (var column in columns)
                 {
@@ -136,14 +151,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         var nameColumn = $"{column.ColGroupName}{suffixKey}";
 
-                        if (firstRowData.ContainsKey(nameColumn))
+                        if (firstRow.ContainsKey(nameColumn))
                         {
-                            newColumn.ColGroupName = firstRowData[nameColumn]?.ToString();
+                            newColumn.ColGroupName = firstRow[nameColumn]?.ToString();
                         }
 
-                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRowData.ContainsKey(column.ColGroupName))
+                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
                         {
-                            newColumn.ColGroupName = firstRowData[column.ColGroupName]?.ToString();
+                            newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
                         }
 
                         newColumn.Alias = $"{column.Alias}{suffixKey}";
@@ -175,7 +190,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return columns.OrderBy(c => c.ColGroupId)
                         .ThenBy(c => c.SuffixKey)
                         .ThenBy(c => c.SortOrder)
-                        .ToList();            
+                        .ToList();
         }
     }
 }
