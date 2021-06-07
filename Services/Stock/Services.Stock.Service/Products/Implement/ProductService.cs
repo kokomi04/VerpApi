@@ -282,7 +282,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 c.ProductId = productInfo.ProductId;
             }
-            await _stockContext.ProductCustomer.AddRangeAsync(productCustomers);
+            await _stockDbContext.ProductCustomer.AddRangeAsync(productCustomers);
 
             await _stockDbContext.SaveChangesAsync();
 
