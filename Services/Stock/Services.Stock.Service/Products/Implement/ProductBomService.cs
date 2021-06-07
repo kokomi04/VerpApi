@@ -149,6 +149,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 updateBom.OldValue.Quantity = updateBom.NewValue.Quantity;
                 updateBom.OldValue.Wastage = updateBom.NewValue.Wastage;
+                updateBom.OldValue.InputStepId = updateBom.NewValue.InputStepId;
+                updateBom.OldValue.OutputStepId = updateBom.NewValue.OutputStepId;
             }
 
             // Cập nhật Material
@@ -184,7 +186,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private bool HasChange(ProductBom oldValue, ProductBomInput newValue)
         {
             return oldValue.Quantity != newValue.Quantity
-                || oldValue.Wastage != newValue.Wastage;
+                || oldValue.Wastage != newValue.Wastage 
+                || oldValue.InputStepId != newValue.InputStepId
+                || oldValue.OutputStepId != newValue.OutputStepId;
         }
 
 

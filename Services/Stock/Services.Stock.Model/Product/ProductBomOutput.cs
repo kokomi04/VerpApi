@@ -28,6 +28,8 @@ namespace VErp.Services.Stock.Model.Product
         public string NumberOrder { get; set; }      
         public int ProductUnitConversionId { get; set; }
         public int DecimalPlace { get; set; }
+        public int? InputStepId { get; set; }
+        public int? OutputStepId { get; set; }
     }
 
    
@@ -104,6 +106,11 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Đánh dấu là nguyên liệu đầu vào (Có, Không)")]
         public bool IsMaterial { get; set; }
+        
+        [Display(Name = "Thuộc công đoạn đầu vào nào?")]
+        public int? InputStepId { get; set; }
 
+        [Display(Name = "Thuộc công đoạn đầu ra nào?")]
+        public int? OutputStepId { get; set; }
     }
 }
