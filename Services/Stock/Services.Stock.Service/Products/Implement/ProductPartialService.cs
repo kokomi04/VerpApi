@@ -271,6 +271,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 if (lstNewUnitConverions != null)
                 {
+                    foreach(var c in lstNewUnitConverions)
+                    {
+                        c.ProductId = productId;
+                        c.ProductUnitConversionId = 0;
+                    }
                     await _stockContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                 }
 
@@ -372,7 +377,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
                     else
                     {
-                        await _stockContext.ProductCustomer.AddAsync(_mapper.Map<ProductCustomer>(c));
+                        var entity = _mapper.Map<ProductCustomer>(c);
+                        entity.ProductId = productId;
+                        await _stockContext.ProductCustomer.AddAsync(entity);
                     }
                 }
 
