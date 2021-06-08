@@ -1058,7 +1058,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         new SqlParameter("@DestProductId", productId),
                     };
 
-                    await _stockDbContext.ExecuteStoreProcedure("asp_CopySourceProductInfoDestinationProduct", parammeters);
+
+                    await _stockDbContext.ExecuteStoreProcedure("asp_CopySourceProductIntoDestinationProduct", parammeters);
 
                     await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
                     await ctx.ConfirmCode();
@@ -1072,6 +1073,56 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     await trans.TryRollbackTransactionAsync();
                     _logger.LogError("CopyProduct", ex);
+                    throw;
+                }
+
+            }
+        }
+
+        public async Task<int> CopyProductBom(int sourceProductId, int destProductId) {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync()) {
+                try {
+
+                    var parammeters = new[]
+                    {
+                        new SqlParameter("@SourceProductId", sourceProductId),
+                        new SqlParameter("@DestProductId", destProductId),
+                    };
+
+                    await _stockDbContext.ExecuteStoreProcedure("asp_CopyProductBom", parammeters);
+
+                    await _activityLogService.CreateLog(EnumObjectType.Product, destProductId, $"Sao chép BOM từ MH {sourceProductId} sang MH {destProductId}", destProductId.JsonSerialize());
+
+                    await trans.CommitAsync();
+                    return destProductId;
+                } catch (Exception ex) {
+                    await trans.TryRollbackTransactionAsync();
+                    _logger.LogError("CopyProductBom", ex);
+                    throw;
+                }
+
+            }
+        }
+
+        public async Task<int> CopyProductMaterialConsumption(int sourceProductId, int destProductId) {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync()) {
+                try {
+
+                    var parammeters = new[]
+                    {
+                        new SqlParameter("@SourceProductId", sourceProductId),
+                        new SqlParameter("@DestProductId", destProductId),
+                    };
+
+                    await _stockDbContext.ExecuteStoreProcedure("asp_CopyProductMaterialConsumption", parammeters);
+
+                    await _activityLogService.CreateLog(EnumObjectType.Product, destProductId, $"Sao chép vật tư tiêu hao từ MH {sourceProductId} sang MH {destProductId}", destProductId.JsonSerialize());
+
+                    await trans.CommitAsync();
+                    return destProductId;
+                } catch (Exception ex) {
+                    await trans.TryRollbackTransactionAsync();
+                    _logger.LogError("CopyProductMaterialConsumption", ex);
                     throw;
                 }
 
