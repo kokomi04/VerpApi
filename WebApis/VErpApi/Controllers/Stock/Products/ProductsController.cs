@@ -225,5 +225,17 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _productService.CopyProduct(product, sourceProductId);
         }
+
+        [HttpPost]
+        [Route("Copy/Bom")]
+        public async Task<long> CopyProductBom([FromQuery] int sourceProductId, [FromQuery] int destProductId) {
+            return await _productService.CopyProductBom(sourceProductId, destProductId);
+        }
+
+        [HttpPost]
+        [Route("Copy/MaterialsConsumption")]
+        public async Task<long> CopyProductMaterialConsumption([FromQuery] int sourceProductId, [FromQuery] int destProductId) {
+            return await _productService.CopyProductMaterialConsumption(sourceProductId, destProductId);
+        }
     }
 }
