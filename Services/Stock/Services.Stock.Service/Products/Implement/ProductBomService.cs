@@ -105,6 +105,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Validate materials
             if (productMaterials.Any(m => m.RootProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Nguyên vật liệu không thuộc sản phẩm");
 
+            // Thiết lập sort order theo thứ tự tạo
+            for (int indx = 0; indx < productBoms.Count; indx++)
+            {
+                productBoms[indx].SortOrder = indx;
+            }
+
             // Remove duplicate
             productBoms = productBoms.GroupBy(b => new { b.ProductId, b.ChildProductId }).Select(g => g.First()).ToList();
 
@@ -151,6 +157,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 updateBom.OldValue.Wastage = updateBom.NewValue.Wastage;
                 updateBom.OldValue.InputStepId = updateBom.NewValue.InputStepId;
                 updateBom.OldValue.OutputStepId = updateBom.NewValue.OutputStepId;
+                updateBom.OldValue.SortOrder = updateBom.NewValue.SortOrder;
             }
 
             // Cập nhật Material
@@ -188,7 +195,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return oldValue.Quantity != newValue.Quantity
                 || oldValue.Wastage != newValue.Wastage 
                 || oldValue.InputStepId != newValue.InputStepId
-                || oldValue.OutputStepId != newValue.OutputStepId;
+                || oldValue.OutputStepId != newValue.OutputStepId
+                || oldValue.Wastage != newValue.Wastage
+                || oldValue.SortOrder != newValue.SortOrder;
         }
 
 
