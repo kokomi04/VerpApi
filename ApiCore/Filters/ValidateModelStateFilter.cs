@@ -90,21 +90,12 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                                 var v = p.GetValue(obj);
 
-                                if (v != null)
+                                if (v != null && p.CanWrite)
                                 {
                                     var vType = v.GetType();
                                     if (vType == typeof(string))
                                     {
-                                        try
-                                        {
-                                            p.SetValue(obj, v.ToString().Trim());
-                                        }
-                                        catch (Exception)
-                                        {
-
-
-                                        }
-
+                                        p.SetValue(obj, v?.ToString()?.Trim());
                                     }
                                 }
                                 if (!ValidateEnum(new List<object>() { v }, propName + ">" + p.Name, out errorPropName).IsSuccess())

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Product
 {
@@ -11,8 +12,10 @@ namespace VErp.Services.Stock.Model.Product
     /// <b>NOTE: All props need to be nullable for check null to append prop to existed product</b>
     /// </summary>
     [Display(Name = "Sản phẩm")]
-    public class ProductImportModel
+    public class ProductImportModel: MappingDataRowAbstract
     {
+
+
         // General info
         [Display(Name = "Mã mặt hàng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng")]
@@ -20,7 +23,6 @@ namespace VErp.Services.Stock.Model.Product
         public string ProductCode { get; set; }
 
         [Display(Name = "Tên mặt hàng", GroupName = "Thông tin chung")]
-        [Required(ErrorMessage = "Vui lòng nhập tên mặt hàng")]
         [MaxLength(128, ErrorMessage = "Tên mặt hàng quá dài")]
         public string ProductName { get; set; }    
 
@@ -41,7 +43,6 @@ namespace VErp.Services.Stock.Model.Product
 
 
         [Display(Name = "Tên Đơn vị chính", GroupName = "Đơn vị chính")]
-        [Required(ErrorMessage = "Vui lòng chọn đơn vị chính")]
         public string Unit { get; set; }
 
         [Display(Name = "Độ chính xác (đơn vị chính)", GroupName = "Đơn vị chính")]    

@@ -22,6 +22,7 @@ namespace VErp.Commons.Library.Model
         public int CategoryFieldId { get; set; }
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
+        public bool IsRequired { get; set; }
         public int? Type { get; set; }
         public CategoryNameModel RefCategory { get; set; }
     }
@@ -33,5 +34,18 @@ namespace VErp.Commons.Library.Model
         {
             Type = type;
         }
+    }
+
+    public class FieldDataIgnoreAttribute : Attribute
+    {
+        public FieldDataIgnoreAttribute()
+        {
+        }
+    }
+
+    public abstract class MappingDataRowAbstract
+    {
+        [FieldDataIgnore]
+        public int RowNumber { get; set; }
     }
 }

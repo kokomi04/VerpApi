@@ -1007,6 +1007,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 return ProductErrorCode.ProductCodeEmpty;
             }
 
+            if (string.IsNullOrWhiteSpace(req?.ProductName))
+            {
+                return ProductErrorCode.ProductNameEmpty;
+            }
+
             if (req.StockInfo.UnitConversions?.Count > 0)
             {
                 foreach (var unitConversion in req.StockInfo.UnitConversions)
