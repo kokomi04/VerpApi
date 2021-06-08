@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
         public virtual DbSet<ProductionMaterialsRequirementDetail> ProductionMaterialsRequirementDetail { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
+        public virtual DbSet<ProductionOrderAttachment> ProductionOrderAttachment { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
@@ -407,6 +408,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProductionOrderStatus).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.StartDate).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<ProductionOrderAttachment>(entity =>
+            {
+                entity.Property(e => e.Title).HasMaxLength(256);
+
+                entity.HasOne(d => d.ProductionOrder)
+                    .WithMany(p => p.ProductionOrderAttachment)
+                    .HasForeignKey(d => d.ProductionOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionOrderAttachment_ProductionOrder");
             });
 
             modelBuilder.Entity<ProductionOrderDetail>(entity =>

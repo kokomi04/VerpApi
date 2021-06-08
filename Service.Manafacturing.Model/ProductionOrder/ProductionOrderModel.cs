@@ -16,11 +16,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         //public EnumProductionStatus? ProductionOrderStatus { get; set; }
         //public EnumProcessStatus ProcessStatus { get; set; }
         public virtual ICollection<ProductionOrderDetailOutputModel> ProductionOrderDetail { get; set; }
+        public virtual ICollection<ProductionOrderAttachmentModel> ProductionOrderAttachment { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionOrderEntity, ProductionOrderOutputModel>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
+                .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.MapFrom(x=>x.ProductionOrderAttachment))
                 .ForMember(dest => dest.ProductionOrderStatus, opt => opt.MapFrom(source => (EnumProductionStatus)source.ProductionOrderStatus))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
@@ -32,10 +34,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionOrderInputModel : ProductOrderModel, IMapFrom<ProductionOrderEntity>
     {
         public virtual ICollection<ProductionOrderDetailInputModel> ProductionOrderDetail { get; set; }
+        public virtual ICollection<ProductionOrderAttachmentModel> ProductionOrderAttachment { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionOrderInputModel, ProductionOrderEntity>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
+                .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.Ignore())
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()))
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.UnixToDateTime()))
