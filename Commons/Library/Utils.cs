@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Globalization;
 using System.IO;
@@ -246,7 +247,7 @@ namespace VErp.Commons.Library
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
             return Eval(expression);
         }
-      
+
 
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
         {
@@ -561,24 +562,48 @@ namespace VErp.Commons.Library
             return false;
         }
 
+
         public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, TMember value)
         {
-            if (!value.IsNullObject())
+            if (value.IsNullObject())
             {
-                var members = member.Body.ToString().Split('.');
+                return;
+            }
 
-                object target = obj;
+            var props = new Stack<PropertyInfo>();
+            MemberExpression me;
+            switch (member.Body.NodeType)
+            {
+                case ExpressionType.Convert:
+                case ExpressionType.ConvertChecked:
+                    var ue = member.Body as UnaryExpression;
+                    me = ((ue != null) ? ue.Operand : null) as MemberExpression;
+                    break;
+                default:
+                    me = member.Body as MemberExpression;
+                    break;
+            }
 
-                var prop = (member.Body as MemberExpression).Member as PropertyInfo;
 
-                for (var i = 1; i < members.Length - 1; i++)
+            while (me != null)
+            {
+                props.Push(me.Member as PropertyInfo);
+                me = me.Expression as MemberExpression;
+            }
+
+            object target = obj;
+            while (props.Count > 0)
+            {
+                var p = props.Pop();
+
+                if (props.Count == 0)
                 {
-                    var child = Expression.PropertyOrField(Expression.Constant(target), members[i]).Member as PropertyInfo;
-
-                    target = child.GetValue(target);
+                    p.SetValue(target, value);
                 }
-
-                prop.SetValue(target, value);
+                else
+                {
+                    target = p.GetValue(target);
+                }
             }
         }
 
@@ -1065,7 +1090,7 @@ namespace VErp.Commons.Library
             var fields = new List<CategoryFieldNameModel>();
             foreach (var prop in typeof(T).GetProperties())
             {
-                var attrs = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>();
+                var attrs = prop.GetCustomAttributes<DisplayAttribute>();
 
                 var title = string.Empty;
                 var groupName = "Trường dữ liệu";
@@ -1091,12 +1116,18 @@ namespace VErp.Commons.Library
                     continue;
                 }
 
+                if (prop.GetCustomAttribute<FieldDataIgnoreAttribute>() != null) continue;
+
+                var isRequired = prop.GetCustomAttribute<RequiredAttribute>();
+
+
                 var fileMapping = new CategoryFieldNameModel()
                 {
                     GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
+                    IsRequired = isRequired != null,
                     Type = type,
                     RefCategory = null
                 };

@@ -46,9 +46,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         IDictionary<string, int> units = null;
         IDictionary<int, Unit> unitInfos = null;
 
-        string unit02Text = nameof(ProductImportModel.SecondaryUnit02);
-        string exp02Text = nameof(ProductImportModel.FactorExpression02);
-        string decimalPlace02Text = nameof(ProductImportModel.DecimalPlace02);
+        string productUnitConversionNamePropPrefix = nameof(ProductImportModel.SecondaryUnit02)[..^2];
+        string productUnitExpressionPropPrefix = nameof(ProductImportModel.FactorExpression02)[..^2];
+        string productUnitDecimalPlacePropPrefix = nameof(ProductImportModel.DecimalPlace02)[..^2];
 
         Type typeInfo = typeof(ProductImportModel);
 
@@ -65,6 +65,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             unitInfos = _masterDBContext.Unit.ToList().ToDictionary(u => u.UnitId, u => u);
 
             units = unitInfos.GroupBy(u => u.Value.UnitName.NormalizeAsInternalName()).ToDictionary(u => u.Key, u => u.First().Key);
+
             var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
 
             var customers = await _organizationHelperService.AllCustomers();
@@ -89,7 +90,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         if (barcodeConfigs.ContainsKey(value)) entity.BarcodeConfigId = barcodeConfigs[value];
                         return true;
                     case nameof(ProductImportModel.StockOutputRuleId):
-                        var rule = stockRules.FirstOrDefault(r =>  r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
+                        var rule = stockRules.FirstOrDefault(r => r.Description.NormalizeAsInternalName() == value.NormalizeAsInternalName());
                         if (rule != null) entity.StockOutputRuleId = rule.Enum;
                         return true;
                     case nameof(ProductImportModel.ExpireTimeTypeId):
@@ -165,9 +166,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                 }
 
-                var decimalPlacePropPrefix = nameof(ProductImportModel.DecimalPlace02)[..^2];
 
-                if (propertyName == nameof(ProductImportModel.DecimalPlaceDefault) || propertyName.StartsWith(decimalPlacePropPrefix))
+                if (propertyName == nameof(ProductImportModel.DecimalPlaceDefault) || propertyName.StartsWith(productUnitDecimalPlacePropPrefix))
                 {
                     if (int.TryParse(value, out var v) && v < 0 || v > 12)
                     {
@@ -189,7 +189,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             foreach (var row in data)
             {
-                if (!units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == row.Unit.NormalizeAsInternalName()))
+                if (!string.IsNullOrWhiteSpace(row.Unit) && !units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == row.Unit.NormalizeAsInternalName()))
                 {
                     includeUnits.Add(new Unit
                     {
@@ -199,7 +199,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
                 for (int suffix = 2; suffix <= 5; suffix++)
                 {
-                    var unitText = suffix > 2 ? new StringBuilder(unit02Text).Remove(unit02Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit02Text;
+                    var unitText = $"{productUnitConversionNamePropPrefix}0{suffix}";
                     var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
                     if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == unit.NormalizeAsInternalName()))
                     {
@@ -279,12 +279,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //    data = data.Where(x => !existsProductCodes.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
             //}
 
-            // Validate required product name
-            var emptyNameProducts = data.Where(p => string.IsNullOrEmpty(p.ProductName)).Select(p => p.ProductCode).ToList();
-            if (emptyNameProducts.Count > 0)
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Vui lòng nhập tên mặt hàng có mã: {string.Join(",", emptyNameProducts)}");
-            }
+
 
 
             existsProductCodes = existsProductCodes.Select(c => c.ToLower()).Distinct().ToHashSet();
@@ -294,16 +289,34 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .Select(y => y.ToList().MergeData())
                 .ToList();
 
+
             newProducts.ForEach(p =>
             {
+                var rowNumber = "";
+                if (p is MappingDataRowAbstract entity)
+                {
+                    rowNumber = ", dòng " + entity.RowNumber;
+                }
+
                 if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} ");
+                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
                 }
 
                 if (defaultCateId == null && string.IsNullOrWhiteSpace(p.ProductCate))
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} ");
+                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
+                }
+
+                if (string.IsNullOrWhiteSpace(p.Unit))
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần định nghĩa đơn vị tính cho mặt hàng {p.ProductCode} {rowNumber}");
+                }
+
+                if (string.IsNullOrWhiteSpace(p.ProductName))
+                {
+
+                    throw new BadRequestException(ProductErrorCode.ProductNameEmpty, $"Yêu cầu tên mặt hàng có mã {p.ProductCode} {rowNumber}");
                 }
             });
             var updateProducts = data.Where(x => existsProductCodes.Contains(x.ProductCode?.ToLower()))
@@ -498,7 +511,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             var newProductUnitConversions = ParsePuConverions(row, product.ProductId);
 
-            var existedPus = product.ProductUnitConversion.GroupBy(p => p.ProductUnitConversionName.ToLower())
+            var existedPus = product.ProductUnitConversion.GroupBy(p => p.ProductUnitConversionName.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.First());
 
             foreach (var pu in newProductUnitConversions)
@@ -518,7 +531,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
                 else
                 {
-                    var puKey = pu.ProductUnitConversionName.ToLower();
+                    var puKey = pu.ProductUnitConversionName.NormalizeAsInternalName();
                     if (existedPus.TryGetValue(puKey, out var existedItem))
                     {
                         existedItem.UpdateIfAvaiable(v => v.DecimalPlace, pu.UploadDecimalPlace);
@@ -568,7 +581,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             {
                                 ProductId = productId,
                                 ProductUnitConversionName = row.Unit,
-                                SecondaryUnitId = units[row.Unit.NormalizeAsInternalName()],
+                                SecondaryUnitId =row.Unit.IsNullObject()?0: units[row.Unit.NormalizeAsInternalName()],
                                 FactorExpression = "1",
                                 ConversionDescription = "Mặc định",
                                 IsDefault = true,
@@ -580,18 +593,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             for (int suffix = 2; suffix <= 5; suffix++)
             {
-                var unitText = suffix > 1 ? new StringBuilder(unit02Text).Remove(unit02Text.Length - 2, 2).Append($"0{suffix}").ToString() : unit02Text;
-                var expText = suffix > 1 ? new StringBuilder(exp02Text).Remove(exp02Text.Length - 2, 2).Append($"0{suffix}").ToString() : exp02Text;
-                var decimalPlaceText = suffix > 1 ? new StringBuilder(decimalPlace02Text).Remove(decimalPlace02Text.Length - 2, 2).Append($"0{suffix}").ToString() : decimalPlace02Text;
-                var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
-                var exp = typeInfo.GetProperty(expText).GetValue(row) as string;
-                int? decimalPlace = null;
-                var strDecimalPlace = typeInfo.GetProperty(decimalPlaceText).GetValue(row) as string;
-                if (!strDecimalPlace.IsNullObject() && int.TryParse(strDecimalPlace, out var d))
-                {
-                    decimalPlace = d;
+                var unitNamePropName = $"{productUnitConversionNamePropPrefix}0{suffix}";
+                var unitExpPropName = $"{productUnitExpressionPropPrefix}0{suffix}";
+                var unitDecimalPropName = $"{productUnitDecimalPlacePropPrefix}0{suffix}";
 
-                }
+                var unit = typeInfo.GetProperty(unitNamePropName).GetValue(row) as string;
+                var exp = typeInfo.GetProperty(unitExpPropName).GetValue(row) as string;
+                var decimalPlace = (int?)typeInfo.GetProperty(unitDecimalPropName).GetValue(row);
                 if (!string.IsNullOrEmpty(unit))
                 {
                     try
@@ -611,9 +619,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     lstUnitConverions.Add(new ProductUnitConversionUpdate()
                     {
                         ProductId = productId,
-                        ProductUnitConversionName = unitInfos[units[unit.NormalizeAsInternalName()]].UnitName,
+                        ProductUnitConversionName = unit,
                         SecondaryUnitId = units[unit.NormalizeAsInternalName()],
-                        FactorExpression = typeInfo.GetProperty(expText).GetValue(row) as string,
+                        FactorExpression = exp,
                         IsDefault = false,
                         IsFreeStyle = false,
                         DecimalPlace = decimalPlace >= 0 ? decimalPlace.Value : DECIMAL_PLACE_DEFAULT,
