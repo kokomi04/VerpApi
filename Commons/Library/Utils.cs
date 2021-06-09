@@ -587,7 +587,7 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu int");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu int");
                     }
 
                     return intValue;
@@ -604,7 +604,7 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu ngày tháng");
                     }
 
                     if (dateValue == 0) return DBNull.Value;
@@ -620,14 +620,14 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu logic");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu logic");
                     }
                     return boolValue;
                 case EnumDataType.Percentage:
                     float percentValue;
                     if (!float.TryParse(value.ToString()?.Trim(), out percentValue) || percentValue < -100 || percentValue > 100)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu phần trăm");
                     }
                     return percentValue;
                 case EnumDataType.BigInt:
@@ -639,14 +639,14 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu long");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu long");
                     }
                     return longValue;
                 case EnumDataType.Decimal:
                     decimal decimalValue;
                     if (!decimal.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu decimal");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu decimal");
                     }
                     return decimalValue;
                 default: return value?.ToString()?.Trim();
