@@ -578,7 +578,7 @@ namespace VErp.Commons.Library
             switch (dataType)
             {
                 case EnumDataType.Text:
-                    return value?.ToString();
+                    return value?.ToString()?.Trim();
                 case EnumDataType.Int:
                     int intValue;
                     try
@@ -610,8 +610,8 @@ namespace VErp.Commons.Library
                     if (dateValue == 0) return DBNull.Value;
                     return dateValue.UnixToDateTime(timeZoneOffset).Value;
 
-                case EnumDataType.PhoneNumber: return value?.ToString();
-                case EnumDataType.Email: return value?.ToString();
+                case EnumDataType.PhoneNumber: return value?.ToString()?.Trim();
+                case EnumDataType.Email: return value?.ToString()?.Trim();
                 case EnumDataType.Boolean:
                     bool boolValue;
                     try
@@ -625,7 +625,7 @@ namespace VErp.Commons.Library
                     return boolValue;
                 case EnumDataType.Percentage:
                     float percentValue;
-                    if (!float.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
+                    if (!float.TryParse(value.ToString()?.Trim(), out percentValue) || percentValue < -100 || percentValue > 100)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
                     }
@@ -649,7 +649,7 @@ namespace VErp.Commons.Library
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu decimal");
                     }
                     return decimalValue;
-                default: return value?.ToString();
+                default: return value?.ToString()?.Trim();
             }
         }
 
