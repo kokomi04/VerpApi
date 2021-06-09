@@ -22,5 +22,6 @@ namespace VErp.Commons.Enums.ErrorCodes
         ListProductionStepNotInContainerId = 7,
         ValidateProductionStep = 8,
         ValidateOutsourcePartRequest = 9,
+        ValidateProductionStepLinkDataRole = 10,
     }
 }
