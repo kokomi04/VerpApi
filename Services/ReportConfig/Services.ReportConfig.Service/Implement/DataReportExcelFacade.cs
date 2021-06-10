@@ -315,8 +315,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 for (int i = 0; i < columns.Count; i++)
                 {
-                    maxColumnLineLengths.Add(i, columns[i].Name?.Length ?? 0);
-
                     sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
                     sheet.SetCellStyle(fRow, i,
                         vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
@@ -324,11 +322,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            for (int i = 0; i < columns.Count; i++) {
+            for (int i = 0; i < columns.Count; i++)
+            {
                 var nameLineLength = columns[i].Name?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
                 var groupLineLength = columns[i].ColGroupName?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
-                if(!maxColumnLineLengths.ContainsKey(i))
-                    maxColumnLineLengths.Add(i, Math.Max(nameLineLength, groupLineLength));
+                maxColumnLineLengths.Add(i, Math.Max(nameLineLength, groupLineLength));
             }
             currentRow = sRow;
         }
