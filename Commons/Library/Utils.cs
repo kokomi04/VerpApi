@@ -694,7 +694,7 @@ namespace VErp.Commons.Library
                     return boolValue;
                 case EnumDataType.Percentage:
                     float percentValue;
-                    if (!float.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
+                    if (!float.TryParse(value.ToString(), out percentValue) || percentValue < -100 )
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
                     }

@@ -324,11 +324,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            for (int i = 0; i < columns.Count; i++)
-            {
+            for (int i = 0; i < columns.Count; i++) {
                 var nameLineLength = columns[i].Name?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
                 var groupLineLength = columns[i].ColGroupName?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
-                maxColumnLineLengths.Add(i, Math.Max(nameLineLength, groupLineLength));
+                if(!maxColumnLineLengths.ContainsKey(i))
+                    maxColumnLineLengths.Add(i, Math.Max(nameLineLength, groupLineLength));
             }
             currentRow = sRow;
         }
