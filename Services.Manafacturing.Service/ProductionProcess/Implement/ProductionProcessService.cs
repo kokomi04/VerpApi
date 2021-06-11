@@ -316,34 +316,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             //Lấy thông tin dữ liệu của steplinkdata
             var lsProductionStepLinkDataId = roles.Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
-            var stepLinkDatas = new List<ProductionStepLinkDataInput>();
+            IList<ProductionStepLinkDataInput> stepLinkDatas = new List<ProductionStepLinkDataInput>();
             if (lsProductionStepLinkDataId.Count > 0)
             {
-                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
-                var parammeters = new List<SqlParameter>();
-                var whereCondition = new StringBuilder();
-
-                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
-                for (int i = 0; i < lsProductionStepLinkDataId.Count; i++)
+                var sql = new StringBuilder(@$"
+                    SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
+                    WHERE v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
+                ");
+                var parammeters = new List<SqlParameter>()
                 {
-                    var number = lsProductionStepLinkDataId[i];
-                    string pName = $"@ProductionStepLinkDataId{i + 1}";
+                    lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
+                };
 
-                    if (i == lsProductionStepLinkDataId.Count - 1)
-                        whereCondition.Append($"{pName} )");
-                    else
-                        whereCondition.Append($"{pName}, ");
-
-                    parammeters.Add(new SqlParameter(pName, number));
-                }
-                if (whereCondition.Length > 0)
-                {
-                    sql.Append(" WHERE ");
-                    sql.Append(whereCondition);
-                }
-
-                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                        .ConvertData<ProductionStepLinkDataInput>();
+                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             // Tính toán quan hệ của quy trình con
@@ -358,7 +343,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ContainerTypeId = containerTypeId,
                 ProductionSteps = stepInfos,
                 ProductionStepLinkDataRoles = roles,
-                ProductionStepLinkDatas = stepLinkDatas,
+                ProductionStepLinkDatas = stepLinkDatas.ToList(),
                 ProductionStepLinks = productionStepLinks,
                 ProductionStepGroupLinkDataRoles = productionStepGroupLinkDataRoles,
             };

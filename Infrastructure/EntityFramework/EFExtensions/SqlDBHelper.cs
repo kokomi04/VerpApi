@@ -52,7 +52,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
         public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
-        {          
+        {
             return await QueryDataTable(dbContext, procedureName, parammeters, CommandType.StoredProcedure, timeout);
         }
 
@@ -90,6 +90,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
             var dbConnection = dbContext.Database.GetDbConnection();
             await dbConnection.OpenAsync();
             await dbConnection.ChangeDatabaseAsync(dbName);
+        }
+
+        public static async Task<IList<T>> QueryList<T>(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        {
+            var dataTable = await QueryDataTable(dbContext, rawSql, parammeters, cmdType, timeout);
+            return dataTable.ConvertData<T>();
         }
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
