@@ -718,7 +718,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             if (stockIds?.Count > 0)
             {
-                var productIdsInStocks = _stockDbContext.StockProduct.Where(s => stockIds.Contains(s.StockId)).Select(s => s.StockId);
+                var productIdsInStocks = _stockDbContext.StockProduct.Where(s => stockIds.Contains(s.StockId)).Select(s => s.ProductId);
                 products = products.Where(s => productIdsInStocks.Contains(s.ProductId));
             }
             var query = (
