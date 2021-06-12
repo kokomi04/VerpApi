@@ -27,6 +27,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal? ReserveQuantity { get; set; }
         public string Note { get; set; }
         public long? OrderDetailId { get; set; }
+        public string OrderCode { get; set; }
+        public string PartnerId { get; set; }
     }
 
 
