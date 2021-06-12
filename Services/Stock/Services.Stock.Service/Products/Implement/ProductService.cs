@@ -718,13 +718,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(x => productIds.Contains(x.ProductId));
             }
 
-            if (isProductSemi.HasValue && isProduct.HasValue)
+            if (!(isProductSemi == isProduct == false))
             {
-                products = products.Where(x => x.IsProductSemi == isProductSemi || x.IsProduct == isProduct);
-            }
-            else
-            {
-
                 if (isProductSemi.HasValue)
                 {
                     products = products.Where(x => x.IsProductSemi == isProductSemi);
@@ -855,7 +850,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 from pt in pts.DefaultIfEmpty()
                 join pc in _stockContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
                 from pc in pcs.DefaultIfEmpty()
-                join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new  {ucs.ProductId,UnitId = ucs.SecondaryUnitId } into gucs
+                join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new { ucs.ProductId, UnitId = ucs.SecondaryUnitId } into gucs
                 from ucs in gucs.DefaultIfEmpty()
                 where productIds.Contains(p.ProductId)
                 select new
