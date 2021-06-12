@@ -425,6 +425,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.Note).HasMaxLength(128);
 
+                entity.Property(e => e.OrderCode).HasMaxLength(50);
+
+                entity.Property(e => e.PartnerId).HasMaxLength(50);
+
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ReserveQuantity)

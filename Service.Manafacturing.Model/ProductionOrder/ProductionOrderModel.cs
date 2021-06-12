@@ -33,6 +33,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionOrderInputModel : ProductOrderModel, IMapFrom<ProductionOrderEntity>
     {
+        public ProductionOrderInputModel() {
+            ProductionOrderDetail = new HashSet<ProductionOrderDetailInputModel>();
+            ProductionOrderAttachment = new HashSet<ProductionOrderAttachmentModel>();
+        }
+
         public virtual ICollection<ProductionOrderDetailInputModel> ProductionOrderDetail { get; set; }
         public virtual ICollection<ProductionOrderAttachmentModel> ProductionOrderAttachment { get; set; }
         public void Mapping(Profile profile)
