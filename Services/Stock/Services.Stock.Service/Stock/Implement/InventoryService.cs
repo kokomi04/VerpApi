@@ -816,7 +816,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var code = await ctx
                 .SetConfig(objectTypeId, EnumObjectType.Stock, req.StockId)
                 .SetConfigData(0, req.Date)
-                .TryValidateAndGenerateCode(_stockDbContext.Inventory, req.InventoryCode, (s, code) => s.InventoryTypeId == (int)inventoryTypeId && s.InventoryCode == code);
+                .TryValidateAndGenerateCode(_stockDbContext.Inventory, req.InventoryCode, (s, code) => s.InventoryCode == code);
 
             req.InventoryCode = code;
             return ctx;
