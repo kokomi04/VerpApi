@@ -246,7 +246,7 @@ namespace VErp.Commons.Library
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
             return Eval(expression);
         }
-      
+
 
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
         {
@@ -1102,6 +1102,19 @@ namespace VErp.Commons.Library
                 formatter.Serialize(stream, a);
                 stream.Position = 0;
                 return (T)formatter.Deserialize(stream);
+            }
+        }
+
+
+        public static void ValidateCodeSpecialCharactors(this string code)
+        {
+            if (string.IsNullOrEmpty(code))
+                return;
+
+            var regEx = new Regex("^([0-9a-zA-Z])([0-9a-zA-Z\\.\\/\\-#])*([0-9a-zA-Z])$", RegexOptions.Multiline);
+            if (!regEx.IsMatch(code))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt");
             }
         }
     }
