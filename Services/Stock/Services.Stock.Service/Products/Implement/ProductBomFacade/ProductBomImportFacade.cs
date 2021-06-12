@@ -263,13 +263,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         {
             var importProducts = _importData.SelectMany(p => new[]
                     {
-                    new { p.ProductCode, p.ProductName, p.ProductTypeCode, p.ProductCateName, p.UnitName, p.Specification },
-                    new { ProductCode = p.ChildProductCode, ProductName = p.ChildProductName, ProductTypeCode= p.ChildProductTypeCode,ProductCateName=p.ChildProductCateName, UnitName = p.ChildUnitName, Specification=p.ChildSpecification } }
+                    new { p.ProductCode, p.ProductName, p.ProductTypeCode, p.ProductCateName, p.UnitName, p.Specification, IsProduct=  true, IsSemi =false },
+                    new { ProductCode = p.ChildProductCode, ProductName = p.ChildProductName, ProductTypeCode= p.ChildProductTypeCode,ProductCateName=p.ChildProductCateName, UnitName = p.ChildUnitName, Specification=p.ChildSpecification,IsProduct=false, IsSemi=true } }
                     ).Where(p => !string.IsNullOrWhiteSpace(p.ProductCode))
                     .Distinct()
                     .ToList()
                     .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
-                    .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+                    .ToDictionary(p => p.Key, p => new
+                    {
+
+                        ProductCode = p.First().ProductCode,
+                        ProductName = p.First().ProductName,
+                        ProductTypeCode = p.First().ProductTypeCode,
+                        ProductCateName = p.First().ProductCateName,
+                        UnitName = p.First().UnitName,
+                        Specification = p.First().Specification,
+                        IsProduct = p.Max(d => d.IsProduct),
+                        IsSemi = p.Max(d => d.IsSemi),
+                    });
 
             _existedProducts = (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName }).ToListAsync()).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
@@ -277,6 +288,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
                 .Select(p =>
                 {
+
                     ProductType type = null;
 
                     if (string.IsNullOrWhiteSpace(p.Value.ProductTypeCode.NormalizeAsInternalName()))
@@ -330,7 +342,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         ProductTypeId = type?.ProductTypeId,
                         ProductCateId = cate.ProductCateId,
                         UnitId = unit.UnitId,
-
+                        IsProduct = p.Value.IsProduct,
+                        IsProductSemi = p.Value.IsSemi,
 
                         Extra = new ProductModelExtra()
                         {

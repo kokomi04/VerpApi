@@ -189,6 +189,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             foreach (var row in data)
             {
+                if (!mapping.MappingFields.Any(f => f.FieldName == nameof(ProductImportModel.IsProduct)))
+                {
+                    row.IsProduct = true;
+                }
+
                 if (!string.IsNullOrWhiteSpace(row.Unit) && !units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == row.Unit.NormalizeAsInternalName()))
                 {
                     includeUnits.Add(new Unit
