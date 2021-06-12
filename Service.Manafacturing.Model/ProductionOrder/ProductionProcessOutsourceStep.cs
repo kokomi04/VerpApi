@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionProcessOutsourceStep
     {
         public List<ProductionStepModel> ProductionSteps { get; set; }
-        public List<ProductionStepLinkDataOutsourceStep> ProductionStepLinkDatas { get; set; }
+        public IList<ProductionStepLinkDataOutsourceStep> ProductionStepLinkDatas { get; set; }
         public List<ProductionStepLinkDataRoleInput> ProductionStepLinkDataRoles { get; set; }
         public List<ProductionStepLinkModel> ProductionStepLinks { get; set; } // dữ liệu chỉ view, không sử dụng trong CRUD 
 

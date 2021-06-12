@@ -1124,34 +1124,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepLinkDataId)
         {
-            var stepLinkDatas = new List<ProductionStepLinkDataInput>();
-            if (lsProductionStepLinkDataId.Count > 0)
-            {
-                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
-                var parammeters = new List<SqlParameter>();
-                var whereCondition = new StringBuilder();
-
-                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
-                for (int i = 0; i < lsProductionStepLinkDataId.Count; i++)
+            IList<ProductionStepLinkDataInput> stepLinkDatas = new List<ProductionStepLinkDataInput>();
+            if (lsProductionStepLinkDataId.Count > 0) {
+                var sql = new StringBuilder(@$"
+                    SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
+                    WHERE v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
+                ");
+                var parammeters = new List<SqlParameter>()
                 {
-                    var number = lsProductionStepLinkDataId[i];
-                    string pName = $"@ProductionStepLinkDataId{i + 1}";
+                    lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
+                };
 
-                    if (i == lsProductionStepLinkDataId.Count - 1)
-                        whereCondition.Append($"{pName} )");
-                    else
-                        whereCondition.Append($"{pName}, ");
-
-                    parammeters.Add(new SqlParameter(pName, number));
-                }
-                if (whereCondition.Length > 0)
-                {
-                    sql.Append(" WHERE ");
-                    sql.Append(whereCondition);
-                }
-
-                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                        .ConvertData<ProductionStepLinkDataInput>();
+                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             return stepLinkDatas;
@@ -1396,34 +1380,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             productionStepChilds.AddRange(productionStepParents);
 
             var lsProductionStepLinkDataId = roles.Where(x=>productionStepIds.Contains(x.ProductionStepId)).Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
-            var stepLinkDatas = new List<ProductionStepLinkDataOutsourceStep>();
+
+            IList<ProductionStepLinkDataOutsourceStep> stepLinkDatas = new List<ProductionStepLinkDataOutsourceStep>();
             if (lsProductionStepLinkDataId.Count > 0)
             {
-                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
-                var parammeters = new List<SqlParameter>();
-                var whereCondition = new StringBuilder();
-
-                whereCondition.Append("v.ProductionStepLinkDataTypeId = 0 AND v.ProductionStepLinkDataId IN ( ");
-                for (int i = 0; i < lsProductionStepLinkDataId.Count; i++)
+                var sql = new StringBuilder(@$"
+                    SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
+                    WHERE v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
+                ");
+                var parammeters = new List<SqlParameter>()
                 {
-                    var number = lsProductionStepLinkDataId[i];
-                    string pName = $"@ProductionStepLinkDataId{i + 1}";
+                    lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
+                };
 
-                    if (i == lsProductionStepLinkDataId.Count - 1)
-                        whereCondition.Append($"{pName} )");
-                    else
-                        whereCondition.Append($"{pName}, ");
-
-                    parammeters.Add(new SqlParameter(pName, number));
-                }
-                if (whereCondition.Length > 0)
-                {
-                    sql.Append(" WHERE ");
-                    sql.Append(whereCondition);
-                }
-
-                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                        .ConvertData<ProductionStepLinkDataOutsourceStep>();
+                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataOutsourceStep>(sql.ToString(), parammeters);
 
                 foreach (var ld in stepLinkDatas)
                 {
