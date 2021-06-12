@@ -923,7 +923,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
                 || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
             {
-                throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title });
+                throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { value?.JsonSerialize(), rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title });
             }
         }
 
@@ -1850,7 +1850,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {row.Index}, trường {field.Title} sang kiểu ngày tháng");
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()}, dòng {row.Index}, trường {field.Title} sang kiểu ngày tháng");
                             value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
                         }
 
@@ -1865,7 +1865,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
                                     || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
                                 {
-                                    throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { row.Index, field.Title });
+                                    throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
                                 }
                             }
                         }
