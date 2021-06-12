@@ -159,6 +159,24 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var obj = entityEntry.Entity;
 
+                /**
+                 * Validate if Code field contains special characters
+                 * 
+                 */
+                var type = obj.GetType();
+                var ps = type.GetProperties();
+                foreach (var prop in ps)
+                {
+                    if (prop.Name.EndsWith("Code"))
+                    {
+                        Utils.ValidateCodeSpecialCharactors(prop.GetValue(obj) as string);
+                    }
+                }
+
+
+                /**
+                 * Set history base
+                 */
                 obj.SetValue("UpdatedByUserId", currentContext.UserId);
 
                 if (entityEntry.State == EntityState.Added)
@@ -355,7 +373,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     body = Expression.PropertyOrField(body, propertyName);
                 }
                 var orderByExpression = Expression.Lambda(body, parameter);
-                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, body.Type }, 
+                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, body.Type },
                     query.Expression, Expression.Quote(orderByExpression));
                 query = query.Provider.CreateQuery<T>(resultExpression);
             }
@@ -413,7 +431,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     prop = Expression.PropertyOrField(prop, propertyName);
                 }
 
-                if(clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
+                if (clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
                     clause.DataType = EnumDataType.BigInt;
 
                 //var prop = Expression.Property(param, clause.FieldName);

@@ -1442,12 +1442,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
+
             var fields = (await GetInputFields(inputTypeId)).ToDictionary(f => f.FieldName, f => f);
 
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
             await FillGenerateColumn(inputBill_F_Id, generateTypeLastValues, infoFields, new[] { data.Info });
+
+            if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
+            {
+                Utils.ValidateCodeSpecialCharactors(sct);
+            }
 
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
@@ -1467,6 +1473,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     insertColumns.Add(item.Key);
                 }
             }
+
 
             foreach (var key in removeKeys)
             {
@@ -1608,6 +1615,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 dataTable.Rows.Add(dataRow);
             }
+
+
 
             //Create addition reciprocal accounting
             if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))

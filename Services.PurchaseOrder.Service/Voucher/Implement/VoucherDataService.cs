@@ -1428,6 +1428,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await FillGenerateColumn(voucherBill_F_Id, generateTypeLastValues, infoFields, new[] { data.Info });
 
+            if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
+            {
+                Utils.ValidateCodeSpecialCharactors(sct);
+            }
+
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
             await FillGenerateColumn(voucherBill_F_Id, generateTypeLastValues, rowFields, data.Rows);

@@ -692,21 +692,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(x => productIds.Contains(x.ProductId));
             }
 
-            if (isProductSemi.HasValue && isProduct.HasValue)
+            if (isProductSemi == true)
             {
-                products = products.Where(x => x.IsProductSemi == isProductSemi || x.IsProduct == isProduct);
+                products = products.Where(x => x.IsProductSemi == isProductSemi.Value);
             }
-            else
-            {
 
-                if (isProductSemi.HasValue)
-                {
-                    products = products.Where(x => x.IsProductSemi == isProductSemi);
-                }
-                if (isProduct.HasValue)
-                {
-                    products = products.Where(x => x.IsProduct == isProduct);
-                }
+            if (isProduct == true)
+            {
+                products = products.Where(x => x.IsProduct == isProduct.Value);
             }
 
 
