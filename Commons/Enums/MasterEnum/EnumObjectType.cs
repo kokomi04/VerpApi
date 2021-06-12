@@ -99,9 +99,11 @@ namespace VErp.Commons.Enums.MasterEnum
         //[Description("Phiếu xuất/nhập kho")]
         //Inventory = 12,
         [Description("Phiếu YC nhập kho")]
+        [GenCodeObject]
         RequestInventoryInput = 300,
 
         [Description("Phiếu YC xuất kho")]
+        [GenCodeObject]
         RequestInventoryOutput = 301,
 
         [Description("Phiếu nhập kho")]
@@ -227,11 +229,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,
         [Description("Yêu cầu nhập kho")]
-        [GenCodeObject]
-        InventoryInputRequirement = 80,
-        [Description("Yêu cầu xuất kho")]
-        [GenCodeObject]
-        InventoryOutputRequirement = 81,
+       
         OutsourceTrack = 78,
         [Description("Khai báo vật tư tiêu hao")]
         ProductionConsumMaterial = 82,

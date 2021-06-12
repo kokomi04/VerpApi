@@ -175,7 +175,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             using var trans = await _stockDBContext.Database.BeginTransactionAsync();
             try
             {
-                var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
+                var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.RequestInventoryInput : EnumObjectType.RequestInventoryOutput;
 
                 var ctx = await GenerateInventoryRequirementCode(inventoryType, objectType, req);
 
@@ -281,7 +281,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             using var trans = await _stockDBContext.Database.BeginTransactionAsync();
             try
             {
-                var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
+                var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.RequestInventoryInput : EnumObjectType.RequestInventoryOutput;
 
                 var inventoryRequirement = _stockDBContext.InventoryRequirement
                     .Include(r => r.InventoryRequirementDetail)
@@ -368,7 +368,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             using var trans = await _stockDBContext.Database.BeginTransactionAsync();
             try
             {
-                var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
+                var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.RequestInventoryInput : EnumObjectType.RequestInventoryOutput;
 
                 var inventoryRequirement = _stockDBContext.InventoryRequirement
                     .Include(r => r.InventoryRequirementDetail)
@@ -416,7 +416,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
         public async Task<bool> ConfirmInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status, Dictionary<long, int> assignStocks = null)
         {
-            var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.InventoryInputRequirement : EnumObjectType.InventoryOutputRequirement;
+            var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.RequestInventoryInput : EnumObjectType.RequestInventoryOutput;
 
             var inventoryRequirement = _stockDBContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementDetail)
