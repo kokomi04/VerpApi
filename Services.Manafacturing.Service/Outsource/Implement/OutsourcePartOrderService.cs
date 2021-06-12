@@ -442,39 +442,22 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                                 && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
                                       .Select(x => x.ProductionStepLinkDataId)
                                       .ToArray();
-                            var stepLinkDatas = new List<ProductionStepLinkDataInput>();
+                            IList<ProductionStepLinkDataInput> stepLinkDatas = new List<ProductionStepLinkDataInput>();
 
-                            if (linkDataIds.Length > 0)
-                            {
-                                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
-                                var parammeters = new List<SqlParameter>();
-                                var whereCondition = new StringBuilder();
-
-                                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
-                                for (int i = 0; i < linkDataIds.Length; i++)
+                            if (linkDataIds.Length > 0) {
+                                var sql = new StringBuilder(@$"
+                                    SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
+                                    WHERE v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
+                                ");
+                                var parammeters = new List<SqlParameter>()
                                 {
-                                    var number = linkDataIds[i];
-                                    string pName = $"@ProductionStepLinkDataId_{i + 1}";
+                                    linkDataIds.ToSqlParameter("@ProductionStepLinkDataIds"),
+                                };
 
-                                    if (i == linkDataIds.Length - 1)
-                                        whereCondition.Append($"{pName} )");
-                                    else
-                                        whereCondition.Append($"{pName}, ");
+                                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
 
-                                    parammeters.Add(new SqlParameter(pName, number));
-                                }
-                                if (whereCondition.Length > 0)
-                                {
-                                    sql.Append(" WHERE ");
-                                    sql.Append(whereCondition);
-                                }
-
-                                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                                        .ConvertData<ProductionStepLinkDataInput>();
-
-                                stepLinkDatas.ForEach(ld => {
-                                    results.Add(new Model.Outsource.Order.OutsourceOrderMaterials
-                                    {
+                                foreach (var ld in stepLinkDatas) {
+                                    results.Add(new Model.Outsource.Order.OutsourceOrderMaterials {
                                         CustomerId = outsourceOrder.CustomerId,
                                         Description = $"Xuất vật tư cho đơn hàng gia công {outsourceOrder.OutsourceOrderCode}",
                                         OrderCode = request.OrderCode,
@@ -488,7 +471,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                         Quantity = decimal.Round((percent * ld.QuantityOrigin), 5)
                                     });
 
-                                });
+                                }
                             }
                         }
                             
