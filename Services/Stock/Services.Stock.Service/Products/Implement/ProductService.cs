@@ -718,16 +718,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(x => productIds.Contains(x.ProductId));
             }
 
-            if (!(isProductSemi == isProduct == false))
+            if (isProductSemi == true)
             {
-                if (isProductSemi.HasValue)
-                {
-                    products = products.Where(x => x.IsProductSemi == isProductSemi);
-                }
-                if (isProduct.HasValue)
-                {
-                    products = products.Where(x => x.IsProduct == isProduct);
-                }
+                products = products.Where(x => x.IsProductSemi == isProductSemi.Value);
+            }
+
+            if (isProduct == true)
+            {
+                products = products.Where(x => x.IsProduct == isProduct.Value);
             }
 
 
