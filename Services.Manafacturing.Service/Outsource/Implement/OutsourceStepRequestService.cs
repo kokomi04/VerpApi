@@ -269,7 +269,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private async Task SyncInfoForProductionProcess(ProductionProcessOutsourceStep processOutsourceStep, long outsourceStepRequestId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep
-                .Where(x => processOutsourceStep.ProductionSteps.Select(s => s.ProductionStepId).Contains(x.ProductionStepId))
+                .Where(x => processOutsourceStep.ProductionSteps.Select(s => s.ProductionStepId).Contains(x.ProductionStepId) && x.IsGroup == false)
                 .ToListAsync();
 
             var productionStepLinkDatas = await _manufacturingDBContext.ProductionStepLinkData
