@@ -59,7 +59,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<long> CreateOutsourceOrderPart(OutsourceOrderInfo req)
         {
-            await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
+            //await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
 
             using (var trans = _manufacturingDBContext.Database.BeginTransaction())
             {
@@ -272,7 +272,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> UpdateOutsourceOrderPart(long outsourceOrderId, OutsourceOrderInfo req)
         {
-            await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
+            //await CheckMarkInvalidOutsourcePartRequest(req.OutsourceOrderDetail.Select(x => x.ObjectId).ToArray());
 
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -350,8 +350,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 if (request == null)
                     throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
-                if (request.MarkInvalid)
-                    throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{request.OutsourcePartRequestCode}\" chưa được xác thực với QTSX");
+                //if (request.MarkInvalid)
+                //    throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{request.OutsourcePartRequestCode}\" chưa được xác thực với QTSX");
 
                 var productionOrderId = request.ProductionOrderId;
                 IList<ProductionStepLinkDataRole> role;
