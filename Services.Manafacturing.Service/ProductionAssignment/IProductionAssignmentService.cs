@@ -26,7 +26,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<CapacityOutputModel> GetCapacityDepartments(long productionOrderId, long productionStepId, long startDate, long endDate);
         Task<CapacityOutputModel> GetGeneralCapacityDepartments(long productionOrderId);
 
-        Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate);
+        //Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate);
 
         Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate);
 

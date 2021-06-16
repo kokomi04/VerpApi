@@ -73,6 +73,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Inventory>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryTypeId, e.InventoryCode })
+                    .HasName("IX_Inventory_InventoryCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0) AND [CreatedDatetimeUtc]>'2021-06-10')");
+
                 entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
 
                 entity.Property(e => e.BillCode)
@@ -131,6 +136,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
+
+                entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
 
                 entity.Property(e => e.OrderCode)
                     .HasMaxLength(64)
@@ -250,6 +257,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryRequirement>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryTypeId, e.InventoryRequirementCode })
+                    .HasName("IX_InventoryRequirement_InventoryRequirementCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
@@ -454,6 +466,11 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.HasIndex(e => e.ProductCode)
                     .HasName("idx_Product_ProductCode");
+
+                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductCode })
+                    .HasName("IX_Product_ProductCode_Unique")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 

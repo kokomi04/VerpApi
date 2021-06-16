@@ -63,7 +63,6 @@ namespace VErpApi.Controllers.Stock.Files
             return await _fileService.GetThumbnails(req?.FileIds, req.ThumbnailSize).ConfigureAwait(true);
         }
 
-
         /// <summary>
         /// Upload file
         /// </summary>
@@ -75,7 +74,6 @@ namespace VErpApi.Controllers.Stock.Files
         [Route("{objectTypeId}/upload")]
         public async Task<long> Upload([FromRoute] EnumObjectType objectTypeId, [FromForm] IFormFile file)
         {
-
             return await _fileService.Upload(objectTypeId, string.Empty, file).ConfigureAwait(true);
         }
 

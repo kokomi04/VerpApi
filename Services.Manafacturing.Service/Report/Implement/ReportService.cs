@@ -127,7 +127,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     new SqlParameter("@ProductionOrderId", productionOrderId)
                 };
 
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
 
                 reqInventorys.Add(productionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(r => r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
@@ -188,8 +188,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
                                 .ToList();
 
-                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
-                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
+                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output /*&& i.ProductionStepId == productionStepId*/).ToList();
+                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input /*&& i.ProductionStepId == productionStepId*/).ToList();
 
                             foreach (var input in stepProductionProgressModel.InputData)
                             {
@@ -295,7 +295,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     new SqlParameter("@ProductionOrderId", productionOrderId)
                 };
 
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
 
                 reqInventorys.Add(productionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(r => r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
@@ -351,8 +351,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
                                 .ToList();
 
-                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output && i.ProductionStepId == productionStepId).ToList();
-                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input && i.ProductionStepId == productionStepId).ToList();
+                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output /*&& i.ProductionStepId == productionStepId*/).ToList();
+                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input/* && i.ProductionStepId == productionStepId*/).ToList();
 
                             foreach (var input in inputData)
                             {
@@ -432,7 +432,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 new SqlParameter("@ProductionOrderId", productionOrderId)
                 };
 
-                var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", invParammeters);
+                var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", invParammeters);
 
                 reqInventorys.Add(productionOrderId, invData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
@@ -498,7 +498,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         .ToList();
 
                     var stepOutputInventory = reqInventorys[productionOrderId]
-                        .Where(i => i.ProductionStepId == productionStep.ProductionStepId)
+                        //.Where(i => i.ProductionStepId == productionStep.ProductionStepId)
                         .ToList();
 
                     if (output.Any(o =>
@@ -665,7 +665,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             {
                 new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", invParammeters);
+            var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", invParammeters);
             var reqInventorys = invData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList();
@@ -705,7 +705,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     .ToList();
 
                 var stepOutputInventory = reqInventorys
-                    .Where(i => i.ProductionStepId == productionStepId)
+                    //.Where(i => i.ProductionStepId == productionStepId)
                     .ToList();
 
                 foreach (var output in outputs)

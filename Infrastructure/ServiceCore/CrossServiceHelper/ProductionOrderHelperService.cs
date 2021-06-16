@@ -13,7 +13,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
     public interface IProductionOrderHelperService
     {
-        Task<bool> UpdateProductionOrderStatus(long productionOrderId, DataTable inventories, EnumProductionStatus status);
+        Task<bool> UpdateProductionOrderStatus(string productionOrderCode, DataTable inventories, EnumProductionStatus status);
     }
     public class ProductionOrderHelperService : IProductionOrderHelperService
     {
@@ -24,9 +24,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _httpCrossService = httpCrossService;
         }
 
-        public async Task<bool> UpdateProductionOrderStatus(long productionOrderId, DataTable inventories, EnumProductionStatus status)
+        public async Task<bool> UpdateProductionOrderStatus(string productionOrderCode, DataTable inventories, EnumProductionStatus status)
         {
-            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionOrder/{productionOrderId}/status", new
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionOrder/{productionOrderCode}/status", new
             {
                 ProductionOrderStatus = status,
                 Inventories = inventories.ConvertData<ProductionInventoryRequirementModel>()

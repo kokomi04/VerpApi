@@ -13,7 +13,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
     public interface IProductionHandoverService
     {
-        Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, DataTable inventories);
+        Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, DataTable inventories);
     }
     public class ProductionHandoverService : IProductionHandoverService
     {
@@ -24,9 +24,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _httpCrossService = httpCrossService;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, DataTable inventories)
+        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, DataTable inventories)
         {
-            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionHandover/productionOrder/{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}/status", inventories.ConvertData<ProductionInventoryRequirementModel>());
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionHandover/productionOrder/{productionOrderCode}/department/{departmentId}/status", inventories.ConvertData<ProductionInventoryRequirementModel>());
         }
     }
 }
