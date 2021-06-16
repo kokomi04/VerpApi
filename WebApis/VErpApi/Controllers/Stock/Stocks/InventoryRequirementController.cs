@@ -40,6 +40,13 @@ namespace VErpApi.Controllers.Stock.Inventory
         }
 
         [HttpGet]
+        [Route("inventorytype/{inventoryType}/inventoryrequirement/code/{inventoryRequirementcode}")]
+        public async Task<long> GetInventoryRequirementId([FromRoute] EnumInventoryType inventoryType, [FromRoute] string inventoryRequirementCode)
+        {
+            return await _inventoryRequirementService.GetInventoryRequirementId(inventoryType, inventoryRequirementCode);
+        }
+
+        [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}")]
         public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute]EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
         {
@@ -85,9 +92,9 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement")]
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromQuery] long productionOrderId, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int productMaterialsConsumptionGroupId)
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int productMaterialsConsumptionGroupId)
         {
-            return await _inventoryRequirementService.GetInventoryRequirementByProductionOrderId(inventoryType, productionOrderId, requirementType, productMaterialsConsumptionGroupId);
+            return await _inventoryRequirementService.GetInventoryRequirementByProductionOrderId(inventoryType, productionOrderCode, requirementType, productMaterialsConsumptionGroupId);
         }
     }
 }

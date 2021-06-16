@@ -109,12 +109,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.GetGeneralCapacityDepartments(productionOrderId);
         }
 
-        [HttpGet]
-        [Route("capacity")]
-        public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
-        {
-            return await _productionAssignmentService.GetCapacity(startDate, endDate);
-        }
+        //[HttpGet]
+        //[Route("capacity")]
+        //public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        //{
+        //    return await _productionAssignmentService.GetCapacity(startDate, endDate);
+        //}
 
         [HttpGet]
         [Route("WorkInfo/productionOrder/{productionOrderId}")]

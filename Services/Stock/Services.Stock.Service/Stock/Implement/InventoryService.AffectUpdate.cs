@@ -504,8 +504,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.OrderCode = submitDetail?.OrderCode;
                 detail.Pocode = submitDetail?.POCode;
                 detail.ProductionOrderCode = submitDetail?.ProductionOrderCode;
-
+                detail.InventoryRequirementCode = submitDetail?.InventoryRequirementCode;
                 detail.Description = submitDetail?.Description;
+
+                detail.DepartmentId = submitDetail?.DepartmentId;
 
                 detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;
 
@@ -760,18 +762,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     throw new Exception("Invalid negative stock product data!");
                 }
             }
-
-            // await _stockDbContext.SaveChangesAsync();
-
-            //foreach (var output in validateOutputDetails)
-            //{
-            //    var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
-
-            //    if (!validate.IsSuccessCode())
-            //    {
-            //        throw new BadRequestException(validate.Code);
-            //    }
-            //}
 
             return changesInventories;
         }

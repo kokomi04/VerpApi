@@ -24,7 +24,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long Date { get; set; }
 
         public int? CustomerId { get; set; }
-        public int? DepartmentId { get; set; }
+        //public int? DepartmentId { get; set; }
 
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }

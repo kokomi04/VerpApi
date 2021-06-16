@@ -189,7 +189,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return await bomExport.BomExport();
         }
 
-
         private bool HasChange(ProductBom oldValue, ProductBomInput newValue)
         {
             return oldValue.Quantity != newValue.Quantity
@@ -199,7 +198,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 || oldValue.Wastage != newValue.Wastage
                 || oldValue.SortOrder != newValue.SortOrder;
         }
-
 
         public CategoryNameModel GetCustomerFieldDataForMapping()
         {
