@@ -107,10 +107,16 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Đánh dấu là nguyên liệu đầu vào (Có, Không)")]
         public bool IsMaterial { get; set; }
         
-        [Display(Name = "Thuộc công đoạn đầu vào nào?")]
-        public int? InputStepId { get; set; }
+        //[Display(Name = "Thuộc công đoạn đầu vào nào?")]
+        //public int? InputStepId { get; set; }
 
-        [Display(Name = "Thuộc công đoạn đầu ra nào?")]
-        public int? OutputStepId { get; set; }
+        [Display(Name = "Thuộc công đoạn đầu vào nào?", GroupName = ChildProductGroup)]
+        public string InputStepName { get; set; }
+
+        //[Display(Name = "Thuộc công đoạn đầu ra nào?")]
+        //public int? OutputStepId { get; set; }
+
+        [Display(Name = "Thuộc công đoạn đầu ra nào?", GroupName = ChildProductGroup)]
+        public string OutputStepName { get; set; }
     }
 }
