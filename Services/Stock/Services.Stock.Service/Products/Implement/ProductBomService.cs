@@ -28,6 +28,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -41,6 +42,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private readonly IUnitService _unitService;
         private readonly IProductService _productService;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
 
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -48,8 +50,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IActivityLogService activityLogService
             , IMapper mapper
             , IUnitService unitService
-            , IProductService productService)
-        {
+            , IProductService productService
+            , IManufacturingHelperService manufacturingHelperService) {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
@@ -57,6 +59,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _mapper = mapper;
             _unitService = unitService;
             _productService = productService;
+            _manufacturingHelperService = manufacturingHelperService;
         }
 
         public async Task<IList<ProductBomOutput>> GetBom(int productId)
@@ -215,6 +218,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .SetService(_productService)
                 .SetService(_unitService)
                 .SetService(_activityLogService)
+                .SetService(_manufacturingHelperService)
                 .SetService(this)
                 .ProcessData(mapping, stream);
         }
