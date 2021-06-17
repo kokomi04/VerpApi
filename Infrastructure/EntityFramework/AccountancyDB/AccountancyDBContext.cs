@@ -125,7 +125,14 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.HasKey(e => e.FId)
                     .HasName("PK_InputValueBill");
 
+                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode })
+                    .HasName("IX_InputBill_BillCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.Property(e => e.BillCode).HasMaxLength(512);
 
                 entity.HasOne(d => d.InputType)
                     .WithMany(p => p.InputBill)

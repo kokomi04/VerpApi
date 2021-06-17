@@ -38,6 +38,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string OnChange { get; set; }
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
+        public bool? IsImage { get; set; }
 
         public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
     }

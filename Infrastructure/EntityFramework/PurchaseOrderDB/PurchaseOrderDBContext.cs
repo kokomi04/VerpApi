@@ -46,6 +46,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
             modelBuilder.Entity<PoAssignment>(entity =>
             {
+                entity.HasIndex(e => e.PoAssignmentCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0) AND [PoAssignmentCode] IS NOT NULL AND [PoAssignmentCode]<>'')");
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.PoAssignmentCode)
@@ -101,6 +105,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchaseOrder>(entity =>
             {
+                entity.HasIndex(e => e.PurchaseOrderCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.AdditionNote).HasMaxLength(512);
 
                 entity.Property(e => e.Content).HasMaxLength(512);
@@ -176,6 +184,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchasingRequest>(entity =>
             {
+                entity.HasIndex(e => e.PurchasingRequestCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -220,6 +232,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchasingSuggest>(entity =>
             {
+                entity.HasIndex(e => e.PurchasingSuggestCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -444,7 +460,14 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasKey(e => e.FId)
                     .HasName("PK_InputValueBill");
 
+                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode })
+                    .HasName("IX_VoucherBill_BillCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.Property(e => e.BillCode).HasMaxLength(512);
 
                 entity.HasOne(d => d.VoucherType)
                     .WithMany(p => p.VoucherBill)

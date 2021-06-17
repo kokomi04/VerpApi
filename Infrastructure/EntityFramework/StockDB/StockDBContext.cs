@@ -73,10 +73,10 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Inventory>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryTypeId, e.InventoryCode })
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryCode })
                     .HasName("IX_Inventory_InventoryCode")
                     .IsUnique()
-                    .HasFilter("([IsDeleted]=(0) AND [CreatedDatetimeUtc]>'2021-06-10')");
+                    .HasFilter("([IsDeleted]=(0))");
 
                 entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
 
