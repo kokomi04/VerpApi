@@ -15,6 +15,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
+        public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
+        public virtual DbSet<MaterialCalcProductDetail> MaterialCalcProductDetail { get; set; }
+        public virtual DbSet<MaterialCalcProductOrder> MaterialCalcProductOrder { get; set; }
+        public virtual DbSet<MaterialCalcSummary> MaterialCalcSummary { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
@@ -44,6 +49,72 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<MaterialCalc>(entity =>
+            {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.MaterialCalcCode })
+                    .HasName("IX_MaterialCalc_MaterialCalcCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.MaterialCalcCode).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<MaterialCalcProduct>(entity =>
+            {
+                entity.HasIndex(e => new { e.MaterialCalcId, e.ProductId })
+                    .HasName("IX_MaterialCalcProduct_ProductId")
+                    .IsUnique();
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.MaterialCalcProduct)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcProduct_MaterialCalc");
+            });
+
+            modelBuilder.Entity<MaterialCalcProductDetail>(entity =>
+            {
+                entity.HasKey(e => new { e.MaterialCalcProductId, e.ProductMaterialsConsumptionGroupId, e.MaterialProductId })
+                    .HasName("PK_MaterialCalcProductDetail_1");
+
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.MaterialCalcProduct)
+                    .WithMany(p => p.MaterialCalcProductDetail)
+                    .HasForeignKey(d => d.MaterialCalcProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcProductDetail_MaterialCalcProduct");
+            });
+
+            modelBuilder.Entity<MaterialCalcProductOrder>(entity =>
+            {
+                entity.HasKey(e => new { e.MaterialCalcProductId, e.OrderCode })
+                    .HasName("PK_MaterialCalcProductOrder_1");
+
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.OrderProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.MaterialCalcProduct)
+                    .WithMany(p => p.MaterialCalcProductOrder)
+                    .HasForeignKey(d => d.MaterialCalcProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcProductOrder_MaterialCalcProduct");
+            });
+
+            modelBuilder.Entity<MaterialCalcSummary>(entity =>
+            {
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.MaterialCalcSummary)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcSummary_MaterialCalc");
+            });
+
             modelBuilder.Entity<PoAssignment>(entity =>
             {
                 entity.HasIndex(e => e.PoAssignmentCode)
