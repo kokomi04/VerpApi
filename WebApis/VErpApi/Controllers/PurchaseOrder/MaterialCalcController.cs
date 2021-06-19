@@ -12,6 +12,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
@@ -29,6 +30,16 @@ namespace VErpApi.Controllers.PurchaseOrder
         public MaterialCalcController(IMaterialCalcService materialCalcService)
         {
             _materialCalcService = materialCalcService;
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("List")]
+        public async Task<PageData<MaterialCalcListModel>> GetList([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filter = null)
+        {
+            return await _materialCalcService
+                .GetList(keyword, filter, page, size)
+                .ConfigureAwait(true);
         }
 
         [HttpPost]
@@ -58,7 +69,7 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .ConfigureAwait(true);
         }
 
-        [HttpPut]
+        [HttpDelete]
         [Route("{materialCalcId}")]
         public async Task<bool> Delete([FromRoute] long materialCalcId)
         {

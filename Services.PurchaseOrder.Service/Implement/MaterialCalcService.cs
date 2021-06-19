@@ -16,6 +16,9 @@ using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Commons.Library;
 using VErp.Commons.Enums.StandardEnum;
 using Microsoft.EntityFrameworkCore;
+using VErp.Infrastructure.EF.EFExtensions;
+using System.Linq;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -56,12 +59,51 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
         }
 
+        public async Task<PageData<MaterialCalcListModel>> GetList(string keyword, Clause filter, int page, int size)
+        {
+            var query = from c in _purchaseOrderDBContext.MaterialCalc
+                        join p in _purchaseOrderDBContext.MaterialCalcProduct on c.MaterialCalcId equals p.MaterialCalcId
+                        join o in _purchaseOrderDBContext.MaterialCalcProductOrderGroup on p.MaterialCalcProductId equals o.MaterialCalcProductId into os
+                        from o in os.DefaultIfEmpty()
+                        select new
+                        {
+                            c.MaterialCalcId,
+                            c.MaterialCalcCode,
+                            c.Title,
+                            c.CreatedByUserId,
+                            c.CreatedDatetimeUtc,
+                            p.ProductId,
+                            o.TotalOrderProductQuantity,
+                            o.OrderCodes
+                        };
+            var total = await query.CountAsync();
+            var paged = (await query.Skip((page - 1) * size).Take(size).ToListAsync())
+                .Select(d => new MaterialCalcListModel()
+                {
+
+                    MaterialCalcId = d.MaterialCalcId,
+                    MaterialCalcCode = d.MaterialCalcCode,
+                    Title = d.Title,
+                    CreatedByUserId = d.CreatedByUserId,
+                    CreatedDatetimeUtc = d.CreatedDatetimeUtc.GetUnix(),
+                    OrderCodes = d.OrderCodes,
+                    TotalOrderProductQuantity = d.TotalOrderProductQuantity
+                }).ToList();
+            return (paged, total);
+        }
+
         public async Task<long> Create(MaterialCalcModel req)
         {
+            var ctx = await GenerateCode(null, req);
+            await Validate(null, req);
+
             var entity = _mapper.Map<MaterialCalc>(req);
             await _purchaseOrderDBContext.MaterialCalc.AddAsync(entity);
             await _purchaseOrderDBContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.MaterialCalc, entity.MaterialCalcId, $"Thêm mới tính nhu cầu VT {req.MaterialCalcCode}", req.JsonSerialize());
+
+            await ctx.ConfirmCode();
+
             return entity.MaterialCalcId;
         }
 
@@ -80,6 +122,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+
+            await Validate(materialCalcId, req);
 
             _mapper.Map(req, entity);
             await _purchaseOrderDBContext.SaveChangesAsync();
@@ -112,6 +156,38 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
               .ThenInclude(s => s.MaterialCalcProductOrder)
               .Include(s => s.MaterialCalcSummary)
               .FirstOrDefaultAsync(c => c.MaterialCalcId == materialCalcId);
+        }
+
+        private async Task Validate(long? materialCalcId, MaterialCalcModel model)
+        {
+            if (materialCalcId > 0 && string.IsNullOrWhiteSpace(model.MaterialCalcCode))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập mã số");
+            }
+            model.MaterialCalcCode = (model.MaterialCalcCode ?? "").Trim();
+            if (!string.IsNullOrWhiteSpace(model.MaterialCalcCode))
+            {
+                if (await _purchaseOrderDBContext.MaterialCalc.AnyAsync(s => s.MaterialCalcId != materialCalcId && s.MaterialCalcCode == model.MaterialCalcCode))
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã số đã tồn tại");
+                }
+            }
+        }
+
+        private async Task<GenerateCodeContext> GenerateCode(long? materialCalcId, MaterialCalcModel model)
+        {
+            model.MaterialCalcCode = (model.MaterialCalcCode ?? "").Trim();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.MaterialCalc)
+                .SetConfigData(materialCalcId ?? 0, model.CreatedDatetimeUtc)
+                .TryValidateAndGenerateCode(_purchaseOrderDBContext.MaterialCalc, model.MaterialCalcCode, (s, code) => s.MaterialCalcId != materialCalcId && s.MaterialCalcCode == code);
+
+            model.MaterialCalcCode = code;
+
+            return ctx;
         }
     }
 }
