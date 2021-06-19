@@ -188,7 +188,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
-                if (data.ProductionOrderDetail.GroupBy(x=> new{x.ProductId, x.OrderDetailId})
+                if (data.ProductionOrderDetail.GroupBy(x=> new{x.ProductId, x.OrderCode})
                     .Where(x=>x.Count() > 1)
                     .Count() > 0) 
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
@@ -276,7 +276,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
-                if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderDetailId })
+                if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
                     .Where(x => x.Count() > 1)
                     .Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
