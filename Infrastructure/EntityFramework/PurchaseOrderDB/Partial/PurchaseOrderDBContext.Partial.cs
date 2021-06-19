@@ -1,5 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Logging;
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +13,29 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
+    public partial class PurchaseOrderDBContext
+    {
+        protected DbSet<MaterialCalcProductOrderGroup> _materialCalcProductOrderGroup { get; set; }
+
+        public virtual IQueryable<MaterialCalcProductOrderGroup> MaterialCalcProductOrderGroup
+        {
+            get
+            {               
+                var sql = $"SELECT MaterialCalcProductId, STRING_AGG(OrderCode,',') OrderCodes, SUM(OrderProductQuantity) TotalOrderProductQuantity FROM dbo.MaterialCalcProductOrder GROUP BY MaterialCalcProductId";
+
+                return _materialCalcProductOrderGroup.FromSqlRaw(sql);
+            }
+        }
+    }
+
+    public class MaterialCalcProductOrderGroup
+    {
+        [Key]
+        public long MaterialCalcProductId { get; set; }
+        public string OrderCodes { get; set; }
+        public decimal? TotalOrderProductQuantity { get; set; }
+
+    }
     public class PurchaseOrderDBRestrictionContext : PurchaseOrderDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
@@ -27,8 +54,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.AddFilterAuthorize(this);
-
         }
+
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {

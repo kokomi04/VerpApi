@@ -3,35 +3,38 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 {
-    public class MaterialCalcListModel : IMapFrom<MaterialCalc>
+    public abstract class MaterialCalcBasicModel
     {
         public long MaterialCalcId { get; set; }
         public string MaterialCalcCode { get; set; }
-        public long Title { get; set; }
+        public string Title { get; set; }
         public int CreatedByUserId { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-
-        public virtual void Mapping(Profile profile)
-        {
-            profile.CreateMap<MaterialCalc, MaterialCalcListModel>();
-        }
+        public long CreatedDatetimeUtc { get; set; }
     }
-    public class MaterialCalcModel : MaterialCalcListModel
+
+    public class MaterialCalcListModel : MaterialCalcBasicModel
+    {
+        public string OrderCodes { get; set; }
+        public decimal? TotalOrderProductQuantity { get; set; }
+    }
+    public class MaterialCalcModel : MaterialCalcBasicModel, IMapFrom<MaterialCalc>
     {
         public IList<MaterialCalcProductModel> Products { get; set; }
         public IList<MaterialCalcSummaryModel> Summary { get; set; }
-        public override void Mapping(Profile profile)
+        public void Mapping(Profile profile)
         {
             profile.CreateMap<MaterialCalcModel, MaterialCalc>()
                 .ForMember(d => d.CreatedByUserId, s => s.Ignore())
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.Ignore())
                 .ForMember(d => d.MaterialCalcProduct, s => s.MapFrom(m => m.Products))
                 .ForMember(d => d.MaterialCalcSummary, s => s.MapFrom(m => m.Summary))
-                .ReverseMap();
+                .ReverseMap()
+                .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
             //.ForMember(d => d.Products, s => s.MapFrom(m => m.MaterialCalcProduct))
             //.ForMember(d => d.Summary, s => s.MapFrom(m => m.MaterialCalcSummary));
         }
