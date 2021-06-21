@@ -102,7 +102,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("/more")]
+        [Route("more")]
         public async Task<long[]> CreateListProductSemi([FromBody] IList<ProductSemiModel> models)
         {
             return await _productSemiService.CreateListProductSemi(models);
