@@ -1141,7 +1141,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         trans.Commit();
 
-                        var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
+                        var messageLog = string.Format("Cập nhật phiếu xuất kho, mã: {0}", inventoryObj.InventoryCode);
                         await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)
