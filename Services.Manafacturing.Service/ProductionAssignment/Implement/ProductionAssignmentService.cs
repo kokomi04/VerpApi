@@ -896,7 +896,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     po.ProductionOrderCode,
                     po.ProductionOrderId,
                     OutputQuantity = ld.Quantity - d.OutsourcePartQuantity.GetValueOrDefault(),
-                    IsImport = ildr.ProductionStepLinkDataId > 0,
+                    IsImport = ildr == null,
                     psw.MinHour,
                     psw.MaxHour,
                 })
