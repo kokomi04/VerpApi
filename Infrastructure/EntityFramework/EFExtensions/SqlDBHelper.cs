@@ -56,6 +56,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return await QueryDataTable(dbContext, procedureName, parammeters, CommandType.StoredProcedure, timeout);
         }
 
+        public static async Task<DataSet> ExecuteMultipleDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
+        {
+            return await QueryMultiDataTable(dbContext, procedureName, parammeters, CommandType.StoredProcedure, timeout);
+        }
+
         public static async Task<int> ExecuteNoneQueryProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
         {
             var ps = new List<SqlParameter>();
