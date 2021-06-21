@@ -100,5 +100,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productSemiConversionService.GetAllProductSemiConversionsByProductSemi(productSemiId);
         }
+
+        [HttpPost]
+        [Route("/more")]
+        public async Task<long[]> CreateListProductSemi([FromBody] IList<ProductSemiModel> models)
+        {
+            return await _productSemiService.CreateListProductSemi(models);
+        }
     }
 }

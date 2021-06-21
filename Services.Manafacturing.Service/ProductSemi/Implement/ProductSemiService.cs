@@ -165,5 +165,44 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 throw;
             }
         }
+
+        public async Task<long[]> CreateListProductSemi(IList<ProductSemiModel> models)
+        {
+            var trans = await _manuDBContext.Database.BeginTransactionAsync();
+            var results = new List<long>();
+            try
+            {
+                foreach (var model in models)
+                {
+                    var productSemiEntity = _mapper.Map<ProductSemiEntity>(model);
+                    await _manuDBContext.ProductSemi.AddAsync(productSemiEntity);
+                    await _manuDBContext.SaveChangesAsync();
+
+                    results.Add(productSemiEntity.ProductSemiId);
+                    if (model.ProductSemiConversions.Count() > 0)
+                    {
+                        foreach (var conversion in model.ProductSemiConversions)
+                        {
+                            conversion.ProductSemiId = productSemiEntity.ProductSemiId;
+                        }
+
+                        var lsConversionEntity = _mapper.Map<ICollection<ProductSemiConversion>>(model.ProductSemiConversions);
+                        await _manuDBContext.ProductSemiConversion.AddRangeAsync(lsConversionEntity);
+                        await _manuDBContext.SaveChangesAsync();
+                    }
+                }
+
+                await trans.CommitAsync();
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, results.FirstOrDefault(), $"Tạo mới bán thành phẩm {results.JsonSerialize()}", results.JsonSerialize());
+                return results.ToArray();
+
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError("CreateListProductSemi", ex);
+                throw;
+            }
+        }
     }
 }
