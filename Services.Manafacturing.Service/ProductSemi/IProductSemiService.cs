@@ -18,5 +18,6 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi
 
         //more
         Task<long[]> CreateListProductSemi(IList<ProductSemiModel> models);
+        Task<bool> UpdateListProductSemi(IList<ProductSemiModel> models);
     }
 }
