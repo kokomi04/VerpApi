@@ -181,6 +181,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Text, product.IsProductSemi ? "Có" : "Không");
                 case nameof(ProductImportModel.IsProduct):
                     return (EnumDataType.Text, product.IsProduct ? "Có" : "Không");
+                case nameof(ProductImportModel.IsMaterials):
+                    return (EnumDataType.Text, product.IsMaterials ? "Có" : "Không");
                 case nameof(ProductImportModel.Coefficient):
                     return (EnumDataType.Int, product.Coefficient);
                 case nameof(ProductImportModel.CustomerCode):

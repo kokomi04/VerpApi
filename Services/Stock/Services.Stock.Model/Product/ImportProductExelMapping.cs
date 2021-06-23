@@ -51,11 +51,14 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Giá ước tính", GroupName = "TT Mua bán")]
         public decimal? EstimatePrice { get; set; }
 
-        [Display(Name = "Là chi tiết mặt hàng (Có, Không)", GroupName = "TT Mua bán")]
+        [Display(Name = "Là chi tiết mặt hàng (Có, Không)", GroupName = "Thông tin chung")]
         public bool? IsProductSemi { get; set; }
 
-        [Display(Name = "Là Mặt hàng (Có, Không)", GroupName = "TT Mua bán")]
+        [Display(Name = "Là Mặt hàng (Có, Không)", GroupName = "Thông tin chung")]
         public bool? IsProduct { get; set; }
+
+        [Display(Name = "Là NVL (Có, Không)", GroupName = "Thông tin chung")]
+        public bool? IsMaterials { get; set; }
 
         [Display(Name = "Cơ số sản phẩm", GroupName = "TT Sản xuất")]
         public int? Coefficient { get; set; }
