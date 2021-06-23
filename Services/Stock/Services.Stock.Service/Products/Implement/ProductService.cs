@@ -419,7 +419,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             u.ProductId = productId;
                             u.ProductUnitConversionId = 0;
                         }
-                        await _stockDbContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
+                        await _stockContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                     }
 
                     foreach (var productUnitConversionId in keepPuIds)
