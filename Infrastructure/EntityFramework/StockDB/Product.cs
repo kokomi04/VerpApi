@@ -55,6 +55,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int Coefficient { get; set; }
         public bool? IsProduct { get; set; }
         public string Color { get; set; }
+        public bool? IsMaterials { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }

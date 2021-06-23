@@ -47,5 +47,6 @@ namespace VErp.Services.Stock.Model.Product.Partial
 
         public bool IsProductSemi { get; set; }
         public bool? IsProduct { get; set; }
+        public bool? IsMaterials { get; set; }
     }
 }

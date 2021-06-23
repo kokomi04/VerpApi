@@ -38,6 +38,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 
         public bool IsProductSemi { get; set; }
         public bool? IsProduct { get; set; }
+        public bool? IsMaterials { get; set; }
         public int Coefficient { get; set; }
         public string Color { get; set; }
 
