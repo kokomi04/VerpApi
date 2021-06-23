@@ -24,7 +24,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 10;
+        private int maxColumnIndex = 11;
 
         private IList<int> productIds;
 
@@ -99,7 +99,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             sheet.EnsureCell(fRow, 9).SetCellValue($"Số lượng");
 
-            sheet.EnsureCell(fRow, 10).SetCellValue($"Là nguyên liệu");
+            sheet.EnsureCell(fRow, 10).SetCellValue($"Tỷ lệ hao hụt");
+
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Là nguyên liệu");
 
 
 
@@ -193,11 +195,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 }
 
                 sheet.EnsureCell(currentRow, 9).SetCellValue(Convert.ToDouble(item.Quantity));
+                sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Wastage));
 
                 if (productMaterial.Contains(item.ChildProductId ?? 0))
                 {
-                    sheet.EnsureCell(currentRow, 10).SetCellValue("Có");
-                    sheet.EnsureCell(currentRow, 10).CellStyle.Alignment = HorizontalAlignment.Center;
+                    sheet.EnsureCell(currentRow, 11).SetCellValue("Có");
+                    sheet.EnsureCell(currentRow, 11).CellStyle.Alignment = HorizontalAlignment.Center;
                     //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
                 }
 
