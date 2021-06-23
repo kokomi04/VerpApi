@@ -87,6 +87,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Width = productInfo.Width,
                 Height = productInfo.Height,
 
+                Color = productInfo.Color,
+
                 UnitId = productInfo.UnitId,
 
                 ProductCateId = productInfo.ProductCateId,
@@ -138,6 +140,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.Long = model.Long;
                 productInfo.Width = model.Width;
                 productInfo.Height = model.Height;
+
+                productInfo.Color = model.Color;
 
                 productInfo.UnitId = model.UnitId;
 
