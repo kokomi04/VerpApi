@@ -19,6 +19,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 
     public class MaterialCalcListModel : MaterialCalcBasicModel
     {
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string productName { get; set; }
         public string OrderCodes { get; set; }
         public decimal? TotalOrderProductQuantity { get; set; }
     }
