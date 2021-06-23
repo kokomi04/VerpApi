@@ -135,7 +135,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-            if (!string.IsNullOrWhiteSpace(keyword))
+            if (!string.IsNullOrWhiteSpace(keyword) || productIds?.Count > 0)
             {
                 var inventoryDetails = _stockDbContext.InventoryDetail.AsQueryable();
                 if (productIds != null && productIds.Count > 0)
