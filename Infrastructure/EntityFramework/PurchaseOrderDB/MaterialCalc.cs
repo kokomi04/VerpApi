@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
             MaterialCalcProduct = new HashSet<MaterialCalcProduct>();
             MaterialCalcSummary = new HashSet<MaterialCalcSummary>();
+            PurchasingRequest = new HashSet<PurchasingRequest>();
         }
 
         public long MaterialCalcId { get; set; }
@@ -21,8 +22,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public long? PurchasingSuggestId { get; set; }
 
         public virtual ICollection<MaterialCalcProduct> MaterialCalcProduct { get; set; }
         public virtual ICollection<MaterialCalcSummary> MaterialCalcSummary { get; set; }
+        public virtual ICollection<PurchasingRequest> PurchasingRequest { get; set; }
     }
 }

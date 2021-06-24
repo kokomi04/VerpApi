@@ -32,7 +32,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? OrderDetailQuantity { get; set; }
         public decimal? OrderDetailRequestQuantity { get; set; }
         public long? ProductionOrderId { get; set; }
+        public long? MaterialCalcId { get; set; }
 
+        public virtual MaterialCalc MaterialCalc { get; set; }
         public virtual ICollection<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
     }
 }

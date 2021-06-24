@@ -276,6 +276,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.PurchasingRequest)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .HasConstraintName("FK_PurchasingRequest_MaterialCalc");
             });
 
             modelBuilder.Entity<PurchasingRequestDetail>(entity =>

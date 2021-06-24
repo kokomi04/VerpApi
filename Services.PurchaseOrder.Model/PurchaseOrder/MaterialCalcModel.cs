@@ -24,6 +24,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string productName { get; set; }
         public string OrderCodes { get; set; }
         public decimal? TotalOrderProductQuantity { get; set; }
+        public long? PurchasingRequestId { get; set; }
+        public string PurchasingRequestCode { get; set; }
     }
     public class MaterialCalcModel : MaterialCalcBasicModel, IMapFrom<MaterialCalc>
     {
