@@ -66,6 +66,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId
                         join o in _purchaseOrderDBContext.MaterialCalcProductOrderGroup on d.MaterialCalcProductId equals o.MaterialCalcProductId into os
                         from o in os.DefaultIfEmpty()
+                        join r in _purchaseOrderDBContext.PurchasingRequest on c.MaterialCalcId equals r.MaterialCalcId into rs
+                        from r in rs.DefaultIfEmpty()
                         select new
                         {
                             c.MaterialCalcId,
@@ -76,8 +78,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             p.ProductId,
                             p.ProductCode,
                             p.ProductName,
-                            o.TotalOrderProductQuantity,
-                            o.OrderCodes
+                            TotalOrderProductQuantity = o == null ? null : o.TotalOrderProductQuantity,
+                            OrderCodes = o == null ? null : o.OrderCodes,
+                            PurchasingRequestId = r == null ? (long?)null : r.PurchasingRequestId,
+                            PurchasingRequestCode = r == null ? null : r.PurchasingRequestCode
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(c => c.MaterialCalcCode.Contains(keyword)
@@ -103,7 +107,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductCode = d.ProductCode,
                     productName = d.ProductName,
                     OrderCodes = d.OrderCodes,
-                    TotalOrderProductQuantity = d.TotalOrderProductQuantity
+                    TotalOrderProductQuantity = d.TotalOrderProductQuantity,
+                    PurchasingRequestId = d.PurchasingRequestId,
+                    PurchasingRequestCode = d.PurchasingRequestCode
                 }).ToList();
             return (paged, total);
         }
