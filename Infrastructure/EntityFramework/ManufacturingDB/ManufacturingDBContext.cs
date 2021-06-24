@@ -477,11 +477,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionProcessMold>(entity =>
             {
-                entity.Property(e => e.SubsidiaryId)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsFixedLength();
-
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(256);
