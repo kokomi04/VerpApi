@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("List")]
-        public async Task<PageData<MaterialCalcListModel>> GetList([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filter = null)
+        public async Task<PageData<MaterialCalcListModel>> GetList([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] ArrayClause filter = null)
         {
             return await _materialCalcService
                 .GetList(keyword, filter, page, size)
