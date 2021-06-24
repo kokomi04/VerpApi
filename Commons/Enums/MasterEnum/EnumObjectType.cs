@@ -250,6 +250,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Bán thành phẩm")]
         ProductSemi = 322,
         [Description("Bán thành phẩm chuyển đổi")]
-        ProductSemiConversion = 323
+        ProductSemiConversion = 323,
+        [Description("Quy trình sản xuất mẫu")]
+        ProductionProcessMold = 324
     }
 }
