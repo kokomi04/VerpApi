@@ -110,13 +110,13 @@ namespace VErp.Services.Stock.Model.Product
         //[Display(Name = "Thuộc công đoạn đầu vào nào?")]
         //public int? InputStepId { get; set; }
 
-        [Display(Name = "Thuộc công đoạn đầu vào nào?", GroupName = ChildProductGroup)]
+        [Display(Name = "Thuộc công đoạn vào nào?", GroupName = ChildProductGroup)]
         public string InputStepName { get; set; }
 
         //[Display(Name = "Thuộc công đoạn đầu ra nào?")]
         //public int? OutputStepId { get; set; }
 
-        [Display(Name = "Thuộc công đoạn đầu ra nào?", GroupName = ChildProductGroup)]
+        [Display(Name = "Thuộc công đoạn ra nào?", GroupName = ChildProductGroup)]
         public string OutputStepName { get; set; }
     }
 }
