@@ -38,6 +38,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
+        public virtual DbSet<ProductionProcessMold> ProductionProcessMold { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
@@ -45,6 +46,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
         public virtual DbSet<ProductionStepLinkData> ProductionStepLinkData { get; set; }
         public virtual DbSet<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }
+        public virtual DbSet<ProductionStepMold> ProductionStepMold { get; set; }
+        public virtual DbSet<ProductionStepMoldLink> ProductionStepMoldLink { get; set; }
         public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<ProductionStepWorkInfo> ProductionStepWorkInfo { get; set; }
         public virtual DbSet<Step> Step { get; set; }
@@ -471,6 +474,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
             });
 
+
+            modelBuilder.Entity<ProductionProcessMold>(entity =>
+            {
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256);
+            });
+
             modelBuilder.Entity<ProductionScheduleTurnShift>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
@@ -617,6 +628,38 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionStepLinkDataRole_ProductionStepLinkData");
+            });
+
+            modelBuilder.Entity<ProductionStepMold>(entity =>
+            {
+                entity.HasOne(d => d.ProductionProcessMold)
+                    .WithMany(p => p.ProductionStepMold)
+                    .HasForeignKey(d => d.ProductionProcessMoldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionStepMold_ProductionProcessMold");
+
+                entity.HasOne(d => d.Step)
+                    .WithMany(p => p.ProductionStepMold)
+                    .HasForeignKey(d => d.StepId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionStepMold_Step");
+            });
+
+            modelBuilder.Entity<ProductionStepMoldLink>(entity =>
+            {
+                entity.HasKey(e => new { e.FromProductionStepMoldId, e.ToProductionStepMoldId });
+
+                entity.HasOne(d => d.FromProductionStepMold)
+                    .WithMany(p => p.ProductionStepMoldLinkFromProductionStepMold)
+                    .HasForeignKey(d => d.FromProductionStepMoldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionStepMoldRole_ProductionStepMold_From");
+
+                entity.HasOne(d => d.ToProductionStepMold)
+                    .WithMany(p => p.ProductionStepMoldLinkToProductionStepMold)
+                    .HasForeignKey(d => d.ToProductionStepMoldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionStepMoldLink_ProductionStepMold_To");
             });
 
             modelBuilder.Entity<ProductionStepRoleClient>(entity =>

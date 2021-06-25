@@ -87,6 +87,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Width = productInfo.Width,
                 Height = productInfo.Height,
 
+                Color = productInfo.Color,
+
                 UnitId = productInfo.UnitId,
 
                 ProductCateId = productInfo.ProductCateId,
@@ -108,7 +110,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 EstimatePrice = productInfo.EstimatePrice,
 
                 IsProductSemi = productInfo.IsProductSemi,
-                IsProduct = productInfo.IsProduct
+                IsProduct = productInfo.IsProduct,
+
+                IsMaterials = productInfo.IsMaterials
             };
         }
 
@@ -120,6 +124,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                if (model.IsMaterials == false && model.IsProduct == false && model.IsProductSemi == false)
+                {
+                    model.IsProduct = true;
                 }
 
                 var stockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -138,6 +147,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.Long = model.Long;
                 productInfo.Width = model.Width;
                 productInfo.Height = model.Height;
+
+                productInfo.Color = model.Color;
 
                 productInfo.UnitId = model.UnitId;
 
@@ -160,7 +171,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.EstimatePrice = model.EstimatePrice;
 
                 productInfo.IsProductSemi = model.IsProductSemi;
+
                 productInfo.IsProduct = model.IsProduct;
+
+                productInfo.IsMaterials = model.IsMaterials;
+
                 await _stockContext.SaveChangesAsync();
 
                 await trans.CommitAsync();

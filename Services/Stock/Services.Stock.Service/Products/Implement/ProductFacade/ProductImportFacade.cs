@@ -113,12 +113,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         {
                             entity.IsProduct = true;
                         }
+                        else entity.IsProduct = false;
                         return true;
                     case nameof(ProductImportModel.IsProductSemi):
                         if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
                         {
                             entity.IsProductSemi = true;
                         }
+                        else entity.IsProductSemi = false;
+                        return true;
+                    case nameof(ProductImportModel.IsMaterials):
+                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        {
+                            entity.IsMaterials = true;
+                        }
+                        else entity.IsMaterials = false;
                         return true;
 
                     //case nameof(ProductImportModel.ProductTypeCode):
@@ -301,6 +310,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 if (p is MappingDataRowAbstract entity)
                 {
                     rowNumber = ", dòng " + entity.RowNumber;
+                }
+
+                if(p.IsMaterials == false && p.IsProduct == false && p.IsProductSemi == false)
+                {
+                    p.IsProduct = true;
                 }
 
                 if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))

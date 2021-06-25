@@ -135,7 +135,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-            if (!string.IsNullOrWhiteSpace(keyword))
+            if (!string.IsNullOrWhiteSpace(keyword) || productIds?.Count > 0)
             {
                 var inventoryDetails = _stockDbContext.InventoryDetail.AsQueryable();
                 if (productIds != null && productIds.Count > 0)
@@ -143,16 +143,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryDetails = inventoryDetails.Where(d => productIds.Contains(d.ProductId));
 
                 }
-                var inventoryIdsQuery = from p in _stockDbContext.Product
-                                        join d in inventoryDetails on p.ProductId equals d.ProductId
-                                        where p.ProductCode.Contains(keyword)
-                                        || p.ProductName.Contains(keyword)
-                                        || p.ProductNameEng.Contains(keyword)
-                                        || d.OrderCode.Contains(keyword)
-                                        || d.ProductionOrderCode.Contains(keyword)
-                                        || d.Pocode.Contains(keyword)
-                                        || d.Description.Contains(keyword)
-                                        || d.RefObjectCode.Contains(keyword)
+
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+
+                    inventoryDetails = from p in _stockDbContext.Product
+                                       join d in inventoryDetails on p.ProductId equals d.ProductId
+                                       where p.ProductCode.Contains(keyword)
+                                       || p.ProductName.Contains(keyword)
+                                       || p.ProductNameEng.Contains(keyword)
+                                       || d.OrderCode.Contains(keyword)
+                                       || d.ProductionOrderCode.Contains(keyword)
+                                       || d.Pocode.Contains(keyword)
+                                       || d.Description.Contains(keyword)
+                                       || d.RefObjectCode.Contains(keyword)
+                                       select d;
+                }
+
+                var inventoryIdsQuery = from d in inventoryDetails
                                         select d.InventoryId;
 
                 inventoryQuery = from q in inventoryQuery
@@ -1141,7 +1149,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         trans.Commit();
 
-                        var messageLog = string.Format("Cập nhật phiếu xuất kho, mã:", inventoryObj.InventoryCode);
+                        var messageLog = string.Format("Cập nhật phiếu xuất kho, mã: {0}", inventoryObj.InventoryCode);
                         await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
                     }
                     catch (Exception ex)

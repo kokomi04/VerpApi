@@ -144,6 +144,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .Include(x => x.OutsourceStepRequestData)
                 .FirstOrDefaultAsync(x => x.OutsourceStepRequestId == outsourceStepRequestId);
 
+            var productionStepParents = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Where(x => request.ProductionStep.Select(x => x.ParentId).Distinct().Contains(x.ProductionStepId))
+                .Include(x => x.Step)
+                .ToListAsync();
+
             var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
                 .Where(x => request.ProductionStep.Select(x => x.ProductionStepId).Contains(x.ProductionStepId))
                 .ToListAsync();
@@ -156,13 +161,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                
                 var role = roles.FirstOrDefault(r => r.ProductionStepLinkDataId == x.ProductionStepLinkDataId && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output);
                 var productionStepInfo = request.ProductionStep.FirstOrDefault(s => s.ProductionStepId == role.ProductionStepId);
+                var productionStepParentInfo = productionStepParents.FirstOrDefault(s => s.ProductionStepId == productionStepInfo.ParentId);
+
                 return new OutsourceStepRequestDetailOutput
                 {
                     ProductionStepLinkDataId = x.ProductionStepLinkDataId,
                     Quantity = x.Quantity,
                     TotalOutsourceOrderQuantity = totalOutsourceOrderQuantityMap.ContainsKey(x.ProductionStepLinkDataId) ? totalOutsourceOrderQuantityMap[x.ProductionStepLinkDataId] : 0,
                     RoleType = (int)EnumProductionStepLinkDataRoleType.Output,
-                    ProductionStepTitle =$"{productionStepInfo.Step.StepName} #({productionStepInfo.ProductionStepId})"
+                    ProductionStepTitle = productionStepParentInfo.Step?.StepName
                 };
             }).ToList();
 

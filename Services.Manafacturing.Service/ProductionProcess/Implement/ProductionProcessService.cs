@@ -1407,7 +1407,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return new ProductionProcessOutsourceStep
             {
                 ProductionSteps = productionStepChilds,
-                ProductionStepLinkDataRoles = productionStepGroupLinkDataRoles,
+                ProductionStepLinkDataRoles = rolesChilds,
                 ProductionStepLinkDatas = stepLinkDatas,
                 ProductionStepLinks = productionStepLinks,
                 ProductionStepLinkDataOutput = roles.Where(x => productionStepIds.Contains(x.ProductionStepId)).GroupBy(r => r.ProductionStepLinkDataId)

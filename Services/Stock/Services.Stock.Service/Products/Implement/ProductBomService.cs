@@ -188,7 +188,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds)
         {
-            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds);
+            var steps = await _manufacturingHelperService.GetSteps();
+            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps);
             return await bomExport.BomExport();
         }
 

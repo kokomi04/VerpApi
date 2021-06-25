@@ -24,6 +24,7 @@ namespace VErp.Services.Stock.Model.Product
         public decimal? EstimatePrice { get; set; }
         public bool IsProductSemi { get; set; }
         public bool IsProduct { get; set; }
+        public bool IsMaterials { get; set; }
         public int Coefficient { get; set; }
         public decimal? Long { get; set; }
         public decimal? Height { get; set; }

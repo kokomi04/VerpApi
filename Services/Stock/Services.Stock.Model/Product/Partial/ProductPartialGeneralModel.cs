@@ -24,6 +24,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public decimal? Width { get; set; }
         public decimal? Height { get; set; }
 
+        public string Color { get; set; }
         public int UnitId { get; set; }
 
         public int ProductCateId { get; set; }
@@ -47,5 +48,6 @@ namespace VErp.Services.Stock.Model.Product.Partial
 
         public bool IsProductSemi { get; set; }
         public bool? IsProduct { get; set; }
+        public bool? IsMaterials { get; set; }
     }
 }

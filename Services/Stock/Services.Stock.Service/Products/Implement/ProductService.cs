@@ -139,7 +139,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     UnitId = req.UnitId,
                     IsProductSemi = true,
                     Coefficient = 1,
-                    IsProduct = false
+                    IsProduct = false,
+                    IsMaterials = false
                 };
 
                 await _stockDbContext.Product.AddAsync(productInfo);
@@ -210,6 +211,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             //{
             //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Loại sinh mã mặt hàng không đúng");
             //}
+
+            if (req.IsMaterials == false && req.IsProduct == false && req.IsProductSemi == false)
+            {
+                req.IsProduct = true;
+            }
 
             var productInfo = _mapper.Map<Product>(req);
             productInfo.ProductInternalName = req.ProductName.NormalizeAsInternalName();
@@ -313,6 +319,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (!(validate = ValidateProduct(req)).IsSuccess())
             {
                 throw new BadRequestException(validate);
+            }
+
+            if (req.IsMaterials == false && req.IsProduct == false && req.IsProductSemi == false)
+            {
+                req.IsProduct = true;
             }
 
             req.ProductCode = (req.ProductCode ?? "").Trim();
@@ -742,6 +753,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.IsProductSemi,
                   p.Coefficient,
                   p.IsProduct,
+                  p.IsMaterials,
                   p.Height,
                   p.Long,
                   p.Width,
@@ -827,6 +839,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     IsProductSemi = item.IsProductSemi,
                     Coefficient = item.Coefficient,
                     IsProduct = item.IsProduct ?? false,
+                    IsMaterials = item.IsMaterials ?? false,
                     Long = item.Long,
                     Width = item.Width,
                     Height = item.Height,

@@ -59,12 +59,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<MaterialCalcListModel>> GetList(string keyword, Clause filter, int page, int size)
+        public async Task<PageData<MaterialCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
         {
             var query = from c in _purchaseOrderDBContext.MaterialCalc
-                        join p in _purchaseOrderDBContext.MaterialCalcProduct on c.MaterialCalcId equals p.MaterialCalcId
-                        join o in _purchaseOrderDBContext.MaterialCalcProductOrderGroup on p.MaterialCalcProductId equals o.MaterialCalcProductId into os
+                        join d in _purchaseOrderDBContext.MaterialCalcProduct on c.MaterialCalcId equals d.MaterialCalcId
+                        join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId
+                        join o in _purchaseOrderDBContext.MaterialCalcProductOrderGroup on d.MaterialCalcProductId equals o.MaterialCalcProductId into os
                         from o in os.DefaultIfEmpty()
+                        join r in _purchaseOrderDBContext.PurchasingRequest on c.MaterialCalcId equals r.MaterialCalcId into rs
+                        from r in rs.DefaultIfEmpty()
                         select new
                         {
                             c.MaterialCalcId,
@@ -73,9 +76,23 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             c.CreatedByUserId,
                             c.CreatedDatetimeUtc,
                             p.ProductId,
-                            o.TotalOrderProductQuantity,
-                            o.OrderCodes
+                            p.ProductCode,
+                            p.ProductName,
+                            TotalOrderProductQuantity = o == null ? null : o.TotalOrderProductQuantity,
+                            OrderCodes = o == null ? null : o.OrderCodes,
+                            PurchasingRequestId = r == null ? (long?)null : r.PurchasingRequestId,
+                            PurchasingRequestCode = r == null ? null : r.PurchasingRequestCode
                         };
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(c => c.MaterialCalcCode.Contains(keyword)
+                 || c.Title.Contains(keyword)
+                 || c.ProductCode.Contains(keyword)
+                 || c.ProductName.Contains(keyword)
+                 || c.OrderCodes.Contains(keyword)
+                );
+
+            query = query.InternalFilter(filter);
+
             var total = await query.CountAsync();
             var paged = (await query.Skip((page - 1) * size).Take(size).ToListAsync())
                 .Select(d => new MaterialCalcListModel()
@@ -86,8 +103,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     Title = d.Title,
                     CreatedByUserId = d.CreatedByUserId,
                     CreatedDatetimeUtc = d.CreatedDatetimeUtc.GetUnix(),
+                    ProductId = d.ProductId,
+                    ProductCode = d.ProductCode,
+                    productName = d.ProductName,
                     OrderCodes = d.OrderCodes,
-                    TotalOrderProductQuantity = d.TotalOrderProductQuantity
+                    TotalOrderProductQuantity = d.TotalOrderProductQuantity,
+                    PurchasingRequestId = d.PurchasingRequestId,
+                    PurchasingRequestCode = d.PurchasingRequestCode
                 }).ToList();
             return (paged, total);
         }
