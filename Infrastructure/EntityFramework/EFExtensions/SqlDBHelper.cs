@@ -658,6 +658,19 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return dataTable;
         }
 
+        public static DataTable ConvertToIntValues(IList<int> values)
+        {
+            DataTable rows = new DataTable();
+            rows.Columns.Add("Value", typeof(int));
+            foreach (var value in values)
+            {
+                var dataRow = rows.NewRow();
+                dataRow["Value"] = value;
+                rows.Rows.Add(dataRow);
+            }
+            return rows;
+        }
+
         private static char[] SpaceChars = new[] { ';', '\n', '\r', '\t', '\v', ' ' };
 
         public static string TSqlAppendCondition(this string sql, string filterCondition)

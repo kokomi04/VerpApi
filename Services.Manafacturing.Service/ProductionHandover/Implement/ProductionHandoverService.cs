@@ -504,9 +504,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             }
                             if (totalInventoryQuantity > 0 && isLastest) receivedQuantity += totalInventoryQuantity;
                         }
-
                     }
-
 
                     detail.InputDatas.Add(new StepInOutData
                     {

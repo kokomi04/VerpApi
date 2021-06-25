@@ -62,6 +62,21 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _manufacturingHelperService = manufacturingHelperService;
         }
 
+        public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
+        {
+            if (!_stockDbContext.Product.Any(p => productIds.Contains(p.ProductId))) throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ProductIds", SqlDBHelper.ConvertToIntValues(productIds)) { SqlDbType = SqlDbType.Structured, TypeName = "dbo._INTVALUES" }
+            };
+
+            var resultData = await _stockDbContext.ExecuteDataProcedure("asp_GetProductElements", parammeters);
+            var result = resultData.ConvertData<ProductElementModel>();
+            return result;
+        }
+
+
         public async Task<IList<ProductBomOutput>> GetBom(int productId)
         {
             if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
