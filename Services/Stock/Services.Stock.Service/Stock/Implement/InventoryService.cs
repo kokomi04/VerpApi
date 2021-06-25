@@ -143,16 +143,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryDetails = inventoryDetails.Where(d => productIds.Contains(d.ProductId));
 
                 }
-                var inventoryIdsQuery = from p in _stockDbContext.Product
-                                        join d in inventoryDetails on p.ProductId equals d.ProductId
-                                        where p.ProductCode.Contains(keyword)
-                                        || p.ProductName.Contains(keyword)
-                                        || p.ProductNameEng.Contains(keyword)
-                                        || d.OrderCode.Contains(keyword)
-                                        || d.ProductionOrderCode.Contains(keyword)
-                                        || d.Pocode.Contains(keyword)
-                                        || d.Description.Contains(keyword)
-                                        || d.RefObjectCode.Contains(keyword)
+
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+
+                    inventoryDetails = from p in _stockDbContext.Product
+                                       join d in inventoryDetails on p.ProductId equals d.ProductId
+                                       where p.ProductCode.Contains(keyword)
+                                       || p.ProductName.Contains(keyword)
+                                       || p.ProductNameEng.Contains(keyword)
+                                       || d.OrderCode.Contains(keyword)
+                                       || d.ProductionOrderCode.Contains(keyword)
+                                       || d.Pocode.Contains(keyword)
+                                       || d.Description.Contains(keyword)
+                                       || d.RefObjectCode.Contains(keyword)
+                                       select d;
+                }
+
+                var inventoryIdsQuery = from d in inventoryDetails
                                         select d.InventoryId;
 
                 inventoryQuery = from q in inventoryQuery
