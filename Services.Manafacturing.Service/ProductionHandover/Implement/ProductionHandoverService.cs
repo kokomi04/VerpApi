@@ -304,13 +304,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
                 join ldr in _manufacturingDBContext.ProductionStepLinkDataRole on ps.ProductionStepId equals ldr.ProductionStepId
                 join ld in _manufacturingDBContext.ProductionStepLinkData on ldr.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
-                join ildr in _manufacturingDBContext.ProductionStepLinkDataRole on ldr.ProductionStepLinkDataId equals ildr.ProductionStepLinkDataId into ildrs
+                join ildr in _manufacturingDBContext.ProductionStepLinkDataRole on new
+                {
+                    ldr.ProductionStepLinkDataId,
+                    IsInput = ldr.ProductionStepLinkDataRoleTypeId == (int) EnumProductionStepLinkDataRoleType.Input
+                } equals new
+                {
+                    ildr.ProductionStepLinkDataId,
+                    IsInput = !(ildr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                } into ildrs
                 from ildr in ildrs.DefaultIfEmpty()
                 where a.DepartmentId == departmentId
-                    && ldr.ProductionStepLinkDataRoleTypeId != ildr.ProductionStepLinkDataRoleTypeId
                     && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
                     && ps.ContainerId == productionOrderId
-                    && d.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                    && ld.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
                 orderby a.CreatedDatetimeUtc ascending
                 select new
                 {
@@ -319,9 +326,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     a.AssignmentQuantity,
                     ldr.ProductionStepLinkDataRoleTypeId,
                     TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault(),
-                    d.ObjectId,
+                    ld.ObjectId,
                     OutputQuantity = ld.Quantity - d.OutsourcePartQuantity.GetValueOrDefault(),
-                    IsImport = ildr.ProductionStepLinkDataId > 0
+                    IsHandover = ildr == null
                 })
                 .GroupBy(a => new
                 {
@@ -337,16 +344,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     TotalQuantity = g.Max(a => a.TotalQuantity),
                     ObjectId = g.Max(a => a.ObjectId),
                     OutputQuantity = g.Sum(a => a.OutputQuantity),
-                    ImportStockQuantity = g.Sum(a => a.IsImport ? a.OutputQuantity : 0)
+                    HandoverStockQuantity = g.Sum(a => a.IsHandover ? a.OutputQuantity : 0)
                 })
-                .Where(a => a.ImportStockQuantity > 0)
+                .Where(a => a.HandoverStockQuantity > 0)
                 .Select(a => new AssigmentLinkData
                 {
                     DepartmentId = a.DepartmentId,
                     ProductionStepId = a.ProductionStepId,
                     ObjectId = a.ObjectId,
                     ProductionStepLinkDataRoleTypeId = a.ProductionStepLinkDataRoleTypeId,
-                    ImportStockQuantity = a.ImportStockQuantity * a.AssignmentQuantity / a.TotalQuantity
+                    HandoverStockQuantity = a.HandoverStockQuantity * a.AssignmentQuantity / a.TotalQuantity
                 })
                 .ToList();
 
@@ -476,12 +483,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                         && ir.ProductId == inputLinkData.ObjectId)
                                     .Sum(ir => ir.ActualQuantity.GetValueOrDefault());
 
-                                if (assignment.ImportStockQuantity <= allocatedQuantity) break;
+                                if (assignment.HandoverStockQuantity <= allocatedQuantity) break;
                                 if (assignment.ObjectId != inputLinkData.ObjectId
                                      || assignment.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output) continue;
 
 
-                                var unallocatedQuantity = totalInventoryQuantity > assignment.ImportStockQuantity - allocatedQuantity ? assignment.ImportStockQuantity - allocatedQuantity : totalInventoryQuantity;
+                                var unallocatedQuantity = totalInventoryQuantity > assignment.HandoverStockQuantity - allocatedQuantity ? assignment.HandoverStockQuantity - allocatedQuantity : totalInventoryQuantity;
                                 if(assignment.ProductionStepId == productionStepId)
                                 {
                                     receivedQuantity += unallocatedQuantity;
@@ -492,14 +499,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                     isLastest = false;
                                 }
                                 
-                                assignment.ImportStockQuantity -= unallocatedQuantity;
+                                assignment.HandoverStockQuantity -= unallocatedQuantity;
                                 totalInventoryQuantity -= unallocatedQuantity;
                             }
                             if (totalInventoryQuantity > 0 && isLastest) receivedQuantity += totalInventoryQuantity;
                         }
-
                     }
-
 
                     detail.InputDatas.Add(new StepInOutData
                     {
@@ -649,12 +654,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                         && ir.ProductId == outputLinkData.ObjectId)
                                     .Sum(ir => ir.ActualQuantity.GetValueOrDefault());
 
-                                if (assignment.ImportStockQuantity <= allocatedQuantity) break;
+                                if (assignment.HandoverStockQuantity <= allocatedQuantity) break;
                                 if (assignment.ObjectId != outputLinkData.ObjectId
                                      || assignment.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input) continue;
 
 
-                                var unallocatedQuantity = totalInventoryQuantity > assignment.ImportStockQuantity - allocatedQuantity ? assignment.ImportStockQuantity - allocatedQuantity : totalInventoryQuantity;
+                                var unallocatedQuantity = totalInventoryQuantity > assignment.HandoverStockQuantity - allocatedQuantity ? assignment.HandoverStockQuantity - allocatedQuantity : totalInventoryQuantity;
                                 if (assignment.ProductionStepId == productionStepId)
                                 {
                                     receivedQuantity += unallocatedQuantity;
@@ -666,7 +671,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                     isLastest = false;
                                 }
 
-                                assignment.ImportStockQuantity -= unallocatedQuantity;
+                                assignment.HandoverStockQuantity -= unallocatedQuantity;
                                 totalInventoryQuantity -= unallocatedQuantity;
                             }
                             if (totalInventoryQuantity > 0 && isLastest) receivedQuantity += totalInventoryQuantity;
@@ -737,7 +742,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             public long ProductionStepId { get; set; }
             public long ObjectId { get; set; }
             public int ProductionStepLinkDataRoleTypeId { get; set; }
-            public decimal ImportStockQuantity { get; set; }
+            public decimal HandoverStockQuantity { get; set; }
         }
     }
 }
