@@ -51,7 +51,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IMapper mapper
             , IUnitService unitService
             , IProductService productService
-            , IManufacturingHelperService manufacturingHelperService) {
+            , IManufacturingHelperService manufacturingHelperService)
+        {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
@@ -60,6 +61,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _unitService = unitService;
             _productService = productService;
             _manufacturingHelperService = manufacturingHelperService;
+        }
+
+        public async Task<IDictionary<int, IList<ProductBomOutput>>> GetBoms(IList<int> productIds)
+        {
+            var dic = new Dictionary<int, IList<ProductBomOutput>>();
+            foreach (var productId in productIds.Distinct())
+            {
+                dic.Add(productId, await GetBom(productId));
+            }
+
+            return dic;
         }
 
         public async Task<IList<ProductBomOutput>> GetBom(int productId)
@@ -195,7 +207,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private bool HasChange(ProductBom oldValue, ProductBomInput newValue)
         {
             return oldValue.Quantity != newValue.Quantity
-                || oldValue.Wastage != newValue.Wastage 
+                || oldValue.Wastage != newValue.Wastage
                 || oldValue.InputStepId != newValue.InputStepId
                 || oldValue.OutputStepId != newValue.OutputStepId
                 || oldValue.Wastage != newValue.Wastage

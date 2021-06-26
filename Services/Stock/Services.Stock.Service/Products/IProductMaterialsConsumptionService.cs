@@ -10,6 +10,8 @@ namespace VErp.Services.Stock.Service.Products
 {
     public interface IProductMaterialsConsumptionService
     {
+        Task<IDictionary<int, IEnumerable<ProductMaterialsConsumptionOutput>>> GetProductMaterialsConsumptionByProductIds(IList<int> productIds);
+
         Task<bool> UpdateProductMaterialsConsumption(int productId, ICollection<ProductMaterialsConsumptionInput> model);
         Task<bool> UpdateProductMaterialsConsumption(int productId, long ProductMaterialsConsumptionId,  ProductMaterialsConsumptionInput model);
         Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int productId);

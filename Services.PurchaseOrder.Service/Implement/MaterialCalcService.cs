@@ -146,8 +146,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
 
             await Validate(materialCalcId, req);
+            _purchaseOrderDBContext.MaterialCalcConsumptionGroup.RemoveRange(entity.MaterialCalcConsumptionGroup);
+
+            _purchaseOrderDBContext.MaterialCalcProductOrder.RemoveRange(entity.MaterialCalcProduct.SelectMany(p=>p.MaterialCalcProductOrder));
+
+            _purchaseOrderDBContext.MaterialCalcProductDetail.RemoveRange(entity.MaterialCalcProduct.SelectMany(p => p.MaterialCalcProductDetail));
+
+            _purchaseOrderDBContext.MaterialCalcProduct.RemoveRange(entity.MaterialCalcProduct);
+
+            _purchaseOrderDBContext.MaterialCalcSummary.RemoveRange(entity.MaterialCalcSummary);
 
             _mapper.Map(req, entity);
+
             await _purchaseOrderDBContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.MaterialCalc, entity.MaterialCalcId, $"Cập nhật tính nhu cầu VT {req.MaterialCalcCode}", req.JsonSerialize());
@@ -172,6 +182,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private Task<MaterialCalc> GetEntityIncludes(long materialCalcId)
         {
             return _purchaseOrderDBContext.MaterialCalc
+              .Include(c => c.MaterialCalcConsumptionGroup)
               .Include(c => c.MaterialCalcProduct)
               .ThenInclude(s => s.MaterialCalcProductDetail)
               .Include(s => s.MaterialCalcProduct)

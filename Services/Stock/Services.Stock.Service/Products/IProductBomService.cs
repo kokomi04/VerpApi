@@ -10,6 +10,7 @@ namespace VErp.Services.Stock.Service.Products
 {
     public interface IProductBomService
     {
+        Task<IDictionary<int,IList<ProductBomOutput>>> GetBoms(IList<int> productIds);
         Task<IList<ProductBomOutput>> GetBom(int productId);
         Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds);
 

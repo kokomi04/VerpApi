@@ -354,7 +354,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var param = Expression.Parameter(typeof(T), "s");
                 Expression filterExp = FilterClauseProcess<T>(param, filters, query, false, timeZoneOffset);
-                query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
+                if (filterExp != null)
+                    query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
             }
             return query;
         }
