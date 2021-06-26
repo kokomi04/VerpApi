@@ -16,6 +16,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public long[] ProductionStepLinkDataOutput { get; set; }
         public long[] ProductionStepLinkDataIntput { get; set; }
+
+        public IList<GroupProductionStepToOutsource> groupProductionStepToOutsources { get; set; }
     }
 
     public class ProductionStepLinkDataOutsourceStep: ProductionStepLinkDataInput

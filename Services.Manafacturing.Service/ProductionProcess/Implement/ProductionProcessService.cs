@@ -1350,6 +1350,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .ProjectTo<ProductionStepModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
+            var groupInOutToOutsource = await GroupProductionStepInOutToOutsource(containerType, containerId, productionStepParents.Select(x => x.ProductionStepId).Distinct().ToArray(), Ignore: true);
+
             productionStepChilds.AddRange(productionStepParents);
 
             var lsProductionStepLinkDataId = roles.Where(x=>productionStepIds.Contains(x.ProductionStepId)).Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
@@ -1419,7 +1421,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Where(g => g.Count() == 1 && g.First().ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
                     .SelectMany(r => r)
                     .Select(x => x.ProductionStepLinkDataId)
-                    .ToArray()
+                    .ToArray(),
+                groupProductionStepToOutsources = groupInOutToOutsource
             };
         }
 
@@ -1675,14 +1678,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         /*
          * Lấy thông tin nhóm đầu ra đầu vào gia công
          */
-        public async Task<IList<GroupProductionStepToOutsource>> GroupProductionStepInOutToOutsource(EnumContainerType containerType, long containerId, long[] arrProductionStepId)
+        public async Task<IList<GroupProductionStepToOutsource>> GroupProductionStepInOutToOutsource(EnumContainerType containerType, long containerId, long[] arrProductionStepId, bool Ignore = false)
         {
             int indexGroup = 1;
             var data = new List<GroupProductionStepToOutsource>();
             var groupRelationship = new NonCamelCaseDictionary();
 
             var lsProductionStepChildIds = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                .Where(x => arrProductionStepId.Contains(x.ParentId.GetValueOrDefault()) && x.OutsourceStepRequestId.GetValueOrDefault() == 0)
+                .Where(x => arrProductionStepId.Contains(x.ParentId.GetValueOrDefault()) && (Ignore ? true : x.OutsourceStepRequestId.GetValueOrDefault() == 0 ))
                 .Select(x => x.ProductionStepId).ToListAsync();
 
             var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
