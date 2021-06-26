@@ -30,6 +30,15 @@ namespace VErpApi.Controllers.Stock.Products
             _productBomService = productBomService;
         }
 
+        [HttpPost]
+        [Route("ByProductIds")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IDictionary<int, IList<ProductBomOutput>>> ByProductIds([FromBody] IList<int> productIds)
+        {
+            return await _productBomService.GetBoms(productIds);
+        }
+
+
         [HttpGet]
         [Route("{productId}")]
         public async Task<IList<ProductBomOutput>> GetBOM([FromRoute] int productId)

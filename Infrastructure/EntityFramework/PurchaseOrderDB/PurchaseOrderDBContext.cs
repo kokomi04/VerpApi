@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         }
 
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
+        public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
         public virtual DbSet<MaterialCalcProductDetail> MaterialCalcProductDetail { get; set; }
         public virtual DbSet<MaterialCalcProductOrder> MaterialCalcProductOrder { get; set; }
@@ -56,9 +57,22 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
                 entity.Property(e => e.MaterialCalcCode).HasMaxLength(128);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<MaterialCalcConsumptionGroup>(entity =>
+            {
+                entity.HasKey(e => new { e.MaterialCalcId, e.ProductMaterialsConsumptionGroupId });
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.MaterialCalcConsumptionGroup)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcConsumptionGroup_MaterialCalc");
             });
 
             modelBuilder.Entity<MaterialCalcProduct>(entity =>
@@ -90,8 +104,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<MaterialCalcProductOrder>(entity =>
             {
-                entity.HasKey(e => new { e.MaterialCalcProductId, e.OrderCode })
-                    .HasName("PK_MaterialCalcProductOrder_1");
+                entity.HasKey(e => new { e.MaterialCalcProductId, e.OrderCode });
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 

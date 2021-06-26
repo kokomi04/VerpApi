@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
     {
         public long MaterialCalcProductId { get; set; }
         public string OrderCode { get; set; }
-        public decimal? OrderProductQuantity { get; set; }
+        public decimal OrderProductQuantity { get; set; }
 
         public virtual MaterialCalcProduct MaterialCalcProduct { get; set; }
     }
