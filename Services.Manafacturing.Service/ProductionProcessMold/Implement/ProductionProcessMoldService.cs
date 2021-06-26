@@ -96,8 +96,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 // step link
                 var mLinks = productionSteps.SelectMany(x => x.ProductionStepMoldLink).ToArray();
                 var nLinks = (from l in mLinks
-                              join fs in productionSteps on l.StepFromId equals fs.StepId
-                              join ts in productionSteps on l.StepToId equals ts.StepId
+                              join fs in nProductionSteps on l.StepFromId equals fs.StepId
+                              join ts in nProductionSteps on l.StepToId equals ts.StepId
                               select new ProductionStepMoldLink
                               {
                                   FromProductionStepMoldId = fs.ProductionStepMoldId,
@@ -138,7 +138,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                     .ToListAsync();
 
                 var linkOlds = await _manufacturingDBContext.ProductionStepMoldLink
-                    .Where(l => productionSteps.Any(x => x.ProductionStepMoldId == l.FromProductionStepMoldId))
+                    .Where(l => productionSteps.Select(x => x.ProductionStepMoldId).Contains(l.FromProductionStepMoldId))
                     .ToListAsync();
 
                 _mapper.Map(model, process); // Cập nhật title
@@ -151,10 +151,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                     else step.IsDeleted = true;
                 }
 
-                var nProductionSteps = _mapper.Map<IEnumerable<ProductionStepMold>>(model.ProductionStepMold.Where(x => x.ProductionStepMoldId <= 0).ToArray());
-                await _manufacturingDBContext.ProductionStepMold.AddRangeAsync(nProductionSteps);
+                var nProductionSteps = _mapper.Map<List<ProductionStepMold>>(model.ProductionStepMold.Where(x => x.ProductionStepMoldId <= 0).ToArray());
+                nProductionSteps.ForEach(x => x.ProductionProcessMoldId = productionProcessMoldId);
 
-                _manufacturingDBContext.ProductionStepMoldLink.RemoveRange(linkOlds);
+                await _manufacturingDBContext.ProductionStepMold.AddRangeAsync(nProductionSteps);
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -162,15 +162,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 productionSteps.AddRange(nProductionSteps);
                 var mLinks = model.ProductionStepMold.SelectMany(x => x.ProductionStepMoldLink).ToArray();
                 var nLinks = (from l in mLinks
-                             join fs in productionSteps on l.StepFromId equals fs.StepId
-                             join ts in productionSteps on l.StepToId equals ts.StepId
-                             select new ProductionStepMoldLink
-                             {
-                                 FromProductionStepMoldId = fs.ProductionStepMoldId,
-                                 ToProductionStepMoldId = ts.ProductionStepMoldId
-                             }).Distinct();
+                              join fs in productionSteps on l.StepFromId equals fs.StepId
+                              join ts in productionSteps on l.StepToId equals ts.StepId
+                              select new ProductionStepMoldLink
+                              {
+                                  FromProductionStepMoldId = fs.ProductionStepMoldId,
+                                  ToProductionStepMoldId = ts.ProductionStepMoldId
+                              }).Distinct();
 
-                await _manufacturingDBContext.ProductionStepMoldLink.AddRangeAsync(nLinks);
+                _manufacturingDBContext.ProductionStepMoldLink.RemoveRange(linkOlds.Except(nLinks, new ProductionStepMoldLinkComparer()));
+
+                await _manufacturingDBContext.ProductionStepMoldLink.AddRangeAsync(nLinks.Except(linkOlds, new ProductionStepMoldLinkComparer()));
+
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, productionProcessMoldId, $"Cập nhật quy trình mẫu {productionProcessMoldId}", model.JsonSerialize());
