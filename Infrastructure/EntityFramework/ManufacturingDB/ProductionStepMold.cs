@@ -19,6 +19,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public decimal? CoordinateX { get; set; }
+        public decimal? CoordinateY { get; set; }
 
         public virtual ProductionProcessMold ProductionProcessMold { get; set; }
         public virtual Step Step { get; set; }

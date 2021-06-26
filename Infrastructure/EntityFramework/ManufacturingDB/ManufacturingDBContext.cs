@@ -632,6 +632,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStepMold>(entity =>
             {
+                entity.Property(e => e.CoordinateX).HasColumnType("decimal(18, 2)");
+
+                entity.Property(e => e.CoordinateY).HasColumnType("decimal(18, 2)");
+
                 entity.HasOne(d => d.ProductionProcessMold)
                     .WithMany(p => p.ProductionStepMold)
                     .HasForeignKey(d => d.ProductionProcessMoldId)
