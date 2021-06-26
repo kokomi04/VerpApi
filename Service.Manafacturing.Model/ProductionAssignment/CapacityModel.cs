@@ -7,16 +7,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class CapacityOutputModel
     {
         public IDictionary<int, List<CapacityModel>> CapacityData { get; set; }
-        public IList<ZeroWorkloadModel> ZeroWorkload { get; set; }
-    }
-
-    public class ZeroWorkloadModel
-    {
-        public string StepName { get; set; }
-        public int UnitId { get; set; }
-        public string ProductionOrderCode { get; set; }
-        public long ProductionStepId { get; set; }
-        public long ProductionOrderId { get; set; }
     }
 
     public class CapacityModel

@@ -81,12 +81,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, productionOrderId, page, size, orderByFieldName, asc);
         }
 
-        [HttpGet]
-        [Route("productivity/productionStep/{productionStepId}")]
-        public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
-        {
-            return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
-        }
+        //[HttpGet]
+        //[Route("productivity/productionStep/{productionStepId}")]
+        //public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
+        //{
+        //    return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
+        //}
 
         [HttpGet]
         [Route("productivity/general/productionOrder/{productionOrderId}")]
@@ -95,12 +95,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.GetGeneralProductivityDepartments(productionOrderId);
         }
 
-        [HttpGet]
-        [Route("capacity/productionOrder/{productionOrderId}/productionStep/{productionStepId}")]
-        public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
-        {
-            return await _productionAssignmentService.GetCapacityDepartments(productionOrderId, productionStepId, startDate, endDate);
-        }
+        //[HttpGet]
+        //[Route("capacity/productionOrder/{productionOrderId}/productionStep/{productionStepId}")]
+        //public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
+        //{
+        //    return await _productionAssignmentService.GetCapacityDepartments(productionOrderId, productionStepId, startDate, endDate);
+        //}
 
         [HttpGet]
         [Route("capacity/general/productionOrder/{productionOrderId}")]
