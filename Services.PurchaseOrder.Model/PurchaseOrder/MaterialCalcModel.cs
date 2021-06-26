@@ -5,7 +5,6 @@ using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using AutoMapper.EquivalencyExpression;
 
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 {
