@@ -41,7 +41,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId);
         Task<bool> ValidateProductionStepRelationship(List<long> lsProductionStepId);
         Task<IList<GroupProductionStepToOutsource>> GroupProductionStepToOutsource(EnumContainerType containerType, long containerId, long[] productionStepIds);
-        Task<IList<GroupProductionStepToOutsource>> GroupProductionStepInOutToOutsource(EnumContainerType containerType, long containerId, long[] arrProductionStepId);
+        Task<IList<GroupProductionStepToOutsource>> GroupProductionStepInOutToOutsource(EnumContainerType containerType, long containerId, long[] arrProductionStepId, bool Ignore = false);
         Task<bool> SetProductionStepWorkload(IList<ProductionStepWorkload> productionStepWorkload);
 
         //OutsourceRequest
