@@ -54,7 +54,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Là chi tiết mặt hàng (Có, Không)", GroupName = "Thông tin chung")]
         public bool? IsProductSemi { get; set; }
 
-        [Display(Name = "Là Mặt hàng (Có, Không)", GroupName = "Thông tin chung")]
+        [Display(Name = "Là thành phẩm (Có, Không)", GroupName = "Thông tin chung")]
         public bool? IsProduct { get; set; }
 
         [Display(Name = "Là NVL (Có, Không)", GroupName = "Thông tin chung")]
