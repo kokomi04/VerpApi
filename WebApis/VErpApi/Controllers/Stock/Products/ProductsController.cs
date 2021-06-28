@@ -57,17 +57,17 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null, [FromQuery] bool? isMaterials = null)
         {
-            return await _productService.GetList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct);
+            return await _productService.GetList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials);
         }
 
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("ExportList")]
-        public async Task<IActionResult> ExportList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null)
+        public async Task<IActionResult> ExportList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null, [FromQuery] bool? isMaterials = null)
         {
-            var (stream, fileName, contentType) =  await _productService.ExportList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct);
+            var (stream, fileName, contentType) =  await _productService.ExportList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials);
 
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
