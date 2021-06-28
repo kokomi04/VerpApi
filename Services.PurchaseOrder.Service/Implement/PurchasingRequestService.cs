@@ -335,6 +335,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 }
 
+                purchasingRequest.MaterialCalcId = null;
+                if (requestType == EnumPurchasingRequestType.MaterialCalc)
+                {
+                    if (!model.MaterialCalcId.HasValue || model.MaterialCalcId <= 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams);
+                    }
+
+                    purchasingRequest.MaterialCalcId = model.MaterialCalcId;
+
+                    purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
+                    purchasingRequest.IsApproved = true;
+                    purchasingRequest.CensorByUserId = _currentContext.UserId;
+                    purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
+                }
+
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -389,6 +405,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     _mapper.Map(model, info);
 
                     if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.OrderMaterial && model.OrderDetailId != info.OrderDetailId))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams);
+                    }
+
+                    if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.MaterialCalc && model.MaterialCalcId != info.MaterialCalcId))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams);
                     }
@@ -489,13 +510,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         //    return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
         //}
 
-        public async Task<bool> Delete(long? orderDetailId, long purchasingRequestId)
+        public async Task<bool> Delete(long? orderDetailId, long? materialCalcId, long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                 if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
                 if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.OrderMaterial && info.OrderDetailId != orderDetailId)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams);
+                }
+
+                if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc && info.MaterialCalcId != materialCalcId)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams);
                 }

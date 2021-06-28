@@ -136,7 +136,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (entity == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
 
-            return _mapper.Map<MaterialCalcModel>(entity);
+            var requestInfo = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.MaterialCalcId == materialCalcId);
+
+            var info = _mapper.Map<MaterialCalcModel>(entity);
+            info.PurchasingRequestId = requestInfo?.PurchasingRequestId;
+            info.PurchasingRequestCode = requestInfo?.PurchasingRequestCode;
+            return info;
         }
 
         public async Task<bool> Update(long materialCalcId, MaterialCalcModel req)
@@ -148,7 +153,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             await Validate(materialCalcId, req);
             _purchaseOrderDBContext.MaterialCalcConsumptionGroup.RemoveRange(entity.MaterialCalcConsumptionGroup);
 
-            _purchaseOrderDBContext.MaterialCalcProductOrder.RemoveRange(entity.MaterialCalcProduct.SelectMany(p=>p.MaterialCalcProductOrder));
+            _purchaseOrderDBContext.MaterialCalcProductOrder.RemoveRange(entity.MaterialCalcProduct.SelectMany(p => p.MaterialCalcProductOrder));
 
             _purchaseOrderDBContext.MaterialCalcProductDetail.RemoveRange(entity.MaterialCalcProduct.SelectMany(p => p.MaterialCalcProductDetail));
 
