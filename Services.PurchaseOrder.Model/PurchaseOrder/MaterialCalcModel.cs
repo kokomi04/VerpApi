@@ -30,6 +30,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     }
     public class MaterialCalcModel : MaterialCalcBasicModel, IMapFrom<MaterialCalc>
     {
+        public long? PurchasingRequestId { get; set; }
+        public string PurchasingRequestCode { get; set; }
+
         public IList<MaterialCalcConsumptionGroupModel> ConsumptionGroups { get; set; }
         public IList<MaterialCalcProductModel> Products { get; set; }
         public IList<MaterialCalcSummaryModel> Summary { get; set; }
