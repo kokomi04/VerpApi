@@ -48,5 +48,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string PartnerTitle { get; set; }
         public int UnitId { get; set; }
         public string UnitName { get; set; }
+        public string Specification { get; set; }
     }
 }
