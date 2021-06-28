@@ -508,7 +508,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private string GenerateFileUrl(long fileId, string filePath, string contentType)
         {
-            var fileName = Path.GetFileName(filePath);
+            var fileName = Path.GetFileName(filePath).Replace('?', ' ').Replace('#', ' ').Replace(" ", "");
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
             return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + $"/filestorage/view/{fileName}?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }
