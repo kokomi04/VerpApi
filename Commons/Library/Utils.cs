@@ -481,14 +481,21 @@ namespace VErp.Commons.Library
                 { StringTemplateConstants.FID, fId },
             };
 
-            if (dateTime.HasValue)
+
+            var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
+            foreach (Match m in dateReg.Matches(template))
             {
-                var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
-                foreach (Match m in dateReg.Matches(template))
+                if (dateTime.HasValue)
                 {
                     values.Add(m.Value, dateTime.Value.ToString(m.Groups["format"].Value));
                 }
+                else
+                {
+                    values.Add(m.Value, m.Groups["format"].Value);
+                }
             }
+
+
 
             if (!string.IsNullOrWhiteSpace(number))
             {
