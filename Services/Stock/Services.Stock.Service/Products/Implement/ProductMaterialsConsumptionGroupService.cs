@@ -106,9 +106,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
 
             var total = query.Count();
-            var lst = (size > 0 ? query.Skip((page - 1) * size).Take(size) : query)
+            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query)
                 .ProjectTo<ProductMaterialsConsumptionGroupModel>(_mapper.ConfigurationProvider)
-                .ToList();
+                .ToListAsync();
 
             return (lst, total);
         }
