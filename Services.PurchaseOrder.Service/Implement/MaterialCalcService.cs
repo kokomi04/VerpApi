@@ -220,7 +220,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var code = await ctx
                 .SetConfig(EnumObjectType.MaterialCalc)
-                .SetConfigData(materialCalcId ?? 0, model.CreatedDatetimeUtc)
+                .SetConfigData(materialCalcId ?? 0, DateTime.Now.GetUnix())
                 .TryValidateAndGenerateCode(_purchaseOrderDBContext.MaterialCalc, model.MaterialCalcCode, (s, code) => s.MaterialCalcId != materialCalcId && s.MaterialCalcCode == code);
 
             model.MaterialCalcCode = code;
