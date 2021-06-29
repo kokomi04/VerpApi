@@ -168,6 +168,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpGet]
         [Route("operators")]
+        [GlobalApi]
         public PageData<OperatorModel> GetOperators([FromQuery] int page, [FromQuery] int size)
         {
             return _categoryConfigService.GetOperators(page, size);
