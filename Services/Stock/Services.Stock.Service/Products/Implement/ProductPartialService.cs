@@ -99,7 +99,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Description = extraInfo.Description,
 
                 BarcodeConfigId = productInfo.BarcodeConfigId,
-                BarcodeStandardId = (EnumBarcodeStandard)productInfo.BarcodeStandardId,
+                BarcodeStandardId = (EnumBarcodeStandard?)productInfo.BarcodeStandardId,
                 Barcode = productInfo.Barcode,
 
                 Quantitative = productInfo.Quantitative,
