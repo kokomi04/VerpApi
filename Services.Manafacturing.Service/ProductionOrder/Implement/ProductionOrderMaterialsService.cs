@@ -89,6 +89,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             || x.ProductionStepLinkData.ProductionStepLinkDataTypeId == (int)EnumProductionStepLinkDataType.Others))
                 .ToList();
 
+            var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Where(x => x.IsGroup == true && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder && x.ContainerId == productionOrderId)
+                .Include(x=>x.Step)
+                .ToListAsync();
+
             var productionAssignments = _manufacturingDBContext.ProductionAssignment.AsNoTracking()
                                             .Where(x => roleInputData.Select(x => x.ProductionStepId).Contains(x.ProductionStepId))
                                             .Include(x => x.ProductionStepLinkData)
@@ -102,13 +107,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var materialsAssigned = (from r in roleInputData
                                      join a in productionAssignments
                                          on r.ProductionStepId equals a.ProductionStepId
+                                     join s in productionSteps
+                                        on r.ProductionStep.ParentId equals s.ProductionStepId
+                                     where r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
                                      select new ProductionOrderMaterialsCalc
                                      {
                                          AssignmentQuantity = a.RateQuantity * (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                          DepartmentId = a.DepartmentId,
                                          ProductId = r.ProductionStepLinkData.ObjectId,
                                          ProductionStepId = r.ProductionStepId,
-                                         ProductionStepTitle = string.Concat(r.ProductionStep.Step?.StepName, $@" (#{r.ProductionStepId})"),
+                                         ProductionStepTitle = string.Concat(s.Step?.StepName, $@" ({r.ProductionStep.Title})"),
                                          ProductionStepLinkDataId = r.ProductionStepLinkDataId,
                                          Quantity = a.RateQuantity * (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                          RateQuantity = a.RateQuantity,
@@ -128,17 +136,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                                    TotalAssignmentQuantity = g.Sum(x => x.AssignmentQuantity)
                                                };
             var materialsUnAssigned = from r in roleInputData
+                                      join s in productionSteps
+                                       on r.ProductionStep.ParentId equals s.ProductionStepId
                                       join a in calcuTotalAssignmentQuantity
                                            on r.ProductionStepLinkDataId equals a.ProductionStepLinkDataId into assignMap
                                       from m in assignMap.DefaultIfEmpty()
                                       let AssignmentQuantity = (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()) - m?.TotalAssignmentQuantity
-                                      where AssignmentQuantity is null || AssignmentQuantity > 0
+                                      where AssignmentQuantity is null || AssignmentQuantity > 0 && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
                                       select new ProductionOrderMaterialsCalc
                                       {
                                           AssignmentQuantity = !AssignmentQuantity.HasValue ? r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() : AssignmentQuantity,
                                           ProductId = r.ProductionStepLinkData.ObjectId,
                                           ProductionStepId = r.ProductionStepId,
-                                          ProductionStepTitle = string.Concat(r.ProductionStep.Step?.StepName, $@" (#{r.ProductionStepId})"),
+                                          ProductionStepTitle = string.Concat(s.Step?.StepName, $@" ({r.ProductionStep.Title})"),
                                           ProductionStepLinkDataId = r.ProductionStepLinkDataId,
                                           Quantity = AssignmentQuantity.HasValue ? AssignmentQuantity.GetValueOrDefault() : (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
                                           RateQuantity = !AssignmentQuantity.HasValue ? 1 : (AssignmentQuantity.GetValueOrDefault() / (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault())),
