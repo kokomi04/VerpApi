@@ -21,7 +21,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         //Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments(long productionStepId);
 
-        Task<IDictionary<long, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments(long productionOrderId);
+        Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments();
 
         //Task<CapacityOutputModel> GetCapacityDepartments(long productionOrderId, long productionStepId, long startDate, long endDate);
         Task<CapacityOutputModel> GetGeneralCapacityDepartments(long productionOrderId);
