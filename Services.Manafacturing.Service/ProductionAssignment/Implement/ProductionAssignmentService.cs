@@ -1255,26 +1255,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         //        });
         //}
 
-        public async Task<IDictionary<long, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments(long productionOrderId)
+        public async Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments()
         {
             return (from sd in _manufacturingDBContext.StepDetail
-                    join ps in _manufacturingDBContext.ProductionStep on sd.StepId equals ps.StepId
                     join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
-                    where ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.ContainerId == productionOrderId
                     select new
                     {
-                        ps.ProductionStepId,
+                        s.StepId,
                         sd.DepartmentId,
                         sd.Quantity,
+                        sd.NumberOfPerson,
                         s.UnitId
                     })
-                .ToList()
-                .GroupBy(sd => sd.ProductionStepId)
-                .ToDictionary(g => g.Key, g => g.ToDictionary(sd => sd.DepartmentId, sd => new ProductivityModel
-                {
-                    Quantity = sd.Quantity,
-                    UnitId = sd.UnitId
-                }));
+                    .ToList()
+                    .GroupBy(sd => sd.StepId)
+                    .ToDictionary(g => g.Key, g => g.ToDictionary(sd => sd.DepartmentId, sd => new ProductivityModel
+                    {
+                        Quantity = sd.Quantity * sd.NumberOfPerson,
+                        UnitId = sd.UnitId
+                    }));
         }
 
         public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId)
