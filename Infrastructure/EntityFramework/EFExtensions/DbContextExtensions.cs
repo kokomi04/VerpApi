@@ -440,6 +440,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 // Check value
                 ConstantExpression value;
                 MethodInfo method;
+
+                var toStringMethod = prop.Type.GetMethod("ToString", Type.EmptyTypes);
+                var propExpression = Expression.Call(prop, toStringMethod);
+
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
@@ -452,10 +456,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         break;
                     case EnumOperator.Contains:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
-                        var toStringMethod = prop.Type.GetMethod("ToString");
-                        var propExpression = Expression.Call(prop, toStringMethod);
+
                         method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
+
                         break;
                     case EnumOperator.InList:
                         Type listType = typeof(List<>);
@@ -471,17 +482,28 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         break;
                     case EnumOperator.StartsWith:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
-                        toStringMethod = prop.Type.GetMethod("ToString");
-                        propExpression = Expression.Call(prop, toStringMethod);
+
                         method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
                         break;
                     case EnumOperator.EndsWith:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
-                        toStringMethod = prop.Type.GetMethod("ToString");
-                        propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
                         break;
                     case EnumOperator.GreaterOrEqual:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));

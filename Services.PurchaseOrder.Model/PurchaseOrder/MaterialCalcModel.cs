@@ -25,6 +25,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string productName { get; set; }
         public string OrderCodes { get; set; }
         public decimal? TotalOrderProductQuantity { get; set; }
+
+        public bool IsPurchasingRequestCreated { get; set; }
         public long? PurchasingRequestId { get; set; }
         public string PurchasingRequestCode { get; set; }
     }
@@ -93,5 +95,19 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
         public decimal ExChangeRate { get; set; }
+    }
+
+
+
+    public class MaterialOrderProductHistory
+    {
+        public long MaterialCalcId { get; set; }
+        public string MaterialCalcCode { get; set; }
+        public string Title { get; set; }
+        public IList<MaterialCalcConsumptionGroupModel> ConsumptionGroups { get; set; }
+
+        public string OrderCode { get; set; }
+        public int ProductId { get; set; }
+        public decimal OrderProductQuantity { get; set; }
     }
 }

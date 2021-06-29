@@ -108,11 +108,51 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     productName = d.ProductName,
                     OrderCodes = d.OrderCodes,
                     TotalOrderProductQuantity = d.TotalOrderProductQuantity,
+                    IsPurchasingRequestCreated = d.PurchasingRequestId > 0,
                     PurchasingRequestId = d.PurchasingRequestId,
                     PurchasingRequestCode = d.PurchasingRequestCode
                 }).ToList();
             return (paged, total);
         }
+
+        public async IAsyncEnumerable<MaterialOrderProductHistory> GetHistoryProductOrderList(IList<int> productIds, IList<string> orderCodes)
+        {
+            var lst = await (
+                from c in _purchaseOrderDBContext.MaterialCalc
+                join d in _purchaseOrderDBContext.MaterialCalcProduct on c.MaterialCalcId equals d.MaterialCalcId
+                join o in _purchaseOrderDBContext.MaterialCalcProductOrder on d.MaterialCalcProductId equals o.MaterialCalcProductId
+                where productIds.Contains(d.ProductId) && orderCodes.Contains(o.OrderCode)
+                select new
+                {
+                    c.MaterialCalcId,
+                    c.MaterialCalcCode,
+                    c.Title,
+                    d.ProductId,
+                    o.OrderCode,
+                    o.OrderProductQuantity
+                }).ToListAsync();
+
+            var materialCalcIds = lst.Select(c => c.MaterialCalcId).ToList();
+
+            var groups = await _purchaseOrderDBContext.MaterialCalcConsumptionGroup.Where(g => materialCalcIds.Contains(g.MaterialCalcId)).ToListAsync();
+
+            foreach (var item in lst)
+            {
+                yield return new MaterialOrderProductHistory()
+                {
+                    MaterialCalcId = item.MaterialCalcId,
+                    MaterialCalcCode = item.MaterialCalcCode,
+                    Title = item.Title,
+                    ConsumptionGroups = _mapper.Map<List<MaterialCalcConsumptionGroupModel>>(groups.Where(g => g.MaterialCalcId == item.MaterialCalcId)),
+
+                    OrderCode = item.OrderCode,
+                    ProductId = item.ProductId,
+                    OrderProductQuantity = item.OrderProductQuantity,
+                };
+            }
+
+        }
+
 
         public async Task<long> Create(MaterialCalcModel req)
         {

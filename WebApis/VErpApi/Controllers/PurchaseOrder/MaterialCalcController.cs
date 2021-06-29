@@ -42,6 +42,14 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("GetHistoryProductOrderList")]
+        public IAsyncEnumerable<MaterialOrderProductHistory> GetHistoryProductOrderList([FromQuery] IList<int> productIds, [FromQuery] IList<string> orderCodes)
+        {
+            return _materialCalcService
+                .GetHistoryProductOrderList(productIds, orderCodes);
+        }
+
         [HttpPost]
         [Route("")]
         public async Task<long> Create([FromBody] MaterialCalcModel req)
