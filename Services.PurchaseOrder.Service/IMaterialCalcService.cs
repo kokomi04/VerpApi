@@ -12,6 +12,8 @@ namespace VErp.Services.PurchaseOrder.Service
     {
         Task<PageData<MaterialCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size);
 
+        IAsyncEnumerable<MaterialOrderProductHistory> GetHistoryProductOrderList(IList<int> productIds, IList<string> orderCodes);
+
         Task<long> Create(MaterialCalcModel req);
         Task<MaterialCalcModel> Info(long materialCalcId);
 
