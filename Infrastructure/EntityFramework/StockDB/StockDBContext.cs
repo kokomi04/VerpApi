@@ -553,11 +553,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Wastage).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Wastage).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.ChildProduct)
                     .WithMany(p => p.ProductBomChildProduct)

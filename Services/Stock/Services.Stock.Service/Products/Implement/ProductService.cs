@@ -692,7 +692,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, Clause filters = null, IList<int> stockIds = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
             var productInternalName = productName.NormalizeAsInternalName();
 
@@ -711,6 +711,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (isProduct == true)
             {
                 products = products.Where(x => x.IsProduct == isProduct.Value);
+            }
+
+            if (isMaterials == true)
+            {
+                products = products.Where(x => x.IsMaterials == isMaterials.Value);
             }
 
 
@@ -872,9 +877,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> ExportList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, Clause filters = null, IList<int> stockIds = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ExportList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
-            var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, filters, stockIds);
+            var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
             var bomExport = new ProductExportFacade(_stockDbContext);
             return await bomExport.Export(lst.List);
         }

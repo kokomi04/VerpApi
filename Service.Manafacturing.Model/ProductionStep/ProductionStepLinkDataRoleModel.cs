@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public long ProductionStepLinkDataId { get; set; }
         public EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
         public string ProductionStepLinkDataGroup { get; set; }
+        public decimal WorkloadConvertRate { get; set; }
     }
 
     public class ProductionStepLinkDataRoleInput: ProductionStepLinkDataRoleModel
@@ -23,9 +24,5 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public string ProductionStepLinkDataCode { get; set; }
         public int? ProductionStepLinkTypeId { get; set; }
 
-        //public void Mapping(Profile profile)
-        //{
-        //    profile.CreateMap<ProductionStepLinkDataRoleModel, ProductionStepLinkDataRoleInput>
-        //}
     }
 }

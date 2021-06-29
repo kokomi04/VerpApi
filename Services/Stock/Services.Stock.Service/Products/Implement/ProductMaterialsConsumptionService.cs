@@ -62,6 +62,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _unitService = unitService;
         }
 
+
+        public async Task<IDictionary<int, IEnumerable<ProductMaterialsConsumptionOutput>>> GetProductMaterialsConsumptionByProductIds(IList<int> productIds)
+        {
+            var dic = new Dictionary<int, IEnumerable<ProductMaterialsConsumptionOutput>>();
+            foreach (var productId in productIds.Distinct())
+            {
+                dic.Add(productId, await GetProductMaterialsConsumption(productId));
+            }
+
+            return dic;
+        }
+
         public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int productId)
         {
             var productBom = (await _productBomService.GetBom(productId)).Where(x => !x.IsMaterial);
@@ -310,7 +322,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .SetService(_productService)
                 .SetService(_unitService);
 
-            return await facade.ProcessData(mapping, stream, productId,materialsConsumptionGroupId);
+            return await facade.ProcessData(mapping, stream, productId, materialsConsumptionGroupId);
         }
 
         public async Task<long> AddProductMaterialsConsumption(int productId, ProductMaterialsConsumptionInput model)

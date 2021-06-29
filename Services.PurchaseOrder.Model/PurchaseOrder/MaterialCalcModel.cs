@@ -13,6 +13,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public long MaterialCalcId { get; set; }
         public string MaterialCalcCode { get; set; }
         public string Title { get; set; }
+        public string Description { get; set; }
         public int CreatedByUserId { get; set; }
         public long CreatedDatetimeUtc { get; set; }
     }
@@ -29,6 +30,10 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     }
     public class MaterialCalcModel : MaterialCalcBasicModel, IMapFrom<MaterialCalc>
     {
+        public long? PurchasingRequestId { get; set; }
+        public string PurchasingRequestCode { get; set; }
+
+        public IList<MaterialCalcConsumptionGroupModel> ConsumptionGroups { get; set; }
         public IList<MaterialCalcProductModel> Products { get; set; }
         public IList<MaterialCalcSummaryModel> Summary { get; set; }
         public void Mapping(Profile profile)
@@ -38,11 +43,17 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.Ignore())
                 .ForMember(d => d.MaterialCalcProduct, s => s.MapFrom(m => m.Products))
                 .ForMember(d => d.MaterialCalcSummary, s => s.MapFrom(m => m.Summary))
+                .ForMember(d => d.MaterialCalcConsumptionGroup, s => s.MapFrom(m => m.ConsumptionGroups))
                 .ReverseMap()
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
             //.ForMember(d => d.Products, s => s.MapFrom(m => m.MaterialCalcProduct))
             //.ForMember(d => d.Summary, s => s.MapFrom(m => m.MaterialCalcSummary));
         }
+    }
+
+    public class MaterialCalcConsumptionGroupModel: IMapFrom<MaterialCalcConsumptionGroup>
+    {
+        public int ProductMaterialsConsumptionGroupId { get; set; }
     }
 
     public class MaterialCalcProductModel : IMapFrom<MaterialCalcProduct>
@@ -66,8 +77,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     public class MaterialCalcProductOrderModel : IMapFrom<MaterialCalcProductOrder>
     {
         public string OrderCode { get; set; }
-        public decimal OrderProductQuantity { get; set; }
+        public decimal OrderProductQuantity { get; set; }     
     }
+
     public class MaterialCalcProductDetailModel : IMapFrom<MaterialCalcProductDetail>
     {
         public int ProductMaterialsConsumptionGroupId { get; set; }
@@ -80,5 +92,6 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public int OriginalMaterialProductId { get; set; }
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
+        public decimal ExChangeRate { get; set; }
     }
 }

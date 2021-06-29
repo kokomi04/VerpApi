@@ -192,21 +192,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.SaveChangesAsync();
 
 
+            //add new details
+            var newDetails = updateDetails.Where(d => d.InventoryDetailId <= 0).ToList();
 
+            foreach (var d in newDetails)
+            {
+                d.InventoryId = inventoryId;
+            }
+
+            _stockDbContext.InventoryDetail.AddRange(newDetails);
+            _stockDbContext.SaveChanges();
+
+
+            //
             var isDelete = !(await _stockDbContext.InventoryDetail.AnyAsync(d => d.InventoryId == inventoryId && d.PrimaryQuantity > 0));
 
             if (!isDelete)
             {
-                var newDetails = updateDetails.Where(d => d.InventoryDetailId <= 0).ToList();
-
-                foreach (var d in newDetails)
-                {
-                    d.InventoryId = inventoryId;
-                }
-
-                _stockDbContext.InventoryDetail.AddRange(newDetails);
-                _stockDbContext.SaveChanges();
-
                 var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.Date, newDetails);
                 if (!r.IsSuccess())
                 {
