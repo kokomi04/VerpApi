@@ -142,6 +142,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PurchasingSuggestOutputList>> GetList(string keyword, EnumPurchasingSuggestStatus? purchasingSuggestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
+            keyword = keyword?.Trim();
             var query = _purchaseOrderDBContext.PurchasingSuggest.AsNoTracking().AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -1722,8 +1723,29 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return false;
                 }
             }
+
+            await ValidateInUsePurchaseOrderPurchasingSuggestDetail(deletePurchasingSuggestDetailIds.Select(id => (long?)id).ToList());
+
             return true;
         }
+
+
+        private async Task ValidateInUsePurchaseOrderPurchasingSuggestDetail(IList<long?> deletePurchasingSuggestDetailIds)
+        {
+            if (deletePurchasingSuggestDetailIds == null || deletePurchasingSuggestDetailIds.Count == 0) return;
+
+            var pos = await (
+                from d in _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => deletePurchasingSuggestDetailIds.Contains(d.PurchasingSuggestDetailId))
+                join po in _purchaseOrderDBContext.PurchaseOrder on d.PurchaseOrderId equals po.PurchaseOrderId
+                select po.PurchaseOrderCode
+                                   ).Distinct()
+                                   .ToListAsync();
+            if (pos.Count > 0)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể xóa do đề nghị được tạo thành PO {string.Join(", ", pos)}");
+            }
+        }
+
 
         private async Task ValidateProductUnitConversion(PurchasingSuggestInput model)
         {
