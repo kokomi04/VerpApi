@@ -155,7 +155,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+                time = time.Value.AddDays(1);
+                query = query.Where(q => q.CreatedDatetimeUtc < time);
             }
 
             var total = await query.CountAsync();
@@ -239,9 +240,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (toDate.HasValue)
             {
-                var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+                var toDateTime = toDate.Value.UnixToDateTime();
+                toDateTime = toDateTime.Value.AddDays(1);
+                query = query.Where(q => q.CreatedDatetimeUtc < toDateTime);
             }
+
 
             var total = await query.CountAsync();
             var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
@@ -416,7 +419,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.MaterialCalc && model.MaterialCalcId != info.MaterialCalcId))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sửa YCVT từ tính toán vật tư");
-                    }                   
+                    }
 
                     await DeleteOldDetails(purchasingRequestId);
 
@@ -440,7 +443,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         //info.CensorByUserId = _currentContext.UserId;
                         //info.CensorDatetimeUtc = DateTime.UtcNow;
                     }
-                   
+
 
                     var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
                     foreach (var item in purchasingRequestDetailList)
@@ -903,7 +906,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var oldDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => d.PurchasingRequestId == purchasingRequestId).ToListAsync();
 
             var purchasingRequestDetailIds = oldDetails.Select(d => (long?)d.PurchasingRequestDetailId).ToList();
-            var sugguests = await(
+            var sugguests = await (
                 from d in _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId))
                 join s in _purchaseOrderDBContext.PurchasingSuggest on d.PurchasingSuggestId equals s.PurchasingSuggestId
                 select
