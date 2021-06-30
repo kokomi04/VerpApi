@@ -828,8 +828,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
+                time = time.Value.AddDays(1);
                 query = from q in query
-                        where q.CreatedDatetimeUtc <= time
+                        where q.CreatedDatetimeUtc < time
                         select q;
             }
 
@@ -933,8 +934,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
+                time = time.Value.AddDays(1);
                 query = from q in query
-                        where q.CreatedDatetimeUtc <= time
+                        where q.CreatedDatetimeUtc < time
                         select q;
             }
 
