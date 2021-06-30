@@ -10,6 +10,7 @@ namespace VErp.Services.Stock.Model.Product
     {
         public IList<ProductBomInput> ProductBoms { get; set; }
         public IList<ProductMaterialModel> ProductMaterials { get; set; }
+        public bool IsCleanOldMaterial { get; set; }
 
         public ProductBomModel()
         {
