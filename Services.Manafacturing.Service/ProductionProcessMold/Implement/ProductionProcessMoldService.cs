@@ -80,7 +80,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 if (model.ProductionStepMold.GroupBy(x => x.StepId).Where(x => x.Count() > 1).Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện 2 công đoạn giống nhau trong quy trình mẫu");
 
-                if (model.ProductionStepMold.GroupBy(x => x.IsFinish == true).Where(x => x.Count() > 1).Count() > 0)
+                if (model.ProductionStepMold.Where(x => x.IsFinish == true).Count() > 1)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện 2 công đoạn cuối cùng trong quy trình mẫu");
 
                 var process = _mapper.Map<ProductionProcessMoldEntity>(model);
@@ -136,7 +136,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 if(model.ProductionStepMold.GroupBy(x => x.StepId).Where(x => x.Count() > 1).Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện 2 công đoạn giống nhau trong quy trình mẫu");
 
-                if (model.ProductionStepMold.GroupBy(x => x.IsFinish == true).Where(x => x.Count() > 1).Count() > 0)
+                if (model.ProductionStepMold.Where(x => x.IsFinish == true).Count() > 1)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện 2 công đoạn cuối cùng trong quy trình mẫu");
 
                 var productionSteps = await _manufacturingDBContext.ProductionStepMold
