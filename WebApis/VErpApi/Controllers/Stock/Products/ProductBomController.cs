@@ -58,7 +58,7 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<bool> Update([FromRoute] int productId, [FromBody] ProductBomModel model)
         {
             if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials);
+            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials, model.IsCleanOldMaterial);
         }
 
         [HttpPost]

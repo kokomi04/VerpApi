@@ -210,7 +210,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     };
                 }).ToList();
 
-                await _productBomService.UpdateProductBomDb(productInfo.ProductId, productBoms, productMaterials);
+                await _productBomService.UpdateProductBomDb(productInfo.ProductId, productBoms, productMaterials, true);
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductBom, productInfo.ProductId, $"Cập nhật chi tiết bom cho mặt hàng {productInfo.ProductCode}, tên hàng {productInfo.ProductName} (import)", new { productBoms, productMaterials }.JsonSerialize());
             }
