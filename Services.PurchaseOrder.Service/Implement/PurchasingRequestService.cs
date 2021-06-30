@@ -178,6 +178,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             r.PurchasingRequestId,
                             r.PurchasingRequestStatusId,
+                            r.PurchasingRequestTypeId,
                             r.Date,
                             d.OrderCode,
                             d.ProductionOrderCode,
@@ -271,7 +272,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductUnitConversionId = info.ProductUnitConversionId,
                     ProductUnitConversionQuantity = info.ProductUnitConversionQuantity,
 
-                    Description = info.Description
+                    Description = info.Description,
+                    PurchasingRequestTypeId = (EnumPurchasingRequestType)info.PurchasingRequestTypeId
                 });
             }
 
@@ -345,10 +347,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     purchasingRequest.MaterialCalcId = model.MaterialCalcId;
 
-                    purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
-                    purchasingRequest.IsApproved = true;
-                    purchasingRequest.CensorByUserId = _currentContext.UserId;
-                    purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
+                    //purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
+                    //purchasingRequest.IsApproved = true;
+                    //purchasingRequest.CensorByUserId = _currentContext.UserId;
+                    //purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 }
 
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
@@ -406,12 +408,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.OrderMaterial && model.OrderDetailId != info.OrderDetailId))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams);
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sửa YCVT từ tính toán vật tư");
                     }
 
                     if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.MaterialCalc && model.MaterialCalcId != info.MaterialCalcId))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams);
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sửa YCVT từ tính toán vật tư");
                     }
 
 
@@ -426,6 +428,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         info.IsApproved = true;
                         info.CensorByUserId = _currentContext.UserId;
                         info.CensorDatetimeUtc = DateTime.UtcNow;
+                    }
+
+                    if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc)
+                    {
+                        //info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
+                        //info.IsApproved = true;
+                        //info.CensorByUserId = _currentContext.UserId;
+                        //info.CensorDatetimeUtc = DateTime.UtcNow;
                     }
 
                     var oldDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => d.PurchasingRequestId == purchasingRequestId).ToListAsync();
