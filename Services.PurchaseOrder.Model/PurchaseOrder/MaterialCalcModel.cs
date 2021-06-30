@@ -94,7 +94,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public int OriginalMaterialProductId { get; set; }
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
-        public decimal ExChangeRate { get; set; }
+        public decimal ExchangeRate { get; set; }
     }
 
 
