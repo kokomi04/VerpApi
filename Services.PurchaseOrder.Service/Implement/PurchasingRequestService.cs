@@ -352,7 +352,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     purchasingRequest.MaterialCalcId = model.MaterialCalcId;
 
-                    //purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
+                    purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
                     //purchasingRequest.IsApproved = true;
                     //purchasingRequest.CensorByUserId = _currentContext.UserId;
                     //purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
@@ -438,7 +438,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc)
                     {
-                        //info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Censored;
+                        info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
                         //info.IsApproved = true;
                         //info.CensorByUserId = _currentContext.UserId;
                         //info.CensorDatetimeUtc = DateTime.UtcNow;
