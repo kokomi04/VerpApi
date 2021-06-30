@@ -30,6 +30,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long? ProductionOrderId { get; set; }
 
+        public EnumPurchasingRequestType PurchasingRequestTypeId { get; set; }
 
         protected IMappingExpression<PurchasingRequest, T> MappingBase<T>(Profile profile) where T : PurchasingRequestOutputList => profile.CreateMap<PurchasingRequest, T>()
           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))
