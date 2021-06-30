@@ -119,6 +119,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<MaterialCalcSummary>(entity =>
             {
+                entity.Property(e => e.ExchangeRate)
+                    .HasColumnType("decimal(32, 16)")
+                    .HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.MaterialCalc)
