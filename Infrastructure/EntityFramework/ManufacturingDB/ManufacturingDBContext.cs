@@ -50,6 +50,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionStepMoldLink> ProductionStepMoldLink { get; set; }
         public virtual DbSet<ProductionStepRoleClient> ProductionStepRoleClient { get; set; }
         public virtual DbSet<ProductionStepWorkInfo> ProductionStepWorkInfo { get; set; }
+        public virtual DbSet<ProductionWeekPlan> ProductionWeekPlan { get; set; }
+        public virtual DbSet<ProductionWeekPlanDetail> ProductionWeekPlanDetail { get; set; }
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepDetail> StepDetail { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
@@ -686,6 +688,29 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey<ProductionStepWorkInfo>(d => d.ProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ProductionStepWorkInfo_ProductionStep");
+            });
+
+            modelBuilder.Entity<ProductionWeekPlan>(entity =>
+            {
+                entity.Property(e => e.EndDate).HasColumnType("datetime");
+
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.StartDate).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<ProductionWeekPlanDetail>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductionWeekPlanId, e.ProductCateId })
+                    .HasName("PK__Producti__E1D52AC5B60EB4AC");
+
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.ProductionWeekPlan)
+                    .WithMany(p => p.ProductionWeekPlanDetail)
+                    .HasForeignKey(d => d.ProductionWeekPlanId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionWeekPlanDetail_ProductionWeekPlan");
             });
 
             modelBuilder.Entity<Step>(entity =>
