@@ -252,6 +252,12 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Bán thành phẩm chuyển đổi")]
         ProductSemiConversion = 323,
         [Description("Quy trình sản xuất mẫu")]
-        ProductionProcessMold = 324
+        ProductionProcessMold = 324,
+
+
+        [Description("Kế hoạch sản xuất")]
+        ProductionPlan = 400,
+
+
     }
 }
