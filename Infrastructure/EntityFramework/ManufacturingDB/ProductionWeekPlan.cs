@@ -13,9 +13,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionWeekPlanId { get; set; }
         public long ProductionOrderId { get; set; }
         public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
         public decimal? ProductQuantity { get; set; }
-
+        public int ProductId { get; set; }
         public virtual ICollection<ProductionWeekPlanDetail> ProductionWeekPlanDetail { get; set; }
     }
 }

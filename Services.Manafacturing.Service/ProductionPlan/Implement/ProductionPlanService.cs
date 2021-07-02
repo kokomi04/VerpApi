@@ -80,7 +80,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     foreach (var productionWeekPlan in productionWeekPlans)
                     {
                         var currentProductionWeekPlan = currentProductionWeekPlans
-                            .FirstOrDefault(cp => cp.StartDate == productionWeekPlan.StartDate && cp.EndDate == productionWeekPlan.EndDate);
+                            .FirstOrDefault(cp => cp.StartDate == productionWeekPlan.StartDate && cp.ProductId == productionWeekPlan.ProductId);
                         if (currentProductionWeekPlan == null)
                         {
                             // Tạo mới
@@ -108,7 +108,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     }
 
                     // Xóa kế hoạch tuần 
-                    var deleteProductionWeekPlans = currentProductionWeekPlans.Where(cp => !productionWeekPlans.Any(p => p.StartDate == cp.StartDate && p.EndDate == cp.EndDate)).ToList();
+                    var deleteProductionWeekPlans = currentProductionWeekPlans.Where(cp => !productionWeekPlans.Any(p => p.StartDate == cp.StartDate && p.ProductId == cp.ProductId)).ToList();
                     var deleteProductionWeekPlanIds = deleteProductionWeekPlans.Select(p => p.ProductionWeekPlanId).ToList();
                     var deleteProductionWeekPlanDetails = _manufacturingDBContext.ProductionWeekPlanDetail.Where(pd => deleteProductionWeekPlanIds.Contains(pd.ProductionWeekPlanId)).ToList();
 

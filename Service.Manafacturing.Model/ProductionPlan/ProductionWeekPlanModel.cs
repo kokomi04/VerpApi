@@ -12,8 +12,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionPlan
     public class ProductionWeekPlanModel: IMapFrom<ProductionWeekPlan>
     {
         public long StartDate { get; set; }
-        public long EndDate { get; set; }
         public decimal? ProductQuantity { get; set; }
+        public int ProductId { get; set; }
         public ICollection<ProductionWeekPlanDetailModel> ProductionWeekPlanDetail { get; set; }
 
         public ProductionWeekPlanModel()
@@ -25,10 +25,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionPlan
         {
             profile.CreateMap<ProductionWeekPlan, ProductionWeekPlanModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
                 .ReverseMap()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
-                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()))
                 .ForMember(dest => dest.ProductionWeekPlanDetail, opt => opt.Ignore());
         }
     }
