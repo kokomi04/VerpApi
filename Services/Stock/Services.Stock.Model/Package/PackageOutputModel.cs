@@ -63,4 +63,47 @@ namespace VErp.Services.Stock.Model.Package
 
         public ProductListOutput ProductOutputModel { set; get; }
     }
+
+    public class ProductPackageOutputModel
+    {
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string Specification { get; set; }
+        public long? MainImageFileId { get; set; }
+        public int UnitId { get; set; }
+        public string UnitName { get; set; }
+
+        public long PackageId { get; set; }
+
+        public int PackageTypeId { get; set; }
+
+        public string PackageCode { get; set; }
+        public string PackageDescription { get; set; }
+
+        public int? LocationId { get; set; }
+        public string LocationName { get; set; }
+        public int StockId { set; get; }
+
+        public long? Date { get; set; }
+        public long? ExpiryTime { get; set; }
+
+        public bool ProductUnitConversionIsDefault { get; set; }
+
+        public int ProductUnitConversionId { get; set; }
+        public string ProductUnitConversionName { get; set; }
+
+        public decimal PrimaryQuantityWaiting { get; set; }
+        public decimal PrimaryQuantityRemaining { get; set; }
+
+        public decimal ProductUnitConversionWaitting { get; set; }
+        public decimal ProductUnitConversionRemaining { get; set; }
+
+        public string OrderCode { get; set; }
+
+        public string POCode { get; set; }
+
+        public string ProductionOrderCode { get; set; }
+
+    }
 }
