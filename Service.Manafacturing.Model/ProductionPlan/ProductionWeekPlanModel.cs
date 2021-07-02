@@ -13,7 +13,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionPlan
     {
         public long StartDate { get; set; }
         public decimal? ProductQuantity { get; set; }
-        public int ProductId { get; set; }
         public ICollection<ProductionWeekPlanDetailModel> ProductionWeekPlanDetail { get; set; }
 
         public ProductionWeekPlanModel()
