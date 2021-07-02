@@ -60,7 +60,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
         public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> UpdateProductionPlan(IDictionary<long, List<ProductionWeekPlanModel>> data)
         {
-           
+
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -69,67 +69,78 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     .Include(pod => pod.ProductionOrder)
                     .Where(pod => productionOrderDetailIds.Contains(pod.ProductionOrderDetailId))
                     .ToList();
-                if (productionOrderDetails.Count != productionOrderDetailIds.Count) 
+                if (productionOrderDetails.Count != productionOrderDetailIds.Count)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Chi tiết lệnh sản xuất không tồn tại");
+
+                var allProductionWeekPlans = _manufacturingDBContext.ProductionWeekPlan
+                        .Where(p => productionOrderDetailIds.Contains(p.ProductionOrderDetailId))
+                        .ToList();
+                var allProductionWeekPlanIds = allProductionWeekPlans.Select(p => p.ProductionWeekPlanId).ToList();
+                var allProductionWeekPlanDetails = _manufacturingDBContext.ProductionWeekPlanDetail
+                     .Where(pd => allProductionWeekPlanIds.Contains(pd.ProductionWeekPlanId))
+                     .ToList();
+
                 foreach (var item in data)
                 {
                     var productionOrderDetailId = item.Key;
                     var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
-
-                    using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderDetail.ProductionOrderId));
-                 
-
-                    var currentProductionWeekPlans = _manufacturingDBContext.ProductionWeekPlan
+                    var currentProductionWeekPlans = allProductionWeekPlans
                         .Where(p => p.ProductionOrderDetailId == productionOrderDetailId)
                         .ToList();
 
-                    var productionWeekPlans = item.Value.AsQueryable().ProjectTo<ProductionWeekPlan>(_mapper.ConfigurationProvider).ToList();
-
-                    foreach (var productionWeekPlan in productionWeekPlans)
+                    foreach (var productionWeekPlanModel in item.Value)
                     {
                         var currentProductionWeekPlan = currentProductionWeekPlans
-                            .FirstOrDefault(cp => cp.StartDate == productionWeekPlan.StartDate);
+                            .FirstOrDefault(cp => cp.StartDate == productionWeekPlanModel.StartDate.UnixToDateTime());
                         if (currentProductionWeekPlan == null)
                         {
                             // Tạo mới
-                            productionWeekPlan.ProductionOrderDetailId = productionOrderDetailId;
-                            _manufacturingDBContext.ProductionWeekPlan.Add(productionWeekPlan);
+                            currentProductionWeekPlan = _mapper.Map<ProductionWeekPlan>(productionWeekPlanModel);
+                            currentProductionWeekPlan.ProductionOrderDetailId = productionOrderDetailId;
+                            _manufacturingDBContext.ProductionWeekPlan.Add(currentProductionWeekPlan);
+                            _manufacturingDBContext.SaveChanges();
                         }
-                        else if (currentProductionWeekPlan.ProductQuantity != productionWeekPlan.ProductQuantity)
+                        else if (currentProductionWeekPlan.ProductQuantity != productionWeekPlanModel.ProductQuantity)
                         {
                             // Update
-                            currentProductionWeekPlan.ProductQuantity = productionWeekPlan.ProductQuantity;
+                            currentProductionWeekPlan.ProductQuantity = productionWeekPlanModel.ProductQuantity;
                         }
-
                         // Cập nhât detail
                         if (currentProductionWeekPlan != null)
                         {
                             // Xóa dữ liệu cũ
-                            var currentProductionWeekPlanDetails = _manufacturingDBContext.ProductionWeekPlanDetail.Where(pd => pd.ProductionWeekPlanId == currentProductionWeekPlan.ProductionWeekPlanId).ToList();
+                            var currentProductionWeekPlanDetails = allProductionWeekPlanDetails.Where(pd => pd.ProductionWeekPlanId == currentProductionWeekPlan.ProductionWeekPlanId).ToList();
                             _manufacturingDBContext.ProductionWeekPlanDetail.RemoveRange(currentProductionWeekPlanDetails);
                         }
-                        var productionWeekPlanDetails = productionWeekPlan.ProductionWeekPlanDetail
-                            .AsQueryable()
-                            .ProjectTo<ProductionWeekPlanDetail>(_mapper.ConfigurationProvider)
-                            .ToList();
-                        _manufacturingDBContext.ProductionWeekPlanDetail.AddRange(productionWeekPlanDetails);
+                        foreach(var detail in productionWeekPlanModel.ProductionWeekPlanDetail)
+                        {
+                            var productionWeekPlanDetail = _mapper.Map<ProductionWeekPlanDetail>(detail);
+                            productionWeekPlanDetail.ProductionWeekPlanId = currentProductionWeekPlan.ProductionWeekPlanId;
+                            _manufacturingDBContext.ProductionWeekPlanDetail.AddRange(productionWeekPlanDetail);
+                        }
+                        
                     }
 
+
                     // Xóa kế hoạch tuần 
-                    var deleteProductionWeekPlans = currentProductionWeekPlans.Where(cp => !productionWeekPlans.Any(p => p.StartDate == cp.StartDate)).ToList();
+                    var deleteProductionWeekPlans = currentProductionWeekPlans.Where(cp => !item.Value.Any(p => p.StartDate.UnixToDateTime() == cp.StartDate)).ToList();
                     var deleteProductionWeekPlanIds = deleteProductionWeekPlans.Select(p => p.ProductionWeekPlanId).ToList();
-                    var deleteProductionWeekPlanDetails = _manufacturingDBContext.ProductionWeekPlanDetail.Where(pd => deleteProductionWeekPlanIds.Contains(pd.ProductionWeekPlanId)).ToList();
+                    var deleteProductionWeekPlanDetails = allProductionWeekPlanDetails.Where(pd => deleteProductionWeekPlanIds.Contains(pd.ProductionWeekPlanId)).ToList();
 
                     _manufacturingDBContext.ProductionWeekPlanDetail.RemoveRange(deleteProductionWeekPlanDetails);
                     _manufacturingDBContext.ProductionWeekPlan.RemoveRange(deleteProductionWeekPlans);
 
                     _manufacturingDBContext.SaveChanges();
-                    trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrderDetail.ProductionOrder.ProductionOrderCode}", data.JsonSerialize());
                 }
 
+                trans.Commit();
 
-                var productionOrderIds = data.Select(g => g.Key).ToList();
+                foreach (var item in data)
+                {
+                    var productionOrderDetailId = item.Key;
+                    var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrderDetail.ProductionOrder.ProductionOrderCode}", data.JsonSerialize());
+                }
 
                 var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
                     .Include(p => p.ProductionWeekPlanDetail)
@@ -152,7 +163,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
         public async Task<bool> DeleteProductionPlan(long productionOrderId)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
