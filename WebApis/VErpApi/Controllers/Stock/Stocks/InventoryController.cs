@@ -37,7 +37,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             _fileProcessDataService = fileProcessDataService;
         }
 
-       
+
         /// <summary>
         /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
@@ -252,6 +252,12 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
         }
 
+        [HttpGet]
+        [Route("GetProductPackageListForExport")]
+        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inventoryService.GetProductPackageListForExport(keyword, isTwoUnit, stockIds, page, size);
+        }
 
 
         /// <summary>
