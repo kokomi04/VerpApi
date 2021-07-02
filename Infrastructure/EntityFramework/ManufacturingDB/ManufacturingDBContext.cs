@@ -692,8 +692,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionWeekPlan>(entity =>
             {
-                entity.Property(e => e.EndDate).HasColumnType("datetime");
-
                 entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.StartDate).HasColumnType("datetime");
