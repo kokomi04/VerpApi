@@ -40,18 +40,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
         public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(long startDate, long endDate)
         {
-            var productionOrderIds = _manufacturingDBContext.ProductionOrder
-                .Where(po => po.StartDate <= endDate.UnixToDateTime() && po.EndDate >= startDate.UnixToDateTime())
-                .Select(po => po.ProductionOrderId)
+            var productionOrderDetailIds = _manufacturingDBContext.ProductionOrderDetail
+                .Include(pod => pod.ProductionOrder)
+                .Where(pod => pod.ProductionOrder.StartDate <= endDate.UnixToDateTime() && pod.ProductionOrder.EndDate >= startDate.UnixToDateTime())
+                .Select(pod => pod.ProductionOrderDetailId)
                 .ToList();
 
             var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
                 .Include(p => p.ProductionWeekPlanDetail)
-                .Where(p => productionOrderIds.Contains(p.ProductionOrderId))
+                .Where(p => productionOrderDetailIds.Contains(p.ProductionOrderDetailId))
                 .ToListAsync();
 
             var result = productionPlans
-                .GroupBy(p => p.ProductionOrderId)
+                .GroupBy(p => p.ProductionOrderDetailId)
                 .ToDictionary(g => g.Key, g => g.AsQueryable().ProjectTo<ProductionWeekPlanModel>(_mapper.ConfigurationProvider).ToList());
 
             return result;
@@ -63,16 +64,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                var productionOrderDetailIds = data.Select(d => d.Key).ToList();
+                var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
+                    .Include(pod => pod.ProductionOrder)
+                    .Where(pod => productionOrderDetailIds.Contains(pod.ProductionOrderDetailId))
+                    .ToList();
+                if (productionOrderDetails.Count != productionOrderDetailIds.Count) 
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Chi tiết lệnh sản xuất không tồn tại");
                 foreach (var item in data)
                 {
-                    var productionOrderId = item.Key;
+                    var productionOrderDetailId = item.Key;
+                    var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
 
-                    using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderId));
-                    var productionOrder = _manufacturingDBContext.ProductionOrder.Where(po => po.ProductionOrderId == productionOrderId).FirstOrDefault();
-                    if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+                    using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(productionOrderDetail.ProductionOrderId));
+                 
 
                     var currentProductionWeekPlans = _manufacturingDBContext.ProductionWeekPlan
-                        .Where(p => p.ProductionOrderId == productionOrderId)
+                        .Where(p => p.ProductionOrderDetailId == productionOrderDetailId)
                         .ToList();
 
                     var productionWeekPlans = item.Value.AsQueryable().ProjectTo<ProductionWeekPlan>(_mapper.ConfigurationProvider).ToList();
@@ -80,11 +88,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     foreach (var productionWeekPlan in productionWeekPlans)
                     {
                         var currentProductionWeekPlan = currentProductionWeekPlans
-                            .FirstOrDefault(cp => cp.StartDate == productionWeekPlan.StartDate && cp.ProductId == productionWeekPlan.ProductId);
+                            .FirstOrDefault(cp => cp.StartDate == productionWeekPlan.StartDate);
                         if (currentProductionWeekPlan == null)
                         {
                             // Tạo mới
-                            productionWeekPlan.ProductionOrderId = productionOrderId;
+                            productionWeekPlan.ProductionOrderDetailId = productionOrderDetailId;
                             _manufacturingDBContext.ProductionWeekPlan.Add(productionWeekPlan);
                         }
                         else if (currentProductionWeekPlan.ProductQuantity != productionWeekPlan.ProductQuantity)
@@ -108,7 +116,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     }
 
                     // Xóa kế hoạch tuần 
-                    var deleteProductionWeekPlans = currentProductionWeekPlans.Where(cp => !productionWeekPlans.Any(p => p.StartDate == cp.StartDate && p.ProductId == cp.ProductId)).ToList();
+                    var deleteProductionWeekPlans = currentProductionWeekPlans.Where(cp => !productionWeekPlans.Any(p => p.StartDate == cp.StartDate)).ToList();
                     var deleteProductionWeekPlanIds = deleteProductionWeekPlans.Select(p => p.ProductionWeekPlanId).ToList();
                     var deleteProductionWeekPlanDetails = _manufacturingDBContext.ProductionWeekPlanDetail.Where(pd => deleteProductionWeekPlanIds.Contains(pd.ProductionWeekPlanId)).ToList();
 
@@ -117,7 +125,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                     _manufacturingDBContext.SaveChanges();
                     trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", data.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrderDetail.ProductionOrder.ProductionOrderCode}", data.JsonSerialize());
                 }
 
 
@@ -125,11 +133,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                 var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
                     .Include(p => p.ProductionWeekPlanDetail)
-                    .Where(p => productionOrderIds.Contains(p.ProductionOrderId))
+                    .Where(p => productionOrderDetailIds.Contains(p.ProductionOrderDetailId))
                     .ToListAsync();
 
                 var result = productionPlans
-                    .GroupBy(p => p.ProductionOrderId)
+                    .GroupBy(p => p.ProductionOrderDetailId)
                     .ToDictionary(g => g.Key, g => g.AsQueryable().ProjectTo<ProductionWeekPlanModel>(_mapper.ConfigurationProvider).ToList());
 
                 return data;
@@ -148,11 +156,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var productionOrder = _manufacturingDBContext.ProductionOrder.Where(po => po.ProductionOrderId == productionOrderId).FirstOrDefault();
+                var productionOrder = _manufacturingDBContext.ProductionOrder
+                    .Include(po => po.ProductionOrderDetail)
+                    .Where(po => po.ProductionOrderId == productionOrderId).FirstOrDefault();
                 if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
 
+                var productionOrderDetailIds = productionOrder.ProductionOrderDetail.Select(pod => pod.ProductionOrderDetailId).ToList();
+
                 var currentProductionWeekPlans = _manufacturingDBContext.ProductionWeekPlan
-                    .Where(p => p.ProductionOrderId == productionOrderId)
+                    .Where(p => productionOrderDetailIds.Contains(p.ProductionOrderDetailId))
                     .ToList();
 
                 var currentProductionWeekPlanIds = currentProductionWeekPlans.Select(p => p.ProductionWeekPlanId).ToList();
