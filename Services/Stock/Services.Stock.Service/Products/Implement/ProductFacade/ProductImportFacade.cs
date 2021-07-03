@@ -462,10 +462,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 product.ProductExtraInfo = new ProductExtraInfo()
                 {
                     ProductId = product.ProductId,
-                    Specification = row.Specification
+                    Specification = row.Specification,
+                    Description = row.Description
                 };
             }
             product.UpdateIfAvaiable(p => p.ProductExtraInfo.Specification, row.Specification);
+            product.UpdateIfAvaiable(p => p.ProductExtraInfo.Description, row.Description);
 
             if (product.ProductId == 0)
             {

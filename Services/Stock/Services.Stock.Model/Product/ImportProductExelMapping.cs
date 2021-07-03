@@ -40,6 +40,7 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Barcode", GroupName = "Thông tin chung")]
         public string Barcode { get; set; }
+       
 
 
         [Display(Name = "Tên Đơn vị chính", GroupName = "Đơn vị chính")]
@@ -75,7 +76,10 @@ namespace VErp.Services.Stock.Model.Product
 
         // Extra info
         [Display(Name = "Quy cách", GroupName = "Thông tin bổ sung")]
-        public string Specification { get; set; }        
+        public string Specification { get; set; }
+
+        [Display(Name = "Ghi chú", GroupName = "Thông tin bổ sung")]
+        public string Description { get; set; }
 
         [Display(Name = "Phương thức đóng gói", GroupName = "Thông tin bổ sung")]
         public string PackingMethod { get; set; }
