@@ -77,11 +77,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (model.ProductionStepMold.GroupBy(x => x.StepId).Where(x => x.Count() > 1).Count() > 0)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện 2 công đoạn giống nhau trong quy trình mẫu");
-
-                if (model.ProductionStepMold.Where(x => x.IsFinish == true).Count() != 1)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Chưa thiết lập hoặc xuất hiện nhiều hơn 1 công đoạn cuối cùng trong quy trình mẫu");
+                ValidProductionProcessMold(model);
 
                 var process = _mapper.Map<ProductionProcessMoldEntity>(model);
 
@@ -133,13 +129,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 if (process == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy quy trình mẫu");
 
-                if(model.ProductionStepMold.GroupBy(x => x.StepId).Where(x => x.Count() > 1).Count() > 0)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện 2 công đoạn giống nhau trong quy trình mẫu");
+                ValidProductionProcessMold(model);
 
-                if (model.ProductionStepMold.Where(x => x.IsFinish == true).Count() != 1)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Chưa thiết lập hoặc xuất hiện nhiều hơn 1 công đoạn cuối cùng trong quy trình mẫu");
-
-                var productionSteps = await _manufacturingDBContext.ProductionStepMold
+                 var productionSteps = await _manufacturingDBContext.ProductionStepMold
                     .Where(x => x.ProductionProcessMoldId == productionProcessMoldId)
                     .ToListAsync();
 
@@ -226,6 +218,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 throw;
             }
+        }
+
+        private void ValidProductionProcessMold(ProductionProcessMoldInput model)
+        {
+            if (model.ProductionStepMold.GroupBy(x => x.StepId).Where(x => x.Count() > 1).Count() > 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện 2 công đoạn giống nhau trong quy trình mẫu");
+
+            if (model.ProductionStepMold.Where(x => x.IsFinish == true).Count() != 1
+                || model.ProductionStepMold.Where(x => !(x.ProductionStepMoldLink != null && x.ProductionStepMoldLink.Count() > 0) && x.IsFinish == true).Count() != 1)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Chưa thiết lập hoặc xuất hiện nhiều hơn 1 công đoạn cuối cùng trong quy trình mẫu");
+
         }
     }
 }
