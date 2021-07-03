@@ -173,7 +173,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             };
         }
 
-        public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceWeightedAverageInput req)
+        public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceInput req)
         {
             return (
                 await _accountancyDBContext.QueryDataTable(
@@ -186,6 +186,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 ).ConvertData();
 
         }
+
+        public async Task<IList<NonCamelCaseDictionary>> GetProductPriceBuyLastest(CalcProductPriceInput req)
+        {
+            return (
+                await _accountancyDBContext.QueryDataTable(
+                "usp_CalcProductPrice_BuyLastest",
+                 new[] {
+                    new SqlParameter("@Date", SqlDbType.DateTime2){ Value = req.Date.UnixToDateTime()},
+                    req.ProductIds.ToSqlParameter("@ProductIds")
+
+                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
+                ).ConvertData();
+
+       }
 
 
         public async Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req)

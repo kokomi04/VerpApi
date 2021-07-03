@@ -13,5 +13,8 @@ namespace VErp.Services.Stock.Model.Product
         public int ChildProductId { get; set; }
         public decimal? Quantity { get; set; }
         public decimal? Wastage { get; set; }
+        public int? InputStepId { get; set; }
+        public int? OutputStepId { get; set; }
+        public int? SortOrder { get; set; }
     }
 }

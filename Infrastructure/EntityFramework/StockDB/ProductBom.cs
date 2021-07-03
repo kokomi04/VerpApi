@@ -17,6 +17,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int? InputStepId { get; set; }
+        public int? OutputStepId { get; set; }
+        public int? SortOrder { get; set; }
 
         public virtual Product ChildProduct { get; set; }
         public virtual Product Product { get; set; }

@@ -33,6 +33,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductAttachment> ProductAttachment { get; set; }
         public virtual DbSet<ProductBom> ProductBom { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
+        public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
         public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
         public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
@@ -72,6 +73,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Inventory>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryCode })
+                    .HasName("IX_Inventory_InventoryCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
 
                 entity.Property(e => e.BillCode)
@@ -120,6 +126,9 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasIndex(e => new { e.InventoryId, e.ProductId, e.PrimaryQuantity, e.ProductUnitConversionId, e.IsDeleted })
                     .HasName("IDX_InventoryDetail_Product");
 
+                entity.HasIndex(e => new { e.ProductId, e.RefObjectCode, e.OrderCode, e.Pocode, e.ProductionOrderCode, e.InventoryId, e.IsDeleted, e.SubsidiaryId })
+                    .HasName("IDX_InventoryDetail_Search");
+
                 entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
 
                 entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
@@ -127,6 +136,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
+
+                entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
 
                 entity.Property(e => e.OrderCode)
                     .HasMaxLength(64)
@@ -246,6 +257,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryRequirement>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryTypeId, e.InventoryRequirementCode })
+                    .HasName("IX_InventoryRequirement_InventoryRequirementCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
@@ -451,11 +467,18 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasIndex(e => e.ProductCode)
                     .HasName("idx_Product_ProductCode");
 
+                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductCode })
+                    .HasName("IX_Product_ProductCode_Unique")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
                 entity.Property(e => e.Coefficient)
                     .HasDefaultValueSql("((1))")
                     .HasComment("Cơ số sản phẩm");
+
+                entity.Property(e => e.Color).HasMaxLength(128);
 
                 entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
 
@@ -562,6 +585,17 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.InverseParentProductCate)
                     .HasForeignKey(d => d.ParentProductCateId)
                     .HasConstraintName("FK_ProductCate_ProductCate");
+            });
+
+            modelBuilder.Entity<ProductCustomer>(entity =>
+            {
+                entity.Property(e => e.CustomerProductCode).HasMaxLength(128);
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductCustomer)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductCustomer_Product");
             });
 
             modelBuilder.Entity<ProductExtraInfo>(entity =>

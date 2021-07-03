@@ -35,7 +35,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Location = 11,
 
-     
+
 
         [Description("Xuất/nhập kho chi tiết")]
         InventoryDetail = 13,
@@ -229,10 +229,13 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,
         [Description("Yêu cầu nhập kho")]
-       
+
         OutsourceTrack = 78,
         [Description("Khai báo vật tư tiêu hao")]
         ProductionConsumMaterial = 82,
+
+        [Description("Tính toán nhu cầu VT của đơn hàng")]
+        MaterialCalc = 85,
 
         [Description("Action")]
         ActionType = 100,
@@ -247,6 +250,14 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Bán thành phẩm")]
         ProductSemi = 322,
         [Description("Bán thành phẩm chuyển đổi")]
-        ProductSemiConversion = 323
+        ProductSemiConversion = 323,
+        [Description("Quy trình sản xuất mẫu")]
+        ProductionProcessMold = 324,
+
+
+        [Description("Kế hoạch sản xuất")]
+        ProductionPlan = 400,
+
+
     }
 }

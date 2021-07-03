@@ -11,6 +11,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 {
     public class RepeatColumnUtils
     {
+        /*
         public static IList<ReportColumnModel> RepeatColumnProcess(IList<ReportColumnModel> columns, IList<NonCamelCaseDictionary> dataTable)
         {
             // Xử lý nếu có repeat columns
@@ -88,6 +89,108 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
             return columns;
+        }*/
+
+        public static IList<ReportColumnModel> RepeatColumnAndSortProcess(IList<ReportColumnModel> columns, IList<NonCamelCaseDictionary> dataTable)
+        {
+            if (dataTable == null || dataTable.Count == 0)
+                return columns;
+
+            columns = columns.OrderBy(c => c.SortOrder).ToList();
+
+            //grant groupId for all column
+            var groupIndex = 0;
+            var currentGroupIndex = 0;
+            foreach (var c in columns)
+            {
+                if (currentGroupIndex != c.ColGroupId || c.ColGroupId == 0)
+                {
+                    currentGroupIndex = c.ColGroupId;
+                    groupIndex++;
+                    c.ColGroupId = groupIndex;
+                }
+                else
+                {
+                    c.ColGroupId = groupIndex;
+                }
+            };
+
+
+            var firstRow = new NonCamelCaseDictionary();
+            foreach (var row in dataTable)
+            {
+                foreach (var (k, v) in row)
+                {
+                    if (!firstRow.ContainsKey(k))
+                    {
+                        firstRow.Add(k, v);
+                    }
+                    else if (firstRow[k].IsNullObject())
+                    {
+                        firstRow[k] = v;
+                    }
+
+                }
+            }
+
+
+            var dynamicColumns = new List<ReportColumnModel>();
+            foreach (var (key, _) in firstRow)
+            {
+                foreach (var column in columns)
+                {
+                    if (column.IsRepeat != true) continue;
+                    var pattern = $"{column.Alias}(?<suffix>\\w+)";
+                    Regex rx = new Regex(pattern);
+                    MatchCollection match = rx.Matches(key);
+                    if (match.Count > 0)
+                    {
+                        var suffixKey = match[0].Groups["suffix"].Value;
+
+                        var newColumn = Utils.DeepClone(column);
+
+                        var nameColumn = $"{column.ColGroupName}{suffixKey}";
+
+                        if (firstRow.ContainsKey(nameColumn))
+                        {
+                            newColumn.ColGroupName = firstRow[nameColumn]?.ToString();
+                        }
+
+                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                        {
+                            newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                        }
+
+                        newColumn.Alias = $"{column.Alias}{suffixKey}";
+                        newColumn.Value = $"{column.Value}{suffixKey}";
+                        newColumn.SuffixKey = $"{suffixKey}";
+                        newColumn.OriginValue = column.Value;
+                        dynamicColumns.Add(newColumn);
+                    }
+                };
+            };
+
+            //remove repeat column
+            for (var i = columns.Count - 1; i >= 0; i--)
+            {
+                var c = columns[i];
+                if (c.IsRepeat == true)
+                {
+                    columns.RemoveAt(i);
+                }
+            }
+
+            //insert repeat columns
+            foreach (var newColumn in dynamicColumns)
+            {
+                columns.Add(newColumn);
+            }
+
+            //sort column by groupId, suffixkey, then by sortOrder
+            return columns.OrderBy(c => c.ColGroupId)
+                        .ThenBy(c => c.SuffixKey)
+                        .ThenBy(c => c.SortOrder)
+                        .ToList();
         }
     }
 }

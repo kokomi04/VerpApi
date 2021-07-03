@@ -204,21 +204,21 @@ namespace VErp.Commons.Library
                     regionValues[re] = cell;
                 }
 
-                var continuousEmpty = 0;
+                var continuousRowEmpty = 0;
                 for (int row = fromRowIndex; row < maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
 
                     var rowData = new NonCamelCaseDictionary<string>();
                     if (sheet.GetRow(row) == null) //null is when the row only contains empty cells 
                     {
-                        continuousEmpty++;
+                        continuousRowEmpty++;
                         //continue;
-                        if (continuousEmpty > 100) break;
+                        if (continuousRowEmpty > 100) break;
                     }
                     else
                     {
+                        if (continuousRowEmpty > 100) break;
 
-                        continuousEmpty = 0;
                         var continuousColumnEmpty = 0;
                         foreach (var col in sheet.GetRow(row).Cells)
                         {
@@ -261,10 +261,12 @@ namespace VErp.Commons.Library
                             if (string.IsNullOrWhiteSpace(rowData[columnName]))
                             {
                                 continuousColumnEmpty++;
+                                continuousRowEmpty++;
                                 if (continuousColumnEmpty > 100) break;
                             }
                             else
                             {
+                                continuousRowEmpty = 0;
                                 continuousColumnEmpty = 0;
                             }
 
@@ -426,6 +428,10 @@ namespace VErp.Commons.Library
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {mapping.FromRow + rowIndx}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
                     }
 
+                    if (entityInfo is MappingDataRowAbstract entity)
+                    {
+                        entity.RowNumber = mapping.FromRow + rowIndx;
+                    }
                     lstData.Add(entityInfo);
                 }
 

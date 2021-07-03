@@ -11,13 +11,13 @@ namespace VErp.Services.Stock.Model.Inventory
         public string InventoryCode { get; set; }
         public long Date { get; set; }
     }
-    public class InventoryInModel: InventoryModelBase
-    {        
+    public class InventoryInModel : InventoryModelBase
+    {
         //public long InventoryId { get; set; }
-              
+
         public string Shipper { get; set; }
         public string Content { get; set; }
-        
+
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
@@ -27,7 +27,6 @@ namespace VErp.Services.Stock.Model.Inventory
         public string BillSerial { set; get; }
         public long? BillDate { set; get; }
         public string AccountancyAccountNumber { get; set; }
-        public int? DepartmentId { get; set; }
         /// <summary>
         /// Id file đính kèm
         /// </summary>
@@ -40,17 +39,17 @@ namespace VErp.Services.Stock.Model.Inventory
     {
         public long? InventoryDetailId { get; set; }
         public int ProductId { get; set; }
-        
+
         //public bool? IsFreeStyle { set; get; }
 
-        public decimal? RequestPrimaryQuantity { get; set; }        
+        public decimal? RequestPrimaryQuantity { get; set; }
 
         public decimal PrimaryQuantity { get; set; }
         public decimal UnitPrice { get; set; }
 
         public int ProductUnitConversionId { set; get; }
         public decimal? RequestProductUnitConversionQuantity { get; set; }
-        public decimal ProductUnitConversionQuantity { get; set; }        
+        public decimal ProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionPrice { get; set; }
 
         public int? RefObjectTypeId { get; set; }
@@ -74,7 +73,10 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Description { get; set; }
 
         public string AccountancyAccountNumberDu { get; set; }
-        public long? InventoryRequirementDetailId { get; set; }
+        //public long? InventoryRequirementDetailId { get; set; }
+        public string InventoryRequirementCode { get; set; }
+
+        public int? DepartmentId { get; set; }
     }
 
     public class InventoryInProductExtendModel : InventoryInProductModel

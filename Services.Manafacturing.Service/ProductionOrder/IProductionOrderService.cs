@@ -19,7 +19,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
         Task<IList<ProductOrderModel>> GetProductionOrders();
 
-        Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
-        Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusModel status);
+        Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data);
+        Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status);
     }
 }

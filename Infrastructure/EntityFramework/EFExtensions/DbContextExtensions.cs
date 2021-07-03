@@ -159,6 +159,25 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var obj = entityEntry.Entity;
 
+                /**
+                 * Validate if Code field contains special characters
+                 * 
+                 */
+                var type = obj.GetType();
+                var ps = type.GetProperties();
+                foreach (var prop in ps)
+                {
+                    var propName = prop.Name.ToLower();
+                    if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode"))
+                    {
+                        Utils.ValidateCodeSpecialCharactors(prop.GetValue(obj) as string);
+                    }
+                }
+
+
+                /**
+                 * Set history base
+                 */
                 obj.SetValue("UpdatedByUserId", currentContext.UserId);
 
                 if (entityEntry.State == EntityState.Added)
@@ -335,7 +354,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var param = Expression.Parameter(typeof(T), "s");
                 Expression filterExp = FilterClauseProcess<T>(param, filters, query, false, timeZoneOffset);
-                query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
+                if (filterExp != null)
+                    query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
             }
             return query;
         }
@@ -355,7 +375,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     body = Expression.PropertyOrField(body, propertyName);
                 }
                 var orderByExpression = Expression.Lambda(body, parameter);
-                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, body.Type }, 
+                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, body.Type },
                     query.Expression, Expression.Quote(orderByExpression));
                 query = query.Provider.CreateQuery<T>(resultExpression);
             }
@@ -413,13 +433,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     prop = Expression.PropertyOrField(prop, propertyName);
                 }
 
-                if(clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
+                if (clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
                     clause.DataType = EnumDataType.BigInt;
 
                 //var prop = Expression.Property(param, clause.FieldName);
                 // Check value
                 ConstantExpression value;
                 MethodInfo method;
+
+                var toStringMethod = prop.Type.GetMethod("ToString", Type.EmptyTypes);
+                var propExpression = Expression.Call(prop, toStringMethod);
+
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
@@ -432,10 +456,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         break;
                     case EnumOperator.Contains:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
-                        var toStringMethod = prop.Type.GetMethod("ToString");
-                        var propExpression = Expression.Call(prop, toStringMethod);
+
                         method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
+
                         break;
                     case EnumOperator.InList:
                         Type listType = typeof(List<>);
@@ -451,17 +482,28 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         break;
                     case EnumOperator.StartsWith:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
-                        toStringMethod = prop.Type.GetMethod("ToString");
-                        propExpression = Expression.Call(prop, toStringMethod);
+
                         method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
                         break;
                     case EnumOperator.EndsWith:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
-                        toStringMethod = prop.Type.GetMethod("ToString");
-                        propExpression = Expression.Call(prop, toStringMethod);
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
                         break;
                     case EnumOperator.GreaterOrEqual:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));

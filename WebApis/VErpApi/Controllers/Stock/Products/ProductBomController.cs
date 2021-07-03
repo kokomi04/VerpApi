@@ -30,6 +30,15 @@ namespace VErpApi.Controllers.Stock.Products
             _productBomService = productBomService;
         }
 
+        [HttpPost]
+        [Route("ByProductIds")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IDictionary<int, IList<ProductBomOutput>>> ByProductIds([FromBody] IList<int> productIds)
+        {
+            return await _productBomService.GetBoms(productIds);
+        }
+
+
         [HttpGet]
         [Route("{productId}")]
         public async Task<IList<ProductBomOutput>> GetBOM([FromRoute] int productId)
@@ -37,12 +46,19 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productBomService.GetBom(productId);
         }
 
+        [HttpPost]
+        [Route("products")]
+        public async Task<IList<ProductElementModel>> GetElements([FromBody] int[] productIds)
+        {
+            return await _productBomService.GetProductElements(productIds);
+        }
+
         [HttpPut]
         [Route("{productId}")]
         public async Task<bool> Update([FromRoute] int productId, [FromBody] ProductBomModel model)
         {
             if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials);
+            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials, model.IsCleanOldMaterial);
         }
 
         [HttpPost]

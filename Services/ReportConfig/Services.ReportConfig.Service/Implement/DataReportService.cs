@@ -143,12 +143,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(reportInfo.GroupTitleSql))
-            {
-                var data = await _dbContext.QueryDataTable(reportInfo.GroupTitleSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
-                result.GroupTitle = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
-            }
-
             var suffix = 0;
             var filterCondition = new StringBuilder();
             if (model.ColumnsFilters != null)
@@ -192,7 +186,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!string.IsNullOrWhiteSpace(reportInfo.FooterSql))
             {
                 var data = await _dbContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
-                result.Head = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
+                result.Foot = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
             return result;
@@ -459,10 +453,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var sql = reportInfo.BodySql;
 
-            if (!string.IsNullOrEmpty(filterCondition))
+            if (reportInfo.BodySql.Contains("$FILTER"))
             {
-                sql = sql.TSqlAppendCondition(filterCondition);
+                sql = sql.Replace("$FILTER", string.IsNullOrWhiteSpace(filterCondition) ? " 1 = 1 " : filterCondition);
             }
+            else
+            {
+                if (!string.IsNullOrEmpty(filterCondition))
+                {
+                    sql = sql.TSqlAppendCondition(filterCondition);
+                }
+            }
+            
 
             string orderBy = reportInfo?.OrderBy ?? "";
 
@@ -472,7 +474,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 orderBy += $"{orderByFieldName}" + (asc ? "" : " DESC");
             }
 
-            if (!string.IsNullOrWhiteSpace(orderBy))
+            if (reportInfo.BodySql.Contains("$ORDERBY"))
+            {
+                sql = sql.Replace("$ORDERBY", string.IsNullOrWhiteSpace(orderBy) ? "" : " ORDER BY " + orderBy);
+            }
+            else if (!string.IsNullOrWhiteSpace(orderBy))
             {
                 sql += " ORDER BY " + orderBy;
             }
@@ -484,7 +490,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var data = table.ConvertData();
 
             IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
-            columns = RepeatColumnUtils.RepeatColumnProcess(columns, data);
+            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, data);
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
 

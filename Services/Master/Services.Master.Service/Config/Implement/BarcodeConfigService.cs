@@ -16,6 +16,7 @@ using VErp.Services.Master.Service.Activity;
 using System.Linq;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -175,7 +176,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 }
                 );
             var total = await lst.CountAsync();
-            var pageData = size == -1 ? lst.OrderBy(c => c.Name) : lst.OrderBy(c => c.Name).Skip((page - 1) * size).Take(size);
+            var pageData = size > 0 ? lst.OrderBy(c => c.Name).Skip((page - 1) * size).Take(size) : lst.OrderBy(c => c.Name);
 
             return (await pageData.ToListAsync(), total);
         }

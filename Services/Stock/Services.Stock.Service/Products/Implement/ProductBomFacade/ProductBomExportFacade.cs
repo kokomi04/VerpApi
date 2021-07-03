@@ -24,14 +24,16 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 10;
+        private int maxColumnIndex = 14;
 
         private IList<int> productIds;
+        private readonly IList<StepSimpleInfo> steps;
 
-        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds)
+        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds, IList<StepSimpleInfo> steps)
         {
             _stockDbContext = stockDbContext;
             this.productIds = productIds;
+            this.steps = steps;
         }
 
 
@@ -99,7 +101,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             sheet.EnsureCell(fRow, 9).SetCellValue($"Số lượng");
 
-            sheet.EnsureCell(fRow, 10).SetCellValue($"Là nguyên liệu");
+            sheet.EnsureCell(fRow, 10).SetCellValue($"Tỷ lệ hao hụt");
+
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Tổng SL");
+
+            sheet.EnsureCell(fRow, 12).SetCellValue($"Là nguyên liệu");
+
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Cộng đoạn vào");
+
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Công đoạn ra");
 
 
 
@@ -159,6 +169,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var firstProductCode = "";
 
             object currentProduct = null;
+            var mapTotalQuantity = new Dictionary<int?, decimal?>();
             foreach (var item in productBoms)
             {
                 sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
@@ -166,6 +177,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 productInfos.TryGetValue(item.ProductId, out var productInfo);
 
                 productInfos.TryGetValue(item.ChildProductId ?? 0, out var childProductInfo);
+
+                var totalQuantity = item.Quantity * item.Wastage * (mapTotalQuantity.ContainsKey(item.ProductId) ? mapTotalQuantity[item.ProductId] : 1);
+
+                if (!mapTotalQuantity.ContainsKey(item.ChildProductId))
+                    mapTotalQuantity.Add(item.ChildProductId, totalQuantity);
 
                 if (productInfo != null)
                 {
@@ -193,13 +209,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 }
 
                 sheet.EnsureCell(currentRow, 9).SetCellValue(Convert.ToDouble(item.Quantity));
+                sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Wastage));
+                sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(totalQuantity));
 
                 if (productMaterial.Contains(item.ChildProductId ?? 0))
                 {
-                    sheet.EnsureCell(currentRow, 10).SetCellValue("Có");
-                    sheet.EnsureCell(currentRow, 10).CellStyle.Alignment = HorizontalAlignment.Center;
+                    sheet.EnsureCell(currentRow, 12).SetCellValue("Có");
+                    sheet.EnsureCell(currentRow, 12).CellStyle.Alignment = HorizontalAlignment.Center;
                     //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
                 }
+
+                sheet.EnsureCell(currentRow, 13).SetCellValue(GetStepName(item.InputStepId));
+                sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.OutputStepId));
 
                 currentRow++;
                 stt++;
@@ -208,6 +229,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return firstProductCode;
         }
 
+        private string GetStepName(int? stepId)
+        {
+            if (!stepId.HasValue) return string.Empty;
 
+            var step = steps.FirstOrDefault(x => x.StepId == stepId.Value);
+            if (step == null) return string.Empty;
+
+            return step.StepName;
+        }
     }
 }

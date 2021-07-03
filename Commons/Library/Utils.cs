@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Globalization;
 using System.IO;
@@ -246,7 +247,7 @@ namespace VErp.Commons.Library
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";
             return Eval(expression);
         }
-      
+
 
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
         {
@@ -480,14 +481,21 @@ namespace VErp.Commons.Library
                 { StringTemplateConstants.FID, fId },
             };
 
-            if (dateTime.HasValue)
+
+            var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
+            foreach (Match m in dateReg.Matches(template))
             {
-                var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
-                foreach (Match m in dateReg.Matches(template))
+                if (dateTime.HasValue)
                 {
                     values.Add(m.Value, dateTime.Value.ToString(m.Groups["format"].Value));
                 }
+                else
+                {
+                    values.Add(m.Value, m.Groups["format"].Value);
+                }
             }
+
+
 
             if (!string.IsNullOrWhiteSpace(number))
             {
@@ -535,7 +543,12 @@ namespace VErp.Commons.Library
             typeof(int),  typeof(double),  typeof(decimal),
             typeof(long), typeof(short),   typeof(sbyte),
             typeof(byte), typeof(ulong),   typeof(ushort),
-            typeof(uint), typeof(float)
+            typeof(uint), typeof(float),
+
+            typeof(int?),  typeof(double?),  typeof(decimal?),
+            typeof(long?), typeof(short?),   typeof(sbyte?),
+            typeof(byte?), typeof(ulong?),   typeof(ushort?),
+            typeof(uint?), typeof(float?)
         };
         public static bool IsNumber(this Type objectType)
         {
@@ -555,6 +568,69 @@ namespace VErp.Commons.Library
 
             return false;
         }
+
+
+        public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, TMember value)
+        {
+            if (value.IsNullObject())
+            {
+                return;
+            }
+
+            var props = new Stack<PropertyInfo>();
+            MemberExpression me;
+            switch (member.Body.NodeType)
+            {
+                case ExpressionType.Convert:
+                case ExpressionType.ConvertChecked:
+                    var ue = member.Body as UnaryExpression;
+                    me = ((ue != null) ? ue.Operand : null) as MemberExpression;
+                    break;
+                default:
+                    me = member.Body as MemberExpression;
+                    break;
+            }
+
+
+            while (me != null)
+            {
+                props.Push(me.Member as PropertyInfo);
+                me = me.Expression as MemberExpression;
+            }
+
+            object target = obj;
+            while (props.Count > 0)
+            {
+                var p = props.Pop();
+
+                if (props.Count == 0)
+                {
+                    p.SetValue(target, value);
+                }
+                else
+                {
+                    target = p.GetValue(target);
+                }
+            }
+        }
+
+        public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, IDictionary<string, TMember> dics, string key)
+        {
+            if (dics.ContainsKey(key))
+            {
+                obj.UpdateIfAvaiable(member, dics[key]);
+            }
+        }
+
+        public static void UpdateIfAvaiable<T, TMember, TDic>(this T obj, Expression<Func<T, TMember>> member, IDictionary<string, TDic> dics, string key, Expression<Func<TDic, TMember>> divValue)
+        {
+            if (dics.ContainsKey(key))
+            {
+                var v = divValue.Compile().Invoke(dics[key]);
+                obj.UpdateIfAvaiable(member, v);
+            }
+        }
+
 
         public static bool IsTimeType(this EnumDataType type)
         {
@@ -1021,7 +1097,7 @@ namespace VErp.Commons.Library
             var fields = new List<CategoryFieldNameModel>();
             foreach (var prop in typeof(T).GetProperties())
             {
-                var attrs = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>();
+                var attrs = prop.GetCustomAttributes<DisplayAttribute>();
 
                 var title = string.Empty;
                 var groupName = "Trường dữ liệu";
@@ -1047,12 +1123,18 @@ namespace VErp.Commons.Library
                     continue;
                 }
 
+                if (prop.GetCustomAttribute<FieldDataIgnoreAttribute>() != null) continue;
+
+                var isRequired = prop.GetCustomAttribute<RequiredAttribute>();
+
+
                 var fileMapping = new CategoryFieldNameModel()
                 {
                     GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
+                    IsRequired = isRequired != null,
                     Type = type,
                     RefCategory = null
                 };
@@ -1102,6 +1184,76 @@ namespace VErp.Commons.Library
                 formatter.Serialize(stream, a);
                 stream.Position = 0;
                 return (T)formatter.Deserialize(stream);
+            }
+        }
+
+
+        public static T MergeData<T>(this IList<T> items) where T : class
+        {
+            var result = Activator.CreateInstance<T>();
+
+            foreach (var item in items)
+            {
+                result.CopyValuesFrom(item);
+            }
+
+            return result;
+        }
+
+        public static void CopyValuesFrom<T>(this T target, T source, bool appendList = true, bool copyObject = true)
+        {
+            Type t = typeof(T);
+
+            var properties = t.GetProperties().Where(prop => prop.CanRead && prop.CanWrite);
+
+            foreach (var prop in properties)
+            {
+                var value = prop.GetValue(source, null);
+                var targetValue = prop.GetValue(target, null);
+
+                bool isPrimitiveType = prop.PropertyType.IsPrimitive || prop.PropertyType.IsValueType || (prop.PropertyType == typeof(string));
+
+                if (appendList && !isPrimitiveType && (prop.PropertyType.IsArray || typeof(IEnumerable).IsAssignableFrom(prop.PropertyType)))
+                {
+
+                    if (targetValue.IsNullObject())
+                    {
+                        targetValue = Activator.CreateInstance(prop.PropertyType);
+                    }
+
+                    if (!value.IsNullObject())
+                    {
+                        foreach (var newVal in value as IEnumerable)
+                        {
+                            targetValue = (targetValue as IEnumerable).Cast<object>().Concat(new[] { newVal });
+                        }
+                    }
+
+                    prop.SetValue(target, targetValue, null);
+
+                }
+                else if (!value.IsNullObject())
+                {
+
+
+                    if ((copyObject || isPrimitiveType) && targetValue != value)
+                    {
+                        prop.SetValue(target, value, null);
+                    }
+
+                }
+            }
+        }
+
+        public static void ValidateCodeSpecialCharactors(this string code)
+        {
+            if (string.IsNullOrEmpty(code))
+                return;
+            
+            var regEx = new Regex("^([0-9a-zA-Z])(([0-9a-zA-Z_\\.\\/\\-#])*([0-9a-zA-Z]))*$", RegexOptions.Multiline);
+            if (!regEx.IsMatch(code))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\./-_#)");
             }
         }
     }

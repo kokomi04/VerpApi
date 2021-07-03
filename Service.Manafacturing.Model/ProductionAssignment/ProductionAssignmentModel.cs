@@ -50,10 +50,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public bool IsChange(ProductionAssignmentEntity entity)
         {
             var isChange = entity.AssignmentQuantity != AssignmentQuantity
-                        || entity.ProductionStepLinkDataId != ProductionStepLinkDataId
-                        || entity.StartDate.GetUnix() != StartDate
-                        || entity.EndDate.GetUnix() != EndDate
-                        || entity.ProductionAssignmentDetail.Count != ProductionAssignmentDetail.Count;
+                || entity.Productivity != Productivity
+                || entity.ProductionStepLinkDataId != ProductionStepLinkDataId
+                || entity.StartDate.GetUnix() != StartDate
+                || entity.EndDate.GetUnix() != EndDate
+                || entity.ProductionAssignmentDetail.Count != ProductionAssignmentDetail.Count;
             if (!isChange)
             {
                 isChange = entity.ProductionAssignmentDetail

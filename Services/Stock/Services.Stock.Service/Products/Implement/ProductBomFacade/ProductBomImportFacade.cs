@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
@@ -33,21 +34,25 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private IDictionary<string, ProductCate> _productCates;
         private IDictionary<string, UnitOutput> _units;
         private IDictionary<string, SimpleProduct> _existedProducts;
-
+        private IList<StepSimpleInfo> _steps;
 
         private IDictionary<string, bool> _productCodeMaterials;
         private IDictionary<string, List<ProductBomImportModel>> _bomByProductCodes;
+
+        private IManufacturingHelperService _manufacturingHelperService;
 
         public ProductBomImportFacade SetService(StockDBContext stockDbContext)
         {
             _stockDbContext = stockDbContext;
             return this;
         }
+
         public ProductBomImportFacade SetService(IUnitService unitService)
         {
             _unitService = unitService;
             return this;
         }
+
         public ProductBomImportFacade SetService(IProductService productService)
         {
             _productService = productService;
@@ -59,14 +64,22 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             _activityLogService = activityLogService;
             return this;
         }
+
         public ProductBomImportFacade SetService(IProductBomService productBomService)
         {
             _productBomService = productBomService;
             return this;
         }
 
+        public ProductBomImportFacade SetService(IManufacturingHelperService manufacturingHelperService) {
+            _manufacturingHelperService = manufacturingHelperService;
+            return this;
+        }
+
         public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream)
         {
+            _steps = await _manufacturingHelperService.GetSteps();
+
             ReadExcelData(mapping, stream);
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -112,7 +125,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                             entity.Wastage = 1;
                         }
                         return true;
-
+                    case nameof(ProductBomImportModel.OutputStepName):
+                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? inputStepId) && inputStepId.HasValue)) {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
+                        }
+                        entity.OutputStepName = value;
+                        return true;
+                    case nameof(ProductBomImportModel.InputStepName):
+                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? outputStepId) && outputStepId.HasValue)) {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
+                        }
+                        entity.InputStepName = value;
+                        return true;
                 }
 
                 return false;
@@ -172,17 +196,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 {
                     _existedProducts.TryGetValue(b.ChildProductCode.NormalizeAsInternalName(), out var childProduct);
 
-                    return new ProductBomInput()
-                    {
+                    TryGetStepId(b.InputStepName, out int? inputStepId);
+                    TryGetStepId(b.OutputStepName, out int? outputStepId);
+
+                    return new ProductBomInput() {
                         ProductBomId = null,
                         ProductId = productInfo.ProductId,
                         ChildProductId = childProduct.ProductId,
                         Quantity = b.Quantity,
-                        Wastage = b.Wastage ?? 1
+                        Wastage = b.Wastage ?? 1,
+                        InputStepId = inputStepId,
+                        OutputStepId = b.IsMaterial ? null : outputStepId
                     };
                 }).ToList();
 
-                await _productBomService.UpdateProductBomDb(productInfo.ProductId, productBoms, productMaterials);
+                await _productBomService.UpdateProductBomDb(productInfo.ProductId, productBoms, productMaterials, true);
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductBom, productInfo.ProductId, $"Cập nhật chi tiết bom cho mặt hàng {productInfo.ProductCode}, tên hàng {productInfo.ProductName} (import)", new { productBoms, productMaterials }.JsonSerialize());
             }
@@ -263,13 +291,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         {
             var importProducts = _importData.SelectMany(p => new[]
                     {
-                    new { p.ProductCode, p.ProductName, p.ProductTypeCode, p.ProductCateName, p.UnitName, p.Specification },
-                    new { ProductCode = p.ChildProductCode, ProductName = p.ChildProductName, ProductTypeCode= p.ChildProductTypeCode,ProductCateName=p.ChildProductCateName, UnitName = p.ChildUnitName, Specification=p.ChildSpecification } }
+                    new { p.ProductCode, p.ProductName, p.ProductTypeCode, p.ProductCateName, p.UnitName, p.Specification, IsProduct=  true, IsSemi =false },
+                    new { ProductCode = p.ChildProductCode, ProductName = p.ChildProductName, ProductTypeCode= p.ChildProductTypeCode,ProductCateName=p.ChildProductCateName, UnitName = p.ChildUnitName, Specification=p.ChildSpecification,IsProduct=false, IsSemi=true } }
                     ).Where(p => !string.IsNullOrWhiteSpace(p.ProductCode))
                     .Distinct()
                     .ToList()
                     .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
-                    .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+                    .ToDictionary(p => p.Key, p => new
+                    {
+
+                        ProductCode = p.First().ProductCode,
+                        ProductName = p.First().ProductName,
+                        ProductTypeCode = p.First().ProductTypeCode,
+                        ProductCateName = p.First().ProductCateName,
+                        UnitName = p.First().UnitName,
+                        Specification = p.First().Specification,
+                        IsProduct = p.Max(d => d.IsProduct),
+                        IsSemi = p.Max(d => d.IsSemi),
+                    });
 
             _existedProducts = (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName }).ToListAsync()).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
@@ -277,6 +316,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
                 .Select(p =>
                 {
+
                     ProductType type = null;
 
                     if (string.IsNullOrWhiteSpace(p.Value.ProductTypeCode.NormalizeAsInternalName()))
@@ -330,7 +370,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         ProductTypeId = type?.ProductTypeId,
                         ProductCateId = cate.ProductCateId,
                         UnitId = unit.UnitId,
-
+                        IsProduct = p.Value.IsProduct,
+                        IsProductSemi = p.Value.IsSemi,
 
                         Extra = new ProductModelExtra()
                         {
@@ -350,6 +391,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 _existedProducts.Add(product.ProductCode.NormalizeAsInternalName(), new SimpleProduct { ProductId = productId, ProductCode = product.ProductCode, ProductName = product.ProductName });
             }
 
+        }
+
+        private bool TryGetStepId(string key, out int? value) {
+
+            key = string.IsNullOrEmpty(key) ? "" : key.Trim().ToLower();
+
+            if (_steps == null || !_steps.Any(x => x.StepName.ToLower().Equals(key))) {
+                value = null;
+                return false;
+            }
+
+            var step = _steps.FirstOrDefault(x => !string.IsNullOrEmpty(key) && x.StepName.ToLower().Equals(key));
+
+            value = step.StepId;
+            return true;
         }
 
         private class SimpleProduct

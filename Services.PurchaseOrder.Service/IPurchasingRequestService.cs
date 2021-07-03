@@ -31,7 +31,7 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<bool> Update(EnumPurchasingRequestType purchasingRequestTypeId, long purchasingRequestId, PurchasingRequestInput model);
 
-        Task<bool> Delete(long? orderDetailId, long purchasingRequestId);
+        Task<bool> Delete(long? orderDetailId, long? materialCalcId, long purchasingRequestId);
 
         Task<bool> SendToCensor(long purchasingRequestId);
 

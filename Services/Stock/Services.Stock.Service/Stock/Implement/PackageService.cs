@@ -13,6 +13,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
@@ -28,16 +29,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         public PackageService(StockDBContext stockContext
            , IOptions<AppSetting> appSetting
            , ILogger<PackageService> logger
-           , IActivityLogService activityLogService)
+           , IActivityLogService activityLogService
+           , ICustomGenCodeHelperService customGenCodeHelperService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
         public async Task<bool> UpdatePackage(long packageId, PackageInputModel req)
@@ -86,8 +89,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(PackageErrorCode.QualtityOfProductInPackageNotEnough);
 
             var newPackages = new List<PackageModel>();
+            var baseValueChains = new Dictionary<string, int>();
+            var genCodeContexts = new List<GenerateCodeContext>();
             foreach (var package in req.ToPackages)
             {
+                genCodeContexts.Add(await GeneratePackageCode(package, baseValueChains));
+
                 if (string.IsNullOrWhiteSpace(package.PackageCode))
                 {
                     throw new BadRequestException(PackageErrorCode.PackageCodeEmpty);
@@ -176,6 +183,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _activityLogService.CreateLog(EnumObjectType.Package, newPackage.PackageId, message, packageRefs.JsonSerialize());
                 }
             }
+
+            foreach (var item in genCodeContexts)
+            {
+                await item.ConfirmCode();
+            }
             return true;
         }
 
@@ -183,6 +195,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             if (req == null || req.FromPackageIds == null || req.FromPackageIds.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams);
+
+            var ctx = await GeneratePackageCode(req, null);
 
             if (string.IsNullOrWhiteSpace(req.PackageCode))
             {
@@ -220,6 +234,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     throw new BadRequestException(PackageErrorCode.HasSomeQualtityWaitingForApproved);
                 }
             }
+
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -273,6 +288,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     await _activityLogService.CreateLog(EnumObjectType.Package, p.PackageId, message, packageRefs.JsonSerialize());
                 }
+
+                await ctx.ConfirmCode();
 
                 return newPackage.PackageId;
             }
@@ -401,6 +418,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return (resultList, totalRecord);
 
+        }
+
+        private async Task<GenerateCodeContext> GeneratePackageCode(INewPackageBase pageAge, Dictionary<string, int> baseValueChains)
+        {
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.Package)
+                .SetConfigData(0)
+                .TryValidateAndGenerateCode(_stockDbContext.Package, pageAge.PackageCode, (s, code) => s.PackageCode == code);
+
+            pageAge.PackageCode = code;
+            return ctx;
         }
 
     }

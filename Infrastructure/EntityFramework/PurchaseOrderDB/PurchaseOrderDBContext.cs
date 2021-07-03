@@ -15,6 +15,12 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
+        public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
+        public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
+        public virtual DbSet<MaterialCalcProductDetail> MaterialCalcProductDetail { get; set; }
+        public virtual DbSet<MaterialCalcProductOrder> MaterialCalcProductOrder { get; set; }
+        public virtual DbSet<MaterialCalcSummary> MaterialCalcSummary { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
@@ -44,8 +50,94 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<MaterialCalc>(entity =>
+            {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.MaterialCalcCode })
+                    .HasName("IX_MaterialCalc_MaterialCalcCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.MaterialCalcCode).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<MaterialCalcConsumptionGroup>(entity =>
+            {
+                entity.HasKey(e => new { e.MaterialCalcId, e.ProductMaterialsConsumptionGroupId });
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.MaterialCalcConsumptionGroup)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcConsumptionGroup_MaterialCalc");
+            });
+
+            modelBuilder.Entity<MaterialCalcProduct>(entity =>
+            {
+                entity.HasIndex(e => new { e.MaterialCalcId, e.ProductId })
+                    .HasName("IX_MaterialCalcProduct_ProductId")
+                    .IsUnique();
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.MaterialCalcProduct)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcProduct_MaterialCalc");
+            });
+
+            modelBuilder.Entity<MaterialCalcProductDetail>(entity =>
+            {
+                entity.HasKey(e => new { e.MaterialCalcProductId, e.ProductMaterialsConsumptionGroupId, e.MaterialProductId })
+                    .HasName("PK_MaterialCalcProductDetail_1");
+
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.MaterialCalcProduct)
+                    .WithMany(p => p.MaterialCalcProductDetail)
+                    .HasForeignKey(d => d.MaterialCalcProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcProductDetail_MaterialCalcProduct");
+            });
+
+            modelBuilder.Entity<MaterialCalcProductOrder>(entity =>
+            {
+                entity.HasKey(e => new { e.MaterialCalcProductId, e.OrderCode });
+
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.OrderProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.MaterialCalcProduct)
+                    .WithMany(p => p.MaterialCalcProductOrder)
+                    .HasForeignKey(d => d.MaterialCalcProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcProductOrder_MaterialCalcProduct");
+            });
+
+            modelBuilder.Entity<MaterialCalcSummary>(entity =>
+            {
+                entity.Property(e => e.ExchangeRate)
+                    .HasColumnType("decimal(32, 16)")
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.MaterialCalcSummary)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcSummary_MaterialCalc");
+            });
+
             modelBuilder.Entity<PoAssignment>(entity =>
             {
+                entity.HasIndex(e => e.PoAssignmentCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0) AND [PoAssignmentCode] IS NOT NULL AND [PoAssignmentCode]<>'')");
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.PoAssignmentCode)
@@ -101,6 +193,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchaseOrder>(entity =>
             {
+                entity.HasIndex(e => e.PurchaseOrderCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.AdditionNote).HasMaxLength(512);
 
                 entity.Property(e => e.Content).HasMaxLength(512);
@@ -176,6 +272,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchasingRequest>(entity =>
             {
+                entity.HasIndex(e => e.PurchasingRequestCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -193,6 +293,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.MaterialCalc)
+                    .WithMany(p => p.PurchasingRequest)
+                    .HasForeignKey(d => d.MaterialCalcId)
+                    .HasConstraintName("FK_PurchasingRequest_MaterialCalc");
             });
 
             modelBuilder.Entity<PurchasingRequestDetail>(entity =>
@@ -220,6 +325,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchasingSuggest>(entity =>
             {
+                entity.HasIndex(e => e.PurchasingSuggestCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -444,7 +553,14 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasKey(e => e.FId)
                     .HasName("PK_InputValueBill");
 
+                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode })
+                    .HasName("IX_VoucherBill_BillCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.Property(e => e.BillCode).HasMaxLength(512);
 
                 entity.HasOne(d => d.VoucherType)
                     .WithMany(p => p.VoucherBill)

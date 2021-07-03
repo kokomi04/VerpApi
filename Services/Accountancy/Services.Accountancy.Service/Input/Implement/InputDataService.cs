@@ -395,7 +395,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(inputTypeId, billInfo.FId, 1, data, generateTypeLastValues);
+                await CreateBillVersion(inputTypeId, billInfo, data, generateTypeLastValues);
 
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
@@ -1031,9 +1031,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data, generateTypeLastValues);
-
                 billInfo.LatestBillVersion++;
+
+                await CreateBillVersion(inputTypeId, billInfo, data, generateTypeLastValues);
+
+
 
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -1440,18 +1442,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task CreateBillVersion(int inputTypeId, long inputBill_F_Id, int billVersionId, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        private async Task CreateBillVersion(int inputTypeId, InputBill billInfo, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
+
             var fields = (await GetInputFields(inputTypeId)).ToDictionary(f => f.FieldName, f => f);
 
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(inputBill_F_Id, generateTypeLastValues, infoFields, new[] { data.Info });
+            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, infoFields, new[] { data.Info });
+
+            if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
+            {
+                Utils.ValidateCodeSpecialCharactors(sct);
+                billInfo.BillCode = sct;
+            }
 
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(inputBill_F_Id, generateTypeLastValues, rowFields, data.Rows);
+            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, rowFields, data.Rows);
 
             var insertColumns = new HashSet<string>();
 
@@ -1467,6 +1476,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     insertColumns.Add(item.Key);
                 }
             }
+
 
             foreach (var key in removeKeys)
             {
@@ -1534,7 +1544,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             //Create rows
             foreach (var row in data.Rows)
             {
-                var dataRow = NewBillVersionRow(dataTable, inputTypeId, inputBill_F_Id, billVersionId, false);
+                var dataRow = NewBillVersionRow(dataTable, inputTypeId, billInfo.FId, billInfo.LatestBillVersion, false);
 
                 foreach (var item in data.Info)
                 {
@@ -1609,10 +1619,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 dataTable.Rows.Add(dataRow);
             }
 
+
+
             //Create addition reciprocal accounting
             if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))
             {
-                var dataRow = NewBillVersionRow(dataTable, inputTypeId, inputBill_F_Id, billVersionId, true);
+                var dataRow = NewBillVersionRow(dataTable, inputTypeId, billInfo.FId, billInfo.LatestBillVersion, true);
 
                 foreach (var item in data.Info)
                 {
@@ -1977,7 +1989,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         await _accountancyDBContext.SaveChangesAsync();
 
-                        await CreateBillVersion(inputTypeId, billInfo.FId, 1, bill, generateTypeLastValues);
+                        await CreateBillVersion(inputTypeId, billInfo, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
                         await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, bill, inputFields, EnumActionType.Add);

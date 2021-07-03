@@ -108,6 +108,13 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             return (lst, total);
         }
 
+        public async Task<long> GetInventoryRequirementId(EnumInventoryType inventoryType, string inventoryRequirementCode)
+        {
+            var entity = await _stockDBContext.InventoryRequirement
+                .FirstOrDefaultAsync(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementCode == inventoryRequirementCode);
+            return entity?.InventoryRequirementId ?? 0;
+        }
+
         public async Task<InventoryRequirementOutputModel> GetInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId)
         {
             var entity = _stockDBContext.InventoryRequirement
@@ -119,41 +126,57 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             if (entity == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
             var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
 
-            var inventoryRequirementDetailIds = model.InventoryRequirementDetail.Select(d => d.InventoryRequirementDetailId).ToList();
-
-            var inventoryDetailQuantitys = _stockDBContext.InventoryDetail
+            var productionOrderCodes = entity.InventoryRequirementDetail.Select(ird => ird.ProductionOrderCode).Distinct().ToList();
+            var departmentIds = entity.InventoryRequirementDetail.Select(ird => ird.DepartmentId).Distinct().ToList();
+            var productIds = entity.InventoryRequirementDetail.Select(ird => ird.ProductId).Distinct().ToList();
+            var inventoryMaps = _stockDBContext.InventoryDetail
                 .Include(id => id.Inventory)
-                .Where(id => id.InventoryRequirementDetailId.HasValue && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
-                .GroupBy(id => id.InventoryRequirementDetailId)
-                .Select(g => new
-                {
-                    InventoryRequirementDetailId = g.Key,
-                    PrimaryQuantity = g.Sum(id => id.PrimaryQuantity)
-                })
-                .ToDictionary(g => g.InventoryRequirementDetailId, g => g.PrimaryQuantity);
-
-            var inventoryMap = _stockDBContext.InventoryDetail
-                .Include(id => id.Inventory)
-                .Where(id => id.InventoryRequirementDetailId.HasValue && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
+                .Where(id => model.InventoryRequirementCode == id.InventoryRequirementCode
+                && productionOrderCodes.Contains(id.ProductionOrderCode)
+                && departmentIds.Contains(id.DepartmentId)
+                && productIds.Contains(id.ProductId))
                 .Select(id => new
                 {
-                    id.InventoryRequirementDetailId,
-                    id.Inventory.InventoryCode,
-                    id.Inventory.InventoryId
+                    id.ProductId,
+                    id.ProductionOrderCode,
+                    id.DepartmentId,
+                    id.PrimaryQuantity,
+                    id.InventoryId,
+                    id.Inventory.InventoryCode
                 })
                 .ToList()
-                .GroupBy(id => id.InventoryRequirementDetailId)
-                .ToDictionary(g => g.Key, g => g.Select(id => new InventorySimpleInfo
+                .GroupBy(id => new
                 {
-                    InventoryId = id.InventoryId,
-                    InventoryCode = id.InventoryCode
-                }).ToList());
+                    id.ProductId,
+                    id.ProductionOrderCode,
+                    id.DepartmentId,
+                })
+                .ToDictionary(g => g.Key, g => new
+                {
+                    PrimaryQuantity = g.Sum(id => id.PrimaryQuantity),
+                    InventorySimpleInfos = g.Select(id => new InventorySimpleInfo
+                    {
+                        InventoryId = id.InventoryId,
+                        InventoryCode = id.InventoryCode
+                    }).Distinct().ToList()
+                });
 
-            foreach (var inventoryRequirementDetail in model.InventoryRequirementDetail)
+            foreach (var data in inventoryMaps)
             {
-                if (inventoryDetailQuantitys.ContainsKey(inventoryRequirementDetail.InventoryRequirementDetailId))
-                    inventoryRequirementDetail.InventoryQuantity = inventoryDetailQuantitys[inventoryRequirementDetail.InventoryRequirementDetailId];
-                if (inventoryMap.ContainsKey(inventoryRequirementDetail.InventoryRequirementDetailId)) inventoryRequirementDetail.InventoryInfo = inventoryMap[inventoryRequirementDetail.InventoryRequirementDetailId];
+                var quantity = data.Value.PrimaryQuantity;
+                InventoryRequirementDetailOutputModel lastestDetail = null;
+                foreach (var detail in model.InventoryRequirementDetail)
+                {
+                    if (detail.ProductId == data.Key.ProductId && detail.ProductionOrderCode == data.Key.ProductionOrderCode && detail.DepartmentId == data.Key.DepartmentId)
+                    {
+                        detail.InventoryInfo = data.Value.InventorySimpleInfos;
+                        if (quantity <= 0) break;
+                        detail.InventoryQuantity = quantity <= detail.PrimaryQuantity ? quantity : detail.PrimaryQuantity;
+                        quantity = quantity - detail.InventoryQuantity;
+                        lastestDetail = detail;
+                    }
+                }
+                if (quantity > 0 && lastestDetail != null) lastestDetail.InventoryQuantity += quantity;
             }
 
             var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
@@ -480,14 +503,14 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             }
         }
 
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId)
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, string productionOrderCode, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId)
         {
             var inventoryRequirements = await _stockDBContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementFile)
                 .Include(r => r.InventoryRequirementDetail)
                 .ThenInclude(d => d.ProductUnitConversion)
                 .Where(r => r.InventoryTypeId == (int)inventoryType
-                    && r.ProductionOrderId == productionOrderId
+                    && r.InventoryRequirementDetail.Any(rd => rd.ProductionOrderCode == productionOrderCode)
                     && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete)
                 .ToListAsync();
 

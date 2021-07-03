@@ -366,7 +366,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(voucherTypeId, billInfo.FId, 1, data, generateTypeLastValues);
+                await CreateBillVersion(voucherTypeId, billInfo, data, generateTypeLastValues);
 
                 // After saving action (SQL)
                 await ProcessActionAsync(voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Add);
@@ -1003,9 +1003,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion + 1, data, generateTypeLastValues);
-
                 billInfo.LatestBillVersion++;
+
+                await CreateBillVersion(voucherTypeId, billInfo, data, generateTypeLastValues);
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -1237,7 +1237,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             var voucherTypeInfo = await GetVoucherTypExecInfo(voucherTypeId);
 
-           
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockVoucherTypeKey(voucherTypeId));
 
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
@@ -1420,17 +1420,23 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task CreateBillVersion(int voucherTypeId, long voucherBill_F_Id, int billVersionId, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        private async Task CreateBillVersion(int voucherTypeId, VoucherBill billInfo, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
         {
             var fields = (await GetVoucherFields(voucherTypeId)).Where(f => !f.IsReadOnly).ToDictionary(f => f.FieldName, f => f);
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(voucherBill_F_Id, generateTypeLastValues, infoFields, new[] { data.Info });
+            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, infoFields, new[] { data.Info });
+
+            if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
+            {
+                Utils.ValidateCodeSpecialCharactors(sct);
+                billInfo.BillCode = sct;
+            }
 
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(voucherBill_F_Id, generateTypeLastValues, rowFields, data.Rows);
+            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, rowFields, data.Rows);
 
             var insertColumns = new HashSet<string>();
 
@@ -1512,7 +1518,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             //Create rows
             foreach (var row in data.Rows)
             {
-                var dataRow = NewVoucherBillVersionRow(dataTable, voucherTypeId, voucherBill_F_Id, billVersionId, false);
+                var dataRow = NewVoucherBillVersionRow(dataTable, voucherTypeId, billInfo.FId, billInfo.LatestBillVersion, false);
 
                 foreach (var item in data.Info)
                 {
@@ -1589,7 +1595,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             //Create addition reciprocal sales
             if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))
             {
-                var dataRow = NewVoucherBillVersionRow(dataTable, voucherTypeId, voucherBill_F_Id, billVersionId, true);
+                var dataRow = NewVoucherBillVersionRow(dataTable, voucherTypeId, billInfo.FId, billInfo.LatestBillVersion, true);
 
                 foreach (var item in data.Info)
                 {
@@ -1961,7 +1967,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         await _purchaseOrderDBContext.SaveChangesAsync();
 
-                        await CreateBillVersion(voucherTypeId, billInfo.FId, 1, bill, generateTypeLastValues);
+                        await CreateBillVersion(voucherTypeId, billInfo, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
                         await ProcessActionAsync(voucherType.AfterSaveActionExec, bill, voucherFields, EnumActionType.Add);
@@ -2268,6 +2274,18 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (data, (total.Value as long?).GetValueOrDefault());
         }
 
+
+        public async Task<IList<NonCamelCaseDictionary>> OrderByCodes(IList<string> orderCodes)
+        {
+            // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderGetByCodes",
+                new[]
+                {
+                   orderCodes.ToSqlParameter("@OrderCodes")
+                });
+
+            return data.ConvertData();
+        }
 
         public async Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds)
         {

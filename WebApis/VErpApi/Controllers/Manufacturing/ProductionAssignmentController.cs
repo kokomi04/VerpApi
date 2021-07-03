@@ -81,26 +81,26 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, productionOrderId, page, size, orderByFieldName, asc);
         }
 
-        [HttpGet]
-        [Route("productivity/productionStep/{productionStepId}")]
-        public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
-        {
-            return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
-        }
+        //[HttpGet]
+        //[Route("productivity/productionStep/{productionStepId}")]
+        //public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
+        //{
+        //    return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
+        //}
 
         [HttpGet]
-        [Route("productivity/general/productionOrder/{productionOrderId}")]
-        public async Task<IDictionary<long, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments([FromRoute] long productionOrderId)
+        [Route("productivity/general")]
+        public async Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments()
         {
-            return await _productionAssignmentService.GetGeneralProductivityDepartments(productionOrderId);
+            return await _productionAssignmentService.GetGeneralProductivityDepartments();
         }
 
-        [HttpGet]
-        [Route("capacity/productionOrder/{productionOrderId}/productionStep/{productionStepId}")]
-        public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
-        {
-            return await _productionAssignmentService.GetCapacityDepartments(productionOrderId, productionStepId, startDate, endDate);
-        }
+        //[HttpGet]
+        //[Route("capacity/productionOrder/{productionOrderId}/productionStep/{productionStepId}")]
+        //public async Task<CapacityOutputModel> GetCapacityDepartments([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromQuery] long startDate, [FromQuery] long endDate)
+        //{
+        //    return await _productionAssignmentService.GetCapacityDepartments(productionOrderId, productionStepId, startDate, endDate);
+        //}
 
         [HttpGet]
         [Route("capacity/general/productionOrder/{productionOrderId}")]
@@ -109,12 +109,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.GetGeneralCapacityDepartments(productionOrderId);
         }
 
-        [HttpGet]
-        [Route("capacity")]
-        public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
-        {
-            return await _productionAssignmentService.GetCapacity(startDate, endDate);
-        }
+        //[HttpGet]
+        //[Route("capacity")]
+        //public async Task<IList<CapacityDepartmentChartsModel>> GetCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        //{
+        //    return await _productionAssignmentService.GetCapacity(startDate, endDate);
+        //}
 
         [HttpGet]
         [Route("WorkInfo/productionOrder/{productionOrderId}")]

@@ -144,6 +144,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .Include(x => x.OutsourceStepRequestData)
                 .FirstOrDefaultAsync(x => x.OutsourceStepRequestId == outsourceStepRequestId);
 
+            var productionStepParents = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Where(x => request.ProductionStep.Select(x => x.ParentId).Distinct().Contains(x.ProductionStepId))
+                .Include(x => x.Step)
+                .ToListAsync();
+
             var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
                 .Where(x => request.ProductionStep.Select(x => x.ProductionStepId).Contains(x.ProductionStepId))
                 .ToListAsync();
@@ -156,13 +161,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                
                 var role = roles.FirstOrDefault(r => r.ProductionStepLinkDataId == x.ProductionStepLinkDataId && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output);
                 var productionStepInfo = request.ProductionStep.FirstOrDefault(s => s.ProductionStepId == role.ProductionStepId);
+                var productionStepParentInfo = productionStepParents.FirstOrDefault(s => s.ProductionStepId == productionStepInfo.ParentId);
+
                 return new OutsourceStepRequestDetailOutput
                 {
                     ProductionStepLinkDataId = x.ProductionStepLinkDataId,
                     Quantity = x.Quantity,
                     TotalOutsourceOrderQuantity = totalOutsourceOrderQuantityMap.ContainsKey(x.ProductionStepLinkDataId) ? totalOutsourceOrderQuantityMap[x.ProductionStepLinkDataId] : 0,
                     RoleType = (int)EnumProductionStepLinkDataRoleType.Output,
-                    ProductionStepTitle =$"{productionStepInfo.Step.StepName} #({productionStepInfo.ProductionStepId})"
+                    ProductionStepTitle = productionStepParentInfo.Step?.StepName
                 };
             }).ToList();
 
@@ -171,7 +178,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 OutsourceStepRequestCode = request.OutsourceStepRequestCode,
                 OutsourceStepRequestFinishDate = request.OutsourceStepRequestFinishDate.GetUnix(),
                 ProductionOrderId = request.ProductionOrderId,
-                ProductionStepIds = request.ProductionStep.Select(x => x.ProductionStepId).ToArray(),
+                ProductionStepIds = request.ProductionStep.Where(x=>x.IsGroup == false).Select(x => x.ProductionStepId).ToArray(),
                 OutsourceStepRequestId = request.OutsourceStepRequestId,
                 OutsourceStepRequestDate = request.CreatedDatetimeUtc.GetUnix(),
                 DetailInputs = arrOutput,
@@ -269,7 +276,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private async Task SyncInfoForProductionProcess(ProductionProcessOutsourceStep processOutsourceStep, long outsourceStepRequestId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep
-                .Where(x => processOutsourceStep.ProductionSteps.Select(s => s.ProductionStepId).Contains(x.ProductionStepId))
+                .Where(x => processOutsourceStep.ProductionSteps.Select(s => s.ProductionStepId).Contains(x.ProductionStepId) && x.IsGroup == false)
                 .ToListAsync();
 
             var productionStepLinkDatas = await _manufacturingDBContext.ProductionStepLinkData
@@ -528,36 +535,19 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return data;
         }
 
-        private async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(long[] lsProductionStepLinkDataId)
-        {
-            var stepLinkDatas = new List<ProductionStepLinkDataInput>();
-            if (lsProductionStepLinkDataId.Length > 0)
-            {
-                var sql = new StringBuilder("Select * from ProductionStepLinkDataExtractInfo v ");
-                var parammeters = new List<SqlParameter>();
-                var whereCondition = new StringBuilder();
-
-                whereCondition.Append("v.ProductionStepLinkDataId IN ( ");
-                for (int i = 0; i < lsProductionStepLinkDataId.Length; i++)
+        private async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(long[] lsProductionStepLinkDataId) {
+            IList<ProductionStepLinkDataInput> stepLinkDatas = new List<ProductionStepLinkDataInput>();
+            if (lsProductionStepLinkDataId.Length > 0) {
+                var sql = new StringBuilder(@$"
+                                    SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
+                                    WHERE v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
+                                ");
+                var parammeters = new List<SqlParameter>()
                 {
-                    var number = lsProductionStepLinkDataId[i];
-                    string pName = $"@ProductionStepLinkDataId{i + 1}";
+                    lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
+                };
 
-                    if (i == lsProductionStepLinkDataId.Length - 1)
-                        whereCondition.Append($"{pName} )");
-                    else
-                        whereCondition.Append($"{pName}, ");
-
-                    parammeters.Add(new SqlParameter(pName, number));
-                }
-                if (whereCondition.Length > 0)
-                {
-                    sql.Append(" WHERE ");
-                    sql.Append(whereCondition);
-                }
-
-                stepLinkDatas = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
-                        .ConvertData<ProductionStepLinkDataInput>();
+                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             return stepLinkDatas;

@@ -11,6 +11,8 @@ namespace VErp.Services.PurchaseOrder.Model
     public class PurchasingRequestInput : IMapFrom<PurchasingRequest>
     {
         public long OrderDetailId { get; set; }
+        public long? MaterialCalcId { get; set; }
+
         public string PurchasingRequestCode { get; set; }
 
         public long Date { get; set; }

@@ -69,6 +69,7 @@ namespace VErpApi.Controllers.System.Category
 
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("{categoryId}/categoryrows")]
         public async Task<int> GetCategoryRow([FromRoute] int categoryId, [FromBody] Dictionary<string, string> data)
         {
@@ -91,6 +92,7 @@ namespace VErpApi.Controllers.System.Category
 
         [GlobalApi]
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("mapToObject")]
         public async Task<List<MapObjectOutputModel>> MapToObject([FromBody] MapObjectInputModel[] data)
         {

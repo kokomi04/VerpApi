@@ -185,14 +185,15 @@ namespace VErp.Infrastructure.ApiCore
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
             app.UseMiddleware<RequestLogMiddleware>();
+
+            loggerFactory.AddSerilog();
+
 #if !DEBUG
             if (AppSetting.ElasticApm?.IsEnabled == true)
             {
                 app.UseAllElasticApm(Configuration);
             }
 #endif
-
-            loggerFactory.AddSerilog();
 
             var pathBase = AppSetting.PathBase;
             if (!string.IsNullOrEmpty(pathBase))

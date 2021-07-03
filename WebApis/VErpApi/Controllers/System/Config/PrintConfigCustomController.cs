@@ -71,9 +71,9 @@ namespace VErpApi.Controllers.System.Config
 
         [HttpPost]
         [Route("{printConfigId}/template/fillData")]
-        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromBody] NonCamelCaseDictionary templateModel)
+        public async Task<IActionResult> GeneratePrintTemplate([FromRoute] int printConfigId, [FromBody] NonCamelCaseDictionary templateModel, [FromQuery] bool isDoc = false)
         {
-            var r = await _printConfigCustomService.GeneratePrintTemplate(printConfigId, templateModel);
+            var r = await _printConfigCustomService.GeneratePrintTemplate(printConfigId, templateModel, isDoc);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }

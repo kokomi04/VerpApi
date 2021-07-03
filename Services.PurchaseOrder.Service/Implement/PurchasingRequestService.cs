@@ -110,6 +110,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PurchasingRequestOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
+            keyword = keyword?.Trim();
+
             var query = _purchaseOrderDBContext.PurchasingRequest.AsNoTracking().AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -153,7 +155,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (toDate.HasValue)
             {
                 var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+                time = time.Value.AddDays(1);
+                query = query.Where(q => q.CreatedDatetimeUtc < time);
             }
 
             var total = await query.CountAsync();
@@ -178,6 +181,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             r.PurchasingRequestId,
                             r.PurchasingRequestStatusId,
+                            r.PurchasingRequestTypeId,
                             r.Date,
                             d.OrderCode,
                             d.ProductionOrderCode,
@@ -236,9 +240,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (toDate.HasValue)
             {
-                var time = toDate.Value.UnixToDateTime();
-                query = query.Where(q => q.CreatedDatetimeUtc <= time);
+                var toDateTime = toDate.Value.UnixToDateTime();
+                toDateTime = toDateTime.Value.AddDays(1);
+                query = query.Where(q => q.CreatedDatetimeUtc < toDateTime);
             }
+
 
             var total = await query.CountAsync();
             var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
@@ -271,7 +277,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductUnitConversionId = info.ProductUnitConversionId,
                     ProductUnitConversionQuantity = info.ProductUnitConversionQuantity,
 
-                    Description = info.Description
+                    Description = info.Description,
+                    PurchasingRequestTypeId = (EnumPurchasingRequestType)info.PurchasingRequestTypeId
                 });
             }
 
@@ -335,6 +342,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 }
 
+                purchasingRequest.MaterialCalcId = null;
+                if (requestType == EnumPurchasingRequestType.MaterialCalc)
+                {
+                    if (!model.MaterialCalcId.HasValue || model.MaterialCalcId <= 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams);
+                    }
+
+                    purchasingRequest.MaterialCalcId = model.MaterialCalcId;
+
+                    purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
+                    //purchasingRequest.IsApproved = true;
+                    //purchasingRequest.CensorByUserId = _currentContext.UserId;
+                    //purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
+                }
+
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -390,9 +413,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.OrderMaterial && model.OrderDetailId != info.OrderDetailId))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams);
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sửa YCVT từ tính toán vật tư");
                     }
 
+                    if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.MaterialCalc && model.MaterialCalcId != info.MaterialCalcId))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sửa YCVT từ tính toán vật tư");
+                    }
+
+                    await DeleteOldDetails(purchasingRequestId);
 
                     info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.Draff;
                     info.IsApproved = null;
@@ -407,13 +436,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         info.CensorDatetimeUtc = DateTime.UtcNow;
                     }
 
-                    var oldDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => d.PurchasingRequestId == purchasingRequestId).ToListAsync();
-
-                    foreach (var item in oldDetails)
+                    if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc)
                     {
-                        item.IsDeleted = true;
-                        item.DeletedDatetimeUtc = DateTime.UtcNow;
+                        info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
+                        //info.IsApproved = true;
+                        //info.CensorByUserId = _currentContext.UserId;
+                        //info.CensorDatetimeUtc = DateTime.UtcNow;
                     }
+
 
                     var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
                     foreach (var item in purchasingRequestDetailList)
@@ -489,28 +519,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         //    return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
         //}
 
-        public async Task<bool> Delete(long? orderDetailId, long purchasingRequestId)
+        public async Task<bool> Delete(long? orderDetailId, long? materialCalcId, long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                 if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
-                if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.OrderMaterial && info.OrderDetailId != orderDetailId)
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams);
-                }
+                //if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.OrderMaterial && info.OrderDetailId != orderDetailId)
+                //{
+                //    throw new BadRequestException(GeneralCode.InvalidParams);
+                //}
+
+                //if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc && info.MaterialCalcId != materialCalcId)
+                //{
+                //    throw new BadRequestException(GeneralCode.InvalidParams);
+                //}
+
+                await DeleteOldDetails(purchasingRequestId);
 
                 info.IsDeleted = true;
                 info.DeletedDatetimeUtc = DateTime.UtcNow;
-
-                var oldDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => d.PurchasingRequestId == purchasingRequestId).ToListAsync();
-
-                foreach (var item in oldDetails)
-                {
-                    item.IsDeleted = true;
-                    item.DeletedDatetimeUtc = DateTime.UtcNow;
-                }
-
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -871,6 +899,33 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
 
             return data;
+        }
+
+        private async Task DeleteOldDetails(long purchasingRequestId)
+        {
+            var oldDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => d.PurchasingRequestId == purchasingRequestId).ToListAsync();
+
+            var purchasingRequestDetailIds = oldDetails.Select(d => (long?)d.PurchasingRequestDetailId).ToList();
+            var sugguests = await (
+                from d in _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId))
+                join s in _purchaseOrderDBContext.PurchasingSuggest on d.PurchasingSuggestId equals s.PurchasingSuggestId
+                select
+
+                    s.PurchasingSuggestCode
+                ).Distinct()
+                .ToListAsync();
+            if (sugguests.Count > 0)
+            {
+
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể xóa YCVT đã tạo đề nghị VT ({string.Join(", ", sugguests)})");
+            }
+
+            foreach (var item in oldDetails)
+            {
+                item.IsDeleted = true;
+                item.DeletedDatetimeUtc = DateTime.UtcNow;
+            }
+
         }
 
     }

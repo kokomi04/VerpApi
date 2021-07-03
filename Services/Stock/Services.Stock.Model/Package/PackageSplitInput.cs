@@ -9,7 +9,7 @@ namespace VErp.Services.Stock.Model.Package
         public IList<PackageSplitDetailModel> ToPackages { get; set; }
     }
 
-    public class PackageSplitDetailModel
+    public class PackageSplitDetailModel: INewPackageBase
     {
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }

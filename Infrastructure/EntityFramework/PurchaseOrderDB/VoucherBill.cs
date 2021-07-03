@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int LatestBillVersion { get; set; }
         public int SubsidiaryId { get; set; }
+        public string BillCode { get; set; }
 
         public virtual VoucherType VoucherType { get; set; }
     }

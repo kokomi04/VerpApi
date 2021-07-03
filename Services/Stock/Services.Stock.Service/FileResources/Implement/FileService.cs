@@ -265,9 +265,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var ext = Path.GetExtension(file.FileName).ToLower();
 
-            if (!new[] { ".xls", ".xlsx" }.Contains(ext))
+            if (!new[] { ".xlsx" }.Contains(ext))
             {
-                throw new BadRequestException(FileErrorCode.InvalidFileExtension);
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension,"Hệ thống chỉ hỗ trợ file *.xlsx");
             }
 
             var reader = new ExcelReader(file.OpenReadStream());

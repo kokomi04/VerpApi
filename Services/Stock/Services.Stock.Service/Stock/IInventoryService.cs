@@ -133,6 +133,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20);
 
+
         /// <summary>
         /// Lấy danh sách kiện để xuất kho
         /// </summary>
@@ -142,6 +143,10 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="size"></param>
         /// <returns></returns>
         Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);
+
+
+        Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> stockIds, int page = 1, int size = 20);
+
 
         Task<IList<CensoredInventoryInputProducts>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req);
 

@@ -385,7 +385,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
                 );
             var total = await query.CountAsync();
-            switch ((EnumStockOutputRule)productStockInfo.StockOutputRuleId)
+            switch ((EnumStockOutputRule?)productStockInfo.StockOutputRuleId)
             {
                 case EnumStockOutputRule.None:
                 case EnumStockOutputRule.Fifo:
@@ -1045,7 +1045,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
               {
                   i.InventoryId,
                   i.CustomerId,
-                  i.DepartmentId,
+                  id.DepartmentId,
                   i.StockId,
                   i.Date,
                   i.CreatedDatetimeUtc,

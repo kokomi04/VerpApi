@@ -7,18 +7,22 @@ using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
 namespace VErp.Services.Organization.Model.Customer
 {
-    public class CustomerListOutput:  IMapFrom<CustomerEntity>
+    public class CustomerListBasicOutput : IMapFrom<CustomerEntity>
     {
         public int CustomerId { get; set; }
         public string CustomerCode { get; set; }
         public string CustomerName { get; set; }
+    }
+    public class CustomerListOutput : CustomerListBasicOutput
+    {
+
         public EnumCustomerType CustomerTypeId { get; set; }
         public string Address { get; set; }
         public string TaxIdNo { get; set; }
         public string PhoneNumber { get; set; }
         public string Website { get; set; }
         public string Email { get; set; }
-        public string Identify { get; set; }        
+        public string Identify { get; set; }
         public EnumCustomerStatus CustomerStatusId { get; set; }
 
         public int? DebtDays { get; set; }
@@ -32,4 +36,5 @@ namespace VErp.Services.Organization.Model.Customer
         public int? LoanManagerUserId { get; set; }
 
     }
+
 }

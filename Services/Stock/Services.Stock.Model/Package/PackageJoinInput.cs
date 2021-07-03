@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VErp.Services.Stock.Model.Package
 {
-    public class PackageJoinInput
+    public class PackageJoinInput: INewPackageBase
     {
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }

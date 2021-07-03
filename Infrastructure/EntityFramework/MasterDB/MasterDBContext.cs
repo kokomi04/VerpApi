@@ -140,6 +140,10 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Category>(entity =>
             {
+                entity.HasIndex(e => e.CategoryCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.CategoryCode)
                     .IsRequired()
                     .HasMaxLength(45)
@@ -609,6 +613,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Unit>(entity =>
             {
+                entity.HasIndex(e => new { e.UnitName, e.SubsidiaryId })
+                    .HasName("IX_Unit_UnitName")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.UnitName)
                     .IsRequired()
                     .HasMaxLength(128);

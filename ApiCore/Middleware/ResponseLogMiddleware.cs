@@ -44,6 +44,10 @@ namespace VErp.Infrastructure.ApiCore.Middleware
                     {
                         memStream.Position = 0;
                         var responseBody = new StreamReader(memStream).ReadToEnd();
+                        if (responseBody != null && responseBody.Length > 2000)
+                        {
+                            responseBody = responseBody.Substring(0, 2000);
+                        }
                         var log = new
                         {
                             Response = responseBody,

@@ -11,14 +11,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class ProductionInventoryRequirementBaseModel
     {
-        public long InventoryRequirementDetailId { get; set; }
         public int ProductId { get; set; }
         public int CreatedByUserId { get; set; }
         public decimal RequirementQuantity { get; set; }
         public decimal? ActualQuantity { get; set; }
         public int? AssignStockId { get; set; }
         public string StockName { get; set; }
-        public long ProductionStepId { get; set; }
+        public long? ProductionStepId { get; set; }
         public int? DepartmentId { get; set; }
         public string Content { get; set; }
         public string InventoryCode { get; set; }

@@ -37,7 +37,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             _fileProcessDataService = fileProcessDataService;
         }
 
-       
+
         /// <summary>
         /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
@@ -252,6 +252,12 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
         }
 
+        [HttpGet]
+        [Route("GetProductPackageListForExport")]
+        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inventoryService.GetProductPackageListForExport(keyword, isTwoUnit, stockIds, page, size);
+        }
 
 
         /// <summary>
@@ -303,13 +309,13 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<long> ImportFromMapping([FromFormString] ImportExcelMapping mapping, InventoryOpeningBalanceModel info, IFormFile file)
+        public async Task<long> ImportFromMapping([FromFormString] InventoryOpeningImportModel data, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inventoryService.InventoryImport(mapping, file.OpenReadStream(), info).ConfigureAwait(true);
+            return await _inventoryService.InventoryImport(data.Mapping, file.OpenReadStream(), data.Info).ConfigureAwait(true);
         }
 
 

@@ -192,21 +192,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _stockDbContext.SaveChangesAsync();
 
 
+            //add new details
+            var newDetails = updateDetails.Where(d => d.InventoryDetailId <= 0).ToList();
 
+            foreach (var d in newDetails)
+            {
+                d.InventoryId = inventoryId;
+            }
+
+            _stockDbContext.InventoryDetail.AddRange(newDetails);
+            _stockDbContext.SaveChanges();
+
+
+            //
             var isDelete = !(await _stockDbContext.InventoryDetail.AnyAsync(d => d.InventoryId == inventoryId && d.PrimaryQuantity > 0));
 
             if (!isDelete)
             {
-                var newDetails = updateDetails.Where(d => d.InventoryDetailId <= 0).ToList();
-
-                foreach (var d in newDetails)
-                {
-                    d.InventoryId = inventoryId;
-                }
-
-                _stockDbContext.InventoryDetail.AddRange(newDetails);
-                _stockDbContext.SaveChanges();
-
                 var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.Date, newDetails);
                 if (!r.IsSuccess())
                 {
@@ -504,8 +506,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.OrderCode = submitDetail?.OrderCode;
                 detail.Pocode = submitDetail?.POCode;
                 detail.ProductionOrderCode = submitDetail?.ProductionOrderCode;
-
+                detail.InventoryRequirementCode = submitDetail?.InventoryRequirementCode;
                 detail.Description = submitDetail?.Description;
+
+                detail.DepartmentId = submitDetail?.DepartmentId;
 
                 detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;
 
@@ -760,18 +764,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     throw new Exception("Invalid negative stock product data!");
                 }
             }
-
-            // await _stockDbContext.SaveChangesAsync();
-
-            //foreach (var output in validateOutputDetails)
-            //{
-            //    var validate = await ValidateBalanceForOutput(req.Inventory.StockId, output.Value.ProductId, output.Value.InventoryId, output.Value.ProductUnitConversionId, output.Value.Date, output.Value.OutputPrimary, output.Value.OutputSecondary);
-
-            //    if (!validate.IsSuccessCode())
-            //    {
-            //        throw new BadRequestException(validate.Code);
-            //    }
-            //}
 
             return changesInventories;
         }

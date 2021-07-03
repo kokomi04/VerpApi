@@ -17,6 +17,7 @@ namespace VErp.Services.Stock.Service.Stock
     public interface IInventoryRequirementService
     {
         Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
+        Task<long> GetInventoryRequirementId(EnumInventoryType inventoryType, string inventoryRequirementCode);
         Task<InventoryRequirementOutputModel> GetInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId);
         Task<long> AddInventoryRequirement(EnumInventoryType inventoryType, InventoryRequirementInputModel req);
         Task<long> UpdateInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, InventoryRequirementInputModel req);
@@ -24,6 +25,6 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<bool> ConfirmInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status, Dictionary<long, int> assignStocks = null);
 
-        Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, long productionOrderId, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId);
+        Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, string productionOrderCode, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId);
     }
 }
