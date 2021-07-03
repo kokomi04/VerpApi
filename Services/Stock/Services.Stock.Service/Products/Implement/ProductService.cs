@@ -775,7 +775,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   s.AmountWarningMin,
                   s.AmountWarningMax,
                   s.ExpireTimeAmount,
-                  s.ExpireTimeTypeId
+                  s.ExpireTimeTypeId,
               });
 
             if (productTypeIds != null && productTypeIds.Length > 0)
@@ -862,7 +862,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ExpireTimeAmount = item.ExpireTimeAmount,
                     ExpireTimeTypeId = (EnumTimeType?)item.ExpireTimeTypeId,
                     DecimalPlace = pus.FirstOrDefault(p => p.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
-                    ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus)
+                    ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
+                    Description = item.Description
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
