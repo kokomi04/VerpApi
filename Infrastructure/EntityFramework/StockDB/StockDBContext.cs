@@ -624,7 +624,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
             {
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.MaterialsConsumption)
                     .WithMany(p => p.ProductMaterialsConsumptionMaterialsConsumption)
