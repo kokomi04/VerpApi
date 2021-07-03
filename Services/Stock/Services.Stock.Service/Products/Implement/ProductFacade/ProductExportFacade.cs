@@ -200,6 +200,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                 case nameof(ProductImportModel.Specification):
                     return (EnumDataType.Text, product.Specification);
+                case nameof(ProductImportModel.Description):
+                    return (EnumDataType.Text, product.Description);
 
                 case nameof(ProductImportModel.PackingMethod):
                     return (EnumDataType.Text, product.PackingMethod);
