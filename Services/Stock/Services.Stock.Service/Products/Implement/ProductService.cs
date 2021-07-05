@@ -645,6 +645,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var productConsum = await _stockDbContext.ProductMaterialsConsumption.Where(b => b.ProductId == productId).ToListAsync();
 
+            var materials = await _stockDbContext.ProductMaterial.Where(b => b.RootProductId == productId).ToListAsync();
+
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 try
@@ -666,8 +668,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         p.IsDeleted = true;
                     }
 
-                    _stockDbContext.ProductBom.RemoveRange(productBoms);
-                    _stockDbContext.ProductMaterialsConsumption.RemoveRange(productConsum);
+                    _stockDbContext.ProductMaterial.RemoveRange(materials);
 
                     //_stockContext.ProductStockValidation.RemoveRange(stockValidations);
 
