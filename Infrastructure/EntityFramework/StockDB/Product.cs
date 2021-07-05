@@ -8,8 +8,13 @@ namespace VErp.Infrastructure.EF.StockDB
         public Product()
         {
             InventoryDetail = new HashSet<InventoryDetail>();
-            ProductBomParentProduct = new HashSet<ProductBom>();
+            InventoryRequirementDetail = new HashSet<InventoryRequirementDetail>();
+            ProductAttachment = new HashSet<ProductAttachment>();
+            ProductBomChildProduct = new HashSet<ProductBom>();
             ProductBomProduct = new HashSet<ProductBom>();
+            ProductCustomer = new HashSet<ProductCustomer>();
+            ProductMaterialsConsumptionMaterialsConsumption = new HashSet<ProductMaterialsConsumption>();
+            ProductMaterialsConsumptionProduct = new HashSet<ProductMaterialsConsumption>();
             ProductStockValidation = new HashSet<ProductStockValidation>();
             ProductUnitConversion = new HashSet<ProductUnitConversion>();
         }
@@ -44,14 +49,26 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? LoadAbility { get; set; }
         public string ProductDescription { get; set; }
         public string ProductNameEng { get; set; }
+        public decimal? Quantitative { get; set; }
+        public int? QuantitativeUnitTypeId { get; set; }
+        public bool IsProductSemi { get; set; }
+        public int Coefficient { get; set; }
+        public bool? IsProduct { get; set; }
+        public string Color { get; set; }
+        public bool? IsMaterials { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }
         public virtual ProductExtraInfo ProductExtraInfo { get; set; }
         public virtual ProductStockInfo ProductStockInfo { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
-        public virtual ICollection<ProductBom> ProductBomParentProduct { get; set; }
+        public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
+        public virtual ICollection<ProductAttachment> ProductAttachment { get; set; }
+        public virtual ICollection<ProductBom> ProductBomChildProduct { get; set; }
         public virtual ICollection<ProductBom> ProductBomProduct { get; set; }
+        public virtual ICollection<ProductCustomer> ProductCustomer { get; set; }
+        public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionMaterialsConsumption { get; set; }
+        public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionProduct { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual ICollection<ProductUnitConversion> ProductUnitConversion { get; set; }
     }

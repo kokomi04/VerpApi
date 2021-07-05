@@ -32,7 +32,14 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Item không tồn tại")]
         ItemNotFound = 8,
 
+
+
         [Description("Tài khoản không có quyền truy cập vào hệ thống")]
         LockedOut = 9,
+
+        GeneralError = 10,
+
+        [Description("Mã item đã tồn tại, vui lòng chọn mã khác!")]
+        ItemCodeExisted = 11,
     }
 }

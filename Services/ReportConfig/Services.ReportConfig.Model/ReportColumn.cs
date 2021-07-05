@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.Report;
 
 namespace Verp.Services.ReportConfig.Model
 {
+    [Serializable]
     public class ReportColumnModel
     {
         public int SortOrder { get; set; }
@@ -14,11 +16,27 @@ namespace Verp.Services.ReportConfig.Model
         public string Width { get; set; }
         public int? DataTypeId { get; set; }
         public int? DecimalPlace { get; set; }
+        public bool? IsArray { get; set; }
+        public bool? IsRepeat { get; set; }
         public bool IsCalcSum { get; set; }
         public bool IsHidden { get; set; }
         public string RowSpan { get; set; }
         public string ColSpan { get; set; }
         public bool IsGroup { get; set; }
+        public bool IsGroupRow { get; set; }
+        public string VAlign { get; set; }
+        public string HAlign { get; set; }
+        public bool IsColGroup { get; set; }
+        public int ColGroupId { get; set; }
+        public string ColGroupName { get; set; }
+
+        public string SuffixKey { get; set; }
+        public string OriginValue { get; set; }
+
+        public EnumReportDetailOpenType? DetailOpenTypeId { get; set; }
+        public EnumReportDetailTarget? DetailTargetId { get; set; }
+        public int? DetailReportId { get; set; }
+        public string DetailReportParams { get; set; }
 
     }
 }

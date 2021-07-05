@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
@@ -22,5 +23,14 @@ namespace VErp.Services.Stock.Model.Inventory
         public string Description { get; set; }
 
         public IList<long> FileIdList { set; get; }
+
+        public string AccountancyAccountNumber { get; set; }
     }
+
+    public class InventoryOpeningImportModel
+    {
+        public ImportExcelMapping Mapping { get; set; }
+        public InventoryOpeningBalanceModel Info { get; set; }
+    }
+
 }

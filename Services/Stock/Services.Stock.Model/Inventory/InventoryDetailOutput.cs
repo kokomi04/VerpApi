@@ -48,5 +48,21 @@ namespace VErp.Services.Stock.Model.Inventory
         public ProductListOutput ProductOutput { get; set; }
 
         public ProductUnitConversion ProductUnitConversion { set; get; }
+
+        public string AccountancyAccountNumberDu { get; set; }
+        public string InventoryRequirementCode { get; set; }
+        public int? DepartmentId { get; set; }
+        //public IList<InventoryRequirementSimpleInfo> InventoryRequirementInfo { set; get; }
+
+        public InventoryDetailOutput()
+        {
+            //InventoryRequirementInfo = new List<InventoryRequirementSimpleInfo>();
+        }
+    }
+
+    public class InventoryRequirementSimpleInfo
+    {
+        public string InventoryRequirementCode { get; set; }
+        public long InventoryRequirementId { get; set; }
     }
 }

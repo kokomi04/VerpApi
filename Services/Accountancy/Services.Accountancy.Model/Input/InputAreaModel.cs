@@ -13,13 +13,16 @@ namespace VErp.Services.Accountancy.Model.Input
         [Required(ErrorMessage = "Vui lòng nhập tên vùng dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tên vùng dữ liệu quá dài")]
         public string Title { get; set; }
+        public string Description { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập mã vùng dữ liệu")]
         [MaxLength(45, ErrorMessage = "Vùng dữ liệu quá dài")]
         [RegularExpression(@"(^[a-zA-Z0-9_]*$)", ErrorMessage = "Mã vùng dữ liệu chỉ gồm các ký tự chữ, số và ký tự _.")]
         public string InputAreaCode { get; set; }
         public bool IsMultiRow { get; set; }
+        public bool IsAddition { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập số lượng cột hiển thị")]
         public int Columns { get; set; }
+        public string ColumnStyles { get; set; }
         public int SortOrder { get; set; }
     }
 

@@ -34,7 +34,8 @@ namespace VErp.Infrastructure.AppSettings
                     .SetBasePath(exeFolder)
                     .AddJsonFile($"AppSetting.json", true, true)
                     .AddJsonFile($"AppSetting.{environmentName ?? modeName}.json", false, true)
-                    .AddJsonFile($"AppService.json", false, true);
+                    .AddJsonFile($"AppService.json", true, true)
+                    .AddJsonFile($"AppServiceCustom.json", true, true);
 
             if (!excludeSensitiveConfig)
             {

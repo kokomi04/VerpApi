@@ -16,12 +16,14 @@ using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
 using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
 
     [Route("api/accountancy/data/bills")]
-
+    [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
     public class InputController : VErpBaseController
     {
         private readonly IInputDataService _inputDataService;
@@ -35,7 +37,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("{inputTypeId}/Search")]
         public async Task<PageDataTable> GetBills([FromRoute] int inputTypeId, [FromBody] InputTypeBillsRequestModel request)
         {
@@ -45,18 +47,10 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
         [HttpGet]
-        [GlobalApi]
-        [Route("GetBillInfoByMappingObject")]
-        public async Task<PageDataTable> GetBillInfoByMappingObject([FromQuery] string mappingFunctionKey, [FromQuery] string objectId)
-        {
-            return await _inputDataService.GetBillInfoByMappingObject(mappingFunctionKey, objectId).ConfigureAwait(true);
-        }
-
-        [HttpGet]
         [Route("{inputTypeId}/{fId}")]
-        public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int? page, [FromQuery] int? size)
         {
-            return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page, size).ConfigureAwait(true);
+            return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page ?? 1, size ?? 0).ConfigureAwait(true);
         }
 
         [HttpGet]
@@ -102,13 +96,13 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpPost]
         [Route("{inputTypeId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportBillExelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inputDataService.ImportBillFromMapping(inputTypeId, JsonConvert.DeserializeObject<ImportBillExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _inputDataService.ImportBillFromMapping(inputTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
         [HttpGet]
@@ -128,7 +122,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("FixExchangeRateDetail")]
-        public async Task<ExchangeRateModel> FixExchangeRateDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accountNumber, [FromQuery] string partnerId)
+        public async Task<DataResultModel> FixExchangeRateDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accountNumber, [FromQuery] string partnerId)
         {
             return await _calcBillService.FixExchangeRateDetail(fromDate, toDate, currency, accountNumber, partnerId);
         }
@@ -139,6 +133,17 @@ namespace VErpApi.Controllers.Accountancy.Data
             [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock)
         {
             return await _calcBillService.CalcCostTransfer(toDate, type, byDepartment, byCustomer, byFixedAsset, byExpenseItem, byFactory, byProduct, byStock);
+        }
+
+        [HttpGet]
+        [Route("CalcCostTransferDetail")]
+        public async Task<DataResultModel> CalcCostTransferDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] EnumCostTransfer type,
+            [FromQuery] bool byDepartment, [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock,
+            [FromQuery] int? department, [FromQuery] string customer, [FromQuery] int? fixedAsset, [FromQuery] int? expenseItem, [FromQuery] int? factory, [FromQuery] int? product, [FromQuery] int? stock)
+        {
+            return await _calcBillService.CalcCostTransferDetail(fromDate, toDate, type,
+                byDepartment, byCustomer, byFixedAsset, byExpenseItem, byFactory, byProduct, byStock,
+                department, customer, fixedAsset, expenseItem, factory, product, stock);
         }
 
         [HttpGet]

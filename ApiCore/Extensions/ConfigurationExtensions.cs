@@ -11,6 +11,7 @@ using System.Reflection;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -31,8 +32,9 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             services.AddDbContext<UnAuthorizeMasterDBContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.MasterDatabase);
-            }, ServiceLifetime.Scoped);
+            }, ServiceLifetime.Transient);
 
+            services.AddSingleton<Func<UnAuthorizeMasterDBContext>>(option => () => option.GetService<UnAuthorizeMasterDBContext>());
         }
 
         public static void ConfigStockDBContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
@@ -66,7 +68,10 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             services.AddDbContext<UnAuthorizeOrganizationContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.OrganizationDatabase);
-            }, ServiceLifetime.Scoped);
+            }, ServiceLifetime.Transient);
+
+
+            services.AddSingleton<Func<UnAuthorizeOrganizationContext>>(option => () => option.GetService<UnAuthorizeOrganizationContext>());
 
         }
 
@@ -80,6 +85,15 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         //        });
         //    }, ServiceLifetime.Scoped);
         //}
+
+        public static void ConfigManufacturingContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
+        {
+            services.AddDbContext<ManufacturingDBContext, ManufacturingDBRestrictionContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.ManufacturingDatabase);
+            }, ServiceLifetime.Scoped);
+        }
+
         public static void ConfigAccountancyContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
             services.AddDbContext<AccountancyDBContext, AccountancyDBRestrictionContext>((option) =>
@@ -102,30 +116,6 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.ActivityLogDatabase);
             }, ServiceLifetime.Scoped);
-        }
-
-        public static IServiceCollection AddScopedServices(this IServiceCollection services, Assembly assembly)
-        {
-            return services
-                .AddScopedInferfaces("Service", assembly);
-        }
-
-        public static IServiceCollection AddScopedInferfaces(this IServiceCollection services, string interfaceSurfix, Assembly assembly)
-        {
-            var classTypes = assembly.GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith(interfaceSurfix))
-                .ToArray();
-
-            foreach (var classType in classTypes)
-            {
-                var interfaceType = classType.GetInterface("I" + classType.Name);
-                if (interfaceType != null)
-                {
-                    services.AddScoped(interfaceType, classType);
-                }
-            }
-
-            return services;
         }
 
         public static IApplicationBuilder UseEndpointsGrpcService(this IApplicationBuilder app, Assembly assembly)

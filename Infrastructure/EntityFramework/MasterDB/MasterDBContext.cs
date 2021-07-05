@@ -16,14 +16,18 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public virtual DbSet<Action> Action { get; set; }
+        public virtual DbSet<ActionButton> ActionButton { get; set; }
+        public virtual DbSet<ActionType> ActionType { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BackupStorage> BackupStorage { get; set; }
         public virtual DbSet<BarcodeConfig> BarcodeConfig { get; set; }
         public virtual DbSet<BarcodeGenerate> BarcodeGenerate { get; set; }
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
+        public virtual DbSet<CategoryGroup> CategoryGroup { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
+        public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
@@ -32,8 +36,15 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
+        public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
+        public virtual DbSet<ObjectPrintConfigStandardMapping> ObjectPrintConfigStandardMapping { get; set; }
         public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
         public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
+        public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
+        public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
+        public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
+        public virtual DbSet<PrintConfigCustom> PrintConfigCustom { get; set; }
+        public virtual DbSet<PrintConfigStandard> PrintConfigStandard { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -52,6 +63,30 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionName)
                     .IsRequired()
                     .HasMaxLength(16);
+            });
+
+            modelBuilder.Entity<ActionButton>(entity =>
+            {
+                entity.Property(e => e.ActionButtonCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ActionType>(entity =>
+            {
+                entity.Property(e => e.ActionTypeId).ValueGeneratedNever();
+
+                entity.Property(e => e.ActionTitle)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.ActionTypeName)
+                    .IsRequired()
+                    .HasMaxLength(64);
             });
 
             modelBuilder.Entity<ApiEndpoint>(entity =>
@@ -77,7 +112,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<BackupStorage>(entity =>
             {
-                entity.HasKey(e => new { e.ModuleId, e.BackupPoint });
+                entity.HasKey(e => new { e.ModuleTypeId, e.BackupPoint });
 
                 entity.Property(e => e.BackupDate).HasColumnType("datetime");
 
@@ -105,6 +140,10 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Category>(entity =>
             {
+                entity.HasIndex(e => e.CategoryCode)
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.CategoryCode)
                     .IsRequired()
                     .HasMaxLength(45)
@@ -114,6 +153,10 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.MenuId).HasComment("");
+
+                entity.Property(e => e.ParentTitle).HasMaxLength(255);
+
                 entity.Property(e => e.Title).HasMaxLength(256);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
@@ -121,10 +164,18 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UsePlace)
                     .HasMaxLength(255)
                     .IsUnicode(false);
+
+                entity.HasOne(d => d.CategoryGroup)
+                    .WithMany(p => p.Category)
+                    .HasForeignKey(d => d.CategoryGroupId)
+                    .HasConstraintName("FK_Category_CategoryGroup");
             });
 
             modelBuilder.Entity<CategoryField>(entity =>
             {
+                entity.HasIndex(e => e.CategoryId)
+                    .HasName("IDX_CategoryId");
+
                 entity.Property(e => e.CategoryFieldName)
                     .IsRequired()
                     .HasMaxLength(45)
@@ -133,8 +184,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Filters).HasMaxLength(512);
 
                 entity.Property(e => e.RefTableCode)
                     .HasMaxLength(255)
@@ -166,6 +215,21 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasConstraintName("FK_CategoryField_Category");
             });
 
+            modelBuilder.Entity<CategoryGroup>(entity =>
+            {
+                entity.Property(e => e.CategoryGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
             modelBuilder.Entity<Config>(entity =>
             {
                 entity.Property(e => e.ConfigId).ValueGeneratedNever();
@@ -181,6 +245,10 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<CustomGenCode>(entity =>
             {
+                entity.Property(e => e.BaseFormat).HasMaxLength(128);
+
+                entity.Property(e => e.CodeFormat).HasMaxLength(128);
+
                 entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
 
                 entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
@@ -223,6 +291,25 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsUnicode(false);
 
                 entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<CustomGenCodeValue>(entity =>
+            {
+                entity.HasKey(e => new { e.CustomGenCodeId, e.BaseValue });
+
+                entity.Property(e => e.BaseValue).HasMaxLength(128);
+
+                entity.Property(e => e.LastCode)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.TempCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
             });
 
             modelBuilder.Entity<DataConfig>(entity =>
@@ -335,11 +422,20 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(128);
             });
 
-            modelBuilder.Entity<ObjectCustomGenCodeMapping>(entity =>
+            modelBuilder.Entity<ObjectPrintConfigMapping>(entity =>
             {
-                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.SubsidiaryId })
-                    .HasName("UK_ObjectCustomGenCode")
-                    .IsUnique();
+                entity.HasKey(e => new { e.PrintConfigCustomId, e.ObjectTypeId, e.ObjectId })
+                    .HasName("PK_ObjectPrintConfigMapping_1");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<ObjectPrintConfigStandardMapping>(entity =>
+            {
+                entity.HasKey(e => new { e.ObjectId, e.ObjectTypeId, e.PrintConfigStandardId })
+                    .HasName("PK__ObjectPr__33C2DE8ADACC08E6");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<OutSideDataConfig>(entity =>
@@ -385,6 +481,81 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
             });
 
+            modelBuilder.Entity<OutsideImportMapping>(entity =>
+            {
+                entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.SourceFieldName).HasMaxLength(128);
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMapping)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .HasConstraintName("FK_AccountancyOutsiteMapping_AccountancyOutsiteMappingFunction");
+            });
+
+            modelBuilder.Entity<OutsideImportMappingFunction>(entity =>
+            {
+                entity.HasIndex(e => e.FunctionName)
+                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                    .IsUnique();
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.DestinationDetailsPropertyName).HasMaxLength(128);
+
+                entity.Property(e => e.FunctionName).HasMaxLength(128);
+
+                entity.Property(e => e.MappingFunctionKey)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ObjectIdFieldName).HasMaxLength(128);
+
+                entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((39))");
+
+                entity.Property(e => e.SourceDetailsPropertyName).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<OutsideImportMappingObject>(entity =>
+            {
+                entity.HasKey(e => new { e.OutsideImportMappingFunctionId, e.SourceId, e.InputBillFId })
+                    .HasName("PK_AccountancyOutsiteMappingObject");
+
+                entity.Property(e => e.SourceId).HasMaxLength(128);
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.BillObjectTypeId).HasDefaultValueSql("((39))");
+
+                entity.HasOne(d => d.OutsideImportMappingFunction)
+                    .WithMany(p => p.OutsideImportMappingObject)
+                    .HasForeignKey(d => d.OutsideImportMappingFunctionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_AccountancyOutsiteMappingObject_AccountancyOutsiteMappingFunction");
+            });
+
+            modelBuilder.Entity<PrintConfigCustom>(entity =>
+            {
+                entity.Property(e => e.ContentType).HasMaxLength(128);
+
+                entity.Property(e => e.PrintConfigName).HasMaxLength(255);
+
+                entity.Property(e => e.TemplateFileName).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<PrintConfigStandard>(entity =>
+            {
+                entity.Property(e => e.ContentType).HasMaxLength(128);
+
+                entity.Property(e => e.PrintConfigName).HasMaxLength(255);
+
+                entity.Property(e => e.TemplateFileName).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(255);
+            });
+
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.Property(e => e.ChildrenRoleIds).HasMaxLength(1024);
@@ -423,7 +594,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<RolePermission>(entity =>
             {
-                entity.HasKey(e => new { e.RoleId, e.ModuleId });
+                entity.HasKey(e => new { e.RoleId, e.ModuleId, e.ObjectTypeId, e.ObjectId });
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getutcdate())");
 
@@ -442,6 +613,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Unit>(entity =>
             {
+                entity.HasIndex(e => new { e.UnitName, e.SubsidiaryId })
+                    .HasName("IX_Unit_UnitName")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.UnitName)
                     .IsRequired()
                     .HasMaxLength(128);

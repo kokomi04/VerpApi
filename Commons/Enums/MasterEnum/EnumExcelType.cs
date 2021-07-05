@@ -10,6 +10,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Boolean = 1,
         DateTime = 2,
         Number = 3,
-        Formula = 4
+        Formula = 4,
+        Percentage = 5
     }
 }

@@ -18,6 +18,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime? CreatedDatetimeUtc { get; set; }
         public DateTime? UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
+        public int CreatedByUserId { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ICollection<Package> Package { get; set; }
     }

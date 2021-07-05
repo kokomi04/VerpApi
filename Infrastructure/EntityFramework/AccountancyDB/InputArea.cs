@@ -14,7 +14,9 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public int InputTypeId { get; set; }
         public string InputAreaCode { get; set; }
         public string Title { get; set; }
+        public string Description { get; set; }
         public bool IsMultiRow { get; set; }
+        public bool IsAddition { get; set; }
         public int Columns { get; set; }
         public int SortOrder { get; set; }
         public int CreatedByUserId { get; set; }
@@ -23,6 +25,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string ColumnStyles { get; set; }
 
         public virtual InputType InputType { get; set; }
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }

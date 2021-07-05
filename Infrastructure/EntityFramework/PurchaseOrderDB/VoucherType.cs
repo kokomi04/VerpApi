@@ -7,9 +7,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
     {
         public VoucherType()
         {
-            SaleBill = new HashSet<SaleBill>();
+            VoucherAction = new HashSet<VoucherAction>();
             VoucherArea = new HashSet<VoucherArea>();
             VoucherAreaField = new HashSet<VoucherAreaField>();
+            VoucherBill = new HashSet<VoucherBill>();
             VoucherTypeView = new HashSet<VoucherTypeView>();
         }
 
@@ -30,11 +31,13 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
+        public string AfterUpdateRowsJsAction { get; set; }
 
         public virtual VoucherTypeGroup VoucherTypeGroup { get; set; }
-        public virtual ICollection<SaleBill> SaleBill { get; set; }
+        public virtual ICollection<VoucherAction> VoucherAction { get; set; }
         public virtual ICollection<VoucherArea> VoucherArea { get; set; }
         public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
+        public virtual ICollection<VoucherBill> VoucherBill { get; set; }
         public virtual ICollection<VoucherTypeView> VoucherTypeView { get; set; }
     }
 }

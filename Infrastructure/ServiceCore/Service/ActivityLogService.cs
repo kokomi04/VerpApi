@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,13 +15,17 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
+using static VErp.Infrastructure.ServiceCore.Service.ActivityLogService;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData);
+        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false);
+        ActivityLogBatchs BeginBatchLog();
+
     }
+
 
     public class ActivityLogService : IActivityLogService
     {
@@ -28,6 +34,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ICurrentContextService _currentContext;
         private readonly GrpcProto.Protos.InternalActivityLog.InternalActivityLogClient _internalActivityLogClient;
+        private readonly object objLock = new object();
+        private readonly HashSet<ActivityLogBatchs> _activityLogBatchs;
 
         public ActivityLogService(IHttpCrossService httpCrossService, ILogger<ActivityLogService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContext, GrpcProto.Protos.InternalActivityLog.InternalActivityLogClient internalActivityLogClient)
         {
@@ -36,13 +44,46 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _appSetting = appSetting.Value;
             _currentContext = currentContext;
             _internalActivityLogClient = internalActivityLogClient;
+            _activityLogBatchs = new HashSet<ActivityLogBatchs>();
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData)
+        public ActivityLogBatchs BeginBatchLog()
+        {
+            var logBatchs = new ActivityLogBatchs(this, _activityLogBatchs);
+            return logBatchs;
+        }
+
+        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false)
+        {
+            if (ignoreBatch)
+            {
+                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action);
+            }
+
+            ActivityLogBatchs batch = null;
+            lock (objLock)
+            {
+                if (_activityLogBatchs.Count > 0)
+                {
+                    batch = _activityLogBatchs.Last();
+                }
+            }
+            if (batch == null)
+            {
+                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action);
+            }
+            else
+            {
+                batch.AddLog(objectTypeId, objectId, message, jsonData, action);
+                return true;
+            }
+        }
+
+        public async Task<bool> CreateLogRequest(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null)
         {
             try
             {
-                if(_appSetting.GrpcInternal?.Address?.Contains("https") == true)
+                if (_appSetting.GrpcInternal?.Address?.Contains("https") == true)
                 {
                     var headers = new Metadata();
                     headers.Add(Headers.CrossServiceKey, _appSetting?.Configuration?.InternalCrossServiceKey);
@@ -50,7 +91,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     var reulst = await _internalActivityLogClient.LogAsync(new GrpcProto.Protos.ActivityInput
                     {
                         UserId = _currentContext.UserId,
-                        ActionId = (int)_currentContext.Action,
+                        ActionId = action == null ? (int)_currentContext.Action : (int)action.Value,
                         ObjectTypeId = (int)objectTypeId,
                         ObjectId = objectId,
                         MessageTypeId = (int)EnumMessageType.ActivityLog,
@@ -76,7 +117,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
 
                 return await _httpCrossService.Post<bool>($"/api/internal/InternalActivityLog/Log", body);
-               
+
             }
             catch (Exception ex)
             {
@@ -84,6 +125,57 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return false;
             }
         }
-        
+
+        public class ActivityLogBatchs : IDisposable
+        {
+            private readonly IActivityLogService _activityLogService;
+            private readonly IList<ActivityLogEntity> _logs;
+            private readonly HashSet<ActivityLogBatchs> _activityLogBatchs;
+            internal ActivityLogBatchs(IActivityLogService activityLogService, HashSet<ActivityLogBatchs> activityLogBatchs)
+            {
+                this._activityLogService = activityLogService;
+                _logs = new List<ActivityLogEntity>();
+                _activityLogBatchs = activityLogBatchs;
+                _activityLogBatchs.Add(this);
+            }
+
+            internal void AddLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null)
+            {
+                _logs.Add(new ActivityLogEntity()
+                {
+                    ObjectTypeId = objectTypeId,
+                    ObjectId = objectId,
+                    Message = message,
+                    JsonData = jsonData,
+                    Action = action
+                });
+            }
+
+            public async Task<bool> CommitAsync()
+            {
+                foreach (var log in _logs)
+                {
+                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true);
+                }
+                return true;
+            }
+
+            public void Dispose()
+            {
+                this._activityLogBatchs.Remove(this);
+                //Commit().Wait();
+            }
+
+            private class ActivityLogEntity
+            {
+                public EnumObjectType ObjectTypeId { get; set; }
+                public long ObjectId { get; set; }
+                public string Message { get; set; }
+                public string JsonData { get; set; }
+                public EnumActionType? Action { get; set; }
+            }
+
+        }
+
     }
 }

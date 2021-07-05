@@ -3,38 +3,33 @@ using AutoMapper;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
-
 {
-    public class VoucherTypeModel: IMapFrom<VoucherType>
+    public class VoucherTypeSimpleProjectMappingModel : VoucherTypeSimpleModel, IMapFrom<VoucherType>
+    {
+       
+    }
+
+    public class VoucherTypeModel: VoucherTypeSimpleProjectMappingModel, ITypeData
     {
         public VoucherTypeModel()
         {
         }
-
-        public int VoucherTypeId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập tên chứng từ")]
-        [MaxLength(256, ErrorMessage = "Tên chứng từ quá dài")]
-        public string Title { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập mã chứng từ")]
-        [MaxLength(45, ErrorMessage = "Mã chứng từ quá dài")]
-        [RegularExpression(@"(^[a-zA-Z0-9_]*$)", ErrorMessage = "Mã chứng từ chỉ gồm các ký tự chữ, số và ký tự _.")]
-        public string VoucherTypeCode { get; set; }
-
-        public int SortOrder { get; set; }
-        public int? VoucherTypeGroupId { get; set; }
+   
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
         public string AfterLoadAction { get; set; }
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
+        public string AfterUpdateRowsJsAction { get; set; }
     }
 
-    public class VoucherTypeFullModel : VoucherTypeModel
+    public class VoucherTypeFullModel : VoucherTypeExecData
     {
         public VoucherTypeFullModel()
         {
@@ -46,5 +41,24 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
             profile.CreateMap<VoucherType, VoucherTypeFullModel>()
                 .ForMember(dest => dest.VoucherAreas, opt => opt.MapFrom(src => src.VoucherArea));
         }
+    }
+
+    public class VoucherTypeExecData : VoucherTypeModel, ITypeExecData
+    {
+        public VoucherTypeGlobalSettingModel GlobalSetting { get; set; }
+        private ExecCodeCombine<ITypeData> execCodeCombine;
+        public VoucherTypeExecData()
+        {
+            execCodeCombine = new ExecCodeCombine<ITypeData>(this);
+        }
+
+        public string PreLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PreLoadAction), GlobalSetting);
+        public string PostLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PostLoadAction), GlobalSetting);
+        public string AfterLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterLoadAction), GlobalSetting);
+        public string BeforeSubmitActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSubmitAction), GlobalSetting);
+        public string BeforeSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSaveAction), GlobalSetting);
+        public string AfterSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterSaveAction), GlobalSetting);
+        public string AfterUpdateRowsJsActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterUpdateRowsJsAction), GlobalSetting);
+
     }
 }

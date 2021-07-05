@@ -4,11 +4,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -56,21 +59,21 @@ namespace VErp.Commons.Library
             return $"{service}{route}{method}".ToGuid();
         }
 
-        public static EnumAction GetDefaultAction(this EnumMethod method)
+        public static EnumActionType GetDefaultAction(this EnumMethod method)
         {
             switch (method)
             {
                 case EnumMethod.Get:
-                    return EnumAction.View;
+                    return EnumActionType.View;
                 case EnumMethod.Post:
-                    return EnumAction.Add;
+                    return EnumActionType.Add;
                 case EnumMethod.Put:
-                    return EnumAction.Update;
+                    return EnumActionType.Update;
                 case EnumMethod.Delete:
-                    return EnumAction.Delete;
+                    return EnumActionType.Delete;
             }
 
-            return EnumAction.View;
+            return EnumActionType.View;
         }
 
         public static string GetObjectJsonDiff(string existing, object modified)
@@ -171,7 +174,26 @@ namespace VErp.Commons.Library
         public static T JsonDeserialize<T>(this string obj)
         {
             if (string.IsNullOrWhiteSpace(obj)) return default(T);
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(obj);
+            return JsonConvert.DeserializeObject<T>(obj);
+        }
+
+        public static object JsonDeserialize(this string obj, Type type)
+        {
+            if (string.IsNullOrWhiteSpace(obj))
+            {
+                if (type.IsValueType)
+                {
+                    return Activator.CreateInstance(type);
+                }
+                return null;
+            }
+            return JsonConvert.DeserializeObject(obj, type);
+        }
+
+        public static long GetUnixUtc(this DateTime dateTime, int? timezoneOffset)
+        {
+            dateTime = dateTime.AddMinutes(timezoneOffset ?? 0);
+            return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
         }
 
         public static long GetUnix(this DateTime dateTime)
@@ -187,8 +209,23 @@ namespace VErp.Commons.Library
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-            if (unixTime == 0) return null;
-            return new DateTime(1970, 1, 1).AddSeconds(unixTime);
+            return UnixToDateTime((long?)unixTime, null);
+        }
+
+        public static DateTime? UnixToDateTime(this long? unixTime)
+        {
+            return UnixToDateTime(unixTime, null);
+        }
+
+        public static DateTime? UnixToDateTime(this long? unixTime, int? timezoneOffset)
+        {
+            if (unixTime == 0 || !unixTime.HasValue) return null;
+            return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value).AddMinutes(-timezoneOffset ?? 0);
+        }
+
+        public static DateTime UnixToDateTime(this long unixTime, int? timezoneOffset)
+        {
+            return UnixToDateTime((long?)unixTime, timezoneOffset).Value;
         }
 
         public static decimal Eval(string expression)
@@ -211,40 +248,22 @@ namespace VErp.Commons.Library
             return Eval(expression);
         }
 
-        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression, decimal inputData)
-        {
-            var expression = $"({productUnitConversionQuantity})/({factorExpression})";
-            var value = Eval(expression);
-            if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
-            {
-                return (true, inputData);
-            }
-
-            if (inputData == 0)
-            {
-                return (true, value);
-            }
-            else
-            {
-                return (false, value);
-            }
-        }
 
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
         {
             var value = productUnitConversionQuantity / factorExpression;
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData);
+                return (true, inputData.Round());
             }
 
             if (inputData == 0)
             {
-                return (true, value);
+                return (true, value.Round());
             }
             else
             {
-                return (false, value);
+                return (false, value.Round());
             }
         }
 
@@ -254,16 +273,16 @@ namespace VErp.Commons.Library
             var value = Eval(expression);
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData);
+                return (true, inputData.Round());
             }
 
             if (inputData == 0)
             {
-                return (true, value);
+                return (true, value.Round());
             }
             else
             {
-                return (false, value);
+                return (false, value.Round());
             }
 
         }
@@ -273,18 +292,23 @@ namespace VErp.Commons.Library
             var value = primaryQuantity * factorExpression;
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData);
+                return (true, inputData.Round());
             }
 
             if (inputData == 0)
             {
-                return (true, value);
+                return (true, value.Round());
             }
             else
             {
-                return (false, value);
+                return (false, value.Round());
             }
 
+        }
+
+        public static decimal Round(this decimal value, int decimalPlace = 11)
+        {
+            return Math.Round(value, decimalPlace, MidpointRounding.AwayFromZero);
         }
 
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
@@ -336,9 +360,9 @@ namespace VErp.Commons.Library
             {
                 var c = a + b;
                 if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
-                return c;
+                return c.Round();
             }
-            return a + b;
+            return (a + b).Round();
         }
 
         public static decimal SubDecimal(this decimal a, decimal b)
@@ -347,11 +371,21 @@ namespace VErp.Commons.Library
             {
                 var c = a - b;
                 if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
+                return c.Round();
+            }
+            return (a - b).Round();
+        }
+
+        public static decimal SubProductionDecimal(this decimal a, decimal b)
+        {
+            if (a > 0 && b > 0 || a < 0 && b < 0)
+            {
+                var c = a - b;
+                if (Math.Abs(c) < Numbers.PRODUCTION_MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
                 return c;
             }
             return a - b;
         }
-
         public static decimal RelativeTo(this decimal value, decimal relValue)
         {
             if (Math.Abs(value) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
@@ -439,12 +473,35 @@ namespace VErp.Commons.Library
             return value;
         }
 
-        public static string FormatStyle(string template, string code, long? fId)
+        public static string FormatStyle(string template, string code, long? fId, DateTime? dateTime, string number)
         {
-            return FormatStyle(template, new Dictionary<string, object>{
+            if (string.IsNullOrWhiteSpace(template)) return template;
+            var values = new Dictionary<string, object>{
                 { StringTemplateConstants.CODE, code },
                 { StringTemplateConstants.FID, fId },
-            });
+            };
+
+
+            var dateReg = new Regex("\\%DATE\\((?<format>[^\\)]*)\\)\\%");
+            foreach (Match m in dateReg.Matches(template))
+            {
+                if (dateTime.HasValue)
+                {
+                    values.Add(m.Value, dateTime.Value.ToString(m.Groups["format"].Value));
+                }
+                else
+                {
+                    values.Add(m.Value, m.Groups["format"].Value);
+                }
+            }
+
+
+
+            if (!string.IsNullOrWhiteSpace(number))
+            {
+                values.Add(StringTemplateConstants.SNUMBER, number);
+            }
+            return FormatStyle(template, values)?.Replace("%", "");
         }
 
         public static string FormatStyle(string template, IDictionary<string, object> data)
@@ -486,7 +543,12 @@ namespace VErp.Commons.Library
             typeof(int),  typeof(double),  typeof(decimal),
             typeof(long), typeof(short),   typeof(sbyte),
             typeof(byte), typeof(ulong),   typeof(ushort),
-            typeof(uint), typeof(float)
+            typeof(uint), typeof(float),
+
+            typeof(int?),  typeof(double?),  typeof(decimal?),
+            typeof(long?), typeof(short?),   typeof(sbyte?),
+            typeof(byte?), typeof(ulong?),   typeof(ushort?),
+            typeof(uint?), typeof(float?)
         };
         public static bool IsNumber(this Type objectType)
         {
@@ -507,6 +569,69 @@ namespace VErp.Commons.Library
             return false;
         }
 
+
+        public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, TMember value)
+        {
+            if (value.IsNullObject())
+            {
+                return;
+            }
+
+            var props = new Stack<PropertyInfo>();
+            MemberExpression me;
+            switch (member.Body.NodeType)
+            {
+                case ExpressionType.Convert:
+                case ExpressionType.ConvertChecked:
+                    var ue = member.Body as UnaryExpression;
+                    me = ((ue != null) ? ue.Operand : null) as MemberExpression;
+                    break;
+                default:
+                    me = member.Body as MemberExpression;
+                    break;
+            }
+
+
+            while (me != null)
+            {
+                props.Push(me.Member as PropertyInfo);
+                me = me.Expression as MemberExpression;
+            }
+
+            object target = obj;
+            while (props.Count > 0)
+            {
+                var p = props.Pop();
+
+                if (props.Count == 0)
+                {
+                    p.SetValue(target, value);
+                }
+                else
+                {
+                    target = p.GetValue(target);
+                }
+            }
+        }
+
+        public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, IDictionary<string, TMember> dics, string key)
+        {
+            if (dics.ContainsKey(key))
+            {
+                obj.UpdateIfAvaiable(member, dics[key]);
+            }
+        }
+
+        public static void UpdateIfAvaiable<T, TMember, TDic>(this T obj, Expression<Func<T, TMember>> member, IDictionary<string, TDic> dics, string key, Expression<Func<TDic, TMember>> divValue)
+        {
+            if (dics.ContainsKey(key))
+            {
+                var v = divValue.Compile().Invoke(dics[key]);
+                obj.UpdateIfAvaiable(member, v);
+            }
+        }
+
+
         public static bool IsTimeType(this EnumDataType type)
         {
             return AccountantConstants.TIME_TYPES.Contains(type);
@@ -522,14 +647,14 @@ namespace VErp.Commons.Library
             return true;
         }
 
-        public static object GetSqlValue(this EnumDataType dataType, object value)
+        public static object GetSqlValue(this EnumDataType dataType, object value, int? timeZoneOffset = null)
         {
             if (value.IsNullObject()) return DBNull.Value;
 
             switch (dataType)
             {
                 case EnumDataType.Text:
-                    return value?.ToString();
+                    return value?.ToString()?.Trim();
                 case EnumDataType.Int:
                     int intValue;
                     try
@@ -538,7 +663,7 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu int");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu int");
                     }
 
                     return intValue;
@@ -548,21 +673,21 @@ namespace VErp.Commons.Library
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
-                    long dateValue;
+                    long? dateValue;
                     try
                     {
                         dateValue = Convert.ToInt64(value);
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu ngày tháng");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu ngày tháng");
                     }
 
                     if (dateValue == 0) return DBNull.Value;
-                    return dateValue.UnixToDateTime().Value;
+                    return dateValue.UnixToDateTime(timeZoneOffset).Value;
 
-                case EnumDataType.PhoneNumber: return value?.ToString();
-                case EnumDataType.Email: return value?.ToString();
+                case EnumDataType.PhoneNumber: return value?.ToString()?.Trim();
+                case EnumDataType.Email: return value?.ToString()?.Trim();
                 case EnumDataType.Boolean:
                     bool boolValue;
                     try
@@ -571,14 +696,14 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu logic");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu logic");
                     }
                     return boolValue;
                 case EnumDataType.Percentage:
                     float percentValue;
-                    if (!float.TryParse(value.ToString(), out percentValue) || percentValue < -100 || percentValue > 100)
+                    if (!float.TryParse(value.ToString()?.Trim(), out percentValue) || percentValue < -100 || percentValue > 100)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu phần trăm");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu phần trăm");
                     }
                     return percentValue;
                 case EnumDataType.BigInt:
@@ -590,17 +715,17 @@ namespace VErp.Commons.Library
                     }
                     catch (Exception)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu long");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu long");
                     }
                     return longValue;
                 case EnumDataType.Decimal:
                     decimal decimalValue;
-                    if (!decimal.TryParse(value.ToString(), out decimalValue))
+                    if (!decimal.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimalValue))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value} sang kiểu decimal");
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu decimal");
                     }
                     return decimalValue;
-                default: return value?.ToString();
+                default: return value?.ToString()?.Trim();
             }
         }
 
@@ -616,10 +741,11 @@ namespace VErp.Commons.Library
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
 
-                case EnumDataType.Percentage:
                 case EnumDataType.BigInt:
                 case EnumDataType.Decimal:
                     return EnumExcelType.Number;
+                case EnumDataType.Percentage:
+                    return EnumExcelType.Percentage;
                 case EnumDataType.Date:
                     return EnumExcelType.DateTime;
                 case EnumDataType.Text:
@@ -678,6 +804,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.Month:
                 case EnumDataType.QuarterOfYear:
                 case EnumDataType.DateRange:
+                    return ((DateTime)dataValue1).CompareTo((DateTime)dataValue2);
                 case EnumDataType.BigInt:
                     return ((long)dataValue1).CompareTo((long)dataValue2);
                 case EnumDataType.Boolean:
@@ -690,19 +817,19 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static bool Contains(this object value1, object value2)
+        public static bool StringContains(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().Contains(value2.ToString());
         }
 
-        public static bool StartsWith(this object value1, object value2)
+        public static bool StringStartsWith(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().StartsWith(value2.ToString());
         }
 
-        public static bool EndsWith(this object value1, object value2)
+        public static bool StringEndsWith(this object value1, object value2)
         {
             if (value1 == null || value2 == null) return false;
             return value1.ToString().EndsWith(value2.ToString());
@@ -799,6 +926,50 @@ namespace VErp.Commons.Library
                 dbtype = SqlDbType.Variant;
             }
             return dbtype;
+        }
+
+        public static List<T> ConvertData<T>(this DataTable dt)
+        {
+            List<T> data = new List<T>();
+            foreach (DataRow row in dt.Rows)
+            {
+                T item = GetItem<T>(row);
+                data.Add(item);
+            }
+            return data;
+        }
+
+        private static T GetItem<T>(DataRow dr)
+        {
+            Type temp = typeof(T);
+            T obj = Activator.CreateInstance<T>();
+
+            foreach (DataColumn column in dr.Table.Columns)
+            {
+                var props = from p in temp.GetProperties()
+                            group p by p.Name into g
+                            select g.OrderByDescending(t => t.DeclaringType == typeof(T)).First();
+
+                foreach (PropertyInfo pro in props)
+                {
+                    if (pro.Name == column.ColumnName && dr[column.ColumnName] != DBNull.Value)
+                    {
+                        try
+                        {
+                            pro.SetValue(obj, dr[column.ColumnName], null);
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+
+                    }
+                    else
+                        continue;
+                }
+            }
+            return obj;
         }
 
         public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)
@@ -921,29 +1092,73 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
         }
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>()
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null)
         {
             var fields = new List<CategoryFieldNameModel>();
             foreach (var prop in typeof(T).GetProperties())
             {
-                var attrs = prop.GetCustomAttributes<System.ComponentModel.DataAnnotations.DisplayAttribute>();
+                var attrs = prop.GetCustomAttributes<DisplayAttribute>();
 
                 var title = string.Empty;
+                var groupName = "Trường dữ liệu";
+                int? type = null;
+
                 if (attrs != null && attrs.Count() > 0)
                 {
                     title = attrs.First().Name;
+                    groupName = attrs.First().GroupName;
                 }
                 if (string.IsNullOrWhiteSpace(title))
                 {
                     title = prop.Name;
                 }
-                fields.Add(new CategoryFieldNameModel()
+
+                var types = prop.GetCustomAttributes<FieldDataTypeAttribute>();
+                if (types != null && types.Count() > 0)
                 {
+                    type = types.First().Type;
+                }
+                if (byType.HasValue && type.HasValue && byType.Value != type.Value)
+                {
+                    continue;
+                }
+
+                if (prop.GetCustomAttribute<FieldDataIgnoreAttribute>() != null) continue;
+
+                var isRequired = prop.GetCustomAttribute<RequiredAttribute>();
+
+
+                var fileMapping = new CategoryFieldNameModel()
+                {
+                    GroupName = groupName,
                     CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
+                    IsRequired = isRequired != null,
+                    Type = type,
                     RefCategory = null
-                });
+                };
+
+                bool isPrimitiveType = prop.PropertyType.IsPrimitive || prop.PropertyType.IsValueType || (prop.PropertyType == typeof(string));
+
+                if (prop.PropertyType.IsClass && !isPrimitiveType)
+                {
+
+                    MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
+                    MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
+                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null });
+
+                    fileMapping.RefCategory = new CategoryNameModel()
+                    {
+                        CategoryCode = prop.PropertyType.Name,
+                        CategoryId = prop.PropertyType.Name.GetHashCode(),
+                        CategoryTitle = title,
+                        Fields = childFields
+                    };
+
+                }
+
+                fields.Add(fileMapping);
             }
 
             return fields;
@@ -961,6 +1176,85 @@ namespace VErp.Commons.Library
             return appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
         }
 
+        public static T DeepClone<T>(this T a)
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                BinaryFormatter formatter = new BinaryFormatter();
+                formatter.Serialize(stream, a);
+                stream.Position = 0;
+                return (T)formatter.Deserialize(stream);
+            }
+        }
 
+
+        public static T MergeData<T>(this IList<T> items) where T : class
+        {
+            var result = Activator.CreateInstance<T>();
+
+            foreach (var item in items)
+            {
+                result.CopyValuesFrom(item);
+            }
+
+            return result;
+        }
+
+        public static void CopyValuesFrom<T>(this T target, T source, bool appendList = true, bool copyObject = true)
+        {
+            Type t = typeof(T);
+
+            var properties = t.GetProperties().Where(prop => prop.CanRead && prop.CanWrite);
+
+            foreach (var prop in properties)
+            {
+                var value = prop.GetValue(source, null);
+                var targetValue = prop.GetValue(target, null);
+
+                bool isPrimitiveType = prop.PropertyType.IsPrimitive || prop.PropertyType.IsValueType || (prop.PropertyType == typeof(string));
+
+                if (appendList && !isPrimitiveType && (prop.PropertyType.IsArray || typeof(IEnumerable).IsAssignableFrom(prop.PropertyType)))
+                {
+
+                    if (targetValue.IsNullObject())
+                    {
+                        targetValue = Activator.CreateInstance(prop.PropertyType);
+                    }
+
+                    if (!value.IsNullObject())
+                    {
+                        foreach (var newVal in value as IEnumerable)
+                        {
+                            targetValue = (targetValue as IEnumerable).Cast<object>().Concat(new[] { newVal });
+                        }
+                    }
+
+                    prop.SetValue(target, targetValue, null);
+
+                }
+                else if (!value.IsNullObject())
+                {
+
+
+                    if ((copyObject || isPrimitiveType) && targetValue != value)
+                    {
+                        prop.SetValue(target, value, null);
+                    }
+
+                }
+            }
+        }
+
+        public static void ValidateCodeSpecialCharactors(this string code)
+        {
+            if (string.IsNullOrEmpty(code))
+                return;
+            
+            var regEx = new Regex("^([0-9a-zA-Z])(([0-9a-zA-Z_\\.\\/\\-#\\+&])*([0-9a-zA-Z]))*$", RegexOptions.Multiline);
+            if (!regEx.IsMatch(code))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\./-_#&+)");
+            }
+        }
     }
 }

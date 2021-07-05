@@ -21,11 +21,13 @@ using VErp.Services.Master.Model.Category;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 
 namespace VErpApi.Controllers.System.Category
 {
     [Route("api/categorydata")]
-    [TypeFilter(typeof(CategoryPermissionAttribute))]
+    //[TypeFilter(typeof(CategoryPermissionAttribute))]
+    [ObjectDataApi(EnumObjectType.Category, "categoryId")]
     public class CategoryDataController : VErpBaseController
     {
         private readonly ICategoryDataService _categoryDataService;
@@ -38,16 +40,17 @@ namespace VErpApi.Controllers.System.Category
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [GlobalApi]
         [Route("{categoryId}/categoryrows/Search")]
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows([FromRoute] int categoryId, [FromBody] CategoryFilterModel request)
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size);
+            return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
 
+        [GlobalApi]
         [HttpGet]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<NonCamelCaseDictionary> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId)
@@ -55,7 +58,18 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryDataService.GetCategoryRow(categoryId, categoryRowId);
         }
 
+
+        [GlobalApi]
+        [HttpGet]
+        [Route("byCode/{categoryCode}/row/{categoryRowId}")]
+        public async Task<NonCamelCaseDictionary> GetCategoryRow([FromRoute] string categoryCode, [FromRoute] int categoryRowId)
+        {
+            return await _categoryDataService.GetCategoryRow(categoryCode, categoryRowId);
+        }
+
+
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("{categoryId}/categoryrows")]
         public async Task<int> GetCategoryRow([FromRoute] int categoryId, [FromBody] Dictionary<string, string> data)
         {
@@ -76,7 +90,9 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryDataService.DeleteCategoryRow(categoryId, categoryRowId);
         }
 
+        [GlobalApi]
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("mapToObject")]
         public async Task<List<MapObjectOutputModel>> MapToObject([FromBody] MapObjectInputModel[] data)
         {
@@ -92,13 +108,13 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpPost]
         [Route("{categoryId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] CategoryImportExelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, JsonConvert.DeserializeObject<CategoryImportExelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

@@ -2,125 +2,80 @@
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using OpenXmlPowerTools;
-using SelectPdf;
+using OpenXmlPowerTools.OpenXMLWordprocessingMLToHtmlConverter;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
 using System;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using VErp.Commons.Library.OpenXmlTools;
+using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Commons.Library
 {
     public static class WordOpenXmlTools
     {
-        public static void ConvertToPdf(string file, string destFileName)
+        public static async Task<Stream> ConvertToPdf(string fileDocPath, PuppeteerPdfSetting puppeteerPdfSetting)
         {
-            string htmlString = ConvertToHtml(file, Path.GetDirectoryName(destFileName));
-            ConvertHtmlToPdf(htmlString, destFileName);
+           return await ConvertHtmlToPdf(ConvertToHtml(fileDocPath), puppeteerPdfSetting) ;
         }
 
-        public static string ConvertToHtml(string file, string outputDirectory)
+        public static string ConvertToHtml(string fileDocPath)
         {
-            var fi = new FileInfo(file);
-            byte[] byteArray = File.ReadAllBytes(fi.FullName);
+            var fileInfo = new FileInfo(fileDocPath);
+            byte[] byteArray = File.ReadAllBytes(fileInfo.FullName);
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 memoryStream.Write(byteArray, 0, byteArray.Length);
                 using (WordprocessingDocument wDoc = WordprocessingDocument.Open(memoryStream, true))
                 {
-                    var destFileName = new FileInfo(fi.Name.Replace(".docx", ".html"));
-                    if (outputDirectory != null && outputDirectory != string.Empty)
+                    if (!fileInfo.Directory.Exists)
                     {
-                        DirectoryInfo di = new DirectoryInfo(outputDirectory);
-                        if (!di.Exists)
-                        {
-                            throw new OpenXmlPowerToolsException("Output directory does not exist");
-                        }
-                        destFileName = new FileInfo(Path.Combine(di.FullName, destFileName.Name));
+                        throw new OpenXmlPowerToolsException("Output directory does not exist");
                     }
+
+                    var destFileName = new FileInfo(Path.Combine(fileInfo.Directory.FullName, Path.GetFileNameWithoutExtension(fileInfo.Name) + ".html"));
+
                     var imageDirectoryName = destFileName.FullName.Substring(0, destFileName.FullName.Length - 5) + "_files";
 
-                    int imageCounter = 0;
-
-                    var pageTitle = fi.FullName;
+                    var pageTitle = fileInfo.FullName;
                     var part = wDoc.CoreFilePropertiesPart;
                     if (part != null)
                     {
-                        pageTitle = (string)part.GetXDocument().Descendants(DC.title).FirstOrDefault() ?? fi.FullName;
+                        pageTitle = (string)part.GetXDocument().Descendants(DC.title).FirstOrDefault() ?? fileInfo.FullName;
                     }
 
-                    // TODO: Determine max-width from size of content area.
-                    WmlToHtmlConverterSettings settings = new WmlToHtmlConverterSettings()
-                    {
-                        AdditionalCss = @"  body { margin: 0cm auto; max-width: 100%; padding: 0; }
-                                            table { page-break-inside:auto }
-                                            tr    { page-break-inside:avoid; page-break-after:auto }",
-                        PageTitle = pageTitle,
-                        FabricateCssClasses = true,
-                        CssClassPrefix = "pt-",
-                        RestrictToSupportedLanguages = false,
-                        RestrictToSupportedNumberingFormats = false,
-                        ImageHandler = imageInfo =>
-                        {
-                            ++imageCounter;
-                            string extension = imageInfo.ContentType.Split('/')[1].ToLower();
-                            ImageFormat imageFormat = null;
-                            if (extension == "png")
-                                imageFormat = ImageFormat.Png;
-                            else if (extension == "gif")
-                                imageFormat = ImageFormat.Gif;
-                            else if (extension == "bmp")
-                                imageFormat = ImageFormat.Bmp;
-                            else if (extension == "jpeg")
-                                imageFormat = ImageFormat.Jpeg;
-                            else if (extension == "tiff")
-                            {
-                                // Convert tiff to gif.
-                                extension = "gif";
-                                imageFormat = ImageFormat.Gif;
-                            }
-                            else if (extension == "x-wmf")
-                            {
-                                extension = "wmf";
-                                imageFormat = ImageFormat.Wmf;
-                            }
+                    var settings = new WmlToHtmlConverterSettings(pageTitle, new CustomImageHandler(imageDirectoryName), new TextDummyHandler(), new SymbolHandler(), new CustomBreakHandler(), true);
+                    XElement htmlElement = WmlToHtmlConverter.ConvertToHtml(wDoc, settings);
 
-                            // If the image format isn't one that we expect, ignore it,
-                            // and don't return markup for the link.
-                            if (imageFormat == null)
-                                return null;
-                            string base64 = null;
-                            try
+                    var elements = htmlElement.Elements().ToList();
+                    foreach (var e in elements)
+                    {
+                        if (e.Name == Xhtml.body)
+                        {
+                            var bodyElements = e.Descendants().Where(x => x.Name == Xhtml.table || x.Name == Xhtml.tr).ToList();
+                            foreach (var elementIns in bodyElements)
                             {
-                                using (MemoryStream ms = new MemoryStream())
+
+                                var styleAttr = elementIns.Attributes().FirstOrDefault(a => a.Name == "style");
+                                var value = elementIns.Name == Xhtml.table ? "page-break-inside:auto" : "page-break-inside:avoid; page-break-after:auto ";
+                                if (styleAttr == null)
                                 {
-                                    imageInfo.Bitmap.Save(ms, imageFormat);
-                                    var ba = ms.ToArray();
-                                    base64 = System.Convert.ToBase64String(ba);
+                                    elementIns.SetAttributeValue(NoNamespace.style, value);
+                                }
+                                else
+                                {
+                                    elementIns.SetAttributeValue(styleAttr.Name, value + ";" + styleAttr.Value);
                                 }
                             }
-                            catch (System.Runtime.InteropServices.ExternalException)
-                            {
-                                return null;
-                            }
-
-                            ImageFormat format = imageInfo.Bitmap.RawFormat;
-                            ImageCodecInfo codec = ImageCodecInfo.GetImageDecoders().First(c => c.FormatID == format.Guid);
-                            string mimeType = codec.MimeType;
-
-                            string imageSource = string.Format("data:{0};base64,{1}", mimeType, base64);
-
-                            XElement img = new XElement(Xhtml.img,
-                                new XAttribute(NoNamespace.src, imageSource),
-                                imageInfo.ImgStyleAttribute,
-                                imageInfo.AltText != null ?
-                                    new XAttribute(NoNamespace.alt, imageInfo.AltText) : null);
-                            return img;
                         }
-                    };
-                    XElement htmlElement = WmlToHtmlConverter.ConvertToHtml(wDoc, settings);
+                    }
 
                     // Produce HTML document with <!DOCTYPE html > declaration to tell the browser
                     // we are using HTML5.
@@ -137,27 +92,63 @@ namespace VErp.Commons.Library
                     // must do it correctly, or entities will not be serialized properly.
 
                     var htmlString = html.ToString(SaveOptions.DisableFormatting);
-
                     File.WriteAllText(destFileName.FullName, htmlString, Encoding.UTF8);
-                    return htmlString;
+                    return destFileName.FullName;
                 }
             }
         }
 
-        public static void ConvertHtmlToPdf(string htmlString, string destFileName)
+        public static async Task<Stream> ConvertHtmlToPdf(string fileHtmlPath, PuppeteerPdfSetting puppeteerSetting)
         {
-            HtmlToPdf converter = new HtmlToPdf();
+            var product = puppeteerSetting?.Product == null ? Product.Chrome : (Product)puppeteerSetting?.Product;
+            var executablePath = puppeteerSetting?.ExecutablePath;
 
-            converter.Options.PdfPageSize = PdfPageSize.A4;
-            converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
-            converter.Options.MarginLeft = 30;
-            converter.Options.MarginRight = 30;
-            converter.Options.MarginTop = 25;
-            converter.Options.MarginBottom = 25;
+            if (string.IsNullOrWhiteSpace(executablePath))
+            {
+                string path = Path.Combine(puppeteerSetting?.Path, product == Product.Chrome? "chrome" : "firefox");
+                int version = !string.IsNullOrWhiteSpace(puppeteerSetting?.Version) ? int.Parse(puppeteerSetting?.Version, CultureInfo.CurrentCulture.NumberFormat) : BrowserFetcher.DefaultRevision;
+                string host = puppeteerSetting?.Host;
 
-            PdfDocument pdfDocument = converter.ConvertHtmlString(htmlString);
-            pdfDocument.Save(destFileName);
-            pdfDocument.Close();
+                var dirPath = new DirectoryInfo(path);
+                if (!dirPath.Exists)
+                    dirPath = Directory.CreateDirectory(path);
+
+                var option = new BrowserFetcherOptions
+                {
+                    Path = dirPath.FullName,
+                    Product = product,
+                    Host = host
+                };
+
+                var browserFetcher = new BrowserFetcher(option);
+                await browserFetcher.DownloadAsync(version);
+                executablePath = browserFetcher.GetExecutablePath(version);
+            }
+
+
+            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true,
+                ExecutablePath = executablePath,
+                Product = product
+            });
+
+            var absolutePath = Path.GetFullPath(fileHtmlPath);
+            await using var page = await browser.NewPageAsync();
+            await page.GoToAsync($"file://{absolutePath}").ConfigureAwait(false);
+            return await page.PdfStreamAsync(new PdfOptions
+            {
+                Format = PaperFormat.A4,
+                PrintBackground = true,
+                MarginOptions = new MarginOptions
+                {
+                    Bottom = "1cm",
+                    Top = "1cm",
+                    Left = "1cm",
+                    Right = "1cm",
+
+                },
+            }).ConfigureAwait(false);
         }
 
         /// <summary>

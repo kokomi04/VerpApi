@@ -12,8 +12,10 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
@@ -35,30 +37,34 @@ namespace VErpApi.Controllers.Stock.Inventory
             _fileProcessDataService = fileProcessDataService;
         }
 
+
         /// <summary>
         /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
-        /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
-        /// <param name="stockId">Id kho</param>
-        /// <param name="isApproved"></param>
-        /// <param name="type">Loại InventoryTypeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>        
-        /// <param name="beginTime"></param>
-        /// <param name="endTime"></param>
-        /// <param name="isExistedInputBill"></param>
-        /// <param name="mappingFunctionKeys"></param>
-        /// <param name="sortBy">sort by column (default: date) </param>
-        /// <param name="asc">true/false (default: false. It mean sort desc)</param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
+        /// <param name="keyword">Từ khóa</param>
+        /// <param name="customerId">ID khách hàng</param>
+        /// <param name="productIds">Danh sách ID mặt hàng</param>
+        /// <param name="accountancyAccountNumber">Tài khoản kế toán</param>
+        /// <param name="stockId">ID kho</param>
+        /// <param name="isApproved">Đã duyệt hay chưa</param>
+        /// <param name="type">Loại (1: Nhập kho, 2: Xuất kho)</param>
+        /// <param name="beginTime">Từ ngày</param>
+        /// <param name="endTime">Đến ngày</param>
+        /// <param name="isExistedInputBill">Đã tạo CTGS hay chưa</param>
+        /// <param name="mappingFunctionKeys">(Deprecated) Các loại chứng từ kiểm tra</param>
+        /// <param name="sortBy">Cột sắp xếp</param>
+        /// <param name="asc">Tăng dần hay giảm dần</param>
+        /// <param name="page">Trang</param>
+        /// <param name="size">Số bản ghi/trang</param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] IList<string> mappingFunctionKeys, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] IList<string> mappingFunctionKeys, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, mappingFunctionKeys, sortBy, asc, page, size).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, productIds, accountancyAccountNumber, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, mappingFunctionKeys, sortBy, asc, page, size).ConfigureAwait(true);
         }
 
 
@@ -167,7 +173,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryInput/{inventoryId}")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApproveInventoryInput([FromRoute] long inventoryId)
         {
             return await _inventoryService.ApproveInventoryInput(inventoryId);
@@ -181,7 +187,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpPut]
         [Route("ApproveInventoryOutput/{inventoryId}")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApproveInventoryOutput([FromRoute] long inventoryId)
         {
             return await _inventoryService.ApproveInventoryOutput(inventoryId);
@@ -197,7 +203,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("File/{fileTypeId}")]
         public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
-            return await _fileService.Upload(EnumObjectType.Inventory, fileTypeId, string.Empty, file);
+            return await _fileService.Upload(EnumObjectType.InventoryInput, fileTypeId, string.Empty, file);
         }
 
         /// <summary>
@@ -246,6 +252,12 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
         }
 
+        [HttpGet]
+        [Route("GetProductPackageListForExport")]
+        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _inventoryService.GetProductPackageListForExport(keyword, isTwoUnit, stockIds, page, size);
+        }
 
 
         /// <summary>
@@ -272,7 +284,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         }
 
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [HttpPost]
         [Route("{inventoryId}/InputGetAffectedPackages")]
         public async Task<IList<CensoredInventoryInputProducts>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] InventoryInModel req)
@@ -282,7 +294,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPut]
         [Route("{inventoryId}/ApprovedInputDataUpdate")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApprovedInputDataUpdate([FromRoute] long inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] ApprovedInputDataSubmitModel req)
         {
             return await _inventoryService.ApprovedInputDataUpdate(inventoryId, fromDate, toDate, req);
@@ -297,13 +309,33 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<long> ImportFromMapping([FromForm] string mapping, [FromForm] string info, [FromForm] IFormFile file)
+        public async Task<long> ImportFromMapping([FromFormString] InventoryOpeningImportModel data, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inventoryService.InventoryImport(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream(), JsonConvert.DeserializeObject<InventoryOpeningBalanceModel>(info)).ConfigureAwait(true);
+            return await _inventoryService.InventoryImport(data.Mapping, file.OpenReadStream(), data.Info).ConfigureAwait(true);
         }
+
+
+        [HttpGet]
+        [Route("{inventoryTypeId}/FieldsForParse")]
+        public CategoryNameModel FieldsForParse([FromRoute] EnumInventoryType inventoryTypeId)
+        {
+            return _inventoryService.FieldsForParse(inventoryTypeId);
+        }
+
+        [HttpPost]
+        [Route("{inventoryTypeId}/ParseExcel")]
+        public IAsyncEnumerable<InventoryDetailRowValue> InputExcelParse([FromRoute] EnumInventoryType inventoryTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return _inventoryService.ParseExcel(mapping, file.OpenReadStream(), inventoryTypeId);
+        }
+
     }
 }

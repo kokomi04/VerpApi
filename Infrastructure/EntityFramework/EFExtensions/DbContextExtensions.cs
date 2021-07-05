@@ -16,6 +16,7 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.EFExtensions
@@ -85,7 +86,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static void AddFilterBase(this ModelBuilder modelBuilder)
         {
-           
+
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 var filterBuilder = new FilterExpressionBuilder(entityType.ClrType);
@@ -158,6 +159,25 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var obj = entityEntry.Entity;
 
+                /**
+                 * Validate if Code field contains special characters
+                 * 
+                 */
+                var type = obj.GetType();
+                var ps = type.GetProperties();
+                foreach (var prop in ps)
+                {
+                    var propName = prop.Name.ToLower();
+                    if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode"))
+                    {
+                        Utils.ValidateCodeSpecialCharactors(prop.GetValue(obj) as string);
+                    }
+                }
+
+
+                /**
+                 * Set history base
+                 */
                 obj.SetValue("UpdatedByUserId", currentContext.UserId);
 
                 if (entityEntry.State == EntityState.Added)
@@ -184,7 +204,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 else
                 {
-                    if (obj.GetValue("IsDeleted") == (object)true)
+                    if ((bool?)obj.GetValue("IsDeleted") == true)
                     {
                         obj.SetValue("DeletedDatetimeUtc", DateTime.UtcNow);
                     }
@@ -328,26 +348,50 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return query;
         }
 
-        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Clause filters = null)
+        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Clause filters = null, int? timeZoneOffset = null)
         {
             if (filters != null)
             {
                 var param = Expression.Parameter(typeof(T), "s");
-                Expression filterExp = FilterClauseProcess<T>(param, filters, query);
-                query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
+                Expression filterExp = FilterClauseProcess<T>(param, filters, query, false, timeZoneOffset);
+                if (filterExp != null)
+                    query = query.Where(Expression.Lambda<Func<T, bool>>(filterExp, param));
             }
             return query;
         }
 
-        public static Expression FilterClauseProcess<T>(ParameterExpression param, Clause clause, IQueryable<T> query, bool not = false)
+        public static IQueryable<T> InternalOrderBy<T>(this IQueryable<T> query, string orderByFieldName, bool asc)
         {
-            Expression exp = Expression.Constant(false);
+            if (!string.IsNullOrWhiteSpace(orderByFieldName))
+            {
+                string command = asc ? "OrderBy" : "OrderByDescending";
+                var type = typeof(T);
+                var propertyNames = orderByFieldName.Split(".");
+
+                var parameter = Expression.Parameter(type, "s");
+                Expression body = parameter;
+                foreach (var propertyName in propertyNames)
+                {
+                    body = Expression.PropertyOrField(body, propertyName);
+                }
+                var orderByExpression = Expression.Lambda(body, parameter);
+                var resultExpression = Expression.Call(typeof(Queryable), command, new Type[] { type, body.Type },
+                    query.Expression, Expression.Quote(orderByExpression));
+                query = query.Provider.CreateQuery<T>(resultExpression);
+            }
+            return query;
+        }
+
+
+        public static Expression FilterClauseProcess<T>(ParameterExpression param, Clause clause, IQueryable<T> query, bool not = false, int? timeZoneOffset = null)
+        {
+            Expression exp = null;
             if (clause != null)
             {
                 if (clause is SingleClause)
                 {
                     var singleClause = clause as SingleClause;
-                    exp = BuildExpression<T>(param, singleClause);
+                    exp = BuildExpression<T>(param, singleClause, timeZoneOffset);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -358,17 +402,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         if (exp == null)
                         {
-                            exp = FilterClauseProcess<T>(param, item, query, isNot);
+                            exp = FilterClauseProcess<T>(param, item, query, isNot, timeZoneOffset);
                         }
                         else
                         {
                             if (isOr)
                             {
-                                exp = Expression.OrElse(exp, FilterClauseProcess<T>(param, item, query, isNot));
+                                exp = Expression.OrElse(exp, FilterClauseProcess<T>(param, item, query, isNot, timeZoneOffset));
                             }
                             else
                             {
-                                exp = Expression.AndAlso(exp, FilterClauseProcess<T>(param, item, query, isNot));
+                                exp = Expression.AndAlso(exp, FilterClauseProcess<T>(param, item, query, isNot, timeZoneOffset));
                             }
                         }
                     }
@@ -377,32 +421,52 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return exp;
         }
 
-        private static Expression BuildExpression<T>(ParameterExpression param, SingleClause clause)
+        private static Expression BuildExpression<T>(ParameterExpression param, SingleClause clause, int? timeZoneOffset = null)
         {
             Expression expression = null;
             if (clause != null)
             {
-                var prop = Expression.Property(param, clause.FieldName);
-                TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
+                var propertyNames = clause.FieldName.Split(".");
+                Expression prop = param;
+                foreach (var propertyName in propertyNames)
+                {
+                    prop = Expression.PropertyOrField(prop, propertyName);
+                }
+
+                if (clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
+                    clause.DataType = EnumDataType.BigInt;
+
+                //var prop = Expression.Property(param, clause.FieldName);
                 // Check value
                 ConstantExpression value;
                 MethodInfo method;
+
+                var toStringMethod = prop.Type.GetMethod("ToString", Type.EmptyTypes);
+                var propExpression = Expression.Call(prop, toStringMethod);
+
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.Equal(prop, value);
                         break;
                     case EnumOperator.NotEqual:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.NotEqual(prop, value);
                         break;
                     case EnumOperator.Contains:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
-                        var toStringMethod = prop.Type.GetMethod("ToString");
-                        var propExpression = Expression.Call(prop, toStringMethod);
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+
                         method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
+
                         break;
                     case EnumOperator.InList:
                         Type listType = typeof(List<>);
@@ -411,24 +475,51 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         foreach (var item in ((string)clause.Value).Split(','))
                         {
                             MethodInfo addMethod = constructedListType.GetMethod("Add");
-                            addMethod.Invoke(instance, new object[] { typeConverter.ConvertFromString(item) });
+                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item, timeZoneOffset) });
                         }
                         method = constructedListType.GetMethod("Contains");
                         expression = Expression.Call(Expression.Constant(instance), method, prop);
                         break;
                     case EnumOperator.StartsWith:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
-                        toStringMethod = prop.Type.GetMethod("ToString");
-                        propExpression = Expression.Call(prop, toStringMethod);
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+
                         method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
                         break;
                     case EnumOperator.EndsWith:
-                        value = Expression.Constant(typeConverter.ConvertFromString((string)clause.Value));
-                        toStringMethod = prop.Type.GetMethod("ToString");
-                        propExpression = Expression.Call(prop, toStringMethod);
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
-                        expression = Expression.Call(propExpression, method, value);
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Call(prop, method, value);
+                        }
+                        else
+                        {
+                            expression = Expression.Call(propExpression, method, value);
+                        }
+                        break;
+                    case EnumOperator.GreaterOrEqual:
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+                        expression = Expression.GreaterThanOrEqual(prop, value);
+                        break;
+                    case EnumOperator.LessThanOrEqual:
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+                        expression = Expression.LessThanOrEqual(prop, value);
+                        break;
+                    case EnumOperator.Greater:
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+                        expression = Expression.GreaterThan(prop, value);
+                        break;
+                    case EnumOperator.LessThan:
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+                        expression = Expression.LessThan(prop, value);
                         break;
                     default:
                         expression = Expression.Constant(true);
@@ -438,7 +529,46 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return expression;
         }
 
+        //public static IOrderedQueryable<TSource> InternalOrderBy<TSource>(this IQueryable<TSource> query, string propertyName, bool asc) {
+        //    return asc ? BuildOrderBy(query, "OrderBy", propertyName) : BuildOrderBy(query, "OrderByDescending", propertyName);
+        //}
 
+        ///// <summary>
+        ///// 
+        ///// Ref links: https://entityframework.net/knowledge-base/31955025/generate-ef-orderby-expression-by-string 
+        ///// </summary>
+        ///// <typeparam name="TSource"></typeparam>
+        ///// <param name="query"></param>
+        ///// <param name="linqMethod"></param>
+        ///// <param name="propertyName"></param>
+        ///// <returns></returns>
+        //private static IOrderedQueryable<TSource> BuildOrderBy<TSource>(IQueryable<TSource> query, string linqMethod, string propertyName) {
+        //    var entityType = typeof(TSource);
 
+        //    //Create x=>x.PropName
+        //    ParameterExpression arg = Expression.Parameter(entityType, "s");
+        //    MemberExpression property = Expression.Property(arg, propertyName);
+        //    var selector = Expression.Lambda(property, new ParameterExpression[] { arg });
+
+        //    //Get System.Linq.Queryable.OrderBy() method.
+        //    var enumarableType = typeof(System.Linq.Queryable);
+        //    var method = enumarableType.GetMethods()
+        //         .Where(m => m.Name == linqMethod && m.IsGenericMethodDefinition)
+        //         .Where(m => {
+        //             var parameters = m.GetParameters().ToList();
+        //             //Put more restriction here to ensure selecting the right overload                
+        //             return parameters.Count == 2;//overload that has 2 parameters
+        //         }).Single();
+        //    //The linq's OrderBy<TSource, TKey> has two generic types, which provided here
+        //    MethodInfo genericMethod = method
+        //         .MakeGenericMethod(entityType, property.Type);
+
+        //    /*Call query.OrderBy(selector), with query and selector: x=> x.PropName
+        //      Note that we pass the selector as Expression to the method and we don't compile it.
+        //      By doing so EF can extract "order by" columns and generate SQL for it.*/
+        //    var newQuery = (IOrderedQueryable<TSource>)genericMethod
+        //         .Invoke(genericMethod, new object[] { query, selector });
+        //    return newQuery;
+        //}
     }
 }

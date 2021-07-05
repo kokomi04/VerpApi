@@ -13,13 +13,18 @@ namespace VErp.Services.Accountancy.Service.Input
     {
         Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate);
 
-        Task<ExchangeRateModel> FixExchangeRateDetail(long fromDate, long toDate, int currency, string accountNumber, string partnerId);
+        Task<DataResultModel> FixExchangeRateDetail(long fromDate, long toDate, int currency, string accountNumber, string partnerId);
 
         Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate);
 
         Task<bool> DeletedFixExchangeRate(long fromDate, long toDate);
 
-        Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type, bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
+        Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type,
+            bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
+
+        Task<DataResultModel> CalcCostTransferDetail(long fromDate, long toDate, EnumCostTransfer type,
+            bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock,
+            int? department, string customer, int? fixedAsset, int? expenseItem, int? factory, int? product, int? stock);
 
         ICollection<CostTransferTypeModel> GetCostTransferTypes();
 

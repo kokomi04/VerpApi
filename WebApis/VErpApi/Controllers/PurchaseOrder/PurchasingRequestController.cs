@@ -11,6 +11,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
@@ -78,19 +79,81 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("")]
         public async Task<long> Add([FromBody] PurchasingRequestInput req)
         {
-            return await _purchasingRequestService.Create(req).ConfigureAwait(true);
+            return await _purchasingRequestService.Create(EnumPurchasingRequestType.Normal, req).ConfigureAwait(true);
+        }
+
+
+
+
+        [HttpGet]
+        [Route("OrderDetail/{orderDetailId}")]
+        public async Task<PurchasingRequestOutput> GetFromOrderMaterial([FromRoute] long orderDetailId)
+        {
+            return await _purchasingRequestService.GetByOrderDetailId(orderDetailId).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("OrderDetail/{orderDetailId}")]
+        public async Task<long> CreateFromOrderMaterial([FromRoute] long orderDetailId, [FromBody] PurchasingRequestInput req)
+        {
+            if (req == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            req.OrderDetailId = orderDetailId;
+            return await _purchasingRequestService.Create(EnumPurchasingRequestType.OrderMaterial, req).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("OrderDetail/{orderDetailId}/{purchasingRequestId}")]
+        public async Task<bool> UpdateFromOrderMaterial([FromRoute] long orderDetailId, [FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInput req)
+        {
+            if (req == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            req.OrderDetailId = orderDetailId;
+            return await _purchasingRequestService.Update(EnumPurchasingRequestType.OrderMaterial, purchasingRequestId, req).ConfigureAwait(true);
+        }
+
+        [HttpDelete]
+        [Route("OrderDetail/{orderDetailId}/{purchasingRequestId}")]
+        public async Task<bool> DeleteFromOrderMaterial([FromRoute] long orderDetailId, [FromRoute] long purchasingRequestId)
+        {
+            return await _purchasingRequestService.Delete(orderDetailId, null, purchasingRequestId).ConfigureAwait(true);
+        }
+
+        //materialCalc
+        [HttpPost]
+        [Route("materialCalc/{materialCalcId}")]
+        public async Task<long> CreateFromMaterialCalc([FromRoute] long materialCalcId, [FromBody] PurchasingRequestInput req)
+        {
+            if (req == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            req.MaterialCalcId = materialCalcId;
+            return await _purchasingRequestService.Create(EnumPurchasingRequestType.MaterialCalc, req).ConfigureAwait(true);
+        }
+
+
+        [HttpPut]
+        [Route("materialCalc/{materialCalcId}/{purchasingRequestId}")]
+        public async Task<bool> UpdateFromMaterialCalc([FromRoute] long materialCalcId, [FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInput req)
+        {
+            if (req == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            req.MaterialCalcId = materialCalcId;
+            return await _purchasingRequestService.Update(EnumPurchasingRequestType.MaterialCalc, purchasingRequestId, req).ConfigureAwait(true);
+        }
+
+        [HttpDelete]
+        [Route("materialCalc/{materialCalcId}/{purchasingRequestId}")]
+        public async Task<bool> DeleteFromMaterialCalc([FromRoute] long materialCalcId, [FromRoute] long purchasingRequestId)
+        {
+            return await _purchasingRequestService.Delete(null, materialCalcId, purchasingRequestId).ConfigureAwait(true);
         }
 
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchasingRequestInputDetail> parseDetailsFromExcelMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        public IAsyncEnumerable<PurchasingRequestInputDetail> parseDetailsFromExcelMapping([FromFormString] SingleInvoicePurchasingRequestExcelMappingModel mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return _purchasingRequestService.ParseInvoiceDetails(JsonConvert.DeserializeObject<SingleInvoicePurchasingRequestExcelMappingModel>(mapping), file.OpenReadStream());
+            return _purchasingRequestService.ParseInvoiceDetails(mapping, file.OpenReadStream());
         }
 
         /// <summary>
@@ -103,7 +166,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}")]
         public async Task<bool> Update([FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInput req)
         {
-            return await _purchasingRequestService.Update(purchasingRequestId, req).ConfigureAwait(true);
+            return await _purchasingRequestService.Update(EnumPurchasingRequestType.Normal, purchasingRequestId, req).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -125,7 +188,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingRequestId}/Approve")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Approve([FromRoute] long purchasingRequestId)
         {
             return await _purchasingRequestService.Approve(purchasingRequestId).ConfigureAwait(true);
@@ -138,7 +201,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchasingRequestId}/Reject")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Reject([FromRoute] long purchasingRequestId)
         {
             return await _purchasingRequestService.Reject(purchasingRequestId).ConfigureAwait(true);
@@ -153,7 +216,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}")]
         public async Task<bool> Delete([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Delete(purchasingRequestId).ConfigureAwait(true);
+            return await _purchasingRequestService.Delete(null, null, purchasingRequestId).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -169,6 +232,18 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             if (poProcessStatusModel == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _purchasingRequestService.UpdatePoProcessStatus(purchasingRequestId, poProcessStatusModel.PoProcessStatusId).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Lấy thông tin phiếu yêu cầu vật tư theo LSX
+        /// </summary>
+        /// <param name="productionOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("")]
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId)
+        {
+            return await _purchasingRequestService.GetPurchasingRequestByProductionOrderId(productionOrderId);
         }
     }
 }

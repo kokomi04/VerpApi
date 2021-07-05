@@ -35,6 +35,7 @@ using System.Text.Json;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Middleware;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using static IdentityModel.OidcConstants;
@@ -61,6 +62,8 @@ namespace VErp.Infrastructure.ApiCore
            });
 
             services.Configure<AppSetting>(Configuration);
+
+            services.AddSingleton<IConfiguration>(Configuration);
 
             CreateSerilogLogger(Configuration);
 
@@ -89,6 +92,7 @@ namespace VErp.Infrastructure.ApiCore
 
             services.AddControllers(options =>
             {
+                options.ModelBinderProviders.Insert(0, new CustomModelBinderProvider());
                 options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
                 options.AllowEmptyInputInBodyModelBinding = true;
                 options.Filters.Add(typeof(HttpGlobalExceptionFilter));
@@ -153,6 +157,7 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigAccountancyContext(AppSetting.DatabaseConnections);
             services.ConfigActivityLogContext(AppSetting.DatabaseConnections);
             services.ConfigReportConfigDBContextContext(AppSetting.DatabaseConnections);
+            services.ConfigManufacturingContext(AppSetting.DatabaseConnections);
         }
 
         protected void ConfigDbOwnerContext(IServiceCollection services)
@@ -180,14 +185,15 @@ namespace VErp.Infrastructure.ApiCore
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
             app.UseMiddleware<RequestLogMiddleware>();
+
+            loggerFactory.AddSerilog();
+
 #if !DEBUG
             if (AppSetting.ElasticApm?.IsEnabled == true)
             {
                 app.UseAllElasticApm(Configuration);
             }
 #endif
-
-            loggerFactory.AddSerilog();
 
             var pathBase = AppSetting.PathBase;
             if (!string.IsNullOrEmpty(pathBase))
@@ -235,7 +241,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 // _logger.LogError(exception, exception?.Message);
 
-                var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception);
+                var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception, AppSetting);
 
                 if (!env.IsProduction())
                 {
@@ -256,7 +262,7 @@ namespace VErp.Infrastructure.ApiCore
                 config.MapControllers();
             });
 
-           
+
         }
 
         private void ConfigureAuthService(IServiceCollection services)

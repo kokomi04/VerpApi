@@ -27,6 +27,8 @@ namespace VErp.Services.Stock.Model.Stock
     public class StockProductDetailsModel
     {
         public long InventoryId { get; set; }
+        public int? CustomerId { get; set; }
+        public int? DepartmentId { get; set; }
         public int StockId { get; set; }
         public string StockName { get; set; }
 
@@ -54,6 +56,9 @@ namespace VErp.Services.Stock.Model.Stock
         public decimal EndOfPerdiodPrimaryQuantity { set; get; }
         public decimal EndOfPerdiodProductUnitConversionQuantity { set; get; }
 
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string Pocode { get; set; }
         public ProductUnitConversion ProductUnitConversion { set; get; }
 
     }

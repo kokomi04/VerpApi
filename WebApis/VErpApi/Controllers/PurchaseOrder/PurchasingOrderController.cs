@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
@@ -47,10 +48,10 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<PageData<PurchaseOrderOutputList>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PurchaseOrderOutputList>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchaseOrderService
-                .GetList(keyword, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetList(keyword, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(true);
         }
 
@@ -109,13 +110,13 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchaseOrderExcelParseDetail> parseDetailsFromExcelMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        public IAsyncEnumerable<PurchaseOrderExcelParseDetail> parseDetailsFromExcelMapping([FromFormString] SingleInvoicePoExcelMappingModel mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return _purchaseOrderService.ParseInvoiceDetails(JsonConvert.DeserializeObject<SingleInvoicePoExcelMappingModel>(mapping), file.OpenReadStream());
+            return _purchaseOrderService.ParseInvoiceDetails(mapping, file.OpenReadStream());
         }
 
         /// <summary>
@@ -154,7 +155,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/Check")]
-        [VErpAction(EnumAction.Check)]
+        [VErpAction(EnumActionType.Check)]
         public async Task<bool> Checked([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
@@ -169,7 +170,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/RejectCheck")]
-        [VErpAction(EnumAction.Check)]
+        [VErpAction(EnumActionType.Check)]
         public async Task<bool> RejectCheck([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
@@ -184,7 +185,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/Approve")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Approve([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService
@@ -199,7 +200,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpPut]
         [Route("{purchaseOrderId}/Reject")]
-        [VErpAction(EnumAction.Censor)]
+        [VErpAction(EnumActionType.Censor)]
         public async Task<bool> Reject([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderService

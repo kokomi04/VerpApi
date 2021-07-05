@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library.Model
 {
@@ -15,9 +16,36 @@ namespace VErp.Commons.Library.Model
 
     public class CategoryFieldNameModel
     {
+        //optional
+        public string GroupName { get; set; }
+
         public int CategoryFieldId { get; set; }
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
+        public bool IsRequired { get; set; }
+        public int? Type { get; set; }
         public CategoryNameModel RefCategory { get; set; }
+    }
+
+    public class FieldDataTypeAttribute : Attribute
+    {
+        public int Type { get; private set; }
+        public FieldDataTypeAttribute(int type)
+        {
+            Type = type;
+        }
+    }
+
+    public class FieldDataIgnoreAttribute : Attribute
+    {
+        public FieldDataIgnoreAttribute()
+        {
+        }
+    }
+
+    public abstract class MappingDataRowAbstract
+    {
+        [FieldDataIgnore]
+        public int RowNumber { get; set; }
     }
 }

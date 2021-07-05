@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -16,38 +17,40 @@ namespace VErpApi.Controllers.System.Internal
     [ApiController]
     public class InternalCustomGenCodeController : CrossServiceBaseController
     {
-        private readonly ICustomGenCodeService _customGenCodeService;
-        public InternalCustomGenCodeController(ICustomGenCodeService customGenCodeService)
+        private readonly IGenCodeConfigService _genCodeConfigService;
+        private readonly IObjectGenCodeService _objectGenCodeService;
+        public InternalCustomGenCodeController(IGenCodeConfigService genCodeConfigService, IObjectGenCodeService objectGenCodeService)
         {
-            _customGenCodeService = customGenCodeService;
+            _genCodeConfigService = genCodeConfigService;
+            _objectGenCodeService = objectGenCodeService;
         }
 
         [HttpPost]
-        [Route("{objectTypeId}/multiconfigs")]
-        public async Task<bool> MapObjectCustomGenCode([FromRoute] int objectTypeId,[FromBody] Dictionary<int,int> data)
+        [Route("multiconfigs")]
+        public async Task<bool> UpdateMultiConfig([FromQuery] EnumObjectType targetObjectTypeId, [FromQuery] EnumObjectType configObjectTypeId, [FromBody] Dictionary<long, int> objectCustomGenCodes)
         {
-            return await _customGenCodeService.UpdateMultiConfig(objectTypeId, data).ConfigureAwait(true);
+            return await _objectGenCodeService.UpdateMultiConfig(targetObjectTypeId, configObjectTypeId, objectCustomGenCodes).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("currentConfig")]
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig([FromQuery] EnumObjectType targetObjectTypeId, [FromQuery] EnumObjectType configObjectTypeId, [FromQuery] long configObjectId, [FromQuery] long? fId, [FromQuery] string code, [FromQuery] long? date)
         {
-            return await _customGenCodeService.GetCurrentConfig(objectTypeId, objectId);
+            return await _objectGenCodeService.GetCurrentConfig(targetObjectTypeId, configObjectTypeId, configObjectId, fId, code, date);
         }
 
         [HttpGet]
         [Route("generateCode")]
-        public async Task<CustomCodeModel> GenerateCode([FromQuery] int customGenCodeId, [FromQuery] int lastValue)
+        public async Task<CustomCodeGeneratedModel> GenerateCode([FromQuery] int customGenCodeId, [FromQuery] int lastValue, [FromQuery] long? fId, [FromQuery] string code, [FromQuery] long? date)
         {
-            return await _customGenCodeService.GenerateCode(customGenCodeId, lastValue);
+            return await _genCodeConfigService.GenerateCode(customGenCodeId, lastValue, fId, code, date);
         }
 
         [HttpPut]
-        [Route("confirmCode")]
-        public async Task<bool> ConfirmCode([FromQuery] int objectTypeId, [FromQuery] int objectId)
+        [Route("{customGenCodeId}/confirmCode")]
+        public async Task<bool> ConfirmCode([FromRoute] int customGenCodeId, [FromQuery] string baseValue)
         {
-            return await _customGenCodeService.ConfirmCode(objectTypeId, objectId);
+            return await _genCodeConfigService.ConfirmCode(customGenCodeId, baseValue);
         }
     }
 }

@@ -6,16 +6,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErpApi.Controllers.Report
 {
     [Route("api/reports/accoutancy")]
+    [ObjectDataApi(EnumObjectType.ReportType, "reportId")]
     public class ReportDataController : VErpBaseController
     {
-        private readonly IAccountancyReportService _accountancyReportService;
-        public ReportDataController(IAccountancyReportService accountancyReportService)
+        private readonly IDataReportService _accountancyReportService;
+        public ReportDataController(IDataReportService accountancyReportService)
         {
             _accountancyReportService = accountancyReportService;
         }
@@ -23,14 +26,16 @@ namespace VErpApi.Controllers.Report
 
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("view/{reportId}")]
         public async Task<ReportDataModel> ReportView([FromRoute] int reportId, [FromBody] ReportFilterModel model)
         {
-            return await _accountancyReportService.Report(reportId, model)
+            return await _accountancyReportService.Report(reportId, model, model?.Page ?? 0, model?.Size ?? 0)
                 .ConfigureAwait(true);
         }
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("view/{reportId}/asDocument")]
         public async Task<IActionResult> ASDocument([FromRoute] int reportId, [FromBody] ReportDataModel dataModel)
         {
@@ -40,6 +45,7 @@ namespace VErpApi.Controllers.Report
         }
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("view/{reportId}/asExcel")]
         public async Task<FileStreamResult> AsExcel([FromRoute] int reportId, [FromBody] ReportFacadeModel model)
         {
@@ -49,5 +55,5 @@ namespace VErpApi.Controllers.Report
         }
     }
 
-   
+
 }

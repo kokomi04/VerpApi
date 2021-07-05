@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -17,16 +19,26 @@ namespace VErpApi.Controllers.PurchaseOrder.Internal
     public class InternalVoucherController : CrossServiceBaseController
     {
         private readonly IVoucherDataService _voucherDataService;
-        public InternalVoucherController(IVoucherDataService voucherDataService)
+        private readonly IVoucherConfigService _voucherConfigService;
+        public InternalVoucherController(IVoucherDataService voucherDataService, IVoucherConfigService voucherConfigService)
         {
             _voucherDataService = voucherDataService;
+            _voucherConfigService = voucherConfigService;
         }
 
         [HttpPost]
         [Route("CheckReferFromCategory")]
         public async Task<bool> CheckReferFromCategory([FromBody] ReferFromCategoryModel data)
         {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _voucherDataService.CheckReferFromCategory(data.CategoryCode, data.FieldNames, data.CategoryRow).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("simpleList")]
+        public async Task<IList<VoucherTypeSimpleModel>> GetSimpleList()
+        {
+            return await _voucherConfigService.GetVoucherTypeSimpleList().ConfigureAwait(true);
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace Services.Organization.Service.Employee.Implement
 {
@@ -13,8 +14,11 @@ namespace Services.Organization.Service.Employee.Implement
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
-        public UserDataService(OrganizationDBContext organizationDBContext,
-            ICurrentContextService currentContextService
+     
+
+        public UserDataService(
+            OrganizationDBContext organizationDBContext
+            , ICurrentContextService currentContextService
             )
         {
             _organizationDBContext = organizationDBContext;
@@ -23,7 +27,12 @@ namespace Services.Organization.Service.Employee.Implement
 
         public async Task<UserDataModel> GetUserData(string key)
         {
-            var info = await _organizationDBContext.UserData.FirstOrDefaultAsync(u => u.DataKey == key);
+            var info = await _organizationDBContext.UserData.FirstOrDefaultAsync(u => u.UserId == _currentContextService.UserId && u.DataKey == key);
+            if (info == null)
+            {
+                info = await _organizationDBContext.UserData.FirstOrDefaultAsync(u => u.DataKey == key);
+            }
+
             return new UserDataModel()
             {
                 DataContent = info?.DataContent
@@ -32,7 +41,7 @@ namespace Services.Organization.Service.Employee.Implement
 
         public async Task<bool> UpdateUserData(string key, string data)
         {
-            var info = await _organizationDBContext.UserData.FirstOrDefaultAsync(u => u.DataKey == key);
+            var info = await _organizationDBContext.UserData.FirstOrDefaultAsync(u => u.UserId == _currentContextService.UserId && u.DataKey == key);
             if (info != null)
             {
                 info.DataContent = data;

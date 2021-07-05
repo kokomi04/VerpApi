@@ -26,7 +26,14 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddScoped<IStockHelperService, StockHelperService>();
             services.AddScoped<IProductHelperService, ProductHelperService>();
             services.AddScoped<IOrganizationHelperService, OrganizationHelperService>();
+            services.AddScoped<IInputTypeHelperService, InputTypeHelperService>();
+            services.AddScoped<IVoucherTypeHelperService, VoucherTypeHelperService>();
+            services.AddScoped<IRoleHelperService, RoleHelperService>();
+            services.AddScoped<IOutsideMappingHelperService, OutsideMappingHelperService>();
+            services.AddScoped<IBarcodeConfigHelperService, BarcodeConfigHelperService>();
+            
 
+            services.AddScoped<ICategoryHelperService, CategoryHelperService>();
             services.AddScoped<IMenuHelperService, MenuHelperService>();
 
             services.AddScoped<HttpCurrentContextService>();

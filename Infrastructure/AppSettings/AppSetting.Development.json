@@ -30,6 +30,13 @@
   },
   "Developer": {
     "Users": [ "user01" ],
-    "Roles": [ "Administrators" ]
+    "SubsidiaryCodes": [ "VERP JSC" ]
+  },
+  "PuppeteerPdf": {
+    "Host": "",
+    "Path": "/usr/resources/_tools",
+    "Version": "",
+    "Product": 0, // 0-Chrome, 1-Firefox
+    "ExecutablePath": ""
   }
 }

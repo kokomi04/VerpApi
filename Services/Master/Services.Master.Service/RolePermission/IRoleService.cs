@@ -25,5 +25,10 @@ namespace VErp.Services.Master.Service.RolePermission
 
         Task<IList<CategoryPermissionModel>> GetCategoryPermissions();
         Task<bool> UpdateCategoryPermission(IList<CategoryPermissionModel> req);
+
+        Task<bool> GrantDataForAllRoles(EnumObjectType objectTypeId, long objectId);
+
+        Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId);
+        
     }
 }

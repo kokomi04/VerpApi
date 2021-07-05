@@ -26,6 +26,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Category;
 using VErp.Services.Master.Model.CategoryConfig;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Master.Service.Category
@@ -37,14 +38,14 @@ namespace VErp.Services.Master.Service.Category
         private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterContext;
-        private readonly IHttpCrossService _httpCrossService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
 
         public CategoryConfigService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            , IHttpCrossService httpCrossService
+            , ICategoryHelperService httpCategoryHelperService
             )
         {
             _logger = logger;
@@ -52,10 +53,28 @@ namespace VErp.Services.Master.Service.Category
             _masterContext = accountancyContext;
             _appSetting = appSetting.Value;
             _mapper = mapper;
-            _httpCrossService = httpCrossService;
+            _httpCategoryHelperService = httpCategoryHelperService;
         }
 
         #region Category
+
+        public async Task<IList<CategoryFullModel>> GetAllCategoryConfig()
+        {
+            var v =  await _masterContext.Category
+               .Include(c => c.OutSideDataConfig)
+               .ThenInclude(o => o.OutsideDataFieldConfig)
+               .Include(c => c.CategoryField)
+               .ToListAsync();
+
+            var categories = await _masterContext.Category
+                .Include(c => c.OutSideDataConfig)
+                .ThenInclude(o => o.OutsideDataFieldConfig)
+                .Include(c => c.CategoryField)
+                .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            return categories;
+        }
+
         public async Task<CategoryFullModel> GetCategory(int categoryId)
         {
             var category = await _masterContext.Category
@@ -125,12 +144,12 @@ namespace VErp.Services.Master.Service.Category
             using var trans = await _masterContext.Database.BeginTransactionAsync();
             try
             {
-                CategoryEntity category = _mapper.Map<CategoryEntity>(data);
+                var category = _mapper.Map<CategoryEntity>(data);
                 await _masterContext.Category.AddAsync(category);
                 await _masterContext.SaveChangesAsync();
 
                 // Thêm F_Identity
-                CategoryField identityField = new CategoryField
+                var identityField = new CategoryField
                 {
                     CategoryId = category.CategoryId,
                     CategoryFieldName = AccountantConstants.F_IDENTITY,
@@ -273,12 +292,16 @@ namespace VErp.Services.Master.Service.Category
                 category.Title = data.Title;
                 category.IsReadonly = data.IsReadonly;
                 category.UsePlace = data.UsePlace;
+                category.CategoryGroupId = data.CategoryGroupId;
+                category.MenuId = data.MenuId;
+                category.ParentTitle = data.ParentTitle;
+                category.DefaultOrder = data.DefaultOrder;
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
                 if (category.IsOutSideData)
                 {
-                    OutSideDataConfig config = _masterContext.OutSideDataConfig
+                    var config = _masterContext.OutSideDataConfig
                         .Include(o => o.OutsideDataFieldConfig)
                         .FirstOrDefault(cf => cf.CategoryId == category.CategoryId);
 
@@ -296,6 +319,7 @@ namespace VErp.Services.Master.Service.Category
                         config.Key = data.OutSideDataConfig.Key;
                         config.Description = data.OutSideDataConfig.Description;
                         config.Joins = data.OutSideDataConfig.Joins;
+                        config.RawSql = data.OutSideDataConfig.RawSql;
                         // Update config fields
                         var deletedFields = config.OutsideDataFieldConfig.Where(f => !data.OutSideDataConfig.OutsideDataFieldConfig.Any(nf => nf.OutsideDataFieldConfigId == f.OutsideDataFieldConfigId)).ToList();
                         var newFields = data.OutSideDataConfig.OutsideDataFieldConfig.Where(nf => nf.OutsideDataFieldConfigId == 0).ToList();
@@ -356,15 +380,7 @@ namespace VErp.Services.Master.Service.Category
             // Validate
             var isExisted = _masterContext.CategoryField.Any(c => c.CategoryId != categoryId && c.RefTableCode == category.CategoryCode);
             if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
-            isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalInput/CheckReferFromCategory", new
-            {
-                category.CategoryCode
-            });
-            if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
-            isExisted = await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", new
-            {
-                category.CategoryCode
-            });
+            isExisted = await _httpCategoryHelperService.CheckReferFromCategory(category.CategoryCode);
             if (isExisted) throw new BadRequestException(CategoryErrorCode.CatRelationshipAlreadyExisted);
 
             using var trans = await _masterContext.Database.BeginTransactionAsync();
@@ -550,22 +566,25 @@ namespace VErp.Services.Master.Service.Category
 
             if (!((EnumFormType)data.FormTypeId).IsSelectForm())
             {
+                data.RefTableCode = null;
                 data.RefTableField = null;
+                data.RefTableTitle = null;
             }
         }
 
         public async Task<List<CategoryFieldReferModel>> GetCategoryFieldsByCodes(string[] categoryCodes)
         {
 
-            List<CategoryFieldReferModel> lst = await (from f in _masterContext.CategoryField
-                                                       join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                                                       where categoryCodes.Contains(c.CategoryCode)
-                                                       select new CategoryFieldReferModel
-                                                       {
-                                                           CategoryCode = c.CategoryCode,
-                                                           CategoryFieldName = f.CategoryFieldName,
-                                                           Title = f.Title
-                                                       }).ToListAsync();
+            var lst = await (
+                from f in _masterContext.CategoryField
+                join c in _masterContext.Category on f.CategoryId equals c.CategoryId
+                where categoryCodes.Contains(c.CategoryCode)
+                select new CategoryFieldReferModel
+                {
+                    CategoryCode = c.CategoryCode,
+                    CategoryFieldName = f.CategoryFieldName,
+                    Title = f.Title
+                }).ToListAsync();
 
             return lst;
         }
@@ -740,7 +759,6 @@ namespace VErp.Services.Master.Service.Category
         }
         #endregion
 
-
         public async Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames)
         {
             return await (from f in _masterContext.CategoryField
@@ -770,7 +788,6 @@ namespace VErp.Services.Master.Service.Category
             //{
             //    throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
             //}
-
 
             var result = new CategoryNameModel()
             {
@@ -818,8 +835,6 @@ namespace VErp.Services.Master.Service.Category
                     })
                     .First()
                 );
-
-
 
             foreach (var field in fields)
             {
@@ -953,5 +968,19 @@ namespace VErp.Services.Master.Service.Category
             }
             return category.CategoryId;
         }
+
+        public async Task<IList<CategoryListModel>> GetDynamicCates()
+        {
+            return await _masterContext.Category.Where(c => !c.IsOutSideData)
+                .Select(c => new CategoryListModel()
+                {
+                    CategoryId = c.CategoryId,
+                    CategoryCode = c.CategoryCode,
+                    Title = c.Title
+                })
+                .ToListAsync();
+
+        }
+
     }
 }

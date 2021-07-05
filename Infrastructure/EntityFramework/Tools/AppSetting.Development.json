@@ -24,5 +24,19 @@
   },
   "GrpcInternal": {
     "Address": "http://103.21.149.106:8001"
+  },
+  "BackupStorage": {
+    "FileBackupFolder": "C:/usr/resources/"
+  },
+  "Developer": {
+    "Users": [ "user01" ],
+    "SubsidiaryCodes": [ "VERP JSC" ]
+  },
+  "PuppeteerPdf": {
+    "Host": "",
+    "Path": "/usr/resources/_tools",
+    "Version": "",
+    "Product": 0, // 0-Chrome, 1-Firefox
+    "ExecutablePath": ""
   }
 }

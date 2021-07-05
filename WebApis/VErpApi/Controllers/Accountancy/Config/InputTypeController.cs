@@ -24,7 +24,6 @@ namespace VErpApi.Controllers.Accountancy.Config
             _inputConfigService = inputConfigService;
         }
 
-
         [HttpGet]
         [Route("groups")]
         public async Task<IList<InputTypeGroupList>> GetList()
@@ -53,7 +52,6 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _inputConfigService.InputTypeGroupDelete(inputTypeGroupId).ConfigureAwait(true);
         }
 
-
         [HttpGet]
         [Route("")]
         public async Task<PageData<InputTypeModel>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
@@ -62,11 +60,26 @@ namespace VErpApi.Controllers.Accountancy.Config
         }
 
         [HttpGet]
+        [Route("GetAllConfig")]
+        public async Task<IList<InputTypeFullModel>> GetAllConfig()
+        {
+            return await _inputConfigService.GetAllInputTypes().ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("simpleList")]
+        public async Task<IList<InputTypeSimpleModel>> GetSimpleList()
+        {
+            return await _inputConfigService.GetInputTypeSimpleList().ConfigureAwait(true);
+        }
+
+        [HttpGet]
         [Route("fields")]
         public async Task<PageData<InputFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _inputConfigService.GetInputFields(keyword, page, size).ConfigureAwait(true);
         }
+
 
         [HttpPost]
         [Route("fields")]
@@ -87,6 +100,20 @@ namespace VErpApi.Controllers.Accountancy.Config
         public async Task<bool> DeleteInputField([FromRoute] int inputFieldId)
         {
             return await _inputConfigService.DeleteInputField(inputFieldId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("GlobalSetting")]
+        public async Task<InputTypeGlobalSettingModel> GetInputGlobalSetting()
+        {
+            return await _inputConfigService.GetInputGlobalSetting().ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("GlobalSetting")]
+        public async Task<bool> UpdateInputGlobalSetting([FromBody] InputTypeGlobalSettingModel setting)
+        {
+            return await _inputConfigService.UpdateInputGlobalSetting(setting).ConfigureAwait(true);
         }
 
         [HttpPost]

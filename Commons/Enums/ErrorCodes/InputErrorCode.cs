@@ -48,7 +48,7 @@ namespace VErp.Commons.Enums.StandardEnum
         IsInputArea = 19,
         [Description("Giá trị không tồn tại")]
         InputValueNotFound = 23,
-        [Description("Giá trị dòng {0} trường dữ liệu {1} không hợp lệ")]
+        [Description("Giá trị {0} dòng {1} trường dữ liệu {2} không hợp lệ")]
         InputValueInValid = 25,
         [Description("Đang có dòng dữ liệu sử dụng giá trị này")]
         InputRowAlreadyExisted = 26,
@@ -75,6 +75,11 @@ namespace VErp.Commons.Enums.StandardEnum
         PrintConfigNotFound = 36,
         [Description("Tên cấu hình phiếu in đã tồn tại")]
         PrintConfigNameAlreadyExisted = 37,
-        DoNotGeneratePrintTemplate = 38
+        DoNotGeneratePrintTemplate = 38,
+
+        [Description("Không tìm thấy chức năng")]
+        InputActionNotFound = 39,
+        [Description("Mã chức năng đã tồn tại")]
+        InputActionCodeAlreadyExisted = 40,
     }
 }

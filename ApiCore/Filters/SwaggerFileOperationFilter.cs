@@ -75,33 +75,43 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             var fileParams = context.MethodInfo.GetParameters()
                 .Where(p => p.ParameterType.FullName.Equals(typeof(Microsoft.AspNetCore.Http.IFormFile).FullName));
-            var isUploadFile = fileParams.Any() && fileParams.Count() == 1;
+
+            var otherParams = context.MethodInfo.GetParameters()
+               .Where(p => !p.ParameterType.FullName.Equals(typeof(Microsoft.AspNetCore.Http.IFormFile).FullName));
+
+            var isUploadFile = fileParams.Count() > 0;
             if (isUploadFile)
             {
                 operation.RequestBody.Content.Remove("multipart/form-data");
                 if (isUploadFile)
                 {
+                    var paramsData = new Dictionary<string, OpenApiSchema>();
                     foreach (var f in fileParams)
                     {
-                        operation.RequestBody.Content.Add("multipart/form-data", new OpenApiMediaType
+                        paramsData.Add(f.Name, new OpenApiSchema
                         {
-                            Schema = new OpenApiSchema
-                            {
-                                Type = "object",
-                                Format = "binary",
-                                Properties =
-                                {
-                                    {
-                                        f.Name, new OpenApiSchema
-                                        {
-                                            Type = "string",
-                                            Format = "binary",
-                                        }
-                                    }
-                                }
-                            }
+                            Type = "string",
+                            Format = "binary",
                         });
                     }
+
+                    foreach (var f in otherParams)
+                    {
+                        var myObjectSchema = context.SchemaGenerator.GenerateSchema(f.ParameterType, context.SchemaRepository);
+
+                        paramsData.Add(f.Name, myObjectSchema);
+                    }
+
+
+
+                    operation.RequestBody.Content.Add("multipart/form-data", new OpenApiMediaType
+                    {
+                        Schema = new OpenApiSchema
+                        {
+                            Type = "object",
+                            Properties = paramsData
+                        }
+                    });
                 }
             }
         }

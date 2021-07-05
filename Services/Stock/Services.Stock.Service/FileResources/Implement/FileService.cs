@@ -42,6 +42,28 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private readonly IDataProtectionProvider _dataProtectionProvider;
 
+        private static readonly Dictionary<string, EnumFileType> FileExtensionTypesNotAccepted = new Dictionary<string, EnumFileType>()
+        {
+            { ".sh", EnumFileType.Other },
+            { ".cmd", EnumFileType.Other },
+            { ".bash", EnumFileType.Other },
+            { ".exe"  , EnumFileType.Other },
+
+            { ".asp" , EnumFileType.Other },
+            { ".dll" , EnumFileType.Other },
+            { ".ahx", EnumFileType.Other },
+            { ".apx", EnumFileType.Other },
+            { ".ini", EnumFileType.Other },
+
+            { ".cs" , EnumFileType.Other },
+            { ".py" , EnumFileType.Other },
+            { ".h", EnumFileType.Other },
+            { ".cpp", EnumFileType.Other },
+            { ".jar", EnumFileType.Other },
+            { ".java", EnumFileType.Other },
+            { ".js", EnumFileType.Other },
+            { ".ts", EnumFileType.Other },
+        };
 
         private static readonly Dictionary<string, EnumFileType> FileExtensionTypes = new Dictionary<string, EnumFileType>()
         {
@@ -93,7 +115,17 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             {
                 throw new BadRequestException(FileErrorCode.FileNotFound);
             }
-            return GetFileUrl(fileInfo, thumb, true);
+            return GenerateFileDownloadInfo(fileInfo, thumb, true);
+        }
+
+        public async Task<IList<FileToDownloadInfo>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb)
+        {
+            if (fileIds == null || fileIds.Count == 0)
+            {
+                return new List<FileToDownloadInfo>();
+            }
+            var fileInfos = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
+            return fileInfos.Select(f => GenerateFileDownloadInfo(f, thumb, true)).ToList();
         }
 
         public async Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb)
@@ -111,7 +143,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var lstData = new List<FileThumbnailInfo>();
             foreach (var file in fileInfos)
             {
-                var fileInfo = GetFileUrl(file, thumb, false);
+                var fileInfo = GenerateFileDownloadInfo(file, thumb, false);
                 lstData.Add(fileInfo);
             }
             return lstData;
@@ -233,9 +265,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var ext = Path.GetExtension(file.FileName).ToLower();
 
-            if (!new[] { ".xls", ".xlsx" }.Contains(ext))
+            if (!new[] { ".xlsx" }.Contains(ext))
             {
-                throw new BadRequestException(FileErrorCode.InvalidFileExtension);
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension,"Hệ thống chỉ hỗ trợ file *.xlsx");
             }
 
             var reader = new ExcelReader(file.OpenReadStream());
@@ -268,23 +300,29 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
 
             const int quality = 75;
-
-            using (var image = new MagickImage(filePath))
+            if (File.Exists(filePath))
             {
-                image.Resize((int)(image.Width * 500.0 / image.Height), 500);
-                image.Strip();
-                image.Quality = quality;
-                image.Write(GetPhysicalFilePath(largeThumb));
+                using (var image = new MagickImage(filePath))
+                {
+                    image.Resize((int)(image.Width * 500.0 / image.Height), 500);
+                    image.Strip();
+                    image.Quality = quality;
+                    image.Write(GetPhysicalFilePath(largeThumb));
 
-                image.Resize((int)(image.Width * 100.0 / image.Height), 100);
-                image.Strip();
+                    image.Resize((int)(image.Width * 100.0 / image.Height), 100);
+                    image.Strip();
 
-                image.Write(GetPhysicalFilePath(smallThumb));
+                    image.Write(GetPhysicalFilePath(smallThumb));
+                }
+
+                fileInfo.SmallThumb = smallThumb;
+                fileInfo.LargeThumb = largeThumb;
+                await _stockContext.SaveChangesAsync();
             }
-
-            fileInfo.SmallThumb = smallThumb;
-            fileInfo.LargeThumb = largeThumb;
-            _stockContext.SaveChanges();
+            else
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, $"File {fileInfo.FilePath} not found");
+            }
             return true;
 
 
@@ -299,7 +337,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var files = await _stockContext.File.AsNoTracking().Where(f => fileIds.Contains(f.FileId)).ToListAsync();
             foreach (var fileInfo in files)
             {
-                var fileToDownloadInfo = GetFileUrl(fileInfo, thumb, true);
+                var fileToDownloadInfo = GenerateFileDownloadInfo(fileInfo, thumb, true);
                 fileList.Add(fileToDownloadInfo);
             }
             return fileList;
@@ -419,7 +457,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var ext = Path.GetExtension(uploadFile.FileName).ToLower();
 
-            if (!FileExtensionTypes.ContainsKey(ext))
+            if (FileExtensionTypesNotAccepted.ContainsKey(ext))
             {
                 return (FileErrorCode.InvalidFileType, null);
             }
@@ -429,11 +467,11 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             //    return FileErrorCode.InvalidFileExtension;
             //}
 
-            return (GeneralCode.Success, FileExtensionTypes[ext]);
+            return (GeneralCode.Success, FileExtensionTypes.ContainsKey(ext) ? FileExtensionTypes[ext] : EnumFileType.Other);
         }
 
 
-        private FileToDownloadInfo GetFileUrl(FileEnity fileInfo, EnumThumbnailSize? thumb, bool isGetOriginFile)
+        private FileToDownloadInfo GenerateFileDownloadInfo(FileEnity fileInfo, EnumThumbnailSize? thumb, bool isGetOriginFile)
         {
             var thumbPath = "";
             if (!string.IsNullOrWhiteSpace(fileInfo.SmallThumb))
@@ -456,8 +494,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
             }
 
-            var fileUrl = isGetOriginFile ? GetFileUrl(fileInfo.FileId, fileInfo.FilePath, fileInfo.ContentType) : null;
-            var thumbUrl = string.IsNullOrWhiteSpace(thumbPath) ? null : GetFileUrl(fileInfo.FileId, thumbPath, "image/jpeg");
+            var fileUrl = isGetOriginFile ? GenerateFileUrl(fileInfo.FileId, fileInfo.FilePath, fileInfo.ContentType) : null;
+            var thumbUrl = string.IsNullOrWhiteSpace(thumbPath) ? null : GenerateFileUrl(fileInfo.FileId, thumbPath, "image/jpeg");
             return new FileToDownloadInfo()
             {
                 FileId = fileInfo.FileId,
@@ -468,9 +506,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             };
         }
 
-        private string GetFileUrl(long fileId, string filePath, string contentType)
+        private string GenerateFileUrl(long fileId, string filePath, string contentType)
         {
-            var fileName = Path.GetFileName(filePath);
+            var fileName = Path.GetFileName(filePath).Replace('?', ' ').Replace('#', ' ').Replace(" ", "");
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
             return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + $"/filestorage/view/{fileName}?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }

@@ -9,11 +9,14 @@ namespace VErp.Commons.GlobalObject
 {
     public interface IMapFrom<T>
     {
-        void Mapping(Profile profile) => profile.CreateMap(typeof(T), GetType()).ReverseMap();
+       void Mapping(Profile profile) => profile.CreateMap(typeof(T), GetType()).ReverseMap();
+    }
+    public interface ICustomMapping
+    {
+        void Mapping(Profile profile);
     }
 
- 
-    public class MappingProfile: Profile
+    public class MappingProfile : Profile
     {
 
     }
@@ -33,6 +36,20 @@ namespace VErp.Commons.GlobalObject
 
                 var methodInfo = type.GetMethod("Mapping")
                     ?? type.GetInterface("IMapFrom`1").GetMethod("Mapping");
+
+                methodInfo?.Invoke(instance, new object[] { profile });
+
+            }
+
+            var customs = assembly.GetExportedTypes()
+               .Where(t => t.GetInterfaces().Any(i => i == typeof(ICustomMapping)))
+               .ToList();
+
+            foreach (var type in customs)
+            {
+                var instance = Activator.CreateInstance(type);
+
+                var methodInfo = type.GetMethod("Mapping");
 
                 methodInfo?.Invoke(instance, new object[] { profile });
 

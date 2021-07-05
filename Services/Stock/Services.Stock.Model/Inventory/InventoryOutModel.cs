@@ -4,15 +4,11 @@ using System.Text;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
-    public class InventoryOutModel
-    {       
-        public int StockId { get; set; }
-     
-        public string InventoryCode { get; set; }
-        
+    public class InventoryOutModel : InventoryModelBase
+    {
         public string Shipper { get; set; }
         public string Content { get; set; }
-        public long Date { get; set; }
+
         public int? CustomerId { get; set; }
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
@@ -28,11 +24,12 @@ namespace VErp.Services.Stock.Model.Inventory
         public IList<long> FileIdList { set; get; }
 
         public IList<InventoryOutProductModel> OutProducts { set; get; }
+        public string AccountancyAccountNumber { get; set; }
     }
 
     public class InventoryOutProductModel
     {
-        public int ProductId { get; set; }        
+        public int ProductId { get; set; }
 
         //public bool? IsFreeStyle { set; get; }
         public decimal? RequestPrimaryQuantity { get; set; }
@@ -43,7 +40,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public decimal? RequestProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionPrice { get; set; }
-        
+
 
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
@@ -61,5 +58,9 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public int SortOrder { get; set; }
         public string Description { get; set; }
+        public string AccountancyAccountNumberDu { get; set; }
+        public string InventoryRequirementCode { set; get; }
+
+        public int? DepartmentId { get; set; }
     }
 }

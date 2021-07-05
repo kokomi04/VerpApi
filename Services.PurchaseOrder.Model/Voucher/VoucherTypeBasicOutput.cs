@@ -30,6 +30,8 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string Title { get; set; }
         public string InputAreaCode { get; set; }
         public bool IsMultiRow { get; set; }
+        public int Columns { get; set; }
+        public string ColumnStyles { get; set; }
         public IList<VoucherAreaFieldBasicOutput> Fields { get; set; }
         public void Mapping(Profile profile)
         {
@@ -52,5 +54,9 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public bool IsRequire { get; set; }
+        public int? decimalPlace { get; set; }
+
+        public string ReferenceUrlExec { get; set; }
     }
 }

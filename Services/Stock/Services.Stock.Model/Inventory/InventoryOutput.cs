@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Model.Stock;
@@ -23,6 +24,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public long Date { get; set; }
 
         public int? CustomerId { get; set; }
+        //public int? DepartmentId { get; set; }
+
         public string Department { get; set; }
         public int? StockKeeperUserId { get; set; }
 
@@ -48,6 +51,8 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public bool IsApproved { set; get; }
 
+        public string AccountancyAccountNumber { get; set; }
+
         public StockOutput StockOutput { get; set; }
         public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
 
@@ -62,5 +67,6 @@ namespace VErp.Services.Stock.Model.Inventory
         public int InputTypeId { get; set; }
         public string SourceId { get; set; }
         public long InputBillFId { get; set; }
+        public EnumObjectType BillObjectTypeId { get; set; }
     }
 }

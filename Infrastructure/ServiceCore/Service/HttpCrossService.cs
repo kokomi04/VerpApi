@@ -1,9 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
@@ -20,7 +24,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         Task<T> Post<T>(string relativeUrl, object postData);
         Task<T> Put<T>(string relativeUrl, object postData);
         Task<T> Detete<T>(string relativeUrl, object postData);
-        Task<T> Get<T>(string relativeUrl);
+        Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null);
+        Task<T> Get<T>(string relativeUrl, object queries);
     }
 
     public class HttpCrossService : IHttpCrossService
@@ -145,11 +150,34 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public async Task<T> Get<T>(string relativeUrl)
+        public async Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null)
         {
             try
             {
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+                var queryData = new Dictionary<string, string>();
+                if (queries != null && queries.Count > 0)
+                {
+                    foreach (var (k, v) in queries)
+                    {
+                        if (!v.IsNullObject())
+                        {
+                            if (v.GetType().IsEnum)
+                            {
+                                queryData.Add(k, ((int)v).ToString());
+                            }
+                            else
+                            {
+                                if (v != null)
+                                    queryData.Add(k, v.ToString());
+                            }
+                        }
+                    }
+                }
+                if (queryData.Count > 0)
+                {
+                    uri = QueryHelpers.AddQueryString(uri, queryData);
+                }
 
                 var request = new HttpRequestMessage
                 {
@@ -174,6 +202,20 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 _logger.LogError(ex, "HttpCrossService:Get");
                 throw;
             }
+        }
+
+        public async Task<T> Get<T>(string relativeUrl, object queries)
+        {
+            var dicQueries = new Dictionary<string, object>();
+            if (!queries.IsNullObject())
+            {
+                var props = queries.GetType().GetProperties();
+                foreach (var prop in props)
+                {
+                    dicQueries.Add(prop.Name, prop.GetValue(queries));
+                }
+            }
+            return await Get<T>(relativeUrl, dicQueries);
         }
 
         private void SetContextHeaders(HttpRequestMessage request)
@@ -215,6 +257,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             throw new Exception($"{(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {response}");
         }
+
 
 
     }

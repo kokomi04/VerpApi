@@ -41,14 +41,7 @@ namespace VErpApi.Controllers.Report
             return await _reportConfigService
                 .ReportTypeGroupCreate(model)
                 .ConfigureAwait(true);
-        }
-
-        [HttpPost]
-        [Route("DecryptExtraFilter")]
-        public CipherFilterModel DecryptExtraFilter([FromBody] CipherFilterModel cipherFilter)
-        {
-            return _reportConfigService.DecryptExtraFilter(cipherFilter);
-        }
+        }     
 
         [HttpPut]
         [Route("Groups/{reportTypeGroupId}")]
@@ -70,10 +63,10 @@ namespace VErpApi.Controllers.Report
 
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ReportTypeListModel>> GetReportTypes([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? reportTypeGroupId = null)
+        public async Task<PageData<ReportTypeListModel>> GetReportTypes([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? moduleTypeId = null)
         {
             return await _reportConfigService
-                .ReportTypes(keyword, page, size, reportTypeGroupId)
+                .ReportTypes(keyword, page, size, moduleTypeId)
                 .ConfigureAwait(true);
         }
 

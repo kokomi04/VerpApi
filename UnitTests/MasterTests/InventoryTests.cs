@@ -335,6 +335,7 @@ namespace MasterTests
                 Content = "",
                 Date = date.GetUnix(),
                 CustomerId = null,
+                //DepartmentId = null,
                 Department = "",
                 StockKeeperUserId = null,
 

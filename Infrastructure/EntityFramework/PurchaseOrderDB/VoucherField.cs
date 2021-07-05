@@ -29,6 +29,16 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string Structure { get; set; }
+        public bool IsReadOnly { get; set; }
+        public string OnFocus { get; set; }
+        public string OnKeydown { get; set; }
+        public string OnKeypress { get; set; }
+        public string OnBlur { get; set; }
+        public string OnChange { get; set; }
+        public string OnClick { get; set; }
+        public string ReferenceUrl { get; set; }
+        public bool? IsImage { get; set; }
 
         public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
     }

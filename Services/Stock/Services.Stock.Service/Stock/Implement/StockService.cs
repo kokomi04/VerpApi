@@ -23,6 +23,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -30,14 +31,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     {
         private readonly StockDBContext _stockContext;
         private readonly IActivityLogService _activityLogService;
-
+        private readonly IRoleHelperService _roleHelperService;
+        private readonly ICurrentContextService _currentContextService;
         public StockService(
             StockDBSubsidiaryContext stockContext
             , IActivityLogService activityLogService
+            , IRoleHelperService roleHelperService
+            , ICurrentContextService currentContextService
             )
         {
             _stockContext = stockContext;
             _activityLogService = activityLogService;
+            _roleHelperService = roleHelperService;
+            _currentContextService = currentContextService;
         }
 
 
@@ -72,6 +78,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                     await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", req.JsonSerialize());
+
+                    await _roleHelperService.GrantDataForAllRoles(EnumObjectType.Stock, stockInfo.StockId);
 
                     return stockInfo.StockId;
                 }
@@ -188,18 +196,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var query = from p in _stockContext.Stock
                         select p;
 
-
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query
                         where q.StockName.Contains(keyword)
                         select q;
             }
-            
+
             query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstData = size > 0 ? await query.Skip((page - 1) * size).Take(size).ToListAsync() : await query.ToListAsync();
 
             var pagedData = new List<StockOutput>();
             foreach (var item in lstData)
@@ -221,7 +228,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         #endregion
 
-      
+
 
 
         public async Task<PageData<StockOutput>> GetListByUserId(int userId, string keyword, int page, int size)

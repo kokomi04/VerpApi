@@ -2,9 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Model.Product;
@@ -14,76 +22,73 @@ using VErp.Services.Stock.Service.Products;
 namespace VErpApi.Controllers.Stock.Products
 {
     [Route("api/productBom")]
-    public class ProductBomController: VErpBaseController
+    public class ProductBomController : VErpBaseController
     {
         private readonly IProductBomService _productBomService;
-        public ProductBomController(IProductBomService productBomService
-            )
+        public ProductBomController(IProductBomService productBomService)
         {
             _productBomService = productBomService;
         }
 
-        /// <summary>
-        /// Lấy thông tin 1 bom theo mã
-        /// </summary>
-        /// <param name="productBomId">Id của 1 bom</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("")]
-        public async Task<ProductBomOutput> Get([FromQuery] int productBomId)
-        {
-            return await _productBomService.Get(productBomId);
-        }
-
-        /// <summary>
-        /// Lấy danh sách (toàn bộ) vật tư và chi tiết cấu thành (Bom) của sản phẩm theo ProductId
-        /// </summary>
-        /// <param name="productId">Mã Id SPVTHH</param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("GetAll")]
-        public async Task<PageData<ProductBomOutput>> GetAll([FromQuery] int productId)
-        {
-            return await _productBomService.GetAll(productId);
-        }
-
-        /// <summary>
-        /// Thêm mới thông tin vào ProductBom
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
         [HttpPost]
-        [Route("")]
-        public async Task<long> Add([FromBody] ProductBomInput model)
+        [Route("ByProductIds")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IDictionary<int, IList<ProductBomOutput>>> ByProductIds([FromBody] IList<int> productIds)
         {
-            return await _productBomService.Add(model);
+            return await _productBomService.GetBoms(productIds);
         }
 
-        /// <summary>
-        /// Cập nhật thông tin 
-        /// </summary>
-        /// <param name="productBomId">Id của productBom</param>
-        /// <param name="model">input productBom model </param>
-        /// <returns></returns>
+
+        [HttpGet]
+        [Route("{productId}")]
+        public async Task<IList<ProductBomOutput>> GetBOM([FromRoute] int productId)
+        {
+            return await _productBomService.GetBom(productId);
+        }
+
+        [HttpPost]
+        [Route("products")]
+        public async Task<IList<ProductElementModel>> GetElements([FromBody] int[] productIds)
+        {
+            return await _productBomService.GetProductElements(productIds);
+        }
+
         [HttpPut]
-        [Route("")]
-        public async Task<bool> Update([FromQuery] long productBomId ,[FromBody] ProductBomInput model)
+        [Route("{productId}")]
+        public async Task<bool> Update([FromRoute] int productId, [FromBody] ProductBomModel model)
         {
-            return await _productBomService.Update(productBomId, model);
+            if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials, model.IsCleanOldMaterial);
         }
 
-        /// <summary>
-        /// Xoá thông tin productBom của sản phẩm
-        /// </summary>
-        /// <param name="productBomId">Id của bom</param>
-        /// <param name="rootProductId">Id của sản phẩm có chứa bom đó</param>
-        /// <returns></returns>
-        [HttpDelete]
-        [Route("")]
-        public async Task<bool> Delete([FromQuery] long productBomId,[FromQuery] int rootProductId)
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("exports")]
+        public async Task<IActionResult> Export([FromBody] IList<int> productIds)
         {
-            return await _productBomService.Delete(productBomId, rootProductId);
+            if (productIds == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            var (stream, fileName, contentType) = await _productBomService.ExportBom(productIds);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            return _productBomService.GetCustomerFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
+            return await _productBomService.ImportBomFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
     }
 }

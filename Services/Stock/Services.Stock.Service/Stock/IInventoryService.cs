@@ -6,6 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 
@@ -19,18 +20,22 @@ namespace VErp.Services.Stock.Service.Stock
         /// <summary>
         /// Lấy danh sách phiếu nhập / xuất kho
         /// </summary>
-        /// <param name="keyword">Tìm kiếm trong Mã phiếu, mã SP, tên SP, tên người gủi/nhận, tên Obj liên quan RefObjectCode</param>
-        /// <param name="stockId">Id kho</param>
+        /// <param name="keyword"></param>
+        /// <param name="customerId"></param>
+        /// <param name="accountancyAccountNumber"></param>
+        /// <param name="stockId"></param>
         /// <param name="isApproved"></param>
-        /// <param name="type">Loại typeId: 1 nhập ; 2 : xuất kho theo MasterEnum.EnumInventory</param>
+        /// <param name="type"></param>
         /// <param name="beginTime"></param>
         /// <param name="endTime"></param>
+        /// <param name="isExistedInputBill"></param>
+        /// <param name="mappingFunctionKeys"></param>
         /// <param name="sortBy"></param>
         /// <param name="asc"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
 
 
         /// <summary>
@@ -128,6 +133,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20);
 
+
         /// <summary>
         /// Lấy danh sách kiện để xuất kho
         /// </summary>
@@ -138,8 +144,18 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);
 
+
+        Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> stockIds, int page = 1, int size = 20);
+
+
         Task<IList<CensoredInventoryInputProducts>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req);
 
         Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
+
+
+        CategoryNameModel FieldsForParse(EnumInventoryType inventoryTypeId);
+
+        IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId);
+
     }
 }

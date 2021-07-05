@@ -24,11 +24,11 @@ namespace VErpApi.Controllers.System.Internal
         }
 
         [HttpPost]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<DepartmentModel>> Get([FromQuery] string keyword, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
+        public async Task<PageData<DepartmentModel>> Get([FromQuery] string keyword, [FromQuery] IList<int> departmentIds, [FromQuery] bool? isProduction, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
         {
-            return await _departmentService.GetList(keyword, isActived, page, size, filters);
+            return await _departmentService.GetList(keyword, departmentIds, isProduction, isActived, page, size, filters);
         }
 
         [HttpGet]
@@ -36,6 +36,14 @@ namespace VErpApi.Controllers.System.Internal
         public async Task<DepartmentModel> GetDepartmentInfo([FromRoute] int departmentId)
         {
             return await _departmentService.GetDepartmentInfo(departmentId);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByIds")]
+        public async Task<IList<DepartmentModel>> GetByIds([FromBody] IList<int> departmentIds)
+        {
+            return await _departmentService.GetListByIds(departmentIds);
         }
     }
 }

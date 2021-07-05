@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
     {
         public InputType()
         {
+            InputAction = new HashSet<InputAction>();
             InputArea = new HashSet<InputArea>();
             InputAreaField = new HashSet<InputAreaField>();
             InputBill = new HashSet<InputBill>();
@@ -30,8 +31,11 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
+        public string AfterUpdateRowsJsAction { get; set; }
+        public bool IsOpenning { get; set; }
 
         public virtual InputTypeGroup InputTypeGroup { get; set; }
+        public virtual ICollection<InputAction> InputAction { get; set; }
         public virtual ICollection<InputArea> InputArea { get; set; }
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
         public virtual ICollection<InputBill> InputBill { get; set; }

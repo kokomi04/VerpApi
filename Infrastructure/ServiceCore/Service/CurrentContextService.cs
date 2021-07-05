@@ -16,6 +16,9 @@ using Microsoft.Extensions.Primitives;
 using VErp.Commons.Constants;
 using System.Security.Claims;
 using System.Security.Principal;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.EF.OrganizationDB;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -55,12 +58,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly UnAuthorizeMasterDBContext _masterDBContext;
+        private readonly Func<UnAuthorizeMasterDBContext> _masterDBContext;
+        private readonly Func<UnAuthorizeOrganizationContext> _organizationDBContext;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         private int _userId = 0;
         private string _userName = "";
         private int _subsidiaryId = 0;
-        private EnumAction? _action;
+        private EnumActionType? _action;
         private int? _timeZoneOffset = null;
         private IList<int> _stockIds;
         //private IList<int> _roleIds;
@@ -70,21 +75,26 @@ namespace VErp.Infrastructure.ServiceCore.Service
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
             , IHttpContextAccessor httpContextAccessor
-            , UnAuthorizeMasterDBContext masterDBContext
+            , Func<UnAuthorizeMasterDBContext> masterDBContext
+            , Func<UnAuthorizeOrganizationContext> organizationDBContext
+           , IServiceScopeFactory serviceScopeFactory
             )
         {
             _appSetting = appSetting.Value;
             _logger = logger;
             _httpContextAccessor = httpContextAccessor;
             _masterDBContext = masterDBContext;
-
+            _organizationDBContext = organizationDBContext;
+            _serviceScopeFactory = serviceScopeFactory;
             CrossServiceLogin();
         }
 
 
         private void CrossServiceLogin()
         {
-            var httpContext = _httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor?.HttpContext;
+            if (httpContext == null) return;
+
             var headers = httpContext.Request.Headers;
             headers.TryGetValue(Headers.CrossServiceKey, out var crossServiceKeys);
             if (crossServiceKeys.ToString() != _appSetting?.Configuration?.InternalCrossServiceKey)
@@ -93,8 +103,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
 
             var userId = 0;
-            var action = EnumAction.View;
-            var subsidiaryId = 0;
+            var action = EnumActionType.View;
+          
             if (headers.TryGetValue(Headers.UserId, out var strUserId))
             {
                 userId = int.Parse(strUserId);
@@ -102,20 +112,21 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             if (headers.TryGetValue(Headers.Action, out var strAction))
             {
-                action = (EnumAction)int.Parse(strAction);
+                action = (EnumActionType)int.Parse(strAction);
             }
 
             if (headers.TryGetValue(Headers.SubsidiaryId, out var strSubsidiaryId))
             {
-                subsidiaryId = int.Parse(strSubsidiaryId);
+                _subsidiaryId = int.Parse(strSubsidiaryId);
             }
 
 
             if (userId > 0)
             {
+                _userId = userId;
                 var claims = new List<Claim>() {
                     new Claim(UserClaimConstants.UserId, userId + ""),
-                    new Claim(UserClaimConstants.SubsidiaryId, subsidiaryId + "")
+                    new Claim(UserClaimConstants.SubsidiaryId, _subsidiaryId + "")
                 };
 
                 var user = new GenericPrincipal(new ClaimsIdentity(claims), null);
@@ -154,7 +165,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 if (!string.IsNullOrEmpty(_userName)) return _userName;
 
-                var userInfo = _masterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
+                var userInfo = _masterDBContext().User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
                 if (userInfo != null)
                 {
                     _userName = userInfo.UserName;
@@ -198,7 +209,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return timeZoneOffset;
             }
         }
-        public EnumAction Action
+        public EnumActionType Action
         {
             get
             {
@@ -212,7 +223,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 if (_httpContextAccessor.HttpContext.Items.ContainsKey(HttpContextActionConstants.Action))
                 {
 
-                    _action = (EnumAction)_httpContextAccessor.HttpContext.Items[HttpContextActionConstants.Action];
+                    _action = (EnumActionType)_httpContextAccessor.HttpContext.Items[HttpContextActionConstants.Action];
                 }
                 else
                 {
@@ -236,9 +247,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     return null;
                 }
 
-                var userInfo = _masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
+                var masterDBContext = _masterDBContext();
+
+                var userInfo = masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
                 var roleInfo = (
-                    from r in _masterDBContext.Role
+                    from r in masterDBContext.Role
                     where r.RoleId == userInfo.RoleId
                     select new
                     {
@@ -258,7 +271,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     roleInfo.IsModulePermissionInherit,
                     roleInfo.RoleName
                 );
-
 
                 return _roleInfo;
             }
@@ -285,12 +297,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     roleIds.AddRange(roleInfo.ChildrenRoleIds);
                 }
 
-                _stockIds = _masterDBContext.RoleDataPermission
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
+
+                    _stockIds = masterDBContext.RoleDataPermission
                     .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && roleIds.Contains(d.RoleId))
                     .Select(d => d.ObjectId)
                     .ToList()
                     .Select(d => (int)d)
                     .ToArray();
+                }
 
                 return _stockIds;
             }
@@ -300,7 +317,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             get
             {
-                return _appSetting.Developer?.IsDeveloper(UserName, RoleInfo.RoleName) == true;
+
+                var subdiaryInfo = _organizationDBContext().Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
+
+                if (subdiaryInfo == null) return false;
+
+                return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
             }
         }
     }
@@ -320,7 +342,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumAction action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
+        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
@@ -337,7 +359,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public int UserId { get; } = 0;
         public int SubsidiaryId { get; private set; } = 0;
-        public EnumAction Action { get; }
+        public EnumActionType Action { get; }
         public IList<int> StockIds { get; }
         public RoleInfo RoleInfo { get; }
         public int? TimeZoneOffset { get; }

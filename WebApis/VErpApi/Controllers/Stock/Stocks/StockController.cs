@@ -179,6 +179,13 @@ namespace VErpApi.Controllers.Stock.Stocks
             return await _stockProductService.StockProductPackageDetails(stockId, productId, page, size);
         }
 
+        [HttpPost]
+        [Route("RemainStock")]
+        public async Task<Dictionary<int, RemainStock[]>> GetRemainStockByProducts([FromBody] int[] productIds)
+        {
+            return await _stockProductService.GetRemainStockByProducts(productIds);
+        }
+
         /// <summary>
         /// Lấy danh sách kiện theo vị trí trong kho
         /// </summary>
@@ -262,10 +269,10 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <param name="size"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("StockSumaryReportForm03")]
-        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportForm03([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
+        [Route("StockSumaryReportProductUnitConversionQuantity")]
+        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockProductService.StockSumaryReportForm03(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
+            return await _stockProductService.StockSumaryReportProductUnitConversionQuantity(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }
 
         /// <summary>

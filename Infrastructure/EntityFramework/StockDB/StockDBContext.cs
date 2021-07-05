@@ -22,18 +22,28 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<InventoryDetailChange> InventoryDetailChange { get; set; }
         public virtual DbSet<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
         public virtual DbSet<InventoryFile> InventoryFile { get; set; }
+        public virtual DbSet<InventoryRequirement> InventoryRequirement { get; set; }
+        public virtual DbSet<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
+        public virtual DbSet<InventoryRequirementFile> InventoryRequirementFile { get; set; }
         public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Package> Package { get; set; }
         public virtual DbSet<PackageOperation> PackageOperation { get; set; }
         public virtual DbSet<PackageRef> PackageRef { get; set; }
         public virtual DbSet<Product> Product { get; set; }
+        public virtual DbSet<ProductAttachment> ProductAttachment { get; set; }
         public virtual DbSet<ProductBom> ProductBom { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
+        public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
+        public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
+        public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
+        public virtual DbSet<ProductMaterialsConsumptionGroup> ProductMaterialsConsumptionGroup { get; set; }
         public virtual DbSet<ProductStockInfo> ProductStockInfo { get; set; }
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
+        public virtual DbSet<RefCustomerBasic> RefCustomerBasic { get; set; }
+        public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
         public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
@@ -63,6 +73,13 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Inventory>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryCode })
+                    .HasName("IX_Inventory_InventoryCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
+
                 entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);
@@ -106,9 +123,21 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
+                entity.HasIndex(e => new { e.InventoryId, e.ProductId, e.PrimaryQuantity, e.ProductUnitConversionId, e.IsDeleted })
+                    .HasName("IDX_InventoryDetail_Product");
+
+                entity.HasIndex(e => new { e.ProductId, e.RefObjectCode, e.OrderCode, e.Pocode, e.ProductionOrderCode, e.InventoryId, e.IsDeleted, e.SubsidiaryId })
+                    .HasName("IDX_InventoryDetail_Search");
+
+                entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
+
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
+
+                entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
 
                 entity.Property(e => e.OrderCode)
                     .HasMaxLength(64)
@@ -147,6 +176,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.HasOne(d => d.FromPackage)
                     .WithMany(p => p.InventoryDetailFromPackage)
                     .HasForeignKey(d => d.FromPackageId)
@@ -183,14 +214,28 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.InventoryDetailId).ValueGeneratedNever();
 
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.OldPrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.OldPuConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<InventoryDetailToPackage>(entity =>
             {
                 entity.HasKey(e => new { e.InventoryDetailId, e.ToPackageId });
+
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.InventoryDetail)
                     .WithMany(p => p.InventoryDetailToPackage)
@@ -210,8 +255,106 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasKey(e => new { e.InventoryId, e.FileId });
             });
 
+            modelBuilder.Entity<InventoryRequirement>(entity =>
+            {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryTypeId, e.InventoryRequirementCode })
+                    .HasName("IX_InventoryRequirement_InventoryRequirementCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.BillCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.BillForm).HasMaxLength(128);
+
+                entity.Property(e => e.BillSerial)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CensorStatus).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.Content).HasMaxLength(512);
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.InventoryRequirementCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ModuleTypeId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.Shipper).HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<InventoryRequirementDetail>(entity =>
+            {
+                entity.Property(e => e.OrderCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.OutsourceStepRequestCode).HasMaxLength(64);
+
+                entity.Property(e => e.Pocode)
+                    .HasColumnName("POCode")
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.UnitPrice)
+                    .HasColumnType("decimal(18, 4)")
+                    .HasDefaultValueSql("((0))");
+
+                entity.HasOne(d => d.AssignStock)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.AssignStockId)
+                    .HasConstraintName("FK_InventoryRequirementDetail_Stock");
+
+                entity.HasOne(d => d.InventoryRequirement)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.InventoryRequirementId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryRequirementDetail_InventoryRequirement");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryRequirementDetail_Product");
+
+                entity.HasOne(d => d.ProductUnitConversion)
+                    .WithMany(p => p.InventoryRequirementDetail)
+                    .HasForeignKey(d => d.ProductUnitConversionId)
+                    .HasConstraintName("FK_InventoryRequirementDetail_ProductUnitConversion");
+            });
+
+            modelBuilder.Entity<InventoryRequirementFile>(entity =>
+            {
+                entity.HasKey(e => new { e.InventoryRequirementId, e.FileId })
+                    .HasName("PK_InventoryFile_copy1");
+
+                entity.HasOne(d => d.InventoryRequirement)
+                    .WithMany(p => p.InventoryRequirementFile)
+                    .HasForeignKey(d => d.InventoryRequirementId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryRequirementFile_InventoryRequirement");
+            });
+
             modelBuilder.Entity<Location>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Description)
@@ -224,16 +367,22 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Status).HasDefaultValueSql("((0))");
 
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<Package>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.OrderCode).HasMaxLength(64);
 
                 entity.Property(e => e.PackageCode)
                     .IsRequired()
@@ -242,6 +391,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.Pocode)
+                    .HasColumnName("POCode")
+                    .HasMaxLength(64)
+                    .HasComment("Purchasing Order Code");
+
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(32, 16)");
@@ -249,6 +403,10 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(64);
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -274,9 +432,17 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.HasKey(e => new { e.PackageId, e.RefPackageId });
 
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.Package)
                     .WithMany(p => p.PackageRefPackage)
@@ -301,7 +467,18 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasIndex(e => e.ProductCode)
                     .HasName("idx_Product_ProductCode");
 
+                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductCode })
+                    .HasName("IX_Product_ProductCode_Unique")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Barcode).HasMaxLength(128);
+
+                entity.Property(e => e.Coefficient)
+                    .HasDefaultValueSql("((1))")
+                    .HasComment("Cơ số sản phẩm");
+
+                entity.Property(e => e.Color).HasMaxLength(128);
 
                 entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
 
@@ -339,6 +516,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.ProductStatusId).HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
 
                 entity.HasOne(d => d.ProductCate)
@@ -353,21 +532,36 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_Product_ProductType");
             });
 
+            modelBuilder.Entity<ProductAttachment>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Title).HasMaxLength(1024);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductAttachment)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__ProductBo__Produ__60D24498");
+            });
+
             modelBuilder.Entity<ProductBom>(entity =>
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Wastage).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Wastage).HasColumnType("decimal(32, 16)");
 
-                entity.HasOne(d => d.ParentProduct)
-                    .WithMany(p => p.ProductBomParentProduct)
-                    .HasForeignKey(d => d.ParentProductId)
+                entity.HasOne(d => d.ChildProduct)
+                    .WithMany(p => p.ProductBomChildProduct)
+                    .HasForeignKey(d => d.ChildProductId)
                     .HasConstraintName("FK_BillOfMaterial_Product_ParentProductId");
 
                 entity.HasOne(d => d.Product)
@@ -379,14 +573,29 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductCate>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.ProductCateName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
                 entity.HasOne(d => d.ParentProductCate)
                     .WithMany(p => p.InverseParentProductCate)
                     .HasForeignKey(d => d.ParentProductCateId)
                     .HasConstraintName("FK_ProductCate_ProductCate");
+            });
+
+            modelBuilder.Entity<ProductCustomer>(entity =>
+            {
+                entity.Property(e => e.CustomerProductCode).HasMaxLength(128);
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductCustomer)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductCustomer_Product");
             });
 
             modelBuilder.Entity<ProductExtraInfo>(entity =>
@@ -402,8 +611,49 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.Product)
                     .WithOne(p => p.ProductExtraInfo)
                     .HasForeignKey<ProductExtraInfo>(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductExtraInfo_Product");
+            });
+
+            modelBuilder.Entity<ProductMaterial>(entity =>
+            {
+                entity.HasIndex(e => e.RootProductId)
+                    .HasName("IDX_RootProductId");
+
+                entity.Property(e => e.PathProductIds).IsRequired();
+            });
+
+            modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.MaterialsConsumption)
+                    .WithMany(p => p.ProductMaterialsConsumptionMaterialsConsumption)
+                    .HasForeignKey(d => d.MaterialsConsumptionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterialsConsumption_Product1");
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductMaterialsConsumptionProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterialsConsumption_Product");
+
+                entity.HasOne(d => d.ProductMaterialsConsumptionGroup)
+                    .WithMany(p => p.ProductMaterialsConsumption)
+                    .HasForeignKey(d => d.ProductMaterialsConsumptionGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterialsConsumption_ProductMaterialsConsumptionGroup");
+            });
+
+            modelBuilder.Entity<ProductMaterialsConsumptionGroup>(entity =>
+            {
+                entity.Property(e => e.ProductMaterialsConsumptionGroupCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
@@ -417,7 +667,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.Product)
                     .WithOne(p => p.ProductStockInfo)
                     .HasForeignKey<ProductStockInfo>(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductStockInfo_Product");
             });
 
@@ -452,6 +701,8 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.Property(e => e.ConversionDescription).HasMaxLength(512);
 
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
+
                 entity.Property(e => e.FactorExpression)
                     .IsRequired()
                     .HasMaxLength(256);
@@ -465,12 +716,41 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductUnitConversion)
                     .HasForeignKey(d => d.ProductId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductUnitConversion_Product");
+            });
+
+            modelBuilder.Entity<RefCustomerBasic>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefCustomerBasic");
+
+                entity.Property(e => e.CustomerCode).HasMaxLength(128);
+
+                entity.Property(e => e.CustomerId).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.CustomerName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<RefInputBillBasic>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefInputBillBasic");
+
+                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.SoCt)
+                    .HasColumnName("so_ct")
+                    .HasMaxLength(512);
             });
 
             modelBuilder.Entity<Stock>(entity =>
             {
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.Status).HasDefaultValueSql("((0))");
@@ -482,6 +762,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.Type).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
             });
 
             modelBuilder.Entity<StockProduct>(entity =>
@@ -490,6 +772,10 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasName("idx_StockProduct_StockId_ProductId_ProductUnitConversionId")
                     .IsUnique();
 
+                entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(32, 16)");
@@ -497,6 +783,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });

@@ -16,7 +16,7 @@ namespace VErp.Services.Stock.Model.Stock
         
         public string ProductName { get; set; }
 
-        public string Specifications { set; get; }
+        public string Specification { set; get; }
 
         public int PrimaryUnitId { set; get; }
 
@@ -29,6 +29,8 @@ namespace VErp.Services.Stock.Model.Stock
         public decimal TotalPrimaryQuantityRemaining { set; get; }
 
         public List<StockProductQuantity> StockProductQuantityList { set; get; }
+        public long? MainImageFileId { get; set; }
+        public int DecimalPlace { get; set; }
     }
 
     public class StockProductQuantity

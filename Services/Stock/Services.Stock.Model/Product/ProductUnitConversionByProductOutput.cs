@@ -14,5 +14,6 @@ namespace VErp.Services.Stock.Model.Product
         public string ConversionDescription { get; set; }
         public bool? IsFreeStyle { get; set; }
         public bool IsDefault { get; set; }
+        public int DecimalPlace { get; set; }
     }
 }

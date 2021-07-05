@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
 
@@ -9,10 +10,17 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
     public interface IVoucherConfigService
     {
         // Input type
+        Task<IList<VoucherTypeFullModel>> GetAllVoucherTypes();
+
         Task<VoucherTypeFullModel> GetVoucherType(int voucherTypeId);
         Task<VoucherTypeFullModel> GetVoucherType(string inputTypeCode);
 
         Task<PageData<VoucherTypeModel>> GetVoucherTypes(string keyword, int page, int size);
+        Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList();
+
+        Task<VoucherTypeGlobalSettingModel> GetVoucherGlobalSetting();
+        Task<bool> UpdateVoucherGlobalSetting(VoucherTypeGlobalSettingModel data);
+
         Task<int> AddVoucherType(VoucherTypeModel data);
         Task<bool> UpdateVoucherType(int voucherTypeId, VoucherTypeModel data);
         Task<bool> DeleteVoucherType(int voucherTypeId);

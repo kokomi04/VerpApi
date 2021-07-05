@@ -53,7 +53,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             }
             var ur = await _masterContext.User.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId);
 
-            if (ur.UserStatusId != (int) EnumUserStatus.Actived)
+            if (ur.UserStatusId != (int)EnumUserStatus.Actived)
             {
                 var json = new ServiceResult
                 {
@@ -104,7 +104,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var apiEndpointId = Utils.HashApiEndpointId(_appSetting.ServiceId, route, methodId);
 
-            var apiInfo = await _masterContext.ApiEndpoint.FirstOrDefaultAsync(a => a.ApiEndpointId == apiEndpointId);
+            var apiInfo = await _masterContext.ApiEndpoint.AsNoTracking().FirstOrDefaultAsync(a => a.ApiEndpointId == apiEndpointId);
 
             if (apiInfo == null)
             {
@@ -141,13 +141,30 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 roleIds.AddRange(roleInfo.ChildrenRoleIds);
             }
 
-            var lstPermission = (
-                from p in _masterContext.RolePermission
-                where p.ModuleId == moduleId
-                && roleIds.Contains(p.RoleId)
-                select p.Permission
-                )
-                .ToList();
+            var (isValidateObject, objectTypeId, objectId, actionButtonId) = GetValidateObjectData(context);
+
+            if (actionButtonId > 0 && objectTypeId.HasValue && objectId.HasValue)
+            {
+                var actionInfo = await _masterContext.ActionButton.FirstOrDefaultAsync(a => a.ActionButtonId == actionButtonId && a.ObjectTypeId == (int)objectTypeId.Value && a.ObjectId == (int)objectId.Value);
+                if (actionInfo != null)
+                {
+                    apiInfo.ActionId = actionInfo.ActionTypeId ?? 1;
+                }
+            }
+
+
+            IQueryable<RolePermission> query;
+            if (!isValidateObject)
+            {
+                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ModuleId == moduleId);
+            }
+            else
+            {
+                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId);
+            }
+
+            var lstPermission = await query.Select(p => p.Permission).ToListAsync();
+
 
             var permission = 0;
             if (lstPermission.Count > 0)
@@ -168,6 +185,42 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             context.Result = new JsonResult(data);
             context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+        }
+
+
+        private (bool isValidateObject, EnumObjectType? objectTypeId, long? objectId, int actionButtonId) GetValidateObjectData(ActionExecutingContext context)
+        {
+            int actionButtonId = 0;
+
+            var actionButtonAttr = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is ActionButtonDataApiAttribute)?.Filter as ActionButtonDataApiAttribute;
+            if (actionButtonAttr != null)
+            {
+                context.RouteData.Values.TryGetValue(actionButtonAttr.RouterActionButtonIdKey, out var strActionButtonId);
+                int.TryParse(strActionButtonId?.ToString(), out actionButtonId);
+            }
+
+            var method = context.HttpContext.Request.Method;
+            var methodId = Enum.Parse<EnumMethod>(method, true);
+            var action = methodId.GetDefaultAction();
+
+            var actionAttr = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is VErpActionAttribute);
+            if (actionAttr != null)
+            {
+                action = (actionAttr.Filter as VErpActionAttribute).Action;
+            }
+
+            var objectApi = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is ObjectDataApiAttribute)?.Filter as ObjectDataApiAttribute;
+            if (objectApi == null) return (false, null, null, actionButtonId);
+
+
+            if (context.RouteData.Values.ContainsKey(objectApi.RouterDataKey))// && action != EnumAction.View)
+            {
+                long.TryParse(context.RouteData.Values[objectApi.RouterDataKey].ToString(), out var objectId);
+
+                return (true, objectApi.ObjectTypeId, objectId, actionButtonId);
+            }
+
+            return (false, null, null, actionButtonId);
         }
     }
 }

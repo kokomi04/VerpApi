@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -23,18 +24,20 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-
+        private readonly ICurrentContextService _currentContextService;
         public ProductTypeService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductTypeService> logger
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
             )
         {
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<int> AddProductType(ProductTypeInput req)
@@ -65,6 +68,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 ProductTypeName = req.ProductTypeName,
                 IdentityCode = req.IdentityCode ?? "",
                 ParentProductTypeId = req.ParentProductTypeId,
+                IsDefault = req.IsDefault,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
@@ -75,7 +79,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productType);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Thêm mới loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
 
@@ -105,7 +109,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productType);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Xóa loại sản phẩm {productType.ProductTypeName}", productType.JsonSerialize());
 
@@ -120,6 +124,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                     ProductTypeId = c.ProductTypeId,
                     IdentityCode = c.IdentityCode,
                     ParentProductTypeId = c.ParentProductTypeId,
+                    IsDefault = c.IsDefault,
                     ProductTypeName = c.ProductTypeName,
                     SortOrder = c.SortOrder
                 })
@@ -133,7 +138,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productType;
         }
 
-        public async Task<PageData<ProductTypeOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<ProductTypeOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             var query = (from c in _stockContext.ProductType select c);
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -143,6 +148,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                         select c;
             }
 
+            query = query.InternalFilter(filters);
+
             var total = await query.CountAsync();
 
             var lstQuery = query.Select(c => new ProductTypeOutput()
@@ -150,16 +157,19 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 ParentProductTypeId = c.ParentProductTypeId,
                 ProductTypeId = c.ProductTypeId,
                 IdentityCode = c.IdentityCode,
+                IsDefault = c.IsDefault,
                 ProductTypeName = c.ProductTypeName,
                 SortOrder = c.SortOrder
             });
 
+            lstQuery = lstQuery.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder);
 
-            var lst = size > 0
-                ? await lstQuery.OrderBy(t => t.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync()
-                : await lstQuery.ToListAsync();
-
-            return (lst, total);
+            if (size > 0)
+            {
+                lstQuery = lstQuery.Skip((page - 1) * size).Take(size);
+            }
+        
+            return (await lstQuery.ToListAsync(), total);
         }
 
         public async Task<bool> UpdateProductType(int productTypeId, ProductTypeInput req)
@@ -180,13 +190,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             productType.ProductTypeName = req.ProductTypeName;
             productType.IdentityCode = req.IdentityCode;
             productType.ParentProductTypeId = req.ParentProductTypeId;
+            productType.IsDefault = req.IsDefault;
             productType.UpdatedDatetimeUtc = DateTime.UtcNow;
             productType.SortOrder = req.SortOrder;
 
 
             await _stockContext.SaveChangesAsync();
 
-            await UpdateSortOrder();
+            await UpdateSortOrder(productType);
 
             await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Cập nhật loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
 
@@ -203,7 +214,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return GeneralCode.Success;
         }
 
-        private async Task UpdateSortOrder()
+        private async Task UpdateSortOrder(ProductType currentProductType)
         {
             var lst = await _stockContext.ProductType.OrderBy(c => c.SortOrder).ToListAsync();
             var st = new Stack<ProductType>();
@@ -215,6 +226,10 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 if (info != null)
                 {
                     info.SortOrder = ++idx;
+                    if (currentProductType.IsDefault && info.ProductTypeId != currentProductType.ProductTypeId)
+                    {
+                        info.IsDefault = false;
+                    }
                 }
 
                 foreach (var child in lst.Where(c => c.ParentProductTypeId == info?.ProductTypeId).Reverse())

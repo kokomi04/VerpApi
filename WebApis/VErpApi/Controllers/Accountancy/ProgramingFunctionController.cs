@@ -10,6 +10,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Programing;
 using VErp.Services.Accountancy.Service.Programing;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Accountancy
 {
@@ -38,7 +39,7 @@ namespace VErpApi.Controllers.Accountancy
         }
 
         [HttpGet("{programingFunctionId}")]
-        public Task<ProgramingFunctionModel> UpdateFunction([FromRoute] int programingFunctionId)
+        public Task<ProgramingFunctionModel> GetFunctionInfo([FromRoute] int programingFunctionId)
         {
             return _programingFunctionService.GetFunctionInfo(programingFunctionId);
         }
@@ -53,6 +54,12 @@ namespace VErpApi.Controllers.Accountancy
         public Task<bool> DeleteFunction([FromRoute] int programingFunctionId)
         {
             return _programingFunctionService.DeleteFunction(programingFunctionId);
+        }
+
+        [HttpPost("ExecFunction/{programingFunctionName}")]
+        public Task<IList<NonCamelCaseDictionary>> ExecSQLFunction([FromRoute] string programingFunctionName, [FromBody]  NonCamelCaseDictionary<FuncParameter> inputData)
+        {
+            return _programingFunctionService.ExecSQLFunction(programingFunctionName, inputData);
         }
     }
 }

@@ -17,6 +17,7 @@ using VErp.Services.Organization.Model.Department;
 using VErp.Infrastructure.EF.EFExtensions;
 using DepartmentEntity = VErp.Infrastructure.EF.OrganizationDB.Department;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Organization.Service.Department.Implement
 {
@@ -26,20 +27,26 @@ namespace VErp.Services.Organization.Service.Department.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICurrentContextService _currentContextService;
+        private readonly IAsyncRunnerService _asyncRunnerService;
 
         public DepartmentService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<DepartmentService> logger
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
+            , IAsyncRunnerService asyncRunnerService
             )
         {
             _organizationContext = organizationContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
+            _asyncRunnerService = asyncRunnerService;
         }
 
-        public async Task<int> AddDepartment(int updatedUserId, DepartmentModel data)
+        public async Task<int> AddDepartment(DepartmentModel data)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentCode == data.DepartmentCode || d.DepartmentName == data.DepartmentName);
 
@@ -71,21 +78,25 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentId = data.ParentId,
                 Description = data.Description,
                 IsActived = data.IsActived,
+                IsProduction = data.IsProduction,
+                WorkingHoursPerDay = data.WorkingHoursPerDay,
+                ImageFileId = data.ImageFileId,
                 IsDeleted = false,
-                UpdatedTime = DateTime.UtcNow,
-                CreatedTime = DateTime.UtcNow,
-                UpdatedUserId = updatedUserId
             };
 
             await _organizationContext.Department.AddAsync(department);
             await _organizationContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Department, department.DepartmentId, $"Thêm bộ phận {department.DepartmentName}", data.JsonSerialize());
+            if (data.ImageFileId.HasValue)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.FileAssignToObject(data.ImageFileId.Value, EnumObjectType.Department, department.DepartmentId));
+            }
             return department.DepartmentId;
         }
 
 
-        public async Task<bool> DeleteDepartment(int updatedUserId, int departmentId)
+        public async Task<bool> DeleteDepartment(int departmentId)
         {
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
@@ -101,9 +112,12 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 throw new BadRequestException(DepartmentErrorCode.DepartmentChildAlreadyExisted);
             }
             department.IsDeleted = true;
-            department.UpdatedTime = DateTime.UtcNow;
             await _organizationContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.Department, departmentId, $"Xóa bộ phận {department.DepartmentName}", department.JsonSerialize());
+            if (department.ImageFileId.HasValue)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.DeleteFile(department.ImageFileId.Value));
+            }
             return true;
         }
 
@@ -123,16 +137,28 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentId = department.ParentId,
                 ParentName = department.Parent?.DepartmentName ?? null,
                 IsActived = department.IsActived,
+                IsProduction = department.IsProduction,
+                WorkingHoursPerDay = department.WorkingHoursPerDay,
+                ImageFileId = department.ImageFileId
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, bool? isActived, int page, int size, Clause filters = null)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction,  bool? isActived, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
+            if (departmentIds != null && departmentIds.Count > 0)
+            {
+                query = query.Where(d => departmentIds.Contains(d.DepartmentId));
+            }
             if (isActived.HasValue)
             {
                 query = query.Where(d => d.IsActived == isActived);
+            }
+
+            if (isProduction.HasValue)
+            {
+                query = query.Where(d => d.IsProduction == isProduction.Value);
             }
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -147,7 +173,10 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 Description = d.Description,
                 IsActived = d.IsActived,
                 ParentId = d.ParentId,
-                ParentName = d.Parent == null ? null : d.Parent.DepartmentName
+                ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
+                IsProduction = d.IsProduction,
+                WorkingHoursPerDay = d.WorkingHoursPerDay,
+                ImageFileId = d.ImageFileId
             }).ToListAsync();
 
             var total = await query.CountAsync();
@@ -155,12 +184,44 @@ namespace VErp.Services.Organization.Service.Department.Implement
             return (lst, total);
         }
 
-        public async Task<bool> UpdateDepartment(int updatedUserId, int departmentId, DepartmentModel data)
+
+        public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
         {
+            if (departmentIds == null || departmentIds.Count == 0)
+            {
+                return new List<DepartmentModel>();
+            }
+            var query = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).Include(d => d.Parent).AsQueryable();
+
+            var lst = await query.Select(d => new DepartmentModel
+            {
+                DepartmentId = d.DepartmentId,
+                DepartmentCode = d.DepartmentCode,
+                DepartmentName = d.DepartmentName,
+                Description = d.Description,
+                IsActived = d.IsActived,
+                ParentId = d.ParentId,
+                ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
+                IsProduction = d.IsProduction,
+                WorkingHoursPerDay = d.WorkingHoursPerDay,
+                ImageFileId = d.ImageFileId
+            }).ToListAsync();
+
+            return lst;
+        }
+
+
+        public async Task<bool> UpdateDepartment(int departmentId, DepartmentModel data)
+        {
+            long? deleteImageFileId = null;
             var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
             if (department == null)
             {
                 throw new BadRequestException(DepartmentErrorCode.DepartmentNotFound);
+            }
+            if (department.ImageFileId != data.ImageFileId)
+            {
+                deleteImageFileId = department.ImageFileId;
             }
             if (data.ParentId.HasValue && department.ParentId != data.ParentId)
             {
@@ -208,10 +269,22 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.Description = data.Description;
             department.ParentId = data.ParentId;
             department.IsActived = data.IsActived;
-            department.UpdatedTime = DateTime.UtcNow;
-            department.UpdatedUserId = updatedUserId;
+            department.IsProduction = data.IsProduction;
+            department.WorkingHoursPerDay = data.WorkingHoursPerDay;
+            department.ImageFileId = data.ImageFileId;
+
             await _organizationContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.Department, departmentId, $"Cập nhật bộ phận {department.DepartmentName}", data.JsonSerialize());
+
+            if (deleteImageFileId.HasValue)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.DeleteFile(deleteImageFileId.Value));
+            }
+
+            if (data.ImageFileId.HasValue)
+            {
+                _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.FileAssignToObject(data.ImageFileId.Value, EnumObjectType.Department, department.DepartmentId));
+            }
             return true;
         }
     }

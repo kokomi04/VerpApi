@@ -24,40 +24,38 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IDocOpenXmlService
     {
-        Task<(string filePath, string contentType, string fileName)> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext);
-        Task<bool> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo, string jsonString, DbContext dbContext);
+        Task<Stream> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext);
+        Task<string> GenerateWordFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext);
     }
     public class DocOpenXmlService : IDocOpenXmlService
     {
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
+        private readonly ICurrentContextService _currentContextService;
 
-        public DocOpenXmlService(ILogger<DocOpenXmlService> logger, IOptionsSnapshot<AppSetting> appSetting)
+        public DocOpenXmlService(ILogger<DocOpenXmlService> logger, IOptionsSnapshot<AppSetting> appSetting, ICurrentContextService currentContextService)
         {
             _logger = logger;
             _appSetting = appSetting.Value;
+            _currentContextService = currentContextService;
         }
 
-        public async Task<(string filePath, string contentType, string fileName)> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string jsonString, DbContext dbContext)
+        public async Task<Stream> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string data, DbContext dbContext)
         {
-            string file = Path.GetFileNameWithoutExtension(fileInfo.FileName);
+            var fileDocPath =  await GenerateWordFromTemplate(fileInfo, data, dbContext);
+            return await WordOpenXmlTools.ConvertToPdf(fileDocPath, _appSetting.PuppeteerPdf);
+        }
+
+        public async Task<string> GenerateWordFromTemplate(SimpleFileInfo fileTemplate,
+            string jsonData, DbContext dbContext)
+        {
             string outDirectory = GeneratePhysicalFolder();
+            var fileTempatePath = GetPhysicalFilePath(fileTemplate.FilePath);
 
-            var physicalFilePath = GetPhysicalFilePath(fileInfo.FilePath);
+            string fileName = $"{outDirectory}/{fileTemplate.FileName}";
+            JObject jObject = JObject.Parse(jsonData);
 
-            await GenerateWordFromTemplate((fileInfo.FileName, outDirectory, physicalFilePath), jsonString, dbContext);
-
-            WordOpenXmlTools.ConvertToPdf($"{outDirectory}/{fileInfo.FileName}", $"{outDirectory}/{file}.pdf");
-
-            return ($"{outDirectory}/{file}.pdf", "application/pdf", $"{file}.pdf");
-        }
-
-        public async Task<bool> GenerateWordFromTemplate((string file, string outDirectory, string fileTemplate) fileInfo,
-            string jsonString, DbContext dbContext)
-        {
-            JObject jObject = JObject.Parse(jsonString);
-
-            using (var document = WordprocessingDocument.CreateFromTemplate(fileInfo.fileTemplate))
+            using (var document = WordprocessingDocument.CreateFromTemplate(fileTempatePath))
             {
                 var body = document.MainDocumentPart.Document.Body;
 
@@ -97,7 +95,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                                             if (field.StartsWith(RegexDocExpression.StartWithFuntion))
                                             {
                                                 var sqlParam = new SqlParameter("@data", (new[] { data }).JsonSerialize());
-                                                var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
+                                                var timeZone = new SqlParameter("@timeZone", Math.Abs(_currentContextService.TimeZoneOffset.GetValueOrDefault() * 60));
+                                                var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
                                                 rs = tbl.Rows[0][0].ToString();
                                             }
                                             else
@@ -130,8 +129,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         string rs = string.Empty;
                         if (field.StartsWith(RegexDocExpression.StartWithFuntion))
                         {
-                            var sqlParam = new SqlParameter("@data", jsonString);
-                            var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam });
+                            var sqlParam = new SqlParameter("@data", jsonData);
+                            var timeZone = new SqlParameter("@timeZone", Math.Abs(_currentContextService.TimeZoneOffset.GetValueOrDefault() * 60));
+                            var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
                             rs = tbl.Rows[0][0].ToString();
                         }
                         else
@@ -142,10 +142,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 }
                 #endregion
 
-                document.SaveAs($"{fileInfo.outDirectory}/{fileInfo.file}").Close();
+                
+                document.SaveAs(fileName).Close();
                 document.Close();
             }
-            return true;
+            return fileName;
         }
 
         private string GeneratePhysicalFolder()

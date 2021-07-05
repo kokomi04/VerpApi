@@ -16,6 +16,19 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
+using Microsoft.Data.SqlClient;
+using VErp.Infrastructure.EF.EFExtensions;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using System.Data;
+using System.IO;
+using VErp.Commons.Library.Model;
+using VErp.Services.Master.Service.Dictionay;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using VErp.Services.Master.Model.Dictionary;
+using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -25,197 +38,221 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
+        private readonly IMapper _mapper;
+
+        private readonly IUnitService _unitService;
+        private readonly IProductService _productService;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
 
         public ProductBomService(StockDBContext stockContext
-           , IOptions<AppSetting> appSetting
-           , ILogger<ProductBomService> logger
-           , IActivityLogService activityLogService)
+            , IOptions<AppSetting> appSetting
+            , ILogger<ProductBomService> logger
+            , IActivityLogService activityLogService
+            , IMapper mapper
+            , IUnitService unitService
+            , IProductService productService
+            , IManufacturingHelperService manufacturingHelperService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
+            _mapper = mapper;
+            _unitService = unitService;
+            _productService = productService;
+            _manufacturingHelperService = manufacturingHelperService;
         }
 
-        public async Task<ProductBomOutput> Get(long productBomId)
+        public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
         {
-            var entity = await _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefaultAsync(q => q.ProductBomId == productBomId);
-            if (entity != null)
+            if (!_stockDbContext.Product.Any(p => productIds.Contains(p.ProductId))) throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            var parammeters = new SqlParameter[]
             {
-                var productExtraObj = await _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(q => q.ProductId == entity.ProductId);
-                var productCateObj = await _stockDbContext.ProductCate.AsNoTracking().FirstOrDefaultAsync(q => q.ProductCateId == entity.Product.ProductCateId);
-                var billOfMaterialOutputModel = new ProductBomOutput
-                {
-                    ProductBomId = entity.ProductBomId,
-                    Level = entity.Level,
-                    ProductId = entity.ProductId,
-                    ParentProductId = entity.ParentProductId,
-                    ProductCode = entity.Product.ProductCode,
-                    ProductName = entity.Product.ProductName,
-                    ProductCateName = productCateObj.ProductCateName,
-                    ProductSpecification = productExtraObj.Specification,
-                    Quantity = entity.Quantity,
-                    Wastage = entity.Wastage,
-                    Description = entity.Description,
-                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc.GetUnix()
-                };
-                return billOfMaterialOutputModel;
-            }
-            return null;
-        }
-
-        public async Task<PageData<ProductBomOutput>> GetAll(int productId)
-        {
-
-            var BomData = new List<ProductBom>();
-            GetAllBom(productId, BomData);
-            var resultList = new List<ProductBomOutput>(BomData.Count);
-            foreach (var item in BomData)
-            {
-                var entity = await _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefaultAsync(q => q.ProductBomId == item.ProductBomId);
-                var productExtraObj = await _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(q => q.ProductId == entity.ProductId);
-                var productCateObj = await _stockDbContext.ProductCate.AsNoTracking().FirstOrDefaultAsync(q => q.ProductCateId == entity.Product.ProductCateId);
-                var billOfMaterialOutputModel = new ProductBomOutput
-                {
-                    ProductBomId = entity.ProductBomId,
-                    Level = entity.Level,
-                    ProductId = entity.ProductId,
-                    ParentProductId = entity.ParentProductId,
-                    ProductCode = entity.Product.ProductCode,
-                    ProductName = entity.Product.ProductName,
-                    ProductCateName = productCateObj.ProductCateName,
-                    ProductSpecification = productExtraObj.Specification,
-                    Quantity = entity.Quantity,
-                    Wastage = entity.Wastage,
-                    Description = entity.Description,
-                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc.GetUnix()
-                };
-                resultList.Add(billOfMaterialOutputModel);
-            }
-            return (resultList, resultList.Count);
-        }
-        public async Task<PageData<ProductBomOutput>> GetList(int productId, int page = 1, int size = 20)
-        {
-            var bomQuery = _stockDbContext.ProductBom.Where(q => q.RootProductId == productId);
-
-            var totalRecord = bomQuery.Count();
-            var bomDataList = bomQuery.Skip((page - 1) * size).Take(size).AsNoTracking().ToList();
-
-            var resultList = new List<ProductBomOutput>(totalRecord);
-            foreach (var item in bomDataList)
-            {
-                var entity = await _stockDbContext.ProductBom.Include(q => q.Product).Include(q => q.ParentProduct).AsNoTracking().FirstOrDefaultAsync(q => q.ProductBomId == item.ProductBomId);
-                var productExtraObj = await _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(q => q.ProductId == entity.ProductId);
-                var productCateObj = await _stockDbContext.ProductCate.AsNoTracking().FirstOrDefaultAsync(q => q.ProductCateId == entity.Product.ProductCateId);
-                var billOfMaterialOutputModel = new ProductBomOutput
-                {
-                    ProductBomId = entity.ProductBomId,
-                    Level = entity.Level,
-                    ProductId = entity.ProductId,
-                    ParentProductId = entity.ParentProductId,
-                    ProductCode = entity.Product.ProductCode,
-                    ProductName = entity.Product.ProductName,
-                    ProductCateName = productCateObj.ProductCateName,
-                    ProductSpecification = productExtraObj.Specification,
-                    Quantity = entity.Quantity,
-                    Wastage = entity.Wastage,
-                    Description = entity.Description,
-                    CreatedDatetimeUtc = entity.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = entity.UpdatedDatetimeUtc.GetUnix()
-                };
-                resultList.Add(billOfMaterialOutputModel);
-            }
-            return (resultList, totalRecord);
-        }
-
-        public async Task<long> Add(ProductBomInput req)
-        {
-
-            var checkExists = _stockDbContext.ProductBom.Any(q => q.RootProductId == req.RootProductId && q.ProductId == req.ProductId && q.ParentProductId == req.ParentProductId);
-            if (checkExists)
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            var entity = new ProductBom
-            {
-                Level = 0,
-                RootProductId = req.RootProductId,
-                ProductId = req.ProductId,
-                ParentProductId = req.ParentProductId,
-                Quantity = req.Quantity,
-                Wastage = req.Wastage,
-                Description = req.Description,
-                IsDeleted = false,
-                CreatedDatetimeUtc = DateTime.UtcNow,
-                UpdatedDatetimeUtc = DateTime.UtcNow,
+                new SqlParameter("@ProductIds", SqlDBHelper.ConvertToIntValues(productIds)) { SqlDbType = SqlDbType.Structured, TypeName = "dbo._INTVALUES" }
             };
-            await _stockDbContext.ProductBom.AddAsync(entity);
-            await _stockDbContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Thêm mới 1 chi tiết bom {entity.ProductId}", req.JsonSerialize());
-
-            return entity.ProductBomId;
-
-        }
-
-        public async Task<bool> Update(long productBomId, ProductBomInput req)
-        {
-
-            if (productBomId <= 0)
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.ProductBomId == productBomId);
-            if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-
-            //entity.ProductId = req.ProductId;
-            //entity.ParentProductId = req.ParentProductId;
-            entity.Quantity = req.Quantity;
-            entity.Wastage = req.Wastage;
-            entity.Description = req.Description;
-            entity.UpdatedDatetimeUtc = DateTime.UtcNow;
-            await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductBomId, $"Cập nhật chi tiết bom {entity.ProductId} {entity.ParentProductId}", req.JsonSerialize());
-            return true;
-
+            var resultData = await _stockDbContext.ExecuteDataProcedure("asp_GetProductElements", parammeters);
+            var result = resultData.ConvertData<ProductElementModel>();
+            return result;
         }
 
 
-        public async Task<bool> Delete(long productBomId, int rootProductId)
+        public async Task<IDictionary<int, IList<ProductBomOutput>>> GetBoms(IList<int> productIds)
         {
-
-            var entity = _stockDbContext.ProductBom.FirstOrDefault(q => q.RootProductId == rootProductId && q.ProductBomId == productBomId);
-            if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-            entity.IsDeleted = true;
-            entity.UpdatedDatetimeUtc = DateTime.UtcNow;
-            var childList = new List<ProductBom>();
-            GetAllBom(entity.ProductId, childList);
-            foreach (var item in childList)
+            var dic = new Dictionary<int, IList<ProductBomOutput>>();
+            foreach (var productId in productIds.Distinct())
             {
-                item.IsDeleted = true;
-                item.UpdatedDatetimeUtc = DateTime.UtcNow;
+                dic.Add(productId, await GetBom(productId));
             }
-            await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, entity.ProductId, $"Xóa thông tin bom {entity.ProductId}", entity.JsonSerialize());
 
-            return true;
-
+            return dic;
         }
 
-        #region Private methods
-        protected void GetAllBom(int productId, List<ProductBom> bomList)
+        public async Task<IList<ProductBomOutput>> GetBom(int productId)
         {
-            var BomDataList = _stockDbContext.ProductBom.Where(q => q.ParentProductId == productId).AsNoTracking().ToList();
-            foreach (var item in BomDataList)
+            if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
+            var parammeters = new SqlParameter[]
             {
-                if (item.ProductId > 0 && item.IsDeleted == false)
+                new SqlParameter("@ProductId", productId)
+            };
+
+            var resultData = await _stockDbContext.ExecuteDataProcedure("asp_GetProductBom", parammeters);
+            var result = new List<ProductBomOutput>();
+            foreach (var item in resultData.ConvertData<ProductBomEntity>())
+            {
+                var bom = _mapper.Map<ProductBomOutput>(item);
+                bom.PathProductIds = Array.ConvertAll(item.PathProductIds.Split(','), s => int.Parse(s));
+                result.Add(bom);
+            }
+            return result;
+        }
+
+        public async Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, bool isCleanOldMaterial)
+        {
+            var product = _stockDbContext.Product.FirstOrDefault(p => p.ProductId == productId);
+            if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            await UpdateProductBomDb(productId, productBoms, productMaterials, isCleanOldMaterial);
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", productBoms.JsonSerialize());
+            return true;
+        }
+
+        public async Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, bool isCleanOldMaterial)
+        {
+            // Validate data
+            // Validate child product id
+            var childIds = productBoms.Select(b => b.ChildProductId).Distinct().ToList();
+            if (_stockDbContext.Product.Count(p => childIds.Contains(p.ProductId)) != childIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound, "Vật tư không tồn tại");
+
+            if (productBoms.Any(b => b.ProductId == b.ChildProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Không được chọn vật tư là chính sản phẩm");
+
+            if (productBoms.Any(p => p.ProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Vật tư không thuộc sản phẩm");
+
+            // Validate materials
+            if (productMaterials.Any(m => m.RootProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Nguyên vật liệu không thuộc sản phẩm");
+
+            // Thiết lập sort order theo thứ tự tạo
+            for (int indx = 0; indx < productBoms.Count; indx++)
+            {
+                productBoms[indx].SortOrder = indx;
+            }
+
+            // Remove duplicate
+            productBoms = productBoms.GroupBy(b => new { b.ProductId, b.ChildProductId }).Select(g => g.First()).ToList();
+
+            // Get old BOM info
+            var oldBoms = _stockDbContext.ProductBom.Where(b => b.ProductId == productId).ToList();
+            var newBoms = new List<ProductBomInput>(productBoms);
+            var changeBoms = new List<(ProductBom OldValue, ProductBomInput NewValue)>();
+
+            // Cập nhật BOM
+            foreach (var newItem in productBoms)
+            {
+                var oldBom = oldBoms.FirstOrDefault(b => b.ChildProductId == newItem.ChildProductId);
+                // Nếu là thay đổi
+                if (oldBom != null)
                 {
-                    bomList.Add(item);
-                    GetAllBom((int)item.ProductId, bomList);
+                    // Kiểm tra thay đổi thông tin
+                    if (HasChange(oldBom, newItem))
+                    {
+                        changeBoms.Add((oldBom, newItem));
+                    }
+                    newBoms.Remove(newItem);
+                    oldBoms.Remove(oldBom);
                 }
             }
-        }
-        #endregion
 
+            // Xóa BOM
+            foreach (var entity in oldBoms)
+            {
+                entity.IsDeleted = true;
+            }
+
+            // Tạo mới bom
+            foreach (var newBom in newBoms)
+            {
+                var entity = _mapper.Map<ProductBom>(newBom);
+                entity.ProductBomId = 0;
+                _stockDbContext.ProductBom.Add(entity);
+            }
+
+            // Cập nhật BOM
+            foreach (var updateBom in changeBoms)
+            {
+                updateBom.OldValue.Quantity = updateBom.NewValue.Quantity;
+                updateBom.OldValue.Wastage = updateBom.NewValue.Wastage;
+                updateBom.OldValue.InputStepId = updateBom.NewValue.InputStepId;
+                updateBom.OldValue.OutputStepId = updateBom.NewValue.OutputStepId;
+                updateBom.OldValue.SortOrder = updateBom.NewValue.SortOrder;
+            }
+            // Cập nhật Material
+            var oldMaterials = _stockDbContext.ProductMaterial.Where(m => m.RootProductId == productId).ToList();
+            var createMaterials = productMaterials
+                .Where(nm => !oldMaterials.Any(om => om.ProductId == nm.ProductId && om.PathProductIds == string.Join(",", nm.PathProductIds)))
+                .Select(nm => new ProductMaterial
+                {
+                    ProductId = nm.ProductId,
+                    ProductMaterialId = nm.ProductMaterialId,
+                    RootProductId = nm.RootProductId,
+                    PathProductIds = string.Join(",", nm.PathProductIds)
+                })
+                .ToList();
+            if (isCleanOldMaterial)
+            {
+                var deleteMaterials = oldMaterials
+                    .Where(om => !productMaterials.Any(nm => nm.ProductId == om.ProductId && string.Join(",", nm.PathProductIds) == om.PathProductIds))
+                    .ToList();
+                _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
+            }
+            _stockDbContext.ProductMaterial.AddRange(createMaterials);
+            await _stockDbContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds)
+        {
+            var steps = await _manufacturingHelperService.GetSteps();
+            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps);
+            return await bomExport.BomExport();
+        }
+
+        private bool HasChange(ProductBom oldValue, ProductBomInput newValue)
+        {
+            return oldValue.Quantity != newValue.Quantity
+                || oldValue.Wastage != newValue.Wastage
+                || oldValue.InputStepId != newValue.InputStepId
+                || oldValue.OutputStepId != newValue.OutputStepId
+                || oldValue.Wastage != newValue.Wastage
+                || oldValue.SortOrder != newValue.SortOrder;
+        }
+
+        public CategoryNameModel GetCustomerFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryId = 1,
+                CategoryCode = "ProductBom",
+                CategoryTitle = "Bill of Material",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var fields = Utils.GetFieldNameModels<ProductBomImportModel>();
+            result.Fields = fields;
+            return result;
+        }
+
+        public Task<bool> ImportBomFromMapping(ImportExcelMapping mapping, Stream stream)
+        {
+            return new ProductBomImportFacade()
+                .SetService(_stockDbContext)
+                .SetService(_productService)
+                .SetService(_unitService)
+                .SetService(_activityLogService)
+                .SetService(_manufacturingHelperService)
+                .SetService(this)
+                .ProcessData(mapping, stream);
+        }
     }
 }

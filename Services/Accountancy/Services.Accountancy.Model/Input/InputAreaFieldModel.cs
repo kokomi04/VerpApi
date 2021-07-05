@@ -5,10 +5,13 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
+using Newtonsoft.Json;
+using VErp.Commons.Constants;
+using VErp.Commons.GlobalObject.DynamicBill;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
-    public class InputFieldInputModel : IMapFrom<InputField>
+    public class InputFieldInputModel : IFieldData, IMapFrom<InputField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tên trường dữ liệu")]
         [MaxLength(45, ErrorMessage = "Tên trường dữ liệu quá dài")]
@@ -16,7 +19,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string FieldName { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
-        public string Title { get; set; }       
+        public string Title { get; set; }
         public string Placeholder { get; set; }
         public int SortOrder { get; set; }
         public EnumDataType DataTypeId { get; set; }
@@ -27,15 +30,28 @@ namespace VErp.Services.Accountancy.Model.Input
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
         public string RefTableTitle { get; set; }
+        public bool IsReadOnly { get; set; }
 
-        protected void MappingBase<T>(Profile profile) where T: InputFieldInputModel
+        public string OnFocus { get; set; }
+        public string OnKeydown { get; set; }
+        public string OnKeypress { get; set; }
+        public string OnBlur { get; set; }
+        public string OnChange { get; set; }
+        public string OnClick { get; set; }
+        public string ReferenceUrl { get; set; }
+        public bool? IsImage { get; set; }
+
+        public ControlStructureModel Structure { get; set; }
+        protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
             profile.CreateMap<InputField, T>()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (EnumDataType)f.DataTypeId))
                 .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (EnumFormType)f.FormTypeId))
+                 .ForMember(d => d.Structure, m => m.MapFrom(f => string.IsNullOrEmpty(f.Structure) ? null : JsonConvert.DeserializeObject<ControlStructureModel>(f.Structure)))
                 .ReverseMap()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (int)f.DataTypeId))
-                .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId));
+                .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId))
+                .ForMember(d => d.Structure, m => m.MapFrom(f => f.Structure == null ? string.Empty : JsonConvert.SerializeObject(f.Structure))); ;
         }
 
         public void Mapping(Profile profile)
@@ -47,14 +63,14 @@ namespace VErp.Services.Accountancy.Model.Input
 
     public class InputFieldOutputModel : InputFieldInputModel
     {
-        public int InputFieldId { get; set; }   
+        public int InputFieldId { get; set; }
         public new void Mapping(Profile profile)
         {
             MappingBase<InputFieldOutputModel>(profile);
         }
     }
 
-    public class InputAreaFieldInputModel : IMapFrom<InputAreaField>
+    public class InputAreaFieldInputModel : IFieldData, IMapFrom<InputAreaField>
     {
         [Required(ErrorMessage = "Vui lòng nhập tiêu đề trường dữ liệu")]
         [MaxLength(256, ErrorMessage = "Tiêu đề trường dữ liệu quá dài")]
@@ -86,7 +102,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public string DefaultValue { get; set; }
         public int? IdGencode { get; set; }
         public string RequireFilters { get; set; }
-
+        public string ReferenceUrl { get; set; }
+        public bool IsBatchSelect { get; set; }
+        public string OnClick { get; set; }
         public bool Compare(InputAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -115,12 +133,30 @@ namespace VErp.Services.Accountancy.Model.Input
                 OnChange == curField.OnChange &&
                 AutoFocus == curField.AutoFocus &&
                 Column == curField.Column &&
-                RequireFilters == curField.RequireFilters;
+                RequireFilters == curField.RequireFilters &&
+                ReferenceUrl == curField.ReferenceUrl &&
+                IsBatchSelect == curField.IsBatchSelect &&
+                OnClick == curField.OnClick;
         }
     }
 
-    public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel
+    public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel, IFieldExecData
     {
         public InputFieldOutputModel InputField { get; set; }
+
+        private ExecCodeCombine<IFieldData> execCodeCombine;
+        public InputAreaFieldOutputFullModel()
+        {
+            execCodeCombine = new ExecCodeCombine<IFieldData>(this);
+        }
+
+        public string OnFocusExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnFocus), InputField);
+        public string OnKeydownExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnKeydown), InputField);
+        public string OnKeypressExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnKeypress), InputField);
+        public string OnBlurExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnBlur), InputField);
+        public string OnChangeExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnChange), InputField);
+        public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), InputField);
+
+        public string ReferenceUrlExec => execCodeCombine.GetExecCode(nameof(IFieldData.ReferenceUrl), InputField);
     }
 }

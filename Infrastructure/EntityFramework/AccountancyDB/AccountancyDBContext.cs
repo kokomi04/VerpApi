@@ -15,18 +15,20 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
 
+        public virtual DbSet<CalcPeriod> CalcPeriod { get; set; }
+        public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
         public virtual DbSet<InputField> InputField { get; set; }
         public virtual DbSet<InputType> InputType { get; set; }
+        public virtual DbSet<InputTypeGlobalSetting> InputTypeGlobalSetting { get; set; }
         public virtual DbSet<InputTypeGroup> InputTypeGroup { get; set; }
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
-        public virtual DbSet<PrintConfig> PrintConfig { get; set; }
         public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -34,7 +36,30 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            
+            modelBuilder.Entity<CalcPeriod>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(512);
+            });
+
+            modelBuilder.Entity<InputAction>(entity =>
+            {
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.InputActionCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.InputType)
+                    .WithMany(p => p.InputAction)
+                    .HasForeignKey(d => d.InputTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InputAction_InputType");
+            });
+
             modelBuilder.Entity<InputArea>(entity =>
             {
                 entity.Property(e => e.Columns).HasDefaultValueSql("((1))");
@@ -62,13 +87,13 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
-                entity.Property(e => e.Filters).HasMaxLength(512);
-
                 entity.Property(e => e.InputStyleJson).HasMaxLength(512);
 
                 entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
 
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
 
                 entity.Property(e => e.RegularExpression).HasMaxLength(256);
 
@@ -100,7 +125,14 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.HasKey(e => e.FId)
                     .HasName("PK_InputValueBill");
 
+                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode })
+                    .HasName("IX_InputBill_BillCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.Property(e => e.BillCode).HasMaxLength(512);
 
                 entity.HasOne(d => d.InputType)
                     .WithMany(p => p.InputBill)
@@ -117,6 +149,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .IsRequired()
                     .HasMaxLength(64);
 
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
+
                 entity.Property(e => e.Placeholder).HasMaxLength(128);
 
                 entity.Property(e => e.RefTableCode).HasMaxLength(128);
@@ -124,6 +158,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.RefTableField).HasMaxLength(128);
 
                 entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
             });
@@ -187,7 +223,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasConstraintName("FK_InputTypeViewField_InputTypeView");
             });
 
-          
             modelBuilder.Entity<OutsideImportMapping>(entity =>
             {
                 entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
@@ -237,21 +272,10 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                     .HasConstraintName("FK_AccountancyOutsiteMappingObject_AccountancyOutsiteMappingFunction");
             });
 
-            modelBuilder.Entity<PrintConfig>(entity =>
-            {
-                entity.Property(e => e.GenerateToString).HasComment("");
-
-                entity.Property(e => e.PrintConfigName)
-                    .IsRequired()
-                    .HasMaxLength(255);
-
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(255);
-            });
-
             modelBuilder.Entity<ProgramingFunction>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.FunctionBody).IsRequired();
 
                 entity.Property(e => e.ProgramingFunctionName)

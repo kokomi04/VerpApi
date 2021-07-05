@@ -47,11 +47,13 @@ namespace SynTool
             var tableOnly = "";
 
             var dbHelper = new DbHelper(cnn);
-            var dataTable = dbHelper.GetDataTable("SELECT [TABLE_CATALOG],[TABLE_SCHEMA], [TABLE_NAME], [TABLE_TYPE]  FROM [INFORMATION_SCHEMA].[TABLES] WHERE [TABLE_TYPE] = N'BASE TABLE' OR [TABLE_NAME] LIKE N'vMapping%' ");
+            var dataTable = dbHelper.GetDataTable("SELECT [TABLE_CATALOG],[TABLE_SCHEMA], [TABLE_NAME], [TABLE_TYPE]  FROM [INFORMATION_SCHEMA].[TABLES] WHERE [TABLE_TYPE] = N'BASE TABLE' OR [TABLE_NAME] LIKE N'vMapping%' OR [TABLE_NAME] LIKE N'Ref%' ");
             for (var i = 0; i < dataTable.Rows.Count; i++)
             {
                 var tblName = dataTable.Rows[i]["TABLE_NAME"].ToString();
-                if (!tblName.StartsWith("_") && !tblName.Equals(AccountantConstants.INPUTVALUEROW_TABLE, StringComparison.OrdinalIgnoreCase))
+                if (!tblName.StartsWith("_") && !tblName.Equals(AccountantConstants.INPUTVALUEROW_TABLE, StringComparison.OrdinalIgnoreCase)
+                    && !tblName.Equals(VoucherConstants.VOUCHER_VALUE_ROW_TABLE, StringComparison.OrdinalIgnoreCase)
+                    )
                     tableOnly += " -t " + dataTable.Rows[i]["TABLE_NAME"];
             }
 

@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
+        public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
         public virtual DbSet<Department> Department { get; set; }
@@ -100,16 +101,44 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Website).HasMaxLength(128);
             });
 
+            modelBuilder.Entity<CustomerAttachment>(entity =>
+            {
+                entity.Property(e => e.Title).HasMaxLength(256);
+
+                entity.HasOne(d => d.Customer)
+                    .WithMany(p => p.CustomerAttachment)
+                    .HasForeignKey(d => d.CustomerId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CustomerAttachment_Customer");
+            });
+
             modelBuilder.Entity<CustomerBankAccount>(entity =>
             {
+                entity.Property(e => e.AccountName).HasMaxLength(255);
+
                 entity.Property(e => e.AccountNumber)
                     .IsRequired()
                     .HasMaxLength(32)
                     .IsUnicode(false);
 
+                entity.Property(e => e.BankAddress)
+                    .HasMaxLength(255)
+                    .HasDefaultValueSql("('')");
+
+                entity.Property(e => e.BankBranch)
+                    .HasMaxLength(255)
+                    .HasDefaultValueSql("('')");
+
+                entity.Property(e => e.BankCode)
+                    .HasMaxLength(15)
+                    .IsUnicode(false)
+                    .HasDefaultValueSql("('')");
+
                 entity.Property(e => e.BankName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.Province).HasMaxLength(255);
 
                 entity.Property(e => e.SwiffCode)
                     .IsRequired()
@@ -142,12 +171,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<Department>(entity =>
             {
-                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
-
                 entity.Property(e => e.DepartmentCode)
                     .IsRequired()
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+                    .HasMaxLength(32);
 
                 entity.Property(e => e.DepartmentName)
                     .IsRequired()
@@ -155,7 +181,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.Description).HasMaxLength(128);
 
-                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
+                entity.Property(e => e.WorkingHoursPerDay).HasColumnType("decimal(4, 2)");
 
                 entity.HasOne(d => d.Parent)
                     .WithMany(p => p.InverseParent)
@@ -185,13 +211,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasKey(e => e.UserDepartmentMappingId)
                     .HasName("PK__UserDepa__3E005141E85C5CB7");
 
-                entity.Property(e => e.CreatedTime).HasColumnType("datetime");
-
                 entity.Property(e => e.EffectiveDate).HasColumnType("date");
 
                 entity.Property(e => e.ExpirationDate).HasColumnType("date");
-
-                entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
 
                 entity.HasOne(d => d.Department)
                     .WithMany(p => p.EmployeeDepartmentMapping)

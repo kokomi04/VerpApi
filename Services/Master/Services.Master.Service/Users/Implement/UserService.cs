@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -120,46 +119,45 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 throw new BadRequestException(validate);
             }
+            var result = await CreateBatchUser(new[] { req }, employeeTypeId);
+            return result.First().userId;
 
-            await using var trans = new MultipleDbTransaction(_masterContext, _organizationContext);
-            try
-            {
-                var userId = await CreateEmployee(req, employeeTypeId);
-
-                await CreateUserAuthen(userId, req);
-
-                // Gắn phòng ban cho nhân sự
-                if (req.DepartmentId.HasValue)
-                {
-                    await EmployeeDepartmentMapping(userId, req.DepartmentId.Value);
-                }
-
-                trans.Commit();
-
-                var info = await GetUserFullInfo(userId);
-
-                await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Thêm mới nhân viên {info?.Employee?.EmployeeCode}", req.JsonSerialize());
-
-                _logger.LogInformation("CreateUser({0}) successful!", userId);
-
-                if (req.AvatarFileId.HasValue)
-                {
-                    _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(req.AvatarFileId.Value, EnumObjectType.UserAndEmployee, userId));
-                }
-
-                return userId;
-            }
-
-            catch (Exception)
-            {
-                await trans.TryRollbackTransactionAsync();
-                throw;
-            }
         }
 
-        private async Task<bool> EmployeeDepartmentMapping(int userId, int departmentId)
+        public async Task<bool> UpdateEmployeeDepartmentMapping(int userId, int userDepartmentMappingId, DateTime? effectiveDate, DateTime? expirationDate)
         {
-            var department = await _organizationContext.Department.FirstOrDefaultAsync(d => d.DepartmentId == departmentId);
+            var mapping = await _organizationContext.EmployeeDepartmentMapping.FindAsync(userDepartmentMappingId);
+
+            if (mapping == null || mapping.UserId != userId)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            }
+
+            mapping.EffectiveDate = effectiveDate;
+            mapping.ExpirationDate = expirationDate;
+
+            await _masterContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteEmployeeDepartmentMapping(int userId, int userDepartmentMappingId)
+        {
+            var mapping = await _organizationContext.EmployeeDepartmentMapping.FindAsync(userDepartmentMappingId);
+
+            if (mapping == null || mapping.UserId != userId)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+            }
+
+            mapping.IsDeleted = true;
+
+            await _masterContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> CreateEmployeeDepartmentMapping(int userId, int departmentId, DateTime? effectiveDate, DateTime? expirationDate)
+        {
+            var department = await _organizationContext.Department.FirstOrDefaultAsync(d => departmentId == d.DepartmentId);
             if (department == null)
             {
                 throw new BadRequestException(DepartmentErrorCode.DepartmentNotFound);
@@ -168,46 +166,15 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 throw new BadRequestException(DepartmentErrorCode.DepartmentInActived);
             }
-            var EmployeeDepartmentMapping = _organizationContext.EmployeeDepartmentMapping
-                .Where(d => d.DepartmentId == departmentId && d.UserId == userId);
-            var current = EmployeeDepartmentMapping
-           .Where(d => d.ExpirationDate >= DateTime.UtcNow.Date && d.EffectiveDate <= DateTime.UtcNow.Date)
-           .FirstOrDefault();
 
-            if (current == null)
+            _organizationContext.EmployeeDepartmentMapping.Add(new EmployeeDepartmentMapping()
             {
-                // kiểm tra xem có bản ghi trong tương lai
-                var future = EmployeeDepartmentMapping.Where(d => d.EffectiveDate > DateTime.UtcNow.Date).OrderBy(d => d.EffectiveDate).FirstOrDefault();
-                DateTime expirationDate = future?.EffectiveDate.AddDays(-1) ?? DateTime.MaxValue.Date;
+                DepartmentId = departmentId,
+                UserId = userId,
+                EffectiveDate = effectiveDate,
+                ExpirationDate = expirationDate
+            });
 
-                _organizationContext.EmployeeDepartmentMapping.Add(new EmployeeDepartmentMapping()
-                {
-                    DepartmentId = departmentId,
-                    UserId = userId,
-                    EffectiveDate = DateTime.UtcNow.Date,
-                    ExpirationDate = expirationDate,
-                    UpdatedUserId = _currentContextService.UserId,
-                    CreatedTime = DateTime.UtcNow,
-                    UpdatedTime = DateTime.UtcNow
-                });
-            }
-            else
-            {
-                current.ExpirationDate = DateTime.UtcNow.AddDays(-1).Date;
-                current.UpdatedTime = DateTime.UtcNow;
-                current.UpdatedUserId = _currentContextService.UserId;
-
-                _organizationContext.EmployeeDepartmentMapping.Add(new EmployeeDepartmentMapping()
-                {
-                    DepartmentId = departmentId,
-                    UserId = userId,
-                    EffectiveDate = DateTime.UtcNow.Date,
-                    ExpirationDate = current.ExpirationDate,
-                    UpdatedUserId = _currentContextService.UserId,
-                    CreatedTime = DateTime.UtcNow,
-                    UpdatedTime = DateTime.UtcNow
-                });
-            }
             await _masterContext.SaveChangesAsync();
             return true;
         }
@@ -220,6 +187,8 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 throw new BadRequestException(UserErrorCode.UserNotFound);
             }
+
+            var sb = await _organizationContext.Subsidiary.FirstOrDefaultAsync(e => e.SubsidiaryId == ur.SubsidiaryId);
             var user = new UserInfoOutput
             {
                 UserId = ur.UserId,
@@ -233,24 +202,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                 GenderId = (EnumGender?)em.GenderId,
                 Phone = em.Phone,
                 AvatarFileId = em.AvatarFileId,
+                IsDeveloper = _appSetting.Developer?.IsDeveloper(ur.UserName, sb.SubsidiaryCode)
             };
 
-            // Thêm thông tin phòng ban cho nhân viên
-            DateTime currentDate = DateTime.UtcNow.Date;
-            var department = _organizationContext.EmployeeDepartmentMapping.Where(m => m.UserId == user.UserId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
-                .Join(_organizationContext.Department, m => m.DepartmentId, d => d.DepartmentId, (m, d) => d)
-                .Select(d => new DepartmentModel()
-                {
-                    DepartmentId = d.DepartmentId,
-                    DepartmentCode = d.DepartmentCode,
-                    DepartmentName = d.DepartmentName,
-                    Description = d.Description,
-                    IsActived = d.IsActived,
-                    ParentId = d.ParentId,
-                    ParentName = d.Parent != null ? d.Parent.DepartmentName : null
-                })
-                .FirstOrDefault();
-            user.Department = department;
+            await EnrichDepartments(new[] { user });
+
             return user;
         }
 
@@ -277,7 +233,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                         throw new BadRequestException(user);
                     }
 
-                    //await DeleteEmployeeSubsidiary(userId);
+                    await DeleteEmployeeDepartment(userId);
 
                     trans.Commit();
 
@@ -340,6 +296,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             })
             .ToList();
 
+            await EnrichDepartments(lst);
 
             return (lst, total);
         }
@@ -371,8 +328,51 @@ namespace VErp.Services.Master.Service.Users.Implement
                            Phone = e.Phone
                        }).ToList();
 
+            await EnrichDepartments(lst);
 
             return lst;
+        }
+
+        private async Task EnrichDepartments(IList<UserInfoOutput> users)
+        {
+            var selectedUserIds = users.Select(u => u.UserId).ToList();
+
+            var departmentMappings = (await _organizationContext.EmployeeDepartmentMapping.Where(ed => selectedUserIds.Contains(ed.UserId)).ToListAsync())
+                .GroupBy(m => m.UserId)
+                .ToDictionary(m => m.Key, m => m.ToList());
+
+            var departmentIds = departmentMappings.SelectMany(ed => ed.Value.Select(d => d.DepartmentId));
+
+            var departments = await _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).ToListAsync();
+
+            foreach (var u in users)
+            {
+
+                departmentMappings.TryGetValue(u.UserId, out var userDepartments);
+
+
+                if (userDepartments != null && userDepartments.Count > 0)
+                {
+                    u.Departments = new List<UserDepartmentInfoModel>();
+                    userDepartments = userDepartments.OrderBy(d => d.ExpirationDate).ThenByDescending(d => d.EffectiveDate).ToList();
+
+                    foreach (var m in userDepartments)
+                    {
+                        var departmentInfo = departments.FirstOrDefault(d => m.DepartmentId == d.DepartmentId);
+
+                        u.Departments.Add(new UserDepartmentInfoModel()
+                        {
+                            UserDepartmentMappingId = m.UserDepartmentMappingId,
+                            DepartmentId = departmentInfo.DepartmentId,
+                            DepartmentCode = departmentInfo.DepartmentCode,
+                            DepartmentName = departmentInfo.DepartmentName,
+                            EffectiveDate = m.EffectiveDate.GetUnix(),
+                            ExpirationDate = m.ExpirationDate.GetUnix()
+                        });
+                    }
+                }
+
+            }
         }
 
         public async Task<bool> UpdateUser(int userId, UserInfoInput req)
@@ -404,17 +404,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                         throw new BadRequestException(r2);
                     }
 
-                    // Lấy thông tin bộ phận hiện tại
-                    DateTime currentDate = DateTime.UtcNow.Date;
-                    var departmentId = _organizationContext.EmployeeDepartmentMapping
-                        .Where(m => m.UserId == userId && m.ExpirationDate >= currentDate && m.EffectiveDate <= currentDate)
-                        .Select(d => d.DepartmentId).FirstOrDefault();
 
-                    // Nếu khác update lại thông tin
-                    if (departmentId != req.DepartmentId && req.DepartmentId.HasValue)
-                    {
-                        await EmployeeDepartmentMapping(userId, req.DepartmentId.Value);
-                    }
+                    await UpdateDepartments(userId, req);
 
                     trans.Commit();
 
@@ -532,7 +523,10 @@ namespace VErp.Services.Master.Service.Users.Implement
                                 || u.Email.Contains(keyword)
                                 select u;
                     }
-                    var userList = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+                    var userList = pageSize > 0 ? query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList() : query.ToList();
+
+                    await EnrichDepartments(userList);
+
                     var totalRecords = query.Count();
                     result.List = userList;
                     result.Total = totalRecords;
@@ -560,7 +554,16 @@ namespace VErp.Services.Master.Service.Users.Implement
             }).ToList();
         }
 
-        public CategoryNameModel GetCustomerFieldDataForMapping()
+        public async Task<IList<UserBasicInfoOutput>> GetBasicInfoByDepartment(int departmentId)
+        {
+            var userIds = await _organizationContext.EmployeeDepartmentMapping.Where(e => e.DepartmentId == departmentId).Select(e => e.UserId).ToListAsync();
+
+            var users = await _masterContext.User.Where(u => userIds.Contains(u.UserId)).Select(u => new { u.UserId, u.UserName }).ToListAsync();
+
+            return await GetBasicInfos(userIds);
+        }
+
+        public CategoryNameModel GetFieldDataForMapping()
         {
             var result = new CategoryNameModel()
             {
@@ -595,6 +598,22 @@ namespace VErp.Services.Master.Service.Users.Implement
                 .GroupBy(r => r.RoleName)
                 .ToDictionary(r => r.Key, r => r.First().RoleId);
 
+            var departments = await _organizationContext.Department.ToListAsync();
+
+            var departmentByCodes = departments
+                .GroupBy(d => d.DepartmentCode.NormalizeAsInternalName(), d => d.DepartmentId)
+                .ToDictionary(g => g.Key, g => g.FirstOrDefault());
+
+            var departmentIds = departments.Select(d => d.DepartmentId.ToString()).ToHashSet();
+
+            var departmentByNames = departments
+                .GroupBy(d => d.DepartmentName.NormalizeAsInternalName(), d => d.DepartmentId)
+                .ToDictionary(g => g.Key, g => g.FirstOrDefault());
+
+            var userDepartment = new Dictionary<UserImportModel, IList<int>>();
+
+            var departmentProp = nameof(UserImportModel.Department1).TrimEnd('1');
+
             var lstData = reader.ReadSheetEntity<UserImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
@@ -612,15 +631,87 @@ namespace VErp.Services.Master.Service.Users.Implement
                         if (!roleData.ContainsKey(value)) throw new BadRequestException(RoleErrorCode.RoleNotFound, $"Nhóm quyền {value} không đúng");
                         entity.RoleId = roleData[value];
                         return true;
+
                 }
+
+                if (propertyName.StartsWith(departmentProp))
+                {
+                    var number = propertyName.Substring(0, departmentProp.Length);
+
+                    var mappingField = mapping.MappingFields.FirstOrDefault(m => m.FieldName == propertyName);
+                    if (mappingField != null)
+                    {
+                        int departmentId = 0;
+
+                        if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentId))
+                        {
+                            if (departmentIds.Contains(value.NormalizeAsInternalName()))
+                            {
+                                departmentId = int.Parse(value.NormalizeAsInternalName());
+                            }
+                        }
+
+                        if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentCode))
+                        {
+                            departmentByCodes.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
+                        }
+
+                        if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentName))
+                        {
+                            departmentByNames.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
+                        }
+
+                        if (departmentId == 0) throw new BadRequestException(GeneralCode.ItemNotFound, $"Bộ phận {value} không tồn tại");
+
+                        if (!userDepartment.ContainsKey(entity))
+                        {
+                            userDepartment.Add(entity, new List<int>());
+                        }
+
+                        entity.GetType().GetProperty(propertyName).SetValue(entity, new UserImportDepartmentModel()
+                        {
+                            DepartmentId = departmentId,
+                        });
+                    }
+                    return true;
+                }
+
                 return false;
             });
 
             var userModels = new List<UserInfoInput>();
 
+            var departmentEffectiveDate = nameof(UserImportModel.EffectiveDate1).TrimEnd('1');
+            var departmentExpirationDate = nameof(UserImportModel.ExpirationDate1).TrimEnd('1');
+
             foreach (var userModel in lstData)
             {
                 var userInfo = _mapper.Map<UserInfoInput>(userModel);
+
+                userInfo.Departments = new List<UserDepartmentMappingModel>();
+
+                var props = userModel.GetType().GetProperties().ToList();
+
+                foreach (var prop in props.Where(p => p.Name.StartsWith(departmentProp)))
+                {
+                    var number = prop.Name.Substring(departmentProp.Length);
+
+                    var departnemtImportModel = (UserImportDepartmentModel)prop.GetValue(userModel);
+
+                    if (departnemtImportModel != null && departnemtImportModel.DepartmentId > 0)
+                    {
+                        var effectiveDateProp = props.FirstOrDefault(p => p.Name == $"{departmentEffectiveDate}{number}");
+                        var expirationDateProp = props.FirstOrDefault(p => p.Name == $"{departmentExpirationDate}{number}");
+
+                        userInfo.Departments.Add(new UserDepartmentMappingModel()
+                        {
+                            DepartmentId = departnemtImportModel.DepartmentId.Value,
+                            EffectiveDate = (long?)effectiveDateProp.GetValue(userModel),
+                            ExpirationDate = (long?)expirationDateProp.GetValue(userModel),
+                        });
+                    }
+                }
+
                 userModels.Add(userInfo);
             }
 
@@ -630,7 +721,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         }
 
         #region private
-        private async Task<bool> CreateBatchUser(List<UserInfoInput> req, EnumEmployeeType employeeTypeId)
+        private async Task<IList<(int userId, UserInfoInput userInfo)>> CreateBatchUser(IList<UserInfoInput> req, EnumEmployeeType employeeTypeId)
         {
             await using var trans = new MultipleDbTransaction(_masterContext, _organizationContext);
             try
@@ -638,6 +729,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 var employees = await AddBatchEmployees(req, employeeTypeId);
 
                 await AddBatchUserAuthen(employees);
+
+                await AddBatchUserDepartment(employees);
 
                 trans.Commit();
 
@@ -647,8 +740,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, info.userId, $"Thêm mới nhân viên {info.userInfo.EmployeeCode}", req.JsonSerialize());
 
                     _logger.LogInformation("CreateUser({0}) successful!", info.userId);
+
+                    if (info.userInfo.AvatarFileId.HasValue)
+                    {
+                        _asyncRunnerService.RunAsync<IPhysicalFileService>(f => f.FileAssignToObject(info.userInfo.AvatarFileId.Value, EnumObjectType.UserAndEmployee, info.userId));
+                    }
                 }
-                return true;
+                return employees;
             }
 
             catch (Exception)
@@ -772,6 +870,32 @@ namespace VErp.Services.Master.Service.Users.Implement
             return users;
         }
 
+        private async Task AddBatchUserDepartment(List<(int userId, UserInfoInput userInfo)> ls)
+        {
+            var userDepartments = new List<EmployeeDepartmentMapping>();
+            foreach (var req in ls)
+            {
+                if (req.userInfo?.Departments != null && req.userInfo?.Departments.Count > 0)
+                {
+                    userDepartments.AddRange(req.userInfo.Departments.Select(d => new EmployeeDepartmentMapping()
+                    {
+                        DepartmentId = d.DepartmentId,
+                        UserId = req.userId,
+                        EffectiveDate = d.EffectiveDate.UnixToDateTime(),
+                        ExpirationDate = d.ExpirationDate.UnixToDateTime(),
+                    }));
+                }
+            };
+
+            if (userDepartments.Count > 0)
+            {
+                await _organizationContext.EmployeeDepartmentMapping.AddRangeAsync(userDepartments);
+
+                await _organizationContext.SaveChangesAsync();
+            }
+        }
+
+
         private async Task<int> CreateEmployee(UserInfoInput req, EnumEmployeeType employeeTypeId)
         {
             var employee = new Employee()
@@ -795,7 +919,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return employee.UserId;
         }
 
-        private async Task<List<(int userId, UserInfoInput userInfo)>> AddBatchEmployees(List<UserInfoInput> userInfos, EnumEmployeeType employeeTypeId)
+        private async Task<List<(int userId, UserInfoInput userInfo)>> AddBatchEmployees(IList<UserInfoInput> userInfos, EnumEmployeeType employeeTypeId)
         {
             var employees = userInfos.Select(e => new Employee()
             {
@@ -869,6 +993,16 @@ namespace VErp.Services.Master.Service.Users.Implement
             return GeneralCode.Success;
         }
 
+        private async Task<bool> UpdateDepartments(int userId, UserInfoInput req)
+        {
+
+            await DeleteEmployeeDepartment(userId);
+
+            await AddBatchUserDepartment(new List<(int userId, UserInfoInput userInfo)>() { (userId, req) });
+
+            return true;
+        }
+
         private async Task<Enum> DeleteUserAuthen(int userId)
         {
             var user = await _masterContext.User.FirstOrDefaultAsync(u => u.UserId == userId);
@@ -902,6 +1036,18 @@ namespace VErp.Services.Master.Service.Users.Implement
             await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
+        }
+
+        private async Task DeleteEmployeeDepartment(int userId)
+        {
+
+            var departmentMappings = await _organizationContext.EmployeeDepartmentMapping.Where(u => u.UserId == userId).ToListAsync();
+            foreach (var item in departmentMappings)
+            {
+                item.IsDeleted = true;
+            }
+
+            await _organizationContext.SaveChangesAsync();
         }
 
         private async Task<UserFullDbInfo> GetUserFullInfo(int userId)

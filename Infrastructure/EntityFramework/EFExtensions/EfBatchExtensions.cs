@@ -7,6 +7,8 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
@@ -14,6 +16,20 @@ namespace VErp.Infrastructure.EF.EFExtensions
     {
         public static async Task InsertByBatch<T>(this DbContext dbContext, IList<T> entities, bool outputIdentity = true) where T : class
         {
+            if (entities.Count == 0) return;
+
+            if (dbContext is ISubsidiayRequestDbContext subsidiayRequestDb)
+            {
+                var type = typeof(T);
+                var subsidiaryIdProp = type.GetProperty(GlobalFieldConstants.SubsidiaryId);
+                if (subsidiaryIdProp != null)
+                {
+                    foreach (var item in entities)
+                    {
+                        subsidiaryIdProp.SetValue(item, subsidiayRequestDb.SubsidiaryId);
+                    }
+                }
+            }
             var bulkConfig = new BulkConfig { PreserveInsertOrder = true, SetOutputIdentity = outputIdentity };
             await dbContext.BulkInsertAsync(entities, bulkConfig);
         }
@@ -22,5 +38,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         {
             return await query.BatchUpdateAsync(updateExpression, cancellationToken);
         }
+
+
     }
 }

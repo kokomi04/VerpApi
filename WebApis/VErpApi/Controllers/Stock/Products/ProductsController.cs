@@ -23,6 +23,8 @@ using VErp.Services.Stock.Service.Products;
 using VErp.Commons.GlobalObject;
 using Newtonsoft.Json;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Services.Stock.Model.Product.Partial;
 
 namespace VErpApi.Controllers.Stock.Products
 {
@@ -32,23 +34,16 @@ namespace VErpApi.Controllers.Stock.Products
     {
         private readonly IProductService _productService;
         private readonly IFileService _fileService;
-        private readonly IObjectGenCodeService _objectGenCodeService;
-        private readonly IProductTypeService _productTypeService;
-        private readonly ICustomGenCodeService _customGenCodeService;
-
+        private readonly IProductPartialService _productPartialService;
         public ProductsController(
             IProductService productService
             , IFileService fileService
-            , IObjectGenCodeService objectGenCodeService
-            , IProductTypeService productTypeService
-            , ICustomGenCodeService customGenCodeService
+            , IProductPartialService productPartialService
             )
         {
             _productService = productService;
             _fileService = fileService;
-            _objectGenCodeService = objectGenCodeService;
-            _productTypeService = productTypeService;
-            _customGenCodeService = customGenCodeService;
+            _productPartialService = productPartialService;
         }
 
         /// <summary>
@@ -62,27 +57,38 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null, [FromQuery] bool? isMaterials = null)
         {
-            return await _productService.GetList(keyword, productTypeIds, productCateIds, page, size);
+            return await _productService.GetList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials);
         }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("ExportList")]
+        public async Task<IActionResult> ExportList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null, [FromQuery] bool? isMaterials = null)
+        {
+            var (stream, fileName, contentType) =  await _productService.ExportList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+
 
         [HttpGet]
         [Route("fields")]
-        public List<EntityField> GetFields()
+        public CategoryNameModel GetFieldMappings()
         {
-            return _productService.GetFields(typeof(ProductImportModel));
+            return _productService.GetFieldMappings();
         }
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<int> ImportFromMapping([FromForm] string mapping, [FromForm] IFormFile file)
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _productService.ImportProductFromMapping(JsonConvert.DeserializeObject<ImportExcelMapping>(mapping), file.OpenReadStream()).ConfigureAwait(true);
+            return await _productService.ImportProductFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -92,7 +98,8 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("GetByIds")]
-        [VErpAction(EnumAction.View)]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
         public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
         {
             return (await _productService.GetListByIds(productIds)).ToList();
@@ -107,8 +114,17 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("")]
         public async Task<int> AddProduct([FromBody] ProductModel product)
         {
-            return await UpdateOrAddProduct(null, product);
+            return await _productService.AddProduct(product);
         }
+
+
+        [HttpPost]
+        [Route("{parentProductId}/SemiProduct")]
+        public async Task<ProductDefaultModel> AddProductSemiProduct([FromRoute] int parentProductId, [FromBody] ProductDefaultModel product)
+        {
+            return await _productService.ProductAddProductSemi(parentProductId, product);
+        }
+
 
         /// <summary>
         /// Lấy thông tin sản phẩm
@@ -122,6 +138,49 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productService.ProductInfo(productId);
         }
 
+        [HttpGet]
+        [Route("{productId}/GeneralInfo")]
+        public async Task<ProductPartialGeneralModel> GeneralInfo([FromRoute] int productId)
+        {
+            return await _productPartialService.GeneralInfo(productId);
+        }
+
+        [HttpPut]
+        [Route("{productId}/GeneralInfo")]
+        public async Task<bool> UpdateGeneralInfo([FromRoute] int productId, [FromBody] ProductPartialGeneralModel model)
+        {
+            return await _productPartialService.UpdateGeneralInfo(productId, model);
+        }
+
+        [HttpGet]
+        [Route("{productId}/StockInfo")]
+        public async Task<ProductPartialStockModel> StockInfo([FromRoute] int productId)
+        {
+            return await _productPartialService.StockInfo(productId);
+        }
+
+        [HttpPut]
+        [Route("{productId}/StockInfo")]
+        public async Task<bool> UpdateStockInfo([FromRoute] int productId, [FromBody] ProductPartialStockModel model)
+        {
+            return await _productPartialService.UpdateStockInfo(productId, model);
+        }
+
+
+        [HttpGet]
+        [Route("{productId}/SellInfo")]
+        public async Task<ProductPartialSellModel> SellInfo([FromRoute] int productId)
+        {
+            return await _productPartialService.SellInfo(productId);
+        }
+
+        [HttpPut]
+        [Route("{productId}/SellInfo")]
+        public async Task<bool> UpdateSellInfo([FromRoute] int productId, [FromBody] ProductPartialSellModel model)
+        {
+            return await _productPartialService.UpdateSellInfo(productId, model);
+        }
+
         /// <summary>
         /// Cập nhật sản phẩm
         /// </summary>
@@ -132,7 +191,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}")]
         public async Task<bool> UpdateProduct([FromRoute] int productId, [FromBody] ProductModel product)
         {
-            return (await UpdateOrAddProduct(productId, product)) > 0;
+            return await _productService.UpdateProduct(productId, product);
         }
 
         /// <summary>
@@ -157,67 +216,26 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("File/{fileTypeId}")]
         public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
-            return await _fileService.Upload(EnumObjectType.Product, fileTypeId, string.Empty, file);
+            return await _fileService.Upload(EnumObjectType.Product, string.Empty, file);
         }
 
-        /// <summary>
-        /// Sinh mã sản phẩm
-        /// </summary>
-        /// <param name="productTypeId"></param>
-        /// <returns></returns>
         [HttpPost]
-        [Route("GenerateProductCode")]
-        public async Task<string> GenerateProductCode([FromQuery] int? productTypeId)
+        [Route("Copy")]
+        public async Task<long> CopyProduct([FromQuery] int sourceProductId, [FromBody] ProductModel product)
         {
-            var typeCode = "";
-            if (productTypeId.HasValue)
-            {
-                var typeInfo = await _productTypeService.GetInfoProductType(productTypeId.Value);
-
-                typeCode = typeInfo.IdentityCode;
-            }
-            var objectCode = await _objectGenCodeService.GenerateCode(EnumObjectType.Product);
-
-
-            return string.IsNullOrWhiteSpace(typeCode) ? objectCode : typeCode + objectCode;
+            return await _productService.CopyProduct(product, sourceProductId);
         }
 
+        [HttpPost]
+        [Route("Copy/Bom")]
+        public async Task<long> CopyProductBom([FromQuery] int sourceProductId, [FromQuery] int destProductId) {
+            return await _productService.CopyProductBom(sourceProductId, destProductId);
+        }
 
-        private async Task<int> UpdateOrAddProduct(int? productId, ProductModel product)
-        {
-            // var lastValue = 0;
-            var isGenCode = false;
-            if (string.IsNullOrWhiteSpace(product?.ProductCode) && product.ProductTypeId.HasValue)
-            {
-                var productTypeInfo = await _productTypeService.GetInfoProductType(product.ProductTypeId.Value);
-
-                var productTypeConfig = await _customGenCodeService.GetCurrentConfig(EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
-
-                var code = await _customGenCodeService.GenerateCode(productTypeConfig.CustomGenCodeId, 0, productTypeInfo.IdentityCode).ConfigureAwait(true);
-
-                product.ProductCode = code.CustomCode;
-                // lastValue = code.Data.LastValue;
-                isGenCode = true;
-
-            }
-
-            int r;
-            if (!productId.HasValue)
-            {
-                r = await _productService.AddProduct(product).ConfigureAwait(true);
-            }
-            else
-            {
-                await _productService.UpdateProduct(productId.Value, product).ConfigureAwait(true);
-                r = productId.Value;
-            }
-
-            if (isGenCode)
-            {
-                await _customGenCodeService.ConfirmCode((int)EnumObjectType.ProductType, product.ProductTypeId.Value).ConfigureAwait(true);
-            }
-
-            return r;
+        [HttpPost]
+        [Route("Copy/MaterialsConsumption")]
+        public async Task<long> CopyProductMaterialConsumption([FromQuery] int sourceProductId, [FromQuery] int destProductId) {
+            return await _productService.CopyProductMaterialConsumption(sourceProductId, destProductId);
         }
     }
 }

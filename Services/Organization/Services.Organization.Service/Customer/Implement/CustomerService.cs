@@ -22,6 +22,7 @@ using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Model;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -147,7 +148,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         {
             await ValidateCustomerModels(customers);
 
-            var (customerEntities, originData, contacts, bankAccounts) = ConvertToCustomerEntities(customers);
+            var (customerEntities, originData, contacts, bankAccounts, attachments) = ConvertToCustomerEntities(customers);
 
             using (var transaction = _organizationContext.Database.BeginTransaction())
             {
@@ -155,6 +156,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 var contactEntities = new List<CustomerContact>();
                 var bankAccountEntities = new List<CustomerBankAccount>();
+                var customerAttachments = new List<CustomerAttachment>();
 
                 foreach (var entity in customerEntities)
                 {
@@ -168,12 +170,19 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         bacnkAcc.CustomerId = entity.CustomerId;
                     }
 
+                    foreach (var attach in attachments[entity])
+                    {
+                        attach.CustomerId = entity.CustomerId;
+                    }
+
                     contactEntities.AddRange(contacts[entity]);
                     bankAccountEntities.AddRange(bankAccounts[entity]);
+                    customerAttachments.AddRange(attachments[entity]);
                 }
 
                 await _organizationContext.InsertByBatch(contactEntities, false);
                 await _organizationContext.InsertByBatch(bankAccountEntities, false);
+                await _organizationContext.InsertByBatch(customerAttachments, false);
 
                 transaction.Commit();
             }
@@ -215,6 +224,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var bankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+            var customerAttachments = await _organizationContext.CustomerAttachment.Where(at => at.CustomerId == customerId).ProjectTo<CustomerAttachmentModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             return new CustomerModel()
             {
@@ -231,7 +241,17 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 IsActived = customerInfo.IsActived,
                 CustomerStatusId = (EnumCustomerStatus)customerInfo.CustomerStatusId,
                 Identify = customerInfo.Identify,
+
                 DebtDays = customerInfo.DebtDays,
+                DebtLimitation = customerInfo.DebtLimitation,
+                DebtBeginningTypeId = (EnumBeginningType)customerInfo.DebtBeginningTypeId,
+                DebtManagerUserId = customerInfo.DebtManagerUserId,
+                LoanDays = customerInfo.LoanDays,
+                LoanLimitation = customerInfo.LoanLimitation,
+                LoanBeginningTypeId = (EnumBeginningType)customerInfo.LoanBeginningTypeId,
+                LoanManagerUserId = customerInfo.LoanManagerUserId,
+
+
                 Contacts = customerContacts.Select(c => new CustomerContactModel()
                 {
                     CustomerContactId = c.CustomerContactId,
@@ -241,23 +261,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     PhoneNumber = c.PhoneNumber,
                     Email = c.Email
                 }).ToList(),
-                BankAccounts = bankAccounts.Select(ba => new CustomerBankAccountModel()
-                {
-                    CustomerBankAccountId = ba.CustomerBankAccountId,
-                    BankName = ba.BankName,
-                    AccountNumber = ba.AccountNumber,
-                    SwiffCode = ba.SwiffCode
-
-                }).ToList()
+                BankAccounts = bankAccounts.Select(ba => TransformBankAccModel(ba)).ToList(),
+                CustomerAttachments = customerAttachments
             };
         }
 
-        public async Task<PageData<CustomerListOutput>> GetList(string keyword, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
+
+
+        public async Task<PageData<CustomerListOutput>> GetList(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
+            var customerQuery = _organizationContext.Customer.AsQueryable();
+            if (customerIds != null && customerIds.Count > 0)
+            {
+                customerQuery = customerQuery.Where(c => customerIds.Contains(c.CustomerId));
+            }
             var query = (
-                 from c in _organizationContext.Customer
+                 from c in customerQuery
                  select new CustomerListOutput()
                  {
                      CustomerCode = c.CustomerCode,
@@ -271,6 +292,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                      Email = c.Email,
                      Identify = c.Identify,
                      DebtDays = c.DebtDays,
+                     DebtLimitation = c.DebtLimitation,
+                     DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
+                     DebtManagerUserId = c.DebtManagerUserId,
+                     LoanDays = c.LoanDays,
+                     LoanLimitation = c.LoanLimitation,
+                     LoanBeginningTypeId = (EnumBeginningType)c.LoanBeginningTypeId,
+                     LoanManagerUserId = c.LoanManagerUserId,
                      CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                  }
              );
@@ -329,6 +357,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     Email = c.Email,
                     Identify = c.Identify,
                     DebtDays = c.DebtDays,
+                    DebtLimitation = c.DebtLimitation,
+                    DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
+                    DebtManagerUserId = c.DebtManagerUserId,
+                    LoanDays = c.LoanDays,
+                    LoanLimitation = c.LoanLimitation,
+                    LoanBeginningTypeId = (EnumBeginningType)c.LoanBeginningTypeId,
+                    LoanManagerUserId = c.LoanManagerUserId,
                     CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
                 }
             ).ToListAsync();
@@ -362,6 +397,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 {
                     var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
                     var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+                    var customerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
+
+
                     customerInfo.LegalRepresentative = data.LegalRepresentative;
                     customerInfo.CustomerCode = data.CustomerCode;
                     customerInfo.CustomerName = data.CustomerName;
@@ -373,6 +411,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     customerInfo.Email = data.Email;
                     customerInfo.Identify = data.Identify;
                     customerInfo.DebtDays = data.DebtDays;
+                    customerInfo.DebtLimitation = data.DebtLimitation;
+                    customerInfo.DebtBeginningTypeId = (int)data.DebtBeginningTypeId;
+                    customerInfo.DebtManagerUserId = data.DebtManagerUserId;
+                    customerInfo.LoanDays = data.LoanDays;
+                    customerInfo.LoanLimitation = data.LoanLimitation;
+                    customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
+                    customerInfo.LoanManagerUserId = data.LoanManagerUserId;
                     customerInfo.Description = data.Description;
                     customerInfo.IsActived = data.IsActived;
                     customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -422,7 +467,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         }
                     }
 
-                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.CustomerBankAccountId == ba.CustomerBankAccountId)).ToList();
+                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
                     foreach (var ba in deletedBankAccounts)
                     {
                         ba.IsDeleted = true;
@@ -430,31 +475,43 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         ba.UpdatedUserId = updatedUserId;
                     }
 
-                    var newBankAccounts = data.BankAccounts.Where(ba => !(ba.CustomerBankAccountId > 0)).Select(ba => new CustomerBankAccount()
-                    {
-                        CustomerId = customerInfo.CustomerId,
-                        BankName = ba.BankName,
-                        UpdatedUserId = updatedUserId,
-                        SwiffCode = ba.SwiffCode,
-                        AccountNumber = ba.AccountNumber,
-                        IsDeleted = false,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
-                    });
+                    var newBankAccounts = data.BankAccounts
+                        .Where(ba => ba.BankAccountId <= 0)
+                        .Select(ba => TransformBankAccEntity(customerId,ba));
                     await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
 
                     foreach (var ba in dbBankAccounts)
                     {
-                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.CustomerBankAccountId == ba.CustomerBankAccountId);
+                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId);
                         if (reqBankAccount != null)
                         {
                             ba.AccountNumber = reqBankAccount.AccountNumber;
                             ba.SwiffCode = reqBankAccount.SwiffCode;
                             ba.BankName = reqBankAccount.BankName;
+                            ba.BankAddress = reqBankAccount.BankAddress;
+                            ba.BankBranch = reqBankAccount.BankBranch;
+                            ba.BankCode = reqBankAccount.BankCode;
                             ba.UpdatedUserId = updatedUserId;
+                            ba.AccountName = reqBankAccount.AccountName;
+                            ba.Province = reqBankAccount.Province;
+                            ba.CurrencyId = reqBankAccount.CurrencyId;
                             ba.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
                     }
+
+                    foreach (var attach in customerAttachments)
+                    {
+                        var change = data.CustomerAttachments.FirstOrDefault(x => x.CustomerAttachmentId == attach.CustomerAttachmentId);
+                        if (change != null)
+                            _mapper.Map(change, attach);
+                        else
+                            attach.IsDeleted = true;
+                    }
+                    var newAttachment = data.CustomerAttachments.AsQueryable()
+                        .Where(x => !(x.CustomerAttachmentId > 0))
+                        .ProjectTo<CustomerAttachment>(_mapper.ConfigurationProvider).ToList();
+                    newAttachment.ForEach(x => x.CustomerId = customerInfo.CustomerId);
+                    await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
 
                     await _organizationContext.SaveChangesAsync();
                     trans.Commit();
@@ -500,6 +557,34 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     else
                     {
                         entity.CustomerTypeId = EnumCustomerType.Organization;
+                    }
+
+                    return true;
+                }
+
+                if (propertyName == nameof(CustomerModel.DebtBeginningTypeId))
+                {
+                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
+                    {
+                        entity.DebtBeginningTypeId = EnumBeginningType.EndOfMonth;
+                    }
+                    else
+                    {
+                        entity.DebtBeginningTypeId = EnumBeginningType.BillDate;
+                    }
+
+                    return true;
+                }
+
+                if (propertyName == nameof(CustomerModel.LoanBeginningTypeId))
+                {
+                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
+                    {
+                        entity.LoanBeginningTypeId = EnumBeginningType.EndOfMonth;
+                    }
+                    else
+                    {
+                        entity.LoanBeginningTypeId = EnumBeginningType.BillDate;
                     }
 
                     return true;
@@ -593,13 +678,15 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         private (IList<CustomerEntity> customerEntities,
             Dictionary<CustomerEntity, CustomerModel> originData,
             Dictionary<CustomerEntity, List<CustomerContact>> contacts,
-            Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts)
+            Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts,
+            Dictionary<CustomerEntity, List<CustomerAttachment>> attachments)
             ConvertToCustomerEntities(IList<CustomerModel> customers)
         {
             var customerEntities = new List<CustomerEntity>();
             var originData = new Dictionary<CustomerEntity, CustomerModel>();
             var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
             var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
+            var attachments = new Dictionary<CustomerEntity, List<CustomerAttachment>>();
 
             foreach (var data in customers)
             {
@@ -621,11 +708,21 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     CustomerStatusId = (int)data.CustomerStatusId,
                     Identify = data.Identify,
-                    DebtDays = data.DebtDays
+                    DebtDays = data.DebtDays,
+                    DebtLimitation = data.DebtLimitation,
+                    DebtBeginningTypeId = (int)data.DebtBeginningTypeId,
+                    DebtManagerUserId = data.DebtManagerUserId,
+                    LoanDays = data.LoanDays,
+                    LoanLimitation = data.LoanLimitation,
+                    LoanBeginningTypeId = (int)data.LoanBeginningTypeId,
+                    LoanManagerUserId = data.LoanManagerUserId
                 };
                 customerEntities.Add(customer);
+
+                originData.Add(customer, data);
                 contacts.Add(customer, new List<CustomerContact>());
                 bankAccounts.Add(customer, new List<CustomerBankAccount>());
+                attachments.Add(customer, new List<CustomerAttachment>());
 
                 if (data.Contacts != null && data.Contacts.Count > 0)
                 {
@@ -645,21 +742,61 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 if (data.BankAccounts != null && data.BankAccounts.Count > 0)
                 {
-                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => new CustomerBankAccount()
+                    bankAccounts[customer].AddRange(data.BankAccounts.Select(ba => TransformBankAccEntity(0, ba)));
+                }
+
+                if (data.CustomerAttachments != null && data.CustomerAttachments.Count > 0)
+                {
+                    attachments[customer].AddRange(data.CustomerAttachments.Select(attach => new CustomerAttachment()
                     {
-                        // CustomerId = customer.CustomerId,
-                        BankName = ba.BankName,
-                        AccountNumber = ba.AccountNumber,
-                        SwiffCode = ba.SwiffCode,
-                        UpdatedUserId = _currentContextService.UserId,
+                        Title = attach.Title,
+                        AttachmentFileId = attach.AttachmentFileId,
                         IsDeleted = false,
                         CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
                     }));
                 }
             }
 
-            return (customerEntities, originData, contacts, bankAccounts);
+            return (customerEntities, originData, contacts, bankAccounts, attachments);
+        }
+
+        private CustomerBankAccountModel TransformBankAccModel(CustomerBankAccount entity)
+        {
+            if (entity == null) return null;
+            return new CustomerBankAccountModel()
+            {
+                BankAccountId = entity.CustomerBankAccountId,
+                BankName = entity.BankName,
+                AccountNumber = entity.AccountNumber,
+                SwiffCode = entity.SwiffCode,
+                BankAddress = entity.BankAddress,
+                BankBranch = entity.BankBranch,
+                BankCode = entity.BankCode,
+                AccountName = entity.AccountName,
+                Province = entity.Province,
+                CurrencyId = entity.CurrencyId
+            };
+        }
+
+        private CustomerBankAccount TransformBankAccEntity(int customerId, CustomerBankAccountModel model)
+        {
+            if (model == null) return null;
+            return new CustomerBankAccount()
+            {
+                CustomerId = customerId,
+                CustomerBankAccountId = model.BankAccountId,
+                BankName = model.BankName,
+                AccountNumber = model.AccountNumber,
+                SwiffCode = model.SwiffCode,
+                BankAddress = model.BankAddress,
+                BankBranch = model.BankBranch,
+                BankCode = model.BankCode,
+                AccountName = model.AccountName,
+                Province = model.Province,
+                CurrencyId = model.CurrencyId,
+                IsDeleted = false,
+            };
         }
 
     }

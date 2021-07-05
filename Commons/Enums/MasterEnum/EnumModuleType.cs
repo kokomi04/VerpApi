@@ -12,10 +12,12 @@ namespace VErp.Commons.Enums.MasterEnum
         Stock = 2,
         [Description("Cơ cấu, tổ chức")]
         Organization = 3,
-        [Description("Mua hàng")]
+        [Description("Mua, bán hàng")]
         PurchaseOrder = 4,
         [Description("Kế toán")]
         Accountant = 5,
+        [Description("Sản xuất")]
+        Manufacturing = 6,
     }
 
 }

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.MasterDB;
@@ -28,6 +29,30 @@ namespace MasterTests
 
 
         public int UserId { get; set; }
+        public BaseDevelopmentUnitStartup(int userId, int subsidiaryId)
+        {
+            Environment.SetEnvironmentVariable("DEBUG_ENVIRONMENT", "UNIT_TEST");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+            webHost = Program.CreateWebHostBuilder(null).Build();
+
+            UserId = userId;
+
+            _unAuthorizeMasterDBContext= (UnAuthorizeMasterDBContext)webHost.Services.GetService(typeof(UnAuthorizeMasterDBContext));
+
+            var currentContextFactory = (ICurrentContextFactory)webHost.Services.GetService(typeof(ICurrentContextFactory));
+
+            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, EnumActionType.Add, RoleInfo, null, subsidiaryId, null));
+
+            _masterDBContext = (MasterDBContext)webHost.Services.GetService(typeof(MasterDBContext));
+
+            _stockDBContext = (StockDBContext)webHost.Services.GetService(typeof(StockDBContext));
+
+            _accountancyDBContext = (AccountancyDBContext)webHost.Services.GetService(typeof(AccountancyDBContext));
+
+
+        }
+
         public BaseDevelopmentUnitStartup()
         {
             Environment.SetEnvironmentVariable("DEBUG_ENVIRONMENT", "UNIT_TEST");
@@ -37,11 +62,11 @@ namespace MasterTests
 
             UserId = 2;
 
-            _unAuthorizeMasterDBContext= (UnAuthorizeMasterDBContext)webHost.Services.GetService(typeof(UnAuthorizeMasterDBContext));
+            _unAuthorizeMasterDBContext = (UnAuthorizeMasterDBContext)webHost.Services.GetService(typeof(UnAuthorizeMasterDBContext));
 
             var currentContextFactory = (ICurrentContextFactory)webHost.Services.GetService(typeof(ICurrentContextFactory));
 
-            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(1, EnumAction.Add, RoleInfo, null, 0, null));
+            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(1, EnumActionType.Add, RoleInfo, null, 0, null));
 
             _masterDBContext = (MasterDBContext)webHost.Services.GetService(typeof(MasterDBContext));
 
@@ -62,7 +87,11 @@ namespace MasterTests
                     return _roleInfo;
                 }
 
-                var userInfo = _unAuthorizeMasterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
+                var userInfo = _unAuthorizeMasterDBContext.User.AsNoTracking().FirstOrDefault(u => u.UserId == UserId);
+
+                if (userInfo == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
+
                 var roleInfo = (
                     from r in _unAuthorizeMasterDBContext.Role
                     where r.RoleId == userInfo.RoleId
@@ -80,7 +109,8 @@ namespace MasterTests
                     roleInfo.RoleId,
                     roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
                     roleInfo.IsDataPermissionInheritOnStock,
-                    roleInfo.IsModulePermissionInherit
+                    roleInfo.IsModulePermissionInherit,
+                    string.Empty
                 );
 
 
