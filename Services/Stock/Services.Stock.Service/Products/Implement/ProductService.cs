@@ -641,6 +641,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unitConverions = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
+            var productBoms = await _stockDbContext.ProductBom.Where(b => b.ProductId == productId).ToListAsync();
+
+            var productConsum = await _stockDbContext.ProductMaterialsConsumption.Where(b => b.ProductId == productId).ToListAsync();
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -652,6 +655,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productExtra.IsDeleted = true;
 
                     productStockInfo.IsDeleted = true;
+
+                    foreach(var p in productBoms)
+                    {
+                        p.IsDeleted = true;
+                    }
+
+                    foreach (var p in productConsum)
+                    {
+                        p.IsDeleted = true;
+                    }
+
+                    _stockDbContext.ProductBom.RemoveRange(productBoms);
+                    _stockDbContext.ProductMaterialsConsumption.RemoveRange(productConsum);
 
                     //_stockContext.ProductStockValidation.RemoveRange(stockValidations);
 
