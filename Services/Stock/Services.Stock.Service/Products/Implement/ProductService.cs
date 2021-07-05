@@ -641,6 +641,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unitConverions = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
+            var productBoms = await _stockDbContext.ProductBom.Where(b => b.ProductId == productId).ToListAsync();
+
+            var productConsum = await _stockDbContext.ProductMaterialsConsumption.Where(b => b.ProductId == productId).ToListAsync();
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -652,6 +655,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     productExtra.IsDeleted = true;
 
                     productStockInfo.IsDeleted = true;
+
+                    foreach(var p in productBoms)
+                    {
+                        p.IsDeleted = true;
+                    }
+
+                    foreach (var p in productConsum)
+                    {
+                        p.IsDeleted = true;
+                    }
+
+                    _stockDbContext.ProductBom.RemoveRange(productBoms);
+                    _stockDbContext.ProductMaterialsConsumption.RemoveRange(productConsum);
 
                     //_stockContext.ProductStockValidation.RemoveRange(stockValidations);
 
@@ -694,6 +710,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
+            keyword = (keyword ?? "").Trim();
+            productName = (productName ?? "").Trim();
+
             var productInternalName = productName.NormalizeAsInternalName();
 
             var products = _stockDbContext.Product.AsQueryable();
@@ -1096,9 +1115,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<int> CopyProductBom(int sourceProductId, int destProductId) {
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync()) {
-                try {
+        public async Task<int> CopyProductBom(int sourceProductId, int destProductId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
 
                     var parammeters = new[]
                     {
@@ -1112,7 +1134,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await trans.CommitAsync();
                     return destProductId;
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     await trans.TryRollbackTransactionAsync();
                     _logger.LogError("CopyProductBom", ex);
                     throw;
@@ -1121,9 +1145,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<int> CopyProductMaterialConsumption(int sourceProductId, int destProductId) {
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync()) {
-                try {
+        public async Task<int> CopyProductMaterialConsumption(int sourceProductId, int destProductId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
 
                     var parammeters = new[]
                     {
@@ -1137,7 +1164,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await trans.CommitAsync();
                     return destProductId;
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     await trans.TryRollbackTransactionAsync();
                     _logger.LogError("CopyProductMaterialConsumption", ex);
                     throw;

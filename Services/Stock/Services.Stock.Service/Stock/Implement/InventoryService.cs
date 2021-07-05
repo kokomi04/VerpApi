@@ -1771,7 +1771,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
 
             var query = from pk in _stockDbContext.Package
-                        join l in _stockDbContext.Location on pk.PackageId equals l.LocationId into ls
+                        join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
                         from l in ls.DefaultIfEmpty()
                         join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
                         join s in _stockDbContext.ProductExtraInfo on p.ProductId equals s.ProductId
@@ -1983,14 +1983,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// Tính toán lại vết khi update phiếu nhập/xuất
         /// </summary>
         /// <param name="inventoryId"></param>
-        private async Task ReCalculateRemainingAfterUpdate(long inventoryId)
+        private async Task ReCalculateRemainingAfterUpdate(long inventoryId, long? effecttedFromInventoryId = null)
         {
             //var errorInventoryId = new SqlParameter("@ErrorInventoryId", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
             var errorIventoryDetailId = new SqlParameter("@ErrorIventoryDetailId", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
 
             // await _stockDbContext.Database.ExecuteSqlRawAsync("EXEC usp_InventoryDetail_UpdatePrimaryQuantityRemanings_Event @UpdatedInventoryId = @UpdatedInventoryId", new SqlParameter("@UpdatedInventoryId", inventoryId), errorInventoryId);
 
-            await _stockDbContext.ExecuteNoneQueryProcedure("usp_InventoryDetail_UpdatePrimaryQuantityRemanings_Event", new[] { new SqlParameter("@UpdatedInventoryId", inventoryId), errorIventoryDetailId });
+            await _stockDbContext.ExecuteNoneQueryProcedure("usp_InventoryDetail_UpdatePrimaryQuantityRemanings_Event",
+                new[] {
+                    new SqlParameter("@UpdatedInventoryId", inventoryId),
+                    new SqlParameter("@EffecttedFromInventoryId", (object)effecttedFromInventoryId??DBNull.Value),
+                    errorIventoryDetailId }
+                );
             //var inventoryTrackingFacade = await InventoryTrackingFacadeFactory.Create(_stockDbContext, inventoryId);
             //await inventoryTrackingFacade.Execute();
 

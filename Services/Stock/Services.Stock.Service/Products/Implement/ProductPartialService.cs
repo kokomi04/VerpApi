@@ -118,6 +118,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateGeneralInfo(int productId, ProductPartialGeneralModel model)
         {
+            model.ProductCode = (model.ProductCode ?? "").Trim();
+
+            if (await _stockContext.Product.AnyAsync(p => p.ProductId != productId && p.ProductCode == model.ProductCode))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Mã mặt hàng đã tồn tại, vui lòng chọn mã khác");
+            }
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -286,7 +293,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 if (lstNewUnitConverions != null)
                 {
-                    foreach(var c in lstNewUnitConverions)
+                    foreach (var c in lstNewUnitConverions)
                     {
                         c.ProductId = productId;
                         c.ProductUnitConversionId = 0;
