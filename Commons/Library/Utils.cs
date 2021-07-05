@@ -1250,7 +1250,7 @@ namespace VErp.Commons.Library
             if (string.IsNullOrEmpty(code))
                 return;
             
-            var regEx = new Regex("^([0-9a-zA-Z])(([0-9a-zA-Z_\\.\\/\\-#]\\+&)*([0-9a-zA-Z]))*$", RegexOptions.Multiline);
+            var regEx = new Regex("^([0-9a-zA-Z])(([0-9a-zA-Z_\\.\\/\\-#\\+&])*([0-9a-zA-Z]))*$", RegexOptions.Multiline);
             if (!regEx.IsMatch(code))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\./-_#&+)");
