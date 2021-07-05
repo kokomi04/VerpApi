@@ -40,7 +40,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 foreach (var changedInventoryId in data)
                 {
-                    await ReCalculateRemainingAfterUpdate(changedInventoryId);
+                    await ReCalculateRemainingAfterUpdate(changedInventoryId, inventoryId);
                 }
 
                 trans.Commit();
