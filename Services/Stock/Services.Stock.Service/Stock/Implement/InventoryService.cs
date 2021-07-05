@@ -1771,7 +1771,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
 
             var query = from pk in _stockDbContext.Package
-                        join l in _stockDbContext.Location on pk.PackageId equals l.LocationId into ls
+                        join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
                         from l in ls.DefaultIfEmpty()
                         join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
                         join s in _stockDbContext.ProductExtraInfo on p.ProductId equals s.ProductId
