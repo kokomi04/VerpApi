@@ -454,14 +454,21 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                     p.Permission
                 }).ToListAsync();
 
-            return lst.Select(p => new RolePermissionModel()
+            return lst.GroupBy(p => new
             {
                 ModuleGroupId = p.ModuleGroupId,
                 ModuleId = p.ModuleId,
                 ObjectTypeId = p.ObjectTypeId,
                 ObjectId = p.ObjectId,
-                Permission = p.Permission
-            }).ToList();
+            })
+                .Select(p => new RolePermissionModel()
+                {
+                    ModuleGroupId = p.Key.ModuleGroupId,
+                    ModuleId = p.Key.ModuleId,
+                    ObjectTypeId = p.Key.ObjectTypeId,
+                    ObjectId = p.Key.ObjectId,
+                    Permission = p.Aggregate(0, (s, v) => s |= v.Permission)
+                }).ToList();
         }
 
         public async Task<IList<StockPemissionOutput>> GetStockPermission()
