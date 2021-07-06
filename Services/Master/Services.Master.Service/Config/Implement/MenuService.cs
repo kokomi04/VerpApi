@@ -49,53 +49,41 @@ namespace VErp.Services.Master.Service.Config.Implement
             var lstMenu = new List<MenuOutputModel>();
             var lstPermissions = await _userService.GetMePermission();
             var moduleIds = lstPermissions.Select(p => p.ModuleId).ToList();
-            foreach (var item in await _masterDbContext.Menu.Where(m => m.ModuleId <= 0
-                || lstPermissions.Any(p => p.ModuleId == m.ModuleId && (m.ObjectTypeId == 0 || m.ObjectTypeId == p.ObjectTypeId && m.ObjectId == p.ObjectId))
-            ).OrderBy(m => m.SortOrder).ToListAsync())
+
+            var menus = _masterDbContext.Menu.ToList();
+
+            var permissionMenus = menus.Where(m => m.ModuleId <= 0
+                || lstPermissions.Any(p => p.ModuleId == m.ModuleId && (m.ObjectTypeId == 0 || m.ObjectTypeId == p.ObjectTypeId && m.ObjectId == p.ObjectId)));
+
+            foreach (var item in permissionMenus)
             {
-                var info = new MenuOutputModel()
-                {
-                    MenuId = item.MenuId,
-                    ParentId = item.ParentId,
-                    IsDisabled = item.IsDisabled,
-                    ModuleId = item.ModuleId,
-                    ObjectTypeId = item.ObjectTypeId,
-                    ObjectId = item.ObjectId,
-                    MenuName = item.MenuName,
-                    Url = item.Url,
-                    Icon = item.Icon,
-                    Param = item.Param,
-                    SortOrder = item.SortOrder,
-                    IsGroup = item.IsGroup,
-                    IsAlwaysShowTopMenu = item.IsAlwaysShowTopMenu
-                };
+                if (lstMenu.Any(m => m.MenuId == item.MenuId) || menus.Any(m => m.ParentId == item.MenuId)) continue;
+
+                var info = EntityToModel(item);
                 lstMenu.Add(info);
+
+                var parentId = info.ParentId;
+                while (parentId > 0)
+                {
+                    var parent = menus.FirstOrDefault(m => m.MenuId == parentId);
+                    parentId = parent?.ParentId ?? 0;
+                    if (parent != null && !lstMenu.Any(m => m.MenuId == parent.MenuId))
+                    {
+                        lstMenu.Add(EntityToModel(parent));
+                    }
+                }
             }
-            return lstMenu;
+            return lstMenu.OrderBy(m => m.SortOrder).ToList();
         }
+
+
 
         public async Task<ICollection<MenuOutputModel>> GetList()
         {
             var lstMenu = new List<MenuOutputModel>();
             foreach (var item in await _masterDbContext.Menu.OrderBy(m => m.SortOrder).ToListAsync())
-            {
-                var info = new MenuOutputModel()
-                {
-                    MenuId = item.MenuId,
-                    ParentId = item.ParentId,
-                    IsDisabled = item.IsDisabled,
-                    ModuleId = item.ModuleId,
-                    ObjectTypeId = item.ObjectTypeId,
-                    ObjectId = item.ObjectId,
-                    MenuName = item.MenuName,
-                    Url = item.Url,
-                    Icon = item.Icon,
-                    Param = item.Param,
-                    SortOrder = item.SortOrder,
-                    IsGroup = item.IsGroup,
-                    IsAlwaysShowTopMenu = item.IsAlwaysShowTopMenu
-                };
-                lstMenu.Add(info);
+            {               
+                lstMenu.Add(EntityToModel(item));
             }
             return lstMenu;
         }
@@ -185,6 +173,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound);
             }
+            return EntityToModel(obj);
+        }
+
+        private MenuOutputModel EntityToModel(Menu obj)
+        {
             return new MenuOutputModel()
             {
                 MenuId = obj.MenuId,
