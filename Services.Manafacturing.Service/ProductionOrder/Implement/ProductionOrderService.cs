@@ -52,7 +52,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _productHelperService = productHelperService;
         }
 
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -65,6 +65,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("OR v.PartnerTitle LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+
+            if (fromDate > 0 && toDate > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" (v.Date >= @FromDate AND v.Date <= @ToDate ) ");
+                parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
             }
 
             if (filters != null)
@@ -89,9 +98,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 @$";WITH tmp AS (
                     SELECT ");
 
-            
+
             sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
-            
+
 
             sql.Append(@" g.ProductionOrderId
                         FROM(
