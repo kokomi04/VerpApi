@@ -51,9 +51,21 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _currentContextService = currentContextService;
         }
 
-        public async Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
+        public async Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(
+            string keyword,
+            int page,
+            int size,
+            string orderByFieldName,
+            bool asc,
+            long fromDate,
+            long toDate,
+            Clause filters = null)
         {
-            var data = (await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
+            var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking();
+            if (fromDate > 0 && toDate > 0)
+                query = query.Where(x => x.CreatedDatetimeUtc >= fromDate.UnixToDateTime() && x.CreatedDatetimeUtc <= toDate.UnixToDateTime());
+
+            var data = (await query
                 .Include(s => s.ProductionStep)
                 .ThenInclude(p=>p.Step)
                 .ToListAsync()).Select(x => new OutsourceStepRequestSearch
@@ -61,10 +73,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     IsInvalid = x.IsInvalid,
                     OutsourceStepRequestCode = x.OutsourceStepRequestCode,
                     OutsourceStepRequestFinishDate = x.OutsourceStepRequestFinishDate.GetUnix(),
+                    OutsourceStepRequestDate = x.CreatedDatetimeUtc.GetUnix(),
                     OutsourceStepRequestId = x.OutsourceStepRequestId,
                     OutsourceStepRequestStatusId = x.OutsourceStepRequestStatusId,
                     ProductionOrderId = x.ProductionOrderId,
-                    ProductionStepCollectionTitle = string.Join(", ", x.ProductionStep.AsQueryable().ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider).Select(x => x.Title))
+                    ProductionStepCollectionTitle = string.Join(
+                        ", ",
+                        x.ProductionStep.AsQueryable()
+                                        .ProjectTo<ProductionStepInfo>(_mapper.ConfigurationProvider)
+                                        .Select(x => x.Title))
                 }).ToList();
 
             var arrProductionOrderId = data.Select(x => x.ProductionOrderId).ToArray();
@@ -110,10 +127,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
             }
 
-            var query = data.AsQueryable();
+            var dataAsQueryable = data.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = query.Where(x =>
+                dataAsQueryable = dataAsQueryable.Where(x =>
                         x.OutsourceStepRequestCode.Contains(keyword)
                         || x.ProductionOrderCode.Contains(keyword)
                         || x.OrderCode.Contains(keyword)
@@ -122,16 +139,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             if(filters != null)
             {
-                query = query.InternalFilter(filters);
+                dataAsQueryable = dataAsQueryable.InternalFilter(filters);
             }
 
             if (!string.IsNullOrWhiteSpace(orderByFieldName))
             {
-                query = query.InternalOrderBy(orderByFieldName, asc);
+                dataAsQueryable = dataAsQueryable.InternalOrderBy(orderByFieldName, asc);
             }
 
-            var total = query.Count();
-            var lst = (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToList();
+            var total = dataAsQueryable.Count();
+            var lst = (size > 0 ? dataAsQueryable.Skip((page - 1) * size).Take(size) : dataAsQueryable).ToList();
 
             return (lst, total);
         }

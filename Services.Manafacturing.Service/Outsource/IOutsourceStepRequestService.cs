@@ -19,7 +19,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<OutsourceStepRequestOutput> GetOutsourceStepRequestOutput(long outsourceStepRequestId);
         Task<bool> UpdateOutsourceStepRequest(long outsourceStepRequestId, OutsourceStepRequestInput req);
         Task<bool> DeleteOutsourceStepRequest(long outsourceStepRequestId);
-        Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
+        Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null);
         Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData(long outsourceStepRequestId);
         Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData(long[] productionStepLinkDataId);
     }

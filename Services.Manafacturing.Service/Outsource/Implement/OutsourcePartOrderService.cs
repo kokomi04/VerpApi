@@ -182,7 +182,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<OutsourcePartOrderDetailInfo>> GetListOutsourceOrderPart(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<OutsourcePartOrderDetailInfo>> GetListOutsourceOrderPart(string keyword, int page, int size, long fromDate, long toDate, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -197,6 +197,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 whereCondition.Append("OR v.ProductionOrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
+
+            if (fromDate > 0 && toDate > 0)
+            {
+                if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                whereCondition.Append(" (v.OutsourceOrderDate >= @FromDate AND v.OutsourceOrderDate <= @ToDate) ");
+                parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
+            }
+
             if (filters != null)
             {
                 var suffix = 0;
@@ -259,7 +268,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 Value = outsourceOrder.OutsourceOrderId
             };
 
-            var data = (await GetListOutsourceOrderPart(string.Empty, 1, 9999, filter)).List;
+            var data = (await GetListOutsourceOrderPart(string.Empty, 1, 9999, 0, 0, filter)).List;
             foreach (var item in data)
             {
                 var outsourceOrderDetail = _mapper.Map<OutsourceOrderDetailInfo>(item);
