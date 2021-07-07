@@ -398,7 +398,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             && mr.OutsourceStepRequestId.Value == fromStep.OutsourceStepRequestId)
                             .ToList();
 
-                        var receivedQuantity = inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+                        var receivedQuantity = inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity);
 
                         detail.InputDatas.Add(new StepInOutData
                         {
@@ -457,7 +457,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             .ToList();
 
                         receivedQuantity = handoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
-                            + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+                            + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity);
 
                         // Xử lý các phiếu xuất kho chưa phân bổ công đoạn
                         var unallocatedInventories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
@@ -465,11 +465,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                              && h.InventoryTypeId == EnumInventoryType.Output
                              && h.ProductId == inputLinkData.ObjectId
                              && !h.OutsourceStepRequestId.HasValue
-                             && h.ActualQuantity.HasValue)
+                             && h.ActualQuantity > 0)
                              .ToList();
                         foreach (var inventory in unallocatedInventories)
                         {
-                            var totalInventoryQuantity = inventory.ActualQuantity.Value;
+                            var totalInventoryQuantity = inventory.ActualQuantity;
                             bool isLastest = false;
                             foreach (var assignment in allProductionAssignments)
                             {
@@ -481,7 +481,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                         && ir.DepartmentId == departmentId
                                         && ir.InventoryTypeId == EnumInventoryType.Output
                                         && ir.ProductId == inputLinkData.ObjectId)
-                                    .Sum(ir => ir.ActualQuantity.GetValueOrDefault());
+                                    .Sum(ir => ir.ActualQuantity);
 
                                 if (assignment.HandoverStockQuantity <= allocatedQuantity) break;
                                 if (assignment.ObjectId != inputLinkData.ObjectId
@@ -563,7 +563,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             && i.OutsourceStepRequestId.Value == toStep.OutsourceStepRequestId)
                             .ToList();
 
-                        var receivedQuantity = inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+                        var receivedQuantity = inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity);
 
                         detail.OutputDatas.Add(new StepInOutData
                         {
@@ -628,7 +628,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             .ToList());
 
                         receivedQuantity = handoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
-                        + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity.GetValueOrDefault());
+                        + inventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity);
 
                         // Xử lý các phiếu xuất kho chưa phân bổ công đoạn
                         var unallocatedInventories = inventoryRequirements.Where(h => h.DepartmentId == departmentId
@@ -636,11 +636,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                              && h.InventoryTypeId == EnumInventoryType.Input
                              && h.ProductId == outputLinkData.ObjectId
                              && !h.OutsourceStepRequestId.HasValue
-                             && h.ActualQuantity.HasValue)
+                             && h.ActualQuantity > 0)
                              .ToList();
                         foreach (var inventory in unallocatedInventories)
                         {
-                            var totalInventoryQuantity = inventory.ActualQuantity.Value;
+                            var totalInventoryQuantity = inventory.ActualQuantity;
                             bool isLastest = false;
                             foreach (var assignment in allProductionAssignments)
                             {
@@ -652,7 +652,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                         && ir.DepartmentId == departmentId
                                         && ir.InventoryTypeId == EnumInventoryType.Input
                                         && ir.ProductId == outputLinkData.ObjectId)
-                                    .Sum(ir => ir.ActualQuantity.GetValueOrDefault());
+                                    .Sum(ir => ir.ActualQuantity);
 
                                 if (assignment.HandoverStockQuantity <= allocatedQuantity) break;
                                 if (assignment.ObjectId != outputLinkData.ObjectId

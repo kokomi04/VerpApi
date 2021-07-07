@@ -978,7 +978,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
 
                 inventoryRequirements.Add(otherProductionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
-                    .Where(ir => departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+                    .Where(ir => ir.DepartmentId.HasValue && departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .AsQueryable()
                     .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                     .ToList());
@@ -994,7 +994,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     ? 0 
                     : inventoryRequirements[group.Key.ProductionOrderId]
                     .Where(ir => !ir.ProductionStepId.HasValue && ir.DepartmentId == group.Key.DepartmentId && ir.ProductId == group.Key.ObjectId)
-                    .Sum(ir => ir.ActualQuantity.GetValueOrDefault());
+                    .Sum(ir => ir.ActualQuantity);
 
                 foreach (var otherAssignment in group)
                 {
@@ -1013,7 +1013,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                             && ir.ProductionStepId.Value == otherAssignment.ProductionStepId 
                             && ir.DepartmentId == group.Key.DepartmentId 
                             && ir.ProductId == group.Key.ObjectId)
-                            .Sum(ir => ir.ActualQuantity.GetValueOrDefault());
+                            .Sum(ir => ir.ActualQuantity);
 
                         var departmentImportStockQuantity = otherAssignment.AssignmentQuantity * otherAssignment.ImportStockQuantity / otherAssignment.TotalQuantity;
                         var unallocatedQuantity = totalInventoryQuantity > departmentImportStockQuantity - allocatedQuantity ? departmentImportStockQuantity - allocatedQuantity : totalInventoryQuantity;
