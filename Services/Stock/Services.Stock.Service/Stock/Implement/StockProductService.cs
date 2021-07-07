@@ -1045,7 +1045,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
               {
                   i.InventoryId,
                   i.CustomerId,
-                  id.DepartmentId,
+                  i.DepartmentId,
                   i.StockId,
                   i.Date,
                   i.CreatedDatetimeUtc,

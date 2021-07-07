@@ -159,21 +159,25 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var obj = entityEntry.Entity;
 
-                /**
-                 * Validate if Code field contains special characters
-                 * 
-                 */
-                var type = obj.GetType();
-                var ps = type.GetProperties();
-                foreach (var prop in ps)
+                var isDeleted = (bool?)obj.GetValue("IsDeleted") == true;
+
+                if (!isDeleted)
                 {
-                    var propName = prop.Name.ToLower();
-                    if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode"))
+                    /**
+                     * Validate if Code field contains special characters
+                     * 
+                     */
+                    var type = obj.GetType();
+                    var ps = type.GetProperties();
+                    foreach (var prop in ps)
                     {
-                        Utils.ValidateCodeSpecialCharactors(prop.GetValue(obj) as string);
+                        var propName = prop.Name.ToLower();
+                        if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode"))
+                        {
+                            Utils.ValidateCodeSpecialCharactors(prop.GetValue(obj) as string);
+                        }
                     }
                 }
-
 
                 /**
                  * Set history base
@@ -204,7 +208,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 else
                 {
-                    if ((bool?)obj.GetValue("IsDeleted") == true)
+                    if (isDeleted)
                     {
                         obj.SetValue("DeletedDatetimeUtc", DateTime.UtcNow);
                     }

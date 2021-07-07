@@ -162,7 +162,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
             return resultData.ConvertData<ProductionInventoryRequirementEntity>()
                 .AsQueryable()
@@ -265,7 +265,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                {
                 new SqlParameter("@ProductionOrderId", productionOrderId)
                };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
                 inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>();
             }

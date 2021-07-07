@@ -925,9 +925,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         StockId = q.StockId,
                         ProductId = q.ProductId,
                         PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.Round(),
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
                         ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.Round()
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
                     }).ToList();
             }
 

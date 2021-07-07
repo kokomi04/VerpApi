@@ -8,7 +8,7 @@ namespace VErp.Commons.Constants
     {
         public const decimal MINIMUM_ACCEPT_DECIMAL_NUMBER = 0.0000000001M;
         public const decimal PRODUCTION_MINIMUM_ACCEPT_DECIMAL_NUMBER = 0.00001M;
-        public const decimal INPUT_RATE_STANDARD_ERROR = 0.01M;
+        public const decimal INPUT_RATE_STANDARD_ERROR = 0.00001M;
 
     }
 }

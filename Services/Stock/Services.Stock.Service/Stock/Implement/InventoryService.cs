@@ -296,7 +296,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     UpdatedByUserId = item.UpdatedByUserId,
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
-
+                    DepartmentId = item.DepartmentId,
                     StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
@@ -434,12 +434,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         InventoryDetailId = details.InventoryDetailId,
                         ProductId = details.ProductId,
                         PrimaryUnitId = productInfo?.UnitId,
-                        RequestPrimaryQuantity = details.RequestPrimaryQuantity?.Round(),
-                        PrimaryQuantity = details.PrimaryQuantity.Round(),
+                        RequestPrimaryQuantity = details.RequestPrimaryQuantity?.RoundBy(),
+                        PrimaryQuantity = details.PrimaryQuantity.RoundBy(),
                         UnitPrice = details.UnitPrice,
                         ProductUnitConversionId = details.ProductUnitConversionId,
-                        RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity?.Round(),
-                        ProductUnitConversionQuantity = details.ProductUnitConversionQuantity.Round(),
+                        RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity?.RoundBy(),
+                        ProductUnitConversionQuantity = details.ProductUnitConversionQuantity.RoundBy(),
                         ProductUnitConversionPrice = details.ProductUnitConversionPrice,
                         FromPackageId = details.FromPackageId,
                         ToPackageId = details.ToPackageId,
@@ -459,8 +459,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Description = details.Description,
                         AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                         InventoryRequirementCode = details.InventoryRequirementCode,
-
-                        DepartmentId = details.DepartmentId,
                     };
 
                     //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
@@ -521,6 +519,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = inventoryObj.AccountancyAccountNumber,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
+                    DepartmentId = inventoryObj.DepartmentId,
                     StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
@@ -739,7 +738,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
-                    IsApproved = false
+                    IsApproved = false,
+                    DepartmentId = req.DepartmentId
                 };
                 await _stockDbContext.AddAsync(inventoryObj);
                 await _stockDbContext.SaveChangesAsync();
@@ -856,7 +856,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
-                    IsApproved = false
+                    IsApproved = false,
+                    DepartmentId = req.DepartmentId
                 };
 
                 await _stockDbContext.AddAsync(inventoryObj);
@@ -1043,6 +1044,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
             inventoryObj.UpdatedByUserId = _currentContextService.UserId;
             inventoryObj.TotalMoney = totalMoney;
+            inventoryObj.DepartmentId = req.DepartmentId;
         }
 
         /// <summary>
@@ -1120,7 +1122,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.IsApproved = false;
                         inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
-
+                        inventoryObj.DepartmentId = req.DepartmentId;
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
 
@@ -1448,7 +1450,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var fromPackageIds = inventoryDetails.Select(f => f.FromPackageId).ToList();
                         var fromPackages = _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToList();
 
-                        var original = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining.Round());
+                        var original = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining.RoundBy());
 
                         //var groupByProducts = inventoryDetails
                         //    .GroupBy(g => new { g.ProductId, g.ProductUnitConversionId })
@@ -1615,7 +1617,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                         new SqlParameter("@ProductionOrderCode", productionOrderCode)
                 };
-                var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+                var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
                 inventoryMap.Add(productionOrderCode, resultData);
                 await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderCode, resultData, status);
             }
@@ -1663,9 +1665,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockId = q.StockId,
                         ProductId = q.ProductId,
                         PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.Round(),
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
                         ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.Round()
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
                     }).ToList();
             }
 
@@ -1746,10 +1748,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Description = item.Description,
                     PrimaryUnitId = item.UnitId,
                     ProductUnitConversionId = item.ProductUnitConversionId,
-                    PrimaryQuantityWaiting = item.PrimaryQuantityWaiting.Round(),
-                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining.Round(),
-                    ProductUnitConversionWaitting = item.ProductUnitConversionWaitting.Round(),
-                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining.Round(),
+                    PrimaryQuantityWaiting = item.PrimaryQuantityWaiting.RoundBy(),
+                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining.RoundBy(),
+                    ProductUnitConversionWaitting = item.ProductUnitConversionWaitting.RoundBy(),
+                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining.RoundBy(),
 
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
@@ -1910,9 +1912,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockId = q.StockId,
                         ProductId = q.ProductId,
                         PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.Round(),
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
                         ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.Round()
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
                     }).ToList();
             }
 
@@ -2116,7 +2118,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if ((puInfo.IsFreeStyle ?? false) == false)
                 {
-                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, puInfo.FactorExpression, details.ProductUnitConversionQuantity);
+                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, puInfo.FactorExpression, details.ProductUnitConversionQuantity, puInfo.DecimalPlace);
                     if (isSuccess)
                     {
                         details.ProductUnitConversionQuantity = pucQuantity;
@@ -2126,7 +2128,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={puInfo.FactorExpression}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
                         //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                         throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError,
-                            $"Không thể tính giá trị đơn vị chuyển đổi \"{puInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\"");
+                            $"Không thể tính giá trị đơn vị chuyển đổi \"{puInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\", kiểm tra lại độ sai số đơn vị");
                     }
                 }
 
@@ -2134,7 +2136,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                     throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError,
-                        $"Không thể tính giá trị đơn vị chuyển đổi \"{puInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\"");
+                        $"Không thể tính giá trị đơn vị chuyển đổi \"{puInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\", kiểm tra lại độ sai số đơn vị");
                 }
 
                 // }
@@ -2178,13 +2180,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    RequestPrimaryQuantity = details.RequestPrimaryQuantity?.Round(puDefault.DecimalPlace),
-                    PrimaryQuantity = details.PrimaryQuantity.Round(puDefault.DecimalPlace),
-                    UnitPrice = details.UnitPrice.Round(puDefault.DecimalPlace),
+                    RequestPrimaryQuantity = details.RequestPrimaryQuantity?.RoundBy(puDefault.DecimalPlace),
+                    PrimaryQuantity = details.PrimaryQuantity.RoundBy(puDefault.DecimalPlace),
+                    UnitPrice = details.UnitPrice.RoundBy(puDefault.DecimalPlace),
                     ProductUnitConversionId = details.ProductUnitConversionId,
-                    RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity?.Round(puInfo.DecimalPlace),
-                    ProductUnitConversionQuantity = details.ProductUnitConversionQuantity.Round(puInfo.DecimalPlace),
-                    ProductUnitConversionPrice = details.ProductUnitConversionPrice.Round(puInfo.DecimalPlace),
+                    RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionQuantity = details.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionPrice = details.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
                     RefObjectTypeId = details.RefObjectTypeId,
                     RefObjectId = details.RefObjectId,
                     RefObjectCode = details.RefObjectCode,
@@ -2197,8 +2199,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     SortOrder = details.SortOrder,
                     Description = details.Description,
                     AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
-                    InventoryRequirementCode = details.InventoryRequirementCode,
-                    DepartmentId = details.DepartmentId,
+                    InventoryRequirementCode = details.InventoryRequirementCode
                 });
             }
             return inventoryDetailList;
@@ -2277,7 +2278,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //{
                 if ((puInfo.IsFreeStyle ?? false) == false)
                 {
-                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(detail.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, detail.ProductUnitConversionQuantity);
+                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(detail.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, detail.ProductUnitConversionQuantity, puInfo.DecimalPlace);
                     if (isSuccess)
                     {
                         detail.ProductUnitConversionQuantity = pucQuantity;
@@ -2286,7 +2287,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={detail.PrimaryQuantity}, FactorExpression={fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={detail.ProductUnitConversionQuantity}, evalData={pucQuantity}");
                         //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, $"{productInfo.ProductCode} không thể tính giá trị ĐVCĐ, tính theo tỷ lệ: {pucQuantity.Format()}, nhập vào {detail.ProductUnitConversionQuantity.Format()}");
+                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, $"{productInfo.ProductCode} không thể tính giá trị ĐVCĐ, tính theo tỷ lệ: {pucQuantity.Format()}, nhập vào {detail.ProductUnitConversionQuantity.Format()}, kiểm tra lại độ sai số đơn vị");
                     }
                 }
 
@@ -2320,13 +2321,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     InventoryId = inventory.InventoryId,
                     ProductId = detail.ProductId,
-                    RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.Round(puDefault.DecimalPlace),
-                    PrimaryQuantity = primaryQualtity.Round(puDefault.DecimalPlace),
-                    UnitPrice = detail.UnitPrice.Round(puDefault.DecimalPlace),
+                    RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(puDefault.DecimalPlace),
+                    PrimaryQuantity = primaryQualtity.RoundBy(puDefault.DecimalPlace),
+                    UnitPrice = detail.UnitPrice.RoundBy(puDefault.DecimalPlace),
                     ProductUnitConversionId = detail.ProductUnitConversionId,
-                    RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.Round(puInfo.DecimalPlace),
-                    ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.Round(puInfo.DecimalPlace),
-                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice.Round(puInfo.DecimalPlace),
+                    RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
                     RefObjectTypeId = detail.RefObjectTypeId,
                     RefObjectId = detail.RefObjectId,
                     RefObjectCode = detail.RefObjectCode,
@@ -2340,7 +2341,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Description = detail.Description,
                     AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
                     InventoryRequirementCode = detail.InventoryRequirementCode,
-                    DepartmentId = detail.DepartmentId,
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity);
