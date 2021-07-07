@@ -132,10 +132,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Validate materials
             if (productMaterials.Any(m => m.RootProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Nguyên vật liệu không thuộc sản phẩm");
 
-            // Thiết lập sort order theo thứ tự tạo
+            // Thiết lập sort order theo thứ tự tạo nếu không truyền từ client lên
             for (int indx = 0; indx < productBoms.Count; indx++)
             {
-                productBoms[indx].SortOrder = indx;
+                if (!productBoms[indx].SortOrder.HasValue)
+                    productBoms[indx].SortOrder = indx;
             }
 
             // Remove duplicate
