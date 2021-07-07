@@ -9,6 +9,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -243,7 +244,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var puIds = products.Select(p => p.ProductUnitConversionId).ToList();
 
-            var puConversions = (await _stockDbContext.ProductUnitConversion.Where(pu => puIds.Contains(pu.ProductUnitConversionId)).ToListAsync()).ToDictionary(pu => pu.ProductUnitConversionId, pu => pu);
+            var productIds = products.Select(p => p.ProductId).ToList();
+            var productUnits = await _stockDbContext.ProductUnitConversion.Where(pu => productIds.Contains(pu.ProductId)).ToListAsync();
+
+            var puConversions = productUnits.ToDictionary(pu => pu.ProductUnitConversionId, pu => pu);
+
+
+            var defaults = productUnits.Where(pu => pu.IsDefault).GroupBy(pu => pu.ProductId).ToDictionary(pu => pu.Key, pu => pu.FirstOrDefault());
 
             foreach (var p in products)
             {
@@ -270,6 +277,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     p.NewPrimaryQuantity = p.OldPrimaryQuantity;
                 }
 
+                defaults.TryGetValue(p.ProductId, out var puDefault);
+
                 foreach (var obj in p.AffectObjects)
                 {
                     if (productUnitConversionInfo.IsFreeStyle == false)
@@ -282,6 +291,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                             bool isSuccess = false;
                             decimal pucQuantity = 0;
+
+                            decimal primaryQuantity = 0;
 
                             //if (obj.OldPrimaryQuantity != 0)
                             //{
@@ -296,7 +307,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 }
                                 else
                                 {
-                                    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
+
+                                    var calcModel = new QuantityPairInputModel()
+                                    {
+                                        PrimaryQuantity = obj.NewPrimaryQuantity,
+                                        PrimaryDecimalPlace = puDefault?.DecimalPlace ?? 12,
+
+                                        PuQuantity = obj.NewProductUnitConversionQuantity,
+                                        PuDecimalPlace = productUnitConversionInfo.DecimalPlace,
+
+                                        FactorExpression = productUnitConversionInfo.FactorExpression,
+
+                                        FactorExpressionRate = null
+                                    };
+
+                                    //(isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
+
+                                    (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
                                 }
                             }
 
@@ -364,7 +391,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                     bool isSuccess = false;
                                     decimal pucQuantity = 0;
-
+                                    decimal primaryQuantity = 0;
 
                                     //if (c.OldTransferPrimaryQuantity != 0)
                                     //{
@@ -379,7 +406,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         }
                                         else
                                         {
-                                            (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
+                                            var calcModel = new QuantityPairInputModel()
+                                            {
+                                                PrimaryQuantity = c.NewTransferPrimaryQuantity,
+                                                PrimaryDecimalPlace = puDefault?.DecimalPlace ?? 12,
+
+                                                PuQuantity = c.NewTransferProductUnitConversionQuantity,
+                                                PuDecimalPlace = productUnitConversionInfo.DecimalPlace,
+
+                                                FactorExpression = productUnitConversionInfo.FactorExpression,
+
+                                                FactorExpressionRate = null
+                                            };
+
+                                            //(isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
+
+                                            (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
                                         }
                                     }
 

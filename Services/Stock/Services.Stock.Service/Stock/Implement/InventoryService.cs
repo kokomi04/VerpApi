@@ -2116,7 +2116,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if ((puInfo.IsFreeStyle ?? false) == false)
                 {
-                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, puInfo.FactorExpression, details.ProductUnitConversionQuantity, puInfo.DecimalPlace);
+                  
+
+                    var calcModel = new QuantityPairInputModel()
+                    {
+                        PrimaryQuantity = details.PrimaryQuantity,
+                        PrimaryDecimalPlace = puDefault?.DecimalPlace ?? 12,
+
+                        PuQuantity = details.ProductUnitConversionQuantity,
+                        PuDecimalPlace = puInfo.DecimalPlace,
+
+                        FactorExpression = puInfo.FactorExpression,
+
+                        FactorExpressionRate = null
+                    };
+
+
+                    //  var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, puInfo.FactorExpression, details.ProductUnitConversionQuantity, puInfo.DecimalPlace);
+
+                    var (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+
                     if (isSuccess)
                     {
                         details.ProductUnitConversionQuantity = pucQuantity;
@@ -2277,7 +2296,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //{
                 if ((puInfo.IsFreeStyle ?? false) == false)
                 {
-                    var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(detail.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, detail.ProductUnitConversionQuantity, puInfo.DecimalPlace);
+                    var calcModel = new QuantityPairInputModel()
+                    {
+                        PrimaryQuantity = detail.PrimaryQuantity,
+                        PrimaryDecimalPlace = puDefault?.DecimalPlace ?? 12,
+
+                        PuQuantity = detail.ProductUnitConversionQuantity,
+                        PuDecimalPlace = puInfo.DecimalPlace,
+
+                        FactorExpression = puInfo.FactorExpression,
+
+                        FactorExpressionRate = fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining
+                    };
+
+                    //var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(detail.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, detail.ProductUnitConversionQuantity, puInfo.DecimalPlace);
+
+                    var (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+
                     if (isSuccess)
                     {
                         detail.ProductUnitConversionQuantity = pucQuantity;
