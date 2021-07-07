@@ -47,9 +47,17 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("Search")]
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(
+            [FromQuery] string keyword,
+            [FromQuery] int page,
+            [FromQuery] int size,
+            [FromQuery] string orderByFieldName,
+            [FromQuery] bool asc,
+            [FromQuery] long fromDate,
+            [FromQuery] long toDate,
+            [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, filters);
+            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
         }
 
         [HttpGet]
