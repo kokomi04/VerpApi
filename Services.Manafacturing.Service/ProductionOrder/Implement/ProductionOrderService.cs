@@ -500,7 +500,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         var quantity = inputInventories
                             .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
-                            .Sum(i => i.ActualQuantity.GetValueOrDefault());
+                            .Sum(i => i.ActualQuantity);
 
                         if (quantity < (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
                         {
