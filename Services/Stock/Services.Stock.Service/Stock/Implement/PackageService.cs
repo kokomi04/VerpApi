@@ -11,6 +11,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -111,7 +112,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 decimal qualtityInPrimaryUnit = package.PrimaryQuantity;
                 if (unitConversionInfo.IsFreeStyle == false)
                 {
-                    var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining, package.PrimaryQuantity, defaulUnitConversionInfo?.DecimalPlace ?? 11);
+                    var calcModel = new QuantityPairInputModel()
+                    {
+                        PrimaryQuantity = package.PrimaryQuantity,
+                        PrimaryDecimalPlace = defaulUnitConversionInfo?.DecimalPlace ?? 12,
+
+                        PuQuantity = package.ProductUnitConversionQuantity,
+                        PuDecimalPlace = unitConversionInfo.DecimalPlace,
+
+                        FactorExpression = unitConversionInfo.FactorExpression,
+
+                        FactorExpressionRate = packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining
+                    };
+
+                    //var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining, package.PrimaryQuantity, defaulUnitConversionInfo?.DecimalPlace ?? 11);
+
+                    var (isSuccess, priQuantity, puQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+
                     if (isSuccess)
                     {
                         qualtityInPrimaryUnit = priQuantity;

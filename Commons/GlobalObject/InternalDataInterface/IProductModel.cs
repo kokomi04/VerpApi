@@ -79,8 +79,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public class ProductModelUnitConversion
         {
             public int ProductUnitConversionId { get; set; }
-            [Required(ErrorMessage = "Vui lòng nhập quy cách đơn vị chuyển đổi")]
-            [MaxLength(128, ErrorMessage = "Quy cách đơn vị chuyển đổi quá dài")]
             public string ProductUnitConversionName { get; set; }
             public int SecondaryUnitId { get; set; }
             public bool IsDefault { get; set; }

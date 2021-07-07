@@ -249,7 +249,7 @@ namespace VErp.Commons.Library
         }
 
 
-        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData, int round)
+        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity_bak(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData, int round)
         {
             var value = (productUnitConversionQuantity / factorExpression).RoundBy(round);
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
@@ -267,7 +267,7 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression, decimal inputData, int round)
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity_bak(decimal primaryQuantity, string factorExpression, decimal inputData, int round)
         {
             var expression = $"({primaryQuantity})*({factorExpression})";
             var value = Eval(expression).RoundBy(round);
@@ -287,7 +287,7 @@ namespace VErp.Commons.Library
 
         }
 
-        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, decimal factorExpression, decimal inputData, int round)
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity_bak(decimal primaryQuantity, decimal factorExpression, decimal inputData, int round)
         {
             var value = (primaryQuantity * factorExpression).RoundBy(round);
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
@@ -305,6 +305,57 @@ namespace VErp.Commons.Library
             }
 
         }
+
+        public static (bool result, decimal primaryQuantity, decimal puQuantity) GetProductUnitConversionQuantityFromPrimaryQuantity(QuantityPairInputModel input)
+        {
+
+            decimal calcPuQuantity;
+            if (input.FactorExpressionRate > 0)
+            {
+                calcPuQuantity = (input.PrimaryQuantity * input.FactorExpressionRate.Value).RoundBy(input.PuDecimalPlace);
+            }
+            else
+            {
+                calcPuQuantity = Eval($"({input.PrimaryQuantity})*({input.FactorExpression})").RoundBy(input.PuDecimalPlace);
+            }
+
+            if (Math.Abs(calcPuQuantity - input.PuQuantity) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, input.PrimaryQuantity, input.PuQuantity);
+            }
+
+            if (input.PuQuantity == 0)
+            {
+                return (true, input.PrimaryQuantity, calcPuQuantity);
+            }
+
+
+            decimal calcPrimaryQuantity;
+
+            if (input.FactorExpressionRate > 0)
+            {
+                calcPrimaryQuantity = (input.PuQuantity / input.FactorExpressionRate.Value).RoundBy(input.PrimaryDecimalPlace);
+            }
+            else
+            {
+                calcPrimaryQuantity = Eval($"({input.PuQuantity})/({input.FactorExpression})").RoundBy(input.PrimaryDecimalPlace);
+            }
+
+            if (Math.Abs(calcPrimaryQuantity - input.PrimaryQuantity) <= Numbers.INPUT_RATE_STANDARD_ERROR)
+            {
+                return (true, input.PrimaryQuantity, input.PuQuantity);
+            }
+
+            if (input.PrimaryQuantity == 0)
+            {
+                return (true, calcPrimaryQuantity, input.PuQuantity);
+            }
+
+
+            return (false, input.PrimaryQuantity, input.PuQuantity);
+
+        }
+
 
         public static decimal RoundBy(this decimal value, int decimalPlace = 11)
         {
@@ -1249,7 +1300,7 @@ namespace VErp.Commons.Library
         {
             if (string.IsNullOrEmpty(code))
                 return;
-            
+
             var regEx = new Regex("^([0-9a-zA-Z])(([0-9a-zA-Z_\\.\\/\\-#\\+&])*([0-9a-zA-Z]))*$", RegexOptions.Multiline);
             if (!regEx.IsMatch(code))
             {
