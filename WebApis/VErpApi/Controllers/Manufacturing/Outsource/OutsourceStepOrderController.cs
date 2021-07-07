@@ -42,9 +42,17 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         [HttpPost]
         [Route("search")]
         [VErpAction(EnumActionType.View)]
-        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters)
+        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(
+            [FromQuery] string keyword,
+            [FromQuery] int page,
+            [FromQuery] int size,
+            [FromQuery] string orderByFieldName,
+            [FromQuery] bool asc,
+            [FromQuery] long fromDate,
+            [FromQuery] long toDate,
+            [FromBody] Clause filters)
         {
-            return await _outsourceStepOrderService.SearchOutsourceStepOrder(keyword, page, size, orderByFieldName, asc, filters);
+            return await _outsourceStepOrderService.SearchOutsourceStepOrder(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
         }
 
         [HttpPut]

@@ -153,13 +153,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return true;
         }
 
-        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
+        public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
         {
             var outsourceStepOrders = (from o in _manufacturingDBContext.OutsourceOrder
                                        join d in _manufacturingDBContext.OutsourceOrderDetail on o.OutsourceOrderId equals d.OutsourceOrderId
                                        join rd in _manufacturingDBContext.OutsourceStepRequestData on d.ObjectId equals rd.ProductionStepLinkDataId
                                        join r in _manufacturingDBContext.OutsourceStepRequest on rd.OutsourceStepRequestId equals r.OutsourceStepRequestId
                                        where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep
+                                           && (fromDate > 0 ? o.OutsourceOrderDate >= fromDate.UnixToDateTime() : true)
+                                           && (toDate > 0 ? o.OutsourceOrderDate <= toDate.UnixToDateTime() : true)
                                        group new { o, r, rd, d } by new { o.OutsourceOrderId, o.OutsourceOrderCode, r.OutsourceStepRequestId, r.OutsourceStepRequestCode, o.OutsourceOrderFinishDate, o.OutsourceOrderDate } into g
                                        select new OutsourceStepOrderSeach
                                        {
@@ -170,7 +172,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                            OutsourceStepRequestId = g.Key.OutsourceStepRequestId,
                                            OutsourceOrderDate = g.Key.OutsourceOrderDate.GetUnix()
                                        }).ToList();
-            var outsourceStepRequests = (await _outsourceStepRequestService.SearchOutsourceStepRequest(string.Empty, 1, -1, string.Empty, true)).List;
+            var outsourceStepRequests = (await _outsourceStepRequestService.SearchOutsourceStepRequest(string.Empty, 1, -1, string.Empty, true, 0, 0)).List;
 
             var data = from order in outsourceStepOrders
                        join request in outsourceStepRequests
