@@ -133,13 +133,13 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 .Include(id => id.Inventory)
                 .Where(id => model.InventoryRequirementCode == id.InventoryRequirementCode
                 && productionOrderCodes.Contains(id.ProductionOrderCode)
-                && departmentIds.Contains(id.DepartmentId)
+                && departmentIds.Contains(id.Inventory.DepartmentId)
                 && productIds.Contains(id.ProductId))
                 .Select(id => new
                 {
                     id.ProductId,
                     id.ProductionOrderCode,
-                    id.DepartmentId,
+                    id.Inventory.DepartmentId,
                     id.PrimaryQuantity,
                     id.InventoryId,
                     id.Inventory.InventoryCode

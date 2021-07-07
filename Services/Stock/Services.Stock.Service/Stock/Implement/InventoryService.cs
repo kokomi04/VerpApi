@@ -296,7 +296,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     UpdatedByUserId = item.UpdatedByUserId,
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
-
+                    DepartmentId = item.DepartmentId,
                     StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
@@ -459,8 +459,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Description = details.Description,
                         AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                         InventoryRequirementCode = details.InventoryRequirementCode,
-
-                        DepartmentId = details.DepartmentId,
                     };
 
                     //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
@@ -521,6 +519,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = inventoryObj.AccountancyAccountNumber,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
+                    DepartmentId = inventoryObj.DepartmentId,
                     StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
@@ -739,7 +738,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
-                    IsApproved = false
+                    IsApproved = false,
+                    DepartmentId = req.DepartmentId
                 };
                 await _stockDbContext.AddAsync(inventoryObj);
                 await _stockDbContext.SaveChangesAsync();
@@ -856,7 +856,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
-                    IsApproved = false
+                    IsApproved = false,
+                    DepartmentId = req.DepartmentId
                 };
 
                 await _stockDbContext.AddAsync(inventoryObj);
@@ -1043,6 +1044,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
             inventoryObj.UpdatedByUserId = _currentContextService.UserId;
             inventoryObj.TotalMoney = totalMoney;
+            inventoryObj.DepartmentId = req.DepartmentId;
         }
 
         /// <summary>
@@ -1120,7 +1122,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.IsApproved = false;
                         inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
-
+                        inventoryObj.DepartmentId = req.DepartmentId;
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
 
@@ -1615,7 +1617,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                         new SqlParameter("@ProductionOrderCode", productionOrderCode)
                 };
-                var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+                var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
                 inventoryMap.Add(productionOrderCode, resultData);
                 await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderCode, resultData, status);
             }
@@ -2216,8 +2218,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     SortOrder = details.SortOrder,
                     Description = details.Description,
                     AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
-                    InventoryRequirementCode = details.InventoryRequirementCode,
-                    DepartmentId = details.DepartmentId,
+                    InventoryRequirementCode = details.InventoryRequirementCode
                 });
             }
             return inventoryDetailList;
@@ -2375,7 +2376,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Description = detail.Description,
                     AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
                     InventoryRequirementCode = detail.InventoryRequirementCode,
-                    DepartmentId = detail.DepartmentId,
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity);

@@ -551,8 +551,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.InventoryRequirementCode = submitDetail?.InventoryRequirementCode;
                 detail.Description = submitDetail?.Description;
 
-                detail.DepartmentId = submitDetail?.DepartmentId;
-
                 detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;
 
                 if (p.NewPrimaryQuantity == 0)

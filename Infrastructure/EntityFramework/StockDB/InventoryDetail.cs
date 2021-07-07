@@ -42,7 +42,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public string InventoryRequirementCode { get; set; }
-        public int? DepartmentId { get; set; }
 
         public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }

@@ -118,7 +118,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
             var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
                 .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
@@ -434,7 +434,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
             var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
                 .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
@@ -975,7 +975,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     new SqlParameter("@ProductionOrderId", otherProductionOrderId)
                 };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
                 inventoryRequirements.Add(otherProductionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
                     .Where(ir => ir.DepartmentId.HasValue && departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
@@ -1188,7 +1188,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         //        {
         //            new SqlParameter("@ProductionOrderId", productionOrderId)
         //        };
-        //        var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder_new", parammeters);
+        //        var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
         //        var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
         //            .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)

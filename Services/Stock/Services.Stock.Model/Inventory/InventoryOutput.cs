@@ -45,14 +45,10 @@ namespace VErp.Services.Stock.Model.Inventory
 
         //public DateTime UpdatedDatetimeUtc { set; get; }
         public long CreatedDatetimeUtc { set; get; }
-
         public long UpdatedDatetimeUtc { set; get; }
-
-
         public bool IsApproved { set; get; }
-
         public string AccountancyAccountNumber { get; set; }
-
+        public int? DepartmentId { get; set; }
         public StockOutput StockOutput { get; set; }
         public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
 
