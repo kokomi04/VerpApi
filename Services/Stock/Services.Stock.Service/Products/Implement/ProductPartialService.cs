@@ -289,7 +289,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 var lstNewUnitConverions = model?.UnitConversions?
                     .Where(c => c.ProductUnitConversionId <= 0)?
-                    .Select(u => _mapper.Map<ProductUnitConversion>(u));
+                    .Select(u => _mapper.Map<ProductUnitConversion>(u))
+                    .ToList();
 
                 if (lstNewUnitConverions != null)
                 {
