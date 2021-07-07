@@ -249,64 +249,64 @@ namespace VErp.Commons.Library
         }
 
 
-        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData)
+        public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData, int round)
         {
-            var value = productUnitConversionQuantity / factorExpression;
+            var value = (productUnitConversionQuantity / factorExpression).RoundBy(round);
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData.Round());
+                return (true, inputData.RoundBy(round));
             }
 
             if (inputData == 0)
             {
-                return (true, value.Round());
+                return (true, value.RoundBy(round));
             }
             else
             {
-                return (false, value.Round());
+                return (false, value.RoundBy(round));
             }
         }
 
-        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression, decimal inputData)
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, string factorExpression, decimal inputData, int round)
         {
             var expression = $"({primaryQuantity})*({factorExpression})";
-            var value = Eval(expression);
+            var value = Eval(expression).RoundBy(round);
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData.Round());
+                return (true, inputData.RoundBy(round));
             }
 
             if (inputData == 0)
             {
-                return (true, value.Round());
+                return (true, value.RoundBy(round));
             }
             else
             {
-                return (false, value.Round());
+                return (false, value.RoundBy(round));
             }
 
         }
 
-        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, decimal factorExpression, decimal inputData)
+        public static (bool, decimal) GetProductUnitConversionQuantityFromPrimaryQuantity(decimal primaryQuantity, decimal factorExpression, decimal inputData, int round)
         {
-            var value = primaryQuantity * factorExpression;
+            var value = (primaryQuantity * factorExpression).RoundBy(round);
             if (Math.Abs(value - inputData) <= Numbers.INPUT_RATE_STANDARD_ERROR)
             {
-                return (true, inputData.Round());
+                return (true, inputData.RoundBy(round));
             }
 
             if (inputData == 0)
             {
-                return (true, value.Round());
+                return (true, value.RoundBy(round));
             }
             else
             {
-                return (false, value.Round());
+                return (false, value.RoundBy(round));
             }
 
         }
 
-        public static decimal Round(this decimal value, int decimalPlace = 11)
+        public static decimal RoundBy(this decimal value, int decimalPlace = 11)
         {
             return Math.Round(value, decimalPlace, MidpointRounding.AwayFromZero);
         }
@@ -360,9 +360,9 @@ namespace VErp.Commons.Library
             {
                 var c = a + b;
                 if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
-                return c.Round();
+                return c.RoundBy();
             }
-            return (a + b).Round();
+            return (a + b).RoundBy();
         }
 
         public static decimal SubDecimal(this decimal a, decimal b)
@@ -371,9 +371,9 @@ namespace VErp.Commons.Library
             {
                 var c = a - b;
                 if (Math.Abs(c) < Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER) return 0;
-                return c.Round();
+                return c.RoundBy();
             }
-            return (a - b).Round();
+            return (a - b).RoundBy();
         }
 
         public static decimal SubProductionDecimal(this decimal a, decimal b)

@@ -296,7 +296,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 }
                                 else
                                 {
-                                    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity);
+                                    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
                                 }
                             }
 
@@ -379,7 +379,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         }
                                         else
                                         {
-                                            (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity);
+                                            (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
                                         }
                                     }
 

@@ -83,6 +83,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (unitConversionInfo == null)
                 throw new BadRequestException(ProductUnitConversionErrorCode.ProductUnitConversionNotFound);
 
+            var defaulUnitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductId == packageInfo.ProductId && c.IsDefault);
+
 
             var totalSecondaryInput = req.ToPackages.Sum(p => p.ProductUnitConversionQuantity);
             if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining)
@@ -109,7 +111,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 decimal qualtityInPrimaryUnit = package.PrimaryQuantity;
                 if (unitConversionInfo.IsFreeStyle == false)
                 {
-                    var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining, package.PrimaryQuantity);
+                    var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining, package.PrimaryQuantity, defaulUnitConversionInfo?.DecimalPlace ?? 11);
                     if (isSuccess)
                     {
                         qualtityInPrimaryUnit = priQuantity;
