@@ -98,7 +98,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
 
             var data = from q in query.AsEnumerable()
-                       join id in _stockDBContext.InventoryDetail.Include(x => x.Inventory).AsEnumerable() on new { q.InventoryRequirement.InventoryRequirementCode, q.ProductionOrderCode, q.ProductId, q.DepartmentId } equals new { id.InventoryRequirementCode, id.ProductionOrderCode, id.ProductId, id.DepartmentId } into ids
+                       join id in _stockDBContext.InventoryDetail.Include(x => x.Inventory).AsEnumerable() on new { q.InventoryRequirement.InventoryRequirementCode, q.ProductionOrderCode, q.ProductId, q.DepartmentId } equals new { id.InventoryRequirementCode, id.ProductionOrderCode, id.ProductId, id.Inventory.DepartmentId } into ids
                        from id in ids.DefaultIfEmpty()
                        select new { q, id } into t1
                        group t1 by new { t1.q.InventoryRequirement.InventoryRequirementCode, t1.q.ProductionOrderCode, t1.q.ProductId, t1.q.DepartmentId } into g
