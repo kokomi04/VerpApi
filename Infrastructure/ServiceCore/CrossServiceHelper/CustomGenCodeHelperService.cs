@@ -162,7 +162,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public GenerateCodeContext CreateGenerateCodeContext(Dictionary<string, int> baseValueChains = null)
         {
-            return new GenerateCodeContext(this, _currentContextService);
+            return new GenerateCodeContext(this, _currentContextService, baseValueChains);
         }
 
     }

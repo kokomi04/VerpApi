@@ -145,7 +145,9 @@ namespace VErp.Services.Stock.Service.Location.Implement
             query = query.OrderBy(q => q.StockId);
 
             var total = await query.CountAsync();
-            var locationList = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var locationList = await (size > 0 ? query.Skip((page - 1) * size).Take(size).ToListAsync()
+                : query.ToListAsync()
+                );
 
             var pageData = new List<LocationOutput>();
             foreach (var item in locationList)
