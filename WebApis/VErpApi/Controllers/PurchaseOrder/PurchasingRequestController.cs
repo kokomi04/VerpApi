@@ -114,7 +114,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("OrderDetail/{orderDetailId}/{purchasingRequestId}")]
         public async Task<bool> DeleteFromOrderMaterial([FromRoute] long orderDetailId, [FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Delete(orderDetailId, null, purchasingRequestId).ConfigureAwait(true);
+            return await _purchasingRequestService.Delete(orderDetailId, null, null, purchasingRequestId).ConfigureAwait(true);
         }
 
         //materialCalc
@@ -141,7 +141,33 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("materialCalc/{materialCalcId}/{purchasingRequestId}")]
         public async Task<bool> DeleteFromMaterialCalc([FromRoute] long materialCalcId, [FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Delete(null, materialCalcId, purchasingRequestId).ConfigureAwait(true);
+            return await _purchasingRequestService.Delete(null, materialCalcId, null, purchasingRequestId).ConfigureAwait(true);
+        }
+
+        //productionOrderMaterialCalc
+        [HttpPost]
+        [Route("productionOrderMaterialCalc/{productionOrderId}")]
+        public async Task<long> CreateFromProductionOrderMaterialCalc([FromRoute] long productionOrderId, [FromBody] PurchasingRequestInput req)
+        {
+            if (req == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            req.ProductionOrderId = productionOrderId;
+            return await _purchasingRequestService.Create(EnumPurchasingRequestType.ProductionOrderMaterialCalc, req).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("productionOrderMaterialCalc/{productionOrderId}/{purchasingRequestId}")]
+        public async Task<bool> UpdateFromProductionOrderMaterialCalc([FromRoute] long productionOrderId, [FromRoute] long purchasingRequestId, [FromBody] PurchasingRequestInput req)
+        {
+            if (req == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            req.ProductionOrderId = productionOrderId;
+            return await _purchasingRequestService.Update(EnumPurchasingRequestType.ProductionOrderMaterialCalc, purchasingRequestId, req).ConfigureAwait(true);
+        }
+
+        [HttpDelete]
+        [Route("productionOrderMaterialCalc/{productionOrderId}/{purchasingRequestId}")]
+        public async Task<bool> DeleteFromProductionOrderMaterialCalc([FromRoute] long productionOrderId, [FromRoute] long purchasingRequestId)
+        {
+            return await _purchasingRequestService.Delete(null, null, productionOrderId, purchasingRequestId).ConfigureAwait(true);
         }
 
 
@@ -216,7 +242,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchasingRequestId}")]
         public async Task<bool> Delete([FromRoute] long purchasingRequestId)
         {
-            return await _purchasingRequestService.Delete(null, null, purchasingRequestId).ConfigureAwait(true);
+            return await _purchasingRequestService.Delete(null, null, null, purchasingRequestId).ConfigureAwait(true);
         }
 
         /// <summary>

@@ -358,6 +358,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     //purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 }
 
+                if (requestType == EnumPurchasingRequestType.ProductionOrderMaterialCalc)
+                {
+                    if (!model.ProductionOrderId.HasValue || model.ProductionOrderId <= 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams);
+                    }
+
+                    purchasingRequest.ProductionOrderId = model.ProductionOrderId;
+
+                    purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
+                }
+
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -436,7 +448,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         info.CensorDatetimeUtc = DateTime.UtcNow;
                     }
 
-                    if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc)
+                    if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc || info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.ProductionOrderMaterialCalc)
                     {
                         info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
                         //info.IsApproved = true;
@@ -519,7 +531,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         //    return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
         //}
 
-        public async Task<bool> Delete(long? orderDetailId, long? materialCalcId, long purchasingRequestId)
+        public async Task<bool> Delete(long? orderDetailId, long? materialCalcId, long? productionOrderId, long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {

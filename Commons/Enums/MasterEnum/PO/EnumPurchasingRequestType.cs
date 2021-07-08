@@ -8,6 +8,7 @@ namespace VErp.Commons.Enums.MasterEnum.PO
     {
         Normal = 0,
         OrderMaterial = 1,
-        MaterialCalc = 2
+        MaterialCalc = 2,
+        ProductionOrderMaterialCalc = 3,
     }
 }
