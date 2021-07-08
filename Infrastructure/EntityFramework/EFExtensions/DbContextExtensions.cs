@@ -172,7 +172,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     foreach (var prop in ps)
                     {
                         var propName = prop.Name.ToLower();
-                        if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode"))
+                        if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode") && !propName.EndsWith("reftablecode"))
                         {
                             Utils.ValidateCodeSpecialCharactors(prop.GetValue(obj) as string);
                         }
