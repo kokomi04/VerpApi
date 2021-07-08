@@ -18,6 +18,7 @@ namespace VErp.Services.Manafacturing.Model.Step
         public bool IsHide { get; set; }
         public int UnitId { get; set; }
         public decimal ShrinkageRate { get; set; }
+        public string Description { get; set; }
         public EnumHandoverTypeStatus HandoverTypeId { get; set; }
 
         public List<StepDetailModel> StepDetail { get; set; }
