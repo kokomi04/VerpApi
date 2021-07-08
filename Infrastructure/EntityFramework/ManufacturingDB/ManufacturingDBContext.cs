@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<DepartmentTimeTable> DepartmentTimeTable { get; set; }
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
+        public virtual DbSet<OutsourceOrderExcess> OutsourceOrderExcess { get; set; }
         public virtual DbSet<OutsourceOrderMaterials> OutsourceOrderMaterials { get; set; }
         public virtual DbSet<OutsourcePartRequest> OutsourcePartRequest { get; set; }
         public virtual DbSet<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }
@@ -95,25 +96,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.OutsourceTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.ProviderAddress).HasMaxLength(256);
-
-                entity.Property(e => e.ProviderName).HasMaxLength(128);
-
-                entity.Property(e => e.ProviderPhone).HasMaxLength(20);
-
-                entity.Property(e => e.ProviderReceiver).HasMaxLength(128);
-
                 entity.Property(e => e.Suppliers)
                     .HasMaxLength(1024)
                     .HasComment("");
-
-                entity.Property(e => e.TransportToAddress).HasMaxLength(256);
-
-                entity.Property(e => e.TransportToCompany).HasMaxLength(128);
-
-                entity.Property(e => e.TransportToPhone).HasMaxLength(20);
-
-                entity.Property(e => e.TransportToReceiver).HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
@@ -137,6 +122,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.OutsourceOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceOrderDetail_OutsourceOrder");
+            });
+
+            modelBuilder.Entity<OutsourceOrderExcess>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.OutsourceOrder)
+                    .WithMany(p => p.OutsourceOrderExcess)
+                    .HasForeignKey(d => d.OutsourceOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceOrderExcess_OutsourceOrder");
             });
 
             modelBuilder.Entity<OutsourceOrderMaterials>(entity =>
