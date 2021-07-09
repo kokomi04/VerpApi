@@ -110,6 +110,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     _manufacturingDBContext.OutsourceOrderMaterials.AddRange(materials);
                     await _manufacturingDBContext.SaveChangesAsync();
 
+                    // Danh sách vật tư dư thừa
+                    var excess = _mapper.Map<List<OutsourceOrderExcess>>(req.OutsourceOrderExcesses);
+                    excess.ForEach(x => x.OutsourceOrderId = order.OutsourceOrderId);
+
+                    _manufacturingDBContext.OutsourceOrderExcess.AddRange(excess);
+                    await _manufacturingDBContext.SaveChangesAsync();
+
 
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                         await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
@@ -221,6 +228,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .Where(x => x.OutsourceOrderId == outsourceStepOrderId)
                 .ProjectTo<OutsourceOrderMaterialsOutput>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
+            var excesses = await _manufacturingDBContext.OutsourceOrderExcess.AsNoTracking()
+                .Where(x => x.OutsourceOrderId == outsourceStepOrderId)
+                .ProjectTo<OutsourceOrderExcessOutput>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
             var details = await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
                 .Where(x => x.OutsourceOrderId == outsourceStepOrderId)
                 .ProjectTo<OutsourceStepOrderDetailOutput>(_mapper.ConfigurationProvider)
@@ -229,8 +242,23 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var lsLinkDataId = details.Select(x => x.ProductionStepLinkDataId).ToList();
             lsLinkDataId.AddRange(materials.Select(x => x.ProductionStepLinkDataId.GetValueOrDefault()));
 
-            var lsProductInfo = await _productHelperService.GetListProducts(materials.Select(x => (int)x.ProductId).ToList());
+            var productIds = materials.Select(x => (int)x.ProductId).ToList();
+            productIds.AddRange(excesses.Select(x => (int)x.ProductId));
+
+            var lsProductInfo = await _productHelperService.GetListProducts(productIds);
             var lsOutsourceStepRequestData = await _outsourceStepRequestService.GetOutsourceStepRequestData(lsLinkDataId.Where(x => x > 0).ToArray());
+
+
+            foreach (var m in excesses)
+            {
+                var productInfo = lsProductInfo.FirstOrDefault(x => x.ProductId == m.ProductId);
+                if (productInfo != null)
+                {
+                    m.ProductTitle = $"{productInfo.ProductCode}/ {productInfo.ProductName}";
+                    m.UnitId = productInfo.UnitId;
+                    m.DecimalPlace = productInfo.StockInfo?.UnitConversions?.FirstOrDefault()?.DecimalPlace;
+                }
+            }
 
             foreach (var m in materials)
             {
@@ -270,11 +298,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     d.IsImportant = data.IsImportant;
                     d.ProductionStepTitle = data.ProductionStepTitle;
                     d.DecimalPlace = data.DecimalPlace;
+                    d.ProductionStepLinkDataObjectId = data.ProductionStepLinkDataObjectId;
                 }
             }
 
             outsourceStepOrder.OutsourceOrderDetail = details;
             outsourceStepOrder.OutsourceOrderMaterials = materials;
+            outsourceStepOrder.OutsourceOrderExcesses = excesses;
 
             return outsourceStepOrder;
         }
@@ -340,6 +370,27 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.OutsourceOrderMaterials.AddRangeAsync(newMaterials);
                 await _manufacturingDBContext.SaveChangesAsync();
 
+                //excesses
+                var excesses = await _manufacturingDBContext.OutsourceOrderExcess.Where(x => x.OutsourceOrderId == outsourceStepOrder.OutsourceOrderId)
+                    .ToListAsync();
+
+                foreach (var m in excesses)
+                {
+                    var s = req.OutsourceOrderExcesses.FirstOrDefault(x => x.OutsourceOrderExcessId == m.OutsourceOrderExcessId);
+                    if (s != null)
+                        _mapper.Map(s, m);
+                    else m.IsDeleted = true;
+                }
+
+                var newExcesses = req.OutsourceOrderExcesses
+                    .AsQueryable()
+                    .Where(x => x.OutsourceOrderExcessId <= 0)
+                    .ProjectTo<OutsourceOrderExcess>(_mapper.ConfigurationProvider)
+                    .ToList();
+                newExcesses.ForEach(x => x.OutsourceOrderId = outsourceStepOrder.OutsourceOrderId);
+
+                await _manufacturingDBContext.OutsourceOrderExcess.AddRangeAsync(newExcesses);
+                await _manufacturingDBContext.SaveChangesAsync();
 
                 //update status request
                 var objectIds = details.Select(x => x.ObjectId).ToList();
@@ -382,6 +433,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .Where(x => x.OutsourceOrderId == order.OutsourceOrderId)
                     .ToListAsync();
                 materials.ForEach(x => x.IsDeleted = true);
+
+                var excesses = await _manufacturingDBContext.OutsourceOrderExcess.Where(x => x.OutsourceOrderId == order.OutsourceOrderId)
+                    .ToListAsync();
+                excesses.ForEach(x => x.IsDeleted = true);
 
                 await _manufacturingDBContext.SaveChangesAsync();
                 await UpdateOutsourceStepRequestStatus(detail.Select(x => x.ObjectId));

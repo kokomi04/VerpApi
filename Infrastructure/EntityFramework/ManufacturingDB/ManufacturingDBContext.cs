@@ -111,7 +111,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Price).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.Tax).HasColumnType("decimal(18, 5)");
 
