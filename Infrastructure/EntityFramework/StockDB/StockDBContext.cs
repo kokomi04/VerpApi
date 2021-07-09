@@ -36,7 +36,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
         public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
-        public virtual DbSet<ProductMaterialProperty> ProductMaterialProperty { get; set; }
         public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
         public virtual DbSet<ProductMaterialsConsumptionGroup> ProductMaterialsConsumptionGroup { get; set; }
         public virtual DbSet<ProductProperty> ProductProperty { get; set; }
@@ -44,6 +43,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
         public virtual DbSet<ProductUnitConversion> ProductUnitConversion { get; set; }
+        public virtual DbSet<Property> Property { get; set; }
         public virtual DbSet<RefCustomerBasic> RefCustomerBasic { get; set; }
         public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
@@ -624,20 +624,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PathProductIds).IsRequired();
             });
 
-            modelBuilder.Entity<ProductMaterialProperty>(entity =>
-            {
-                entity.HasIndex(e => e.RootProductId)
-                    .HasName("IDX_RootProductId");
-
-                entity.Property(e => e.PathProductIds).IsRequired();
-
-                entity.HasOne(d => d.ProductProperty)
-                    .WithMany(p => p.ProductMaterialProperty)
-                    .HasForeignKey(d => d.ProductPropertyId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductMaterialProperty_ProductProperty");
-            });
-
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
             {
                 entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
@@ -674,7 +660,16 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductProperty>(entity =>
             {
-                entity.Property(e => e.PropertyName).IsRequired();
+                entity.HasIndex(e => e.RootProductId)
+                    .HasName("IDX_RootProductId");
+
+                entity.Property(e => e.PathProductIds).IsRequired();
+
+                entity.HasOne(d => d.Property)
+                    .WithMany(p => p.ProductProperty)
+                    .HasForeignKey(d => d.PropertyId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductProperty_Property");
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
@@ -738,6 +733,11 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithMany(p => p.ProductUnitConversion)
                     .HasForeignKey(d => d.ProductId)
                     .HasConstraintName("FK_ProductUnitConversion_Product");
+            });
+
+            modelBuilder.Entity<Property>(entity =>
+            {
+                entity.Property(e => e.PropertyName).IsRequired();
             });
 
             modelBuilder.Entity<RefCustomerBasic>(entity =>
