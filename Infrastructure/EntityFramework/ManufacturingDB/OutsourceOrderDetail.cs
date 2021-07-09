@@ -18,6 +18,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public int? ProductUnitConversionId { get; set; }
+        public decimal? ProductUnitConversionQuantity { get; set; }
+        public decimal? ProductUnitConversionPrice { get; set; }
 
         public virtual OutsourceOrder OutsourceOrder { get; set; }
     }
