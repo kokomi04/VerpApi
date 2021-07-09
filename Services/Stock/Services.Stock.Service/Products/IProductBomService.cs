@@ -15,9 +15,9 @@ namespace VErp.Services.Stock.Service.Products
         Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds);
         Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds);
 
-        Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, bool isCleanOldMaterial);
+        Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial);
 
-        Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, bool isCleanOldMaterial);
+        Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial);
 
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportBomFromMapping(ImportExcelMapping importExcelMapping, Stream stream);
