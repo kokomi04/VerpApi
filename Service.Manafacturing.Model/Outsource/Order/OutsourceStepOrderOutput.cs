@@ -43,6 +43,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public decimal? QuantityRequirement { get; set; }
         public string OutsourceRequestCode { get; set; }
         public int? DecimalPlace { get; set; }
+        public string ProductionOrderCode { get; set; }
     }
 
     public class OutsourceOrderExcessOutput: OutsourceOrderExcessModel

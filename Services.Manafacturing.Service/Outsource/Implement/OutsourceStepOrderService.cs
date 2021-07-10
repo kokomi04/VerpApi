@@ -239,6 +239,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ProjectTo<OutsourceStepOrderDetailOutput>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
+            var mapProductionOrder = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
+                .Where(x => materials.Select(m => m.OutsourceRequestId).Contains(x.OutsourceStepRequestId))
+                .Include(x => x.ProductionOrder)
+                .ToDictionaryAsync(k => k.OutsourceStepRequestId, v => v.ProductionOrder?.ProductionOrderCode);
+
             var lsLinkDataId = details.Select(x => x.ProductionStepLinkDataId).ToList();
             lsLinkDataId.AddRange(materials.Select(x => x.ProductionStepLinkDataId.GetValueOrDefault()));
 
@@ -269,6 +274,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     m.ProductTitle = $"{productInfo.ProductCode}/ {productInfo.ProductName}";
                     m.UnitId = productInfo.UnitId;
                     m.DecimalPlace = productInfo.StockInfo?.UnitConversions?.FirstOrDefault()?.DecimalPlace;
+                    m.ProductionOrderCode = mapProductionOrder.ContainsKey(m.OutsourceRequestId.GetValueOrDefault()) ? mapProductionOrder[m.OutsourceRequestId.GetValueOrDefault()] : "";
                 }
 
                 if (data != null)
