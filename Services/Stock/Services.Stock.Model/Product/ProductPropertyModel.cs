@@ -8,7 +8,7 @@ using AutoMapper;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductPropertyModel: IMapFrom<ProductProperty>
+    public class ProductPropertyModel
     {
         public int ProductPropertyId { get; set; }
 

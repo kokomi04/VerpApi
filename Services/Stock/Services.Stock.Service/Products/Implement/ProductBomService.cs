@@ -109,16 +109,25 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial)
+        public async Task<IList<ProductPropertyModel>> GetProductProperties(int productId)
+        {
+            var productProperties = await _stockDbContext.ProductProperty
+                .Where(p => p.RootProductId == productId)
+                .ProjectTo<ProductPropertyModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            return productProperties;
+        }
+
+        public async Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial, bool isCleanOldProperties)
         {
             var product = _stockDbContext.Product.FirstOrDefault(p => p.ProductId == productId);
             if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
-            await UpdateProductBomDb(productId, productBoms, productMaterials, productProperties, isCleanOldMaterial);
+            await UpdateProductBomDb(productId, productBoms, productMaterials, productProperties, isCleanOldMaterial, isCleanOldProperties);
             await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", productBoms.JsonSerialize());
             return true;
         }
 
-        public async Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial)
+        public async Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial, bool isCleanOldProperties)
         {
             // Validate data
             // Validate child product id
@@ -206,6 +215,31 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     .ToList();
                 _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
             }
+
+            // Cập nhật Properties
+            var propertyIds = productProperties.Select(p => p.PropertyId).Distinct().ToList();
+            var properties = _stockDbContext.Property.Where(p => propertyIds.Contains(p.PropertyId)).ToList();
+            if (propertyIds.Count != properties.Count) throw new BadRequestException(GeneralCode.InvalidParams, "BOM có chứa thuộc tính sản phẩm không tồn tại");
+            var oldProperties = _stockDbContext.ProductProperty.Where(m => m.RootProductId == productId).ToList();
+            var createProperties = productProperties
+                .Where(np => !oldProperties.Any(op => op.ProductId == np.ProductId && op.PathProductIds == string.Join(",", np.PathProductIds)))
+                .Select(np => new ProductProperty
+                {
+                    ProductId = np.ProductId,
+                    ProductPropertyId = np.ProductPropertyId,
+                    RootProductId = np.RootProductId,
+                    PathProductIds = string.Join(",", np.PathProductIds),
+                    PropertyId = np.PropertyId
+                })
+                .ToList();
+            if (isCleanOldProperties)
+            {
+                var deleteProperties = oldProperties
+                    .Where(op => !productProperties.Any(np => np.ProductId == op.ProductId && string.Join(",", np.PathProductIds) == op.PathProductIds))
+                    .ToList();
+                _stockDbContext.ProductProperty.RemoveRange(deleteProperties);
+            }
+
             _stockDbContext.ProductMaterial.AddRange(createMaterials);
             await _stockDbContext.SaveChangesAsync();
             return true;
