@@ -213,13 +213,20 @@ namespace VErp.Commons.Library
                     {
                         continuousRowEmpty++;
                         //continue;
-                        if (continuousRowEmpty > 100) break;
+                        if (continuousRowEmpty > 100)
+                        {
+                            break;
+                        }
                     }
                     else
                     {
-                        if (continuousRowEmpty > 100) break;
+                        if (continuousRowEmpty > 100)
+                        {
+                            break;
+                        }
 
                         var continuousColumnEmpty = 0;
+                        var isRowEmpty = true;
                         foreach (var col in sheet.GetRow(row).Cells)
                         {
 
@@ -260,16 +267,27 @@ namespace VErp.Commons.Library
                             }
                             if (string.IsNullOrWhiteSpace(rowData[columnName]))
                             {
-                                continuousColumnEmpty++;
-                                continuousRowEmpty++;
-                                if (continuousColumnEmpty > 100) break;
+                                continuousColumnEmpty++;                              
+                                if (continuousColumnEmpty > 100)
+                                {
+                                    break;
+                                }
                             }
                             else
                             {
-                                continuousRowEmpty = 0;
+                                isRowEmpty = false;
                                 continuousColumnEmpty = 0;
                             }
 
+                        }
+
+                        if (isRowEmpty)
+                        {
+                            continuousRowEmpty++;
+                        }
+                        else
+                        {
+                            continuousRowEmpty = 0;
                         }
                     }
 
