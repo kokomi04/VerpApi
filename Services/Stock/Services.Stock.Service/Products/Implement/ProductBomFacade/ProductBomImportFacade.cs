@@ -37,6 +37,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private IList<StepSimpleInfo> _steps;
 
         private IDictionary<string, bool> _productCodeMaterials;
+        private IDictionary<string, HashSet<int>> _productCodeProperties;
         private IDictionary<string, List<ProductBomImportModel>> _bomByProductCodes;
 
         private IManufacturingHelperService _manufacturingHelperService;
@@ -71,7 +72,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return this;
         }
 
-        public ProductBomImportFacade SetService(IManufacturingHelperService manufacturingHelperService) {
+        public ProductBomImportFacade SetService(IManufacturingHelperService manufacturingHelperService)
+        {
             _manufacturingHelperService = manufacturingHelperService;
             return this;
         }
@@ -126,27 +128,60 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         }
                         return true;
                     case nameof(ProductBomImportModel.OutputStepName):
-                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? inputStepId) && inputStepId.HasValue)) {
+                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? inputStepId) && inputStepId.HasValue))
+                        {
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
                         }
                         entity.OutputStepName = value;
                         return true;
                     case nameof(ProductBomImportModel.InputStepName):
-                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? outputStepId) && outputStepId.HasValue)) {
+                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? outputStepId) && outputStepId.HasValue))
+                        {
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
                         }
                         entity.InputStepName = value;
                         return true;
                 }
 
+
+                if (propertyName.StartsWith(nameof(ProductBomImportModel.Properties)))
+                {
+                    var propertyId = int.Parse(propertyName.Substring(nameof(ProductBomImportModel.Properties).Length));
+                    if (entity.Properties == null)
+                    {
+                        entity.Properties = new HashSet<int>();
+                    }
+
+                    if (!entity.Properties.Contains(propertyId) && value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                    {
+                        entity.Properties.Add(propertyId);
+                    }                  
+                }
+
+
                 return false;
             });
         }
 
 
-        private void FindMaterial(int rootProductId, string parentProductCode, IList<int> paths, IList<string> pathCodes, IList<ProductMaterialModel> productMaterials)
+        private void FindMaterial(int rootProductId, string parentProductCode, IList<int> paths, IList<string> pathCodes, IList<ProductMaterialModel> productMaterials, List<ProductPropertyModel> productProperties)
         {
             _existedProducts.TryGetValue(parentProductCode, out var parentInfo);
+
+            if (_productCodeProperties.TryGetValue(parentProductCode, out var props))
+            {
+                var propData = props.Select(propertyId => new ProductPropertyModel()
+                {
+                    RootProductId = rootProductId,
+                    ProductId = parentInfo.ProductId,
+                    PropertyId = propertyId,
+                    PathProductIds = paths.ToArray(),
+                    PathProductCodes = pathCodes.ToArray()
+                });
+
+                productProperties.AddRange(propData);
+            }
+
 
             if (_productCodeMaterials.TryGetValue(parentProductCode, out var isMaterial) && isMaterial)
             {
@@ -160,6 +195,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
             else
             {
+
                 if (_bomByProductCodes.ContainsKey(parentProductCode) && _bomByProductCodes[parentProductCode].Count > 0)
                 {
                     foreach (var b in _bomByProductCodes[parentProductCode])
@@ -171,7 +207,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         _pathCodes.Add(parentInfo.ProductCode);
                         _existedProducts.TryGetValue(b.ChildProductCode.NormalizeAsInternalName(), out var childInfo);
                         if (!_paths.Contains(childInfo.ProductId))
-                            FindMaterial(rootProductId, childInfo.ProductCode.NormalizeAsInternalName(), _paths, _pathCodes, productMaterials);
+                            FindMaterial(rootProductId, childInfo.ProductCode.NormalizeAsInternalName(), _paths, _pathCodes, productMaterials, productProperties);
                     }
                 }
             }
@@ -183,13 +219,17 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             _productCodeMaterials = _importData.GroupBy(c => c.ChildProductCode.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.Max(m => m.IsMaterial));
 
+            _productCodeProperties = _importData.GroupBy(c => c.ChildProductCode.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.SelectMany(m => m.Properties ?? new HashSet<int>()).Distinct().ToHashSet());
+
             foreach (var bom in _bomByProductCodes)
             {
                 _existedProducts.TryGetValue(bom.Key, out var productInfo);
 
                 var productMaterials = new List<ProductMaterialModel>();
 
-                FindMaterial(productInfo.ProductId, bom.Key, new List<int>(), new List<string>(), productMaterials);
+                var productProperties = new List<ProductPropertyModel>();
+
+                FindMaterial(productInfo.ProductId, bom.Key, new List<int>(), new List<string>(), productMaterials, productProperties);
 
 
                 var productBoms = bom.Value.Select(b =>
@@ -199,7 +239,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     TryGetStepId(b.InputStepName, out int? inputStepId);
                     TryGetStepId(b.OutputStepName, out int? outputStepId);
 
-                    return new ProductBomInput() {
+                    return new ProductBomInput()
+                    {
                         ProductBomId = null,
                         ProductId = productInfo.ProductId,
                         ChildProductId = childProduct.ProductId,
@@ -209,8 +250,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         OutputStepId = b.IsMaterial ? null : outputStepId
                     };
                 }).ToList();
-
-                var productProperties = new List<ProductPropertyModel>();
 
                 await _productBomService.UpdateProductBomDb(productInfo.ProductId, productBoms, productMaterials, productProperties, false, false);
 
@@ -395,11 +434,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
         }
 
-        private bool TryGetStepId(string key, out int? value) {
+        private bool TryGetStepId(string key, out int? value)
+        {
 
             key = string.IsNullOrEmpty(key) ? "" : key.Trim().ToLower();
 
-            if (_steps == null || !_steps.Any(x => x.StepName.ToLower().Equals(key))) {
+            if (_steps == null || !_steps.Any(x => x.StepName.ToLower().Equals(key)))
+            {
                 value = null;
                 return false;
             }

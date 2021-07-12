@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Product
 {
@@ -118,5 +119,9 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Thuộc công đoạn ra nào?", GroupName = ChildProductGroup)]
         public string OutputStepName { get; set; }
+
+
+        [FieldDataIgnore]
+        public ISet<int> Properties { get; set; }
     }
 }

@@ -74,9 +74,9 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpGet]
         [Route("fieldDataForMapping")]
-        public CategoryNameModel GetCustomerFieldDataForMapping()
+        public async Task<CategoryNameModel> GetBomFieldDataForMapping()
         {
-            return _productBomService.GetCustomerFieldDataForMapping();
+            return await _productBomService.GetBomFieldDataForMapping();
         }
 
         [HttpPost]

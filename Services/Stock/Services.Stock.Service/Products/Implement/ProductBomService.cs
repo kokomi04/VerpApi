@@ -43,6 +43,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IUnitService _unitService;
         private readonly IProductService _productService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
+        private readonly IPropertyService _propertyService;
 
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -51,7 +52,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IMapper mapper
             , IUnitService unitService
             , IProductService productService
-            , IManufacturingHelperService manufacturingHelperService)
+            , IManufacturingHelperService manufacturingHelperService
+            , IPropertyService propertyService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
@@ -61,6 +63,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _unitService = unitService;
             _productService = productService;
             _manufacturingHelperService = manufacturingHelperService;
+            _propertyService = propertyService;
         }
 
         public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
@@ -262,7 +265,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 || oldValue.SortOrder != newValue.SortOrder;
         }
 
-        public CategoryNameModel GetCustomerFieldDataForMapping()
+        public async Task<CategoryNameModel> GetBomFieldDataForMapping()
         {
             var result = new CategoryNameModel()
             {
@@ -275,6 +278,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var fields = Utils.GetFieldNameModels<ProductBomImportModel>();
             result.Fields = fields;
+            var properties = await _propertyService.GetProperties();
+            foreach (var p in properties)
+            {
+                result.Fields.Add(new CategoryFieldNameModel()
+                {
+                    GroupName = "Thuộc tính",
+                    FieldName = nameof(ProductBomImportModel.Properties) + p.PropertyId,
+                    FieldTitle = p.PropertyName + " (Có, Không)"
+                });
+            }
             return result;
         }
 
