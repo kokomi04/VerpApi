@@ -124,6 +124,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Mã mặt hàng đã tồn tại, vui lòng chọn mã khác");
             }
+            var unitInfo = await _unitService.GetUnitInfo(model.UnitId);
+            if (unitInfo == null)
+            {
+                throw new BadRequestException(UnitErrorCode.UnitNotFound, $"Đơn vị tính không tìm thấy ");
+            }
 
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
@@ -136,6 +141,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (model.IsMaterials == false && model.IsProduct == false && model.IsProductSemi == false)
                 {
                     model.IsProduct = true;
+                }
+
+                var defaultPuConversion = await _stockContext.ProductUnitConversion.FirstOrDefaultAsync(pu => pu.IsDefault && pu.ProductId == productId);
+
+                if (defaultPuConversion == null)
+                {
+                    throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy đơn vị tính mặc định");
                 }
 
                 var stockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -158,6 +170,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.Color = model.Color;
 
                 productInfo.UnitId = model.UnitId;
+
+                defaultPuConversion.SecondaryUnitId = model.UnitId;
+                defaultPuConversion.ProductUnitConversionName = unitInfo.UnitName;
 
                 productInfo.ProductCateId = model.ProductCateId;
 
