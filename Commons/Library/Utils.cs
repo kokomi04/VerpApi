@@ -1146,6 +1146,14 @@ namespace VErp.Commons.Library
         public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null)
         {
             var fields = new List<CategoryFieldNameModel>();
+
+            fields.Add(new CategoryFieldNameModel()
+            {
+                GroupName = "Dòng dữ liệu",
+                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
+                FieldTitle = "Cột kiểm tra"
+            });
+
             foreach (var prop in typeof(T).GetProperties())
             {
                 var attrs = prop.GetCustomAttributes<DisplayAttribute>();
@@ -1212,6 +1220,7 @@ namespace VErp.Commons.Library
                 fields.Add(fileMapping);
             }
 
+         
             return fields;
         }
 

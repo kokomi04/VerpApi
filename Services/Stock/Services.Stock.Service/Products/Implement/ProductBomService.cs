@@ -244,6 +244,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
 
             _stockDbContext.ProductMaterial.AddRange(createMaterials);
+            _stockDbContext.ProductProperty.AddRange(createProperties);
             await _stockDbContext.SaveChangesAsync();
             return true;
         }

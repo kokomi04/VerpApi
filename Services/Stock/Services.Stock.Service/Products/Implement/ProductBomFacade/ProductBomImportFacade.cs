@@ -155,7 +155,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     if (!entity.Properties.Contains(propertyId) && value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
                     {
                         entity.Properties.Add(propertyId);
-                    }                  
+                    }
+                    return true;
                 }
 
 
@@ -168,7 +169,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         {
             _existedProducts.TryGetValue(parentProductCode, out var parentInfo);
 
-            if (_productCodeProperties.TryGetValue(parentProductCode, out var props))
+            if (_productCodeProperties.TryGetValue(parentProductCode, out var props) && rootProductId != parentInfo.ProductId)
             {
                 var propData = props.Select(propertyId => new ProductPropertyModel()
                 {
