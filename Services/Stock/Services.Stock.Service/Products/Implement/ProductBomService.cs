@@ -95,7 +95,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var properties = await _stockDbContext.Property.ToListAsync();
             var productProperties = await _stockDbContext.ProductProperty
                .Where(p => p.RootProductId == productId)
-               .ProjectTo<ProductPropertyModel>(_mapper.ConfigurationProvider)
                .ToListAsync();
             var parammeters = new SqlParameter[]
             {
@@ -110,20 +109,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 bom.PathProductIds = Array.ConvertAll(item.PathProductIds.Split(','), s => int.Parse(s));
                 foreach(var property in properties)
                 {
-                    bom.Properties.Add(property.PropertyId, productProperties.Any(p => p.PropertyId == property.PropertyId && p.ProductId == bom.ChildProductId && p.PathProductIds == bom.PathProductIds));
+                    bom.Properties.Add(property.PropertyId, productProperties.Any(p => p.PropertyId == property.PropertyId && p.ProductId == item.ChildProductId && p.PathProductIds == item.PathProductIds));
                 }
                 result.Add(bom);
             }
             return result;
-        }
-
-        public async Task<IList<ProductPropertyModel>> GetProductProperties(int productId)
-        {
-            var productProperties = await _stockDbContext.ProductProperty
-                .Where(p => p.RootProductId == productId)
-                .ProjectTo<ProductPropertyModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-            return productProperties;
         }
 
         public async Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial, bool isCleanOldProperties)
