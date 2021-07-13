@@ -63,7 +63,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _stockDbContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductProperty, propertyEntity.PropertyId, $"Tạo mới thuộc tính sản phẩm {propertyEntity.PropertyId}", req.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Property, propertyEntity.PropertyId, $"Tạo mới thuộc tính sản phẩm {propertyEntity.PropertyId}", req.JsonSerialize());
                 return propertyEntity.PropertyId;
 
             }
@@ -131,7 +131,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 _mapper.Map(req, propertyEntity);
                 await _stockDbContext.SaveChangesAsync();
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductProperty, propertyEntity.PropertyId, $"Cập nhật thuộc tính sản phẩm {propertyEntity.PropertyId}", req.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Property, propertyEntity.PropertyId, $"Cập nhật thuộc tính sản phẩm {propertyEntity.PropertyId}", req.JsonSerialize());
                 return propertyId;
             }
             catch (Exception ex)

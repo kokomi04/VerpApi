@@ -92,7 +92,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<IList<ProductBomOutput>> GetBom(int productId)
         {
             if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
-
+            var properties = await _stockDbContext.Property.ToListAsync();
+            var productProperties = await _stockDbContext.ProductProperty
+               .Where(p => p.RootProductId == productId)
+               .ProjectTo<ProductPropertyModel>(_mapper.ConfigurationProvider)
+               .ToListAsync();
             var parammeters = new SqlParameter[]
             {
                 new SqlParameter("@ProductId", productId)
@@ -104,6 +108,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 var bom = _mapper.Map<ProductBomOutput>(item);
                 bom.PathProductIds = Array.ConvertAll(item.PathProductIds.Split(','), s => int.Parse(s));
+                foreach(var property in properties)
+                {
+                    bom.Properties.Add(property.PropertyId, productProperties.Any(p => p.PropertyId == property.PropertyId && p.ProductId == bom.ChildProductId && p.PathProductIds == bom.PathProductIds));
+                }
                 result.Add(bom);
             }
             return result;
@@ -215,7 +223,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     .ToList();
                 _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
             }
-
+            _stockDbContext.ProductMaterial.AddRange(createMaterials);
             // Cập nhật Properties
             var propertyIds = productProperties.Select(p => p.PropertyId).Distinct().ToList();
             var properties = _stockDbContext.Property.Where(p => propertyIds.Contains(p.PropertyId)).ToList();
@@ -239,8 +247,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     .ToList();
                 _stockDbContext.ProductProperty.RemoveRange(deleteProperties);
             }
+            _stockDbContext.ProductProperty.AddRange(createProperties);
 
-            _stockDbContext.ProductMaterial.AddRange(createMaterials);
             await _stockDbContext.SaveChangesAsync();
             return true;
         }

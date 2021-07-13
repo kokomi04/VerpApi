@@ -258,7 +258,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Kế hoạch sản xuất")]
         ProductionPlan = 400,
         [Description("Thuộc tính sản phầm")]
-        ProductProperty = 401,
-
+        Property = 401,
+        [Description("Tính toán nhu cầu VT có thuộc tính đặc biệt của đơn hàng")]
+        PropertyCalc = 402,
     }
 }
