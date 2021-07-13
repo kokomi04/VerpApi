@@ -25,14 +25,14 @@ namespace VErp.Services.Stock.Model.Product
         public string UnitName { get; set; }
         public int UnitId { get; set; }
         public bool IsMaterial { get; set; }
-        public string NumberOrder { get; set; }      
+        public string NumberOrder { get; set; }
         public int ProductUnitConversionId { get; set; }
         public int DecimalPlace { get; set; }
         public int? InputStepId { get; set; }
         public int? OutputStepId { get; set; }
     }
 
-   
+
     public class ProductBomEntity : ProductBomOutputBase
     {
         public string PathProductIds { get; set; }
@@ -41,6 +41,12 @@ namespace VErp.Services.Stock.Model.Product
     public class ProductBomOutput : ProductBomOutputBase, IMapFrom<ProductBomEntity>
     {
         public int[] PathProductIds { get; set; }
+        public IDictionary<int, bool> Properties { get; set; }
+
+        public ProductBomOutput()
+        {
+            Properties = new Dictionary<int, bool>();
+        }
         public virtual void Mapping(Profile profile)
         {
             profile.CreateMap<ProductBomEntity, ProductBomOutput>()
@@ -106,7 +112,7 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Đánh dấu là nguyên liệu đầu vào (Có, Không)")]
         public bool IsMaterial { get; set; }
-        
+
         //[Display(Name = "Thuộc công đoạn đầu vào nào?")]
         //public int? InputStepId { get; set; }
 
