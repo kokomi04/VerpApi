@@ -16,6 +16,7 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 {
@@ -24,16 +25,22 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 14;
+
+        const int START_PROP_COLUMN_INDEX = 15;
+
+        private int maxColumnIndex;
 
         private IList<int> productIds;
         private readonly IList<StepSimpleInfo> steps;
+        private readonly IList<PropertyModel> _productBomProperties;
 
-        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds, IList<StepSimpleInfo> steps)
+        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds, IList<StepSimpleInfo> steps, IList<PropertyModel> productBomProperties)
         {
             _stockDbContext = stockDbContext;
             this.productIds = productIds;
             this.steps = steps;
+            _productBomProperties = productBomProperties;
+            maxColumnIndex = 14 + productBomProperties.Count;
         }
 
 
@@ -74,6 +81,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return (stream, fileName, contentType);
         }
 
+
+
+
         private async Task<string> WriteTable()
         {
             currentRow = 1;
@@ -111,7 +121,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             sheet.EnsureCell(fRow, 14).SetCellValue($"Công đoạn ra");
 
+            var col = START_PROP_COLUMN_INDEX;
 
+            foreach (var p in _productBomProperties)
+            {
+                sheet.EnsureCell(fRow, col).SetCellValue(p.PropertyName);
+                col++;
+            }
 
             for (var i = fRow; i <= sRow; i++)
             {
@@ -147,6 +163,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
 
             var productMaterial = (await _stockDbContext.ProductMaterial.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().Select(m => m.ProductId).Distinct().ToListAsync()).ToHashSet();
+
+            var productBomProperties = await _stockDbContext.ProductProperty.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().ToListAsync();
 
             var productInfos = (await (
                 from p in _stockDbContext.Product
@@ -221,6 +239,19 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                 sheet.EnsureCell(currentRow, 13).SetCellValue(GetStepName(item.InputStepId));
                 sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.OutputStepId));
+
+                var col = START_PROP_COLUMN_INDEX;
+
+                foreach (var p in _productBomProperties)
+                {
+                    if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId))
+                    {
+                        sheet.EnsureCell(currentRow, col).SetCellValue("Có");
+                        sheet.EnsureCell(currentRow, col).CellStyle.Alignment = HorizontalAlignment.Center;
+                    }
+
+                    col++;
+                }
 
                 currentRow++;
                 stt++;

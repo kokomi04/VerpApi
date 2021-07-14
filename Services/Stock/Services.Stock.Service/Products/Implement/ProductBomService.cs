@@ -43,6 +43,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IUnitService _unitService;
         private readonly IProductService _productService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
+        private readonly IPropertyService _propertyService;
 
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -51,7 +52,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IMapper mapper
             , IUnitService unitService
             , IProductService productService
-            , IManufacturingHelperService manufacturingHelperService)
+            , IManufacturingHelperService manufacturingHelperService
+            , IPropertyService propertyService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
@@ -61,6 +63,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _unitService = unitService;
             _productService = productService;
             _manufacturingHelperService = manufacturingHelperService;
+            _propertyService = propertyService;
         }
 
         public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
@@ -237,8 +240,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     .ToList();
                 _stockDbContext.ProductProperty.RemoveRange(deleteProperties);
             }
-            _stockDbContext.ProductProperty.AddRange(createProperties);
 
+            _stockDbContext.ProductProperty.AddRange(createProperties);
             await _stockDbContext.SaveChangesAsync();
             return true;
         }
@@ -246,7 +249,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds)
         {
             var steps = await _manufacturingHelperService.GetSteps();
-            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps);
+            var properties = await _propertyService.GetProperties();
+            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps, properties);
             return await bomExport.BomExport();
         }
 
@@ -260,7 +264,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 || oldValue.SortOrder != newValue.SortOrder;
         }
 
-        public CategoryNameModel GetCustomerFieldDataForMapping()
+        public async Task<CategoryNameModel> GetBomFieldDataForMapping()
         {
             var result = new CategoryNameModel()
             {
@@ -273,19 +277,43 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var fields = Utils.GetFieldNameModels<ProductBomImportModel>();
             result.Fields = fields;
+            var properties = await _propertyService.GetProperties();
+            foreach (var p in properties)
+            {
+                result.Fields.Add(new CategoryFieldNameModel()
+                {
+                    GroupName = "Thuộc tính",
+                    FieldName = nameof(ProductBomImportModel.Properties) + p.PropertyId,
+                    FieldTitle = p.PropertyName + " (Có, Không)"
+                });
+            }
             return result;
         }
 
         public Task<bool> ImportBomFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            return new ProductBomImportFacade()
-                .SetService(_stockDbContext)
-                .SetService(_productService)
-                .SetService(_unitService)
-                .SetService(_activityLogService)
-                .SetService(_manufacturingHelperService)
-                .SetService(this)
+            return InitImportBomFacade(false)
                 .ProcessData(mapping, stream);
+        }
+
+        public async Task<IList<ProductBomByProduct>> PreviewBomFromMapping(ImportExcelMapping mapping, Stream stream)
+        {
+            var bomProcess = InitImportBomFacade(true);
+            var r = await bomProcess.ProcessData(mapping, stream);
+            if (!r) return null;
+            return bomProcess.PreviewData;
+        }
+
+
+        private ProductBomImportFacade InitImportBomFacade(bool isPreview)
+        {
+            return new ProductBomImportFacade(isPreview)
+               .SetService(_stockDbContext)
+               .SetService(_productService)
+               .SetService(_unitService)
+               .SetService(_activityLogService)
+               .SetService(_manufacturingHelperService)
+               .SetService(this);
         }
     }
 }
