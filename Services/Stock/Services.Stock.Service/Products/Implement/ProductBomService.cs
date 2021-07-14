@@ -252,7 +252,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds)
         {
             var steps = await _manufacturingHelperService.GetSteps();
-            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps);
+            var properties = await _propertyService.GetProperties();
+            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps, properties);
             return await bomExport.BomExport();
         }
 
@@ -294,14 +295,28 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public Task<bool> ImportBomFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            return new ProductBomImportFacade()
-                .SetService(_stockDbContext)
-                .SetService(_productService)
-                .SetService(_unitService)
-                .SetService(_activityLogService)
-                .SetService(_manufacturingHelperService)
-                .SetService(this)
+            return InitImportBomFacade(false)
                 .ProcessData(mapping, stream);
+        }
+
+        public async Task<IList<ProductBomByProduct>> PreviewBomFromMapping(ImportExcelMapping mapping, Stream stream)
+        {
+            var bomProcess = InitImportBomFacade(true);
+            var r = await bomProcess.ProcessData(mapping, stream);
+            if (!r) return null;
+            return bomProcess.PreviewData;
+        }
+
+
+        private ProductBomImportFacade InitImportBomFacade(bool isPreview)
+        {
+            return new ProductBomImportFacade(isPreview)
+               .SetService(_stockDbContext)
+               .SetService(_productService)
+               .SetService(_unitService)
+               .SetService(_activityLogService)
+               .SetService(_manufacturingHelperService)
+               .SetService(this);
         }
     }
 }

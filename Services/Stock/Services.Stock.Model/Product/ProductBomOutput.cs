@@ -21,7 +21,7 @@ namespace VErp.Services.Stock.Model.Product
         public string Specification { get; set; }
 
         public decimal Quantity { get; set; }
-        public decimal Wastage { get; set; }
+        public decimal Wastage { get; set; }    
         public string Description { get; set; }
         public string UnitName { get; set; }
         public int UnitId { get; set; }
@@ -31,9 +31,19 @@ namespace VErp.Services.Stock.Model.Product
         public int DecimalPlace { get; set; }
         public int? InputStepId { get; set; }
         public int? OutputStepId { get; set; }
+     
     }
 
-   
+
+    public class ProductBomPreviewOutput: ProductBomOutputBase
+    {
+        public decimal TotalQuantity { get; set; }
+
+        public IList<int> PropertyIds { get; set; }
+
+        public int[] PathProductIds { get; set; }
+    }
+
     public class ProductBomEntity : ProductBomOutputBase
     {
         public string PathProductIds { get; set; }
@@ -123,5 +133,23 @@ namespace VErp.Services.Stock.Model.Product
 
         [FieldDataIgnore]
         public ISet<int> Properties { get; set; }
+    }
+
+    public class ProductBomByProduct
+    {
+        public ProductRootBomInfo Info { get; set; }
+        public IList<ProductBomPreviewOutput> Boms { get; set; }
+    }
+
+
+    public class ProductRootBomInfo
+    {
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string UnitName { get; set; }
+        public string ProductTypeName { get; set; }
+        public string ProductCateName { get; set; }
+        public string Specification { get; set; }
     }
 }

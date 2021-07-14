@@ -23,5 +23,7 @@ namespace VErp.Services.Stock.Service.Products
         Task<CategoryNameModel> GetBomFieldDataForMapping();
 
         Task<bool> ImportBomFromMapping(ImportExcelMapping importExcelMapping, Stream stream);
+
+        Task<IList<ProductBomByProduct>> PreviewBomFromMapping(ImportExcelMapping mapping, Stream stream);
     }
 }

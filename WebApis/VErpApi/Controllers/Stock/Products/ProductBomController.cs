@@ -90,5 +90,17 @@ namespace VErpApi.Controllers.Stock.Products
 
             return await _productBomService.ImportBomFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
+
+        [HttpPost]
+        [Route("previewFromMapping")]
+        public async Task<IList<ProductBomByProduct>> PreviewFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
+            return await _productBomService.PreviewBomFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
     }
 }
