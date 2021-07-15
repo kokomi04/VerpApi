@@ -365,8 +365,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     DecimalPlace = 12,
                     InputStepId = b.InputStepId,
                     OutputStepId = b.OutputStepId,
-                    PathProductIds = pathProductIds.ToArray(),
-                    PropertyIds = propertyIds.ToList()
+                    PathProductIds = pathProductIds?.ToArray(),
+                    PropertyIds = propertyIds?.ToList()
                 });
 
                 var pathProducts = pathProductIds.DeepClone();
