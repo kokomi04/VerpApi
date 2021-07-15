@@ -42,7 +42,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
         public int ProductStatusId { get; set; }
         public string PackingMethod { get; set; }
-        public int? CustomerId { get; set; }
+        //public int? CustomerId { get; set; }
         public decimal? NetWeight { get; set; }
         public decimal? GrossWeight { get; set; }
         public decimal? Measurement { get; set; }

@@ -782,7 +782,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.Height,
                   p.Long,
                   p.Width,
-                  p.CustomerId,
+                  //p.CustomerId,
 
                   p.PackingMethod,
                   p.Quantitative,
@@ -868,7 +868,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Long = item.Long,
                     Width = item.Width,
                     Height = item.Height,
-                    CustomerId = item.CustomerId,
+                    //CustomerId = item.CustomerId,
                     PackingMethod = item.PackingMethod,
                     Quantitative = item.Quantitative,
                     QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)item.QuantitativeUnitTypeId,
