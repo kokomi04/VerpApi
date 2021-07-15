@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -32,7 +30,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private IList<ProductBomImportModel> _importData;
         private IDictionary<string, ProductType> _productTypes;
         private IDictionary<string, ProductCate> _productCates;
-        private IDictionary<string, UnitOutput> _units;
+        private IDictionary<string, UnitOutput[]> _units;
         private IDictionary<string, SimpleProduct> _existedProducts;
         private IList<StepSimpleInfo> _steps;
 
@@ -434,7 +432,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private async Task AddMissingUnit()
         {
             _units = (await _unitService.GetList(string.Empty, null, 1, -1, null)).List.GroupBy(u => u.UnitName.NormalizeAsInternalName())
-                      .ToDictionary(u => u.Key, u => u.FirstOrDefault());
+                      .ToDictionary(u => u.Key, u => u.ToArray());
 
 
             var importedUnits = _importData.SelectMany(p => new[] { p.UnitName, p.ChildUnitName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
@@ -456,7 +454,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     unitId = await _unitService.AddUnit(uni);
                 }
 
-                _units.Add(uni.UnitName.NormalizeAsInternalName(), new UnitOutput() { UnitId = unitId, UnitName = uni.UnitName, UnitStatusId = uni.UnitStatusId });
+                _units.Add(uni.UnitName.NormalizeAsInternalName(), new UnitOutput[] {
+                    new UnitOutput { UnitId = unitId, UnitName = uni.UnitName, UnitStatusId = uni.UnitStatusId }
+                });
             }
 
         }
@@ -496,7 +496,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     ProductCode = p.ProductCode,
                     ProductName = p.ProductName,
                     UnitId = p.UnitId,
-                    UnitName = _units.Values.FirstOrDefault(u => u.UnitId == p.UnitId).UnitName,
+                    UnitName = _units.Values.SelectMany(u => u).FirstOrDefault(u => u.UnitId == p.UnitId)?.UnitName,
                     Specification = p.Specification,
                     ProductTypeId = p.ProductTypeId,
                     ProductCateId = p.ProductCateId
@@ -546,7 +546,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
 
                     _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
-                    if (unit == null)
+                    if (unit == null || unit.Length <= 0)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính \"{p.Value.UnitName}\" cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
                     }
@@ -559,7 +559,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                         ProductTypeId = type?.ProductTypeId,
                         ProductCateId = cate.ProductCateId,
-                        UnitId = unit.UnitId,
+                        UnitId = unit.FirstOrDefault().UnitId,
                         IsProduct = p.Value.IsProduct,
                         IsProductSemi = p.Value.IsSemi,
 
@@ -589,7 +589,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     ProductCode = product.ProductCode,
                     ProductName = product.ProductName,
                     UnitId = product.UnitId,
-                    UnitName = _units.Values.FirstOrDefault(u => u.UnitId == product.UnitId).UnitName,
+                    UnitName = _units.Values.SelectMany(u => u).FirstOrDefault(u => u.UnitId == product.UnitId)?.UnitName,
                     Specification = product.Extra.Specification,
                     ProductCateId = product.ProductCateId,
                     ProductTypeId = product.ProductTypeId
