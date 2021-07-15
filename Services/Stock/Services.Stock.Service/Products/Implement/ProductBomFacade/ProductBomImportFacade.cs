@@ -313,7 +313,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                 bomInfo.Boms = new List<ProductBomPreviewOutput>();
 
-                GetBoms(rootProductId, 1, 1, "", new List<int>(), bomInfo.Boms, boms);
+                GetBoms(rootProductId, 1, 1, "", new List<int>() { rootProductId }, bomInfo.Boms, boms);
 
                 PreviewData.Add(bomInfo);
             }
@@ -330,12 +330,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 var totalQuantity = quantity * b.Quantity ?? 0 * b.Wastage ?? 1;
 
                 var bomNumOrder = numberOrder;
-                if (!string.IsNullOrWhiteSpace(numberOrder))
-                {
-                    bomNumOrder += "." + bomIndex;
-                }
 
-                var productCodeNormalized = _existedProducts.Values.FirstOrDefault(p => p.ProductId == b.ProductId)?.ProductCode?.NormalizeAsInternalName();
+                bomNumOrder += "." + bomIndex++;
+                bomNumOrder = bomNumOrder.Trim('.');
+
+
+                var productCodeNormalized = childInfo?.ProductCode?.NormalizeAsInternalName();
 
                 _productCodeProperties.TryGetValue(productCodeNormalized, out var propertyIds);
 
