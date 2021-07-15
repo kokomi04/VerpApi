@@ -142,18 +142,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             out bool isFormula
             )
         {
-            isFormula = false;
-            var customerId = product.CustomerId;
-            ProductCustomer pCustomer = productCustomers?.FirstOrDefault(c => c.CustomerId == null || c.CustomerId == product.CustomerId);
-            if (pCustomer == null)
-            {
-
-                pCustomer = productCustomers.OrderByDescending(c => c.CreatedDatetimeUtc).FirstOrDefault();
-            }
-            if (pCustomer?.CustomerId != null)
-            {
-                customerId = pCustomer.CustomerId.Value;
-            }
+            isFormula = false;            
+            ProductCustomer pCustomer = productCustomers?.OrderBy(c=>c.CustomerId)?.ThenByDescending(c=>c.CreatedDatetimeUtc).FirstOrDefault();
+            int? customerId = pCustomer?.CustomerId;
+                   
             var pus = product.ProductUnitConversions.Where(s => !s.IsDefault).ToList();
             switch (fieldName)
             {

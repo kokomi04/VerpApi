@@ -31,7 +31,7 @@ namespace VErp.Services.Stock.Model.Product
         public decimal? Width { get; set; }
         public int DecimalPlace { get; set; }
 
-        public int? CustomerId { get; set; }
+        //public int? CustomerId { get; set; }
 
         public string PackingMethod { get; set; }
 

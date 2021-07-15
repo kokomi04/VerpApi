@@ -12,7 +12,7 @@ namespace VErp.Services.Stock.Model.Product
     /// <b>NOTE: All props need to be nullable for check null to append prop to existed product</b>
     /// </summary>
     [Display(Name = "Sản phẩm")]
-    public class ProductImportModel: MappingDataRowAbstract
+    public class ProductImportModel : MappingDataRowAbstract
     {
 
 
@@ -24,15 +24,15 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Tên mặt hàng", GroupName = "Thông tin chung")]
         [MaxLength(128, ErrorMessage = "Tên mặt hàng quá dài")]
-        public string ProductName { get; set; }    
+        public string ProductName { get; set; }
 
-        [Display(Name = "Mã loại", GroupName = "Thông tin chung")]       
+        [Display(Name = "Mã loại", GroupName = "Thông tin chung")]
         public string ProductTypeCode { get; set; }
 
         [Display(Name = "Tên loại mã", GroupName = "Thông tin chung")]
         public string ProductTypeName { get; set; }
 
-        [Display(Name = "Danh mục mặt hàng", GroupName = "Thông tin chung")]      
+        [Display(Name = "Danh mục mặt hàng", GroupName = "Thông tin chung")]
         public string ProductCate { get; set; }
 
         [Display(Name = "Cấu hình Barcode", GroupName = "Thông tin chung")]
@@ -40,13 +40,13 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Barcode", GroupName = "Thông tin chung")]
         public string Barcode { get; set; }
-       
+
 
 
         [Display(Name = "Tên Đơn vị chính", GroupName = "Đơn vị chính")]
         public string Unit { get; set; }
 
-        [Display(Name = "Độ chính xác (đơn vị chính)", GroupName = "Đơn vị chính")]    
+        [Display(Name = "Độ chính xác (đơn vị chính)", GroupName = "Đơn vị chính")]
         public int? DecimalPlaceDefault { get; set; }
 
         [Display(Name = "Giá ước tính", GroupName = "TT Mua bán")]
@@ -66,6 +66,9 @@ namespace VErp.Services.Stock.Model.Product
 
 
 
+        [FieldDataIgnore]
+        public int? CustomerId { get; set; }
+
         [Display(Name = "Mã Khách hàng", GroupName = "TT Khách hàng")]
         public string CustomerCode { get; set; }
 
@@ -75,7 +78,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Mã lưu bên k.hàng", GroupName = "TT Khách hàng")]
         public string CustomerProductCode { get; set; }
 
-      
+
 
         // Extra info
         [Display(Name = "Quy cách", GroupName = "Thông tin bổ sung")]
