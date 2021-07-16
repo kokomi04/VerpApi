@@ -15,7 +15,6 @@ namespace VErp.Services.Stock.Model.Product
     public class ProductImportModel : MappingDataRowAbstract
     {
 
-
         // General info
         [Display(Name = "Mã mặt hàng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng")]

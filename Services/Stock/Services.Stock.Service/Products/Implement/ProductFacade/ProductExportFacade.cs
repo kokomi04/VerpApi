@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -28,20 +29,22 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 10;
+        //private int maxColumnIndex = 10;
 
-        private static readonly IList<CategoryFieldNameModel> fields = Utils.GetFieldNameModels<ProductImportModel>();
-        private static readonly IList<string> groups = fields.Select(g => g.GroupName).Distinct().ToList();
+        private readonly IList<CategoryFieldNameModel> fields;
+        private readonly IList<string> groups;
 
 
         IDictionary<int, RefCustomerBasic> customers;
         IDictionary<int, SimpleStockInfo> stocks;
 
-        public ProductExportFacade(StockDBContext stockDbContext)
+        public ProductExportFacade(StockDBContext stockDbContext, IList<string> fieldNames)
         {
             _stockDbContext = stockDbContext;
             customers = (_stockDbContext.RefCustomerBasic.AsNoTracking().ToList()).ToDictionary(c => c.CustomerId, c => c);
             stocks = (_stockDbContext.Stock.Select(s => new SimpleStockInfo { StockId = s.StockId, StockName = s.StockName }).ToList()).ToDictionary(c => c.StockId, c => c);
+            fields = Utils.GetFieldNameModels<ProductImportModel>().Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
+            groups = fields.Select(g => g.GroupName).Distinct().ToList();
         }
 
 
@@ -94,7 +97,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             sheet.SetHeaderCellStyle(fRow, 0);
 
             var sColIndex = 1;
-            if (groups.Count > 1)
+            if (groups.Count > 0)
             {
                 sRow = fRow + 1;
             }
@@ -142,10 +145,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             out bool isFormula
             )
         {
-            isFormula = false;            
-            ProductCustomer pCustomer = productCustomers?.OrderBy(c=>c.CustomerId)?.ThenByDescending(c=>c.CreatedDatetimeUtc).FirstOrDefault();
+            isFormula = false;
+            ProductCustomer pCustomer = productCustomers?.OrderBy(c => c.CustomerId)?.ThenByDescending(c => c.CreatedDatetimeUtc).FirstOrDefault();
             int? customerId = pCustomer?.CustomerId;
-                   
+
             var pus = product.ProductUnitConversions.Where(s => !s.IsDefault).ToList();
             switch (fieldName)
             {
@@ -170,11 +173,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 case nameof(ProductImportModel.EstimatePrice):
                     return (EnumDataType.Decimal, product.EstimatePrice);
                 case nameof(ProductImportModel.IsProductSemi):
-                    return (EnumDataType.Text, product.IsProductSemi ? "Có" : "Không");
+                    return (EnumDataType.Text, product.IsProductSemi ? "Có" : "");
                 case nameof(ProductImportModel.IsProduct):
-                    return (EnumDataType.Text, product.IsProduct ? "Có" : "Không");
+                    return (EnumDataType.Text, product.IsProduct ? "Có" : "");
                 case nameof(ProductImportModel.IsMaterials):
-                    return (EnumDataType.Text, product.IsMaterials ? "Có" : "Không");
+                    return (EnumDataType.Text, product.IsMaterials ? "Có" : "");
                 case nameof(ProductImportModel.Coefficient):
                     return (EnumDataType.Int, product.Coefficient);
                 case nameof(ProductImportModel.CustomerCode):
@@ -366,7 +369,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 {
                                     sheet.EnsureCell(currentRow, sColIndex, intStyle);
                                 }
-                                break;                           
+                                break;
                             case EnumDataType.Decimal:
                                 if (!v.IsNullObject())
                                 {
