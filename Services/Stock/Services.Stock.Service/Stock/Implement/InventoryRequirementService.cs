@@ -1,14 +1,10 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Verp.Cache.RedisCache;
-using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -21,14 +17,11 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory.InventoryRequirement;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using System.Linq.Expressions;
 using InventoryRequirementEntity = VErp.Infrastructure.EF.StockDB.InventoryRequirement;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Commons.Enums.Stock;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using System.Data;
-using System.Reflection;
 using VErp.Commons.Enums.StockEnum;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
@@ -74,73 +67,136 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _stockDBContext.InventoryRequirementDetail
-                .Include(s => s.InventoryRequirement)
-                .Include(s => s.AssignStock)
-                .Include(s => s.Product)
-                .Where(s => s.InventoryRequirement.InventoryTypeId == (int)inventoryType);
+            var inventoryRequirementAsQuery = from ird in _stockDBContext.InventoryRequirementDetail
+                                              join ir in _stockDBContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
+                                              join @as in _stockDBContext.Stock on ird.AssignStockId equals @as.StockId into @asAlias
+                                              from @as in @asAlias.DefaultIfEmpty()
+                                              where ir.InventoryTypeId == (int)inventoryType
+                                              select new
+                                              {
+                                                  InventoryRequirementCode = ir.InventoryRequirementCode,
+                                                  Content = ir.Content,
+                                                  Date = ir.Date,
+                                                  DepartmentId = ird.DepartmentId,
+                                                  ProductionStepId = ird.ProductionStepId,
+                                                  CreatedByUserId = ir.CreatedByUserId,
+                                                  ProductionOrderCode = ird.ProductionOrderCode,
+                                                  Shipper = ir.Shipper,
+                                                  CustomerId = ir.CustomerId,
+                                                  BillForm = ir.BillForm,
+                                                  BillCode = ir.BillCode,
+                                                  BillSerial = ir.BillSerial,
+                                                  BillDate = ir.BillDate,
+                                                  ModuleTypeId = ir.ModuleTypeId,
+                                                  InventoryRequirementId = ir.InventoryRequirementId,
+                                                  CensorByUserId = ir.CensorByUserId,
+                                                  CensorDatetimeUtc = ir.CensorDatetimeUtc,
+                                                  CensorStatus = ir.CensorStatus,
+                                                  StockName = @as != null ? @as.StockName : "",
+                                                  ProductId = ird.ProductId
+                                              };
+
+            var inventoryAsQuery = from id in _stockDBContext.InventoryDetail
+                                   join i in _stockDBContext.Inventory on id.InventoryId equals i.InventoryId
+                                   select new
+                                   {
+                                       i.InventoryId,
+                                       i.InventoryCode,
+                                       id.InventoryDetailId,
+                                       id.InventoryRequirementCode,
+                                       id.ProductionOrderCode,
+                                       i.DepartmentId,
+                                       id.ProductId
+                                   };
+
+            var query = from ir in inventoryRequirementAsQuery
+                        join p in _stockDBContext.Product on ir.ProductId equals p.ProductId into @pAlias
+                        from p in @pAlias.DefaultIfEmpty()
+                        where !hasInventory ? !hasInventory : inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId)
+                        select new
+                        {
+                            InventoryRequirementCode = ir.InventoryRequirementCode,
+                            Content = ir.Content,
+                            Date = ir.Date,
+                            DepartmentId = ir.DepartmentId,
+                            ProductionStepId = ir.ProductionStepId,
+                            CreatedByUserId = ir.CreatedByUserId,
+                            ProductionOrderCode = ir.ProductionOrderCode,
+                            Shipper = ir.Shipper,
+                            CustomerId = ir.CustomerId,
+                            BillForm = ir.BillForm,
+                            BillCode = ir.BillCode,
+                            BillSerial = ir.BillSerial,
+                            BillDate = ir.BillDate,
+                            ModuleTypeId = ir.ModuleTypeId,
+                            InventoryRequirementId = ir.InventoryRequirementId,
+                            CensorByUserId = ir.CensorByUserId,
+                            CensorDatetimeUtc = ir.CensorDatetimeUtc,
+                            CensorStatus = ir.CensorStatus,
+                            ProductCode = p.ProductCode,
+                            ProductName = p.ProductName,
+                            StockName = ir.StockName,
+                            ProductTitle = $"{p.ProductCode} / {p.ProductName}",
+                            ProductId = ir.ProductId
+                        };
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = query.Where(s => s.InventoryRequirement.InventoryRequirementCode.Contains(keyword)
-                || s.InventoryRequirement.Content.Contains(keyword)
-                || s.OrderCode.Contains(keyword)
-                || s.ProductionOrderCode.Contains(keyword)
-                || s.OutsourceStepRequestCode.Contains(keyword)
-                || s.Pocode.Contains(keyword)
-                || s.Product.ProductCode.Contains(keyword)
-                || s.Product.ProductName.Contains(keyword)
-                || s.Product.ProductNameEng.Contains(keyword)
-
+                query = query.Where(s => s.InventoryRequirementCode.Contains(keyword)
+                                         || s.Content.Contains(keyword)
+                                         || s.ProductionOrderCode.Contains(keyword)
+                                         || s.ProductCode.Contains(keyword)
+                                         || s.ProductName.Contains(keyword)
                 );
-
             }
             query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
 
-            var data = from q in query.AsEnumerable()
-                       join id in _stockDBContext.InventoryDetail.Include(x => x.Inventory).AsEnumerable() on new { q.InventoryRequirement.InventoryRequirementCode, q.ProductionOrderCode, q.ProductId, q.DepartmentId } equals new { id.InventoryRequirementCode, id.ProductionOrderCode, id.ProductId, id.Inventory.DepartmentId } into ids
-                       from id in ids.DefaultIfEmpty()
-                       select new { q, id } into t1
-                       group t1 by new { t1.q.InventoryRequirement.InventoryRequirementCode, t1.q.ProductionOrderCode, t1.q.ProductId, t1.q.DepartmentId } into g
-                       select new InventoryRequirementListModel
-                       {
-                           InventoryRequirementCode = g.FirstOrDefault().q.InventoryRequirement.InventoryRequirementCode,
-                           Content = g.FirstOrDefault().q.InventoryRequirement.Content,
-                           Date = g.FirstOrDefault().q.InventoryRequirement.Date.GetUnix(),
-                           DepartmentId = g.FirstOrDefault().q.DepartmentId,
-                           ProductionStepId = g.FirstOrDefault().q.ProductionStepId,
-                           CreatedByUserId = g.FirstOrDefault().q.InventoryRequirement.CreatedByUserId,
-                           ProductionOrderCode = g.FirstOrDefault().q.ProductionOrderCode,
-                           Shipper = g.FirstOrDefault().q.InventoryRequirement.Shipper,
-                           CustomerId = g.FirstOrDefault().q.InventoryRequirement.CustomerId,
-                           BillForm = g.FirstOrDefault().q.InventoryRequirement.BillForm,
-                           BillCode = g.FirstOrDefault().q.InventoryRequirement.BillCode,
-                           BillSerial = g.FirstOrDefault().q.InventoryRequirement.BillSerial,
-                           BillDate = g.FirstOrDefault().q.InventoryRequirement.BillDate.GetUnix(),
-                           ModuleTypeId = g.FirstOrDefault().q.InventoryRequirement.ModuleTypeId,
-                           InventoryRequirementId = g.FirstOrDefault().q.InventoryRequirement.InventoryRequirementId,
-                           CensorByUserId = g.FirstOrDefault().q.InventoryRequirement.CensorByUserId,
-                           CensorDatetimeUtc = g.FirstOrDefault().q.InventoryRequirement.CensorDatetimeUtc.GetUnix(),
-                           CensorStatus = (EnumInventoryRequirementStatus)g.FirstOrDefault().q.InventoryRequirement.CensorStatus,
-                           ProductCode = g.FirstOrDefault().q.Product?.ProductCode,
-                           ProductName = g.FirstOrDefault().q.Product?.ProductName,
-                           StockName = g.FirstOrDefault().q.AssignStock?.StockName,
-                           ProductTitle = $"{g.FirstOrDefault().q.Product?.ProductCode} / {g.FirstOrDefault().q.Product?.ProductName}",
-                           InventoryInfo = g.Where(x => x.id != null).Select(x => new InventorySimpleInfo
-                           {
-                               InventoryId = x.id.InventoryId,
-                               InventoryCode = x.id.Inventory.InventoryCode
-                           }).ToList()
-                       };
+            var total = query.Count();
+            var lst = (await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync())
+                .Select(x => new InventoryRequirementListModel
+                {
+                    InventoryRequirementCode = x.InventoryRequirementCode,
+                    Content = x.Content,
+                    Date = x.Date.GetUnix(),
+                    DepartmentId = x.DepartmentId,
+                    ProductionStepId = x.ProductionStepId,
+                    CreatedByUserId = x.CreatedByUserId,
+                    ProductionOrderCode = x.ProductionOrderCode,
+                    Shipper = x.Shipper,
+                    CustomerId = x.CustomerId,
+                    BillForm = x.BillForm,
+                    BillCode = x.BillCode,
+                    BillSerial = x.BillSerial,
+                    BillDate = x.BillDate.GetUnix(),
+                    ModuleTypeId = x.ModuleTypeId,
+                    InventoryRequirementId = x.InventoryRequirementId,
+                    CensorByUserId = x.CensorByUserId,
+                    CensorDatetimeUtc = x.CensorDatetimeUtc.GetUnix(),
+                    CensorStatus = (EnumInventoryRequirementStatus)x.CensorStatus,
+                    ProductCode = x.ProductCode,
+                    ProductName = x.ProductName,
+                    StockName = x.StockName,
+                    ProductTitle = x.ProductTitle,
+                    ProductId = x.ProductId,
+                    InventoryInfo = new List<InventorySimpleInfo>(),
+                }).ToList();
 
-            if (hasInventory)
+            var lsInventoryRequirementCode = lst.Select(x => x.InventoryRequirementCode).ToArray();
+            var mapInventorySimpleInfo = (await inventoryAsQuery.Where(x => lsInventoryRequirementCode.Contains(x.InventoryRequirementCode)).ToListAsync())
+            .GroupBy(x => (new { x.InventoryRequirementCode, x.ProductId }).GetHashCode())
+            .ToDictionary(k => k.Key, v => v.Select(x => new InventorySimpleInfo
             {
-                data = data.Where(x => x.InventoryInfo != null && x.InventoryInfo.Count > 0);
+                InventoryCode = x.InventoryCode,
+                InventoryId = x.InventoryId
+            }).Distinct());
+
+            foreach (var item in lst)
+            {
+                var hashCode = (new { item.InventoryRequirementCode, item.ProductId }).GetHashCode();
+                if (mapInventorySimpleInfo.ContainsKey(hashCode))
+                    ((List<InventorySimpleInfo>)item.InventoryInfo).AddRange(mapInventorySimpleInfo[hashCode]);
             }
 
-            var total = data.Count();
-            var lst = (size > 0 ? data.Skip((page - 1) * size).Take(size) : data)
-               .ToList();
             return (lst, total);
         }
 
