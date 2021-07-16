@@ -92,6 +92,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         {
             public int? CustomerId { get; set; }
             public string CustomerProductCode { get; set; }
+            public string CustomerProductName { get; set; }
         }
     }
 
