@@ -658,7 +658,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     productStockInfo.IsDeleted = true;
 
-                    foreach(var p in productBoms)
+                    foreach (var p in productBoms)
                     {
                         p.IsDeleted = true;
                     }
@@ -898,10 +898,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> ExportList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
             var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
-            var bomExport = new ProductExportFacade(_stockDbContext);
+            var bomExport = new ProductExportFacade(_stockDbContext, fieldNames);
             return await bomExport.Export(lst.List);
         }
 

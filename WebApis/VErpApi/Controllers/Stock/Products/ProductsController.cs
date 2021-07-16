@@ -65,9 +65,13 @@ namespace VErpApi.Controllers.Stock.Products
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("ExportList")]
-        public async Task<IActionResult> ExportList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null, [FromQuery] bool? isMaterials = null)
+        public async Task<IActionResult> ExportList([FromBody] ProductExportRequestModel req)
         {
-            var (stream, fileName, contentType) =  await _productService.ExportList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials);
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _productService.ExportList(req.FieldNames, req.Keyword, req.ProductIds, req.ProductName, req.ProductTypeIds, req.ProductCateIds, req.Page, req.Size, isProductSemi: req.IsProductSemi, isProduct: req.IsProduct, isMaterials: req.IsMaterials);
 
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
@@ -228,13 +232,15 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpPost]
         [Route("Copy/Bom")]
-        public async Task<long> CopyProductBom([FromQuery] int sourceProductId, [FromQuery] int destProductId) {
+        public async Task<long> CopyProductBom([FromQuery] int sourceProductId, [FromQuery] int destProductId)
+        {
             return await _productService.CopyProductBom(sourceProductId, destProductId);
         }
 
         [HttpPost]
         [Route("Copy/MaterialsConsumption")]
-        public async Task<long> CopyProductMaterialConsumption([FromQuery] int sourceProductId, [FromQuery] int destProductId) {
+        public async Task<long> CopyProductMaterialConsumption([FromQuery] int sourceProductId, [FromQuery] int destProductId)
+        {
             return await _productService.CopyProductMaterialConsumption(sourceProductId, destProductId);
         }
     }

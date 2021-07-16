@@ -1143,16 +1143,19 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
         }
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null)
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false)
         {
             var fields = new List<CategoryFieldNameModel>();
 
-            fields.Add(new CategoryFieldNameModel()
+            if (!forExport)
             {
-                GroupName = "Dòng dữ liệu",
-                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
-                FieldTitle = "Cột kiểm tra"
-            });
+                fields.Add(new CategoryFieldNameModel()
+                {
+                    GroupName = "Dòng dữ liệu",
+                    FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
+                    FieldTitle = "Cột kiểm tra"
+                });
+            }
 
             foreach (var prop in typeof(T).GetProperties())
             {
@@ -1182,7 +1185,11 @@ namespace VErp.Commons.Library
                     continue;
                 }
 
+
                 if (prop.GetCustomAttribute<FieldDataIgnoreAttribute>() != null) continue;
+
+                if (forExport && prop.GetCustomAttribute<FieldDataIgnoreExportAttribute>() != null) continue;
+
 
                 var isRequired = prop.GetCustomAttribute<RequiredAttribute>();
 
@@ -1220,7 +1227,7 @@ namespace VErp.Commons.Library
                 fields.Add(fileMapping);
             }
 
-         
+
             return fields;
         }
 
