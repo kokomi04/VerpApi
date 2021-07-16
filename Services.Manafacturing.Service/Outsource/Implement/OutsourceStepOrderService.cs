@@ -68,7 +68,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     CustomGenCodeOutputModel currentConfig = null;
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
-                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0, null, null, null);
+                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0, null, null, DateTime.UtcNow.GetUnix());
                         if (currentConfig == null)
                             throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
 
@@ -77,7 +77,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         {
                             if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
-                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, outsoureOrderCode, DateTime.UtcNow.GetUnix());
+                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, null, DateTime.UtcNow.GetUnix());
                             if (generated == null)
                                 throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
 
