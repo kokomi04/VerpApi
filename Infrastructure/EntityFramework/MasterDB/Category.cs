@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public Category()
         {
             CategoryField = new HashSet<CategoryField>();
+            CategoryView = new HashSet<CategoryView>();
         }
 
         public int CategoryId { get; set; }
@@ -31,5 +32,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual CategoryGroup CategoryGroup { get; set; }
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
         public virtual ICollection<CategoryField> CategoryField { get; set; }
+        public virtual ICollection<CategoryView> CategoryView { get; set; }
     }
 }

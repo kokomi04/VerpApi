@@ -187,5 +187,32 @@ namespace VErpApi.Controllers.System.Category
         {
             return _categoryConfigService.GetModuleTypes(page, size);
         }
+
+        [HttpGet]
+        [Route("{categoryId}/ViewInfo")]
+        public async Task<CategoryViewModel> ReportTypeViewInfo([FromRoute] int categoryId)
+        {
+            return await _categoryConfigService
+                .CategoryViewGetInfo(categoryId)
+                .ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("config/{categoryId}/ViewInfo")]
+        public async Task<CategoryViewModel> ReportTypeViewInfoConfig([FromRoute] int categoryId)
+        {
+            return await _categoryConfigService
+                .CategoryViewGetInfo(categoryId, true)
+                .ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{categoryId}/ViewInfo")]
+        public async Task<bool> ViewInfoUpdate([FromRoute] int categoryId, [FromBody] CategoryViewModel model)
+        {
+            return await _categoryConfigService
+                .CategoryViewUpdate(categoryId, model)
+                .ConfigureAwait(true);
+        }
     }
 }

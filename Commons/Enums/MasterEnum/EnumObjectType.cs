@@ -121,7 +121,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Trường danh mục")]
         CategoryField = 33,
 
-
+        [Description("Bộ lọc danh mục")]
+        CategoryView = 1034, 
         //AccountingAccount = 33,
 
 
@@ -261,5 +262,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Property = 401,
         [Description("Tính toán nhu cầu VT có thuộc tính đặc biệt của đơn hàng")]
         PropertyCalc = 402,
+
+
     }
 }
