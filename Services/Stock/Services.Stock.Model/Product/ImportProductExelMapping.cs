@@ -77,6 +77,9 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Mã lưu bên k.hàng", GroupName = "TT Khách hàng")]
         public string CustomerProductCode { get; set; }
 
+        [Display(Name = "Tên lưu bên k.hàng", GroupName = "TT Khách hàng")]
+        public string CustomerProductName { get; set; }
+
 
 
         // Extra info

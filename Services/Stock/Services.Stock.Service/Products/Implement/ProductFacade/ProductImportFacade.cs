@@ -530,6 +530,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 else
                 {
                     existedItem.UpdateIfAvaiable(v => v.CustomerProductCode, productCustomer.CustomerProductCode);
+                    existedItem.UpdateIfAvaiable(v => v.CustomerProductName, productCustomer.CustomerProductName);
                 }
             }
 
@@ -592,7 +593,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                            {
                                ProductId = productId,
                                CustomerId = row.CustomerId,
-                               CustomerProductCode = row.CustomerProductCode
+                               CustomerProductCode = row.CustomerProductCode,
+                               CustomerProductName = row.CustomerProductName
                            }
                 };
 
