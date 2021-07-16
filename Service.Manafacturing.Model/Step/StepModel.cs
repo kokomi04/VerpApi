@@ -1,15 +1,12 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using StepEnity = VErp.Infrastructure.EF.ManufacturingDB.Step;
+using StepEntity = VErp.Infrastructure.EF.ManufacturingDB.Step;
 
 namespace VErp.Services.Manafacturing.Model.Step
 {
-    public class StepModel: IMapFrom<StepEnity>
+    public class StepModel: IMapFrom<StepEntity>
     {
         public int StepId { get; set; }
         public string StepName { get; set; }
@@ -25,7 +22,7 @@ namespace VErp.Services.Manafacturing.Model.Step
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<StepEnity, StepModel>()
+            profile.CreateMap<StepEntity, StepModel>()
                 .ForMember(m => m.StepDetail, v => v.MapFrom(m => m.StepDetail))
                 .ReverseMap()
                 .ForMember(m => m.StepDetail, v => v.Ignore());

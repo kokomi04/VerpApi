@@ -16,7 +16,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Step;
-using StepEnity = VErp.Infrastructure.EF.ManufacturingDB.Step;
+using StepEntity = VErp.Infrastructure.EF.ManufacturingDB.Step;
 
 namespace VErp.Services.Manafacturing.Service.Step.Implement
 {
@@ -40,10 +40,13 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<int> CreateStep(StepModel req)
         {
+            if (req.StepGroupId == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thuộc nhóm nào.");
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var entity = _mapper.Map<StepEnity>(req);
+                var entity = _mapper.Map<StepEntity>(req);
                 await _manufacturingDBContext.Step.AddAsync(entity);
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -139,6 +142,9 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<bool> UpdateStep(int stepId, StepModel req)
         {
+            if (req.StepGroupId == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thuộc nhóm nào.");
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
