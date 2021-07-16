@@ -148,6 +148,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                          || s.ProductCode.Contains(keyword)
                                          || s.ProductName.Contains(keyword)
                 );
+
             }
             query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
 
@@ -218,6 +219,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             if (entity == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu {type} không tồn tại");
             var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
 
+
+            // Lấy thông tin xuất/nhập kho theo yêu cầu, mã lệnh SX, tổ nhận, sản phẩm
+            // Do 1 phiếu yêu cầu tạo cho nhiều lệnh SX nên cần thêm thông tin mã lệnh SX, tổ nhận, sản phẩm để map chi tiết xuất/nhập kho nào với chi tiết yêu cầu nào
             var productionOrderCodes = entity.InventoryRequirementDetail.Select(ird => ird.ProductionOrderCode).Distinct().ToList();
             var departmentIds = entity.InventoryRequirementDetail.Select(ird => ird.DepartmentId).Distinct().ToList();
             var productIds = entity.InventoryRequirementDetail.Select(ird => ird.ProductId).Distinct().ToList();
@@ -252,7 +256,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                         InventoryCode = id.InventoryCode
                     }).Distinct().ToList()
                 });
-
+            // Map chi tiết xuất/nhập kho với chi tiết yêu cầu
             foreach (var data in inventoryMaps)
             {
                 var quantity = data.Value.PrimaryQuantity;

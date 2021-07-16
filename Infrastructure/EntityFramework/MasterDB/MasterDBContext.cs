@@ -25,6 +25,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<CategoryGroup> CategoryGroup { get; set; }
+        public virtual DbSet<CategoryView> CategoryView { get; set; }
+        public virtual DbSet<CategoryViewField> CategoryViewField { get; set; }
         public virtual DbSet<Config> Config { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
@@ -228,6 +230,50 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<CategoryView>(entity =>
+            {
+                entity.Property(e => e.CategoryViewName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.CategoryView)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_FK_ReportTypeView_ReportTypeView_Category");
+            });
+
+            modelBuilder.Entity<CategoryViewField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.HelpText).HasMaxLength(512);
+
+                entity.Property(e => e.ParamerterName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefFilters).HasMaxLength(512);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.CategoryView)
+                    .WithMany(p => p.CategoryViewField)
+                    .HasForeignKey(d => d.CategoryViewId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryViewField_CategoryView");
             });
 
             modelBuilder.Entity<Config>(entity =>
@@ -627,6 +673,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<User>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.UserName })
+                    .HasName("IX_User_UserName")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0) AND [UserName]<>'' AND [UserName] IS NOT NULL)");
+
                 entity.Property(e => e.UserId).ValueGeneratedNever();
 
                 entity.Property(e => e.AccessFailedCount).HasComment("");
