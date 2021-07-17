@@ -99,7 +99,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var paged = (await query.Skip((page - 1) * size).Take(size).ToListAsync())
                 .Select(d => new PropertyCalcListModel()
                 {
-
                     PropertyCalcId = d.PropertyCalcId,
                     PropertyCalcCode = d.PropertyCalcCode,
                     Title = d.Title,
