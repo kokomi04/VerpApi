@@ -15,6 +15,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
+        public virtual DbSet<CuttingWorkSheetSource> CuttingWorkSheetSource { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
@@ -56,6 +58,34 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CuttingWorkSheetDest>(entity =>
+            {
+                entity.HasKey(e => new { e.CuttingWorkSheetId, e.ProductId })
+                    .HasName("PK__CuttingW__E19F308DFAD9852B");
+
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.CuttingWorkSheet)
+                    .WithMany(p => p.CuttingWorkSheetDest)
+                    .HasForeignKey(d => d.CuttingWorkSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingWorkSheetDest_CuttingWorkSheetSource");
+            });
+
+            modelBuilder.Entity<CuttingWorkSheetSource>(entity =>
+            {
+                entity.HasKey(e => e.CuttingWorkSheetId)
+                    .HasName("PK__CuttingW__2ADFFCE19CDB8FE7");
+
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.PropertyCalc)
+                    .WithMany(p => p.CuttingWorkSheetSource)
+                    .HasForeignKey(d => d.PropertyCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingWorkSheetSource_PropertyCalc");
+            });
+
             modelBuilder.Entity<MaterialCalc>(entity =>
             {
                 entity.HasIndex(e => new { e.SubsidiaryId, e.MaterialCalcCode })
