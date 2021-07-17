@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
         public decimal ExchangeRate { get; set; }
+        public int PropertyId { get; set; }
 
         public virtual PropertyCalc PropertyCalc { get; set; }
     }
