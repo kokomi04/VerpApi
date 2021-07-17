@@ -72,18 +72,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     string outsoureOrderCode = "";
                     if (string.IsNullOrWhiteSpace(req.OutsourceOrderCode))
                     {
-                        currentConfig = await _customGenCodeHelperService.CurrentConfig(
-                            EnumObjectType.OutsourceOrder,
-                            EnumObjectType.OutsourceOrder,
-                            configObjectId:0,
-                            fId: null,
-                            req.OutsourceOrderCode,
-                            req.OutsourceOrderDate);
+                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceOrder, EnumObjectType.OutsourceOrder, 0, null, null, req.OutsourceOrderDate);
                         if (currentConfig == null)
                         {
                             throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
                         }
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, req.OutsourceOrderCode, req.OutsourceOrderDate);
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, null, req.OutsourceOrderDate);
                         if (generated == null)
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");

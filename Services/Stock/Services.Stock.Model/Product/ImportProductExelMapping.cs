@@ -15,7 +15,6 @@ namespace VErp.Services.Stock.Model.Product
     public class ProductImportModel : MappingDataRowAbstract
     {
 
-
         // General info
         [Display(Name = "Mã mặt hàng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng")]
@@ -77,6 +76,9 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Mã lưu bên k.hàng", GroupName = "TT Khách hàng")]
         public string CustomerProductCode { get; set; }
+
+        [Display(Name = "Tên lưu bên k.hàng", GroupName = "TT Khách hàng")]
+        public string CustomerProductName { get; set; }
 
 
 

@@ -43,6 +43,13 @@ namespace VErp.Commons.Library.Model
         }
     }
 
+    public class FieldDataIgnoreExportAttribute : Attribute
+    {
+        public FieldDataIgnoreExportAttribute()
+        {
+        }
+    }
+
     public abstract class MappingDataRowAbstract
     {
         [FieldDataIgnore]
