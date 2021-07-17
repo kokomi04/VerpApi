@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
+        public virtual DbSet<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
@@ -76,11 +77,24 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
 
+                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 16)");
+
                 entity.HasOne(d => d.CuttingWorkSheet)
                     .WithMany(p => p.CuttingWorkSheetDest)
                     .HasForeignKey(d => d.CuttingWorkSheetId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CuttingWorkSheetDest_CuttingWorkSheetSource");
+            });
+
+            modelBuilder.Entity<CuttingWorkSheetFile>(entity =>
+            {
+                entity.HasKey(e => new { e.CuttingWorkSheetId, e.FileId });
+
+                entity.HasOne(d => d.CuttingWorkSheet)
+                    .WithMany(p => p.CuttingWorkSheetFile)
+                    .HasForeignKey(d => d.CuttingWorkSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingWorkSheetFile_CuttingWorkSheet");
             });
 
             modelBuilder.Entity<MaterialCalc>(entity =>

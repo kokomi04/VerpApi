@@ -19,6 +19,8 @@ using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.EF.EFExtensions;
 using System.Linq;
 using VErp.Infrastructure.ServiceCore.Model;
+using AutoMapper.QueryableExtensions;
+using Verp.Cache.RedisCache;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -153,7 +155,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
-
         public async Task<long> Create(PropertyCalcModel req)
         {
             var ctx = await GenerateCode(null, req);
@@ -168,7 +169,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             return entity.PropertyCalcId;
         }
-
 
         public async Task<PropertyCalcModel> Info(long propertyCalcId)
         {
@@ -217,9 +217,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
 
             entity.IsDeleted = true;
+            // Xóa bảng tính cắt ván
+            DeleteCuttingWorkSheet(propertyCalcId);
             await _purchaseOrderDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.MaterialCalc, entity.PropertyCalcId, $"Xóa tính nhu cầu VT có thuộc tính đặc biệt {entity.PropertyCalcCode}", new { propertyCalcId }.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Xóa tính nhu cầu VT có thuộc tính đặc biệt {entity.PropertyCalcCode}", new { propertyCalcId }.JsonSerialize());
 
             return true;
         }
@@ -266,6 +267,115 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             model.PropertyCalcCode = code;
 
             return ctx;
+        }
+
+        public async Task<IList<CuttingWorkSheetModel>> GetCuttingWorkSheet(long propertyCalcId)
+        {
+            var result = await _purchaseOrderDBContext.CuttingWorkSheet
+                .Include(s => s.CuttingWorkSheetDest)
+                .Include(s => s.CuttingWorkSheetFile)
+                .Where(s => s.PropertyCalcId == propertyCalcId)
+                .ProjectTo<CuttingWorkSheetModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+            return result;
+        }
+
+        public async Task<IList<CuttingWorkSheetModel>> UpdateCuttingWorkSheet(long propertyCalcId, IList<CuttingWorkSheetModel> data)
+        {
+            var propertyCalc = _purchaseOrderDBContext.PropertyCalc.FirstOrDefault(p => p.PropertyCalcId == propertyCalcId);
+            if (propertyCalc == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+
+            var currentWorkSheets = _purchaseOrderDBContext.CuttingWorkSheet.Where(s => s.PropertyCalcId == propertyCalcId).ToList();
+            var currentWorkSheetIds = currentWorkSheets.Select(s => s.CuttingWorkSheetId).ToList();
+            var currentFiles = _purchaseOrderDBContext.CuttingWorkSheetFile.Where(f => currentWorkSheetIds.Contains(f.CuttingWorkSheetId)).ToList();
+            var currentDests = _purchaseOrderDBContext.CuttingWorkSheetDest.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCuttingWorkSheet(propertyCalcId));
+            using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                // Xoá 
+                var deleteWorkSheets = currentWorkSheets.Where(s => !data.Any(d => d.CuttingWorkSheetId == s.CuttingWorkSheetId)).ToList();
+                foreach (var deleteWorkSheet in deleteWorkSheets)
+                {
+                    deleteWorkSheet.IsDeleted = true;
+                }
+                var tupples = new List<Tuple<CuttingWorkSheetModel, CuttingWorkSheet>>();
+
+                // Tạo mới/thay đổi
+                foreach (var item in data)
+                {
+                    var currentWorkSheet = currentWorkSheets.FirstOrDefault(s => s.CuttingWorkSheetId == item.CuttingWorkSheetId);
+                    if (currentWorkSheet == null)
+                    {
+                        currentWorkSheet = _mapper.Map<CuttingWorkSheet>(item);
+                        _purchaseOrderDBContext.CuttingWorkSheet.Add(currentWorkSheet);
+                    }
+                    else
+                    {
+                        currentWorkSheet.InputProductId = item.InputProductId;
+                        currentWorkSheet.InputQuantity = item.InputQuantity;
+                    }
+
+                    tupples.Add(new Tuple<CuttingWorkSheetModel, CuttingWorkSheet>(item, currentWorkSheet));
+                }
+
+                _purchaseOrderDBContext.SaveChanges();
+
+                // Cập nhật file và thông tin đích
+                foreach (var tuple in tupples)
+                {
+                    // Xóa dữ liệu cũ
+                    var deleteFiles = currentFiles.Where(f => f.CuttingWorkSheetId == tuple.Item2.CuttingWorkSheetId).ToList();
+                    _purchaseOrderDBContext.CuttingWorkSheetFile.RemoveRange(deleteFiles);
+                    var deleteDests = currentDests.Where(d => d.CuttingWorkSheetId == tuple.Item2.CuttingWorkSheetId).ToList();
+                    _purchaseOrderDBContext.CuttingWorkSheetDest.RemoveRange(deleteDests);
+
+                    // Tạo dữ liệu mới
+                    foreach (var file in tuple.Item1.CuttingWorkSheetFile)
+                    {
+                        var newFile = _mapper.Map<CuttingWorkSheetFile>(file);
+                        newFile.CuttingWorkSheetId = tuple.Item2.CuttingWorkSheetId;
+                        _purchaseOrderDBContext.CuttingWorkSheetFile.Add(newFile);
+                    }
+                    foreach (var dest in tuple.Item1.CuttingWorkSheetDest)
+                    {
+                        var newDest = _mapper.Map<CuttingWorkSheetDest>(dest);
+                        newDest.CuttingWorkSheetId = tuple.Item2.CuttingWorkSheetId;
+                        _purchaseOrderDBContext.CuttingWorkSheetDest.Add(newDest);
+                    }
+                }
+
+                _purchaseOrderDBContext.SaveChanges();
+
+                data = await _purchaseOrderDBContext.CuttingWorkSheet
+                .Include(s => s.CuttingWorkSheetDest)
+                .Include(s => s.CuttingWorkSheetFile)
+                .Where(s => s.PropertyCalcId == propertyCalcId)
+                .ProjectTo<CuttingWorkSheetModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, propertyCalcId, $"Cập nhật bảng cắt ván {propertyCalc.PropertyCalcCode}", data.JsonSerialize());
+                return data;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "UpdateCuttingWorkSheet");
+                throw;
+            }
+        }
+
+        private bool DeleteCuttingWorkSheet(long propertyCalcId)
+        {
+            var deleteWorkSheets = _purchaseOrderDBContext.CuttingWorkSheet.Where(s => s.PropertyCalcId == propertyCalcId).ToList();
+            // Xoá 
+            foreach (var deleteWorkSheet in deleteWorkSheets)
+            {
+                deleteWorkSheet.IsDeleted = true;
+            }
+            _purchaseOrderDBContext.SaveChanges();
+            return true;
         }
     }
 }
