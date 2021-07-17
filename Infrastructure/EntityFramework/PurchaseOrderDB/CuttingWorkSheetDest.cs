@@ -9,6 +9,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int ProductId { get; set; }
         public decimal ProductQuantity { get; set; }
 
-        public virtual CuttingWorkSheetSource CuttingWorkSheet { get; set; }
+        public virtual CuttingWorkSheet CuttingWorkSheet { get; set; }
     }
 }

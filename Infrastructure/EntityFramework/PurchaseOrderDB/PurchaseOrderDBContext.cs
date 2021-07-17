@@ -15,8 +15,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
-        public virtual DbSet<CuttingWorkSheetSource> CuttingWorkSheetSource { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
@@ -58,6 +58,17 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CuttingWorkSheet>(entity =>
+            {
+                entity.Property(e => e.InputQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.PropertyCalc)
+                    .WithMany(p => p.CuttingWorkSheet)
+                    .HasForeignKey(d => d.PropertyCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingWorkSheetSource_PropertyCalc");
+            });
+
             modelBuilder.Entity<CuttingWorkSheetDest>(entity =>
             {
                 entity.HasKey(e => new { e.CuttingWorkSheetId, e.ProductId })
@@ -70,20 +81,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.CuttingWorkSheetId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CuttingWorkSheetDest_CuttingWorkSheetSource");
-            });
-
-            modelBuilder.Entity<CuttingWorkSheetSource>(entity =>
-            {
-                entity.HasKey(e => e.CuttingWorkSheetId)
-                    .HasName("PK__CuttingW__2ADFFCE19CDB8FE7");
-
-                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
-
-                entity.HasOne(d => d.PropertyCalc)
-                    .WithMany(p => p.CuttingWorkSheetSource)
-                    .HasForeignKey(d => d.PropertyCalcId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CuttingWorkSheetSource_PropertyCalc");
             });
 
             modelBuilder.Entity<MaterialCalc>(entity =>

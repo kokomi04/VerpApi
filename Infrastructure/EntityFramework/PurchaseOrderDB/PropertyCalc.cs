@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
     {
         public PropertyCalc()
         {
-            CuttingWorkSheetSource = new HashSet<CuttingWorkSheetSource>();
+            CuttingWorkSheet = new HashSet<CuttingWorkSheet>();
             PropertyCalcProduct = new HashSet<PropertyCalcProduct>();
             PropertyCalcProperty = new HashSet<PropertyCalcProperty>();
             PropertyCalcSummary = new HashSet<PropertyCalcSummary>();
@@ -26,7 +26,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
-        public virtual ICollection<CuttingWorkSheetSource> CuttingWorkSheetSource { get; set; }
+        public virtual ICollection<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual ICollection<PropertyCalcProduct> PropertyCalcProduct { get; set; }
         public virtual ICollection<PropertyCalcProperty> PropertyCalcProperty { get; set; }
         public virtual ICollection<PropertyCalcSummary> PropertyCalcSummary { get; set; }
