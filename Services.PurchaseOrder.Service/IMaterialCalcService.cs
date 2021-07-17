@@ -20,7 +20,5 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<bool> Update(long materialCalcId, MaterialCalcModel req);
 
         Task<bool> Delete(long materialCalcId);
-        //Task<IList<CuttingWorkSheetSourceModel>> GetList(string keyword, ArrayClause filter, int page, int size);
-
     }
 }

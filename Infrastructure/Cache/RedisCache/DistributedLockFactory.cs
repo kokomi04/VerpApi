@@ -95,6 +95,10 @@ namespace Verp.Cache.RedisCache
         {
             return $"PRODUCTION_ORDER_LOCK_{productOrderId}";
         }
+        public static string GetLockCuttingWorkSheet(long propertyCalcId)
+        {
+            return $"CUTTING_WORK_SHEET_LOCK_{propertyCalcId}";
+        }
 
         public static string GetLockInputTypeKey(int inputTypeId)
         {

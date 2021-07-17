@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public CuttingWorkSheet()
         {
             CuttingWorkSheetDest = new HashSet<CuttingWorkSheetDest>();
+            CuttingWorkSheetFile = new HashSet<CuttingWorkSheetFile>();
         }
 
         public long CuttingWorkSheetId { get; set; }
@@ -24,5 +25,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         public virtual PropertyCalc PropertyCalc { get; set; }
         public virtual ICollection<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
+        public virtual ICollection<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
     }
 }
