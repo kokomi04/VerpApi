@@ -110,9 +110,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 var bom = _mapper.Map<ProductBomOutput>(item);
                 bom.PathProductIds = Array.ConvertAll(item.PathProductIds.Split(','), s => int.Parse(s));
-                foreach(var property in properties)
+                foreach (var property in properties)
                 {
-                    bom.Properties.Add(property.PropertyId, productProperties.Any(p => p.PropertyId == property.PropertyId && p.ProductId == item.ChildProductId && p.PathProductIds == item.PathProductIds));
+                    bom.Properties.Add(new BomPropertyModel
+                    {
+                        PropertyId = property.PropertyId,
+                        IsProperty = productProperties.Any(p => p.PropertyId == property.PropertyId && p.ProductId == item.ChildProductId && p.PathProductIds == item.PathProductIds)
+                    });
                 }
                 result.Add(bom);
             }
