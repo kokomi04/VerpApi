@@ -148,20 +148,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 var quantity = linkData.QuantityOrigin - (linkData.OutsourceQuantity + linkData.OutsourcePartQuantity);
 
-                if (productionStepLinkDataIds.ContainsKey(linkData.ProductionStepLinkDataCode)
-                    && (linkData.OutsourceQuantity > (linkData.QuantityOrigin - linkData.OutsourcePartQuantity) || linkData.ExportOutsourceQuantity > quantity))
+                if (productionStepLinkDataIds.ContainsKey(linkData.ProductionStepLinkDataCode))
                 {
                     var stepInfo = productionStepLinkDataIds[linkData.ProductionStepLinkDataCode];
                     var stepRequest = outsourceStepRequest[dicOutsourceStep.FirstOrDefault(x => x.Value.Contains(stepInfo.ProductionStepCode)).Key];
-                    lsWarning.Add(new ProductionProcessWarningMessage
+                    if ((linkData.OutsourceQuantity > (linkData.QuantityOrigin - linkData.OutsourcePartQuantity) || linkData.ExportOutsourceQuantity > quantity))
                     {
-                        Message = $"YCGC {stepRequest.OutsourceStepRequestCode} - Chi tiết \"{linkData.ObjectTitle}\" có số lượng gia công vượt quá so với QTSX.",
-                        ObjectId = stepRequest.OutsourceStepRequestId,
-                        ObjectCode = stepRequest.OutsourceStepRequestCode,
-                        GroupName = EnumProductionProcessWarningCode.WarningOutsourceStepRequest.GetEnumDescription(),
-                        WarningCode = EnumProductionProcessWarningCode.WarningOutsourceStepRequest,
-                    });
+                        lsWarning.Add(new ProductionProcessWarningMessage
+                        {
+                            Message = $"YCGC {stepRequest.OutsourceStepRequestCode} - Chi tiết \"{linkData.ObjectTitle}\" có số lượng gia công vượt quá so với QTSX.",
+                            ObjectId = stepRequest.OutsourceStepRequestId,
+                            ObjectCode = stepRequest.OutsourceStepRequestCode,
+                            GroupName = EnumProductionProcessWarningCode.WarningOutsourceStepRequest.GetEnumDescription(),
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourceStepRequest,
+                        });
+                    }
+
+                    if (linkData.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                    {
+                        lsWarning.Add(new ProductionProcessWarningMessage
+                        {
+                            Message = $"YCGC {stepRequest.OutsourceStepRequestCode} - Chi tiết \"{linkData.ObjectTitle}\" đang là BTP trong quy trình. Cần chuyển về chi tiết có trong danh mục mặt hàng.",
+                            ObjectId = stepRequest.OutsourceStepRequestId,
+                            ObjectCode = stepRequest.OutsourceStepRequestCode,
+                            GroupName = EnumProductionProcessWarningCode.WarningOutsourceStepRequest.GetEnumDescription(),
+                            WarningCode = EnumProductionProcessWarningCode.WarningOutsourceStepRequest,
+                        });
+                    }
                 }
+                
             }
 
             return lsWarning;

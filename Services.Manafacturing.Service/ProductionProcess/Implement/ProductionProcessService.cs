@@ -1436,7 +1436,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     foreach (var l in s.ProductionStepLinkDatas)
                     {
                         if (l.ExportOutsourceQuantity > (l.QuantityOrigin - (l.OutsourcePartQuantity + l.OutsourceQuantity))
-                            || l.OutsourceQuantity > (l.QuantityOrigin - l.OutsourcePartQuantity))
+                            || l.OutsourceQuantity > (l.QuantityOrigin - l.OutsourcePartQuantity) || l.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                         {
                             rq.IsInvalid = true;
                             break;
