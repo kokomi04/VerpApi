@@ -219,7 +219,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (propertyIds.Count != properties.Count) throw new BadRequestException(GeneralCode.InvalidParams, "BOM có chứa thuộc tính sản phẩm không tồn tại");
             var oldProperties = _stockDbContext.ProductProperty.Where(m => m.RootProductId == productId).ToList();
             var createProperties = productProperties
-                .Where(np => !oldProperties.Any(op => op.ProductId == np.ProductId && op.PathProductIds == string.Join(",", np.PathProductIds)))
+                .Where(np => !oldProperties.Any(op => op.ProductId == np.ProductId && op.PropertyId == np.PropertyId && op.PathProductIds == string.Join(",", np.PathProductIds)))
                 .Select(np => new ProductProperty
                 {
                     ProductId = np.ProductId,
@@ -232,7 +232,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (isCleanOldProperties)
             {
                 var deleteProperties = oldProperties
-                    .Where(op => !productProperties.Any(np => np.ProductId == op.ProductId && string.Join(",", np.PathProductIds) == op.PathProductIds))
+                    .Where(op => !productProperties.Any(np => np.ProductId == op.ProductId && np.PropertyId == op.PropertyId && string.Join(",", np.PathProductIds) == op.PathProductIds))
                     .ToList();
                 _stockDbContext.ProductProperty.RemoveRange(deleteProperties);
             }
