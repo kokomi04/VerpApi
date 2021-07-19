@@ -697,11 +697,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var output = request.OutsourceStepRequestData.FirstOrDefault(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output);
             var linkDataOutput = await _manufacturingDBContext.ProductionStepLinkData.FirstOrDefaultAsync(x => x.ProductionStepLinkDataId == output.ProductionStepLinkDataId);
             var mapProductOfProductOrder = request.ProductionOrder.ProductionOrderDetail.GroupBy(x => x.ProductId).ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+            var productionStep = await _manufacturingDBContext.ProductionStep.FirstOrDefaultAsync(x => x.ProductionStepId == output.ProductionStepId);
 
             var materialsConsumptions = await _productHelperService.GetProductMaterialsConsumptions(mapProductOfProductOrder.Keys.ToArray());
 
             foreach (var materials in materialsConsumptions)
             {
+                if (materials.StepId != productionStep.StepId) continue;
+
                 var rate = (output.Quantity / linkDataOutput.QuantityOrigin) * mapProductOfProductOrder[materials.ProductId];
 
                 var exists = results.FirstOrDefault(x => x.ProductId == materials.MaterialsConsumptionId);
@@ -718,7 +721,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
                 else
                 {
-                    exists.Quantity = (decimal)((materials.Quantity + materials.TotalQuantityInheritance) * rate);
+                    exists.Quantity += (decimal)((materials.Quantity + materials.TotalQuantityInheritance) * rate);
                 }
             }
 
