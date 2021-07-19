@@ -15,5 +15,6 @@ namespace VErp.Commons.Enums.Report
         ProductionOrder = 7,
         InventoryProduct = 8,
         PurchaseOrder = 9,
+        ProductionHandover = 10
     }
 }
