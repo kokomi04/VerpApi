@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Services.PurchaseOrder.Model.Resources;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -30,9 +33,17 @@ namespace VErp.Services.PurchaseOrder.Model
 
     public class PurchasingRequestInputDetail : IMapFrom<PurchasingRequestDetail>
     {
+        public PurchasingRequestInputDetail()
+        {
+
+        }
         public int ProductId { get; set; }
+        [Required(ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityRequired))]
+        [GreaterThan(0, ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityInvalid))]
         public decimal PrimaryQuantity { get; set; }
         public int ProductUnitConversionId { get; set; }
+        [Required(ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityRequired))]
+        [GreaterThan(0, ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityInvalid))]
         public decimal ProductUnitConversionQuantity { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
@@ -50,5 +61,5 @@ namespace VErp.Services.PurchaseOrder.Model
 
     }
 
-   
+
 }

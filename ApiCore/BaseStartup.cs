@@ -184,6 +184,8 @@ namespace VErp.Infrastructure.ApiCore
 
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
+            
+            app.UseMiddleware<CultureInfoMiddleware>();
             app.UseMiddleware<RequestLogMiddleware>();
 
             loggerFactory.AddSerilog();
