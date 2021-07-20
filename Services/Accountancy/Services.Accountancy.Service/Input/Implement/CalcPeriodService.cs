@@ -53,6 +53,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<PageData<CalcPeriodListModel>> GetList(EnumCalcPeriodType calcPeriodTypeId, string keyword, long? fromDate, long? toDate, int page, int? size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = _accountancyDBContext.CalcPeriod.Where(c => c.CalcPeriodTypeId == (int)calcPeriodTypeId);
             if (!string.IsNullOrWhiteSpace(keyword))
             {

@@ -61,6 +61,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<MaterialCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = from c in _purchaseOrderDBContext.MaterialCalc
                         join d in _purchaseOrderDBContext.MaterialCalcProduct on c.MaterialCalcId equals d.MaterialCalcId
                         join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId

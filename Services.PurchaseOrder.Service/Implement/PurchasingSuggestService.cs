@@ -208,6 +208,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PurchasingSuggestOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchasingSuggestStatus? purchasingSuggestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
 
             var query = from s in _purchaseOrderDBContext.PurchasingSuggest
                         join d in _purchaseOrderDBContext.PurchasingSuggestDetail on s.PurchasingSuggestId equals d.PurchasingSuggestId
@@ -771,6 +772,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PoAssignmentOutputList>> PoAssignmentListByUser(string keyword, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             var query = (
                 from s in _purchaseOrderDBContext.PurchasingSuggest
                 join a in _purchaseOrderDBContext.PoAssignment on s.PurchasingSuggestId equals a.PurchasingSuggestId
@@ -861,6 +864,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PoAssignmentOutputListByProduct>> PoAssignmentListByProduct(string keyword, IList<int> productIds, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = (
                 from s in _purchaseOrderDBContext.PurchasingSuggest
                 join a in _purchaseOrderDBContext.PoAssignment on s.PurchasingSuggestId equals a.PurchasingSuggestId

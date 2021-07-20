@@ -99,6 +99,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<PageData<ProductMaterialsConsumptionGroupModel>> SearchProductMaterialsConsumptionGroup(string keyword, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(keyword))
             {

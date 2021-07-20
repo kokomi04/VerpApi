@@ -73,6 +73,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             var viewInfo = await _accountancyDBContext.InputTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
 
             var inputTypeViewId = viewInfo?.InputTypeViewId;

@@ -162,6 +162,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<PageData<OutsourceStepOrderSeach>> SearchOutsourceStepOrder(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var outsourceStepOrders = (from o in _manufacturingDBContext.OutsourceOrder
                                        join d in _manufacturingDBContext.OutsourceOrderDetail on o.OutsourceOrderId equals d.OutsourceOrderId
                                        join rd in _manufacturingDBContext.OutsourceStepRequestData on d.ObjectId equals rd.ProductionStepLinkDataId

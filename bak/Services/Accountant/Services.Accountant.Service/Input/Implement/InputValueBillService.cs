@@ -129,6 +129,8 @@ namespace VErp.Services.Accountant.Service.Input.Implement
 
         public async Task<PageData<InputValueBillListOutput>> GetInputValueBills(int inputTypeId, string keyword, IList<InputValueFilterModel> fieldFilters, string orderBy, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             var fields = await _accountingContext.InputAreaField
                 .Include(af => af.InputField)
                 .Include(af => af.InputArea)

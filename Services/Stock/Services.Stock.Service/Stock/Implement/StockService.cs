@@ -193,6 +193,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         public async Task<PageData<StockOutput>> GetAll(string keyword, int page, int size, Clause filters)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = from p in _stockContext.Stock
                         select p;
 

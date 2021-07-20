@@ -71,6 +71,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<PageDataTable> GetVoucherBills(int voucherTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             var viewInfo = await _purchaseOrderDBContext.VoucherTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
             var voucherTypeViewId = viewInfo?.VoucherTypeViewId;
             var fields = (await (
@@ -2258,6 +2260,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
             var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailByPurchasingRequest",
                 new[]

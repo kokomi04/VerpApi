@@ -107,6 +107,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         {
             try
             {
+                keyWord = (keyWord ?? "").Trim();
+
                 var rootDirectory = GenerateRootPath();
                 var ls = new List<VisualFile>();
 

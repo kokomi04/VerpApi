@@ -64,6 +64,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             long toDate,
             Clause filters = null)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking();
             if (fromDate > 0 && toDate > 0)
             {

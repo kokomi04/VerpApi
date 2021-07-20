@@ -365,7 +365,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<PageData<PackageOutputModel>> GetList(int stockId = 0, string keyword = "", int page = 1, int size = 10)
         {
-
+            keyword = (keyword ?? "").Trim();
+            
             var query = from p in _stockDbContext.Package
                         join l in _stockDbContext.Location on p.LocationId equals l.LocationId into pl
                         from lo in pl.DefaultIfEmpty()

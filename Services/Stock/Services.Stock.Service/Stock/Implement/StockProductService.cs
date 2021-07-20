@@ -49,6 +49,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<PageData<StockOutput>> StockGetListByPermission(string keyword, int page, int size, Clause filters = null)
         {
+            keyword = (keyword ?? "").Trim();
+
             var query = from p in _stockContext.Stock
                         select p;
 
@@ -157,6 +159,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var productQuery = (
                  from p in _stockContext.Product
                  select new
@@ -510,6 +514,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             var productQuery = _stockContext.Product.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -654,6 +660,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<PageData<StockSumaryReportOutput>> StockSumaryReport(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long beginTime, long endTime, string sortBy, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             DateTime fromDate = DateTime.MinValue;
             DateTime toDate = DateTime.UtcNow;
 
@@ -1148,7 +1156,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
         {
-
+            keyword = (keyword ?? "").Trim();
+            
             IList<int> allowStockIds = stockIds?.Where(stockId => _currentContextService.StockIds.Contains(stockId))?.ToList();
             if (stockIds == null || stockIds.Count == 0)
             {
