@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
@@ -41,6 +42,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("GetAll")]
+        [GlobalApi]
         public async Task<PageData<StockOutput>> GetAll([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.GetAll(keyword, page, size, null);
@@ -55,6 +57,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<PageData<StockOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockProductService.StockGetListByPermission(keyword, page, size);

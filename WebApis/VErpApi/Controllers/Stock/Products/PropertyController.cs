@@ -32,6 +32,7 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<IList<PropertyModel>> GetProperties()
         {
             return await _propertyService.GetProperties();

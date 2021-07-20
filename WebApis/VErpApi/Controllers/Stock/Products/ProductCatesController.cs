@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
@@ -25,6 +26,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<PageData<ProductCateOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _productCateService.GetList(keyword, page, size).ConfigureAwait(true);
