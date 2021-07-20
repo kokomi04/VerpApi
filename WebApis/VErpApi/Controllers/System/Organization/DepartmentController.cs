@@ -28,6 +28,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<PageData<DepartmentModel>> Get([FromQuery] string keyword, [FromQuery] IList<int> departmentIds, [FromQuery] bool? isProduction, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size)
         {
             return await _departmentService.GetList(keyword, departmentIds, isProduction, isActived, page, size);

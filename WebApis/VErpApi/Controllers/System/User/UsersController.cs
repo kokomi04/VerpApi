@@ -100,6 +100,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{userId}")]
+        [GlobalApi]
         public async Task<UserInfoOutput> UserInfo([FromRoute] int userId)
         {
             return await _userService.GetInfo(userId).ConfigureAwait(true);
