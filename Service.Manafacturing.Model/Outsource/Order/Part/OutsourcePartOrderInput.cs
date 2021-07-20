@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order.Part
 
         public IList<OutsourcePartOrderDetailInput> OutsourceOrderDetails { get; set; }
         public IList<OutsourceOrderMaterialsModel> OutsourceOrderMaterials { get; set; }
-        public IList<OutsourceOrderExcessModel> OutsourceOrderExcesses { get; set; }
+        // public IList<OutsourceOrderExcessModel> OutsourceOrderExcesses { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -25,11 +25,13 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order.Part
                 .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonDeserialize<DeliveryDestinationModel>()))
                 .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonDeserialize<SuppliersModel>()))
                 .ForMember(m => m.AttachmentFileId, v => v.MapFrom(m => m.AttachmentFileId))
+                .ForMember(m => m.ExcessMaterialNotes, v => v.MapFrom(m=>m.ExcessMaterialNotes))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.Value.UnixToDateTime()))
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()))
                 .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonSerialize()))
                 .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonSerialize()))
+                .ForMember(m => m.ExcessMaterialNotes, v => v.MapFrom(m=>m.ExcessMaterialNotes))
                 .ForMember(m => m.AttachmentFileId, v => v.MapFrom(m => m.AttachmentFileId));
         }
     }
