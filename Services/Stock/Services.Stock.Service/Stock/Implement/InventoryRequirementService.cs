@@ -63,7 +63,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _productionOrderHelperService = productionOrderHelperService;
         }
 
-        public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool hasInventory, Clause filters = null)
+        public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool? hasInventory, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -112,7 +112,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             var query = from ir in inventoryRequirementAsQuery
                         join p in _stockDBContext.Product on ir.ProductId equals p.ProductId into @pAlias
                         from p in @pAlias.DefaultIfEmpty()
-                        where !hasInventory ? !hasInventory : inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId)
+                        where hasInventory.HasValue == false ? true : hasInventory.Value == false ? !inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId) : inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId)
                         select new
                         {
                             InventoryRequirementCode = ir.InventoryRequirementCode,

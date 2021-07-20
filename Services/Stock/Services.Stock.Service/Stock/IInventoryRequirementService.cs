@@ -16,7 +16,7 @@ namespace VErp.Services.Stock.Service.Stock
 {
     public interface IInventoryRequirementService
     {
-        Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool hasInventory, Clause filters = null);
+        Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool? hasInventory, Clause filters = null);
         Task<long> GetInventoryRequirementId(EnumInventoryType inventoryType, string inventoryRequirementCode);
         Task<InventoryRequirementOutputModel> GetInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId);
         Task<long> AddInventoryRequirement(EnumInventoryType inventoryType, InventoryRequirementInputModel req);
