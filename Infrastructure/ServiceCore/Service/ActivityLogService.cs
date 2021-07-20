@@ -4,7 +4,9 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
@@ -14,6 +16,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using static VErp.Infrastructure.ServiceCore.Service.ActivityLogService;
 
@@ -21,7 +24,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false);
+        ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType objectTypeId);
+
+        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "");
+
+        Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null);
+
         ActivityLogBatchs BeginBatchLog();
 
     }
@@ -53,11 +61,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return logBatchs;
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false)
+        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "")
         {
             if (ignoreBatch)
             {
-                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action);
+                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData);
             }
 
             ActivityLogBatchs batch = null;
@@ -70,16 +78,34 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             if (batch == null)
             {
-                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action);
+                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData);
             }
             else
             {
-                batch.AddLog(objectTypeId, objectId, message, jsonData, action);
+                batch.AddLog(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData);
                 return true;
             }
         }
 
-        public async Task<bool> CreateLogRequest(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null)
+        public async Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null)
+        {
+            var propertyInfo = ((MemberExpression)messageResourceName.Body).Member as PropertyInfo;
+            if (propertyInfo == null)
+            {
+                throw new ArgumentException("The lambda expression 'property' should point to a valid Property");
+            }
+
+            var type = propertyInfo.DeclaringType.FullName + "." + propertyInfo.Name;
+            var messageFormat = (string)propertyInfo.GetValue(null);// typeof(T).stat
+            return await CreateLog(objectTypeId, objectId, string.Format(messageFormat, messageResourceFormatData), jsonData, action, ignoreBatch, type, messageResourceFormatData.JsonSerialize());
+        }
+
+        public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType objectTypeId)
+        {
+            return new ObjectActivityLogFacade(objectTypeId, this);
+        }
+
+        private async Task<bool> CreateLogRequest(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, string messageResourceName = "", string messageResourceFormatData = "")
         {
             try
             {
@@ -96,6 +122,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         ObjectId = objectId,
                         MessageTypeId = (int)EnumMessageType.ActivityLog,
                         Message = message,
+                        MessageResourceName = messageResourceName,
+                        MessageResourceFormatData = messageResourceFormatData,
                         Data = jsonData,
                         SubsidiaryId = _currentContext.SubsidiaryId
                     }, headers);
@@ -111,6 +139,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ObjectId = objectId,
                     SubsidiaryId = _currentContext.SubsidiaryId,
                     MessageTypeId = EnumMessageType.ActivityLog,
+                    MessageResourceName = messageResourceName,
+                    MessageResourceFormatData = messageResourceFormatData,
                     Message = message,
                     Data = jsonData
                 };
@@ -139,13 +169,15 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 _activityLogBatchs.Add(this);
             }
 
-            internal void AddLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null)
+            internal void AddLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, string messageResourceName = "", string messageResourceFormatData = "")
             {
                 _logs.Add(new ActivityLogEntity()
                 {
                     ObjectTypeId = objectTypeId,
                     ObjectId = objectId,
                     Message = message,
+                    MessageResourceName = messageResourceName,
+                    MessageResourceFormatData = messageResourceFormatData,
                     JsonData = jsonData,
                     Action = action
                 });
@@ -155,7 +187,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 foreach (var log in _logs)
                 {
-                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true);
+                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true, log.MessageResourceName, log.MessageResourceFormatData);
                 }
                 return true;
             }
@@ -171,6 +203,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 public EnumObjectType ObjectTypeId { get; set; }
                 public long ObjectId { get; set; }
                 public string Message { get; set; }
+                public string MessageResourceName { get; set; }
+                public string MessageResourceFormatData { get; set; }
                 public string JsonData { get; set; }
                 public EnumActionType? Action { get; set; }
             }

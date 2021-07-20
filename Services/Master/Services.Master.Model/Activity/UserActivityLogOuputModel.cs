@@ -18,6 +18,8 @@ namespace VErp.Services.Master.Model.Activity
         public EnumMessageType MessageTypeId { set; get; }
 
         public string Message { set; get; }
+        public string MessageResourceName { set; get; }
+        public string MessageResourceFormatData { get; set; }
 
         public long CreatedDatetimeUtc { set; get; }
 

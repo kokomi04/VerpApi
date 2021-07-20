@@ -27,6 +27,10 @@ namespace ActivityLogDB
             {
                 entity.Property(e => e.Message).HasMaxLength(512);
 
+                entity.Property(e => e.MessageResourceFormatData).HasMaxLength(512);
+
+                entity.Property(e => e.MessageResourceName).HasMaxLength(512);
+
                 entity.Property(e => e.MessageTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.SubsidiaryId).HasComment("");

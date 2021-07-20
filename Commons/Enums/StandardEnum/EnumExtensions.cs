@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
@@ -42,6 +43,17 @@ namespace VErp.Commons.Enums.StandardEnum
         {
             try
             {
+                var enumResourceAttr = (LocalizedDescriptionAttribute[])value.GetType().GetCustomAttributes(typeof(LocalizedDescriptionAttribute), false);
+                if (enumResourceAttr.Length > 0)
+                {
+                    System.Resources.ResourceManager rs = new System.Resources.ResourceManager(enumResourceAttr[0].ResourceType);
+                    var des= rs.GetString(value.ToString());
+                    if (!string.IsNullOrWhiteSpace(des))
+                    {
+                        return des;
+                    }
+                }
+
                 FieldInfo fi = value.GetType().GetField(value.ToString());
                 if (fi == null)
                     return value.ToString();

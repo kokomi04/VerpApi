@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
+using VErp.Commons.Enums.Resources.PO;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.MasterEnum.PO
 {
+    [LocalizedDescription(ResourceType = typeof(EnumPurchasingRequestTypeDescription))]
     public enum EnumPurchasingRequestType
     {
         Normal = 0,
