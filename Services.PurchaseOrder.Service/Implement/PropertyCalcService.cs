@@ -63,6 +63,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = from c in _purchaseOrderDBContext.PropertyCalc
                         join d in _purchaseOrderDBContext.PropertyCalcProduct on c.PropertyCalcId equals d.PropertyCalcId
                         join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId

@@ -35,6 +35,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
        
         public async Task<PageData<BarcodeConfigListOutput>> GetList(string keyword, int page = 1, int size = 0)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var queries = new
             {
                 keyword,

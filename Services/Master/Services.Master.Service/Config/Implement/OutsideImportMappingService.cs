@@ -30,6 +30,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<PageData<OutsideMappingModelList>> GetList(string keyword, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             var query = _masterDBContext.OutsideImportMappingFunction.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {

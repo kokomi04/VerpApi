@@ -218,7 +218,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes(string keyword, int page, int size)
         {
-            keyword = keyword?.ToLower();
+            keyword = (keyword ?? "").Trim().ToLower();
+            
             _objectCustomGenCodeMappings = await _masterDbContext.ObjectCustomGenCodeMapping.ToListAsync();
             _customGenCodes = await _masterDbContext.CustomGenCode.ToListAsync();
 

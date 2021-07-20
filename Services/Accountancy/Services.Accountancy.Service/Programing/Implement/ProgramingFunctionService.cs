@@ -49,6 +49,8 @@ namespace VErp.Services.Accountancy.Service.Programing.Implement
 
         public async Task<PageData<ProgramingFunctionOutputList>> GetListFunctions(string keyword, EnumProgramingLang? programingLangId, EnumProgramingLevel? programingLevelId, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = _accountancyDBContext.ProgramingFunction.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {

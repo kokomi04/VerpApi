@@ -41,6 +41,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
         public async Task<PageData<ProductionProcessMoldOutput>> Search(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = _manufacturingDBContext.ProductionProcessMold.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))

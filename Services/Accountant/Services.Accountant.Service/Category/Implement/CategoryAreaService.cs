@@ -53,6 +53,7 @@ namespace VErp.Services.Accountant.Service.Category.Implement
         public async Task<PageData<CategoryAreaModel>> GetCategoryAreas(int categoryId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
+            
             var query = _accountingContext.CategoryArea.Where(a => a.CategoryId == categoryId).AsQueryable();
             if (!string.IsNullOrEmpty(keyword))
             {

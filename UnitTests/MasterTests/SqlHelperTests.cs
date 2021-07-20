@@ -149,6 +149,8 @@ sdd WHERE
         private static char[] SpaceChars = new[] { ';', '\n', '\r', '\t', '\v', ' ' };
         private static int GetSqlKeyWordIndex(string sql, string keyword)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var index = sql.LastIndexOf(keyword, StringComparison.OrdinalIgnoreCase);
 
             while (index >= 0

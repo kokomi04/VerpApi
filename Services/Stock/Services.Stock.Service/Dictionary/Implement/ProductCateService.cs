@@ -145,6 +145,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
         public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = (from c in _stockContext.ProductCate select c);
             if (!string.IsNullOrWhiteSpace(keyword))
             {

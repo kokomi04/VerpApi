@@ -69,6 +69,8 @@ namespace VErp.Services.Master.Service.Guide.Implement
 
         public async Task<PageData<GuideModelOutput>> GetList(string keyword, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = _masterDBContext.Guide.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
