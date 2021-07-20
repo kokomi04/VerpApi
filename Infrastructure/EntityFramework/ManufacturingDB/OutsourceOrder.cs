@@ -8,7 +8,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public OutsourceOrder()
         {
             OutsourceOrderDetail = new HashSet<OutsourceOrderDetail>();
-            OutsourceOrderExcess = new HashSet<OutsourceOrderExcess>();
             OutsourceOrderMaterials = new HashSet<OutsourceOrderMaterials>();
             OutsourceTrack = new HashSet<OutsourceTrack>();
         }
@@ -33,9 +32,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string DeliveryDestination { get; set; }
         public string Suppliers { get; set; }
         public long? AttachmentFileId { get; set; }
+        public string ExcessMaterialNotes { get; set; }
 
         public virtual ICollection<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
-        public virtual ICollection<OutsourceOrderExcess> OutsourceOrderExcess { get; set; }
         public virtual ICollection<OutsourceOrderMaterials> OutsourceOrderMaterials { get; set; }
         public virtual ICollection<OutsourceTrack> OutsourceTrack { get; set; }
     }
