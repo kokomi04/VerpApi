@@ -66,7 +66,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var query = _manufacturingDBContext.OutsourceStepRequest.AsNoTracking();
             if (fromDate > 0 && toDate > 0)
-                query = query.Where(x => x.CreatedDatetimeUtc >= fromDate.UnixToDateTime() && x.CreatedDatetimeUtc <= toDate.UnixToDateTime());
+            {
+                query = query.Where(x => x.CreatedDatetimeUtc >= fromDate.UnixToDateTime() && x.CreatedDatetimeUtc < toDate.UnixToDateTime().Value.AddDays(1));
+            }
+                
 
             var data = (await query
                 .Include(s => s.ProductionStep)
