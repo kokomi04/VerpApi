@@ -203,9 +203,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             if(fromDate > 0 && toDate > 0)
             {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
-                whereCondition.Append(" (v.OutsourcePartRequestDate >= @FromDate AND v.OutsourcePartRequestDate <= @ToDate) ");
+                whereCondition.Append(" (v.OutsourcePartRequestDate >= @FromDate AND v.OutsourcePartRequestDate < @ToDate) ");
                 parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
-                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime().Value.AddDays(1)));
             }
 
             if (filters != null)
