@@ -21,7 +21,9 @@ namespace VErp.Services.Stock.Model.Product
         public string Specification { get; set; }
 
         public decimal Quantity { get; set; }
-        public decimal Wastage { get; set; }    
+        public decimal Wastage { get; set; }
+        public decimal TotalQuantity { get; set; }
+
         public string Description { get; set; }
         public string UnitName { get; set; }
         public int UnitId { get; set; }
@@ -37,7 +39,7 @@ namespace VErp.Services.Stock.Model.Product
 
     public class ProductBomPreviewOutput: ProductBomOutputBase
     {
-        public decimal TotalQuantity { get; set; }
+      
 
         public IList<int> PropertyIds { get; set; }
 

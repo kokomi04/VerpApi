@@ -327,7 +327,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             {
                 var childInfo = _existedProducts.Values.FirstOrDefault(v => v.ProductId == b.ChildProductId);
 
-                var totalQuantity = quantity * b.Quantity ?? 0 * b.Wastage ?? 1;
+                var totalQuantity = quantity * (b.Quantity ?? 0) * (b.Wastage ?? 1);
 
                 var bomNumOrder = numberOrder;
 
