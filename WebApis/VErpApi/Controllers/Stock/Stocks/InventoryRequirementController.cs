@@ -41,7 +41,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             [FromQuery] int size,
             [FromQuery] string orderByFieldName,
             [FromQuery] bool asc,
-            [FromQuery] bool hasInventory,
+            [FromQuery] bool? hasInventory,
             [FromBody] Clause filters = null)
         {
             return await _inventoryRequirementService.GetListInventoryRequirements(inventoryType, keyword, page, size, orderByFieldName, asc, hasInventory, filters).ConfigureAwait(true);
