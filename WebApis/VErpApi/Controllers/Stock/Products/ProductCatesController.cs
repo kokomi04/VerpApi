@@ -27,9 +27,9 @@ namespace VErpApi.Controllers.Stock.Products
         [HttpGet]
         [Route("")]
         [GlobalApi]
-        public async Task<PageData<ProductCateOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductCateOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderBy, [FromQuery] bool asc)
         {
-            return await _productCateService.GetList(keyword, page, size).ConfigureAwait(true);
+            return await _productCateService.GetList(keyword, page, size, orderBy, asc).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -78,6 +78,6 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<bool> DeleteProductCate([FromRoute] int productCateId)
         {
             return await _productCateService.DeleteProductCate(productCateId).ConfigureAwait(true);
-        }       
+        }
     }
 }

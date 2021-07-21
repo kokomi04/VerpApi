@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
     {
         public CuttingWorkSheet()
         {
+            CuttingExcessMaterial = new HashSet<CuttingExcessMaterial>();
             CuttingWorkSheetDest = new HashSet<CuttingWorkSheetDest>();
             CuttingWorkSheetFile = new HashSet<CuttingWorkSheetFile>();
         }
@@ -24,6 +25,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual PropertyCalc PropertyCalc { get; set; }
+        public virtual ICollection<CuttingExcessMaterial> CuttingExcessMaterial { get; set; }
         public virtual ICollection<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
         public virtual ICollection<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
     }

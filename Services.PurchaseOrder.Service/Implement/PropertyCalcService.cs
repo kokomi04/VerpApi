@@ -180,6 +180,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var requestInfo = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PropertyCalcId == propertyCalcId);
 
             var info = _mapper.Map<PropertyCalcModel>(entity);
+
+            var cuttingWorkSheet = await _purchaseOrderDBContext.CuttingWorkSheet
+                .Include(s => s.CuttingWorkSheetDest)
+                .Where(s => s.PropertyCalcId == propertyCalcId)
+                .ToListAsync();
+
+
+            foreach (var item in info.Summary)
+            {
+                // Nếu là chi tiết
+                if (item.PropertyId > 0)
+                {
+                    item.CuttingQuantity = cuttingWorkSheet.SelectMany(s => s.CuttingWorkSheetDest).Where(d => d.ProductId == item.MaterialProductId).Sum(d => d.ProductQuantity);
+                }
+                else // Nếu là NVL
+                {
+                    item.CuttingQuantity = cuttingWorkSheet.Where(d => d.InputProductId == item.MaterialProductId).Sum(d => d.InputQuantity);
+                }
+            }
+
             info.PurchasingRequestId = requestInfo?.PurchasingRequestId;
             info.PurchasingRequestCode = requestInfo?.PurchasingRequestCode;
             return info;
@@ -274,6 +294,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var result = await _purchaseOrderDBContext.CuttingWorkSheet
                 .Include(s => s.CuttingWorkSheetDest)
+                .Include(s => s.CuttingExcessMaterial)
                 .Include(s => s.CuttingWorkSheetFile)
                 .Where(s => s.PropertyCalcId == propertyCalcId)
                 .ProjectTo<CuttingWorkSheetModel>(_mapper.ConfigurationProvider)
@@ -290,6 +311,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var currentWorkSheetIds = currentWorkSheets.Select(s => s.CuttingWorkSheetId).ToList();
             var currentFiles = _purchaseOrderDBContext.CuttingWorkSheetFile.Where(f => currentWorkSheetIds.Contains(f.CuttingWorkSheetId)).ToList();
             var currentDests = _purchaseOrderDBContext.CuttingWorkSheetDest.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
+            var currentExcessMaterials = _purchaseOrderDBContext.CuttingExcessMaterial.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCuttingWorkSheet(propertyCalcId));
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
@@ -330,7 +352,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     _purchaseOrderDBContext.CuttingWorkSheetFile.RemoveRange(deleteFiles);
                     var deleteDests = currentDests.Where(d => d.CuttingWorkSheetId == tuple.Item2.CuttingWorkSheetId).ToList();
                     _purchaseOrderDBContext.CuttingWorkSheetDest.RemoveRange(deleteDests);
-
+                    var deleteExcessMaterials = currentExcessMaterials.Where(d => d.CuttingWorkSheetId == tuple.Item2.CuttingWorkSheetId).ToList();
+                    _purchaseOrderDBContext.CuttingExcessMaterial.RemoveRange(deleteExcessMaterials);
                     // Tạo dữ liệu mới
                     foreach (var file in tuple.Item1.CuttingWorkSheetFile)
                     {
@@ -344,12 +367,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         newDest.CuttingWorkSheetId = tuple.Item2.CuttingWorkSheetId;
                         _purchaseOrderDBContext.CuttingWorkSheetDest.Add(newDest);
                     }
+                    foreach (var excessMaterial in tuple.Item1.CuttingExcessMaterial)
+                    {
+                        var newExcessMaterial = _mapper.Map<CuttingExcessMaterial>(excessMaterial);
+                        newExcessMaterial.CuttingWorkSheetId = tuple.Item2.CuttingWorkSheetId;
+                        _purchaseOrderDBContext.CuttingExcessMaterial.Add(newExcessMaterial);
+                    }
                 }
 
                 _purchaseOrderDBContext.SaveChanges();
 
                 data = await _purchaseOrderDBContext.CuttingWorkSheet
                 .Include(s => s.CuttingWorkSheetDest)
+                .Include(s => s.CuttingExcessMaterial)
                 .Include(s => s.CuttingWorkSheetFile)
                 .Where(s => s.PropertyCalcId == propertyCalcId)
                 .ProjectTo<CuttingWorkSheetModel>(_mapper.ConfigurationProvider)

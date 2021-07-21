@@ -15,6 +15,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<CuttingExcessMaterial> CuttingExcessMaterial { get; set; }
         public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
         public virtual DbSet<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
@@ -59,6 +60,23 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CuttingExcessMaterial>(entity =>
+            {
+                entity.HasKey(e => new { e.CuttingWorkSheetId, e.ExcessMaterial });
+
+                entity.Property(e => e.ExcessMaterial).HasMaxLength(255);
+
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.CuttingWorkSheet)
+                    .WithMany(p => p.CuttingExcessMaterial)
+                    .HasForeignKey(d => d.CuttingWorkSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingExcessMaterial_CuttingWorkSheetSource");
+            });
+
             modelBuilder.Entity<CuttingWorkSheet>(entity =>
             {
                 entity.Property(e => e.InputQuantity).HasColumnType("decimal(32, 16)");

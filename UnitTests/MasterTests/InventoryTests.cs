@@ -543,7 +543,7 @@ namespace MasterTests
         {
 
 
-            var productCateInfo = productCateService.GetList("", 1, 1).GetAwaiter().GetResult().List[0];
+            var productCateInfo = productCateService.GetList("", 1, 1, null, true).GetAwaiter().GetResult().List[0];
             var productTypeInfo = productTypeService.GetList("", 1, 1).GetAwaiter().GetResult().List[0];
 
             var unitInfo = unitService.GetList("", EnumUnitStatus.Using, 1, 1).GetAwaiter().GetResult().List[0];
