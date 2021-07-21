@@ -118,12 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="MaterialCalc" xml:space="preserve">
-    <value>Calculate purchasing request from orders</value>
+    <value>Tính nhu cầu vật tư từ đơn hàng</value>
   </data>
   <data name="OrderMaterial" xml:space="preserve">
-    <value>Calculate purchasing request from orders (cũ)</value>
+    <value>Tính nhu cầu vật tư từ đơn hàng (cũ)</value>
   </data>
   <data name="ProductionOrderMaterialCalc" xml:space="preserve">
-    <value>Calculate purchasing request from production order</value>
+    <value>Tính nhu cầu vật tư từ lệnh sản xuất</value>
   </data>
 </root>

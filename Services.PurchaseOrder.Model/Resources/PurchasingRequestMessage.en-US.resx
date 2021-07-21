@@ -117,25 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="PurchasingRequestApproved" xml:space="preserve">
-    <value>Duyệt yêu cầu VTHH {0}</value>
+  <data name="QuantityInvalid" xml:space="preserve">
+    <value>The quantity is invalid</value>
   </data>
-  <data name="PurchasingRequestCreate" xml:space="preserve">
-    <value>Thêm mới phiếu yêu cầu VTHH {0}</value>
-  </data>
-  <data name="PurchasingRequestDelete" xml:space="preserve">
-    <value>Xóa phiếu yêu cầu VTHH  {0}</value>
-  </data>
-  <data name="PurchasingRequestRejected" xml:space="preserve">
-    <value>Từ chối yêu cầu VTHH {0}</value>
-  </data>
-  <data name="PurchasingRequestSentToCensor" xml:space="preserve">
-    <value>Gửi duyệt yêu cầu VTHH {0}</value>
-  </data>
-  <data name="PurchasingRequestUpdate" xml:space="preserve">
-    <value>Cập nhật phiếu yêu cầu VTHH {0}</value>
-  </data>
-  <data name="PurchasingRequestUpdatedProgress" xml:space="preserve">
-    <value>Cập nhật tiến độ yêu cầu VTHH {0}: {1}</value>
+  <data name="QuantityRequired" xml:space="preserve">
+    <value>The quantity is required</value>
   </data>
 </root>

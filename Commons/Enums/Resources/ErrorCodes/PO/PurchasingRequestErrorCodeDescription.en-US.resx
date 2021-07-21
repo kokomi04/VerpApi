@@ -117,25 +117,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="PurchasingRequestApproved" xml:space="preserve">
-    <value>Duyệt yêu cầu VTHH {0}</value>
+  <data name="RequestAlreadyApproved" xml:space="preserve">
+    <value>Can not delete approved purchasing request</value>
   </data>
-  <data name="PurchasingRequestCreate" xml:space="preserve">
-    <value>Thêm mới phiếu yêu cầu VTHH {0}</value>
+  <data name="RequestCodeAlreadyExisted" xml:space="preserve">
+    <value>Purchasing request code is already existed</value>
   </data>
-  <data name="PurchasingRequestDelete" xml:space="preserve">
-    <value>Xóa phiếu yêu cầu VTHH  {0}</value>
+  <data name="RequestCodeEmpty" xml:space="preserve">
+    <value>Purchasing request code is empty</value>
   </data>
-  <data name="PurchasingRequestRejected" xml:space="preserve">
-    <value>Từ chối yêu cầu VTHH {0}</value>
-  </data>
-  <data name="PurchasingRequestSentToCensor" xml:space="preserve">
-    <value>Gửi duyệt yêu cầu VTHH {0}</value>
-  </data>
-  <data name="PurchasingRequestUpdate" xml:space="preserve">
-    <value>Cập nhật phiếu yêu cầu VTHH {0}</value>
-  </data>
-  <data name="PurchasingRequestUpdatedProgress" xml:space="preserve">
-    <value>Cập nhật tiến độ yêu cầu VTHH {0}</value>
+  <data name="RequestNotFound" xml:space="preserve">
+    <value>Purchasing request was not found</value>
   </data>
 </root>

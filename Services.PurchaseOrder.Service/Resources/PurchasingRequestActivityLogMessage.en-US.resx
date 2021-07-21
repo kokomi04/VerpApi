@@ -117,10 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="QuantityInvalid" xml:space="preserve">
-    <value>Số lượng không hợp lệ</value>
+  <data name="PurchasingRequestApproved" xml:space="preserve">
+    <value>Approved purchasing request  {0}</value>
   </data>
-  <data name="QuantityRequired" xml:space="preserve">
-    <value>Yêu cầu nhập số lượng</value>
+  <data name="PurchasingRequestCreate" xml:space="preserve">
+    <value>Created purchasing request {0}</value>
+  </data>
+  <data name="PurchasingRequestDelete" xml:space="preserve">
+    <value>Deleted purchasing request {0}</value>
+  </data>
+  <data name="PurchasingRequestRejected" xml:space="preserve">
+    <value>Rejected purchasing request  {0}</value>
+  </data>
+  <data name="PurchasingRequestSentToCensor" xml:space="preserve">
+    <value>Sent to censor purchasing request  {0}</value>
+  </data>
+  <data name="PurchasingRequestUpdate" xml:space="preserve">
+    <value>Updated purchasing request {0}</value>
+  </data>
+  <data name="PurchasingRequestUpdatedProgress" xml:space="preserve">
+    <value>Updated purchasing request {0} progress state {1}</value>
   </data>
 </root>

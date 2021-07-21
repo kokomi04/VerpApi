@@ -61,7 +61,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Can not delete purchasing request because there are some linked purchasing suggests {0}.
+        ///   Looks up a localized string similar to Không thể xóa yêu cầu vật tư khi đang tồn tại đề nghị vật tư được liên kết {0}.
         /// </summary>
         internal static string CanNotDeletePurchasingRequestWithExistedSuggest {
             get {
@@ -70,7 +70,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error while calculate quantity item {0}.
+        ///   Looks up a localized string similar to Lỗi tính toán số lượng mặt hàng {0}.
         /// </summary>
         internal static string ErrorCalcQuantity {
             get {
@@ -79,7 +79,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to  {0} items  {1} found.
+        ///   Looks up a localized string similar to Tìm thấy {0} mặt hàng {1}.
         /// </summary>
         internal static string FoundNumberProduct {
             get {
@@ -88,7 +88,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to There were {0} product units {1} of item {2} found.
+        ///   Looks up a localized string similar to Tìm thấy {0} đơn vị chuyển đổi {1} mặt hàng {2}.
         /// </summary>
         internal static string FoundNumberPuOfProduct {
             get {
@@ -97,7 +97,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid quantity of item {0}.
+        ///   Looks up a localized string similar to Số lượng không hợp lệ mặt hàng {0}.
         /// </summary>
         internal static string InvalidQuantity {
             get {
@@ -106,7 +106,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No items  {0} found.
+        ///   Looks up a localized string similar to Không tìm thấy mặt hàng  {0}.
         /// </summary>
         internal static string NoProductFound {
             get {
@@ -115,7 +115,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Product units {0} of item {1} was not found.
+        ///   Looks up a localized string similar to Đơn vị chuyển đổi {0} của mặt hàng {1} không tìm thấy.
         /// </summary>
         internal static string NoPuOfProductFound {
             get {
@@ -124,7 +124,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The product unit conversion does not belong to.
+        ///   Looks up a localized string similar to Đơn vị chuyển đổi không thuộc về mặt hàng.
         /// </summary>
         internal static string PuConversionDoesNotBelongToProduct {
             get {
@@ -133,7 +133,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Default unit of item {0} was not found.
+        ///   Looks up a localized string similar to Không tìm thấy đơn vị tính của mặt hàng {0}.
         /// </summary>
         internal static string PuDefaultError {
             get {
@@ -142,7 +142,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Can not edit purchasing request from {0}.
+        ///   Looks up a localized string similar to Không thể sửa YCVT từ {0}.
         /// </summary>
         internal static string PurchasingRequestPreventFrom {
             get {

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace VErp.Services.PurchaseOrder.Service.Resources {
+namespace VErp.Commons.Enums.Resources.PO {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class PurchasingRequestActivityLogMessage {
+    internal class EnumPoProcessStatusDescription {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal PurchasingRequestActivityLogMessage() {
+        internal EnumPoProcessStatusDescription() {
         }
         
         /// <summary>
@@ -39,8 +39,7 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("VErp.Services.PurchaseOrder.Service.Resources.PurchasingRequestActivityLogMessage" +
-                            "", typeof(PurchasingRequestActivityLogMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("VErp.Commons.Enums.Resources.PO.EnumPoProcessStatusDescription", typeof(EnumPoProcessStatusDescription).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -62,65 +61,29 @@ namespace VErp.Services.PurchaseOrder.Service.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Duyệt yêu cầu VTHH {0}.
+        ///   Looks up a localized string similar to Đã hoàn thành.
         /// </summary>
-        internal static string PurchasingRequestApproved {
+        internal static string Completed {
             get {
-                return ResourceManager.GetString("PurchasingRequestApproved", resourceCulture);
+                return ResourceManager.GetString("Completed", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới phiếu yêu cầu VTHH {0}.
+        ///   Looks up a localized string similar to Khởi tạo.
         /// </summary>
-        internal static string PurchasingRequestCreate {
+        internal static string Normal {
             get {
-                return ResourceManager.GetString("PurchasingRequestCreate", resourceCulture);
+                return ResourceManager.GetString("Normal", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa phiếu yêu cầu VTHH  {0}.
+        ///   Looks up a localized string similar to Đã gửi nhà cung cấp.
         /// </summary>
-        internal static string PurchasingRequestDelete {
+        internal static string SentToProvider {
             get {
-                return ResourceManager.GetString("PurchasingRequestDelete", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Từ chối yêu cầu VTHH {0}.
-        /// </summary>
-        internal static string PurchasingRequestRejected {
-            get {
-                return ResourceManager.GetString("PurchasingRequestRejected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Gửi duyệt yêu cầu VTHH {0}.
-        /// </summary>
-        internal static string PurchasingRequestSentToCensor {
-            get {
-                return ResourceManager.GetString("PurchasingRequestSentToCensor", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cập nhật phiếu yêu cầu VTHH {0}.
-        /// </summary>
-        internal static string PurchasingRequestUpdate {
-            get {
-                return ResourceManager.GetString("PurchasingRequestUpdate", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cập nhật tiến độ yêu cầu VTHH {0}: {1}.
-        /// </summary>
-        internal static string PurchasingRequestUpdatedProgress {
-            get {
-                return ResourceManager.GetString("PurchasingRequestUpdatedProgress", resourceCulture);
+                return ResourceManager.GetString("SentToProvider", resourceCulture);
             }
         }
     }

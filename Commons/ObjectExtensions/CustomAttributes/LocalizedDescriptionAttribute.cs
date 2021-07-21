@@ -31,6 +31,11 @@ namespace VErp.Commons.ObjectExtensions.CustomAttributes
 
         }
 
+        public LocalizedDescriptionAttribute(Type resourceType)
+        {
+            ResourceType = resourceType;
+        }
+
         public override string Description
         {
             get

@@ -61,7 +61,7 @@ namespace VErp.Commons.GlobalObject.DataAnnotationsExtensions.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The field {0} must be greater than {1}.
+        ///   Looks up a localized string similar to Lỗi trường {0} phải có giá trị lớn hơn {1}.
         /// </summary>
         internal static string GreaterThanAttribute_Invalid {
             get {
@@ -70,7 +70,7 @@ namespace VErp.Commons.GlobalObject.DataAnnotationsExtensions.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The field {0} must be greater than or equal to {1}.
+        ///   Looks up a localized string similar to Lỗi trường {0} phải lớn hơn hoặc bằng {1}.
         /// </summary>
         internal static string MinAttribute_Invalid {
             get {
