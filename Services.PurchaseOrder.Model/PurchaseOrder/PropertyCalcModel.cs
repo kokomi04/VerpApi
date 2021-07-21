@@ -93,6 +93,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
         public decimal ExchangeRate { get; set; }
+        public decimal CuttingQuantity { get; set; }
         public int PropertyId { get; set; }
     }
 
