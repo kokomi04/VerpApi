@@ -283,7 +283,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PropertyCalcProperty>(entity =>
             {
-                entity.HasKey(e => new { e.PropertyCalcId, e.PropertypId })
+                entity.HasKey(e => new { e.PropertyCalcId, e.PropertyId })
                     .HasName("PK_MaterialCalcConsumptionGroup_copy1");
 
                 entity.HasOne(d => d.PropertyCalc)
