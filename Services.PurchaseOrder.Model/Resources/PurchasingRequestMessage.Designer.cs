@@ -61,7 +61,7 @@ namespace VErp.Services.PurchaseOrder.Model.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The quantity is invalid.
+        ///   Looks up a localized string similar to Số lượng không hợp lệ.
         /// </summary>
         internal static string QuantityInvalid {
             get {
@@ -70,7 +70,7 @@ namespace VErp.Services.PurchaseOrder.Model.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The quantity is required.
+        ///   Looks up a localized string similar to Yêu cầu nhập số lượng.
         /// </summary>
         internal static string QuantityRequired {
             get {

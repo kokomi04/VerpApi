@@ -61,7 +61,7 @@ namespace VErp.Commons.Enums.Resources.ErrorCodes.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Can not delete approved purchasing request.
+        ///   Looks up a localized string similar to Không thế xóa phiếu yêu cầu VTHH đã được duyệt.
         /// </summary>
         internal static string RequestAlreadyApproved {
             get {
@@ -70,7 +70,7 @@ namespace VErp.Commons.Enums.Resources.ErrorCodes.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Purchasing request code is already existed.
+        ///   Looks up a localized string similar to Phiếu yêu cầu VTHH đã tồn tại.
         /// </summary>
         internal static string RequestCodeAlreadyExisted {
             get {
@@ -79,7 +79,7 @@ namespace VErp.Commons.Enums.Resources.ErrorCodes.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Purchasing request code is empty.
+        ///   Looks up a localized string similar to Mã phiếu yêu cầu VTHH không có.
         /// </summary>
         internal static string RequestCodeEmpty {
             get {
@@ -88,7 +88,7 @@ namespace VErp.Commons.Enums.Resources.ErrorCodes.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Purchasing request was not found.
+        ///   Looks up a localized string similar to Không tìm thấy phiếu yêu cầu VTHH tương ứng.
         /// </summary>
         internal static string RequestNotFound {
             get {

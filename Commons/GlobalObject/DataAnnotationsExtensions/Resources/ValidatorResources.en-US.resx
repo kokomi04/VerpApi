@@ -117,13 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MaterialCalc" xml:space="preserve">
-    <value>Tính nhu cầu vật tư từ đơn hàng</value>
+  <data name="GreaterThanAttribute_Invalid" xml:space="preserve">
+    <value>The field {0} must be greater than {1}</value>
   </data>
-  <data name="OrderMaterial" xml:space="preserve">
-    <value>Tính nhu cầu vật tư từ đơn hàng (cũ)</value>
-  </data>
-  <data name="ProductionOrderMaterialCalc" xml:space="preserve">
-    <value>Tính nhu cầu vật tư từ lệnh sản xuất</value>
+  <data name="MinAttribute_Invalid" xml:space="preserve">
+    <value>The field {0} must be greater than or equal to {1}</value>
   </data>
 </root>

@@ -17,6 +17,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>PurchasingRequestErrorCodeDescription.resx</DependentUpon>
     </Compile>
+    <Compile Update="Resources\PO\EnumPoProcessStatusDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>EnumPoProcessStatusDescription.resx</DependentUpon>
+    </Compile>
     <Compile Update="Resources\PO\EnumPurchasingRequestTypeDescription.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -28,6 +33,10 @@
     <EmbeddedResource Update="Resources\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>PurchasingRequestErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\PO\EnumPoProcessStatusDescription.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>EnumPoProcessStatusDescription.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Resources\PO\EnumPurchasingRequestTypeDescription.resx">
       <Generator>ResXFileCodeGenerator</Generator>

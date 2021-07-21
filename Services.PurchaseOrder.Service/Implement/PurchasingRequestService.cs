@@ -819,7 +819,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _purchasingRequestActivityLog.CreateLog(purchasingRequestId, () => PurchasingRequestActivityLogMessage.PurchasingRequestSentToCensor, new[] { info.PurchasingRequestCode }, info.JsonSerialize());
+
+                await _purchasingRequestActivityLog
+                  .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestSentToCensor)
+                  .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                  .ObjectId(purchasingRequestId)
+                  .JsonData(info.JsonSerialize())
+                  .CreateLog();
+
 
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Gửi duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
@@ -851,7 +858,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _purchasingRequestActivityLog.CreateLog(purchasingRequestId, () => PurchasingRequestActivityLogMessage.PurchasingRequestApproved, new[] { info.PurchasingRequestCode }, info.JsonSerialize());
+                await _purchasingRequestActivityLog
+                   .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestApproved)
+                   .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                   .ObjectId(purchasingRequestId)
+                   .JsonData(info.JsonSerialize())
+                   .CreateLog();
 
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
@@ -884,7 +896,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _purchasingRequestActivityLog.CreateLog(purchasingRequestId, () => PurchasingRequestActivityLogMessage.PurchasingRequestRejected, new[] { info.PurchasingRequestCode }, info.JsonSerialize());
+                await _purchasingRequestActivityLog
+                  .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestRejected)
+                  .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                  .ObjectId(purchasingRequestId)
+                  .JsonData(info.JsonSerialize())
+                  .CreateLog();
 
                 // await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Từ chối yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
@@ -905,8 +922,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _purchasingRequestActivityLog.CreateLog(purchasingRequestId, () => PurchasingRequestActivityLogMessage.PurchasingRequestUpdatedProgress, new[] { info.PurchasingRequestCode }, info.JsonSerialize());
-
+                await _purchasingRequestActivityLog
+                 .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestUpdatedProgress)
+                 .MessageResourceFormatData(new[] { info.PurchasingRequestCode, poProcessStatusId.GetEnumDescription() })
+                 .ObjectId(purchasingRequestId)
+                 .JsonData(info.JsonSerialize())
+                 .CreateLog();
+              
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật tiến trình PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return true;

@@ -61,7 +61,7 @@ namespace VErp.Commons.Enums.Resources.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Calculate purchasing request from orders.
+        ///   Looks up a localized string similar to Tính nhu cầu vật tư từ đơn hàng.
         /// </summary>
         internal static string MaterialCalc {
             get {
@@ -70,7 +70,7 @@ namespace VErp.Commons.Enums.Resources.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Calculate purchasing request from orders (cũ).
+        ///   Looks up a localized string similar to Tính nhu cầu vật tư từ đơn hàng (cũ).
         /// </summary>
         internal static string OrderMaterial {
             get {
@@ -79,7 +79,7 @@ namespace VErp.Commons.Enums.Resources.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Calculate purchasing request from production order.
+        ///   Looks up a localized string similar to Tính nhu cầu vật tư từ lệnh sản xuất.
         /// </summary>
         internal static string ProductionOrderMaterialCalc {
             get {

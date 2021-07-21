@@ -366,7 +366,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language = "vi-VN")
+        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
@@ -389,6 +389,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public RoleInfo RoleInfo { get; }
         public int? TimeZoneOffset { get; }
         public bool IsDeveloper { get; } = false;
-        public string Language { get; } = "vi-VN";
+        public string Language { get; }
     }
 }
