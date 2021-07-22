@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,6 +38,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
         private readonly IActivityLogService _activityLogService;
+
+        private IProductBomService _productBomService;
         private IUnitService _unitService;
         private IProductService _productService;
 
@@ -48,6 +51,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private IList<DepartmentSimpleModel> _departments;
         private IList<StepSimpleInfo> _steps;
 
+        private IList<ProductBomOutput> _boms;
+        private ProductModel _productInfo;
+        private Dictionary<string, ProductMaterialsConsumptionGroup> _groupConsumptions;
+
         public ProductMaterialsConsumptionInportFacade SetService(IUnitService unitService)
         {
             _unitService = unitService;
@@ -56,6 +63,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         public ProductMaterialsConsumptionInportFacade SetService(IProductService productService)
         {
             _productService = productService;
+            return this;
+        }
+
+        public ProductMaterialsConsumptionInportFacade SetService(IProductBomService productBomService)
+        {
+            _productBomService= productBomService;
             return this;
         }
 
@@ -70,10 +83,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             _activityLogService = activityLogService;
         }
 
-        public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int productId, int materialsConsumptionGroupId)
+        public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int productId)
         {
             ReadExcelData(mapping, stream);
-            await ValiExcelData();
+            await ValidWithProductBOM(productId);
+            await ValidExcelData();
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 using (var logBath = _activityLogService.BeginBatchLog())
@@ -82,7 +96,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     await AddMissingProductCate();
                     await AddMissingUnit();
                     await AddMissingProduct();
-                    await Import(productId, materialsConsumptionGroupId);
+                    await AddMissingMaterialConsumptionGroup();
+                    await Import(productId);
                     await trans.CommitAsync();
                     await logBath.CommitAsync();
                 }
@@ -90,15 +105,33 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             return true;
         }
 
-        private async Task ValiExcelData()
+        private async Task ValidWithProductBOM(int productId)
         {
-            var hasTwoProduct = _importData
+            _boms = await _productBomService.GetBom(productId);
+            _productInfo = await _productService.ProductInfo(productId);
+
+            var notExistsUsageProductInBom = _importData.Where(x => x.UsageProductCode != _productInfo.ProductCode)
+                                                        .Where(x => !_boms.Any(b => b.ProductCode == x.UsageProductCode))
+                                                        .Select(x => x.UsageProductCode).ToList();
+            if (notExistsUsageProductInBom.Count() > 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Xuất hiện các chi tiết sử dụng không tồn tại trong BOM mặt hàng. Các chi tiết sử dụng: \"{string.Join(", ", notExistsUsageProductInBom)}\"");
+
+        }
+
+        private async Task ValidExcelData()
+        {
+            var hasGreatThanTwoUsageProductUsingMaterialConsumption = _importData
                 .Where(x => !string.IsNullOrWhiteSpace(x.ProductCode))
-                .GroupBy(x => x.ProductCode)
-                .Where(x => x.Count() > 1)
-                .Select(x => x.Key);
-            if (hasTwoProduct.Count() > 0)
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Xuất hiện hơn 1 sản phẩm trở lên trong file import. Chi tiết các mã sản phẩm: \"{string.Join(", ", hasTwoProduct)}\"");
+                .GroupBy(x => new {x.ProductCode, GroupTitle = x.GroupTitle.NormalizeAsInternalName()})
+                .Where(x => x.GroupBy(y => y.UsageProductCode).Where(y => y.Count() > 1).Count() > 1)
+                .Select(x => new
+                {
+                    productCode = x.Key.ProductCode,
+                    usageProductCode = x.GroupBy(y => y.UsageProductCode).Where(y => y.Count() > 1).Select(y => y.Select(t => t.UsageProductCode))
+                }).ToList();
+
+            if (hasGreatThanTwoUsageProductUsingMaterialConsumption.Count > 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Xuất hiện chi tiết sử dụng có mã trùng nhau cùng sử dụng vật liệu tiêu hao trong cùng 1 nhóm. Các vật liệu tiêu hao: \"{string.Join(", ", hasGreatThanTwoUsageProductUsingMaterialConsumption.Select(x => x.productCode))}\"");
 
             _departments = await _organizationHelperService.GetAllDepartmentSimples();
             _steps = await _manufacturingHelperService.GetSteps();
@@ -127,38 +160,60 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             _importData = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping, null);
         }
 
-        private async Task Import(int productId, int materialsConsumptionGroupId)
+        private async Task Import(int productId)
         {
-            var groups = (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync()).ToDictionary(k => k.ProductMaterialsConsumptionGroupCode, v => v.ProductMaterialsConsumptionGroupId);
-
-            
-
-            var oldMaterialConsumption = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                .Where(x => x.ProductId == productId && x.ProductMaterialsConsumptionGroupId == materialsConsumptionGroupId)
-                .ToListAsync()).Select(k => k.MaterialsConsumptionId).ToList();
-
-            foreach (var row in _importData)
+            var data = _importData.GroupBy(x => x.GroupTitle.NormalizeAsInternalName());
+            foreach (var d in data)
             {
-                if (!_existedProducts.ContainsKey(row.ProductCode.NormalizeAsInternalName()) || oldMaterialConsumption.Contains(_existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId)) continue;
-
-                var department = _departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
-                var step = _steps.FirstOrDefault(x => x.StepName == row.StepName);
-                var item = new ProductMaterialsConsumption
+                if (_groupConsumptions.ContainsKey(d.Key))
                 {
-                    MaterialsConsumptionId = _existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId,
-                    ProductId = productId,
-                    Quantity = row.Quantity,
-                    DepartmentId = department?.DepartmentId,
-                    StepId = step?.StepId,
-                    ProductMaterialsConsumptionGroupId = materialsConsumptionGroupId
-                };
+                    var lsUsageProductIds = _boms.Select(x => x.ChildProductId).ToList();
+                    lsUsageProductIds.Add(productId);
 
-                _stockDbContext.ProductMaterialsConsumption.Add(item);
-                oldMaterialConsumption.Add(item.MaterialsConsumptionId);
+                    /* Loại bỏ row data cũ */
+                    var oldMaterialConsumptions = await _stockDbContext.ProductMaterialsConsumption
+                        .Where(x => lsUsageProductIds.Contains(x.ProductId) && x.ProductMaterialsConsumptionGroupId == _groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId)
+                        .ToListAsync();
+
+                    oldMaterialConsumptions.ForEach(x => x.IsDeleted = true);
+
+                    await _stockDbContext.SaveChangesAsync();
+                    
+                    /* Thêm mới row data cũ */
+                    foreach (var row in d)
+                    {
+                        if (!_existedProducts.ContainsKey(row.ProductCode.NormalizeAsInternalName())) continue;
+
+                        var bom = _boms.FirstOrDefault(x => x.ProductCode == row.UsageProductCode);
+                        var usageProductId = _productInfo.ProductCode == row.UsageProductCode ? productId : bom.ChildProductId.Value;
+                        // var oldComsumption = oldMaterialConsumptions.FirstOrDefault(x => x.ProductId == usageProductId && x.MaterialsConsumptionId == _existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId);
+
+                        // if (oldComsumption != null)
+                        // {
+                        //     oldComsumption.Quantity = row.Quantity;
+                        // }
+                        // else
+                        // {
+                        var department = _departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
+                        var step = _steps.FirstOrDefault(x => x.StepName == row.StepName);
+                        var item = new ProductMaterialsConsumption
+                        {
+                            MaterialsConsumptionId = _existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId,
+                            ProductId = usageProductId,
+                            Quantity = row.Quantity,
+                            DepartmentId = department?.DepartmentId,
+                            StepId = step?.StepId,
+                            ProductMaterialsConsumptionGroupId = _groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId
+                        };
+
+                        _stockDbContext.ProductMaterialsConsumption.Add(item);
+                        // }
+                    }
+
+                    await _stockDbContext.SaveChangesAsync();
+                    await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Import vật liệu tiêu hao cho sản phẩm {productId} nhóm {_groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId} ", _importData.JsonSerialize());
+                }
             }
-
-            await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Import vật liệu tiêu hao cho sản phẩm {productId} nhóm {materialsConsumptionGroupId} ", _importData.JsonSerialize());
         }
 
         private async Task AddMissingUnit()
@@ -178,10 +233,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     UnitName = t.Value,
                     UnitStatusId = EnumUnitStatus.Using
                 }).ToList();
-            foreach (var uni in newUnits)
+            foreach (var unit in newUnits)
             {
-                var unitId = await _unitService.AddUnit(uni);
-                _units.Add(uni.UnitName.NormalizeAsInternalName(), new UnitOutput() { UnitId = unitId, UnitName = uni.UnitName, UnitStatusId = uni.UnitStatusId });
+                var unitId = await _unitService.AddUnit(unit);
+                _units.Add(unit.UnitName.NormalizeAsInternalName(), new UnitOutput() { UnitId = unitId, UnitName = unit.UnitName, UnitStatusId = unit.UnitStatusId });
             }
 
         }
@@ -326,6 +381,29 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             }
         }
 
+        private async Task AddMissingMaterialConsumptionGroup(){
+            _groupConsumptions =  (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync())
+            .GroupBy(t => t.Title.NormalizeAsInternalName()).ToDictionary(t => t.Key, t => t.FirstOrDefault());
+
+            var importGroups = _importData.SelectMany(p => new[] { p.GroupTitle}).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+                .GroupBy(t => t.NormalizeAsInternalName())
+                .ToDictionary(t => t.Key, t => t.FirstOrDefault());
+
+            var newGroups = importGroups.Where(t => !_groupConsumptions.ContainsKey(t.Key))
+                .Select(t => new ProductMaterialsConsumptionGroup()
+                {
+                    Title = t.Value,
+                    ProductMaterialsConsumptionGroupCode = t.Value.NormalizeAsInternalName()
+                }).ToList();
+
+            await _stockDbContext.ProductMaterialsConsumptionGroup.AddRangeAsync(newGroups);
+            await _stockDbContext.SaveChangesAsync();
+
+            foreach (var t in newGroups)
+            {
+                _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
+            }
+        }
         
     }
 }
