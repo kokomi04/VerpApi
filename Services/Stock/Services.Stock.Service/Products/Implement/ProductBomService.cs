@@ -146,7 +146,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             if (bomInfo.Bom.Any(p => p.ProductId != rootProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Vật tư không thuộc sản phẩm");
 
-          
+
             // Thiết lập sort order theo thứ tự tạo nếu không truyền từ client lên
             for (int indx = 0; indx < bomInfo.Bom.Count; indx++)
             {
@@ -201,6 +201,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 updateBom.OldValue.InputStepId = updateBom.NewValue.InputStepId;
                 updateBom.OldValue.OutputStepId = updateBom.NewValue.OutputStepId;
                 updateBom.OldValue.SortOrder = updateBom.NewValue.SortOrder;
+                updateBom.OldValue.Description = updateBom.NewValue.Description;
             }
 
             await _stockDbContext.SaveChangesAsync();
@@ -266,7 +267,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _stockDbContext.ProductProperty.AddRange(createProperties);
             await _stockDbContext.SaveChangesAsync();
         }
-        
+
 
         public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds)
         {
@@ -283,7 +284,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 || oldValue.InputStepId != newValue.InputStepId
                 || oldValue.OutputStepId != newValue.OutputStepId
                 || oldValue.Wastage != newValue.Wastage
-                || oldValue.SortOrder != newValue.SortOrder;
+                || oldValue.SortOrder != newValue.SortOrder
+                || oldValue.Description != newValue.Description;
         }
 
         public async Task<CategoryNameModel> GetBomFieldDataForMapping()
