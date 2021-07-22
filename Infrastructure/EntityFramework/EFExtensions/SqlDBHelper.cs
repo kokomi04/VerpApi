@@ -214,6 +214,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
             };
         }
 
+        public static IList<SqlParameter> CloneSqlParams(this IList<SqlParameter> sqlParameters)
+        {
+            return sqlParameters?.Select(p => p.CloneSqlParam()).ToList();
+        }
+
 
         public static async Task<long> InsertDataTable(this DbContext dbContext, DataTable table, bool includeSubId = false)
         {
