@@ -8,7 +8,7 @@ using AutoMapper;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductPropertyModel: ProductBomInfoPathBaseModel
+    public class ProductPropertyModel : ProductBomInfoPathBaseModel
     {
         public long ProductPropertyId { get; set; }
        
@@ -16,5 +16,20 @@ namespace VErp.Services.Stock.Model.Product
         public override int ProductId { get; set; }
 
         public int PropertyId { get; set; }
+    }
+
+    public class ProductBomPropertyUpdateInfo
+    {
+        public ProductBomPropertyUpdateInfo()
+        {
+
+        }
+        public ProductBomPropertyUpdateInfo(IList<ProductPropertyModel> bomProperties, bool cleanOldData)
+        {
+            BomProperties = bomProperties;
+            CleanOldData = cleanOldData;
+        }
+        public IList<ProductPropertyModel> BomProperties { get; set; }
+        public bool CleanOldData { get; set; }
     }
 }

@@ -135,6 +135,8 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Thuộc công đoạn ra nào?", GroupName = ChildProductGroup)]
         public string OutputStepName { get; set; }
 
+        [Display(Name = "Mô tả cho chi tiết trong BOM (cách lắp ráp,...)")]
+        public string Description { get; set; }
 
         [FieldDataIgnore]
         public ISet<int> Properties { get; set; }

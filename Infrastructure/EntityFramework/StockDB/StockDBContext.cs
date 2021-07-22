@@ -32,7 +32,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductAttachment> ProductAttachment { get; set; }
         public virtual DbSet<ProductBom> ProductBom { get; set; }
-        public virtual DbSet<ProductBomDescription> ProductBomDescription { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
@@ -584,13 +583,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_BillOfMaterial_Product_ProductId");
             });
-
-            modelBuilder.Entity<ProductBomDescription>(entity =>
-            {
-                entity.Property(e => e.Description).HasMaxLength(1024);
-
-                entity.Property(e => e.PathProductIds).IsRequired();
-            });
+          
 
             modelBuilder.Entity<ProductCate>(entity =>
             {

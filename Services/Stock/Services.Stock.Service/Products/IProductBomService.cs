@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Bom;
 
 namespace VErp.Services.Stock.Service.Products
 {
@@ -15,9 +16,9 @@ namespace VErp.Services.Stock.Service.Products
         Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds);
         Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds);
 
-        Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial, bool isCleanOldProperties);
+        Task<bool> UpdateProductBomDb(int productId, ProductBomUpdateInfoModel bomInfo);
 
-        Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, IList<ProductPropertyModel> productProperties, bool isCleanOldMaterial, bool isCleanOldProperties);
+        Task<bool> Update(int productId, ProductBomUpdateInfoModel bomInfo);
 
         Task<CategoryNameModel> GetBomFieldDataForMapping();
 
