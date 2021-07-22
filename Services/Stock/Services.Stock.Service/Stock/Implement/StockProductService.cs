@@ -512,7 +512,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
+        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, int page, int size, Clause filters)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -606,6 +606,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                        ucs.ProductUnitConversionId,
                                        ucs.DecimalPlace
                                    };
+            
+            if(filters != null){
+                productInfoQuery = productInfoQuery.InternalFilter(filters);
+            }
 
             var total = productInfoQuery.Count();
             var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();
