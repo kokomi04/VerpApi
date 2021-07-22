@@ -32,6 +32,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductAttachment> ProductAttachment { get; set; }
         public virtual DbSet<ProductBom> ProductBom { get; set; }
+        public virtual DbSet<ProductBomDescription> ProductBomDescription { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
@@ -584,6 +585,13 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_BillOfMaterial_Product_ProductId");
             });
 
+            modelBuilder.Entity<ProductBomDescription>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.PathProductIds).IsRequired();
+            });
+
             modelBuilder.Entity<ProductCate>(entity =>
             {
                 entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
@@ -635,6 +643,18 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasName("IDX_RootProductId");
 
                 entity.Property(e => e.PathProductIds).IsRequired();
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductMaterialProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterial_MaterialProduct");
+
+                entity.HasOne(d => d.RootProduct)
+                    .WithMany(p => p.ProductMaterialRootProduct)
+                    .HasForeignKey(d => d.RootProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductMaterial_RootProduct");
             });
 
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
@@ -678,11 +698,23 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PathProductIds).IsRequired();
 
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductPropertyProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductProperty_ProductProperty");
+
                 entity.HasOne(d => d.Property)
                     .WithMany(p => p.ProductProperty)
                     .HasForeignKey(d => d.PropertyId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductProperty_Property");
+
+                entity.HasOne(d => d.RootProduct)
+                    .WithMany(p => p.ProductPropertyRootProduct)
+                    .HasForeignKey(d => d.RootProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductProperty_RootProduct");
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
