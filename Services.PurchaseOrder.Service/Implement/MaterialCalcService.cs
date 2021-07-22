@@ -19,6 +19,7 @@ using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.EF.EFExtensions;
 using System.Linq;
 using VErp.Infrastructure.ServiceCore.Model;
+using Microsoft.Data.SqlClient;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -61,60 +62,76 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<MaterialCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
         {
-            keyword = (keyword ?? "").Trim();
-            
-            var query = from c in _purchaseOrderDBContext.MaterialCalc
-                        join d in _purchaseOrderDBContext.MaterialCalcProduct on c.MaterialCalcId equals d.MaterialCalcId
-                        join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId
-                        join o in _purchaseOrderDBContext.MaterialCalcProductOrderGroup on d.MaterialCalcProductId equals o.MaterialCalcProductId into os
-                        from o in os.DefaultIfEmpty()
-                        join r in _purchaseOrderDBContext.PurchasingRequest on c.MaterialCalcId equals r.MaterialCalcId into rs
-                        from r in rs.DefaultIfEmpty()
-                        select new
-                        {
-                            c.MaterialCalcId,
-                            c.MaterialCalcCode,
-                            c.Title,
-                            c.CreatedByUserId,
-                            c.CreatedDatetimeUtc,
-                            p.ProductId,
-                            p.ProductCode,
-                            p.ProductName,
-                            TotalOrderProductQuantity = o == null ? null : o.TotalOrderProductQuantity,
-                            OrderCodes = o == null ? null : o.OrderCodes,
-                            PurchasingRequestId = r == null ? (long?)null : r.PurchasingRequestId,
-                            PurchasingRequestCode = r == null ? null : r.PurchasingRequestCode
-                        };
+            keyword = keyword?.Trim();
+
+            var sqlParams = new List<SqlParameter>();
+            sqlParams.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+
+            var rawSql = new StringBuilder($@"
+    SELECT
+         c.MaterialCalcId,
+         c.MaterialCalcCode,
+         c.Title,
+         c.CreatedByUserId,
+         c.CreatedDatetimeUtc,
+         p.ProductId,
+         p.ProductCode,
+         p.ProductName,
+         o.TotalOrderProductQuantity,
+         o.OrderCodes,
+         r.PurchasingRequestId,
+         r.PurchasingRequestCode
+    FROM dbo.MaterialCalc c
+        JOIN dbo.MaterialCalcProduct d ON c.MaterialCalcId = d.MaterialCalcId
+        JOIN dbo.RefProduct p on d.ProductId = p.ProductId
+        LEFT JOIN(
+            SELECT MaterialCalcProductId, STRING_AGG(OrderCode,',') OrderCodes, SUM(OrderProductQuantity) TotalOrderProductQuantity FROM dbo.MaterialCalcProductOrder GROUP BY MaterialCalcProductId
+        ) o ON d.MaterialCalcProductId = o.MaterialCalcProductId
+        LEFT JOIN dbo.PurchasingRequest r  on c.MaterialCalcId = r.MaterialCalcId
+    WHERE c.IsDeleted=0 AND c.SubsidiaryId = @SubId
+");
             if (!string.IsNullOrWhiteSpace(keyword))
-                query = query.Where(c => c.MaterialCalcCode.Contains(keyword)
-                 || c.Title.Contains(keyword)
-                 || c.ProductCode.Contains(keyword)
-                 || c.ProductName.Contains(keyword)
-                 || c.OrderCodes.Contains(keyword)
-                );
+            {
+                rawSql.AppendLine("AND");
+                rawSql.AppendLine("(");
+                rawSql.AppendLine("c.MaterialCalcCode LIKE @keyword");
+                rawSql.AppendLine("OR c.Title LIKE @keyword");
+                rawSql.AppendLine("OR p.ProductCode LIKE @keyword");
+                rawSql.AppendLine("OR p.ProductName LIKE @keyword");
+                rawSql.AppendLine("OR o.OrderCodes LIKE @keyword");
+                rawSql.AppendLine(")");
+            }
 
-            query = query.InternalFilter(filter);
 
-            var total = await query.CountAsync();
-            var paged = (await query.Skip((page - 1) * size).Take(size).ToListAsync())
-                .Select(d => new MaterialCalcListModel()
-                {
+            rawSql.Insert(0, "FROM (\n");
+            rawSql.AppendLine(") v");
 
-                    MaterialCalcId = d.MaterialCalcId,
-                    MaterialCalcCode = d.MaterialCalcCode,
-                    Title = d.Title,
-                    CreatedByUserId = d.CreatedByUserId,
-                    CreatedDatetimeUtc = d.CreatedDatetimeUtc.GetUnix(),
-                    ProductId = d.ProductId,
-                    ProductCode = d.ProductCode,
-                    productName = d.ProductName,
-                    OrderCodes = d.OrderCodes,
-                    TotalOrderProductQuantity = d.TotalOrderProductQuantity,
-                    IsPurchasingRequestCreated = d.PurchasingRequestId > 0,
-                    PurchasingRequestId = d.PurchasingRequestId,
-                    PurchasingRequestCode = d.PurchasingRequestCode
-                }).ToList();
-            return (paged, total);
+
+            var suffix = 0;
+            var whereCondition = new StringBuilder();
+
+            if (filter != null && filter.Rules.Count > 0)
+                filter.FilterClauseProcess("v", "v", ref whereCondition, ref sqlParams, ref suffix);
+            if (whereCondition.Length > 0)
+            {
+                rawSql.AppendLine("WHERE");
+                rawSql.AppendLine(whereCondition.ToString());
+            }
+
+
+            var totalTable = await _purchaseOrderDBContext.QueryDataTable("SELECT COUNT(DISTINCT MaterialCalcId) Total " + rawSql.ToString(), sqlParams.CloneSqlParams());
+            int total = totalTable.Rows.Count > 0 ? (int)totalTable.Rows[0]["Total"] : 0;
+
+            var listSql = $@";WITH tmp AS (
+SELECT
+                    DENSE_RANK () OVER (ORDER BY CreatedDatetimeUtc DESC,  MaterialCalcCode) RowNumber,
+                    v.* {rawSql}
+)
+SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * size}
+";
+            var paged = await _purchaseOrderDBContext.QueryList<MaterialCalcListModel>(listSql, sqlParams.CloneSqlParams());
+
+            return (paged.OrderBy(d=>d.RowNumber).ToList(), total);
         }
 
         public async IAsyncEnumerable<MaterialOrderProductHistory> GetHistoryProductOrderList(IList<int> productIds, IList<string> orderCodes)

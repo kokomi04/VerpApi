@@ -1007,7 +1007,16 @@ namespace VErp.Commons.Library
                     {
                         try
                         {
-                            pro.SetValue(obj, dr[column.ColumnName], null);
+                            var v = dr[column.ColumnName];
+                            if (pro.PropertyType == typeof(long) && v?.GetType() == typeof(DateTime))
+                            {
+                                pro.SetValue(obj, (dr[column.ColumnName] as DateTime?).GetUnix(), null);
+                            }
+                            else
+                            {
+                                pro.SetValue(obj, dr[column.ColumnName], null);
+                            }
+
                         }
                         catch (Exception)
                         {
