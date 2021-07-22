@@ -313,16 +313,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream, int materialsConsumptionGroupId)
+        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream)
         {
             var facade = new ProductMaterialsConsumptionInportFacade(_stockDbContext
                 , _organizationHelperService
                 , _manufacturingHelperService
                 , _activityLogService)
                 .SetService(_productService)
+                .SetService(_productBomService)
                 .SetService(_unitService);
 
-            return await facade.ProcessData(mapping, stream, productId, materialsConsumptionGroupId);
+            return await facade.ProcessData(mapping, stream, productId);
         }
 
         public async Task<long> AddProductMaterialsConsumption(int productId, ProductMaterialsConsumptionInput model)
