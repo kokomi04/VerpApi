@@ -120,6 +120,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 await UpdateProductBomDb(productId, bomInfo);
+                await trans.CommitAsync();
             }
             await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", bomInfo.JsonSerialize());
             return true;
