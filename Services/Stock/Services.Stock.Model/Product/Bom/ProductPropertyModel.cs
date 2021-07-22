@@ -10,7 +10,7 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductPropertyModel: ProductBomInfoPathBaseModel
     {
-        public int ProductPropertyId { get; set; }
+        public long ProductPropertyId { get; set; }
        
         [Required(ErrorMessage = "Chi tiết của thuộc tính không hợp lệ")]
         public override int ProductId { get; set; }
