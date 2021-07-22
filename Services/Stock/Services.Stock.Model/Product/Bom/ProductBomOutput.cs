@@ -54,11 +54,11 @@ namespace VErp.Services.Stock.Model.Product
     public class ProductBomOutput : ProductBomOutputBase, IMapFrom<ProductBomEntity>
     {
         public int[] PathProductIds { get; set; }
-        public IList<long> Properties { get; set; }
+        public IList<int> Properties { get; set; }
 
         public ProductBomOutput()
         {
-            Properties = new List<long>();
+            Properties = new List<int>();
         }
         public virtual void Mapping(Profile profile)
         {
