@@ -26,7 +26,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private ISheet sheet = null;
         private int currentRow = 0;
 
-        const int START_PROP_COLUMN_INDEX = 15;
+        const int START_PROP_COLUMN_INDEX = 16;
 
         private int maxColumnIndex;
 
@@ -40,7 +40,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             this.productIds = productIds;
             this.steps = steps;
             _productBomProperties = productBomProperties;
-            maxColumnIndex = 14 + productBomProperties.Count;
+            maxColumnIndex = 15 + productBomProperties.Count;
         }
 
 
@@ -115,11 +115,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             sheet.EnsureCell(fRow, 11).SetCellValue($"Tổng SL");
 
-            sheet.EnsureCell(fRow, 12).SetCellValue($"Là nguyên liệu");
+            sheet.EnsureCell(fRow, 12).SetCellValue($"Mô tả");
 
-            sheet.EnsureCell(fRow, 13).SetCellValue($"Cộng đoạn vào");
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Là nguyên liệu");
 
-            sheet.EnsureCell(fRow, 14).SetCellValue($"Công đoạn ra");
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Cộng đoạn vào");
+
+            sheet.EnsureCell(fRow, 15).SetCellValue($"Công đoạn ra");
+
+            
 
             var col = START_PROP_COLUMN_INDEX;
 
@@ -230,15 +234,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Wastage));
                 sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(totalQuantity));
 
+                sheet.EnsureCell(currentRow, 12).SetCellValue(item.Description);
+
+
                 if (productMaterial.Contains(item.ChildProductId ?? 0))
                 {
-                    sheet.EnsureCell(currentRow, 12).SetCellValue("Có");
-                    sheet.EnsureCell(currentRow, 12).CellStyle.Alignment = HorizontalAlignment.Center;
+                    sheet.EnsureCell(currentRow, 13).SetCellValue("Có");
+                    sheet.EnsureCell(currentRow, 13).CellStyle.Alignment = HorizontalAlignment.Center;
                     //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
                 }
 
-                sheet.EnsureCell(currentRow, 13).SetCellValue(GetStepName(item.InputStepId));
-                sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.OutputStepId));
+                sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.InputStepId));
+                sheet.EnsureCell(currentRow, 15).SetCellValue(GetStepName(item.OutputStepId));
 
                 var col = START_PROP_COLUMN_INDEX;
 
