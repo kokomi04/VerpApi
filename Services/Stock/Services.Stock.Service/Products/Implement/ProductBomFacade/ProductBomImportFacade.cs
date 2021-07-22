@@ -15,6 +15,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Bom;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
@@ -36,6 +37,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
         private IDictionary<string, bool> _productCodeMaterials;
         private IDictionary<string, HashSet<int>> _productCodeProperties;
+
         private IDictionary<string, List<ProductBomImportModel>> _bomByProductCodes;
 
         private IManufacturingHelperService _manufacturingHelperService;
@@ -180,30 +182,32 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         }
 
 
-        private void FindMaterial(int rootProductId, string parentProductCode, IList<int> paths, IList<string> pathCodes, IList<ProductMaterialModel> productMaterials, List<ProductPropertyModel> productProperties)
+        private void FindMaterial(SimpleProduct rootProduct, string parentProductCode, IList<int> paths, IList<string> pathCodes, ProductBomUpdateInfoModel model)
         {
             _existedProducts.TryGetValue(parentProductCode, out var parentInfo);
 
-            if (_productCodeProperties.TryGetValue(parentProductCode, out var props) && rootProductId != parentInfo.ProductId)
+            if (_productCodeProperties.TryGetValue(parentProductCode, out var props) && rootProduct.ProductId != parentInfo.ProductId)
             {
-                var propData = props.Select(propertyId => new ProductPropertyModel()
+                foreach (var propertyId in props)
                 {
-                    RootProductId = rootProductId,
-                    ProductId = parentInfo.ProductId,
-                    PropertyId = propertyId,
-                    PathProductIds = paths.ToArray(),
-                    PathProductCodes = pathCodes.ToArray()
-                });
-
-                productProperties.AddRange(propData);
+                    var propData = new ProductPropertyModel()
+                    {
+                        RootProductId = rootProduct.ProductId,
+                        ProductId = parentInfo.ProductId,
+                        PropertyId = propertyId,
+                        PathProductIds = paths.ToArray(),
+                        PathProductCodes = pathCodes.ToArray()
+                    };
+                    model.PropertiesInfo.BomProperties.Add(propData);
+                }
             }
 
 
             if (_productCodeMaterials.TryGetValue(parentProductCode, out var isMaterial) && isMaterial)
             {
-                productMaterials.Add(new ProductMaterialModel()
+                model.MaterialsInfo.BomMaterials.Add(new ProductMaterialModel()
                 {
-                    RootProductId = rootProductId,
+                    RootProductId = rootProduct.ProductId,
                     ProductId = parentInfo.ProductId,
                     PathProductIds = paths.ToArray(),
                     PathProductCodes = pathCodes.ToArray()
@@ -223,7 +227,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         _pathCodes.Add(parentInfo.ProductCode);
                         _existedProducts.TryGetValue(b.ChildProductCode.NormalizeAsInternalName(), out var childInfo);
                         if (!_paths.Contains(childInfo.ProductId))
-                            FindMaterial(rootProductId, childInfo.ProductCode.NormalizeAsInternalName(), _paths, _pathCodes, productMaterials, productProperties);
+                            FindMaterial(rootProduct, childInfo.ProductCode.NormalizeAsInternalName(), _paths, _pathCodes, model);
                     }
                 }
             }
@@ -237,18 +241,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             _productCodeProperties = _importData.GroupBy(c => c.ChildProductCode.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.SelectMany(m => m.Properties ?? new HashSet<int>()).Distinct().ToHashSet());
 
+
             var bomData = new List<ProductBomInput>();
 
             foreach (var bom in _bomByProductCodes)
             {
-                _existedProducts.TryGetValue(bom.Key, out var productInfo);
-
-                var productMaterials = new List<ProductMaterialModel>();
-
-                var productProperties = new List<ProductPropertyModel>();
-
-                FindMaterial(productInfo.ProductId, bom.Key, new List<int>(), new List<string>(), productMaterials, productProperties);
-
+                _existedProducts.TryGetValue(bom.Key, out var rootProductInfo);
 
                 var productBoms = bom.Value.Select(b =>
                 {
@@ -260,20 +258,36 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     return new ProductBomInput()
                     {
                         ProductBomId = null,
-                        ProductId = productInfo.ProductId,
+                        ProductId = rootProductInfo.ProductId,
                         ChildProductId = childProduct.ProductId,
                         Quantity = b.Quantity,
                         Wastage = b.Wastage ?? 1,
                         InputStepId = inputStepId,
-                        OutputStepId = b.IsMaterial ? null : outputStepId
+                        OutputStepId = b.IsMaterial ? null : outputStepId,
+                        Description = b.Description
                     };
                 }).ToList();
 
+                var productMaterials = new List<ProductMaterialModel>();
+
+                var productProperties = new List<ProductPropertyModel>();
+
+                var updateModel = new ProductBomUpdateInfoModel()
+                {
+                    BomInfo = new ProductBomUpdateInfo(productBoms),
+                    MaterialsInfo = new ProductBomMaterialUpdateInfo(new List<ProductMaterialModel>(), false),
+                    PropertiesInfo = new ProductBomPropertyUpdateInfo(new List<ProductPropertyModel>(), false)
+                };
+
+                FindMaterial(rootProductInfo, bom.Key, new List<int>(), new List<string>(), updateModel);
+
+
                 if (!IsPreview)
                 {
-                    await _productBomService.UpdateProductBomDb(productInfo.ProductId, productBoms, productMaterials, productProperties, false, false);
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductBom, productInfo.ProductId, $"Cập nhật chi tiết bom cho mặt hàng {productInfo.ProductCode}, tên hàng {productInfo.ProductName} (import)", new { productBoms, productMaterials }.JsonSerialize());
+                    await _productBomService.UpdateProductBomDb(rootProductInfo.ProductId, updateModel);
+
+                    await _activityLogService.CreateLog(EnumObjectType.ProductBom, rootProductInfo.ProductId, $"Import chi tiết bom cho mặt hàng {rootProductInfo.ProductCode}, tên hàng {rootProductInfo.ProductName} (import)", new { productBoms, productMaterials }.JsonSerialize());
                 }
                 else
                 {
@@ -298,28 +312,28 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             foreach (var rootProductId in rootProductIds)
             {
                 var bomInfo = new ProductBomByProduct();
-                var productInfo = _existedProducts.Values.FirstOrDefault(v => v.ProductId == rootProductId);
+                var rootInfo = _existedProducts.Values.FirstOrDefault(v => v.ProductId == rootProductId);
 
                 bomInfo.Info = new ProductRootBomInfo()
                 {
-                    ProductId = productInfo.ProductId,
-                    ProductCode = productInfo.ProductCode,
-                    ProductName = productInfo.ProductName,
-                    Specification = productInfo.Specification,
-                    UnitName = productInfo.UnitName,
-                    ProductCateName = _productCates.Values.FirstOrDefault(c => c.ProductCateId == productInfo.ProductCateId)?.ProductCateName,
-                    ProductTypeName = _productTypes.Values.FirstOrDefault(c => c.ProductTypeId == productInfo.ProductTypeId)?.ProductTypeName,
+                    ProductId = rootInfo.ProductId,
+                    ProductCode = rootInfo.ProductCode,
+                    ProductName = rootInfo.ProductName,
+                    Specification = rootInfo.Specification,
+                    UnitName = rootInfo.UnitName,
+                    ProductCateName = _productCates.Values.FirstOrDefault(c => c.ProductCateId == rootInfo.ProductCateId)?.ProductCateName,
+                    ProductTypeName = _productTypes.Values.FirstOrDefault(c => c.ProductTypeId == rootInfo.ProductTypeId)?.ProductTypeName,
                 };
 
                 bomInfo.Boms = new List<ProductBomPreviewOutput>();
 
-                GetBoms(rootProductId, 1, 1, "", new List<int>() { rootProductId }, bomInfo.Boms, boms);
+                GetBoms(rootInfo, rootInfo.ProductId, 1, 1, "", new List<int>() { rootProductId }, bomInfo.Boms, boms);
 
                 PreviewData.Add(bomInfo);
             }
         }
 
-        private void GetBoms(int productId, decimal quantity, int level, string numberOrder, IList<int> pathProductIds, IList<ProductBomPreviewOutput> lst, IList<ProductBomInput> boms)
+        private void GetBoms(SimpleProduct rootInfo, int productId, decimal quantity, int level, string numberOrder, IList<int> pathProductIds, IList<ProductBomPreviewOutput> lst, IList<ProductBomInput> boms)
         {
             var productBoms = boms.Where(b => b.ProductId == productId).ToList();
             var bomIndex = 1;
@@ -356,7 +370,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     Quantity = b.Quantity ?? 0,
                     Wastage = b.Wastage ?? 1,
                     TotalQuantity = totalQuantity,
-                    Description = "",
+                    Description = b.Description,
                     UnitName = childInfo.UnitName,
                     UnitId = childInfo.UnitId,
                     IsMaterial = isMaterial,
@@ -371,7 +385,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                 var pathProducts = pathProductIds.DeepClone();
                 pathProducts.Add(b.ChildProductId);
-                GetBoms(b.ChildProductId, totalQuantity, level + 1, bomNumOrder, pathProducts, lst, boms);
+                GetBoms(rootInfo, b.ChildProductId, totalQuantity, level + 1, bomNumOrder, pathProducts, lst, boms);
             }
         }
 
@@ -626,6 +640,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             public int? ProductTypeId { get; set; }
             public int? ProductCateId { get; set; }
+        }
+
+        private class ProductRootCodeDescription : Dictionary<string, string>
+        {
+            //public string RootProductCode { get; set; }
+            //  public string Description { get; set; }
         }
     }
 }
