@@ -68,6 +68,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
 
+                entity.Property(e => e.Specification).HasMaxLength(512);
+
                 entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.CuttingWorkSheet)

@@ -9,5 +9,6 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public decimal ProductQuantity { get; set; }
         public decimal WorkpieceQuantity { get; set; }
         public string Note { get; set; }
+        public string Specification { get; set; }
     }
 }
