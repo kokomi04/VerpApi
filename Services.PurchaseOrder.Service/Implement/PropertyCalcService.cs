@@ -314,6 +314,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var currentExcessMaterials = _purchaseOrderDBContext.CuttingExcessMaterial.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCuttingWorkSheet(propertyCalcId));
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
+
+            if(data.Any(s => s.CuttingWorkSheetDest.GroupBy(d => d.ProductId).Any(g => g.Count() > 1))) {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
+            }
+            if (data.Any(s => s.CuttingExcessMaterial.Any(m => string.IsNullOrEmpty(m.ExcessMaterial))))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
+            }
+            if (data.Any(s => s.CuttingExcessMaterial.GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có vật tư dư thừa bị trùng lặp");
+            }
             try
             {
                 // Xoá 
