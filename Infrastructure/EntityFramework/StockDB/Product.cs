@@ -13,8 +13,12 @@ namespace VErp.Infrastructure.EF.StockDB
             ProductBomChildProduct = new HashSet<ProductBom>();
             ProductBomProduct = new HashSet<ProductBom>();
             ProductCustomer = new HashSet<ProductCustomer>();
+            ProductMaterialProduct = new HashSet<ProductMaterial>();
+            ProductMaterialRootProduct = new HashSet<ProductMaterial>();
             ProductMaterialsConsumptionMaterialsConsumption = new HashSet<ProductMaterialsConsumption>();
             ProductMaterialsConsumptionProduct = new HashSet<ProductMaterialsConsumption>();
+            ProductPropertyProduct = new HashSet<ProductProperty>();
+            ProductPropertyRootProduct = new HashSet<ProductProperty>();
             ProductStockValidation = new HashSet<ProductStockValidation>();
             ProductUnitConversion = new HashSet<ProductUnitConversion>();
         }
@@ -67,8 +71,12 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual ICollection<ProductBom> ProductBomChildProduct { get; set; }
         public virtual ICollection<ProductBom> ProductBomProduct { get; set; }
         public virtual ICollection<ProductCustomer> ProductCustomer { get; set; }
+        public virtual ICollection<ProductMaterial> ProductMaterialProduct { get; set; }
+        public virtual ICollection<ProductMaterial> ProductMaterialRootProduct { get; set; }
         public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionMaterialsConsumption { get; set; }
         public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionProduct { get; set; }
+        public virtual ICollection<ProductProperty> ProductPropertyProduct { get; set; }
+        public virtual ICollection<ProductProperty> ProductPropertyRootProduct { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual ICollection<ProductUnitConversion> ProductUnitConversion { get; set; }
     }
