@@ -507,6 +507,7 @@ namespace VErp.Services.Master.Service.Category
             categoryField.RefTableCode = data.RefTableCode;
             categoryField.RefTableField = data.RefTableField;
             categoryField.RefTableTitle = data.RefTableTitle;
+            categoryField.IsImage = data.IsImage;
         }
 
         private void ValidateCategoryField(CategoryFieldModel data, CategoryField categoryField = null, int? categoryFieldId = null)

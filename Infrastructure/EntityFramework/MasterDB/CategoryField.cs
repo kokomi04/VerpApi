@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string RefTableTitle { get; set; }
         public int DecimalPlace { get; set; }
         public string DefaultValue { get; set; }
+        public bool? IsImage { get; set; }
 
         public virtual Category Category { get; set; }
     }

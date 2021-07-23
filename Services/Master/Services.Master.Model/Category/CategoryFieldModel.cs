@@ -38,6 +38,7 @@ namespace VErp.Services.Master.Model.Category
         public string RefTableTitle { get; set; }
         public int DecimalPlace { get; set; }
         public string DefaultValue { get; set; }
+        public bool? IsImage { get; set; }
 
         public bool Compare(CategoryField curField)
         {
@@ -63,7 +64,8 @@ namespace VErp.Services.Master.Model.Category
                 RefTableField == curField.RefTableField &&
                 RefTableTitle == curField.RefTableTitle &&
                 DecimalPlace == curField.DecimalPlace &&
-                DefaultValue == curField.DefaultValue;
+                DefaultValue == curField.DefaultValue&&
+                IsImage == curField.IsImage;
 
         }
     }
