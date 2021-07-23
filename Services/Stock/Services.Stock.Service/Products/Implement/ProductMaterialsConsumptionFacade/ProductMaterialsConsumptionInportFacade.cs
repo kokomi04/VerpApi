@@ -22,7 +22,7 @@ using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade
 {
-   
+
 
     public class ProductMaterialsConsumptionInportFacade
     {
@@ -68,7 +68,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
         public ProductMaterialsConsumptionInportFacade SetService(IProductBomService productBomService)
         {
-            _productBomService= productBomService;
+            _productBomService = productBomService;
             return this;
         }
 
@@ -122,7 +122,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         {
             var hasGreatThanTwoUsageProductUsingMaterialConsumption = _importData
                 .Where(x => !string.IsNullOrWhiteSpace(x.ProductCode))
-                .GroupBy(x => new {x.ProductCode, GroupTitle = x.GroupTitle.NormalizeAsInternalName()})
+                .GroupBy(x => new { x.ProductCode, GroupTitle = x.GroupTitle.NormalizeAsInternalName() })
                 .Where(x => x.GroupBy(y => y.UsageProductCode).Where(y => y.Count() > 1).Count() > 1)
                 .Select(x => new
                 {
@@ -178,7 +178,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     oldMaterialConsumptions.ForEach(x => x.IsDeleted = true);
 
                     await _stockDbContext.SaveChangesAsync();
-                    
+
                     /* Thêm mới row data cũ */
                     foreach (var row in d)
                     {
@@ -203,7 +203,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                             Quantity = row.Quantity,
                             DepartmentId = department?.DepartmentId,
                             StepId = step?.StepId,
-                            ProductMaterialsConsumptionGroupId = _groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId
+                            ProductMaterialsConsumptionGroupId = _groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId,
+                            Description = row.Description
                         };
 
                         _stockDbContext.ProductMaterialsConsumption.Add(item);
@@ -222,7 +223,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                       .ToDictionary(u => u.Key, u => u.FirstOrDefault());
 
 
-            var importedUnits = _importData.SelectMany(p => new[] { p.UnitName}).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            var importedUnits = _importData.SelectMany(p => new[] { p.UnitName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
                 .GroupBy(t => t.NormalizeAsInternalName())
                 .ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
@@ -244,14 +245,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private async Task AddMissingProduct()
         {
             var importProducts = _importData.Select(p => new
-                {
-                    p.ProductCode,
-                    p.ProductName,
-                    p.UnitName,
-                    p.Specification,
-                    p.ProductCateName,
-                    p.ProductTypeCode
-                })
+            {
+                p.ProductCode,
+                p.ProductName,
+                p.UnitName,
+                p.Specification,
+                p.ProductCateName,
+                p.ProductTypeCode
+            })
                 .Where(p => !string.IsNullOrWhiteSpace(p.ProductCode))
                     .Distinct()
                     .ToList()
@@ -339,7 +340,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         {
             _productTypes = (await _stockDbContext.ProductType.AsNoTracking().ToListAsync()).GroupBy(t => t.IdentityCode.NormalizeAsInternalName()).ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
-            var newProductTypes = _importData.SelectMany(p => new[] { p.ProductTypeCode}).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            var newProductTypes = _importData.SelectMany(p => new[] { p.ProductTypeCode }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
                 .GroupBy(t => t.NormalizeAsInternalName())
                 .ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
@@ -362,7 +363,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         {
             _productCates = (await _stockDbContext.ProductCate.AsNoTracking().ToListAsync()).GroupBy(t => t.ProductCateName.NormalizeAsInternalName()).ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
-            var newProductCates = _importData.SelectMany(p => new[] { p.ProductCateName}).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            var newProductCates = _importData.SelectMany(p => new[] { p.ProductCateName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
                 .GroupBy(t => t.NormalizeAsInternalName())
                 .ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
@@ -381,11 +382,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             }
         }
 
-        private async Task AddMissingMaterialConsumptionGroup(){
-            _groupConsumptions =  (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync())
+        private async Task AddMissingMaterialConsumptionGroup()
+        {
+            _groupConsumptions = (await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().ToListAsync())
             .GroupBy(t => t.Title.NormalizeAsInternalName()).ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
-            var importGroups = _importData.SelectMany(p => new[] { p.GroupTitle}).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            var importGroups = _importData.SelectMany(p => new[] { p.GroupTitle }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
                 .GroupBy(t => t.NormalizeAsInternalName())
                 .ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
@@ -404,6 +406,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
             }
         }
-        
+
     }
 }

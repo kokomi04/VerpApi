@@ -19,5 +19,6 @@ namespace VErp.Services.Stock.Model.Product
         public decimal Quantity { get; set; }
         public int? StepId { get; set; }
         public int? DepartmentId { get; set; }
+        public string Description { get; set; }
     }
 }
