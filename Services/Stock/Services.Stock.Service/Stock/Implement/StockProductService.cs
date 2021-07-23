@@ -160,7 +160,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<StockProductListOutput>> StockProducts(int stockId, string keyword, IList<int> productTypeIds, IList<int> productCateIds, IList<EnumWarningType> stockWarningTypeIds, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var productQuery = (
                  from p in _stockContext.Product
                  select new
@@ -1157,7 +1157,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity(string keyword, IList<int> stockIds, IList<int> productTypeIds, IList<int> productCateIds, long bTime, long eTime, int page = 1, int size = int.MaxValue)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             IList<int> allowStockIds = stockIds?.Where(stockId => _currentContextService.StockIds.Contains(stockId))?.ToList();
             if (stockIds == null || stockIds.Count == 0)
             {
@@ -1178,7 +1178,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ).ConvertData<StockSumaryReportForm3Data>();
 
             var lstData = new List<StockSumaryReportForm03Output>();
-            var groupData = data.GroupBy(d => new { d.ProductId, d.ProductCode, d.ProductName }).ToList();
+            var groupData = data.GroupBy(d => new { d.ProductId, d.ProductCode, d.ProductName, d.UnitId }).ToList();
             foreach (var g in groupData)
             {
                 lstData.Add(new StockSumaryReportForm03Output()
@@ -1187,7 +1187,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = g.Key.ProductId,
                     ProductCode = g.Key.ProductCode,
                     ProductName = g.Key.ProductName,
-                    // UnitId = 0,
+                    UnitId = g.Key.UnitId,
 
                     // UnitName = "",
 
@@ -1206,7 +1206,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         RankNumber = p.RankNumber,
                         ProductId = g.Key.ProductId,
 
-                        UnitId = 0,
+                        //UnitId = 0,
                         PrimaryQuantityBefore = p.StartPrimaryRemaing ?? 0,
                         PrimaryQuantityInput = p.InPrimary ?? 0,
                         PrimaryQuantityOutput = p.OutPrimaryRemaing ?? 0,
