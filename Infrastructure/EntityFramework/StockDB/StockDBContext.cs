@@ -583,7 +583,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_BillOfMaterial_Product_ProductId");
             });
-          
+
 
             modelBuilder.Entity<ProductCate>(entity =>
             {
@@ -652,6 +652,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.MaterialsConsumption)

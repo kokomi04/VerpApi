@@ -150,7 +150,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     Quantity = row.Quantity,
                     DepartmentId = department?.DepartmentId,
                     StepId = step?.StepId,
-                    ProductMaterialsConsumptionGroupId = materialsConsumptionGroupId
+                    ProductMaterialsConsumptionGroupId = materialsConsumptionGroupId,
+                    Description= row.Description
                 };
 
                 _stockDbContext.ProductMaterialsConsumption.Add(item);

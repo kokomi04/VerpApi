@@ -19,7 +19,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 10;
+        private int maxColumnIndex = 11;
 
         private IEnumerable<ProductMaterialsConsumptionOutput> materialsConsumps;
 
@@ -98,6 +98,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             sheet.EnsureCell(fRow, 9).SetCellValue($"Mã bộ phận");
 
             sheet.EnsureCell(fRow, 10).SetCellValue($"Bộ phận");
+
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Ghi chú");
 
 
 
@@ -180,6 +182,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         sheet.EnsureCell(currentRow, 9, styleText).SetCellValue(department.DepartmentCode);
                         sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(department.DepartmentName);
                     }
+                    sheet.EnsureCell(currentRow, 11, styleText).SetCellValue(m.Description);
 
                     currentRow++;
                 }
