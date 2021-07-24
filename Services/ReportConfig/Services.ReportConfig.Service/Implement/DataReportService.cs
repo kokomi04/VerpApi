@@ -353,7 +353,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     foreach (var column in calSumColumns)
                     {
-                        var colData = row[column.Alias];
+                        var calcSumCol = column.CalcSumCol;
+                        if (string.IsNullOrWhiteSpace(calcSumCol))
+                            calcSumCol = column.Alias;
+                        var colData = row[calcSumCol];
                         if (!colData.IsNullObject())
                         {
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
@@ -464,7 +467,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     sql = sql.TSqlAppendCondition(filterCondition);
                 }
             }
-            
+
 
             string orderBy = reportInfo?.OrderBy ?? "";
 
@@ -520,7 +523,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         foreach (var column in calSumColumns)
                         {
-                            var colData = row[column.Alias];
+                            var calcSumCol = column.CalcSumCol;
+                            if (string.IsNullOrWhiteSpace(calcSumCol))
+                                calcSumCol = column.Alias;
+                            var colData = row[calcSumCol];
 
                             if (!colData.IsNullObject())
                             {
@@ -546,11 +552,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         foreach (var column in calSumColumns)
                         {
-                            var colData = row[column.Alias];
+                            var calcSumCol = column.CalcSumCol;
+                            if (string.IsNullOrWhiteSpace(calcSumCol))
+                                calcSumCol = column.Alias;
+                            var colData = row[calcSumCol];
 
                             if (!colData.IsNullObject())
                             {
-                                totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(row[column.Alias]);
+                                totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                             }
                         }
                     }
@@ -706,7 +715,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             foreach (var column in columns.Where(c => c.IsCalcSum))
             {
-                totalSql.Append($", SUM({column.Alias}) AS {column.Alias}");
+                var calcSumCol = column.CalcSumCol;
+                if (string.IsNullOrWhiteSpace(calcSumCol))
+                    calcSumCol = column.Alias;
+                totalSql.Append($", SUM({calcSumCol}) AS {column.Alias}");
             }
             totalSql.Append($" FROM {view}");
             if (!string.IsNullOrEmpty(filterCondition))
