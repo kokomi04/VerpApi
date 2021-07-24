@@ -19,6 +19,7 @@ namespace Verp.Services.ReportConfig.Model
         public bool? IsArray { get; set; }
         public bool? IsRepeat { get; set; }
         public bool IsCalcSum { get; set; }
+        public string CalcSumCol { get; set; }
         public bool IsHidden { get; set; }
         public string RowSpan { get; set; }
         public string ColSpan { get; set; }
