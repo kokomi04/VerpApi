@@ -95,12 +95,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             numberOfColumns = columns.Count;
 
-            WriteHeader();
+            await WriteHeader();
 
             WriteBody();
 
             WriteFooter();
-           
+
 
 
             if (sheet.LastRowNum < 1000)
@@ -140,7 +140,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return (stream, fileName, contentType);
         }
 
-        private void WriteHeader()
+        private async Task WriteHeader()
         {
             if (_model.Header != null)
             {
@@ -158,8 +158,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 if (_model.Header.fLogoId > 0)
                 {
-#if !DEBUG
                     var fileInfo = await _physicalFileService.GetSimpleFileInfo(_model.Header.fLogoId);
+#if !DEBUG
+                   
                     var pictureType = GetPictureType(Path.GetExtension(fileInfo.FileName).ToLower());
 
                     if (fileInfo != null && pictureType != PictureType.None)
@@ -488,7 +489,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
                 }
 
-                
+
                 for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
                 {
                     var col = conditionHiddenColumns[conditionIndex];
@@ -539,9 +540,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 ExcelRow sumRow = table.NewRow();
                 foreach (var (index, column) in sumCalc)
                 {
-                    
+
                     var dataType = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
-                    
+
                     var columnName = (index + 1).GetExcelColumnName();
 
                     var conditionColum = conditionHiddenColumns.FirstOrDefault(c => c == column.CalcSumConditionCol);
