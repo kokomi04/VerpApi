@@ -14,7 +14,7 @@ using VErp.Services.Master.Service.Guide;
 
 namespace VErpApi.Controllers.System
 {
-    [Route("api/guides")]
+    [Route("api/ReuseContent")]
     public class ReuseContentController : VErpBaseController
     {
         private readonly IReuseContentService _reuseContentService;
