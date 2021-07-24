@@ -73,6 +73,14 @@ namespace VErp.Infrastructure.ServiceCore.Facade
             this.messageResourceFormatData = messageResourceFormatData;
             return this;
         }
+
+        public ObjectActivityLogModelBuilder<T> MessageResourceFormatDatas(params object[] datas)
+        {
+            this.messageResourceFormatData = datas;
+            return this;
+        }
+
+
         public ObjectActivityLogModelBuilder<T> JsonData(string jsonData)
         {
             this.jsonData = jsonData;

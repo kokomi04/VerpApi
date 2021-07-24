@@ -10,6 +10,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 {
     public interface IProductionOrderService
     {
+        Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes);
+
         Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null);
         Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId);
         Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId);

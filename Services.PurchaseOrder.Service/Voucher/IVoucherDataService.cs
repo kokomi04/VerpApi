@@ -40,7 +40,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size);
 
-        Task<IList<NonCamelCaseDictionary>> OrderByCodes(IList<string> orderCodes);
+        Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IList<string> orderCodes);
 
         Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds);
     }

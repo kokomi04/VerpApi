@@ -264,5 +264,8 @@ namespace VErp.Commons.Enums.MasterEnum
         PropertyCalc = 402,
 
 
+        [Description("Nội dung thường xuyên sử dụng")]
+        ReuseContent = 501,
+
     }
 }
