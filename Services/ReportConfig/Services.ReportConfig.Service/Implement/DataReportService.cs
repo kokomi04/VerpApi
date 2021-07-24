@@ -849,7 +849,22 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             if (string.IsNullOrWhiteSpace(CalcSumConditionCol) || !row.ContainsKey(CalcSumConditionCol)) return true;
 
-            return (row[CalcSumConditionCol] as bool?) ?? true;
+            if (row[CalcSumConditionCol] is bool calc)
+            {
+                return calc;
+            }
+
+            if (row[CalcSumConditionCol] is int calcNum)
+            {
+                return calcNum != 0;
+            }
+
+            if (row[CalcSumConditionCol] is long calcNumLong)
+            {
+                return calcNumLong != 0;
+            }
+
+            return !row[CalcSumConditionCol].IsNullObject();
         }
 
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
