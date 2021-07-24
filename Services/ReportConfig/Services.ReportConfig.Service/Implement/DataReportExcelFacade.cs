@@ -14,6 +14,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -332,6 +333,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
+        
         private void GenerateDataTable(ReportType reportInfo)
         {
             var sheet = xssfwb.GetSheet(sheetName);
@@ -365,9 +367,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 //customCellStyles
                 ICellStyle rowStyle = null;
                 var rowStyleStr = "";
-                if (row.ContainsKey("$ROW_CSS_STYLE"))
+                if (row.ContainsKey(ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS))
                 {
-                    rowStyleStr = row["$ROW_CSS_STYLE"]?.ToString();
+                    rowStyleStr = row[ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS]?.ToString();
                     rowStyle = ParseCellStyle(sheet, null, rowStyleStr);
                 }
                 cellStyles[i + currentRow] = new ICellStyle[columns.Count];
@@ -382,9 +384,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
 
                     var cellStyleStr = "";
-                    if (row.ContainsKey("$" + field.Alias + "_CSS_STYLE"))
+                    var cellStyleAlias = string.Format(ReportSpecialColumnConstants.ROW_COLUMN_CSS_STYLE_ALIAS_FORMAT, field.Alias);
+                    if (row.ContainsKey(cellStyleAlias))
                     {
-                        cellStyleStr = row["$" + field.Alias + "_CSS_STYLE"]?.ToString();
+                        cellStyleStr = row[cellStyleAlias]?.ToString();
                     }
 
                     ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
