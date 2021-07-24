@@ -47,6 +47,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
         public virtual DbSet<PrintConfigCustom> PrintConfigCustom { get; set; }
         public virtual DbSet<PrintConfigStandard> PrintConfigStandard { get; set; }
+        public virtual DbSet<ReuseContent> ReuseContent { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
@@ -600,6 +601,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.TemplateFileName).HasMaxLength(128);
 
                 entity.Property(e => e.Title).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<ReuseContent>(entity =>
+            {
+                entity.Property(e => e.Key).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
             });
 
             modelBuilder.Entity<Role>(entity =>

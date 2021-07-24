@@ -2261,7 +2261,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
             var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderDetailByPurchasingRequest",
                 new[]
@@ -2279,7 +2279,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         }
 
 
-        public async Task<IList<NonCamelCaseDictionary>> OrderByCodes(IList<string> orderCodes)
+        public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IList<string> orderCodes)
         {
             // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
             var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderGetByCodes",
@@ -2288,7 +2288,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                    orderCodes.ToSqlParameter("@OrderCodes")
                 });
 
-            return data.ConvertData();
+            return data.ConvertData<VoucherOrderDetailSimpleModel>();
         }
 
         public async Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds)

@@ -52,6 +52,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _productHelperService = productHelperService;
         }
 
+        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
+        {
+            var filter = new SingleClause()
+            {
+                DataType = EnumDataType.Text,
+                FieldName = nameof(ProductionOrderListModel.ProductionOrderCode),
+                Operator = EnumOperator.InList,
+                Value = productionOrderCodes
+            };
+
+            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, filter);
+            return result.List;
+        }
+
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
@@ -197,9 +211,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
-                if (data.ProductionOrderDetail.GroupBy(x=> new{x.ProductId, x.OrderCode})
-                    .Where(x=>x.Count() > 1)
-                    .Count() > 0) 
+                if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
+                    .Where(x => x.Count() > 1)
+                    .Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
 
                 CustomGenCodeOutputModel currentConfig = null;
@@ -250,7 +264,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 // Tạo đính kèm
-                foreach (var attach in data.ProductionOrderAttachment) {
+                foreach (var attach in data.ProductionOrderAttachment)
+                {
                     attach.ProductionOrderId = productionOrder.ProductionOrderId;
 
                     var entityAttach = _mapper.Map<ProductionOrderAttachment>(attach);
@@ -342,16 +357,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 var oldAttach = _manufacturingDBContext.ProductionOrderAttachment.Where(att => att.ProductionOrderId == productionOrderId).ToList();
 
-                foreach (var item in data.ProductionOrderAttachment) {
+                foreach (var item in data.ProductionOrderAttachment)
+                {
                     item.ProductionOrderId = productionOrderId;
                     var oldItem = oldAttach.Where(od => od.ProductionOrderAttachmentId == item.ProductionOrderAttachmentId).FirstOrDefault();
 
-                    if (oldItem != null) {
+                    if (oldItem != null)
+                    {
                         // Cập nhật
                         _mapper.Map(item, oldItem);
                         // Gỡ khỏi danh sách cũ
                         oldAttach.Remove(oldItem);
-                    } else {
+                    }
+                    else
+                    {
                         item.ProductionOrderAttachmentId = 0;
                         // Tạo mới
                         var entity = _mapper.Map<ProductionOrderAttachment>(item);
@@ -360,7 +379,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 await _manufacturingDBContext.SaveChangesAsync();
-          
+
                 // Xóa chi tiết
                 foreach (var item in oldDetail)
                 {
@@ -368,7 +387,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 // Xóa đính kèm
-                foreach (var item in oldAttach) {
+                foreach (var item in oldAttach)
+                {
                     item.IsDeleted = true;
                 }
 
@@ -433,7 +453,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 // Xóa chi tiết
-                foreach (var item in attach) {
+                foreach (var item in attach)
+                {
                     item.IsDeleted = true;
                 }
 
@@ -500,7 +521,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.ProductionOrderStatus == EnumProductionStatus.Finished)
                 {
                     // Check nhận đủ số lượng đầu ra
-                  
+
                     var inputInventories = data.Inventories;
 
                     bool isFinish = true;
