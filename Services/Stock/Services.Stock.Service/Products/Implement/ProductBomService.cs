@@ -70,7 +70,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var parammeters = new SqlParameter[]
             {
-                new SqlParameter("@ProductIds", SqlDBHelper.ConvertToIntValues(productIds)) { SqlDbType = SqlDbType.Structured, TypeName = "dbo._INTVALUES" }
+                productIds.ToSqlParameter("@ProductIds")
             };
 
             var resultData = await _stockDbContext.ExecuteDataProcedure("asp_GetProductElements", parammeters);

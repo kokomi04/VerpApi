@@ -186,7 +186,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .Where(s => s.PropertyCalcId == propertyCalcId)
                 .ToListAsync();
 
-
             foreach (var item in info.Summary)
             {
                 // Nếu là chi tiết
