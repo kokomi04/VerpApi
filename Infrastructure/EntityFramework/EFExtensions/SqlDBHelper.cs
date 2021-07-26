@@ -113,7 +113,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var st = new Stopwatch();
                 st.Start();
-               
+
                 using (var command = dbContext.Database.GetDbConnection().CreateCommand())
                 {
                     command.CommandType = cmdType;
@@ -223,7 +223,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 Direction = sqlParameter.Direction,
                 TypeName = sqlParameter.TypeName,
                 DbType = sqlParameter.DbType,
-                Size = sqlParameter.Size
+                Size = sqlParameter.Size,
+                SqlDbType = sqlParameter.SqlDbType
             };
         }
 
