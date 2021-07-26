@@ -7,6 +7,7 @@ using Microsoft.SqlServer.Management.SqlParser.Parser;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
@@ -24,6 +25,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
     {
         private const string SubIdParam = "@SubId";
         private const string SubsidiaryIdColumn = "SubsidiaryId";
+        private static ILogger _logger = Utils.LoggerFactory.CreateLogger(typeof(SqlDBHelper));
 
         private static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
         {
@@ -105,14 +107,25 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
+            var dbParams = parammeters.CloneSqlParams();
+
             try
             {
+                var st = new Stopwatch();
+                st.Start();
+               
                 using (var command = dbContext.Database.GetDbConnection().CreateCommand())
                 {
                     command.CommandType = cmdType;
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
-                    foreach (var param in parammeters)
+
+                    if (dbContext is ISubsidiayRequestDbContext requestDbContext)
+                    {
+                        dbParams.Add(requestDbContext.CreateSubSqlParam());
+                    }
+
+                    foreach (var param in dbParams)
                     {
                         if (param.Value.IsNullObject())
                         {
@@ -121,10 +134,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         command.Parameters.Add(param);
                     }
 
-                    if (dbContext is ISubsidiayRequestDbContext requestDbContext)
-                    {
-                        command.Parameters.Add(requestDbContext.CreateSubSqlParam());
-                    }
 
                     if (timeout.HasValue)
                     {
@@ -142,13 +151,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         DataTable dt = new DataTable();
                         dt.Load(result);
+                        st.Stop();
+                        _logger.LogInformation($"Executed DbCommand QueryDataTable ({st.ElapsedMilliseconds}ms) CommandTimeout={command.CommandTimeout}, CommandType = {command.CommandType} [Parametters={string.Join(", ", dbParams.Select(p => p.ParameterName + "=" + p.Value).ToArray())}], CommandText={command.CommandText}");
                         return dt;
                     }
                 }
+
+
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", dbParams?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 
@@ -495,7 +508,18 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{aliasField} {ope} (");
                         int inSuffix = 0;
                         var paramNames = new StringBuilder();
-                        foreach (var value in (clause.Value as string).Split(","))
+                        IList<string> values = new List<string>();
+                        if (clause.Value is IList<string> lst)
+                        {
+                            values = lst;
+                        }
+
+                        if (clause.Value is string str)
+                        {
+                            values = (str ?? "").Split(",").Select(v => v.Trim()).ToList();
+                        }
+
+                        foreach (var value in values)
                         {
                             var inParamName = $"{paramName}_{inSuffix}";
                             paramNames.Append(inParamName);

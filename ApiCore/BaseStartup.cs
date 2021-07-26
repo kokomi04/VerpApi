@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Text.Json;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Middleware;
@@ -184,7 +185,7 @@ namespace VErp.Infrastructure.ApiCore
 
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
-            
+
             app.UseMiddleware<CultureInfoMiddleware>();
             app.UseMiddleware<RequestLogMiddleware>();
 
@@ -264,7 +265,7 @@ namespace VErp.Infrastructure.ApiCore
                 config.MapControllers();
             });
 
-
+            Utils.LoggerFactory = loggerFactory;
         }
 
         private void ConfigureAuthService(IServiceCollection services)
