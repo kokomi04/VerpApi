@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
@@ -27,6 +28,9 @@ namespace VErp.Commons.Library
 {
     public static class Utils
     {
+        private static ILoggerFactory _loggerFactory = new LoggerFactory();
+        public static ILoggerFactory LoggerFactory { get { return _loggerFactory; } set { _loggerFactory = value; } }
+
         public static string RemoveDiacritics(this string str)
         {
             if (str == null) return null;
