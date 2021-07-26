@@ -38,6 +38,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
+        public virtual DbSet<ProductionOrderStatus> ProductionOrderStatus { get; set; }
         public virtual DbSet<ProductionProcessMold> ProductionProcessMold { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
@@ -71,6 +72,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<OutsourceOrder>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.OutsourceOrderCode })
+                    .HasName("IX_OutsourceOrder_OutsourceOrderCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
@@ -89,25 +95,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.OutsourceTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.ProviderAddress).HasMaxLength(256);
-
-                entity.Property(e => e.ProviderName).HasMaxLength(128);
-
-                entity.Property(e => e.ProviderPhone).HasMaxLength(20);
-
-                entity.Property(e => e.ProviderReceiver).HasMaxLength(128);
-
                 entity.Property(e => e.Suppliers)
                     .HasMaxLength(1024)
                     .HasComment("");
-
-                entity.Property(e => e.TransportToAddress).HasMaxLength(256);
-
-                entity.Property(e => e.TransportToCompany).HasMaxLength(128);
-
-                entity.Property(e => e.TransportToPhone).HasMaxLength(20);
-
-                entity.Property(e => e.TransportToReceiver).HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
@@ -120,7 +110,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Price).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.Tax).HasColumnType("decimal(18, 5)");
 
@@ -146,6 +140,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<OutsourcePartRequest>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.OutsourcePartRequestCode })
+                    .HasName("IX_OutsourcePartRequest_OutsourcePartRequestCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
@@ -191,6 +190,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<OutsourceStepRequest>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.OutsourceStepRequestCode })
+                    .HasName("IX_OutsourceStepRequest_OutsourceStepRequestCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
@@ -368,6 +372,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionMaterialsRequirement>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.RequirementCode })
+                    .HasName("IX_ProductionMaterialsRequirement_RequirementCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.RequirementCode)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -400,6 +409,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionOrder>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductionOrderCode })
+                    .HasName("IX_ProductionOrder_ProductionOrderCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Date).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Description).HasMaxLength(128);
@@ -476,6 +490,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
             });
 
+            modelBuilder.Entity<ProductionOrderStatus>(entity =>
+            {
+                entity.Property(e => e.ProductionOrderStatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.Description).HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderStatusName).HasMaxLength(128);
+            });
 
             modelBuilder.Entity<ProductionProcessMold>(entity =>
             {
@@ -713,6 +735,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<Step>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.HandoverTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ShrinkageRate).HasColumnType("decimal(18, 5)");

@@ -360,7 +360,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return new ProductPartialSellModel()
             {
-                CustomerId = productInfo.CustomerId,
+                //CustomerId = productInfo.CustomerId,
                 Measurement = productInfo.Measurement,
                 PackingMethod = productInfo.PackingMethod,
                 GrossWeight = productInfo.GrossWeight,
@@ -384,7 +384,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 var productCustomers = await _stockContext.ProductCustomer.Where(p => p.ProductId == productId).ToListAsync();
 
-                productInfo.CustomerId = model.CustomerId;
+                //productInfo.CustomerId = model.CustomerId;
                 productInfo.Measurement = model.Measurement;
                 productInfo.PackingMethod = model.PackingMethod;
                 productInfo.GrossWeight = model.GrossWeight;

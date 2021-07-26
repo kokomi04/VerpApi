@@ -17,14 +17,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string OutsourceOrderCode { get; set; }
         public DateTime OutsourceOrderDate { get; set; }
         public DateTime OutsourceOrderFinishDate { get; set; }
-        public string ProviderName { get; set; }
-        public string ProviderReceiver { get; set; }
-        public string ProviderAddress { get; set; }
-        public string ProviderPhone { get; set; }
-        public string TransportToReceiver { get; set; }
-        public string TransportToCompany { get; set; }
-        public string TransportToAddress { get; set; }
-        public string TransportToPhone { get; set; }
         public string OutsourceRequired { get; set; }
         public string Note { get; set; }
         public decimal FreightCost { get; set; }
@@ -39,6 +31,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int? CustomerId { get; set; }
         public string DeliveryDestination { get; set; }
         public string Suppliers { get; set; }
+        public long? AttachmentFileId { get; set; }
+        public string ExcessMaterialNotes { get; set; }
 
         public virtual ICollection<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual ICollection<OutsourceOrderMaterials> OutsourceOrderMaterials { get; set; }

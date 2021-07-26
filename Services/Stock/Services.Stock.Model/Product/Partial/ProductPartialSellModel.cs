@@ -7,7 +7,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
 {
     public class ProductPartialSellModel
     {
-        public int? CustomerId { get; set; }
+        //public int? CustomerId { get; set; }
         public decimal? Measurement { get; set; }
         public string PackingMethod { get; set; }
         public decimal? GrossWeight { get; set; }

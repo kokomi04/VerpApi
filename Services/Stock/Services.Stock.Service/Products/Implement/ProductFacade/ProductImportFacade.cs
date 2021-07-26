@@ -156,6 +156,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             {
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy khách hàng có mã {value} trong hệ thống!");
                             }
+                            entity.CustomerId = customerByCodes[code].Value;
                         }
 
                         return false;
@@ -168,6 +169,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             {
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy khách hàng có tên {value} trong hệ thống!");
                             }
+
+                            entity.CustomerId = customerByNames[code].Value;
                         }
 
                         return false;
@@ -405,8 +408,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
             var cateName = row.ProductCate.NormalizeAsInternalName();
 
-            product.UpdateIfAvaiable(p => p.CustomerId, customerByCodes, row.CustomerCode.NormalizeAsInternalName());
-            product.UpdateIfAvaiable(p => p.CustomerId, customerByNames, row.CustomerName.NormalizeAsInternalName());
+            //product.UpdateIfAvaiable(p => p.CustomerId, customerByCodes, row.CustomerCode.NormalizeAsInternalName());
+            //product.UpdateIfAvaiable(p => p.CustomerId, customerByNames, row.CustomerName.NormalizeAsInternalName());
 
 
             product.UpdateIfAvaiable(p => p.ProductCode, row.ProductCode);
@@ -516,7 +519,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     //existedItem.UpdateIfAvaiable(v=>v.StockId)
                 }
             }
-            var productCustomers = ParseProductCustomers(row, product.ProductId, product.CustomerId);
+            var productCustomers = ParseProductCustomers(row, product.ProductId);
             foreach (var productCustomer in productCustomers)
             {
                 var existedItem = product.ProductCustomer.FirstOrDefault(s => s.CustomerId == productCustomer.CustomerId);
@@ -527,6 +530,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 else
                 {
                     existedItem.UpdateIfAvaiable(v => v.CustomerProductCode, productCustomer.CustomerProductCode);
+                    existedItem.UpdateIfAvaiable(v => v.CustomerProductName, productCustomer.CustomerProductName);
                 }
             }
 
@@ -580,7 +584,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private IList<ProductCustomer> ParseProductCustomers(ProductImportModel row, int productId, int? customerId)
+        private IList<ProductCustomer> ParseProductCustomers(ProductImportModel row, int productId)
         {
             return string.IsNullOrWhiteSpace(row.CustomerProductCode) ? new List<ProductCustomer>() :
                 new List<ProductCustomer>()
@@ -588,8 +592,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                            new ProductCustomer()
                            {
                                ProductId = productId,
-                               CustomerId = customerId,
-                               CustomerProductCode = row.CustomerProductCode
+                               CustomerId = row.CustomerId,
+                               CustomerProductCode = row.CustomerProductCode,
+                               CustomerProductName = row.CustomerProductName
                            }
                 };
 

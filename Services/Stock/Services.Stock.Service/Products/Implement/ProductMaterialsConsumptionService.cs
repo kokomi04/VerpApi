@@ -101,7 +101,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductId = productId,
                     DepartmentId = x.DepartmentId,
                     StepId = x.StepId,
-                    UnitId = x.UnitId
+                    UnitId = x.UnitId,
+                    Description = x.Description
                 });
 
             materialsConsumption.AddRange(exceptMaterialsConsumption);
@@ -111,6 +112,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 && x.MaterialsConsumptionId == m.MaterialsConsumptionId).ToList();
                 m.BomQuantity = 1;
                 m.TotalQuantityInheritance = m.MaterialsConsumptionInheri.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
+                //m.Description = string.Join(", ", m.MaterialsConsumptionInheri.Select(d => d.Description).Distinct().ToArray());                
             }
 
             return materialsConsumption;
@@ -137,6 +139,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         DepartmentId = x.DepartmentId,
                         StepId = x.StepId,
                         UnitId = x.UnitId,
+                        Description = x.Description
                     });
 
                 materials.AddRange(exceptMaterials);
@@ -313,16 +316,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream, int materialsConsumptionGroupId)
+        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream)
         {
             var facade = new ProductMaterialsConsumptionInportFacade(_stockDbContext
                 , _organizationHelperService
                 , _manufacturingHelperService
                 , _activityLogService)
                 .SetService(_productService)
+                .SetService(_productBomService)
                 .SetService(_unitService);
 
-            return await facade.ProcessData(mapping, stream, productId, materialsConsumptionGroupId);
+            return await facade.ProcessData(mapping, stream, productId);
         }
 
         public async Task<long> AddProductMaterialsConsumption(int productId, ProductMaterialsConsumptionInput model)

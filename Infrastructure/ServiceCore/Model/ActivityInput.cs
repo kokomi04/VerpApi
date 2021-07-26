@@ -14,6 +14,8 @@ namespace VErp.Infrastructure.ServiceCore.Model
         public EnumMessageType MessageTypeId { get; set; }
         public long ObjectId { get; set; }
         public string Message { get; set; }
+        public string MessageResourceName { get; set; }
+        public string MessageResourceFormatData { get; set; }
         public string Data { get; set; }
         public int SubsidiaryId { get; set; }
     }

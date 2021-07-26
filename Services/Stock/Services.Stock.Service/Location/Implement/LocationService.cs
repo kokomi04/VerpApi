@@ -118,6 +118,8 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
         public async Task<PageData<LocationOutput>> GetList(int stockId, string keyword, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = from l in _stockDbContext.Location
                         join s in _stockDbContext.Stock on l.StockId equals s.StockId
                         select new LocationOutput

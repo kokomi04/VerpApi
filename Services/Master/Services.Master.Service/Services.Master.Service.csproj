@@ -22,4 +22,19 @@
     <ProjectReference Include="..\Services.Master.Model\Services.Master.Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Resources\ReuseContent\ReuseContentActivityMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ReuseContentActivityMessage.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\ReuseContent\ReuseContentActivityMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ReuseContentActivityMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

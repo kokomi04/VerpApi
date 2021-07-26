@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Product
 {
@@ -21,18 +22,30 @@ namespace VErp.Services.Stock.Model.Product
 
         public decimal Quantity { get; set; }
         public decimal Wastage { get; set; }
+        public decimal TotalQuantity { get; set; }
+
         public string Description { get; set; }
         public string UnitName { get; set; }
         public int UnitId { get; set; }
         public bool IsMaterial { get; set; }
-        public string NumberOrder { get; set; }      
+        public string NumberOrder { get; set; }
         public int ProductUnitConversionId { get; set; }
         public int DecimalPlace { get; set; }
         public int? InputStepId { get; set; }
         public int? OutputStepId { get; set; }
+     
     }
 
-   
+
+    public class ProductBomPreviewOutput: ProductBomOutputBase
+    {
+      
+
+        public IList<int> PropertyIds { get; set; }
+
+        public int[] PathProductIds { get; set; }
+    }
+
     public class ProductBomEntity : ProductBomOutputBase
     {
         public string PathProductIds { get; set; }
@@ -41,15 +54,18 @@ namespace VErp.Services.Stock.Model.Product
     public class ProductBomOutput : ProductBomOutputBase, IMapFrom<ProductBomEntity>
     {
         public int[] PathProductIds { get; set; }
+        public IList<int> Properties { get; set; }
+
+        public ProductBomOutput()
+        {
+            Properties = new List<int>();
+        }
         public virtual void Mapping(Profile profile)
         {
             profile.CreateMap<ProductBomEntity, ProductBomOutput>()
                 .ForMember(m => m.PathProductIds, v => v.Ignore());
         }
     }
-
-
-
 
     public class ProductBomImportModel
     {
@@ -106,7 +122,7 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Đánh dấu là nguyên liệu đầu vào (Có, Không)")]
         public bool IsMaterial { get; set; }
-        
+
         //[Display(Name = "Thuộc công đoạn đầu vào nào?")]
         //public int? InputStepId { get; set; }
 
@@ -118,5 +134,29 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Thuộc công đoạn ra nào?", GroupName = ChildProductGroup)]
         public string OutputStepName { get; set; }
+
+        [Display(Name = "Mô tả cho chi tiết trong BOM (cách lắp ráp,...)")]
+        public string Description { get; set; }
+
+        [FieldDataIgnore]
+        public ISet<int> Properties { get; set; }
+    }
+
+    public class ProductBomByProduct
+    {
+        public ProductRootBomInfo Info { get; set; }
+        public IList<ProductBomPreviewOutput> Boms { get; set; }
+    }
+
+
+    public class ProductRootBomInfo
+    {
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string UnitName { get; set; }
+        public string ProductTypeName { get; set; }
+        public string ProductCateName { get; set; }
+        public string Specification { get; set; }
     }
 }

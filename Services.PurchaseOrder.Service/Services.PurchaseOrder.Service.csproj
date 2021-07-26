@@ -17,4 +17,28 @@
     <ProjectReference Include="..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Resources\PurchasingRequestActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchasingRequestActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Resources\PurchasingRequestMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchasingRequestMessage.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\PurchasingRequestActivityLogMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>PurchasingRequestActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\PurchasingRequestMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>PurchasingRequestMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

@@ -157,6 +157,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<PageData<BarcodeConfigListOutput>> GetList(string keyword, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = (from c in _masterContext.BarcodeConfig select c);
             if (!string.IsNullOrWhiteSpace(keyword))
             {

@@ -143,17 +143,23 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productCate;
         }
 
-        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, string orderBy, bool asc, Clause filters = null)
         {
-            var query = (from c in _stockContext.ProductCate select c);
+            var query = _stockContext.ProductCate.Include(c => c.ParentProductCate).AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = from c in query
-                        where c.ProductCateName.Contains(keyword)
-                        select c;
+                query = query.Where(c => c.ProductCateName.Contains(keyword));
             }
             query = query.InternalFilter(filters);
             var total = await query.CountAsync();
+            if (string.IsNullOrEmpty(orderBy))
+            {
+                query = query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder);
+            }
+            else
+            {
+                query = query.InternalOrderBy<ProductCate>(orderBy, asc);
+            }
 
             var lst = query.Select(c => new ProductCateOutput()
             {
@@ -164,12 +170,11 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 IsDefault = c.IsDefault
             });
 
-            lst = lst.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder);
 
             if (size > 0)
             {
                 lst = lst.Skip((page - 1) * size).Take(size);
-            }           
+            }
 
             return (await lst.ToListAsync(), total);
         }

@@ -135,8 +135,8 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
 
         [HttpPost("OrderByCodes")]
-        [VErpAction(EnumActionType.View)]
-        public async Task<IList<NonCamelCaseDictionary>> OrderByCodes([FromBody] IList<string> orderCodes)
+        [VErpAction(EnumActionType.View)]        
+        public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes([FromBody] IList<string> orderCodes)
         {
             return await _voucherDataService.OrderByCodes(orderCodes);
         }

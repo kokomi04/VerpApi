@@ -141,7 +141,8 @@ namespace VErp.Services.Master.Service.Config.Implement
         private IList<PrintConfigCustom> _printConfigs;
         public async Task<PageData<ObjectPrintConfigSearch>> GetObjectPrintConfigSearch(string keyword, int page, int size)
         {
-            keyword = keyword?.ToLower();
+            keyword = (keyword?? "").Trim().ToLower();
+
             _objectPrintConfigMappings = await _masterDbContext.ObjectPrintConfigMapping.AsNoTracking().ToListAsync();
             _printConfigs = await _masterDbContext.PrintConfigCustom.AsNoTracking().ToListAsync();
 

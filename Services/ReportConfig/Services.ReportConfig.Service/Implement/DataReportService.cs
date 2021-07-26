@@ -354,7 +354,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var column in calSumColumns)
                     {
                         var colData = row[column.Alias];
-                        if (!colData.IsNullObject())
+                        if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
                         {
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                         }
@@ -464,7 +464,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     sql = sql.TSqlAppendCondition(filterCondition);
                 }
             }
-            
+
 
             string orderBy = reportInfo?.OrderBy ?? "";
 
@@ -520,9 +520,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         foreach (var column in calSumColumns)
                         {
+
                             var colData = row[column.Alias];
 
-                            if (!colData.IsNullObject())
+                            if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
                             {
                                 var decimalValue = Convert.ToDecimal(colData);
                                 if (!groupColumAlias.Contains(column.Alias))
@@ -546,11 +547,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         foreach (var column in calSumColumns)
                         {
+
                             var colData = row[column.Alias];
 
-                            if (!colData.IsNullObject())
+                            if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
                             {
-                                totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(row[column.Alias]);
+                                totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                             }
                         }
                     }
@@ -706,7 +708,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             foreach (var column in columns.Where(c => c.IsCalcSum))
             {
-                totalSql.Append($", SUM({column.Alias}) AS {column.Alias}");
+                if (string.IsNullOrWhiteSpace(column.CalcSumConditionCol))
+                {
+                    totalSql.Append($", SUM({column.Alias}) AS {column.Alias}");
+                }
+                else
+                {
+                    totalSql.Append($", SUM(CASE WHEN {column.CalcSumConditionCol} = 1 THEN {column.Alias} ELSE NULL END) AS {column.Alias}");
+                }
             }
             totalSql.Append($" FROM {view}");
             if (!string.IsNullOrEmpty(filterCondition))
@@ -834,6 +843,28 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             return selectSql.ToString();
+        }
+
+        private bool IsCalcSum(NonCamelCaseDictionary row, string CalcSumConditionCol)
+        {
+            if (string.IsNullOrWhiteSpace(CalcSumConditionCol) || !row.ContainsKey(CalcSumConditionCol)) return true;
+
+            if (row[CalcSumConditionCol] is bool calc)
+            {
+                return calc;
+            }
+
+            if (row[CalcSumConditionCol] is int calcNum)
+            {
+                return calcNum != 0;
+            }
+
+            if (row[CalcSumConditionCol] is long calcNumLong)
+            {
+                return calcNumLong != 0;
+            }
+
+            return !row[CalcSumConditionCol].IsNullObject();
         }
 
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)

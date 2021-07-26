@@ -57,6 +57,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
             return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size);
@@ -96,6 +97,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{customerId}")]
+        [GlobalApi]
         public async Task<CustomerModel> GetCustomerInfo([FromRoute] int customerId)
         {
             return await _customerService.GetCustomerInfo(customerId);

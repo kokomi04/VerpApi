@@ -16,7 +16,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long? OutsourceRequestId { get; set; }
         public long? ProductionStepLinkDataId { get; set; }
 
-
         public virtual OutsourceOrder OutsourceOrder { get; set; }
     }
 }

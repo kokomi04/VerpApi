@@ -28,6 +28,10 @@ using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using Org.BouncyCastle.Ocsp;
 using Verp.Cache.RedisCache;
+using VErp.Services.PurchaseOrder.Service.Resources;
+using VErp.Infrastructure.ServiceCore.Facade;
+using System.Linq.Expressions;
+using VErp.Commons.ObjectExtensions.Extensions;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -36,12 +40,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        //private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
         private readonly IProductHelperService _productHelperService;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly ObjectActivityLogFacade _purchasingRequestActivityLog;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -58,12 +63,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
+            //_activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
             _productHelperService = productHelperService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _purchasingRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchasingRequest);
         }
 
 
@@ -74,7 +80,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .AsNoTracking()
                 .FirstOrDefaultAsync(r => r.PurchasingRequestId == purchasingRequestId);
 
-            if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
+            if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
 
             var details = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking()
                 .Where(d => d.PurchasingRequestId == purchasingRequestId)
@@ -174,6 +180,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PurchasingRequestOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchasingRequestStatus? purchasingRequestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
 
             var query = from r in _purchaseOrderDBContext.PurchasingRequest
                         join d in _purchaseOrderDBContext.PurchasingRequestDetail on r.PurchasingRequestId equals d.PurchasingRequestId
@@ -347,7 +354,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     if (!model.MaterialCalcId.HasValue || model.MaterialCalcId <= 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams);
+                        throw GeneralCode.InvalidParams.BadRequest();
                     }
 
                     purchasingRequest.MaterialCalcId = model.MaterialCalcId;
@@ -356,6 +363,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     //purchasingRequest.IsApproved = true;
                     //purchasingRequest.CensorByUserId = _currentContext.UserId;
                     //purchasingRequest.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
+                }
+
+                if (requestType == EnumPurchasingRequestType.ProductionOrderMaterialCalc)
+                {
+                    if (!model.ProductionOrderId.HasValue || model.ProductionOrderId <= 0)
+                    {
+                        throw GeneralCode.InvalidParams.BadRequest();
+                    }
+
+                    purchasingRequest.ProductionOrderId = model.ProductionOrderId;
+
+                    purchasingRequest.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
                 }
 
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
@@ -378,10 +397,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequest.PurchasingRequestId, $"Thêm mới phiếu yêu cầu VTHH  {purchasingRequest.PurchasingRequestCode}", model.JsonSerialize());
+                await ctx.ConfirmCode();
+
+                await _purchasingRequestActivityLog
+                     .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestCreate)
+                     .MessageResourceFormatData(new[] { purchasingRequest.PurchasingRequestCode })
+                     .ObjectId(purchasingRequest.PurchasingRequestId)
+                     .JsonData(model.JsonSerialize())
+                     .CreateLog();
+
+                //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequest.PurchasingRequestId, $"Thêm mới phiếu yêu cầu VTHH  {purchasingRequest.PurchasingRequestCode}", model.JsonSerialize());
 
                 //await ConfirmPurchasingRequestCode(customGenCodeLastValue);
-                await ctx.ConfirmCode();
+
 
                 return purchasingRequest.PurchasingRequestId;
             }
@@ -400,25 +428,38 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (!string.IsNullOrEmpty(model.PurchasingRequestCode))
                 {
                     var existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestId != purchasingRequestId && r.PurchasingRequestCode == model.PurchasingRequestCode);
-                    if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
+                    if (existedItem != null) throw PurchasingRequestErrorCode.RequestCodeAlreadyExisted.BadRequest();
                 }
 
 
                 using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
                     var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                    if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
+                    if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
 
                     _mapper.Map(model, info);
 
-                    if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.OrderMaterial && model.OrderDetailId != info.OrderDetailId))
+                    if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId
+                        || (purchasingRequestTypeId == EnumPurchasingRequestType.OrderMaterial && model.OrderDetailId != info.OrderDetailId))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sửa YCVT từ tính toán vật tư");
+                        throw PurchasingRequestMessage.PurchasingRequestPreventFrom.BadFormat()
+                            .Add(EnumPurchasingRequestType.OrderMaterial.GetEnumDescription())
+                            .Build();
+
                     }
 
                     if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.MaterialCalc && model.MaterialCalcId != info.MaterialCalcId))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sửa YCVT từ tính toán vật tư");
+                        throw PurchasingRequestMessage.PurchasingRequestPreventFrom.BadFormat()
+                            .Add(EnumPurchasingRequestType.MaterialCalc.GetEnumDescription())
+                            .Build();
+                    }
+
+                    if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId || (purchasingRequestTypeId == EnumPurchasingRequestType.ProductionOrderMaterialCalc && model.ProductionOrderId != info.ProductionOrderId))
+                    {
+                        throw PurchasingRequestMessage.PurchasingRequestPreventFrom.BadFormat()
+                            .Add(EnumPurchasingRequestType.ProductionOrderMaterialCalc.GetEnumDescription())
+                            .Build();
                     }
 
                     await DeleteOldDetails(purchasingRequestId);
@@ -436,12 +477,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         info.CensorDatetimeUtc = DateTime.UtcNow;
                     }
 
-                    if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc)
+                    if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.MaterialCalc || info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.ProductionOrderMaterialCalc)
                     {
                         info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
-                        //info.IsApproved = true;
-                        //info.CensorByUserId = _currentContext.UserId;
-                        //info.CensorDatetimeUtc = DateTime.UtcNow;
                     }
 
 
@@ -461,15 +499,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", model.JsonSerialize());
-
-                    //await ConfirmPurchasingRequestCode(customGenCodeBaseValueModel);
                     await ctx.ConfirmCode();
+
+
+                    await _purchasingRequestActivityLog
+                      .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestUpdate)
+                      .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                      .ObjectId(purchasingRequestId)
+                      .JsonData(model.JsonSerialize())
+                      .CreateLog();
+
+                    //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", model.JsonSerialize());
 
                     return true;
                 }
             }
         }
+
+
 
         private async Task<GenerateCodeContext> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
         {
@@ -487,44 +534,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             return ctx;
 
-            /*
-            model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
-
-            PurchasingRequest existedItem = null;
-            if (!string.IsNullOrWhiteSpace(model.PurchasingRequestCode))
-            {
-                existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestCode == model.PurchasingRequestCode && r.PurchasingRequestId != purchasingRequestId);
-                if (existedItem != null) throw new BadRequestException(PurchasingRequestErrorCode.RequestCodeAlreadyExisted);
-                return null;
-            }
-            else
-            {
-                var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.PurchasingRequest, EnumObjectType.PurchasingRequest, 0, purchasingRequestId, model.PurchasingRequestCode, model.Date);
-                if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã cho YCVT");
-                int dem = 0;
-                do
-                {
-
-                    model.PurchasingRequestCode = (await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, purchasingRequestId, model.PurchasingRequestCode, model.Date))?.CustomCode;
-                    existedItem = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PurchasingRequestCode == model.PurchasingRequestCode && r.PurchasingRequestId != purchasingRequestId);
-                    dem++;
-                } while (existedItem != null && dem < 10);
-                return config.CurrentLastValue;
-            }*/
         }
 
-        //private async Task<bool> ConfirmPurchasingRequestCode(CustomGenCodeBaseValueModel customGenCodeBaseValue)
-        //{
-        //    if (customGenCodeBaseValue == null) return true;
-        //    return await _customGenCodeHelperService.ConfirmCode(customGenCodeBaseValue);
-        //}
 
-        public async Task<bool> Delete(long? orderDetailId, long? materialCalcId, long purchasingRequestId)
+
+        public async Task<bool> Delete(long? orderDetailId, long? materialCalcId, long? productionOrderId, long purchasingRequestId)
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
+                if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
                 //if (info.PurchasingRequestTypeId == (int)EnumPurchasingRequestType.OrderMaterial && info.OrderDetailId != orderDetailId)
                 //{
                 //    throw new BadRequestException(GeneralCode.InvalidParams);
@@ -544,7 +563,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
+
+                await _purchasingRequestActivityLog
+                  .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestDelete)
+                  .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                  .ObjectId(purchasingRequestId)
+                  .JsonData(info.JsonSerialize())
+                  .CreateLog();
+
+                //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
                 return true;
             }
         }
@@ -579,9 +606,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
                 }
 
+                var itemMessage = $"{item.ProductCode} {item.ProductName}";
                 if (productInfo == null || productInfo.Count == 0)
                 {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName}");
+                    throw PurchasingRequestMessage.NoProductFound.BadRequestFormat(itemMessage);
                 }
 
                 if (productInfo.Count > 1)
@@ -589,7 +617,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     productInfo = productInfo.Where(p => p.ProductName == item.ProductName).ToList();
 
                     if (productInfo.Count != 1)
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {productInfo.Count} mặt hàng {item.ProductCode} {item.ProductName}");
+                    {
+                        throw PurchasingRequestMessage.FoundNumberProduct.BadFormat()
+                            .Add(productInfo.Count)
+                            .Add(itemMessage)
+                            .Build();
+                    }
                 }
 
                 var productUnitConversionId = 0;
@@ -615,11 +648,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (pus.Count == 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PurchasingRequestMessage.NoPuOfProductFound.BadFormat()
+                            .Add(item.ProductUnitConversionName)
+                            .Add($"{item.ProductCode} {item.ProductName}")
+                            .Build();
                     }
                     if (pus.Count > 1)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {pus.Count} đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PurchasingRequestMessage.FoundNumberPuOfProduct.BadFormat()
+                            .Add(pus.Count)
+                            .Add(item.ProductUnitConversionName)
+                            .Add($"{item.ProductCode} {item.ProductName}")
+                            .Build();
                     }
 
                     productUnitConversionId = pus[0].ProductUnitConversionId;
@@ -630,7 +670,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var puDefault = productInfo[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
                     if (puDefault == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu đơn vị tính default lỗi, mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PurchasingRequestMessage.PuDefaultError
+                            .BadRequestFormat($"{item.ProductCode} {item.ProductName}");
 
                     }
                     productUnitConversionId = puDefault.ProductUnitConversionId;
@@ -689,7 +730,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
                     catch (Exception ex)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+                        throw PurchasingRequestMessage.ErrorCalcQuantity
+                            .BadRequestFormat($"{rowData.ProductCode} {rowData.ProductName} {ex.Message}");
                     }
 
                 }
@@ -717,18 +759,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
                     catch (Exception ex)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
+
+                        throw PurchasingRequestMessage.ErrorCalcQuantity
+                            .BadRequestFormat($"{rowData.ProductCode} {rowData.ProductName} {ex.Message}");
                     }
                 }
 
-                //if (rowData.ProductUnitConversionQuantity == 0)
-                //{
-                //    rowData.ProductUnitConversionName = null;
-                //}
-
                 if (rowData.PrimaryQuantity <= 0 && rowData.ProductUnitConversionQuantity <= 0)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng không hợp lệ ở mặt hàng {rowData.ProductCode} {rowData.ProductName}");
+                    throw PurchasingRequestMessage.InvalidQuantity
+                        .BadRequestFormat($"{rowData.ProductCode} {rowData.ProductName}");
                 }
 
 
@@ -764,11 +804,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
+                if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
 
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Draff)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams);
+                    throw GeneralCode.InvalidParams.BadRequest();
                 }
 
                 info.PurchasingRequestStatusId = (int)EnumPurchasingRequestStatus.WaitToCensor;
@@ -780,7 +820,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Gửi duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
+
+                await _purchasingRequestActivityLog
+                  .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestSentToCensor)
+                  .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                  .ObjectId(purchasingRequestId)
+                  .JsonData(info.JsonSerialize())
+                  .CreateLog();
+
+
+                //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Gửi duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return true;
             }
@@ -791,14 +840,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
+                if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
 
                 //allow re censored
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
                     && info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Censored
                     )
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams);
+                    throw GeneralCode.InvalidParams.BadRequest();
                 }
 
                 info.IsApproved = true;
@@ -810,7 +859,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
+                await _purchasingRequestActivityLog
+                   .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestApproved)
+                   .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                   .ObjectId(purchasingRequestId)
+                   .JsonData(info.JsonSerialize())
+                   .CreateLog();
+
+                //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return true;
             }
@@ -821,13 +877,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
+                if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
                 //allow re censored
                 if (info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.WaitToCensor
                     && info.PurchasingRequestStatusId != (int)EnumPurchasingRequestStatus.Censored
                     )
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams);
+                    throw GeneralCode.InvalidParams.BadRequest();
                 }
 
                 info.IsApproved = false;
@@ -841,7 +897,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Từ chối yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
+                await _purchasingRequestActivityLog
+                  .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestRejected)
+                  .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
+                  .ObjectId(purchasingRequestId)
+                  .JsonData(info.JsonSerialize())
+                  .CreateLog();
+
+                // await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Từ chối yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return true;
             }
@@ -852,7 +915,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
-                if (info == null) throw new BadRequestException(PurchasingRequestErrorCode.RequestNotFound);
+                if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
 
@@ -860,7 +923,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật tiến trình PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
+                await _purchasingRequestActivityLog
+                 .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestUpdatedProgress)
+                 .MessageResourceFormatData(new[] { info.PurchasingRequestCode, poProcessStatusId.GetEnumDescription() })
+                 .ObjectId(purchasingRequestId)
+                 .JsonData(info.JsonSerialize())
+                 .CreateLog();
+              
+                //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật tiến trình PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return true;
             }
@@ -872,12 +942,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                .GroupBy(d => d.ProductUnitConversionId);
             if (productUnitConversionProductGroup.Any(g => g.Select(p => p.ProductId).Distinct().Count() > 1))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
+                throw PurchasingRequestMessage.PuConversionDoesNotBelongToProduct.BadRequest();
             }
 
             if (!await _productHelperService.ValidateProductUnitConversions(productUnitConversionProductGroup.ToDictionary(g => g.Key, g => g.First().ProductId)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
+                throw PurchasingRequestMessage.PuConversionDoesNotBelongToProduct.BadRequest();
             }
         }
 
@@ -916,8 +986,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .ToListAsync();
             if (sugguests.Count > 0)
             {
-
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể xóa YCVT đã tạo đề nghị VT ({string.Join(", ", sugguests)})");
+                throw PurchasingRequestMessage.CanNotDeletePurchasingRequestWithExistedSuggest.BadRequestFormat(string.Join(", ", sugguests));
             }
 
             foreach (var item in oldDetails)

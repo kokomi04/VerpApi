@@ -62,6 +62,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<PageData<StepGroupModel>> GetListStepGroup(string keyWord, int page, int size)
         {
+            keyWord = (keyWord ?? "").Trim();
+
             var query = _manufacturingDBContext.StepGroup.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyWord))

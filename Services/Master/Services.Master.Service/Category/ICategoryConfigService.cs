@@ -38,5 +38,8 @@ namespace VErp.Services.Master.Service.Category
         Task<bool> UpdateMultiField(int categoryId, List<CategoryFieldModel> fields);
 
         Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames);
+        Task<CategoryViewModel> CategoryViewGetInfo(int categoryId, bool isConfig = false);
+        Task<bool> CategoryViewUpdate(int categoryId, CategoryViewModel model);
+
     }
 }

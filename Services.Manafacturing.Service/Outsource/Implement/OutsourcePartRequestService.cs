@@ -183,7 +183,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<OutsourcePartRequestDetailInfo>> GetListOutsourcePartRequest(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<OutsourcePartRequestDetailInfo>> GetListOutsourcePartRequest(string keyword, int page, int size, long fromDate, long toDate, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim().ToLower();
 
@@ -199,6 +199,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 whereCondition.Append("OR v.ProductPartName LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
+
+            if(fromDate > 0 && toDate > 0)
+            {
+                if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                whereCondition.Append(" (v.OutsourcePartRequestDate >= @FromDate AND v.OutsourcePartRequestDate < @ToDate) ");
+                parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime().Value.AddDays(1)));
+            }
+
             if (filters != null)
             {
                 var suffix = 0;

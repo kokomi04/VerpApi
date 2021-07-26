@@ -990,8 +990,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var group in otherAssignments.GroupBy(a => new { a.ProductionOrderId, a.ObjectId, a.ObjectTypeId, a.DepartmentId }))
             {
-                var totalInventoryQuantity = group.Key.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product 
-                    ? 0 
+                var totalInventoryQuantity = group.Key.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                    ? 0
                     : inventoryRequirements[group.Key.ProductionOrderId]
                     .Where(ir => !ir.ProductionStepId.HasValue && ir.DepartmentId == group.Key.DepartmentId && ir.ProductId == group.Key.ObjectId)
                     .Sum(ir => ir.ActualQuantity);
@@ -1009,9 +1009,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     if (otherAssignment.ImportStockQuantity > 0)
                     {
                         var allocatedQuantity = inventoryRequirements[group.Key.ProductionOrderId]
-                            .Where(ir => ir.ProductionStepId.HasValue 
-                            && ir.ProductionStepId.Value == otherAssignment.ProductionStepId 
-                            && ir.DepartmentId == group.Key.DepartmentId 
+                            .Where(ir => ir.ProductionStepId.HasValue
+                            && ir.ProductionStepId.Value == otherAssignment.ProductionStepId
+                            && ir.DepartmentId == group.Key.DepartmentId
                             && ir.ProductId == group.Key.ObjectId)
                             .Sum(ir => ir.ActualQuantity);
 
@@ -1082,7 +1082,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     capacityDepartments[otherAssignment.DepartmentId].Add(capacityDepartment);
                 }
 
-                if(totalInventoryQuantity > 0)
+                if (totalInventoryQuantity > 0)
                 {
                     capacityDepartments[group.Key.DepartmentId][capacityDepartments[group.Key.DepartmentId].Count - 1].CompletedQuantity += totalInventoryQuantity;
                 }
@@ -1257,17 +1257,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments()
         {
-            return (from sd in _manufacturingDBContext.StepDetail
-                    join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
-                    select new
-                    {
-                        s.StepId,
-                        sd.DepartmentId,
-                        sd.Quantity,
-                        sd.NumberOfPerson,
-                        s.UnitId
-                    })
-                    .ToList()
+            return (await (from sd in _manufacturingDBContext.StepDetail
+                           join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
+                           select new
+                           {
+                               s.StepId,
+                               sd.DepartmentId,
+                               sd.Quantity,
+                               sd.NumberOfPerson,
+                               s.UnitId
+                           })
+                    .ToListAsync()
+                    )
                     .GroupBy(sd => sd.StepId)
                     .ToDictionary(g => g.Key, g => g.ToDictionary(sd => sd.DepartmentId, sd => new ProductivityModel
                     {
@@ -1344,7 +1345,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             public DateTime EndDate { get; set; }
             public DateTime CreatedDatetimeUtc { get; set; }
 
-    public List<AssignmentCapacityDetail> ProductionAssignmentDetail { get; set; }
+            public List<AssignmentCapacityDetail> ProductionAssignmentDetail { get; set; }
         }
     }
 }

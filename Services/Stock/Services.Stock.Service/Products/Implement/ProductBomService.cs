@@ -24,11 +24,9 @@ using System.Data;
 using System.IO;
 using VErp.Commons.Library.Model;
 using VErp.Services.Master.Service.Dictionay;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Services.Stock.Model.Product.Bom;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -43,6 +41,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IUnitService _unitService;
         private readonly IProductService _productService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
+        private readonly IPropertyService _propertyService;
 
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -51,7 +50,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IMapper mapper
             , IUnitService unitService
             , IProductService productService
-            , IManufacturingHelperService manufacturingHelperService)
+            , IManufacturingHelperService manufacturingHelperService
+            , IPropertyService propertyService)
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
@@ -61,6 +61,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _unitService = unitService;
             _productService = productService;
             _manufacturingHelperService = manufacturingHelperService;
+            _propertyService = propertyService;
         }
 
         public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
@@ -92,7 +93,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<IList<ProductBomOutput>> GetBom(int productId)
         {
             if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
-
+            var productProperties = await _stockDbContext.ProductProperty
+               .Where(p => p.RootProductId == productId)
+               .ToListAsync();
             var parammeters = new SqlParameter[]
             {
                 new SqlParameter("@ProductId", productId)
@@ -104,50 +107,63 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 var bom = _mapper.Map<ProductBomOutput>(item);
                 bom.PathProductIds = Array.ConvertAll(item.PathProductIds.Split(','), s => int.Parse(s));
+                bom.Properties = productProperties.Where(p => p.ProductId == item.ChildProductId && p.PathProductIds == item.PathProductIds).Select(p => p.PropertyId).Distinct().ToList();
                 result.Add(bom);
             }
             return result;
         }
 
-        public async Task<bool> Update(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, bool isCleanOldMaterial)
+        public async Task<bool> Update(int productId, ProductBomUpdateInfoModel bomInfo)
         {
             var product = _stockDbContext.Product.FirstOrDefault(p => p.ProductId == productId);
             if (product == null) throw new BadRequestException(ProductErrorCode.ProductNotFound);
-            await UpdateProductBomDb(productId, productBoms, productMaterials, isCleanOldMaterial);
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", productBoms.JsonSerialize());
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                await UpdateProductBomDb(productId, bomInfo);
+                await trans.CommitAsync();
+            }
+            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", bomInfo.JsonSerialize());
             return true;
         }
 
-        public async Task<bool> UpdateProductBomDb(int productId, IList<ProductBomInput> productBoms, IList<ProductMaterialModel> productMaterials, bool isCleanOldMaterial)
+        public async Task<bool> UpdateProductBomDb(int productId, ProductBomUpdateInfoModel bomInfo)
+        {
+            await UpdateBoms(productId, bomInfo.BomInfo);
+            await UpdateBomMaterials(productId, bomInfo.MaterialsInfo);
+            await UpdateBomProperties(productId, bomInfo.PropertiesInfo);
+            return true;
+        }
+
+
+        private async Task UpdateBoms(int rootProductId, ProductBomUpdateInfo bomInfo)
         {
             // Validate data
             // Validate child product id
-            var childIds = productBoms.Select(b => b.ChildProductId).Distinct().ToList();
+            var childIds = bomInfo.Bom.Select(b => b.ChildProductId).Distinct().ToList();
             if (_stockDbContext.Product.Count(p => childIds.Contains(p.ProductId)) != childIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound, "Vật tư không tồn tại");
 
-            if (productBoms.Any(b => b.ProductId == b.ChildProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Không được chọn vật tư là chính sản phẩm");
+            if (bomInfo.Bom.Any(b => b.ProductId == b.ChildProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Không được chọn vật tư là chính sản phẩm");
 
-            if (productBoms.Any(p => p.ProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Vật tư không thuộc sản phẩm");
+            if (bomInfo.Bom.Any(p => p.ProductId != rootProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Vật tư không thuộc sản phẩm");
 
-            // Validate materials
-            if (productMaterials.Any(m => m.RootProductId != productId)) throw new BadRequestException(GeneralCode.InvalidParams, "Nguyên vật liệu không thuộc sản phẩm");
 
-            // Thiết lập sort order theo thứ tự tạo
-            for (int indx = 0; indx < productBoms.Count; indx++)
+            // Thiết lập sort order theo thứ tự tạo nếu không truyền từ client lên
+            for (int indx = 0; indx < bomInfo.Bom.Count; indx++)
             {
-                productBoms[indx].SortOrder = indx;
+                if (!bomInfo.Bom[indx].SortOrder.HasValue)
+                    bomInfo.Bom[indx].SortOrder = indx;
             }
 
             // Remove duplicate
-            productBoms = productBoms.GroupBy(b => new { b.ProductId, b.ChildProductId }).Select(g => g.First()).ToList();
+            bomInfo.Bom = bomInfo.Bom.GroupBy(b => new { b.ProductId, b.ChildProductId }).Select(g => g.First()).ToList();
 
             // Get old BOM info
-            var oldBoms = _stockDbContext.ProductBom.Where(b => b.ProductId == productId).ToList();
-            var newBoms = new List<ProductBomInput>(productBoms);
+            var oldBoms = _stockDbContext.ProductBom.Where(b => b.ProductId == rootProductId).ToList();
+            var newBoms = new List<ProductBomInput>(bomInfo.Bom);
             var changeBoms = new List<(ProductBom OldValue, ProductBomInput NewValue)>();
 
             // Cập nhật BOM
-            foreach (var newItem in productBoms)
+            foreach (var newItem in bomInfo.Bom)
             {
                 var oldBom = oldBoms.FirstOrDefault(b => b.ChildProductId == newItem.ChildProductId);
                 // Nếu là thay đổi
@@ -185,10 +201,21 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 updateBom.OldValue.InputStepId = updateBom.NewValue.InputStepId;
                 updateBom.OldValue.OutputStepId = updateBom.NewValue.OutputStepId;
                 updateBom.OldValue.SortOrder = updateBom.NewValue.SortOrder;
+                updateBom.OldValue.Description = updateBom.NewValue.Description;
             }
+
+            await _stockDbContext.SaveChangesAsync();
+        }
+
+        private async Task UpdateBomMaterials(int rootProductId, ProductBomMaterialUpdateInfo materialsInfo)
+        {
+            // Validate materials
+            if (materialsInfo.BomMaterials.Any(m => m.RootProductId != rootProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Nguyên vật liệu không thuộc sản phẩm");
+
+
             // Cập nhật Material
-            var oldMaterials = _stockDbContext.ProductMaterial.Where(m => m.RootProductId == productId).ToList();
-            var createMaterials = productMaterials
+            var oldMaterials = _stockDbContext.ProductMaterial.Where(m => m.RootProductId == rootProductId).ToList();
+            var createMaterials = materialsInfo.BomMaterials
                 .Where(nm => !oldMaterials.Any(om => om.ProductId == nm.ProductId && om.PathProductIds == string.Join(",", nm.PathProductIds)))
                 .Select(nm => new ProductMaterial
                 {
@@ -198,22 +225,55 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     PathProductIds = string.Join(",", nm.PathProductIds)
                 })
                 .ToList();
-            if (isCleanOldMaterial)
+            if (materialsInfo.CleanOldData)
             {
                 var deleteMaterials = oldMaterials
-                    .Where(om => !productMaterials.Any(nm => nm.ProductId == om.ProductId && string.Join(",", nm.PathProductIds) == om.PathProductIds))
+                    .Where(om => !materialsInfo.BomMaterials.Any(nm => nm.ProductId == om.ProductId && string.Join(",", nm.PathProductIds) == om.PathProductIds))
                     .ToList();
                 _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
             }
             _stockDbContext.ProductMaterial.AddRange(createMaterials);
+
             await _stockDbContext.SaveChangesAsync();
-            return true;
         }
+
+
+        private async Task UpdateBomProperties(int rootProductId, ProductBomPropertyUpdateInfo propertiesInfo)
+        {
+            // Cập nhật Properties
+            var propertyIds = propertiesInfo.BomProperties.Select(p => p.PropertyId).Distinct().ToList();
+            var properties = _stockDbContext.Property.Where(p => propertyIds.Contains(p.PropertyId)).ToList();
+            if (propertyIds.Count != properties.Count) throw new BadRequestException(GeneralCode.InvalidParams, "BOM có chứa thuộc tính sản phẩm không tồn tại");
+            var oldProperties = _stockDbContext.ProductProperty.Where(m => m.RootProductId == rootProductId).ToList();
+            var createProperties = propertiesInfo.BomProperties
+                .Where(np => !oldProperties.Any(op => op.ProductId == np.ProductId && op.PropertyId == np.PropertyId && op.PathProductIds == string.Join(",", np.PathProductIds)))
+                .Select(np => new ProductProperty
+                {
+                    ProductId = np.ProductId,
+                    ProductPropertyId = np.ProductPropertyId,
+                    RootProductId = np.RootProductId,
+                    PathProductIds = string.Join(",", np.PathProductIds),
+                    PropertyId = np.PropertyId
+                })
+                .ToList();
+            if (propertiesInfo.CleanOldData)
+            {
+                var deleteProperties = oldProperties
+                    .Where(op => !propertiesInfo.BomProperties.Any(np => np.ProductId == op.ProductId && np.PropertyId == op.PropertyId && string.Join(",", np.PathProductIds) == op.PathProductIds))
+                    .ToList();
+                _stockDbContext.ProductProperty.RemoveRange(deleteProperties);
+            }
+
+            _stockDbContext.ProductProperty.AddRange(createProperties);
+            await _stockDbContext.SaveChangesAsync();
+        }
+
 
         public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds)
         {
             var steps = await _manufacturingHelperService.GetSteps();
-            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps);
+            var properties = await _propertyService.GetProperties();
+            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps, properties);
             return await bomExport.BomExport();
         }
 
@@ -224,10 +284,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 || oldValue.InputStepId != newValue.InputStepId
                 || oldValue.OutputStepId != newValue.OutputStepId
                 || oldValue.Wastage != newValue.Wastage
-                || oldValue.SortOrder != newValue.SortOrder;
+                || oldValue.SortOrder != newValue.SortOrder
+                || oldValue.Description != newValue.Description;
         }
 
-        public CategoryNameModel GetCustomerFieldDataForMapping()
+        public async Task<CategoryNameModel> GetBomFieldDataForMapping()
         {
             var result = new CategoryNameModel()
             {
@@ -240,19 +301,43 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var fields = Utils.GetFieldNameModels<ProductBomImportModel>();
             result.Fields = fields;
+            var properties = await _propertyService.GetProperties();
+            foreach (var p in properties)
+            {
+                result.Fields.Add(new CategoryFieldNameModel()
+                {
+                    GroupName = "Thuộc tính",
+                    FieldName = nameof(ProductBomImportModel.Properties) + p.PropertyId,
+                    FieldTitle = p.PropertyName + " (Có, Không)"
+                });
+            }
             return result;
         }
 
         public Task<bool> ImportBomFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            return new ProductBomImportFacade()
-                .SetService(_stockDbContext)
-                .SetService(_productService)
-                .SetService(_unitService)
-                .SetService(_activityLogService)
-                .SetService(_manufacturingHelperService)
-                .SetService(this)
+            return InitImportBomFacade(false)
                 .ProcessData(mapping, stream);
+        }
+
+        public async Task<IList<ProductBomByProduct>> PreviewBomFromMapping(ImportExcelMapping mapping, Stream stream)
+        {
+            var bomProcess = InitImportBomFacade(true);
+            var r = await bomProcess.ProcessData(mapping, stream);
+            if (!r) return null;
+            return bomProcess.PreviewData;
+        }
+
+
+        private ProductBomImportFacade InitImportBomFacade(bool isPreview)
+        {
+            return new ProductBomImportFacade(isPreview)
+               .SetService(_stockDbContext)
+               .SetService(_productService)
+               .SetService(_unitService)
+               .SetService(_activityLogService)
+               .SetService(_manufacturingHelperService)
+               .SetService(this);
         }
     }
 }

@@ -35,15 +35,15 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var validationErrors = context.ModelState
                 .Keys
-                .SelectMany(k => context.ModelState[k].Errors)
-                .Select(e => e.ErrorMessage)
+                .SelectMany(k => context.ModelState[k].Errors.Select(e => new { Key = k, ErrorMessage = e.ErrorMessage }))
                 .ToArray();
 
 
-            var invalidModels = new ServiceResult()
+            var invalidModels = new ServiceResult<object>()
             {
                 Code = GeneralCode.InvalidParams,
-                Message = string.Join(",", validationErrors)
+                Message = string.Join(", \n", validationErrors.Select(e => e.ErrorMessage)),
+                Data = context.ModelState
             };
 
             context.Result = new BadRequestObjectResult(invalidModels);

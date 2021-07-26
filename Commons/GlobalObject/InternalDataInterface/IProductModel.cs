@@ -25,7 +25,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal? Width { get; set; }
         public decimal? Height { get; set; }
         public string PackingMethod { get; set; }
-        public int? CustomerId { get; set; }
+        //public int? CustomerId { get; set; }
         public decimal? NetWeight { get; set; }
         public decimal? GrossWeight { get; set; }
         public decimal? Measurement { get; set; }
@@ -92,6 +92,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         {
             public int? CustomerId { get; set; }
             public string CustomerProductCode { get; set; }
+            public string CustomerProductName { get; set; }
         }
     }
 

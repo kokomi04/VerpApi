@@ -9,6 +9,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
+using VErp.Services.Manafacturing.Model.Outsource.Order.Part;
 using VErp.Services.Manafacturing.Service.Outsource;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
@@ -26,16 +27,22 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateOutsourceOrderPart([FromBody] OutsourceOrderInfo req)
+        public async Task<long> CreateOutsourceOrderPart([FromBody] OutsourcePartOrderInput req)
         {
             return await _outsourceOrderService.CreateOutsourceOrderPart(req);
         }
 
         [HttpPost]
         [Route("search")]
-        public async Task<PageData<OutsourcePartOrderDetailInfo>> GetListOutsourceOrderPart([FromQuery]string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
+        public async Task<PageData<OutsourcePartOrderDetailInfo>> GetListOutsourceOrderPart(
+            [FromQuery] string keyword,
+            [FromQuery] int page,
+            [FromQuery] int size,
+            [FromQuery] long fromDate,
+            [FromQuery] long toDate,
+            [FromBody] Clause filters)
         {
-            return await _outsourceOrderService.GetListOutsourceOrderPart(keyword, page, size, filters);
+            return await _outsourceOrderService.GetListOutsourceOrderPart(keyword, page, size,fromDate, toDate, filters);
         }
 
         [HttpDelete]
@@ -47,21 +54,21 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpGet]
         [Route("{outsourceOrderId}")]
-        public async Task<OutsourceOrderInfo> GetOutsourceOrderPart([FromRoute] long outsourceOrderId)
+        public async Task<OutsourcePartOrderOutput> GetOutsourceOrderPart([FromRoute] long outsourceOrderId)
         {
             return await _outsourceOrderService.GetOutsourceOrderPart(outsourceOrderId);
         }
 
         [HttpPut]
         [Route("{outsourceOrderId}")]
-        public async Task<bool> UpdateOutsourceOrderPart([FromRoute] long outsourceOrderId, [FromBody] OutsourceOrderInfo req)
+        public async Task<bool> UpdateOutsourceOrderPart([FromRoute] long outsourceOrderId, [FromBody] OutsourcePartOrderInput req)
         {
             return await _outsourceOrderService.UpdateOutsourceOrderPart(outsourceOrderId, req);
         }
 
         [HttpGet]
         [Route("{outsourceOrderId}/materials")]
-        public async Task<IList<OutsourceOrderMaterials>> GetMaterials([FromRoute] long outsourceOrderId)
+        public async Task<IList<OutsourceOrderMaterialsLSX>> GetMaterials([FromRoute] long outsourceOrderId)
         {
             return await _outsourceOrderService.GetMaterials(outsourceOrderId);
         }

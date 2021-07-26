@@ -70,6 +70,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private IList<int> _stockIds;
         //private IList<int> _roleIds;
         private RoleInfo _roleInfo;
+        private string _language;
 
         public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
@@ -104,7 +105,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             var userId = 0;
             var action = EnumActionType.View;
-          
+
             if (headers.TryGetValue(Headers.UserId, out var strUserId))
             {
                 userId = int.Parse(strUserId);
@@ -119,7 +120,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 _subsidiaryId = int.Parse(strSubsidiaryId);
             }
-
+            if (headers.TryGetValue(Headers.Language, out var language))
+            {
+                _language = language;
+            }
 
             if (userId > 0)
             {
@@ -325,6 +329,25 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
             }
         }
+
+        public string Language
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_language))
+                    return _language;
+
+                var languages = new StringValues();
+                _httpContextAccessor.HttpContext?.Request.Headers.TryGetValue(Headers.Language, out languages);
+
+                if (languages.Count == 0)
+                {
+                    return "";
+                }
+                _language = languages.ToString();
+                return _language;
+            }
+        }
     }
 
     public class ScopeCurrentContextService : ICurrentContextService
@@ -336,13 +359,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 currentContextService.RoleInfo,
                 currentContextService.StockIds,
                 currentContextService.SubsidiaryId,
-                currentContextService.TimeZoneOffset
+                currentContextService.TimeZoneOffset,
+                currentContextService.Language
         )
         {
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
+        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
@@ -350,6 +374,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             RoleInfo = roleInfo == null ? null : roleInfo.JsonSerialize().JsonDeserialize<RoleInfo>();
             StockIds = stockIds == null ? null : stockIds.JsonSerialize().JsonDeserialize<List<int>>();
             TimeZoneOffset = timeZoneOffset;
+            Language = language;
         }
 
         public void SetSubsidiaryId(int subsidiaryId)
@@ -364,5 +389,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public RoleInfo RoleInfo { get; }
         public int? TimeZoneOffset { get; }
         public bool IsDeveloper { get; } = false;
+        public string Language { get; }
     }
 }

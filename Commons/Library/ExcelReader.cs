@@ -12,6 +12,7 @@ using NPOI.SS.Formula;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
@@ -258,16 +259,16 @@ namespace VErp.Commons.Library
 
                             try
                             {
-                                rowData.Add(columnName, GetCellString(cell));
+                                rowData.Add(columnName, GetCellString(cell)?.Trim()?.Trim('\''));
                             }
                             catch
                             {
-                                rowData.Add(columnName, cell.StringCellValue.ToString());
+                                rowData.Add(columnName, cell.StringCellValue.ToString()?.Trim()?.Trim('\''));
 
                             }
                             if (string.IsNullOrWhiteSpace(rowData[columnName]))
                             {
-                                continuousColumnEmpty++;                              
+                                continuousColumnEmpty++;
                                 if (continuousColumnEmpty > 100)
                                 {
                                     break;
@@ -386,10 +387,19 @@ namespace VErp.Commons.Library
 
                 var row = data.Rows[rowIndx];
 
-                bool isIgnoreRow = false;
-                var entityInfo = Activator.CreateInstance<T>();
+                //bool isIgnoreRow = false;
 
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+
+                var checkFieldsMapping = mapping.MappingFields.Where(f => f.IsRequire || f.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
+
+                if (checkFieldsMapping.Any(f => string.IsNullOrWhiteSpace(row[f.Column])))
+                {
+                    continue;
+                }
+
+
+                var entityInfo = Activator.CreateInstance<T>();
+                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count; fieldIndx++)//&& !isIgnoreRow
                 {
 
                     var mappingField = mapping.MappingFields[fieldIndx];
@@ -401,13 +411,17 @@ namespace VErp.Commons.Library
                         if (row.ContainsKey(mappingField.Column))
                             value = row[mappingField.Column]?.ToString();
 
-                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
-                        {
-                            isIgnoreRow = true;
-                            break;
-                        }
+                        //if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                        //{
+                        //    isIgnoreRow = true;
+                        //    break;
+                        //}
 
                         var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+                        if (field == null)
+                        {
+                            field = fields.FirstOrDefault(f => mappingField.FieldName.StartsWith(f.Name));
+                        }
 
                         if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
 
@@ -417,7 +431,7 @@ namespace VErp.Commons.Library
 
                         if (OnAssignProperty != null)
                         {
-                            if (!OnAssignProperty(entityInfo, field.Name, value))
+                            if (!OnAssignProperty(entityInfo, mappingField.FieldName, value))
                             {
                                 if (!string.IsNullOrWhiteSpace(value))
                                     field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
@@ -436,27 +450,27 @@ namespace VErp.Commons.Library
 
                 }
 
-                if (!isIgnoreRow)
+                //if (!isIgnoreRow)
+                //{
+                var context = new ValidationContext(entityInfo);
+                ICollection<ValidationResult> results = new List<ValidationResult>();
+                bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
+                if (!isValid)
                 {
-                    var context = new ValidationContext(entityInfo);
-                    ICollection<ValidationResult> results = new List<ValidationResult>();
-                    bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
-                    if (!isValid)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {mapping.FromRow + rowIndx}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
-                    }
-
-                    if (entityInfo is MappingDataRowAbstract entity)
-                    {
-                        entity.RowNumber = mapping.FromRow + rowIndx;
-                    }
-                    lstData.Add(entityInfo);
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {mapping.FromRow + rowIndx}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
                 }
 
+                if (entityInfo is MappingDataRowAbstract entity)
+                {
+                    entity.RowNumber = mapping.FromRow + rowIndx;
+                }
+                lstData.Add(entityInfo);
+                //}
             }
 
             return lstData;
         }
+
 
         private string GetCellString(ICell cell)
         {

@@ -20,6 +20,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public decimal ShrinkageRate { get; set; }
         public int HandoverTypeId { get; set; }
         public bool IsHide { get; set; }
+        public string Description { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }

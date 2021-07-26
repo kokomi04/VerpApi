@@ -19,7 +19,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 10;
+        private int maxColumnIndex = 14;
 
         private IEnumerable<ProductMaterialsConsumptionOutput> materialsConsumps;
 
@@ -77,27 +77,46 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             var fRow = currentRow;
             var sRow = currentRow;
 
-            sheet.EnsureCell(fRow, 0).SetCellValue($"Nhóm NVL");
+            sheet.EnsureCell(fRow, 0).SetCellValue($"STT");
 
-            sheet.EnsureCell(fRow, 1).SetCellValue($"Mã NVL");
+            /* Thông tin Nvl tiêu hao */
+            sheet.EnsureCell(fRow, 1).SetCellValue($"Mã Nvl tiêu hao");
 
-            sheet.EnsureCell(fRow, 2).SetCellValue($"Tên NVL");
+            sheet.EnsureCell(fRow, 2).SetCellValue($"Tên Nvl tiêu hao");
 
-            sheet.EnsureCell(fRow, 3).SetCellValue($"ĐVT");
+            sheet.EnsureCell(fRow, 3).SetCellValue($"ĐVT Nvl tiêu hao");
 
-            sheet.EnsureCell(fRow, 4).SetCellValue($"Loại mã NVL");
+            // sheet.EnsureCell(fRow, 4).SetCellValue($"Loại mã mặt hàng của Nvl tiêu hao");
 
-            sheet.EnsureCell(fRow, 5).SetCellValue($"Quy cách NVL");
+            sheet.EnsureCell(fRow, 4).SetCellValue($"Quy cách Nvl tiêu hao");
 
-            sheet.EnsureCell(fRow, 6).SetCellValue($"Danh mục NVL");
+            // sheet.EnsureCell(fRow, 6).SetCellValue($"Danh mục Nvl tiêu hao");
 
-            sheet.EnsureCell(fRow, 7).SetCellValue($"Số lượng");
+            /* Thông tin chi tiết sử dụng Nvl tiêu hao */
+            sheet.EnsureCell(fRow, 5).SetCellValue($"Mã chi tiết sử dụng");
 
-            sheet.EnsureCell(fRow, 8).SetCellValue($"Công đoạn");
+            sheet.EnsureCell(fRow, 6).SetCellValue($"Tên chi tiết sử dụng");
 
-            sheet.EnsureCell(fRow, 9).SetCellValue($"Mã bộ phận");
+            sheet.EnsureCell(fRow, 7).SetCellValue($"ĐVT chi tiết sử dụng");
 
-            sheet.EnsureCell(fRow, 10).SetCellValue($"Bộ phận");
+            // sheet.EnsureCell(fRow, 10).SetCellValue($"Loại mã mặt hàng của chi tiết sử dụng");
+
+            sheet.EnsureCell(fRow, 8).SetCellValue($"Quy cách chi tiết sử dụng");
+
+            // sheet.EnsureCell(fRow, 12).SetCellValue($"Danh mục chi tiết sử dụng");
+
+            /* Thông tin chung */
+            sheet.EnsureCell(fRow, 9).SetCellValue($"Số lượng sử dụng");
+
+            sheet.EnsureCell(fRow, 10).SetCellValue($"Công đoạn");
+
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Mã bộ phận");
+
+            sheet.EnsureCell(fRow, 12).SetCellValue($"Bộ phận");
+
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Ghi chú");
+
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Nhóm Nvl tiêu hao");
 
 
 
@@ -151,42 +170,72 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             var styleNumber = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: false, dataFormat: "#,##0.00");
             var styleText = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: false);
 
-            foreach (var group in materialsConsumps.GroupBy(x=>x.ProductMaterialsConsumptionGroupId))
+            var materialConsumptionSlice = GetMaterialConsumptionSlices(materialsConsumps).Where(x => x.Quantity > 0)
+                .OrderBy(x => x.ProductMaterialsConsumptionGroupId);
+
+            var index = 1;
+            foreach (var m in materialConsumptionSlice)
             {
-                if(groupsConsump.ContainsKey(group.Key))
-                    sheet.EnsureCell(currentRow, 0, styleText).SetCellValue(groupsConsump[group.Key]);
+                productInfos.TryGetValue(m.MaterialsConsumptionId, out var materialConsumptionInfo);
+                productInfos.TryGetValue(m.ProductId, out var productInfo);
 
-                foreach(var m in group)
+                sheet.EnsureCell(currentRow, 0, styleText).SetCellValue(index);
+
+                if (groupsConsump.ContainsKey(m.ProductMaterialsConsumptionGroupId))
+                    sheet.EnsureCell(currentRow, 14, styleText).SetCellValue(groupsConsump[m.ProductMaterialsConsumptionGroupId]);
+
+                if (materialConsumptionInfo != null)
                 {
-                    productInfos.TryGetValue(m.MaterialsConsumptionId, out var productInfo);
-
-                        if (productInfo != null)
-                    {
-                        sheet.EnsureCell(currentRow, 1, styleText).SetCellValue(productInfo.ProductCode);
-                        sheet.EnsureCell(currentRow, 2, styleText).SetCellValue(productInfo.ProductName);
-                        sheet.EnsureCell(currentRow, 3, styleText).SetCellValue(productInfo.ProductUnitConversionName);
-                        sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(productInfo.ProductTypeName);
-                        sheet.EnsureCell(currentRow, 5, styleText).SetCellValue(productInfo.Specification);
-                        sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(productInfo.ProductCateName);
-                    }
-                    sheet.EnsureCell(currentRow, 7, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity + m.TotalQuantityInheritance));
-
-                    if (m.StepId.HasValue && stepInfos.ContainsKey((int)m.StepId))
-                        sheet.EnsureCell(currentRow, 8, styleText).SetCellValue(stepInfos[(int)m.StepId]);
-
-                    if (m.DepartmentId.HasValue && departmentInfos.ContainsKey((int)m.DepartmentId))
-                    {
-                        var department = departmentInfos[(int)m.DepartmentId];
-                        sheet.EnsureCell(currentRow, 9, styleText).SetCellValue(department.DepartmentCode);
-                        sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(department.DepartmentName);
-                    }
-
-                    currentRow++;
+                    sheet.EnsureCell(currentRow, 1, styleText).SetCellValue(materialConsumptionInfo.ProductCode);
+                    sheet.EnsureCell(currentRow, 2, styleText).SetCellValue(materialConsumptionInfo.ProductName);
+                    sheet.EnsureCell(currentRow, 3, styleText).SetCellValue(materialConsumptionInfo.ProductUnitConversionName);
+                    // sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(materialConsumptionInfo.ProductTypeName);
+                    sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(materialConsumptionInfo.Specification);
+                    // sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(materialConsumptionInfo.ProductCateName);
                 }
-                
+
+                if (productInfo != null)
+                {
+                    sheet.EnsureCell(currentRow, 5, styleText).SetCellValue(productInfo.ProductCode);
+                    sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(productInfo.ProductName);
+                    sheet.EnsureCell(currentRow, 7, styleText).SetCellValue(productInfo.ProductUnitConversionName);
+                    // sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(productInfo.ProductTypeName);
+                    sheet.EnsureCell(currentRow, 8, styleText).SetCellValue(productInfo.Specification);
+                    // sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(productInfo.ProductCateName);
+                }
+
+                sheet.EnsureCell(currentRow, 9, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity));
+
+                if (m.StepId.HasValue && stepInfos.ContainsKey((int)m.StepId))
+                    sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(stepInfos[(int)m.StepId]);
+
+                if (m.DepartmentId.HasValue && departmentInfos.ContainsKey((int)m.DepartmentId))
+                {
+                    var department = departmentInfos[(int)m.DepartmentId];
+                    sheet.EnsureCell(currentRow, 11, styleText).SetCellValue(department.DepartmentCode);
+                    sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(department.DepartmentName);
+                }
+
+                sheet.EnsureCell(currentRow, 13, styleText).SetCellValue(m.Description);
+
+                currentRow++;
+                index++;
             }
 
+
             return true;
+        }
+
+        private IEnumerable<ProductMaterialsConsumptionOutput> GetMaterialConsumptionSlices(IEnumerable<ProductMaterialsConsumptionOutput> group)
+        {
+            var results = new List<ProductMaterialsConsumptionOutput>();
+            foreach (var item in group)
+            {
+                results.Add(item);
+                if (item.MaterialsConsumptionInheri.Count() > 0)
+                    results.AddRange(GetMaterialConsumptionSlices(item.MaterialsConsumptionInheri));
+            }
+            return results;
         }
     }
 }

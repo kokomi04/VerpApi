@@ -125,6 +125,8 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         public async Task<PageData<PrintConfigStandardModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var query = _masterDBContext.PrintConfigStandard.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))

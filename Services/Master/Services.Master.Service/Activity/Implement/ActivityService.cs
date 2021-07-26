@@ -61,6 +61,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     MessageTypeId = (int)input.MessageTypeId,
                     ObjectId = input.ObjectId,
                     Message = input.Message,
+                    MessageResourceName = input.MessageResourceName,
+                    MessageResourceFormatData = input.MessageResourceFormatData,
                     SubsidiaryId = input.SubsidiaryId
                 };
 
@@ -86,7 +88,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             }
         }
 
-        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message)
+        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message, string messageResourceName = null, string messageResourceFormatData = null)
         {
             var activity = new UserActivityLog()
             {
@@ -96,6 +98,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 ActionId = actionTypeId,
                 MessageTypeId = (int)messageTypeId,
                 Message = message,
+                MessageResourceName = messageResourceName,
+                MessageResourceFormatData = messageResourceFormatData,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 SubsidiaryId = subsidiaryId
             };
@@ -132,6 +136,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     Message = item.Message,
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     MessageTypeId = (EnumMessageType)item.MessageTypeId,
+                    MessageResourceName = item.MessageResourceName,
+                    MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId
                 };
                 result.Add(actLogOutput);

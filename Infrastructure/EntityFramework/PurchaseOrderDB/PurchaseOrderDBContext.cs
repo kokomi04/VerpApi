@@ -15,6 +15,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
         }
 
+        public virtual DbSet<CuttingExcessMaterial> CuttingExcessMaterial { get; set; }
+        public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
+        public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
+        public virtual DbSet<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
@@ -23,6 +27,12 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<MaterialCalcSummary> MaterialCalcSummary { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
+        public virtual DbSet<PropertyCalc> PropertyCalc { get; set; }
+        public virtual DbSet<PropertyCalcProduct> PropertyCalcProduct { get; set; }
+        public virtual DbSet<PropertyCalcProductDetail> PropertyCalcProductDetail { get; set; }
+        public virtual DbSet<PropertyCalcProductOrder> PropertyCalcProductOrder { get; set; }
+        public virtual DbSet<PropertyCalcProperty> PropertyCalcProperty { get; set; }
+        public virtual DbSet<PropertyCalcSummary> PropertyCalcSummary { get; set; }
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
         public virtual DbSet<PurchaseOrder> PurchaseOrder { get; set; }
         public virtual DbSet<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
@@ -50,6 +60,63 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CuttingExcessMaterial>(entity =>
+            {
+                entity.HasKey(e => new { e.CuttingWorkSheetId, e.ExcessMaterial });
+
+                entity.Property(e => e.ExcessMaterial).HasMaxLength(255);
+
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.Specification).HasMaxLength(512);
+
+                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.CuttingWorkSheet)
+                    .WithMany(p => p.CuttingExcessMaterial)
+                    .HasForeignKey(d => d.CuttingWorkSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingExcessMaterial_CuttingWorkSheetSource");
+            });
+
+            modelBuilder.Entity<CuttingWorkSheet>(entity =>
+            {
+                entity.Property(e => e.InputQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.PropertyCalc)
+                    .WithMany(p => p.CuttingWorkSheet)
+                    .HasForeignKey(d => d.PropertyCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingWorkSheetSource_PropertyCalc");
+            });
+
+            modelBuilder.Entity<CuttingWorkSheetDest>(entity =>
+            {
+                entity.HasKey(e => new { e.CuttingWorkSheetId, e.ProductId })
+                    .HasName("PK__CuttingW__E19F308DFAD9852B");
+
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.CuttingWorkSheet)
+                    .WithMany(p => p.CuttingWorkSheetDest)
+                    .HasForeignKey(d => d.CuttingWorkSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingWorkSheetDest_CuttingWorkSheetSource");
+            });
+
+            modelBuilder.Entity<CuttingWorkSheetFile>(entity =>
+            {
+                entity.HasKey(e => new { e.CuttingWorkSheetId, e.FileId });
+
+                entity.HasOne(d => d.CuttingWorkSheet)
+                    .WithMany(p => p.CuttingWorkSheetFile)
+                    .HasForeignKey(d => d.CuttingWorkSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CuttingWorkSheetFile_CuttingWorkSheet");
+            });
+
             modelBuilder.Entity<MaterialCalc>(entity =>
             {
                 entity.HasIndex(e => new { e.SubsidiaryId, e.MaterialCalcCode })
@@ -182,6 +249,85 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasConstraintName("FK_PoAssignmentDetail_PurchasingSuggestDetail");
             });
 
+            modelBuilder.Entity<PropertyCalc>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.PropertyCalcCode).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<PropertyCalcProduct>(entity =>
+            {
+                entity.HasIndex(e => new { e.PropertyCalcId, e.ProductId })
+                    .HasName("IX_MaterialCalcProduct_ProductId_copy1")
+                    .IsUnique();
+
+                entity.HasOne(d => d.PropertyCalc)
+                    .WithMany(p => p.PropertyCalcProduct)
+                    .HasForeignKey(d => d.PropertyCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PropertyCalcProduct_PropertyCalc");
+            });
+
+            modelBuilder.Entity<PropertyCalcProductDetail>(entity =>
+            {
+                entity.HasKey(e => new { e.PropertyCalcProductId, e.PropertyId, e.MaterialProductId })
+                    .HasName("PK_MaterialCalcProductDetail_1_copy1");
+
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.PropertyCalcProduct)
+                    .WithMany(p => p.PropertyCalcProductDetail)
+                    .HasForeignKey(d => d.PropertyCalcProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PropertyCalcProductDetail_PropertyCalcProduct");
+            });
+
+            modelBuilder.Entity<PropertyCalcProductOrder>(entity =>
+            {
+                entity.HasKey(e => new { e.PropertyCalcProductId, e.OrderCode })
+                    .HasName("PK_MaterialCalcProductOrder_copy1");
+
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.OrderProductQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.PropertyCalcProduct)
+                    .WithMany(p => p.PropertyCalcProductOrder)
+                    .HasForeignKey(d => d.PropertyCalcProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PropertyCalcProductOrder_PropertyCalcProduct");
+            });
+
+            modelBuilder.Entity<PropertyCalcProperty>(entity =>
+            {
+                entity.HasKey(e => new { e.PropertyCalcId, e.PropertyId })
+                    .HasName("PK_MaterialCalcConsumptionGroup_copy1");
+
+                entity.HasOne(d => d.PropertyCalc)
+                    .WithMany(p => p.PropertyCalcProperty)
+                    .HasForeignKey(d => d.PropertyCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PropertyCalcConsumptionGroup_PropertyCalc");
+            });
+
+            modelBuilder.Entity<PropertyCalcSummary>(entity =>
+            {
+                entity.Property(e => e.ExchangeRate)
+                    .HasColumnType("decimal(32, 16)")
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.PropertyCalc)
+                    .WithMany(p => p.PropertyCalcSummary)
+                    .HasForeignKey(d => d.PropertyCalcId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PropertyCalcSummary_PropertyCalc");
+            });
+
             modelBuilder.Entity<ProviderProductInfo>(entity =>
             {
                 entity.HasKey(e => new { e.ProductId, e.CustomerId });
@@ -298,6 +444,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .WithMany(p => p.PurchasingRequest)
                     .HasForeignKey(d => d.MaterialCalcId)
                     .HasConstraintName("FK_PurchasingRequest_MaterialCalc");
+
+                entity.HasOne(d => d.PropertyCalc)
+                    .WithMany(p => p.PurchasingRequest)
+                    .HasForeignKey(d => d.PropertyCalcId)
+                    .HasConstraintName("FK_PurchasingRequest_PropertyCalc");
             });
 
             modelBuilder.Entity<PurchasingRequestDetail>(entity =>

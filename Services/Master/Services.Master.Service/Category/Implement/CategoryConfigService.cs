@@ -28,6 +28,7 @@ using VErp.Services.Master.Model.CategoryConfig;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace VErp.Services.Master.Service.Category
 {
@@ -39,6 +40,7 @@ namespace VErp.Services.Master.Service.Category
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterContext;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly IDataProtectionProvider _protectionProvider;
 
         public CategoryConfigService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
@@ -46,6 +48,7 @@ namespace VErp.Services.Master.Service.Category
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICategoryHelperService httpCategoryHelperService
+            , IDataProtectionProvider protectionProvider
             )
         {
             _logger = logger;
@@ -54,6 +57,7 @@ namespace VErp.Services.Master.Service.Category
             _appSetting = appSetting.Value;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
+            _protectionProvider = protectionProvider;
         }
 
         #region Category
@@ -503,6 +507,7 @@ namespace VErp.Services.Master.Service.Category
             categoryField.RefTableCode = data.RefTableCode;
             categoryField.RefTableField = data.RefTableField;
             categoryField.RefTableTitle = data.RefTableTitle;
+            categoryField.IsImage = data.IsImage;
         }
 
         private void ValidateCategoryField(CategoryFieldModel data, CategoryField categoryField = null, int? categoryFieldId = null)
@@ -982,5 +987,131 @@ namespace VErp.Services.Master.Service.Category
 
         }
 
+        public async Task<CategoryViewModel> CategoryViewGetInfo(int categoryId, bool isConfig = false)
+        {
+            var info = await _masterContext.CategoryView
+                .AsNoTracking()
+                .Where(t => t.CategoryId == categoryId)
+                .ProjectTo<CategoryViewModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+
+            if (info == null)
+            {
+                return new CategoryViewModel()
+                {
+                    Fields = new List<CategoryViewFieldModel>(),
+                    IsDefault = true,
+                    CategoryViewName = "Lọc dữ liệu"
+                };
+            }
+
+            var fields = await _masterContext.CategoryViewField.AsNoTracking()
+                .Where(t => t.CategoryViewId == info.CategoryViewId)
+                .OrderBy(f => f.SortOrder)
+                .ProjectTo<CategoryViewFieldModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            if (!isConfig)
+            {
+                var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+
+                foreach (var field in fields)
+                {
+                    if (!string.IsNullOrEmpty(field.ExtraFilter))
+                    {
+                        field.ExtraFilter = protector.Protect(field.ExtraFilter);
+                    }
+                }
+            }
+
+            info.Fields = fields.OrderBy(f => f.SortOrder).ToList();
+
+            return info;
+        }
+
+
+        public async Task<bool> CategoryViewUpdate(int categoryId, CategoryViewModel model)
+        {
+            var CategoryInfo = await _masterContext.Category.FirstOrDefaultAsync(t => t.CategoryId == categoryId);
+            if (CategoryInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy dan mục");
+
+            var info = await _masterContext.CategoryView.FirstOrDefaultAsync(v => v.CategoryId == categoryId);
+
+            if (info == null)
+            {
+                return await CategoryViewCreate(categoryId, model);
+            }
+
+            using var trans = await _masterContext.Database.BeginTransactionAsync();
+            try
+            {
+
+                _mapper.Map(model, info);
+
+                var oldFields = await _masterContext.CategoryViewField.Where(f => f.CategoryViewId == info.CategoryViewId).ToListAsync();
+
+                _masterContext.CategoryViewField.RemoveRange(oldFields);
+
+                await CategoryViewFieldAddRange(info.CategoryViewId, model.Fields);
+
+                await _masterContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.CategoryView, info.CategoryViewId, $"Cập nhật bộ lọc {info.CategoryViewName} cho báo cáo  {CategoryInfo.Title}", model.JsonSerialize());
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "CategoryViewUpdate");
+                throw;
+            }
+        }
+
+        private async Task<bool> CategoryViewCreate(int categoryId, CategoryViewModel model)
+        {
+            using var trans = await _masterContext.Database.BeginTransactionAsync();
+            try
+            {
+                var categoryInfo = await _masterContext.Category.FirstOrDefaultAsync(t => t.CategoryId == categoryId);
+                if (categoryInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
+                var info = _mapper.Map<CategoryView>(model);
+
+                info.CategoryId = categoryId;
+
+                await _masterContext.CategoryView.AddAsync(info);
+                await _masterContext.SaveChangesAsync();
+
+                await CategoryViewFieldAddRange(info.CategoryViewId, model.Fields);
+
+                await _masterContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.CategoryView, info.CategoryViewId, $"Tạo bộ lọc {info.CategoryViewName} cho báo cáo  {categoryInfo.Title}", model.JsonSerialize());
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "CategoryViewCreate");
+                throw;
+            }
+
+        }
+
+        private async Task CategoryViewFieldAddRange(int categoryViewId, IList<CategoryViewFieldModel> fieldModels)
+        {
+            var fields = fieldModels.Select(f => _mapper.Map<CategoryViewField>(f)).ToList();
+            foreach (var f in fields)
+            {
+                f.CategoryViewId = categoryViewId;
+            }
+            await _masterContext.CategoryViewField.AddRangeAsync(fields);
+        }
     }
 }

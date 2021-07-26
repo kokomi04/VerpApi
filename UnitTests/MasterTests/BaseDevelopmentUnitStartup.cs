@@ -42,7 +42,7 @@ namespace MasterTests
 
             var currentContextFactory = (ICurrentContextFactory)webHost.Services.GetService(typeof(ICurrentContextFactory));
 
-            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, EnumActionType.Add, RoleInfo, null, subsidiaryId, null));
+            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, EnumActionType.Add, RoleInfo, null, subsidiaryId, null,""));
 
             _masterDBContext = (MasterDBContext)webHost.Services.GetService(typeof(MasterDBContext));
 
@@ -66,7 +66,7 @@ namespace MasterTests
 
             var currentContextFactory = (ICurrentContextFactory)webHost.Services.GetService(typeof(ICurrentContextFactory));
 
-            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(1, EnumActionType.Add, RoleInfo, null, 0, null));
+            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(1, EnumActionType.Add, RoleInfo, null, 0, null,""));
 
             _masterDBContext = (MasterDBContext)webHost.Services.GetService(typeof(MasterDBContext));
 

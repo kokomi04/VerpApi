@@ -121,7 +121,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Trường danh mục")]
         CategoryField = 33,
 
-
+        [Description("Bộ lọc danh mục")]
+        CategoryView = 1034, 
         //AccountingAccount = 33,
 
 
@@ -257,7 +258,14 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Kế hoạch sản xuất")]
         ProductionPlan = 400,
+        [Description("Thuộc tính sản phầm")]
+        Property = 401,
+        [Description("Tính toán nhu cầu VT có thuộc tính đặc biệt của đơn hàng")]
+        PropertyCalc = 402,
 
+
+        [Description("Nội dung thường xuyên sử dụng")]
+        ReuseContent = 501,
 
     }
 }

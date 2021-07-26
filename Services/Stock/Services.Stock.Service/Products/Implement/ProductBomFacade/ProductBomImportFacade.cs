@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -17,6 +15,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Bom;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
@@ -32,15 +31,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private IList<ProductBomImportModel> _importData;
         private IDictionary<string, ProductType> _productTypes;
         private IDictionary<string, ProductCate> _productCates;
-        private IDictionary<string, UnitOutput> _units;
+        private IDictionary<string, UnitOutput[]> _units;
         private IDictionary<string, SimpleProduct> _existedProducts;
         private IList<StepSimpleInfo> _steps;
 
         private IDictionary<string, bool> _productCodeMaterials;
+        private IDictionary<string, HashSet<int>> _productCodeProperties;
+
         private IDictionary<string, List<ProductBomImportModel>> _bomByProductCodes;
 
         private IManufacturingHelperService _manufacturingHelperService;
 
+        private bool IsPreview = false;
+        public IList<ProductBomByProduct> PreviewData { get; private set; }
+
+        public ProductBomImportFacade(bool isPreview)
+        {
+            IsPreview = isPreview;
+        }
         public ProductBomImportFacade SetService(StockDBContext stockDbContext)
         {
             _stockDbContext = stockDbContext;
@@ -71,9 +79,17 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return this;
         }
 
-        public ProductBomImportFacade SetService(IManufacturingHelperService manufacturingHelperService) {
+        public ProductBomImportFacade SetService(IManufacturingHelperService manufacturingHelperService)
+        {
             _manufacturingHelperService = manufacturingHelperService;
             return this;
+        }
+
+
+        private int _id = -1000;
+        public int GetNewId()
+        {
+            return _id--;
         }
 
         public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream)
@@ -91,8 +107,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     await AddMissingUnit();
                     await AddMissingProduct();
                     await ImportBom();
-                    await trans.CommitAsync();
-                    await logBath.CommitAsync();
+                    if (!IsPreview)
+                    {
+                        await trans.CommitAsync();
+                        await logBath.CommitAsync();
+                    }
                 }
             }
             return true;
@@ -126,33 +145,69 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         }
                         return true;
                     case nameof(ProductBomImportModel.OutputStepName):
-                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? inputStepId) && inputStepId.HasValue)) {
+                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? inputStepId) && inputStepId.HasValue))
+                        {
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
                         }
                         entity.OutputStepName = value;
                         return true;
                     case nameof(ProductBomImportModel.InputStepName):
-                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? outputStepId) && outputStepId.HasValue)) {
+                        if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? outputStepId) && outputStepId.HasValue))
+                        {
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
                         }
                         entity.InputStepName = value;
                         return true;
                 }
 
+
+                if (propertyName.StartsWith(nameof(ProductBomImportModel.Properties)))
+                {
+                    var propertyId = int.Parse(propertyName.Substring(nameof(ProductBomImportModel.Properties).Length));
+                    if (entity.Properties == null)
+                    {
+                        entity.Properties = new HashSet<int>();
+                    }
+
+                    if (!entity.Properties.Contains(propertyId) && value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                    {
+                        entity.Properties.Add(propertyId);
+                    }
+                    return true;
+                }
+
+
                 return false;
             });
         }
 
 
-        private void FindMaterial(int rootProductId, string parentProductCode, IList<int> paths, IList<string> pathCodes, IList<ProductMaterialModel> productMaterials)
+        private void FindMaterial(SimpleProduct rootProduct, string parentProductCode, IList<int> paths, IList<string> pathCodes, ProductBomUpdateInfoModel model)
         {
             _existedProducts.TryGetValue(parentProductCode, out var parentInfo);
 
+            if (_productCodeProperties.TryGetValue(parentProductCode, out var props) && rootProduct.ProductId != parentInfo.ProductId)
+            {
+                foreach (var propertyId in props)
+                {
+                    var propData = new ProductPropertyModel()
+                    {
+                        RootProductId = rootProduct.ProductId,
+                        ProductId = parentInfo.ProductId,
+                        PropertyId = propertyId,
+                        PathProductIds = paths.ToArray(),
+                        PathProductCodes = pathCodes.ToArray()
+                    };
+                    model.PropertiesInfo.BomProperties.Add(propData);
+                }
+            }
+
+
             if (_productCodeMaterials.TryGetValue(parentProductCode, out var isMaterial) && isMaterial)
             {
-                productMaterials.Add(new ProductMaterialModel()
+                model.MaterialsInfo.BomMaterials.Add(new ProductMaterialModel()
                 {
-                    RootProductId = rootProductId,
+                    RootProductId = rootProduct.ProductId,
                     ProductId = parentInfo.ProductId,
                     PathProductIds = paths.ToArray(),
                     PathProductCodes = pathCodes.ToArray()
@@ -160,6 +215,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
             else
             {
+
                 if (_bomByProductCodes.ContainsKey(parentProductCode) && _bomByProductCodes[parentProductCode].Count > 0)
                 {
                     foreach (var b in _bomByProductCodes[parentProductCode])
@@ -171,7 +227,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         _pathCodes.Add(parentInfo.ProductCode);
                         _existedProducts.TryGetValue(b.ChildProductCode.NormalizeAsInternalName(), out var childInfo);
                         if (!_paths.Contains(childInfo.ProductId))
-                            FindMaterial(rootProductId, childInfo.ProductCode.NormalizeAsInternalName(), _paths, _pathCodes, productMaterials);
+                            FindMaterial(rootProduct, childInfo.ProductCode.NormalizeAsInternalName(), _paths, _pathCodes, model);
                     }
                 }
             }
@@ -183,14 +239,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             _productCodeMaterials = _importData.GroupBy(c => c.ChildProductCode.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.Max(m => m.IsMaterial));
 
+            _productCodeProperties = _importData.GroupBy(c => c.ChildProductCode.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.SelectMany(m => m.Properties ?? new HashSet<int>()).Distinct().ToHashSet());
+
+
+            var bomData = new List<ProductBomInput>();
+
             foreach (var bom in _bomByProductCodes)
             {
-                _existedProducts.TryGetValue(bom.Key, out var productInfo);
-
-                var productMaterials = new List<ProductMaterialModel>();
-
-                FindMaterial(productInfo.ProductId, bom.Key, new List<int>(), new List<string>(), productMaterials);
-
+                _existedProducts.TryGetValue(bom.Key, out var rootProductInfo);
 
                 var productBoms = bom.Value.Select(b =>
                 {
@@ -199,22 +255,140 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     TryGetStepId(b.InputStepName, out int? inputStepId);
                     TryGetStepId(b.OutputStepName, out int? outputStepId);
 
-                    return new ProductBomInput() {
+                    return new ProductBomInput()
+                    {
                         ProductBomId = null,
-                        ProductId = productInfo.ProductId,
+                        ProductId = rootProductInfo.ProductId,
                         ChildProductId = childProduct.ProductId,
                         Quantity = b.Quantity,
                         Wastage = b.Wastage ?? 1,
                         InputStepId = inputStepId,
-                        OutputStepId = b.IsMaterial ? null : outputStepId
+                        OutputStepId = b.IsMaterial ? null : outputStepId,
+                        Description = b.Description
                     };
                 }).ToList();
 
-                await _productBomService.UpdateProductBomDb(productInfo.ProductId, productBoms, productMaterials, true);
+                var productMaterials = new List<ProductMaterialModel>();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductBom, productInfo.ProductId, $"Cập nhật chi tiết bom cho mặt hàng {productInfo.ProductCode}, tên hàng {productInfo.ProductName} (import)", new { productBoms, productMaterials }.JsonSerialize());
+                var productProperties = new List<ProductPropertyModel>();
+
+                var updateModel = new ProductBomUpdateInfoModel()
+                {
+                    BomInfo = new ProductBomUpdateInfo(productBoms),
+                    MaterialsInfo = new ProductBomMaterialUpdateInfo(new List<ProductMaterialModel>(), false),
+                    PropertiesInfo = new ProductBomPropertyUpdateInfo(new List<ProductPropertyModel>(), false)
+                };
+
+                FindMaterial(rootProductInfo, bom.Key, new List<int>(), new List<string>(), updateModel);
+
+
+                if (!IsPreview)
+                {
+
+                    await _productBomService.UpdateProductBomDb(rootProductInfo.ProductId, updateModel);
+
+                    await _activityLogService.CreateLog(EnumObjectType.ProductBom, rootProductInfo.ProductId, $"Import chi tiết bom cho mặt hàng {rootProductInfo.ProductCode}, tên hàng {rootProductInfo.ProductName} (import)", new { productBoms, productMaterials }.JsonSerialize());
+                }
+                else
+                {
+                    bomData.AddRange(productBoms);
+                }
+            }
+
+            if (IsPreview)
+            {
+                LoadPreviewData(bomData);
             }
         }
+
+        private void LoadPreviewData(IList<ProductBomInput> boms)
+        {
+            var rootProductIds = boms.Select(b => b.ProductId)
+                .Distinct()
+                .Where(pId => !boms.Any(b => b.ChildProductId == pId))
+                .ToList();
+
+            PreviewData = new List<ProductBomByProduct>();
+            foreach (var rootProductId in rootProductIds)
+            {
+                var bomInfo = new ProductBomByProduct();
+                var rootInfo = _existedProducts.Values.FirstOrDefault(v => v.ProductId == rootProductId);
+
+                bomInfo.Info = new ProductRootBomInfo()
+                {
+                    ProductId = rootInfo.ProductId,
+                    ProductCode = rootInfo.ProductCode,
+                    ProductName = rootInfo.ProductName,
+                    Specification = rootInfo.Specification,
+                    UnitName = rootInfo.UnitName,
+                    ProductCateName = _productCates.Values.FirstOrDefault(c => c.ProductCateId == rootInfo.ProductCateId)?.ProductCateName,
+                    ProductTypeName = _productTypes.Values.FirstOrDefault(c => c.ProductTypeId == rootInfo.ProductTypeId)?.ProductTypeName,
+                };
+
+                bomInfo.Boms = new List<ProductBomPreviewOutput>();
+
+                GetBoms(rootInfo, rootInfo.ProductId, 1, 1, "", new List<int>() { rootProductId }, bomInfo.Boms, boms);
+
+                PreviewData.Add(bomInfo);
+            }
+        }
+
+        private void GetBoms(SimpleProduct rootInfo, int productId, decimal quantity, int level, string numberOrder, IList<int> pathProductIds, IList<ProductBomPreviewOutput> lst, IList<ProductBomInput> boms)
+        {
+            var productBoms = boms.Where(b => b.ProductId == productId).ToList();
+            var bomIndex = 1;
+            foreach (var b in productBoms)
+            {
+                var childInfo = _existedProducts.Values.FirstOrDefault(v => v.ProductId == b.ChildProductId);
+
+                var totalQuantity = quantity * (b.Quantity ?? 0) * (b.Wastage ?? 1);
+
+                var bomNumOrder = numberOrder;
+
+                bomNumOrder += "." + bomIndex++;
+                bomNumOrder = bomNumOrder.Trim('.');
+
+
+                var productCodeNormalized = childInfo?.ProductCode?.NormalizeAsInternalName();
+
+                _productCodeProperties.TryGetValue(productCodeNormalized, out var propertyIds);
+
+                _productCodeMaterials.TryGetValue(productCodeNormalized, out var isMaterial);
+
+                lst.Add(new ProductBomPreviewOutput()
+                {
+                    ProductBomId = 0,
+                    Level = level,
+                    ProductId = productId,
+                    ChildProductId = b.ChildProductId,
+
+                    ProductCode = childInfo.ProductCode,
+
+                    ProductName = childInfo.ProductName,
+                    Specification = childInfo.Specification,
+
+                    Quantity = b.Quantity ?? 0,
+                    Wastage = b.Wastage ?? 1,
+                    TotalQuantity = totalQuantity,
+                    Description = b.Description,
+                    UnitName = childInfo.UnitName,
+                    UnitId = childInfo.UnitId,
+                    IsMaterial = isMaterial,
+                    NumberOrder = bomNumOrder,
+                    ProductUnitConversionId = 0,
+                    DecimalPlace = 12,
+                    InputStepId = b.InputStepId,
+                    OutputStepId = b.OutputStepId,
+                    PathProductIds = pathProductIds?.ToArray(),
+                    PropertyIds = propertyIds?.ToList()
+                });
+
+                var pathProducts = pathProductIds.DeepClone();
+                pathProducts.Add(b.ChildProductId);
+                GetBoms(rootInfo, b.ChildProductId, totalQuantity, level + 1, bomNumOrder, pathProducts, lst, boms);
+            }
+        }
+
 
         private async Task AddMissingProductType()
         {
@@ -227,11 +401,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var newTypes = newProductTypes.Where(t => !_productTypes.ContainsKey(t.Key))
                 .Select(t => new ProductType()
                 {
+                    ProductTypeId = IsPreview ? GetNewId() : 0,
                     ProductTypeName = t.Value,
                     IdentityCode = t.Value
                 }).ToList();
-            await _stockDbContext.ProductType.AddRangeAsync(newTypes);
-            await _stockDbContext.SaveChangesAsync();
+            if (!IsPreview)
+            {
+                await _stockDbContext.ProductType.AddRangeAsync(newTypes);
+                await _stockDbContext.SaveChangesAsync();
+            }
 
             foreach (var t in newTypes)
             {
@@ -250,12 +428,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var newCates = newProductCates.Where(t => !_productCates.ContainsKey(t.Key))
                 .Select(t => new ProductCate()
                 {
+                    ProductCateId = IsPreview ? GetNewId() : 0,
                     ProductCateName = t.Value
                 }).ToList();
 
-            await _stockDbContext.ProductCate.AddRangeAsync(newCates);
-            await _stockDbContext.SaveChangesAsync();
-
+            if (!IsPreview)
+            {
+                await _stockDbContext.ProductCate.AddRangeAsync(newCates);
+                await _stockDbContext.SaveChangesAsync();
+            }
             foreach (var t in newCates)
             {
                 _productCates.Add(t.ProductCateName.NormalizeAsInternalName(), t);
@@ -265,7 +446,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private async Task AddMissingUnit()
         {
             _units = (await _unitService.GetList(string.Empty, null, 1, -1, null)).List.GroupBy(u => u.UnitName.NormalizeAsInternalName())
-                      .ToDictionary(u => u.Key, u => u.FirstOrDefault());
+                      .ToDictionary(u => u.Key, u => u.ToArray());
 
 
             var importedUnits = _importData.SelectMany(p => new[] { p.UnitName, p.ChildUnitName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
@@ -281,8 +462,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 }).ToList();
             foreach (var uni in newUnits)
             {
-                var unitId = await _unitService.AddUnit(uni);
-                _units.Add(uni.UnitName.NormalizeAsInternalName(), new UnitOutput() { UnitId = unitId, UnitName = uni.UnitName, UnitStatusId = uni.UnitStatusId });
+                var unitId = GetNewId();
+                if (!IsPreview)
+                {
+                    unitId = await _unitService.AddUnit(uni);
+                }
+
+                _units.Add(uni.UnitName.NormalizeAsInternalName(), new UnitOutput[] {
+                    new UnitOutput { UnitId = unitId, UnitName = uni.UnitName, UnitStatusId = uni.UnitStatusId }
+                });
             }
 
         }
@@ -307,10 +495,26 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         UnitName = p.First().UnitName,
                         Specification = p.First().Specification,
                         IsProduct = p.Max(d => d.IsProduct),
-                        IsSemi = p.Max(d => d.IsSemi),
+                        IsSemi = p.Max(d => d.IsSemi)
                     });
 
-            _existedProducts = (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName }).ToListAsync()).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
+            _existedProducts = (await (
+                from p in _stockDbContext.Product
+                join e in _stockDbContext.ProductExtraInfo on p.ProductId equals e.ProductId into es
+                from e in es.DefaultIfEmpty()
+                select new { p.ProductId, p.ProductCode, p.ProductName, p.UnitId, e.Specification, p.ProductCateId, p.ProductTypeId }
+                ).ToListAsync())
+                .Select(p => new SimpleProduct
+                {
+                    ProductId = p.ProductId,
+                    ProductCode = p.ProductCode,
+                    ProductName = p.ProductName,
+                    UnitId = p.UnitId,
+                    UnitName = _units.Values.SelectMany(u => u).FirstOrDefault(u => u.UnitId == p.UnitId)?.UnitName,
+                    Specification = p.Specification,
+                    ProductTypeId = p.ProductTypeId,
+                    ProductCateId = p.ProductCateId
+                }).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
 
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
@@ -356,7 +560,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
 
                     _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
-                    if (unit == null)
+                    if (unit == null || unit.Length <= 0)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính \"{p.Value.UnitName}\" cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
                     }
@@ -369,7 +573,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                         ProductTypeId = type?.ProductTypeId,
                         ProductCateId = cate.ProductCateId,
-                        UnitId = unit.UnitId,
+                        UnitId = unit.FirstOrDefault().UnitId,
                         IsProduct = p.Value.IsProduct,
                         IsProductSemi = p.Value.IsSemi,
 
@@ -387,17 +591,34 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 .ToList();
             foreach (var product in newProducts)
             {
-                var productId = await _productService.AddProductToDb(product);
-                _existedProducts.Add(product.ProductCode.NormalizeAsInternalName(), new SimpleProduct { ProductId = productId, ProductCode = product.ProductCode, ProductName = product.ProductName });
+                var productId = GetNewId();
+                if (!IsPreview)
+                {
+                    productId = await _productService.AddProductToDb(product);
+                }
+
+                _existedProducts.Add(product.ProductCode.NormalizeAsInternalName(), new SimpleProduct
+                {
+                    ProductId = productId,
+                    ProductCode = product.ProductCode,
+                    ProductName = product.ProductName,
+                    UnitId = product.UnitId,
+                    UnitName = _units.Values.SelectMany(u => u).FirstOrDefault(u => u.UnitId == product.UnitId)?.UnitName,
+                    Specification = product.Extra.Specification,
+                    ProductCateId = product.ProductCateId,
+                    ProductTypeId = product.ProductTypeId
+                });
             }
 
         }
 
-        private bool TryGetStepId(string key, out int? value) {
+        private bool TryGetStepId(string key, out int? value)
+        {
 
             key = string.IsNullOrEmpty(key) ? "" : key.Trim().ToLower();
 
-            if (_steps == null || !_steps.Any(x => x.StepName.ToLower().Equals(key))) {
+            if (_steps == null || !_steps.Any(x => x.StepName.ToLower().Equals(key)))
+            {
                 value = null;
                 return false;
             }
@@ -413,6 +634,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             public int ProductId { get; set; }
             public string ProductCode { get; set; }
             public string ProductName { get; set; }
+            public int UnitId { get; set; }
+            public string UnitName { get; set; }
+            public string Specification { get; set; }
+
+            public int? ProductTypeId { get; set; }
+            public int? ProductCateId { get; set; }
+        }
+
+        private class ProductRootCodeDescription : Dictionary<string, string>
+        {
+            //public string RootProductCode { get; set; }
+            //  public string Description { get; set; }
         }
     }
 }

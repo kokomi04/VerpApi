@@ -34,9 +34,17 @@ namespace VErpApi.Controllers.Stock.Inventory
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("inventorytype/{inventoryType}/Search")]
-        public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements([FromRoute]EnumInventoryType inventoryType, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
+        public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(
+            [FromRoute] EnumInventoryType inventoryType,
+            [FromQuery] string keyword,
+            [FromQuery] int page,
+            [FromQuery] int size,
+            [FromQuery] string orderByFieldName,
+            [FromQuery] bool asc,
+            [FromQuery] bool? hasInventory,
+            [FromBody] Clause filters = null)
         {
-            return await _inventoryRequirementService.GetListInventoryRequirements(inventoryType, keyword, page, size, orderByFieldName, asc, filters).ConfigureAwait(true);
+            return await _inventoryRequirementService.GetListInventoryRequirements(inventoryType, keyword, page, size, orderByFieldName, asc, hasInventory, filters).ConfigureAwait(true);
         }
 
         [HttpGet]

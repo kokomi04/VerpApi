@@ -664,7 +664,8 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
-
+            keyword = (keyword ?? "").Trim();
+            
             var fields = (from f in _accountancyContext.CategoryField
                           join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
                           where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly

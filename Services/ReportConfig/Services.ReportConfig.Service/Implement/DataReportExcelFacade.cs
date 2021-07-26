@@ -14,6 +14,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -27,6 +28,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 {
     public class DataReportExcelFacade
     {
+        private const int CONDITION_VALUE = 1;
         private ISheet sheet = null;
         private ExcelWriter xssfwb = null;
         private int currentRow = 0;
@@ -95,8 +97,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await WriteHeader();
 
-            WriteBody(reportInfo);
+            WriteBody();
+
             WriteFooter();
+
+
 
             if (sheet.LastRowNum < 1000)
             {
@@ -153,8 +158,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 if (_model.Header.fLogoId > 0)
                 {
-#if !DEBUG
                     var fileInfo = await _physicalFileService.GetSimpleFileInfo(_model.Header.fLogoId);
+#if !DEBUG
+                   
                     var pictureType = GetPictureType(Path.GetExtension(fileInfo.FileName).ToLower());
 
                     if (fileInfo != null && pictureType != PictureType.None)
@@ -205,12 +211,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-        private void WriteBody(ReportType reportInfo)
+        private void WriteBody()
         {
             GenerateBodyInfo();
             currentRow += 2;
-            GenerateHeadTable(reportInfo);
-            GenerateDataTable(reportInfo);
+            GenerateHeadTable();
+            GenerateDataTable();
         }
 
         private void GenerateBodyInfo()
@@ -245,7 +251,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         Dictionary<int, int> maxColumnLineLengths = new Dictionary<int, int>();
         readonly byte[] headerRgb = new byte[3] { 221, 229, 239 };
-        private void GenerateHeadTable(ReportType reportInfo)
+        private void GenerateHeadTable()
         {
             int fRow, sRow;
             fRow = sRow = 0;
@@ -332,7 +338,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        private void GenerateDataTable(ReportType reportInfo)
+
+        private void GenerateDataTable()
         {
             var sheet = xssfwb.GetSheet(sheetName);
             currentRow += 1;
@@ -342,7 +349,19 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 table.Columns.Add($"Col-{index}");
             }
+
+
+            var conditionHiddenColumns = allColumns.Select(c => c.CalcSumConditionCol).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToArray();
+            for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
+            {
+                var col = conditionHiddenColumns[conditionIndex];
+                sheet.SetColumnHidden(columns.Count + conditionIndex, true);
+                table.Columns.Add($"Col-{columns.Count + conditionIndex + 1}");
+            }
+
+
             var sumCalc = new Dictionary<int, ReportColumnModel>();
+            //var sumValues = new Dictionary<int, decimal>();
 
             int? firstGroupDataRow = null;
             int? lastGroupDataRow = null;
@@ -350,6 +369,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             _mergeRows = new bool[dataTable.Rows.List.Count][];
             cellStyles = new ICellStyle[dataTable.Rows.List.Count + currentRow][];
+
 
             var mergeRanges = new List<CellRangeAddress>();
             for (var i = 0; i < dataTable.Rows.List.Count; i++)
@@ -365,9 +385,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 //customCellStyles
                 ICellStyle rowStyle = null;
                 var rowStyleStr = "";
-                if (row.ContainsKey("$ROW_CSS_STYLE"))
+                if (row.ContainsKey(ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS))
                 {
-                    rowStyleStr = row["$ROW_CSS_STYLE"]?.ToString();
+                    rowStyleStr = row[ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS]?.ToString();
                     rowStyle = ParseCellStyle(sheet, null, rowStyleStr);
                 }
                 cellStyles[i + currentRow] = new ICellStyle[columns.Count];
@@ -382,26 +402,52 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
 
                     var cellStyleStr = "";
-                    if (row.ContainsKey("$" + field.Alias + "_CSS_STYLE"))
+                    var cellStyleAlias = string.Format(ReportSpecialColumnConstants.ROW_COLUMN_CSS_STYLE_ALIAS_FORMAT, field.Alias);
+                    if (row.ContainsKey(cellStyleAlias))
                     {
-                        cellStyleStr = row["$" + field.Alias + "_CSS_STYLE"]?.ToString();
+                        cellStyleStr = row[cellStyleAlias]?.ToString();
                     }
 
                     ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
 
-                    if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx)) sumCalc.Add(columnIndx, field);
+                    if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx))
+                    {
+                        sumCalc.Add(columnIndx, field);
+                        //sumValues.Add(columnIndx, 0);
+                    }
                     var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
 
                     cellStyles[i + currentRow][columnIndx] = cellStyle;
 
                     if (row.ContainsKey(field.Alias))
                     {
+                        var value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset);
                         tbRow[columnIndx] = new ExcelCell
                         {
-                            Value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset),
+                            Value = value,
                             Type = dataType.GetExcelType(),
                             CellStyle = cellStyle
                         };
+
+
+                        //if (!value.IsNullObject() && field.IsCalcSum)
+                        //{
+                        //    if (!string.IsNullOrWhiteSpace(field.CalcSumConditionCol) && row.ContainsKey(field.CalcSumConditionCol))
+                        //    {
+                        //        var condition = row[field.CalcSumConditionCol];
+
+                        //        if (condition == (object)true || (long.TryParse(condition?.ToString(), out var vInNumber) && vInNumber > 0))
+                        //        {
+                        //            sumValues[columnIndx] += Convert.ToDecimal(value);
+                        //        }
+                        //    }
+                        //    else
+                        //    {
+                        //        sumValues[columnIndx] += Convert.ToDecimal(value);
+                        //    }
+
+                        //}
+
                     }
 
                     columnIndx++;
@@ -442,6 +488,31 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         currentMergeValue = mergeValue;
                     }
                 }
+
+
+                for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
+                {
+                    var col = conditionHiddenColumns[conditionIndex];
+                    if (row.ContainsKey(col))
+                    {
+                        var v = row[col];
+                        long.TryParse(v?.ToString(), out var vInNumber);
+                        if (v == (object)true || vInNumber > 0)
+                        {
+                            tbRow[columnIndx] = new ExcelCell
+                            {
+                                Value = CONDITION_VALUE,
+                                Type = EnumDataType.Int.GetExcelType()
+                            };
+                        }
+
+                    }
+
+                    columnIndx++;
+
+                }
+
+
                 tbRow.FillAllRow();
                 table.Rows.Add(tbRow);
             }
@@ -469,14 +540,44 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 ExcelRow sumRow = table.NewRow();
                 foreach (var (index, column) in sumCalc)
                 {
+
                     var dataType = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
+
                     var columnName = (index + 1).GetExcelColumnName();
-                    sumRow[index] = new ExcelCell
+
+                    var conditionColum = conditionHiddenColumns.FirstOrDefault(c => c == column.CalcSumConditionCol);
+
+                    var sumRange = $"{columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()}";
+                    if (!string.IsNullOrWhiteSpace(column.CalcSumConditionCol) && conditionColum != null)
                     {
-                        Value = $"SUM({columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()})",
-                        Type = EnumExcelType.Formula,
-                        CellStyle = GetCellStyle(sheet, column, true)
-                    };
+                        var aliasIndex = columns.Count + Array.IndexOf(conditionHiddenColumns, conditionColum);
+                        var aliasName = (aliasIndex + 1).GetExcelColumnName();
+
+                        var conditionRange = $"{aliasName}{currentRow + 1}:{aliasName}{currentRow + dataTable.Rows.List.Count()}";
+                        sumRow[index] = new ExcelCell
+                        {
+                            Value = $"SUMIF({conditionRange},{CONDITION_VALUE},{sumRange})",
+                            Type = EnumExcelType.Formula,
+                            CellStyle = GetCellStyle(sheet, column, true)
+                        };
+                    }
+                    else
+                    {
+                        sumRow[index] = new ExcelCell
+                        {
+                            Value = $"SUM({sumRange})",
+                            Type = EnumExcelType.Formula,
+                            CellStyle = GetCellStyle(sheet, column, true)
+                        };
+                    }
+
+                    //sumRow[index] = new ExcelCell
+                    //{
+                    //    Value = sumValues[index],
+                    //    Type = EnumExcelType.Number,
+                    //    CellStyle = GetCellStyle(sheet, column, true)
+                    //};
+
                 }
                 var columnIndx = 0;
                 foreach (var field in columns)
