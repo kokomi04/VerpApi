@@ -26,10 +26,22 @@ using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Commons.Library
 {
+
     public static class Utils
     {
-        private static ILoggerFactory _loggerFactory = new LoggerFactory();
-        public static ILoggerFactory LoggerFactory { get { return _loggerFactory; } set { _loggerFactory = value; } }
+
+        public static ILoggerFactory LoggerFactory;
+
+        public static ILoggerFactory DefaultLoggerFactory
+        {
+            get
+            {
+                return Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+                {
+                    builder.AddConsole();
+                });
+            }
+        }
 
         public static string RemoveDiacritics(this string str)
         {

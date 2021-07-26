@@ -21,11 +21,27 @@ using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
+    
     public static class SqlDBHelper
     {
         private const string SubIdParam = "@SubId";
         private const string SubsidiaryIdColumn = "SubsidiaryId";
-        private static ILogger _logger = Utils.LoggerFactory.CreateLogger(typeof(SqlDBHelper));
+
+        private static ILogger __logger;
+        private static ILogger _logger
+        {
+            get
+            {
+                if (__logger != null) return __logger;
+                var loggerFactory = Utils.LoggerFactory;
+                if (loggerFactory != null)
+                {
+                    __logger = Utils.LoggerFactory.CreateLogger(typeof(SqlDBHelper));
+                    return __logger;
+                }
+                return Utils.DefaultLoggerFactory.CreateLogger(typeof(SqlDBHelper));
+            }
+        }
 
         private static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
         {
