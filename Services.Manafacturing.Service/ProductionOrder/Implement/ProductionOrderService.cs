@@ -77,6 +77,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductTitle LIKE @Keyword ");
                 whereCondition.Append("OR v.PartnerTitle LIKE @Keyword ");
+                whereCondition.Append("OR v.ContainerNumber LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -308,9 +309,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var productionOrder = _manufacturingDBContext.ProductionOrder
                     .Where(o => o.ProductionOrderId == productionOrderId)
                     .FirstOrDefault();
+
+                bool invalidPlan = productionOrder.StartDate.GetUnix() != data.StartDate || productionOrder.EndDate.GetUnix() != data.EndDate;
+
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
                 _mapper.Map(data, productionOrder);
-
+               
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
                 var productIds = data.ProductionOrderDetail.Select(od => (long)od.ProductId).ToList();
                 // Lấy ra thông tin đầu ra nhập kho trong quy trình
@@ -334,6 +338,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 var oldDetail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
+                var oldDetailIds = oldDetail.Select(d => d.ProductionOrderDetailId).ToList();
 
                 foreach (var item in data.ProductionOrderDetail)
                 {
@@ -342,12 +347,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     if (oldItem != null)
                     {
                         // Cập nhật
+                        invalidPlan = invalidPlan || oldItem.ProductId != item.ProductId || oldItem.Quantity != item.Quantity || oldItem.ReserveQuantity != item.ReserveQuantity;
                         _mapper.Map(item, oldItem);
                         // Gỡ khỏi danh sách cũ
                         oldDetail.Remove(oldItem);
                     }
                     else
                     {
+                        invalidPlan = true;
                         item.ProductionOrderDetailId = 0;
                         // Tạo mới
                         var entity = _mapper.Map<ProductionOrderDetail>(item);
@@ -379,6 +386,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 await _manufacturingDBContext.SaveChangesAsync();
+
+                invalidPlan = invalidPlan || oldDetail.Count > 0;
+                if (invalidPlan && _manufacturingDBContext.ProductionWeekPlan.Any(wp => oldDetailIds.Contains(wp.ProductionOrderDetailId)))
+                {
+                    productionOrder.InvalidPlan = true;
+                }
 
                 // Xóa chi tiết
                 foreach (var item in oldDetail)
@@ -585,6 +598,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "UpdateProductOrderStatus");
+                throw;
+            }
+        }
+
+        public async Task<bool> EditNote(long productionOrderDetailId, string note)
+        {
+            var productionOrderDetail = await _manufacturingDBContext.ProductionOrderDetail.FirstOrDefaultAsync(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
+            if (productionOrderDetail == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+            try
+            {
+                productionOrderDetail.Note = note;
+                _manufacturingDBContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductOrderNote");
                 throw;
             }
         }
