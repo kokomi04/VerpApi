@@ -12,7 +12,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
     {
         public IList<OutsourceStepOrderDetailInput> OutsourceOrderDetail { get; set; }
         public IList<OutsourceOrderMaterialsModel> OutsourceOrderMaterials { get; set; }
-        // public IList<OutsourceOrderExcessModel> OutsourceOrderExcesses { get; set; }
+        public IList<OutsourceOrderExcessModel> OutsourceOrderExcesses { get; set; }
     }
 
     public class OutsourceStepOrderDetailInput: IMapFrom<OutsourceOrderDetail>
