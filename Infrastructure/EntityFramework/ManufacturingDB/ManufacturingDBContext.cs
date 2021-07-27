@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<DepartmentTimeTable> DepartmentTimeTable { get; set; }
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
+        public virtual DbSet<OutsourceOrderExcess> OutsourceOrderExcess { get; set; }
         public virtual DbSet<OutsourceOrderMaterials> OutsourceOrderMaterials { get; set; }
         public virtual DbSet<OutsourcePartRequest> OutsourcePartRequest { get; set; }
         public virtual DbSet<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }
@@ -125,6 +126,25 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.OutsourceOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceOrderDetail_OutsourceOrder");
+            });
+
+            modelBuilder.Entity<OutsourceOrderExcess>(entity =>
+            {
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Specification).HasMaxLength(255);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.HasOne(d => d.OutsourceOrder)
+                    .WithMany(p => p.OutsourceOrderExcess)
+                    .HasForeignKey(d => d.OutsourceOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_OutsourceOrderExcess_OutsourceOrder");
             });
 
             modelBuilder.Entity<OutsourceOrderMaterials>(entity =>
