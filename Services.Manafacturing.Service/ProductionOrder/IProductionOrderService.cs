@@ -23,5 +23,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 
         Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data);
         Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status);
+        Task<bool> EditNote(long productionOrderDetailId, string note);
     }
 }

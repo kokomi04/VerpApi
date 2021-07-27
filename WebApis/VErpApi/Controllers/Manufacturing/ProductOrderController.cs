@@ -44,6 +44,14 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.UpdateProductionOrder(productionOrderId, req);
         }
 
+
+        [HttpPut]
+        [Route("{productionOrderDetailId}/note")]
+        public async Task<bool> EditNote([FromRoute] long productionOrderDetailId, [FromQuery] string note)
+        {
+            return await _productionOrderService.EditNote(productionOrderDetailId, note);
+        }
+
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("Search")]

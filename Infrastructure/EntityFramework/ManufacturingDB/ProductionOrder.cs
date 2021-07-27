@@ -31,6 +31,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime Date { get; set; }
         public bool IsInvalid { get; set; }
         public bool IsResetProductionProcess { get; set; }
+        public bool? InvalidPlan { get; set; }
 
         public virtual ICollection<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual ICollection<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
