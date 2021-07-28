@@ -313,9 +313,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportMaterialsConsumptionFromMapping(int? productId, ImportExcelMapping mapping, Stream stream)
         {
-            var facade = new ProductMaterialsConsumptionInportFacade(_stockDbContext
+            var facade = new ProductMaterialsConsumptionImportFacade(_stockDbContext
                 , _organizationHelperService
                 , _manufacturingHelperService
                 , _activityLogService)
