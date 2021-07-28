@@ -8,13 +8,13 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
-    public class OutsourceStepOrderOutput: OutsourceOrderModel, IMapFrom<OutsourceOrder>
+    public class OutsourceStepOrderOutput : OutsourceOrderModel, IMapFrom<OutsourceOrder>
     {
         public IList<OutsourceStepOrderDetailOutput> OutsourceOrderDetail { get; set; }
         public IList<OutsourceOrderMaterialsOutput> OutsourceOrderMaterials { get; set; }
         public IList<OutsourceOrderExcessOutput> OutsourceOrderExcesses { get; set; }
 
-        public void Mapping(Profile profile)
+        public override void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrder, OutsourceStepOrderOutput>()
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
@@ -36,8 +36,10 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         }
     }
 
-    public class OutsourceOrderMaterialsOutput: OutsourceOrderMaterialsModel
+    public class OutsourceOrderMaterialsOutput : OutsourceOrderMaterialsModel
     {
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
         public string ProductTitle { get; set; }
         public int UnitId { get; set; }
         public decimal? QuantityRequirement { get; set; }
@@ -46,7 +48,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string ProductionOrderCode { get; set; }
     }
 
-    public class OutsourceOrderExcessOutput: OutsourceOrderExcessModel
+    public class OutsourceOrderExcessOutput : OutsourceOrderExcessModel
     {
         
     }
