@@ -22,9 +22,7 @@ using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade
 {
-
-
-    public class ProductMaterialsConsumptionInportFacade
+    public class ProductMaterialsConsumptionImportFacade
     {
         private class SimpleProduct
         {
@@ -48,31 +46,32 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private IDictionary<string, SimpleProduct> _existedProducts;
         private IDictionary<string, ProductType> _productTypes;
         private IDictionary<string, ProductCate> _productCates;
-        private IList<DepartmentSimpleModel> _departments;
-        private IList<StepSimpleInfo> _steps;
+
 
         private IList<ProductBomOutput> _boms;
         private ProductModel _productInfo;
         private Dictionary<string, ProductMaterialsConsumptionGroup> _groupConsumptions;
+        private IList<DepartmentSimpleModel> _departments;
+        private Dictionary<string, StepSimpleInfo> _steps;
 
-        public ProductMaterialsConsumptionInportFacade SetService(IUnitService unitService)
+        public ProductMaterialsConsumptionImportFacade SetService(IUnitService unitService)
         {
             _unitService = unitService;
             return this;
         }
-        public ProductMaterialsConsumptionInportFacade SetService(IProductService productService)
+        public ProductMaterialsConsumptionImportFacade SetService(IProductService productService)
         {
             _productService = productService;
             return this;
         }
 
-        public ProductMaterialsConsumptionInportFacade SetService(IProductBomService productBomService)
+        public ProductMaterialsConsumptionImportFacade SetService(IProductBomService productBomService)
         {
             _productBomService = productBomService;
             return this;
         }
 
-        public ProductMaterialsConsumptionInportFacade(StockDBContext stockDbContext
+        public ProductMaterialsConsumptionImportFacade(StockDBContext stockDbContext
             , IOrganizationHelperService organizationHelperService
             , IManufacturingHelperService manufacturingHelperService
             , IActivityLogService activityLogService)
@@ -83,10 +82,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             _activityLogService = activityLogService;
         }
 
-        public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int productId)
+        public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int? productId)
         {
             ReadExcelData(mapping, stream);
-            await ValidWithProductBOM(productId);
+
+            if (productId.HasValue)
+                await ValidWithProductBOM(productId);
+
             await ValidExcelData();
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -97,7 +99,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     await AddMissingUnit();
                     await AddMissingProduct();
                     await AddMissingMaterialConsumptionGroup();
-                    await Import(productId);
+                    await ImportProcess();
                     await trans.CommitAsync();
                     await logBath.CommitAsync();
                 }
@@ -105,10 +107,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             return true;
         }
 
-        private async Task ValidWithProductBOM(int productId)
+        private async Task ValidWithProductBOM(int? productId)
         {
-            _boms = await _productBomService.GetBom(productId);
-            _productInfo = await _productService.ProductInfo(productId);
+            _boms = await _productBomService.GetBom(productId.Value);
+            _productInfo = await _productService.ProductInfo(productId.Value);
 
             var notExistsUsageProductInBom = _importData.Where(x => x.UsageProductCode != _productInfo.ProductCode)
                                                         .Where(x => !_boms.Any(b => b.ProductCode == x.UsageProductCode))
@@ -134,7 +136,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Xuất hiện chi tiết sử dụng có mã trùng nhau cùng sử dụng vật liệu tiêu hao trong cùng 1 nhóm. Các vật liệu tiêu hao: \"{string.Join(", ", hasGreatThanTwoUsageProductUsingMaterialConsumption.Select(x => x.productCode))}\"");
 
             _departments = await _organizationHelperService.GetAllDepartmentSimples();
-            _steps = await _manufacturingHelperService.GetSteps();
+            _steps = (await _manufacturingHelperService.GetSteps()).GroupBy(x => x.StepName.NormalizeAsInternalName())
+                                                                                       .ToDictionary(k => k.Key, v => v.First());
 
             foreach (var row in _importData)
             {
@@ -148,8 +151,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 if (string.IsNullOrWhiteSpace(row.StepName))
                     continue;
 
-                var step = _steps.FirstOrDefault(x => x.StepName == row.StepName);
-                if (step == null)
+                if (!_steps.ContainsKey(row.StepName.NormalizeAsInternalName()))
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy công đoạn \"{row.StepName}\" của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
             }
         }
@@ -160,61 +162,70 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             _importData = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping, null);
         }
 
-        private async Task Import(int productId)
+        private async Task ImportProcess()
         {
             var data = _importData.GroupBy(x => x.GroupTitle.NormalizeAsInternalName());
             foreach (var d in data)
             {
                 if (_groupConsumptions.ContainsKey(d.Key))
                 {
-                    var lsUsageProductIds = _boms.Select(x => x.ChildProductId).ToList();
-                    lsUsageProductIds.Add(productId);
+                    var groupMaterialConsumptionId = _groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId;
 
-                    /* Loại bỏ row data cũ */
-                    var oldMaterialConsumptions = await _stockDbContext.ProductMaterialsConsumption
-                        .Where(x => lsUsageProductIds.Contains(x.ProductId) && x.ProductMaterialsConsumptionGroupId == _groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId)
-                        .ToListAsync();
+                    var usageProductCodes = d.Select(x => x.UsageProductCode).ToArray();
+                    var usageProductIds = _existedProducts.Values.Where(x => usageProductCodes.Contains(x.ProductCode)).Select(x => x.ProductId).ToArray();
+                    await RemoveOldMaterialConsumption(usageProductIds, groupMaterialConsumptionId);
 
-                    oldMaterialConsumptions.ForEach(x => x.IsDeleted = true);
-
-                    await _stockDbContext.SaveChangesAsync();
-
+                    var dicMaterialConsumption = new Dictionary<int, List<ProductMaterialsConsumption>>();
                     /* Thêm mới row data cũ */
-                    foreach (var row in d)
+                    foreach (var (usageProductCode, rows) in d.GroupBy(x => x.UsageProductCode.NormalizeAsInternalName()).ToDictionary(k => k.Key, v => v))
                     {
-                        if (!_existedProducts.ContainsKey(row.ProductCode.NormalizeAsInternalName())) continue;
+                        var usageProductId = _existedProducts[usageProductCode].ProductId;
 
-                        var bom = _boms.FirstOrDefault(x => x.ProductCode == row.UsageProductCode);
-                        var usageProductId = _productInfo.ProductCode == row.UsageProductCode ? productId : bom.ChildProductId.Value;
-                        // var oldComsumption = oldMaterialConsumptions.FirstOrDefault(x => x.ProductId == usageProductId && x.MaterialsConsumptionId == _existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId);
+                        var newMaterialConsumptions = from r in rows
+                                                      let stepId = GetStep(r.StepName)?.StepId
+                                                      let departmentId = GetDepartment(r.DepartmentCode, r.DepartmentName)?.DepartmentId
+                                                      let materialsConsumptionId = _existedProducts[r.ProductCode.NormalizeAsInternalName()].ProductId
+                                                      select new ProductMaterialsConsumption
+                                                      {
+                                                          MaterialsConsumptionId = materialsConsumptionId,
+                                                          ProductId = usageProductId,
+                                                          Quantity = r.Quantity,
+                                                          DepartmentId = departmentId,
+                                                          StepId = stepId,
+                                                          ProductMaterialsConsumptionGroupId = groupMaterialConsumptionId
+                                                      };
 
-                        // if (oldComsumption != null)
-                        // {
-                        //     oldComsumption.Quantity = row.Quantity;
-                        // }
-                        // else
-                        // {
-                        var department = _departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
-                        var step = _steps.FirstOrDefault(x => x.StepName == row.StepName);
-                        var item = new ProductMaterialsConsumption
+                        if (!dicMaterialConsumption.ContainsKey(usageProductId))
                         {
-                            MaterialsConsumptionId = _existedProducts[row.ProductCode.NormalizeAsInternalName()].ProductId,
-                            ProductId = usageProductId,
-                            Quantity = row.Quantity,
-                            DepartmentId = department?.DepartmentId,
-                            StepId = step?.StepId,
-                            ProductMaterialsConsumptionGroupId = _groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId,
-                            Description = row.Description
-                        };
+                            dicMaterialConsumption.Add(usageProductId, new List<ProductMaterialsConsumption>());
+                        }
 
-                        _stockDbContext.ProductMaterialsConsumption.Add(item);
-                        // }
+                        dicMaterialConsumption[usageProductId].AddRange(newMaterialConsumptions);
+
+                    }
+
+                    foreach (var (usageProductId, values) in dicMaterialConsumption)
+                    {
+                        await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(values);
+                        await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, usageProductId, $"Import vật liệu tiêu hao cho sản phẩm {usageProductId} nhóm {groupMaterialConsumptionId}", values.JsonSerialize());
                     }
 
                     await _stockDbContext.SaveChangesAsync();
-                    await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Import vật liệu tiêu hao cho sản phẩm {productId} nhóm {_groupConsumptions[d.Key].ProductMaterialsConsumptionGroupId} ", _importData.JsonSerialize());
                 }
             }
+        }
+
+
+        private async Task RemoveOldMaterialConsumption(IEnumerable<int> productIds, int groupMaterialConsumptionId)
+        {
+            /* Loại bỏ row data cũ */
+            var oldMaterialConsumptions = await _stockDbContext.ProductMaterialsConsumption
+                .Where(x => productIds.Contains(x.ProductId) && x.ProductMaterialsConsumptionGroupId == groupMaterialConsumptionId)
+                .ToListAsync();
+
+            oldMaterialConsumptions.ForEach(x => x.IsDeleted = true);
+
+            await _stockDbContext.SaveChangesAsync();
         }
 
         private async Task AddMissingUnit()
@@ -223,7 +234,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                       .ToDictionary(u => u.Key, u => u.FirstOrDefault());
 
 
-            var importedUnits = _importData.SelectMany(p => new[] { p.UnitName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            var importedUnits = _importData.SelectMany(p => new[] { p.UnitName, p.UsageUnitName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
                 .GroupBy(t => t.NormalizeAsInternalName())
                 .ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
@@ -244,20 +255,38 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
         private async Task AddMissingProduct()
         {
-            var importProducts = _importData.Select(p => new
-            {
-                p.ProductCode,
-                p.ProductName,
-                p.UnitName,
-                p.Specification,
-                p.ProductCateName,
-                p.ProductTypeCode
-            })
+            var importProducts = _importData.SelectMany(p => new[]{
+                    new {
+                        p.ProductCode,
+                        p.ProductName,
+                        p.UnitName,
+                        p.Specification,
+                        p.ProductCateName,
+                        p.ProductTypeCode
+                    },
+                    new {
+                        ProductCode = p.UsageProductCode,
+                        ProductName = p.UsageProductName,
+                        UnitName = p.UsageUnitName,
+                        Specification = p.UsageSpecification,
+                        ProductCateName = p.UsageProductCateName,
+                        ProductTypeCode = p.UsageProductTypeCode
+                    }
+                })
                 .Where(p => !string.IsNullOrWhiteSpace(p.ProductCode))
                     .Distinct()
                     .ToList()
                     .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
-                    .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+                    .ToDictionary(p => p.Key, p => new
+                    {
+
+                        ProductCode = p.First().ProductCode,
+                        ProductName = p.First().ProductName,
+                        ProductTypeCode = p.First().ProductTypeCode,
+                        ProductCateName = p.First().ProductCateName,
+                        UnitName = p.First().UnitName,
+                        Specification = p.First().Specification,
+                    });
 
             _existedProducts = (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName }).ToListAsync()).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
@@ -340,7 +369,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         {
             _productTypes = (await _stockDbContext.ProductType.AsNoTracking().ToListAsync()).GroupBy(t => t.IdentityCode.NormalizeAsInternalName()).ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
-            var newProductTypes = _importData.SelectMany(p => new[] { p.ProductTypeCode }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            var newProductTypes = _importData.SelectMany(p => new[] { p.ProductTypeCode, p.UsageProductTypeCode }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
                 .GroupBy(t => t.NormalizeAsInternalName())
                 .ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
@@ -363,7 +392,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         {
             _productCates = (await _stockDbContext.ProductCate.AsNoTracking().ToListAsync()).GroupBy(t => t.ProductCateName.NormalizeAsInternalName()).ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
-            var newProductCates = _importData.SelectMany(p => new[] { p.ProductCateName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+            var newProductCates = _importData.SelectMany(p => new[] { p.ProductCateName, p.UsageProductCateName }).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
                 .GroupBy(t => t.NormalizeAsInternalName())
                 .ToDictionary(t => t.Key, t => t.FirstOrDefault());
 
@@ -405,6 +434,19 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             {
                 _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
             }
+        }
+
+        private StepSimpleInfo GetStep(string StepName)
+        {
+            StepSimpleInfo step = null;
+            if (!string.IsNullOrWhiteSpace(StepName))
+                step = _steps[StepName.NormalizeAsInternalName()];
+
+            return step;
+        }
+        private DepartmentSimpleModel GetDepartment(string departmentCode, string departmentName)
+        {
+            return _departments.FirstOrDefault(x => x.DepartmentCode == departmentCode || x.DepartmentName == departmentName);
         }
 
     }

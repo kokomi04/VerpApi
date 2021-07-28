@@ -90,6 +90,18 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
         [HttpPost]
+        [Route("materialsConsumption/importFromMapping")]
+        public async Task<bool> ImportMaterialsConsumptionFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
+            return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMapping(null, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+        [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{productId}/materialsConsumption/exports")]
         public async Task<IActionResult> ExportProductMaterialsConsumption([FromRoute] int productId)
