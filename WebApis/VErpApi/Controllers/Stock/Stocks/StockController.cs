@@ -215,15 +215,18 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <param name="stockIds"></param>
         /// <param name="productTypeIds"></param>
         /// <param name="productCateIds"></param>
+        /// <param name="rangeQuantityRemaining">Lọc tồn kho trong khoảng a, b. Luôn luôn có 2 giá trị</param>
+        /// <param name="isMinOrMax">Lọc ngưỡng min hoặc max. Giá trị: null - tất cả; true - ngưỡng min; false - ngưỡng max</param>
         /// <param name="page"></param>
         /// <param name="size"></param>
+        /// <param name="filters"></param>
         /// <returns></returns>
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("GetStockProductQuantityWarning")]
-        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters )
+        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> rangeQuantityRemaining, [FromQuery] bool? isMinOrMax, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
-            return await _stockProductService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, page, size, filters);
+            return await _stockProductService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, rangeQuantityRemaining, isMinOrMax, page, size, filters);
         }
 
         /// <summary>
