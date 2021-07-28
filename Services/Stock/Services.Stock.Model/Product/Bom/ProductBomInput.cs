@@ -16,5 +16,20 @@ namespace VErp.Services.Stock.Model.Product
         public int? InputStepId { get; set; }
         public int? OutputStepId { get; set; }
         public int? SortOrder { get; set; }
+        public string Description { get; set; }
     }
+    public class ProductBomUpdateInfo
+    {
+        public ProductBomUpdateInfo()
+        {
+
+        }
+        public ProductBomUpdateInfo(IList<ProductBomInput> bom)
+        {
+            Bom = bom;
+        }
+
+        public IList<ProductBomInput> Bom { get; set; }
+    }
+    
 }

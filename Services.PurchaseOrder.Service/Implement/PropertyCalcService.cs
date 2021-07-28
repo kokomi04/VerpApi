@@ -186,7 +186,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .Where(s => s.PropertyCalcId == propertyCalcId)
                 .ToListAsync();
 
-
             foreach (var item in info.Summary)
             {
                 // Nếu là chi tiết
@@ -312,6 +311,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var currentFiles = _purchaseOrderDBContext.CuttingWorkSheetFile.Where(f => currentWorkSheetIds.Contains(f.CuttingWorkSheetId)).ToList();
             var currentDests = _purchaseOrderDBContext.CuttingWorkSheetDest.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
             var currentExcessMaterials = _purchaseOrderDBContext.CuttingExcessMaterial.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
+          
+            if(data.Any(s => s.CuttingWorkSheetDest.GroupBy(d => d.ProductId).Any(g => g.Count() > 1))) {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
+            }
+            if (data.Any(s => s.CuttingExcessMaterial.Any(m => string.IsNullOrEmpty(m.ExcessMaterial))))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
+            }
+            if (data.Any(s => s.CuttingExcessMaterial.GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có vật tư dư thừa bị trùng lặp");
+            }
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCuttingWorkSheet(propertyCalcId));
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
@@ -344,16 +356,20 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 _purchaseOrderDBContext.SaveChanges();
 
+                var changeCuttingWorkSheetIds = tupples.Select(t => t.Item2.CuttingWorkSheetId).ToList();
+
+                // Xóa dữ liệu cũ
+                var deleteFiles = currentFiles.Where(f => changeCuttingWorkSheetIds.Contains(f.CuttingWorkSheetId)).ToList();
+                _purchaseOrderDBContext.CuttingWorkSheetFile.RemoveRange(deleteFiles);
+                var deleteDests = currentDests.Where(d => changeCuttingWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
+                _purchaseOrderDBContext.CuttingWorkSheetDest.RemoveRange(deleteDests);
+                var deleteExcessMaterials = currentExcessMaterials.Where(d => changeCuttingWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
+                _purchaseOrderDBContext.CuttingExcessMaterial.RemoveRange(deleteExcessMaterials);
+
+                _purchaseOrderDBContext.SaveChanges();
                 // Cập nhật file và thông tin đích
                 foreach (var tuple in tupples)
                 {
-                    // Xóa dữ liệu cũ
-                    var deleteFiles = currentFiles.Where(f => f.CuttingWorkSheetId == tuple.Item2.CuttingWorkSheetId).ToList();
-                    _purchaseOrderDBContext.CuttingWorkSheetFile.RemoveRange(deleteFiles);
-                    var deleteDests = currentDests.Where(d => d.CuttingWorkSheetId == tuple.Item2.CuttingWorkSheetId).ToList();
-                    _purchaseOrderDBContext.CuttingWorkSheetDest.RemoveRange(deleteDests);
-                    var deleteExcessMaterials = currentExcessMaterials.Where(d => d.CuttingWorkSheetId == tuple.Item2.CuttingWorkSheetId).ToList();
-                    _purchaseOrderDBContext.CuttingExcessMaterial.RemoveRange(deleteExcessMaterials);
                     // Tạo dữ liệu mới
                     foreach (var file in tuple.Item1.CuttingWorkSheetFile)
                     {

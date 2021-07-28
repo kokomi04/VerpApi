@@ -32,7 +32,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Product> Product { get; set; }
         public virtual DbSet<ProductAttachment> ProductAttachment { get; set; }
         public virtual DbSet<ProductBom> ProductBom { get; set; }
-        public virtual DbSet<ProductBomDescription> ProductBomDescription { get; set; }
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
@@ -585,12 +584,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_BillOfMaterial_Product_ProductId");
             });
 
-            modelBuilder.Entity<ProductBomDescription>(entity =>
-            {
-                entity.Property(e => e.Description).HasMaxLength(1024);
-
-                entity.Property(e => e.PathProductIds).IsRequired();
-            });
 
             modelBuilder.Entity<ProductCate>(entity =>
             {
@@ -659,6 +652,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductMaterialsConsumption>(entity =>
             {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.MaterialsConsumption)

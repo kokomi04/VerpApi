@@ -60,6 +60,15 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
         }
 
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByCodes")]
+        public async Task<IList<ProductionOrderListModel>> GetProductionOrders([FromBody] IList<string> productionOrderCodes)
+        {
+            return await _productionOrderService.GetProductionOrdersByCodes(productionOrderCodes);
+        }
+
+
         [HttpGet]
         [Route("{productionOrderId}")]
         public async Task<ProductionOrderOutputModel> GetProductionOrder([FromRoute] long productionOrderId)

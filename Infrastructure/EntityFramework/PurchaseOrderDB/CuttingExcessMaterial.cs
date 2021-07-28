@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal ProductQuantity { get; set; }
         public decimal WorkpieceQuantity { get; set; }
         public string Note { get; set; }
+        public string Specification { get; set; }
 
         public virtual CuttingWorkSheet CuttingWorkSheet { get; set; }
     }

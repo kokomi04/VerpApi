@@ -22,8 +22,6 @@ using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade
 {
-
-
     public class ProductMaterialsConsumptionImportFacade
     {
         private class SimpleProduct

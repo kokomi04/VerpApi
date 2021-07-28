@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
@@ -25,8 +26,23 @@ using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Commons.Library
 {
+
     public static class Utils
     {
+
+        public static ILoggerFactory LoggerFactory;
+
+        public static ILoggerFactory DefaultLoggerFactory
+        {
+            get
+            {
+                return Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+                {
+                    builder.AddConsole();
+                });
+            }
+        }
+
         public static string RemoveDiacritics(this string str)
         {
             if (str == null) return null;
@@ -1003,11 +1019,20 @@ namespace VErp.Commons.Library
 
                 foreach (PropertyInfo pro in props)
                 {
-                    if (pro.Name == column.ColumnName && dr[column.ColumnName] != DBNull.Value)
+                    if (pro.Name.Equals(column.ColumnName, StringComparison.OrdinalIgnoreCase) && dr[column.ColumnName] != DBNull.Value)
                     {
                         try
                         {
-                            pro.SetValue(obj, dr[column.ColumnName], null);
+                            var v = dr[column.ColumnName];
+                            if (pro.PropertyType == typeof(long) && v?.GetType() == typeof(DateTime))
+                            {
+                                pro.SetValue(obj, (dr[column.ColumnName] as DateTime?).GetUnix(), null);
+                            }
+                            else
+                            {
+                                pro.SetValue(obj, dr[column.ColumnName], null);
+                            }
+
                         }
                         catch (Exception)
                         {
@@ -1322,6 +1347,26 @@ namespace VErp.Commons.Library
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\.,/-_#&+)");
             }
+        }
+
+        public static string SubStringMaxLength(this string str, int maxLength, bool byword = false, bool elipsis = false)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return str;
+            if (str.Length < maxLength) return str;
+            str = str.Substring(0, maxLength);
+            if (byword)
+            {
+                var idxOfSpace = str.LastIndexOfAny(new[] { ' ', '\n', '\r', '\t' });
+                if (idxOfSpace > 0)
+                {
+                    str = str.Substring(0, idxOfSpace);
+                }
+            }
+            if (elipsis)
+            {
+                str += "...";
+            }
+            return str;
         }
     }
 }

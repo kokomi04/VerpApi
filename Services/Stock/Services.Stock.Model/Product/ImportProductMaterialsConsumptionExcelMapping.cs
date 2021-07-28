@@ -66,5 +66,8 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Tên công đoạn (Nếu có)", GroupName = "Thông tin công đoạn")]
         public string StepName { get; set; }
 
+        [Display(Name = "Ghi chú", GroupName = "Khác")]
+        public string Description { get; set; }
+
     }
 }

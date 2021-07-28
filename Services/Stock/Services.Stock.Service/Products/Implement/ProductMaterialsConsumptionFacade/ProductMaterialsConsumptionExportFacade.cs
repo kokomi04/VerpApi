@@ -19,7 +19,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 13;
+        private int maxColumnIndex = 14;
 
         private IEnumerable<ProductMaterialsConsumptionOutput> materialsConsumps;
 
@@ -114,7 +114,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
             sheet.EnsureCell(fRow, 12).SetCellValue($"Bộ phận");
 
-            sheet.EnsureCell(fRow, 13).SetCellValue($"Nhóm Nvl tiêu hao");
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Ghi chú");
+
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Nhóm Nvl tiêu hao");
 
 
 
@@ -180,7 +182,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 sheet.EnsureCell(currentRow, 0, styleText).SetCellValue(index);
 
                 if (groupsConsump.ContainsKey(m.ProductMaterialsConsumptionGroupId))
-                    sheet.EnsureCell(currentRow, 13, styleText).SetCellValue(groupsConsump[m.ProductMaterialsConsumptionGroupId]);
+                    sheet.EnsureCell(currentRow, 14, styleText).SetCellValue(groupsConsump[m.ProductMaterialsConsumptionGroupId]);
 
                 if (materialConsumptionInfo != null)
                 {
@@ -213,6 +215,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     sheet.EnsureCell(currentRow, 11, styleText).SetCellValue(department.DepartmentCode);
                     sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(department.DepartmentName);
                 }
+
+                sheet.EnsureCell(currentRow, 13, styleText).SetCellValue(m.Description);
 
                 currentRow++;
                 index++;

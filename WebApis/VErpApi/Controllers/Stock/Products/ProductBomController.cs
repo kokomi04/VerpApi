@@ -16,6 +16,7 @@ using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Bom;
 using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.Products;
 
@@ -60,7 +61,13 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<bool> Update([FromRoute] int productId, [FromBody] ProductBomModel model)
         {
             if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials, model.ProductProperties, model.IsCleanOldMaterial, model.IsCleanOldProperties);
+            var updateModel = new ProductBomUpdateInfoModel()
+            {
+                BomInfo = new ProductBomUpdateInfo(model.ProductBoms),
+                MaterialsInfo = new ProductBomMaterialUpdateInfo(model.ProductMaterials, model.IsCleanOldMaterial),
+                PropertiesInfo = new ProductBomPropertyUpdateInfo(model.ProductProperties, model.IsCleanOldProperties)
+            };
+            return await _productBomService.Update(productId, updateModel);
         }
 
         [HttpPost]

@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 ProductName = productInfo.ProductName,
 
-                ProductNameEng = productInfo.ProductName,
+                ProductNameEng = productInfo.ProductNameEng,
 
                 MainImageFileId = productInfo.MainImageFileId,
 
@@ -159,7 +159,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 productInfo.ProductName = model.ProductName;
 
-                productInfo.ProductNameEng = model.ProductName;
+                productInfo.ProductNameEng = model.ProductNameEng;
 
                 productInfo.MainImageFileId = model.MainImageFileId;
 
