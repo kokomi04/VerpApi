@@ -12,4 +12,19 @@
     <ProjectReference Include="..\Service.Manafacturing.Model\Services.Manafacturing.Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Resources\OutsourceMaterialActivityMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>OutsourceMaterialActivityMessage.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\OutsourceMaterialActivityMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

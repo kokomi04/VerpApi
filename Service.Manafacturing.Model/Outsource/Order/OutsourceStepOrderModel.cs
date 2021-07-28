@@ -43,4 +43,5 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string ProductionOrderCode { get; set; }
         public string OrderCode { get; set; }
     }
+
 }

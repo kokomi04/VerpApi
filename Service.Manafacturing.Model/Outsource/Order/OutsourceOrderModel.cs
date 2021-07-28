@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         [Required]
         public long OutsourceOrderFinishDate { get; set; }
 
-        public void Mapping(Profile profile)
+        public virtual void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrder, OutsourceOrderModel>()
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
@@ -81,6 +81,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public SuppliersModel Suppliers { get; set; }
         public long? AttachmentFileId { get; set; }
         public string ExcessMaterialNotes { get; set; }
+
+        public long? PropertyCalcId { get; set; }
     }
 
     public class SuppliersModel

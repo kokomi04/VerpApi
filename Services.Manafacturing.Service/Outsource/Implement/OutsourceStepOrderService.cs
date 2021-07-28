@@ -273,6 +273,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var data = lsOutsourceStepRequestData.FirstOrDefault(x => x.ProductionStepLinkDataId == m.ProductionStepLinkDataId);
                 if (productInfo != null)
                 {
+                    m.ProductCode = productInfo.ProductCode;
+                    m.ProductName = productInfo.ProductName;
                     m.ProductTitle = $"{productInfo.ProductCode}/ {productInfo.ProductName}";
                     m.UnitId = productInfo.UnitId;
                     m.DecimalPlace = productInfo.StockInfo?.UnitConversions?.FirstOrDefault()?.DecimalPlace;
