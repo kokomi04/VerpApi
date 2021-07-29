@@ -87,6 +87,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     _manufacturingDBContext.OutsourceOrderMaterials.AddRange(materials);
                     await _manufacturingDBContext.SaveChangesAsync();
 
+                    // Danh sách vật tư dư thừa
+                    var excess = _mapper.Map<List<OutsourceOrderExcess>>(req.OutsourceOrderExcesses);
+                    excess.ForEach(x => x.OutsourceOrderId = order.OutsourceOrderId);
+
+                    _manufacturingDBContext.OutsourceOrderExcess.AddRange(excess);
+                    await _manufacturingDBContext.SaveChangesAsync();
+
+
                     // Tạo lịch sử theo dõi lần đầu
                     await CreateOutsourceTrackFirst(order.OutsourceOrderId);
 
@@ -317,7 +325,27 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.OutsourceOrderMaterials.AddRangeAsync(newMaterials);
                 await _manufacturingDBContext.SaveChangesAsync();
 
+                //excesses
+                var excesses = await _manufacturingDBContext.OutsourceOrderExcess.Where(x => x.OutsourceOrderId == outsourceStepOrder.OutsourceOrderId)
+                    .ToListAsync();
 
+                foreach (var m in excesses)
+                {
+                    var s = req.OutsourceOrderExcesses.FirstOrDefault(x => x.OutsourceOrderExcessId == m.OutsourceOrderExcessId);
+                    if (s != null)
+                        _mapper.Map(s, m);
+                    else m.IsDeleted = true;
+                }
+
+                var newExcesses = req.OutsourceOrderExcesses
+                    .AsQueryable()
+                    .Where(x => x.OutsourceOrderExcessId <= 0)
+                    .ProjectTo<OutsourceOrderExcess>(_mapper.ConfigurationProvider)
+                    .ToList();
+                newExcesses.ForEach(x => x.OutsourceOrderId = outsourceStepOrder.OutsourceOrderId);
+
+                await _manufacturingDBContext.OutsourceOrderExcess.AddRangeAsync(newExcesses);
+                
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
