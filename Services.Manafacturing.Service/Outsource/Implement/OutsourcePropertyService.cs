@@ -109,7 +109,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
             }
         }
-        private async Task<GenerateCodeContext> GenerateCode(long? outsourceOrderId, OutsourceStepOrderInput model)
+        private async Task<GenerateCodeContext> GenerateCode(long? outsourceOrderId, OutsourcePropertyOrderInput model)
         {
             model.OutsourceOrderCode = (model.OutsourceOrderCode ?? "").Trim();
 
@@ -241,7 +241,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             var details = await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
                 .Where(x => x.OutsourceOrderId == outsourceOrderId)
-                .ProjectTo<OutsourceStepOrderDetailInput>(_mapper.ConfigurationProvider)
+                .ProjectTo<OutsourcePropertyOrderDetail>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
             var productIds = materials.Select(x => (int)x.ProductId).ToList();
