@@ -36,6 +36,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public long PropertyCalcId { get; set; }
         public IList<OutsourcePropertyOrderDetail> OutsourceOrderDetail { get; set; }
         public IList<OutsourceOrderMaterialsModel> OutsourceOrderMaterials { get; set; }
+        public IList<OutsourceOrderExcessModel> OutsourceOrderExcesses { get; set; }
     }
 
     public class OutsourcePropertyOrderDetail : IMapFrom<OutsourceOrderDetail>
