@@ -14,35 +14,35 @@ using VErp.Services.Manafacturing.Service.Outsource;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {
-    [Route("api/manufacturing/outsourceMaterialOrder")]
+    [Route("api/manufacturing/outsourcePropertyOrder")]
     [ApiController]
-    public class OutsourceMaterialOrderController : VErpBaseController
+    public class OutsourcePropertyOrderController : VErpBaseController
     {
-        private readonly IOutsourceMaterialService _outsourceMaterialOrderService;
+        private readonly IOutsourcePropertyService _outsourcePropertyOrderService;
 
-        public OutsourceMaterialOrderController(IOutsourceMaterialService outsourceMaterialOrderService)
+        public OutsourcePropertyOrderController(IOutsourcePropertyService outsourcePropertyOrderService)
         {
-            _outsourceMaterialOrderService = outsourceMaterialOrderService;
+            _outsourcePropertyOrderService = outsourcePropertyOrderService;
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<long> Create([FromBody] OutsourceStepOrderInput req)
+        public async Task<long> Create([FromBody] OutsourcePropertyOrderInput req)
         {
-            return await _outsourceMaterialOrderService.Create(req);
+            return await _outsourcePropertyOrderService.Create(req);
         }
 
         [HttpGet]
         [Route("{outsourceOrderId}")]
-        public async Task<OutsourceStepOrderOutput> GetInfo([FromRoute] long outsourceOrderId)
+        public async Task<OutsourcePropertyOrderInput> GetInfo([FromRoute] long outsourceOrderId)
         {
-            return await _outsourceMaterialOrderService.Info(outsourceOrderId);
+            return await _outsourcePropertyOrderService.Info(outsourceOrderId);
         }
 
         [HttpPost]
         [Route("search")]
         [VErpAction(EnumActionType.View)]
-        public async Task<PageData<OutsourceMaterialOrderList>> Search(
+        public async Task<PageData<OutsourcePropertyOrderList>> Search(
             [FromQuery] string keyword,
             [FromQuery] int page,
             [FromQuery] int size,
@@ -52,19 +52,19 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             [FromQuery] long toDate,
             [FromBody] Clause filters)
         {
-            return await _outsourceMaterialOrderService.GetList(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
+            return await _outsourcePropertyOrderService.GetList(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
         }
 
         [HttpPut]
         [Route("{outsourceOrderId}")]
-        public async Task<bool> Update([FromRoute]long outsourceOrderId, [FromBody] OutsourceStepOrderOutput req) {
-            return await _outsourceMaterialOrderService.Update(outsourceOrderId, req);
+        public async Task<bool> Update([FromRoute]long outsourceOrderId, [FromBody] OutsourcePropertyOrderInput req) {
+            return await _outsourcePropertyOrderService.Update(outsourceOrderId, req);
         }
 
         [HttpDelete]
         [Route("{outsourceOrderId}")]
         public async Task<bool> DeleteOutsouceStepOrder([FromRoute] long outsourceOrderId) {
-            return await _outsourceMaterialOrderService.Delete(outsourceOrderId);
+            return await _outsourcePropertyOrderService.Delete(outsourceOrderId);
         }
     }
 }

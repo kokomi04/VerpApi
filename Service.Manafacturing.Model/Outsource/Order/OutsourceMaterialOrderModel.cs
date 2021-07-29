@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {   
-    public class OutsourceMaterialOrderList
+    public class OutsourcePropertyOrderList
     {
         public long OutsourceOrderId { get; set; }
         public string OutsourceOrderCode { get; set; }
@@ -25,5 +25,10 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public int? CustomerId { get; set; }
         public string CustomerCode { get; set; }
         public string CustomerName { get; set; }
+    }
+
+    public class OutsourcePropertyOrderInput: OutsourceStepOrderInput
+    {
+        public long PropertyCalcId { get; set; }
     }
 }
