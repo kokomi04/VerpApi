@@ -82,7 +82,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public long? AttachmentFileId { get; set; }
         public string ExcessMaterialNotes { get; set; }
 
-        public long? PropertyCalcId { get; set; }
     }
 
     public class SuppliersModel
