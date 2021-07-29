@@ -39,5 +39,10 @@ namespace Verp.Services.ReportConfig.Model
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
 
+        public EnumReportDetailOpenType? HeaderOpenTypeId { get; set; }
+        public EnumReportDetailTarget? HeaderTargetId { get; set; }
+        public int? HeaderReportId { get; set; }
+        public string HeaderReportParams { get; set; }
+
     }
 }
