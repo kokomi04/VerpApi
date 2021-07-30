@@ -252,11 +252,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ProjectTo<OutsourcePropertyOrderDetail>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
+            var excesses = await _manufacturingDBContext.OutsourceOrderExcess.AsNoTracking()
+             .Where(x => x.OutsourceOrderId == outsourceOrderId)
+             .ProjectTo<OutsourceOrderExcessModel>(_mapper.ConfigurationProvider)
+             .ToListAsync();
+
             var productIds = materials.Select(x => (int)x.ProductId).ToList();
 
             outsourceStepOrder.OutsourceOrderDetail = details;
             outsourceStepOrder.OutsourceOrderMaterials = materials;
-            // outsourceStepOrder.OutsourceOrderExcesses = excesses;
+            outsourceStepOrder.OutsourceOrderExcesses = excesses;
 
             return outsourceStepOrder;
         }
@@ -345,7 +350,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 newExcesses.ForEach(x => x.OutsourceOrderId = outsourceStepOrder.OutsourceOrderId);
 
                 await _manufacturingDBContext.OutsourceOrderExcess.AddRangeAsync(newExcesses);
-                
+
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
