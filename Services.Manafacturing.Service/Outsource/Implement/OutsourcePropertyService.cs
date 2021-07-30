@@ -273,7 +273,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             if (outsourceStepOrder == null)
                 throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
 
-            if (await _manufacturingDBContext.OutsourceOrder.AnyAsync(o => o.OutsourceOrderId == outsourceOrderId && o.OutsourceOrderCode == req.OutsourceOrderCode))
+            if (await _manufacturingDBContext.OutsourceOrder.AnyAsync(o => o.OutsourceOrderId != outsourceOrderId && o.OutsourceOrderCode == req.OutsourceOrderCode))
             {
                 throw OutsourceErrorCode.OutsoureOrderCodeAlreadyExisted.BadRequest();
             }
