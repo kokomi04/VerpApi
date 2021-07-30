@@ -211,7 +211,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 query = query.InternalOrderBy(orderByFieldName, asc);
 
             var total = await query.CountAsync();
-            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync();
+            var lst = await (size > 0 ? query.OrderByDescending(o=>o.OutsourceOrderDate).ThenByDescending(o=>o.OutsourceOrderCode).Skip((page - 1) * size).Take(size) : query).ToListAsync();
 
             return (lst.Select(o => new OutsourcePropertyOrderList()
             {
