@@ -266,6 +266,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return outsourceStepOrder;
         }
 
+        public async Task<OutsourcePropertyOrderInput> GetInfoByPropertyCalcId(long propertyCalcId)
+        {
+            var info = await _manufacturingDBContext.OutsourceOrder.FirstOrDefaultAsync(o => o.PropertyCalcId == propertyCalcId);
+            if (info == null)
+            {
+                throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
+            }
+            return await Info(info.OutsourceOrderId);
+        }
         public async Task<bool> Update(long outsourceOrderId, OutsourcePropertyOrderInput req)
         {
             var outsourceStepOrder = await _manufacturingDBContext.OutsourceOrder

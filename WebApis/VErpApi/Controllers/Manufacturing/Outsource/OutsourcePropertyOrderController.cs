@@ -39,6 +39,14 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             return await _outsourcePropertyOrderService.Info(outsourceOrderId);
         }
 
+        [HttpGet]
+        [Route("PropertyCalc/{propertyCalcId}")]
+        public async Task<OutsourcePropertyOrderInput> GetInfoByPropertyCalcId([FromRoute] long propertyCalcId)
+        {
+            return await _outsourcePropertyOrderService.GetInfoByPropertyCalcId(propertyCalcId);
+        }
+
+
         [HttpPost]
         [Route("search")]
         [VErpAction(EnumActionType.View)]
