@@ -11,6 +11,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<bool> Delete(long outsourceOrderId);
         Task<PageData<OutsourcePropertyOrderList>> GetList(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null);
         Task<OutsourcePropertyOrderInput> Info(long outsourceOrderId);
+        Task<OutsourcePropertyOrderInput> GetInfoByPropertyCalcId(long propertyCalcId);
+
         Task<bool> Update(long outsourceOrderId, OutsourcePropertyOrderInput req);
     }
 }
