@@ -170,7 +170,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ToList();
         }
 
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>()
@@ -178,7 +178,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 new SqlParameter("@Keyword", keyword),
                 new SqlParameter("@DepartmentId", departmentId),
                 new SqlParameter("@Size", size),
-                new SqlParameter("@Page", page)
+                new SqlParameter("@Page", page),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
             };
 
             //var whereCondition = new StringBuilder("");

@@ -17,7 +17,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable);
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
-        Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc);
+        Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
 
         //Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments(long productionStepId);
 
