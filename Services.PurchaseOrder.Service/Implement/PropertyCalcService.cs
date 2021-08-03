@@ -181,21 +181,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var info = _mapper.Map<PropertyCalcModel>(entity);
 
-            var cuttingWorkSheet = await _purchaseOrderDBContext.CuttingWorkSheet
-                .Include(s => s.CuttingWorkSheetDest)
-                .Where(s => s.PropertyCalcId == propertyCalcId)
-                .ToListAsync();
-
             foreach (var item in info.Summary)
             {
                 // Nếu là chi tiết
                 if (item.PropertyId > 0)
                 {
-                    item.CuttingQuantity = cuttingWorkSheet.SelectMany(s => s.CuttingWorkSheetDest).Where(d => d.ProductId == item.MaterialProductId).Sum(d => d.ProductQuantity);
+                    item.CuttingQuantity = info.CuttingWorkSheet.SelectMany(s => s.CuttingWorkSheetDest).Where(d => d.ProductId == item.MaterialProductId).Sum(d => d.ProductQuantity);
                 }
                 else // Nếu là NVL
                 {
-                    item.CuttingQuantity = cuttingWorkSheet.Where(d => d.InputProductId == item.MaterialProductId).Sum(d => d.InputQuantity);
+                    item.CuttingQuantity = info.CuttingWorkSheet.Where(d => d.InputProductId == item.MaterialProductId).Sum(d => d.InputQuantity);
                 }
             }
 
@@ -212,15 +207,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             await Validate(propertyCalcId, req);
             _purchaseOrderDBContext.PropertyCalcProperty.RemoveRange(entity.PropertyCalcProperty);
-
             _purchaseOrderDBContext.PropertyCalcProductOrder.RemoveRange(entity.PropertyCalcProduct.SelectMany(p => p.PropertyCalcProductOrder));
-
             _purchaseOrderDBContext.PropertyCalcProductDetail.RemoveRange(entity.PropertyCalcProduct.SelectMany(p => p.PropertyCalcProductDetail));
-
             _purchaseOrderDBContext.PropertyCalcProduct.RemoveRange(entity.PropertyCalcProduct);
-
             _purchaseOrderDBContext.PropertyCalcSummary.RemoveRange(entity.PropertyCalcSummary);
-
+            _purchaseOrderDBContext.CuttingWorkSheetDest.RemoveRange(entity.CuttingWorkSheet.SelectMany(p => p.CuttingWorkSheetDest));
+            _purchaseOrderDBContext.CuttingWorkSheetFile.RemoveRange(entity.CuttingWorkSheet.SelectMany(p => p.CuttingWorkSheetFile));
+            _purchaseOrderDBContext.CuttingExcessMaterial.RemoveRange(entity.CuttingWorkSheet.SelectMany(p => p.CuttingExcessMaterial));
+            _purchaseOrderDBContext.CuttingWorkSheet.RemoveRange(entity.CuttingWorkSheet);
             _mapper.Map(req, entity);
 
             await _purchaseOrderDBContext.SaveChangesAsync();
@@ -237,8 +231,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
 
             entity.IsDeleted = true;
-            // Xóa bảng tính cắt ván
-            DeleteCuttingWorkSheet(propertyCalcId);
             await _purchaseOrderDBContext.SaveChangesAsync();
             await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Xóa tính nhu cầu VT có thuộc tính đặc biệt {entity.PropertyCalcCode}", new { propertyCalcId }.JsonSerialize());
 
@@ -254,6 +246,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
               .Include(s => s.PropertyCalcProduct)
               .ThenInclude(s => s.PropertyCalcProductOrder)
               .Include(s => s.PropertyCalcSummary)
+              .Include(s => s.CuttingWorkSheet)
+              .ThenInclude(cs => cs.CuttingWorkSheetDest)
+              .Include(s => s.CuttingWorkSheet)
+              .ThenInclude(cs => cs.CuttingExcessMaterial)
+              .Include(s => s.CuttingWorkSheet)
+              .ThenInclude(cs => cs.CuttingWorkSheetFile)
               .FirstOrDefaultAsync(c => c.PropertyCalcId == propertyCalcId);
         }
 
@@ -271,6 +269,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Mã số đã tồn tại");
                 }
             }
+            if (model.CuttingWorkSheet.Any(s => s.CuttingWorkSheetDest.GroupBy(d => d.ProductId).Any(g => g.Count() > 1)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
+            }
+            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Any(m => string.IsNullOrEmpty(m.ExcessMaterial))))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
+            }
+            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1)))
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có vật tư dư thừa bị trùng lặp");
+            }
         }
 
         private async Task<GenerateCodeContext> GenerateCode(long? propertyCalcId, PropertyCalcModel model)
@@ -287,142 +297,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             model.PropertyCalcCode = code;
 
             return ctx;
-        }
-
-        public async Task<IList<CuttingWorkSheetModel>> GetCuttingWorkSheet(long propertyCalcId)
-        {
-            var result = await _purchaseOrderDBContext.CuttingWorkSheet
-                .Include(s => s.CuttingWorkSheetDest)
-                .Include(s => s.CuttingExcessMaterial)
-                .Include(s => s.CuttingWorkSheetFile)
-                .Where(s => s.PropertyCalcId == propertyCalcId)
-                .ProjectTo<CuttingWorkSheetModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-            return result;
-        }
-
-        public async Task<IList<CuttingWorkSheetModel>> UpdateCuttingWorkSheet(long propertyCalcId, IList<CuttingWorkSheetModel> data)
-        {
-            var propertyCalc = _purchaseOrderDBContext.PropertyCalc.FirstOrDefault(p => p.PropertyCalcId == propertyCalcId);
-            if (propertyCalc == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
-
-            var currentWorkSheets = _purchaseOrderDBContext.CuttingWorkSheet.Where(s => s.PropertyCalcId == propertyCalcId).ToList();
-            var currentWorkSheetIds = currentWorkSheets.Select(s => s.CuttingWorkSheetId).ToList();
-            var currentFiles = _purchaseOrderDBContext.CuttingWorkSheetFile.Where(f => currentWorkSheetIds.Contains(f.CuttingWorkSheetId)).ToList();
-            var currentDests = _purchaseOrderDBContext.CuttingWorkSheetDest.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
-            var currentExcessMaterials = _purchaseOrderDBContext.CuttingExcessMaterial.Where(d => currentWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
-          
-            if(data.Any(s => s.CuttingWorkSheetDest.GroupBy(d => d.ProductId).Any(g => g.Count() > 1))) {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
-            }
-            if (data.Any(s => s.CuttingExcessMaterial.Any(m => string.IsNullOrEmpty(m.ExcessMaterial))))
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
-            }
-            if (data.Any(s => s.CuttingExcessMaterial.GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1)))
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có vật tư dư thừa bị trùng lặp");
-            }
-
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCuttingWorkSheet(propertyCalcId));
-            using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
-            try
-            {
-                // Xoá 
-                var deleteWorkSheets = currentWorkSheets.Where(s => !data.Any(d => d.CuttingWorkSheetId == s.CuttingWorkSheetId)).ToList();
-                foreach (var deleteWorkSheet in deleteWorkSheets)
-                {
-                    deleteWorkSheet.IsDeleted = true;
-                }
-                var tupples = new List<Tuple<CuttingWorkSheetModel, CuttingWorkSheet>>();
-
-                // Tạo mới/thay đổi
-                foreach (var item in data)
-                {
-                    var currentWorkSheet = currentWorkSheets.FirstOrDefault(s => s.CuttingWorkSheetId == item.CuttingWorkSheetId);
-                    if (currentWorkSheet == null)
-                    {
-                        currentWorkSheet = _mapper.Map<CuttingWorkSheet>(item);
-                        _purchaseOrderDBContext.CuttingWorkSheet.Add(currentWorkSheet);
-                    }
-                    else
-                    {
-                        currentWorkSheet.InputProductId = item.InputProductId;
-                        currentWorkSheet.InputQuantity = item.InputQuantity;
-                    }
-
-                    tupples.Add(new Tuple<CuttingWorkSheetModel, CuttingWorkSheet>(item, currentWorkSheet));
-                }
-
-                _purchaseOrderDBContext.SaveChanges();
-
-                var changeCuttingWorkSheetIds = tupples.Select(t => t.Item2.CuttingWorkSheetId).ToList();
-
-                // Xóa dữ liệu cũ
-                var deleteFiles = currentFiles.Where(f => changeCuttingWorkSheetIds.Contains(f.CuttingWorkSheetId)).ToList();
-                _purchaseOrderDBContext.CuttingWorkSheetFile.RemoveRange(deleteFiles);
-                var deleteDests = currentDests.Where(d => changeCuttingWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
-                _purchaseOrderDBContext.CuttingWorkSheetDest.RemoveRange(deleteDests);
-                var deleteExcessMaterials = currentExcessMaterials.Where(d => changeCuttingWorkSheetIds.Contains(d.CuttingWorkSheetId)).ToList();
-                _purchaseOrderDBContext.CuttingExcessMaterial.RemoveRange(deleteExcessMaterials);
-
-                _purchaseOrderDBContext.SaveChanges();
-                // Cập nhật file và thông tin đích
-                foreach (var tuple in tupples)
-                {
-                    // Tạo dữ liệu mới
-                    foreach (var file in tuple.Item1.CuttingWorkSheetFile)
-                    {
-                        var newFile = _mapper.Map<CuttingWorkSheetFile>(file);
-                        newFile.CuttingWorkSheetId = tuple.Item2.CuttingWorkSheetId;
-                        _purchaseOrderDBContext.CuttingWorkSheetFile.Add(newFile);
-                    }
-                    foreach (var dest in tuple.Item1.CuttingWorkSheetDest)
-                    {
-                        var newDest = _mapper.Map<CuttingWorkSheetDest>(dest);
-                        newDest.CuttingWorkSheetId = tuple.Item2.CuttingWorkSheetId;
-                        _purchaseOrderDBContext.CuttingWorkSheetDest.Add(newDest);
-                    }
-                    foreach (var excessMaterial in tuple.Item1.CuttingExcessMaterial)
-                    {
-                        var newExcessMaterial = _mapper.Map<CuttingExcessMaterial>(excessMaterial);
-                        newExcessMaterial.CuttingWorkSheetId = tuple.Item2.CuttingWorkSheetId;
-                        _purchaseOrderDBContext.CuttingExcessMaterial.Add(newExcessMaterial);
-                    }
-                }
-
-                _purchaseOrderDBContext.SaveChanges();
-
-                data = await _purchaseOrderDBContext.CuttingWorkSheet
-                .Include(s => s.CuttingWorkSheetDest)
-                .Include(s => s.CuttingExcessMaterial)
-                .Include(s => s.CuttingWorkSheetFile)
-                .Where(s => s.PropertyCalcId == propertyCalcId)
-                .ProjectTo<CuttingWorkSheetModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
-
-                trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, propertyCalcId, $"Cập nhật bảng cắt ván {propertyCalc.PropertyCalcCode}", data.JsonSerialize());
-                return data;
-            }
-            catch (Exception ex)
-            {
-                trans.TryRollbackTransaction();
-                _logger.LogError(ex, "UpdateCuttingWorkSheet");
-                throw;
-            }
-        }
-
-        private bool DeleteCuttingWorkSheet(long propertyCalcId)
-        {
-            var deleteWorkSheets = _purchaseOrderDBContext.CuttingWorkSheet.Where(s => s.PropertyCalcId == propertyCalcId).ToList();
-            // Xoá 
-            foreach (var deleteWorkSheet in deleteWorkSheets)
-            {
-                deleteWorkSheet.IsDeleted = true;
-            }
-            _purchaseOrderDBContext.SaveChanges();
-            return true;
         }
     }
 }

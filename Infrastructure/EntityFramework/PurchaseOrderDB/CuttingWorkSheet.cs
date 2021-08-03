@@ -16,13 +16,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long PropertyCalcId { get; set; }
         public int InputProductId { get; set; }
         public decimal InputQuantity { get; set; }
-        public int SubsidiaryId { get; set; }
-        public int CreatedByUserId { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public int UpdatedByUserId { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
-        public bool IsDeleted { get; set; }
-        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual PropertyCalc PropertyCalc { get; set; }
         public virtual ICollection<CuttingExcessMaterial> CuttingExcessMaterial { get; set; }

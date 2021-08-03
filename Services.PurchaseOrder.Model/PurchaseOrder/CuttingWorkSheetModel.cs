@@ -23,10 +23,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
                 .ForMember(dest => dest.CuttingWorkSheetDest, opt => opt.MapFrom(x => x.CuttingWorkSheetDest))
                 .ForMember(dest => dest.CuttingExcessMaterial, opt => opt.MapFrom(x => x.CuttingExcessMaterial))
                 .ForMember(dest => dest.CuttingWorkSheetFile, opt => opt.MapFrom(x => x.CuttingWorkSheetFile))
-                .ReverseMap()
-                .ForMember(dest => dest.CuttingWorkSheetDest, opt => opt.Ignore())
-                .ForMember(dest => dest.CuttingWorkSheetFile, opt => opt.Ignore())
-                .ForMember(dest => dest.CuttingExcessMaterial, opt => opt.Ignore());
+                .ReverseMap();
         }
     }
 }

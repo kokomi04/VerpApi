@@ -21,8 +21,5 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<bool> Delete(long propertyCalcId);
 
-        Task<IList<CuttingWorkSheetModel>> GetCuttingWorkSheet(long propertyCalcId);
-
-        Task<IList<CuttingWorkSheetModel>> UpdateCuttingWorkSheet(long propertyCalcId, IList<CuttingWorkSheetModel> data);
     }
 }

@@ -74,23 +74,5 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .Delete(propertyCalcId)
                 .ConfigureAwait(true);
         }
-
-        [HttpGet]
-        [Route("{propertyCalcId}/CuttingWorkSheet")]
-        public async Task<IList<CuttingWorkSheetModel>> GetCuttingWorkSheet([FromRoute] long propertyCalcId)
-        {
-            return await _propertyCalcService
-                .GetCuttingWorkSheet(propertyCalcId)
-                .ConfigureAwait(true);
-        }
-
-        [HttpPut]
-        [Route("{propertyCalcId}/CuttingWorkSheet")]
-        public async Task<IList<CuttingWorkSheetModel>> UpdateCuttingWorkSheet([FromRoute] long propertyCalcId, IList<CuttingWorkSheetModel> data)
-        {
-            return await _propertyCalcService
-                .UpdateCuttingWorkSheet(propertyCalcId, data)
-                .ConfigureAwait(true);
-        }
     }
 }
