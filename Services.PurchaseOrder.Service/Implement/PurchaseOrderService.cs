@@ -339,6 +339,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var total = await query.CountAsync();
             var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var additionResult = await (from q in query
+                                        group q by 1 into g
+                                        select new
+                                        {
+                                            SumTotalMoney = g.Sum(x => x.TotalMoney),
+                                            SumPrimaryQuantity = g.Sum(x => x.PrimaryQuantity),
+                                            SumTaxInMoney = g.Sum(x => x.TaxInMoney)
+                                        }).FirstOrDefaultAsync();
 
             var poAssignmentDetailIds = pagedData.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
             var purchasingSuggestDetailIds = pagedData.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
@@ -409,7 +417,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 });
             }
 
-            return (result, total);
+            return (result, total, additionResult);
         }
 
 
