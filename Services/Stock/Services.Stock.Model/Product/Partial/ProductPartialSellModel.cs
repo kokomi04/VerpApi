@@ -13,7 +13,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public decimal? GrossWeight { get; set; }
         public decimal? NetWeight { get; set; }
         public decimal? LoadAbility { get; set; }
-        public string ProductDescription { get; set; }
+        public string SellDescription { get; set; }
 
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
     }
