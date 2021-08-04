@@ -166,9 +166,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var poQuery = _purchaseOrderDBContext.PurchaseOrder.Where(po => query.Select(p => p.PurchaseOrderId).Contains(po.PurchaseOrderId));
 
             var total = await poQuery.CountAsync();
+            var additionResult = await (from q in poQuery
+                                        group q by 1 into g
+                                        select new
+                                        {
+                                            SumTotalMoney = g.Sum(x => x.TotalMoney),
+                                        }).FirstOrDefaultAsync();
             var pagedData = await poQuery.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
             var result = new List<PurchaseOrderOutputList>();
-
 
             foreach (var info in pagedData)
             {
@@ -200,7 +205,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 });
             }
 
-            return (result, total);
+            return (result, total, additionResult);
         }
 
         public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
