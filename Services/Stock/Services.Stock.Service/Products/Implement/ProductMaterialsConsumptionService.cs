@@ -318,10 +318,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> ImportMaterialsConsumptionFromMapping(int? productId, ImportExcelMapping mapping, Stream stream)
         {
-            var facade = new ProductMaterialsConsumptionImportFacade(_stockDbContext
-                , _organizationHelperService
-                , _manufacturingHelperService
-                , _activityLogService)
+            var facade = new ProductMaterialsConsumptionImportFacade(false)
+                .SetService(_stockDbContext)
+                .SetService(_organizationHelperService)
+                .SetService(_manufacturingHelperService)
+                .SetService(_activityLogService)
                 .SetService(_productService)
                 .SetService(_productBomService)
                 .SetService(_unitService);
