@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         }
 
         public int ProductPriceConfigVersionId { get; set; }
-        public int? ProductPriceConfigId { get; set; }
+        public int ProductPriceConfigId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public string EvalSourceCodeJs { get; set; }

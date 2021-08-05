@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string Title { get; set; }
         public string Description { get; set; }
         public int? SortOrder { get; set; }
+        public bool isTable { get; set; }
         public string TableConfig { get; set; }
         public bool? IsEditable { get; set; }
         public int CreatedByUserId { get; set; }
