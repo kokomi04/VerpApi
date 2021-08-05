@@ -20,6 +20,8 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
         public long UpdatedDatetimeUtc { get; set; }
 
         public IList<ProductPriceConfigItemModel> Items { get; set; }
+
+        public bool IsActived { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductPriceConfigVersionModel, ProductPriceConfigVersion>()
@@ -40,7 +42,9 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
         public string Title { get; set; }
         public string Description { get; set; }
         public int? SortOrder { get; set; }
+        public bool isTable { get; set; }
         public string TableConfig { get; set; }
         public bool? IsEditable { get; set; }
+        
     }
 }

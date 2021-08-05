@@ -67,13 +67,22 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             _objectActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductPriceConfig);
         }
 
-        public async Task<IList<ProductPriceConfigVersionModel>> GetList()
+        public async Task<IList<ProductPriceConfigVersionModel>> GetList(bool? isActived)
         {
             var query = from c in _purchaseOrderDBContext.ProductPriceConfig
                         join v in _purchaseOrderDBContext.ProductPriceConfigVersion on c.LastestProductPriceConfigVersionId equals v.ProductPriceConfigVersionId
-                        select v;
+                        where isActived == null || c.IsActived == isActived
+                        select new { Version = v, c.IsActived };
+            var lst = await query.ToListAsync();
+            var data = new List<ProductPriceConfigVersionModel>();
+            foreach (var item in lst)
+            {
+                var dataItem = _mapper.Map<ProductPriceConfigVersionModel>(item.Version);
+                dataItem.IsActived = item.IsActived;
+                data.Add(dataItem);
+            }
 
-            return await query.ProjectTo<ProductPriceConfigVersionModel>(_mapper.ConfigurationProvider).ToListAsync();
+            return data;
         }
 
         public async Task<ProductPriceConfigVersionModel> LastestVersionInfo(int productPriceConfigId)
@@ -85,20 +94,24 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
             return await VersionInfo(info.LastestProductPriceConfigVersionId);
         }
 
         public async Task<ProductPriceConfigVersionModel> VersionInfo(int productPriceConfigVersionId)
         {
-            var model = await _purchaseOrderDBContext.ProductPriceConfigVersion
-                .Where(c => c.ProductPriceConfigVersionId == productPriceConfigVersionId)
-                .ProjectTo<ProductPriceConfigVersionModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync();
 
-            if (model == null)
+            var query = from c in _purchaseOrderDBContext.ProductPriceConfig
+                        join v in _purchaseOrderDBContext.ProductPriceConfigVersion on c.ProductPriceConfigId equals v.ProductPriceConfigId
+                        where c.LastestProductPriceConfigVersionId == productPriceConfigVersionId
+                        select new { Version = v, c.IsActived };
+            var data = await query.FirstOrDefaultAsync();
+            if (data == null)
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            var model = _mapper.Map<ProductPriceConfigVersionModel>(data.Version);
+            model.IsActived = data.IsActived;
 
             var items = await _purchaseOrderDBContext.ProductPriceConfigItem
                 .Where(c => c.ProductPriceConfigVersionId == productPriceConfigVersionId)
@@ -113,7 +126,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
         {
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
 
-            var cfg = new ProductPriceConfig();
+            var cfg = new ProductPriceConfig() { IsActived = model.IsActived };
             await _purchaseOrderDBContext.ProductPriceConfig.AddAsync(cfg);
             await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -143,6 +156,8 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            info.IsActived = model.IsActived;
 
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
 
@@ -205,9 +220,12 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
         }
 
 
-        private async Task<int> CreateVersion(int? productPriceConfigId, ProductPriceConfigVersionModel model)
+        private async Task<int> CreateVersion(int productPriceConfigId, ProductPriceConfigVersionModel model)
         {
             var versionInfo = _mapper.Map<ProductPriceConfigVersion>(model);
+            versionInfo.ProductPriceConfigVersionId = 0;
+            versionInfo.ProductPriceConfigId = productPriceConfigId;
+
             await _purchaseOrderDBContext.ProductPriceConfigVersion.AddAsync(versionInfo);
             await _purchaseOrderDBContext.SaveChangesAsync();
 
