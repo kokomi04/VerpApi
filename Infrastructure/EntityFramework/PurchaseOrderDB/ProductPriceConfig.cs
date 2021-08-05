@@ -11,7 +11,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         }
 
         public int ProductPriceConfigId { get; set; }
-        public int? SubsidiaryId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int LastestProductPriceConfigVersionId { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
