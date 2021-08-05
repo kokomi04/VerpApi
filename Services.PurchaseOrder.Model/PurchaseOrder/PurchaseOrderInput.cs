@@ -14,6 +14,9 @@ namespace VErp.Services.PurchaseOrder.Model
         [MinLength(1, ErrorMessage = "Vui lòng chọn mặt hàng")]
         public IList<PurchaseOrderInputDetail> Details { get; set; }
 
+        public IList<PurchaseOrderExcessModel> Excess { get; set; }
+        public IList<PurchaseOrderMaterialsModel> Materials { get; set; }
+
         public long Date { get; set; }
 
       
@@ -78,6 +81,9 @@ namespace VErp.Services.PurchaseOrder.Model
         public string ProductionOrderCode { get; set; }
 
         public string Description { get; set; }
+
+        public long? OutsourceRequestId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
 
 
     }

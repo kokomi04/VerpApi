@@ -559,7 +559,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorDatetimeUtc = null,
                     IsDeleted = false,
                     DeletedDatetimeUtc = null,
-
+                    PurchaseOrderType = (int)EnumPurchasingOrderType.Default
                 };
 
                 if (po.DeliveryDestination?.Length > 1024)

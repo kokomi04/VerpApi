@@ -23,5 +23,11 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
 
         [Description("Bạn chỉ có thể tạo PO từ phân công mua hàng hoặc từ đề nghị mua hàng, không thể cả 2")]
         CreatePOFromOneOfPurchasingSuggestOrPoAssignmentOnly= 5,
+
+        [Description("Mặt hàng không có liên kết với đơn yêu cầu gia công")]
+        NotExistsOutsourceRequestId = 6,
+
+        [Description("Số lượng mặt hàng lớn hơn số lượng yêu cầu của gia công")]
+        PrimaryQuanityGreaterThanQuantityRequirment = 7,
     }
 }
