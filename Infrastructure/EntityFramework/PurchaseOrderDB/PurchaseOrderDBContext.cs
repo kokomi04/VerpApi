@@ -27,6 +27,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<MaterialCalcSummary> MaterialCalcSummary { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
+        public virtual DbSet<ProductPriceConfig> ProductPriceConfig { get; set; }
+        public virtual DbSet<ProductPriceConfigItem> ProductPriceConfigItem { get; set; }
+        public virtual DbSet<ProductPriceConfigVersion> ProductPriceConfigVersion { get; set; }
+        public virtual DbSet<ProductPriceInfo> ProductPriceInfo { get; set; }
+        public virtual DbSet<ProductPriceInfoItem> ProductPriceInfoItem { get; set; }
         public virtual DbSet<PropertyCalc> PropertyCalc { get; set; }
         public virtual DbSet<PropertyCalcProduct> PropertyCalcProduct { get; set; }
         public virtual DbSet<PropertyCalcProductDetail> PropertyCalcProductDetail { get; set; }
@@ -247,6 +252,68 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchasingSuggestDetailId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PoAssignmentDetail_PurchasingSuggestDetail");
+            });
+
+            modelBuilder.Entity<ProductPriceConfigItem>(entity =>
+            {
+                entity.HasIndex(e => new { e.ProductPriceConfigVersionId, e.ItemKey })
+                    .HasName("IX_ProductPriceConfigItem")
+                    .IsUnique();
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.ItemKey)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.ProductPriceConfigVersion)
+                    .WithMany(p => p.ProductPriceConfigItem)
+                    .HasForeignKey(d => d.ProductPriceConfigVersionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductPriceConfigItem_ProductPriceConfigVersion");
+            });
+
+            modelBuilder.Entity<ProductPriceConfigVersion>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.ProductPriceConfig)
+                    .WithMany(p => p.ProductPriceConfigVersion)
+                    .HasForeignKey(d => d.ProductPriceConfigId)
+                    .HasConstraintName("FK_ProductPriceConfigVersion_ProductPriceConfig");
+            });
+
+            modelBuilder.Entity<ProductPriceInfo>(entity =>
+            {
+                entity.Property(e => e.FinalPrice).HasColumnType("decimal(18, 4)");
+
+                entity.HasOne(d => d.ProductPriceConfigVersion)
+                    .WithMany(p => p.ProductPriceInfo)
+                    .HasForeignKey(d => d.ProductPriceConfigVersionId)
+                    .HasConstraintName("FK_ProductPriceInfo_ProductPriceConfigVersion");
+            });
+
+            modelBuilder.Entity<ProductPriceInfoItem>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.ProductPriceConfigItem)
+                    .WithMany(p => p.ProductPriceInfoItem)
+                    .HasForeignKey(d => d.ProductPriceConfigItemId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductPriceInfoItem_ProductPriceConfigItem");
+
+                entity.HasOne(d => d.ProductPriceInfo)
+                    .WithMany(p => p.ProductPriceInfoItem)
+                    .HasForeignKey(d => d.ProductPriceInfoId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductPriceInfoItem_ProductPriceInfo");
             });
 
             modelBuilder.Entity<PropertyCalc>(entity =>

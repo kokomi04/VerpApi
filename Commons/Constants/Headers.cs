@@ -10,5 +10,6 @@ namespace VErp.Commons.Constants
         public const string SubsidiaryId = "x-subsidiary-id";
         public const string TimeZoneOffset = "x-timezone-offset";
         public const string Language = "x-language";
+        public const string Module = "x-module";
     }
 }
