@@ -75,6 +75,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         from p in ps.DefaultIfEmpty()
                         join c in _purchaseOrderDBContext.RefCustomer on po.CustomerId equals c.CustomerId into cs
                         from c in cs.DefaultIfEmpty()
+                        join creator in _purchaseOrderDBContext.RefEmployee on po.CreatedByUserId equals creator.UserId into gCreator
+                        from creator in gCreator.DefaultIfEmpty()
+                        join checker in _purchaseOrderDBContext.RefEmployee on po.CheckedByUserId equals checker.UserId into gChecker
+                        from checker in gChecker.DefaultIfEmpty()
+                        join censor in _purchaseOrderDBContext.RefEmployee on po.CensorByUserId equals censor.UserId into gCensor
+                        from censor in gCensor.DefaultIfEmpty()
                         select new
                         {
                             po.PurchaseOrderId,
@@ -107,6 +113,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             p.ProductId,
                             p.ProductCode,
                             p.ProductName,
+                            po.DeliveryDate,
+
+                            CreatorFullName = creator.FullName,
+                            CheckerFullName = checker.FullName,
+                            CensorFullName = censor.FullName
 
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -114,12 +125,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 query = query
                    .Where(q => q.PurchaseOrderCode.Contains(keyword)
-                   || q.Content.Contains(keyword)
-                   || q.AdditionNote.Contains(keyword)
-                   || q.CustomerCode.Contains(keyword)
-                   || q.CustomerName.Contains(keyword)
-                   || q.ProductCode.Contains(keyword)
-                   || q.ProductName.Contains(keyword)
+                    || q.Content.Contains(keyword)
+                    || q.AdditionNote.Contains(keyword)
+                    || q.CustomerCode.Contains(keyword)
+                    || q.CustomerName.Contains(keyword)
+                    || q.ProductCode.Contains(keyword)
+                    || q.ProductName.Contains(keyword)
+                    || q.CreatorFullName.Contains(keyword)
+                    || q.CheckerFullName.Contains(keyword)
+                    || q.CensorFullName.Contains(keyword)
                    );
 
             }
@@ -201,7 +215,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
                     UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
                     CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
-                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix()
+                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    DeliveryDate = info.DeliveryDate.GetUnix(),
                 });
             }
 
@@ -226,6 +241,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         from sd in sds.DefaultIfEmpty()
                         join s in _purchaseOrderDBContext.PurchasingSuggest on sd.PurchasingSuggestId equals s.PurchasingSuggestId into ss
                         from s in ss.DefaultIfEmpty()
+                        join creator in _purchaseOrderDBContext.RefEmployee on po.CreatedByUserId equals creator.UserId into gCreator
+                        from creator in gCreator.DefaultIfEmpty()
+                        join checker in _purchaseOrderDBContext.RefEmployee on po.CheckedByUserId equals checker.UserId into gChecker
+                        from checker in gChecker.DefaultIfEmpty()
+                        join censor in _purchaseOrderDBContext.RefEmployee on po.CensorByUserId equals censor.UserId into gCensor
+                        from censor in gCensor.DefaultIfEmpty()
                         select new
                         {
                             po.PurchaseOrderId,
@@ -285,7 +306,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             PoAssignmentCode = a == null ? null : a.PoAssignmentCode,
 
                             PurchasingSuggestId = s == null ? (long?)null : s.PurchasingSuggestId,
-                            PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode
+                            PurchasingSuggestCode = s == null ? null : s.PurchasingSuggestCode,
+                            po.DeliveryDate,
+
+                            CreatorFullName = creator.FullName,
+                            CheckerFullName = checker.FullName,
+                            CensorFullName = censor.FullName
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -295,13 +321,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     || q.Content.Contains(keyword)
                     || q.AdditionNote.Contains(keyword)
                     || q.CustomerCode.Contains(keyword)
-                   || q.CustomerName.Contains(keyword)
-                   || q.ProductCode.Contains(keyword)
-                   || q.ProductName.Contains(keyword)
+                    || q.CustomerName.Contains(keyword)
+                    || q.ProductCode.Contains(keyword)
+                    || q.ProductName.Contains(keyword)
                     || q.PoAssignmentCode.Contains(keyword)
                     || q.PurchasingSuggestCode.Contains(keyword)
                     || q.OrderCode.Contains(keyword)
                     || q.ProductionOrderCode.Contains(keyword)
+                    || q.CreatorFullName.Contains(keyword)
+                    || q.CheckerFullName.Contains(keyword)
+                    || q.CensorFullName.Contains(keyword)
                     );
             }
 
@@ -424,7 +453,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     Description = info.Description,
 
                     PoAssignmentDetail = assignmentDetailInfo,
-                    PurchasingSuggestDetail = purchasingSuggestDetailInfo
+                    PurchasingSuggestDetail = purchasingSuggestDetailInfo,
+
+                    DeliveryDate = info.DeliveryDate.GetUnix(),
+                    CreatorFullName = info.CreatorFullName,
+                    CheckerFullName = info.CheckerFullName,
+                    CensorFullName = info.CensorFullName
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
