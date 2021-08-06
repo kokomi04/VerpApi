@@ -34,6 +34,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public long UpdatedDatetimeUtc { get; set; }
         public long? CensorDatetimeUtc { get; set; }
         public long? CheckedDatetimeUtc { get; set; }
+        public long? DeliveryDate { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
@@ -79,7 +80,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public PoAssignmentDetailInfo PoAssignmentDetail { get; set; }
         public PurchasingSuggestDetailInfo PurchasingSuggestDetail { get; set; }
-
+        public string CreatorFullName { get; set; }
+        public string CheckerFullName { get; set; }
+        public string CensorFullName { get; set; }
     }
 
 }
