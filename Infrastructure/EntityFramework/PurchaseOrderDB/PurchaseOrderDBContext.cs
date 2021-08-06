@@ -48,6 +48,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<RefCustomer> RefCustomer { get; set; }
         public virtual DbSet<RefOutsourcePartRequest> RefOutsourcePartRequest { get; set; }
         public virtual DbSet<RefOutsourceStepRequest> RefOutsourceStepRequest { get; set; }
+        public virtual DbSet<RefEmployee> RefEmployee { get; set; }
         public virtual DbSet<RefProduct> RefProduct { get; set; }
         public virtual DbSet<VoucherAction> VoucherAction { get; set; }
         public virtual DbSet<VoucherArea> VoucherArea { get; set; }
@@ -657,6 +658,26 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasMaxLength(128);
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+            });
+
+            modelBuilder.Entity<RefEmployee>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefEmployee");
+
+                entity.Property(e => e.Address).HasMaxLength(512);
+
+                entity.Property(e => e.Email).HasMaxLength(128);
+
+                entity.Property(e => e.EmployeeCode).HasMaxLength(64);
+
+                entity.Property(e => e.FullName).HasMaxLength(128);
+
+                entity.Property(e => e.Phone).HasMaxLength(64);
+
+                entity.Property(e => e.UserId).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<RefProduct>(entity =>
