@@ -34,6 +34,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public long UpdatedDatetimeUtc { get; set; }
         public long? CensorDatetimeUtc { get; set; }
         public long? CheckedDatetimeUtc { get; set; }
+
+        public int PurchaseOrderType { get; set; }
         public long? DeliveryDate { get; set; }
     }
 
@@ -47,6 +49,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public IList<long> FileIds { get; set; }
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
+
+        public IList<PurchaseOrderExcessModel> Excess {get;set;}
+        public IList<PurchaseOrderMaterialsModel> Materials {get;set;}
     }
 
     public class PurchaseOrderOutputDetail : PurchaseOrderInputDetail

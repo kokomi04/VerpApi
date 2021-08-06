@@ -266,6 +266,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Nội dung thường xuyên sử dụng")]
         ReuseContent = 501,
+        [Description("Cập nhật tiến độ đơn hàng gia công")]
+        PurchaseOrderTracked = 1035,
 
         [Description("Công thức tính giá mặt hàng")]
         ProductPriceConfig = 550,

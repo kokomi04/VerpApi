@@ -515,6 +515,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
                 CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
                 CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+
+                PurchaseOrderType = info.PurchaseOrderType,
+
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d =>
                 {
@@ -593,7 +596,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorDatetimeUtc = null,
                     IsDeleted = false,
                     DeletedDatetimeUtc = null,
-
+                    PurchaseOrderType = (int)EnumPurchasingOrderType.Default
                 };
 
                 if (po.DeliveryDestination?.Length > 1024)

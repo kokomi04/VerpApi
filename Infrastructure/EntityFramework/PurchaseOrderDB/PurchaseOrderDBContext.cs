@@ -41,13 +41,18 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
         public virtual DbSet<PurchaseOrder> PurchaseOrder { get; set; }
         public virtual DbSet<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
+        public virtual DbSet<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }
         public virtual DbSet<PurchaseOrderFile> PurchaseOrderFile { get; set; }
+        public virtual DbSet<PurchaseOrderMaterials> PurchaseOrderMaterials { get; set; }
+        public virtual DbSet<PurchaseOrderTracked> PurchaseOrderTracked { get; set; }
         public virtual DbSet<PurchasingRequest> PurchasingRequest { get; set; }
         public virtual DbSet<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
         public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
         public virtual DbSet<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }
         public virtual DbSet<PurchasingSuggestFile> PurchasingSuggestFile { get; set; }
         public virtual DbSet<RefCustomer> RefCustomer { get; set; }
+        public virtual DbSet<RefOutsourcePartRequest> RefOutsourcePartRequest { get; set; }
+        public virtual DbSet<RefOutsourceStepRequest> RefOutsourceStepRequest { get; set; }
         public virtual DbSet<RefEmployee> RefEmployee { get; set; }
         public virtual DbSet<RefProduct> RefProduct { get; set; }
         public virtual DbSet<VoucherAction> VoucherAction { get; set; }
@@ -473,6 +478,25 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
             });
 
+            modelBuilder.Entity<PurchaseOrderExcess>(entity =>
+            {
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Specification).HasMaxLength(255);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.HasOne(d => d.PurchaseOrder)
+                    .WithMany(p => p.PurchaseOrderExcess)
+                    .HasForeignKey(d => d.PurchaseOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PurchaseOrderExcess_PurchaseOrder");
+            });
+
             modelBuilder.Entity<PurchaseOrderFile>(entity =>
             {
                 entity.HasKey(e => new { e.PurchaseOrderId, e.FileId });
@@ -482,6 +506,32 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchaseOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchaseOrderFile_PurchaseOrder");
+            });
+
+            modelBuilder.Entity<PurchaseOrderMaterials>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.PurchaseOrder)
+                    .WithMany(p => p.PurchaseOrderMaterials)
+                    .HasForeignKey(d => d.PurchaseOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PurchaseOrderMaterials_PurchaseOrder");
+            });
+
+            modelBuilder.Entity<PurchaseOrderTracked>(entity =>
+            {
+                entity.Property(e => e.Description)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.PurchaseOrder)
+                    .WithMany(p => p.PurchaseOrderTracked)
+                    .HasForeignKey(d => d.PurchaseOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PurchaseOrderTracked_PurchaseOrder");
             });
 
             modelBuilder.Entity<PurchasingRequest>(entity =>
@@ -641,6 +691,41 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<RefOutsourcePartRequest>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefOutsourcePartRequest");
+
+                entity.Property(e => e.OutsourcePartRequestCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(38, 5)");
+            });
+
+            modelBuilder.Entity<RefOutsourceStepRequest>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefOutsourceStepRequest");
+
+                entity.Property(e => e.OutsourceStepRequestCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+
             });
 
             modelBuilder.Entity<RefEmployee>(entity =>
