@@ -54,6 +54,7 @@ namespace Verp.Services.ReportConfig.Model
         public string HeadPrint { get; set; }
         public long? TemplateFileId { get; set; }
         public string GroupTitleSql { get; set; }
+        public bool? IsDbPaging { get; set; }
 
         public IList<ReportColumnModel> Columns { get; set; }
         public bool IsBsc { get; set; }

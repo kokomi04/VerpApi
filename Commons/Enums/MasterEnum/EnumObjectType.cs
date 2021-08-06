@@ -122,7 +122,7 @@ namespace VErp.Commons.Enums.MasterEnum
         CategoryField = 33,
 
         [Description("Bộ lọc danh mục")]
-        CategoryView = 1034, 
+        CategoryView = 1034,
         //AccountingAccount = 33,
 
 
@@ -268,5 +268,15 @@ namespace VErp.Commons.Enums.MasterEnum
         ReuseContent = 501,
         [Description("Cập nhật tiến độ đơn hàng gia công")]
         PurchaseOrderTracked = 1035,
+
+        [Description("Công thức tính giá mặt hàng")]
+        ProductPriceConfig = 550,
+
+        [Description("Phiên bản tính giá mặt hàng")]
+        ProductPriceConfigVersion = 551,
+
+        [Description("Tính giá mặt hàng")]
+        ProductPriceInfo = 552
+
     }
 }

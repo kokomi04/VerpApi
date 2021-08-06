@@ -36,6 +36,10 @@ namespace VErp.Infrastructure.ApiCore.Middleware
             {
                 Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language);
             }
+            else
+            {
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("vi-VN");
+            }
 
             await _next.Invoke(context);
         }

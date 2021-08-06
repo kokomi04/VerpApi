@@ -115,20 +115,50 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (string.IsNullOrWhiteSpace(param)) continue;
 
                     var paramName = param.Trim().ToLower();
-
-                    if (filters.ContainsKey(paramName))
+                    if (filterFiled.FormTypeId == EnumFormType.MultiSelect)
                     {
-                        value = filters[paramName];
-                        if (!value.IsNullObject())
+                        if (filters.ContainsKey(paramName))
                         {
-                            if (AccountantConstants.TIME_TYPES.Contains(filterFiled.DataTypeId))
-                            {
-                                value = Convert.ToInt64(value);
-                            }
+                            value = filters[paramName];
+
+                        }
+                        switch (filterFiled.DataTypeId)
+                        {
+                            case EnumDataType.Int:
+                                sqlParams.Add((!value.IsNullObject() ? value as int[] : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
+                                break;
+                            case EnumDataType.BigInt:
+                                sqlParams.Add((!value.IsNullObject() ? value as long[] : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
+                                break;
+                            case EnumDataType.Text:
+                                sqlParams.Add((!value.IsNullObject() ? value as string[] : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
+                                break;
+                            default:
+                                break;
                         }
                     }
-                    sqlParams.Add(new SqlParameter($"@{paramName}", filterFiled.DataTypeId.GetSqlValue(value)));
+                    else
+                    {
+                        if (filters.ContainsKey(paramName))
+                        {
+                            value = filters[paramName];
+                            if (!value.IsNullObject())
+                            {
+                                if (AccountantConstants.TIME_TYPES.Contains(filterFiled.DataTypeId))
+                                {
+                                    value = Convert.ToInt64(value);
+                                }
+                            }
+                        }
+                        sqlParams.Add(new SqlParameter($"@{paramName}", filterFiled.DataTypeId.GetSqlValue(value)));
+                    }
                 }
+            }
+
+            if (reportInfo.IsDbPaging.HasValue && reportInfo.IsDbPaging.Value)
+            {
+                sqlParams.Add(new SqlParameter("@Page", page));
+                sqlParams.Add(new SqlParameter("@Size", size));
             }
 
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
@@ -560,10 +590,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             }
 
-            var pagedData = size > 0 ? data.Skip((page - 1) * size).Take(size).ToList() : data;
+            var total = data.Count;
+            if (reportInfo.IsDbPaging.HasValue && reportInfo.IsDbPaging.Value && data.Count > 0 && data[0].ContainsKey("TotalRecord"))
+            {
+                total = Convert.ToInt32(data[0]["TotalRecord"]);
+            }
+            var pagedData = size > 0 && (!reportInfo.IsDbPaging.HasValue || !reportInfo.IsDbPaging.Value) ? data.Skip((page - 1) * size).Take(size).ToList() : data;
 
-            return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
-
+            return (new PageDataTable() { List = pagedData, Total = total }, totals);
         }
 
         class ColumnGroupHasBeenSum : HashSet<string>

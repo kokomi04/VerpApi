@@ -18,6 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Resources\ProductPriceConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductPriceConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Resources\PurchasingRequestActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -31,6 +36,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Resources\ProductPriceConfigActivityLogMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductPriceConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Resources\PurchasingRequestActivityLogMessage.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>PurchasingRequestActivityLogMessage.Designer.cs</LastGenOutput>
