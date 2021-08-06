@@ -11,6 +11,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest();
         Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] arrOutsourcePartId);
         Task<bool> UpdatePurchaseOrderOutsourcePart(long purchaseOrderId, PurchaseOrderInput model);
+        Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePart(long purchaseOrderId);
     }
 
 }

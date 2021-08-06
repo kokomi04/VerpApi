@@ -11,6 +11,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest();
         Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest(long[] arrOutsourceStepId);
         Task<bool> UpdatePurchaseOrderOutsourceStep(long purchaseOrderId, PurchaseOrderInput model);
+        Task<PurchaseOrderOutput> GetPurchaseOrderOutsourceStep(long purchaseOrderId);
     }
 
 }

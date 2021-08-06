@@ -26,13 +26,20 @@ namespace VErpApi.Controllers.PurchaseOrder
     {
         private readonly IPurchaseOrderOutsourceStepService _purchaseOrderOutsourceStepService;
         private readonly IPurchaseOrderOutsourcePartService _purchaseOrderOutsourcePartService;
+        private readonly IPurchaseOrderOutsourcePropertyService _purchaseOrderOutsourcePropertyService;
+
+        private readonly IPurchaseOrderTrackService _purchaseOrderTrackService;
 
         public PurchasingOrderOutsourceController(
             IPurchaseOrderOutsourcePartService purchaseOrderOutsourcePartService,
-            IPurchaseOrderOutsourceStepService purchaseOrderOutsourceStepService)
+            IPurchaseOrderOutsourceStepService purchaseOrderOutsourceStepService,
+            IPurchaseOrderOutsourcePropertyService purchaseOrderOutsourcePropertyService,
+            IPurchaseOrderTrackService purchaseOrderTrackService)
         {
             _purchaseOrderOutsourcePartService = purchaseOrderOutsourcePartService;
             _purchaseOrderOutsourceStepService = purchaseOrderOutsourceStepService;
+            _purchaseOrderOutsourcePropertyService = purchaseOrderOutsourcePropertyService;
+            _purchaseOrderTrackService = purchaseOrderTrackService;
         }
 
         #region Outsource-Step
@@ -49,6 +56,13 @@ namespace VErpApi.Controllers.PurchaseOrder
         public async Task<bool> DeletePurchaseOrderOutsourceStep([FromRoute] long purchaseOrderId)
         {
             return await _purchaseOrderOutsourceStepService.DeletePurchaseOrderOutsourceStep(purchaseOrderId);
+        }
+
+        [HttpGet]
+        [Route("outsourceStep/{purchaseOrderId}")]
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourceStep([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderOutsourceStepService.GetPurchaseOrderOutsourceStep(purchaseOrderId);
         }
 
         /// <summary>
@@ -100,6 +114,13 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchaseOrderOutsourcePartService.DeletePurchaseOrderOutsourcePart(purchaseOrderId);
         }
 
+        [HttpGet]
+        [Route("outsourcePart/{purchaseOrderId}")]
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePart([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderOutsourcePartService.GetPurchaseOrderOutsourcePart(purchaseOrderId);
+        }
+
         /// <summary>
         /// Lấy thông tin chi tiết cần đi gia công
         /// </summary>
@@ -133,5 +154,74 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         #endregion
 
+        #region Outsource-Property
+
+        [HttpPost]
+        [Route("outsourceProperty")]
+        public async Task<long> CreatePurchaseOrderOutsourceProperty([FromBody] PurchaseOrderInput model)
+        {
+            return await _purchaseOrderOutsourcePropertyService.CreatePurchaseOrderOutsourceProperty(model);
+        }
+
+        [HttpDelete]
+        [Route("outsourceProperty/{purchaseOrderId}")]
+        public async Task<bool> DeletePurchaseOrderOutsourceProperty([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderOutsourcePropertyService.DeletePurchaseOrderOutsourceProperty(purchaseOrderId);
+        }
+
+        [HttpGet]
+        [Route("outsourceProperty/{purchaseOrderId}")]
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourceProperty([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderOutsourcePropertyService.GetPurchaseOrderOutsourceProperty(purchaseOrderId);
+        }
+
+        [HttpPut]
+        [Route("outsourceProperty/{purchaseOrderId}")]
+        public async Task<bool> UpdatePurchaseOrderOutsourceProperty([FromRoute] long purchaseOrderId, [FromBody] PurchaseOrderInput model)
+        {
+            return await _purchaseOrderOutsourcePropertyService.UpdatePurchaseOrderOutsourceProperty(purchaseOrderId, model);
+        }
+
+        #endregion
+
+        #region Outsource-tracked
+
+        [HttpPost()]
+        [Route("outsourceTrack/{purchaseOrderId}")]
+        public async Task<long> CreatePurchaseOrderTrack([FromRoute] long purchaseOrderId, [FromBody] purchaseOrderTrackedModel req)
+        {
+            return await _purchaseOrderTrackService.CreatePurchaseOrderTrack(purchaseOrderId, req);
+        }
+
+        [HttpDelete()]
+        [Route("outsourceTrack/{purchaseOrderId}/{purchaseOrderTrackId}")]
+        public async Task<bool> DeletePurchaseOrderTrack([FromRoute] long purchaseOrderId, [FromRoute] long purchaseOrderTrackId)
+        {
+            return await _purchaseOrderTrackService.DeletePurchaseOrderTrack(purchaseOrderId, purchaseOrderTrackId);
+        }
+
+        [HttpGet()]
+        [Route("outsourceTrack/{purchaseOrderId}")]
+        public async Task<IList<purchaseOrderTrackedModel>> SearchPurchaseOrderTrackByPurchaseOrder([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderTrackService.SearchPurchaseOrderTrackByPurchaseOrder(purchaseOrderId);
+        }
+
+        [HttpPut()]
+        [Route("outsourceTrack/{purchaseOrderId}/{purchaseOrderTrackId}")]
+        public async Task<bool> UpdatePurchaseOrderTrack([FromRoute] long purchaseOrderId, [FromRoute] long purchaseOrderTrackId, [FromBody] purchaseOrderTrackedModel req)
+        {
+            return await _purchaseOrderTrackService.UpdatePurchaseOrderTrack(purchaseOrderId, purchaseOrderTrackId, req);
+        }
+
+        [HttpPut()]
+        [Route("outsourceTrack/{purchaseOrderId}")]
+        public async Task<bool> UpdatePurchaseOrderTrackByPurchaseOrderId([FromRoute] long purchaseOrderId, [FromBody] IList<purchaseOrderTrackedModel> req)
+        {
+            return await _purchaseOrderTrackService.UpdatePurchaseOrderTrackByPurchaseOrderId(purchaseOrderId, req);
+        }
+        #endregion
     }
 }

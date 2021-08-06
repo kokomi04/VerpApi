@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             PurchaseOrderExcess = new HashSet<PurchaseOrderExcess>();
             PurchaseOrderFile = new HashSet<PurchaseOrderFile>();
             PurchaseOrderMaterials = new HashSet<PurchaseOrderMaterials>();
+            PurchaseOrderTracked = new HashSet<PurchaseOrderTracked>();
         }
 
         public long PurchaseOrderId { get; set; }
@@ -48,5 +49,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual ICollection<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }
         public virtual ICollection<PurchaseOrderFile> PurchaseOrderFile { get; set; }
         public virtual ICollection<PurchaseOrderMaterials> PurchaseOrderMaterials { get; set; }
+        public virtual ICollection<PurchaseOrderTracked> PurchaseOrderTracked { get; set; }
     }
 }

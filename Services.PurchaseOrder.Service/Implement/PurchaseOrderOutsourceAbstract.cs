@@ -35,7 +35,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         protected ICustomGenCodeHelperService _customGenCodeHelperService;
         protected IMapper _mapper;
 
-        protected PurchaseOrderOutsourceAbstract(
+        public PurchaseOrderOutsourceAbstract(
             PurchaseOrderDBContext purchaseOrderDBContext,
             IOptions<AppSetting> appSetting,
             ILogger logger,
@@ -159,8 +159,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(_mapper.Map<IList<PurchaseOrderMaterials>>(model.Materials));
                 }
+                
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
+
+                await CreatePurchaseOrderTracked(po.PurchaseOrderId);
+
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, po.PurchaseOrderId, $"Tạo PO {po.PurchaseOrderCode}", model.JsonSerialize());
@@ -397,6 +401,82 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsource(long purchaseOrderId)
+        {
+            var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().Where(po => po.PurchaseOrderId == purchaseOrderId).FirstOrDefaultAsync();
+
+            if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+            var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+            var files = await _purchaseOrderDBContext.PurchaseOrderFile.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+            var excess = await _purchaseOrderDBContext.PurchaseOrderExcess.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderExcessModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderMaterialsModel>(_mapper.ConfigurationProvider).ToListAsync();
+
+            return new PurchaseOrderOutput()
+            {
+                PurchaseOrderId = info.PurchaseOrderId,
+                PurchaseOrderCode = info.PurchaseOrderCode,
+                Date = info.Date.GetUnix(),
+                CustomerId = info.CustomerId,
+                PaymentInfo = info.PaymentInfo,
+
+                DeliveryDate = info.DeliveryDate?.GetUnix(),
+                DeliveryUserId = info.DeliveryUserId,
+                DeliveryCustomerId = info.DeliveryCustomerId,
+
+                DeliveryDestination = info.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
+                Content = info.Content,
+                AdditionNote = info.AdditionNote,
+                DeliveryFee = info.DeliveryFee,
+                OtherFee = info.OtherFee,
+                TotalMoney = info.TotalMoney,
+                PurchaseOrderStatusId = (EnumPurchaseOrderStatus)info.PurchaseOrderStatusId,
+                IsChecked = info.IsChecked,
+                IsApproved = info.IsApproved,
+                PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
+                CreatedByUserId = info.CreatedByUserId,
+                UpdatedByUserId = info.UpdatedByUserId,
+                CheckedByUserId = info.CheckedByUserId,
+                CensorByUserId = info.CensorByUserId,
+
+                CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
+                UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
+                CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
+                CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+
+                PurchaseOrderType = info.PurchaseOrderType,
+
+                FileIds = files.Select(f => f.FileId).ToList(),
+                Details = details.Select(d =>
+                {
+                    return new PurchaseOrderOutputDetail()
+                    {
+                        PurchaseOrderDetailId = d.PurchaseOrderDetailId,
+                        PoAssignmentDetailId = d.PoAssignmentDetailId,
+                        ProviderProductName = d.ProviderProductName,
+                        ProductId = d.ProductId,
+                        PrimaryQuantity = d.PrimaryQuantity,
+                        PrimaryUnitPrice = d.PrimaryUnitPrice,
+
+                        ProductUnitConversionId = d.ProductUnitConversionId,
+                        ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                        ProductUnitConversionPrice = d.ProductUnitConversionPrice,
+
+                        TaxInPercent = d.TaxInPercent,
+                        TaxInMoney = d.TaxInMoney,
+                        OrderCode = d.OrderCode,
+                        ProductionOrderCode = d.ProductionOrderCode,
+                        Description = d.Description,
+
+                        OutsourceRequestId = d.OutsourceRequestId,
+                        ProductionStepLinkDataId = d.ProductionStepLinkDataId
+                    };
+                }).ToList(),
+                Excess = excess,
+                Materials = materials
+            };
+        }
+
         private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
         {
             model.PurchaseOrderCode = (model.PurchaseOrderCode ?? "").Trim();
@@ -418,7 +498,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return GeneralCode.InternalError;
         }
         
+        private async Task<bool> CreatePurchaseOrderTracked(long purchaseOrderId)
+        {
+            var track = new purchaseOrderTrackedModel
+            {
+                Date = DateTime.UtcNow.GetUnixUtc(_currentContext.TimeZoneOffset),
+                Description = "Tạo đơn hàng gia công",
+                Status = EnumPurchaseOrderTrackStatus.Created,
+                PurchaseOrderId = purchaseOrderId
+            };
 
+            await _purchaseOrderDBContext.PurchaseOrderTracked.AddAsync(_mapper.Map<PurchaseOrderTracked>(track));
+            await _purchaseOrderDBContext.SaveChangesAsync();
+
+            return true;
+        }
 
     }
 }

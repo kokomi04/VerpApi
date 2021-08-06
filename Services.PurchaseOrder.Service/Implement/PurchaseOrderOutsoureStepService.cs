@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes.PO;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -83,6 +82,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return await DeletePurchaseOrderOutsource(purchaseOrderId);
         }
 
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourceStep(long purchaseOrderId)
+        {
+            return await GetPurchaseOrderOutsource(purchaseOrderId);
+        }
+
+
         public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest(long[] arrOutsourceStepId)
         {
             return (await GetOutsourceStepRequest()).Where(x => arrOutsourceStepId.Contains(x.OutsourceStepRequestId)).ToList();
@@ -91,22 +96,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private async Task<RefOutsourceStepRequestModel> GetOutsourceStepRequest(long outsourceStepRequestId)
         {
             return (await GetOutsourceStepRequest()).FirstOrDefault(x => x.OutsourceStepRequestId == outsourceStepRequestId);
-        }
-
-        private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
-        {
-            model.PurchaseOrderCode = (model.PurchaseOrderCode ?? "").Trim();
-
-            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
-
-            var code = await ctx
-                .SetConfig(EnumObjectType.PurchaseOrder)
-                .SetConfigData(purchaseOrderId ?? 0, model.Date)
-                .TryValidateAndGenerateCode(_purchaseOrderDBContext.PurchaseOrder, model.PurchaseOrderCode, (s, code) => s.PurchaseOrderId != purchaseOrderId && s.PurchaseOrderCode == code);
-
-            model.PurchaseOrderCode = code;
-
-            return ctx;
         }
 
         protected override async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
