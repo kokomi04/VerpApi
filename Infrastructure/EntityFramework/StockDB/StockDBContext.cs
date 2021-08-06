@@ -777,6 +777,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Property>(entity =>
             {
+                entity.Property(e => e.PropertyCode).HasMaxLength(128);
+
                 entity.Property(e => e.PropertyName).IsRequired();
             });
 
