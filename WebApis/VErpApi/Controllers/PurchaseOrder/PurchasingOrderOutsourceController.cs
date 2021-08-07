@@ -177,6 +177,13 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchaseOrderOutsourcePropertyService.GetPurchaseOrderOutsourceProperty(purchaseOrderId);
         }
 
+        [HttpGet]
+        [Route("outsourceProperty/propertyCalc/{propertyCalcId}")]
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePropertyByPropertyCalcId([FromRoute] long propertyCalcId)
+        {
+            return await _purchaseOrderOutsourcePropertyService.GetPurchaseOrderOutsourcePropertyByPropertyCalcId(propertyCalcId);
+        }
+
         [HttpPut]
         [Route("outsourceProperty/{purchaseOrderId}")]
         public async Task<bool> UpdatePurchaseOrderOutsourceProperty([FromRoute] long purchaseOrderId, [FromBody] PurchaseOrderInput model)

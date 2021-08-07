@@ -60,6 +60,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return await GetPurchaseOrderOutsource(purchaseOrderId);
         }
 
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePropertyByPropertyCalcId(long propertyCalcId)
+        {
+            var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(o => o.PropertyCalcId == propertyCalcId);
+            if (info == null)
+            {
+                throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+            }
+
+            return await GetPurchaseOrderOutsource(info.PurchaseOrderId);
+        }
+
         protected override async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
         {
             if (!string.IsNullOrEmpty(model.PurchaseOrderCode))

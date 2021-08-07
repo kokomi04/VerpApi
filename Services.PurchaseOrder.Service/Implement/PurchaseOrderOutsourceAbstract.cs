@@ -89,7 +89,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     TotalMoney = model.TotalMoney,
                     CensorByUserId = null,
                     CensorDatetimeUtc = null,
-                    PurchaseOrderType = (int) purchaseOrderType
+                    PurchaseOrderType = (int) purchaseOrderType,
+                    PropertyCalcId = model.PropertyCalcId
                 };
 
                 if (po.DeliveryDestination?.Length > 1024)
@@ -445,6 +446,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
 
                 PurchaseOrderType = info.PurchaseOrderType,
+
+                PropertyCalcId = info.PropertyCalcId,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d =>

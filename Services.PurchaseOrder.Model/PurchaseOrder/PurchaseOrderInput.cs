@@ -35,6 +35,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal DeliveryFee { get; set; }
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
+
+        public long? PropertyCalcId { get; set; }
     }
 
     public interface IPurchaseOrderInputDetail
