@@ -37,6 +37,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.CreateProductionOrder(req);
         }
 
+        [HttpPost]
+        [Route("multiple")]
+        public async Task<int> CreateMultipleProductionOrder([FromBody] ProductionOrderInputModel[] req)
+        {
+            return await _productionOrderService.CreateMultipleProductionOrder(req);
+        }
+
         [HttpPut]
         [Route("{productionOrderId}")]
         public async Task<ProductionOrderInputModel> UpdateProductionOrder([FromRoute] long productionOrderId, [FromBody] ProductionOrderInputModel req)

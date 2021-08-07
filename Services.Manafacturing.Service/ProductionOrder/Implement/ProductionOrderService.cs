@@ -54,6 +54,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
         {
+            if (productionOrderCodes.Count == 0) return Array.Empty<ProductionOrderListModel>();
             var filter = new SingleClause()
             {
                 DataType = EnumDataType.Text,
@@ -245,49 +246,122 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     if (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == data.ProductionOrderCode))
                         throw new BadRequestException(ProductOrderErrorCode.ProductOrderCodeAlreadyExisted);
                 }
-
-                var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
-                productionOrder.IsResetProductionProcess = false;
-                productionOrder.IsInvalid = true;
-                productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
-                _manufacturingDBContext.ProductionOrder.Add(productionOrder);
-                await _manufacturingDBContext.SaveChangesAsync();
-
-                // Tạo detail
-                foreach (var item in data.ProductionOrderDetail)
-                {
-                    item.ProductionOrderDetailId = 0;
-                    item.ProductionOrderId = productionOrder.ProductionOrderId;
-                    // Tạo mới
-                    var entity = _mapper.Map<ProductionOrderDetail>(item);
-
-                    _manufacturingDBContext.ProductionOrderDetail.Add(entity);
-                }
-
-                // Tạo đính kèm
-                foreach (var attach in data.ProductionOrderAttachment)
-                {
-                    attach.ProductionOrderId = productionOrder.ProductionOrderId;
-
-                    var entityAttach = _mapper.Map<ProductionOrderAttachment>(attach);
-
-                    _manufacturingDBContext.ProductionOrderAttachment.Add(entityAttach);
-                }
-
-                await _manufacturingDBContext.SaveChangesAsync();
-
+                var productionOrder = await SaveProductionOrder(data);
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
 
                 await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
+
                 return data;
             }
             catch (Exception ex)
             {
                 trans.TryRollbackTransaction();
                 _logger.LogError(ex, "CreateProductOrder");
+                throw;
+            }
+        }
+
+        private async Task<ProductionOrderEntity> SaveProductionOrder(ProductionOrderInputModel data)
+        {
+            var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
+            productionOrder.IsResetProductionProcess = false;
+            productionOrder.IsInvalid = true;
+            productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
+            _manufacturingDBContext.ProductionOrder.Add(productionOrder);
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            // Tạo detail
+            foreach (var item in data.ProductionOrderDetail)
+            {
+                item.ProductionOrderDetailId = 0;
+                item.ProductionOrderId = productionOrder.ProductionOrderId;
+                // Tạo mới
+                var entity = _mapper.Map<ProductionOrderDetail>(item);
+
+                _manufacturingDBContext.ProductionOrderDetail.Add(entity);
+            }
+
+            // Tạo đính kèm
+            foreach (var attach in data.ProductionOrderAttachment)
+            {
+                attach.ProductionOrderId = productionOrder.ProductionOrderId;
+
+                var entityAttach = _mapper.Map<ProductionOrderAttachment>(attach);
+
+                _manufacturingDBContext.ProductionOrderAttachment.Add(entityAttach);
+            }
+
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            return productionOrder;
+        }
+
+        public async Task<int> CreateMultipleProductionOrder(ProductionOrderInputModel[] data)
+        {
+            if (data.Length == 0) return 0;
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
+            using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var startDate = data.Min(d => d.StartDate);
+                CustomGenCodeOutputModel currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0, null, null, startDate);
+                if (currentConfig == null)
+                {
+                    throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
+                }
+                int currentValue = currentConfig.CurrentLastValue.LastValue;
+                string currentCode = currentConfig.CurrentLastValue.LastCode;
+                foreach (var item in data)
+                {
+                    if (item.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
+                    if (item.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                    if (item.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
+
+                    if (item.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
+                        .Where(x => x.Count() > 1)
+                        .Count() > 0)
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
+
+                    
+                  
+                    //string currentCode = currentConfig.CurrentLastValue.LastCode;
+                    do
+                    {
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentValue, null, currentCode, item.StartDate);
+                        if (generated == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
+                        }
+                        item.ProductionOrderCode = generated.CustomCode;
+                        currentValue = generated.LastValue;
+                        currentCode = generated.CustomCode;
+                    } while (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == item.ProductionOrderCode));
+                }
+                long productionOrderId = 0;
+                foreach (var item in data)
+                {
+                    var productionOrder = await SaveProductionOrder(item);
+                    productionOrderId = productionOrder.ProductionOrderId;
+                }
+
+                trans.Commit();
+
+                currentConfig.CurrentLastValue.LastValue = currentValue;
+                currentConfig.CurrentLastValue.LastCode = currentCode;
+
+                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrderId, $"Thêm {data.Length} lệnh sản xuất từ kế hoạch", data.JsonSerialize());
+
+                return data.Length;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "CreateProductOrders");
                 throw;
             }
         }
@@ -314,7 +388,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
                 _mapper.Map(data, productionOrder);
-               
+
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
                 var productIds = data.ProductionOrderDetail.Select(od => (long)od.ProductId).ToList();
                 // Lấy ra thông tin đầu ra nhập kho trong quy trình
