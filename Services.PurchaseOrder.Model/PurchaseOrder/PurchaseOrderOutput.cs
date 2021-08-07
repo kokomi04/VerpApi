@@ -25,6 +25,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public bool? IsChecked { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
+        public string PoDescription { get; set; }
+
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public int? CheckedByUserId { get; set; }
