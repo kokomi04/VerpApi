@@ -37,6 +37,8 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public int PurchaseOrderType { get; set; }
         public long? DeliveryDate { get; set; }
+
+        public long? PropertyCalcId { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList

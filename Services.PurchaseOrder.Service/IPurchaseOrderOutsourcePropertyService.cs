@@ -10,6 +10,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<bool> DeletePurchaseOrderOutsourceProperty(long purchaseOrderId);
         Task<PurchaseOrderOutput> GetPurchaseOrderOutsourceProperty(long purchaseOrderId);
         Task<bool> UpdatePurchaseOrderOutsourceProperty(long purchaseOrderId, PurchaseOrderInput model);
+        Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePropertyByPropertyCalcId(long propertyCalcId);
     }
 
 }

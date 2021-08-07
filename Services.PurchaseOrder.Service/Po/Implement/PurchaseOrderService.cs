@@ -65,7 +65,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
-        public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = keyword?.Trim();
 
@@ -117,8 +117,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             CreatorFullName = creator.FullName,
                             CheckerFullName = checker.FullName,
-                            CensorFullName = censor.FullName
-
+                            CensorFullName = censor.FullName,
+                            po.PurchaseOrderType,
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -177,6 +177,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 query = query.Where(p => productIds.Contains(p.ProductId));
             }
 
+            if (purchaseOrderTypes != null && purchaseOrderTypes.Count > 0)
+            {
+                query = query.Where(p => purchaseOrderTypes.Contains(p.PurchaseOrderType));
+            }
+
             var poQuery = _purchaseOrderDBContext.PurchaseOrder.Where(po => query.Select(p => p.PurchaseOrderId).Contains(po.PurchaseOrderId));
 
             var total = await poQuery.CountAsync();
@@ -217,13 +222,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
                     CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
                     DeliveryDate = info.DeliveryDate.GetUnix(),
+                    PurchaseOrderType = info.PurchaseOrderType
                 });
             }
 
             return (result, total, additionResult);
         }
 
-        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
             
@@ -311,7 +317,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             CreatorFullName = creator.FullName,
                             CheckerFullName = checker.FullName,
-                            CensorFullName = censor.FullName
+                            CensorFullName = censor.FullName,
+                            po.PurchaseOrderType
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -369,6 +376,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (productIds != null && productIds.Count > 0)
             {
                 query = query.Where(q => productIds.Contains(q.ProductId));
+            }
+
+            if (purchaseOrderTypes != null && purchaseOrderTypes.Count > 0)
+            {
+                query = query.Where(p => purchaseOrderTypes.Contains(p.PurchaseOrderType));
             }
 
             var total = await query.CountAsync();
@@ -458,7 +470,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     DeliveryDate = info.DeliveryDate.GetUnix(),
                     CreatorFullName = info.CreatorFullName,
                     CheckerFullName = info.CheckerFullName,
-                    CensorFullName = info.CensorFullName
+                    CensorFullName = info.CensorFullName,
+                    PurchaseOrderType = info.PurchaseOrderType
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });

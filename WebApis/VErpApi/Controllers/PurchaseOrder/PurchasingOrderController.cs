@@ -36,8 +36,11 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// Lấy danh sách đơn đặt hàng
         /// </summary>
         /// <param name="keyword"></param>
+        /// <param name="purchaseOrderTypes"></param>
+        /// <param name="productIds"></param>
         /// <param name="purchaseOrderStatusId"></param>
         /// <param name="poProcessStatusId"></param>
+        /// <param name="isChecked"></param>
         /// <param name="isApproved"></param>
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
@@ -48,10 +51,10 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<PageData<PurchaseOrderOutputList>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PurchaseOrderOutputList>> GetList([FromQuery] string keyword, [FromQuery] IList<int> purchaseOrderTypes, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchaseOrderService
-                .GetList(keyword, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetList(keyword, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(true);
         }
 
@@ -60,9 +63,11 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// Lấy danh sách đơn đặt hàng chi tiết theo sản phẩm
         /// </summary>
         /// <param name="keyword"></param>
+        /// <param name="purchaseOrderTypes"></param>
         /// <param name="productIds"></param>
         /// <param name="purchaseOrderStatusId"></param>
         /// <param name="poProcessStatusId"></param>
+        /// <param name="isChecked"></param>
         /// <param name="isApproved"></param>
         /// <param name="fromDate"></param>
         /// <param name="toDate"></param>
@@ -73,10 +78,10 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetListByProduct")]
-        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> purchaseOrderTypes, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchaseOrderService
-                .GetListByProduct(keyword, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetListByProduct(keyword, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(true);
         }
 
