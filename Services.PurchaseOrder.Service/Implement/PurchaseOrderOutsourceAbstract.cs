@@ -90,7 +90,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorByUserId = null,
                     CensorDatetimeUtc = null,
                     PurchaseOrderType = (int) purchaseOrderType,
-                    PropertyCalcId = model.PropertyCalcId
+                    PropertyCalcId = model.PropertyCalcId,
+                    PoDescription = model.PoDescription
                 };
 
                 if (po.DeliveryDestination?.Length > 1024)
@@ -212,6 +213,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.TotalMoney = model.TotalMoney;
                 info.CensorByUserId = null;
                 info.CensorDatetimeUtc = null;
+                info.PoDescription = model.PoDescription;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
@@ -508,7 +510,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 Date = DateTime.UtcNow.GetUnixUtc(_currentContext.TimeZoneOffset),
                 Description = "Tạo đơn hàng gia công",
                 Status = EnumPurchaseOrderTrackStatus.Created,
-                PurchaseOrderId = purchaseOrderId
+                PurchaseOrderId = purchaseOrderId,
             };
 
             await _purchaseOrderDBContext.PurchaseOrderTracked.AddAsync(_mapper.Map<PurchaseOrderTracked>(track));
