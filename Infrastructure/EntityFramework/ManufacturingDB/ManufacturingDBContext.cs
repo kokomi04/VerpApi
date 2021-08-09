@@ -55,6 +55,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionWeekPlan> ProductionWeekPlan { get; set; }
         public virtual DbSet<ProductionWeekPlanDetail> ProductionWeekPlanDetail { get; set; }
         public virtual DbSet<RefCustomer> RefCustomer { get; set; }
+        public virtual DbSet<RefOutsourcePartOrder> RefOutsourcePartOrder { get; set; }
+        public virtual DbSet<RefOutsourcePartTrack> RefOutsourcePartTrack { get; set; }
+        public virtual DbSet<RefOutsourceStepOrder> RefOutsourceStepOrder { get; set; }
+        public virtual DbSet<RefOutsourceStepTrack> RefOutsourceStepTrack { get; set; }
         public virtual DbSet<RefProduct> RefProduct { get; set; }
         public virtual DbSet<RefPropertyCalc> RefPropertyCalc { get; set; }
         public virtual DbSet<Step> Step { get; set; }
@@ -792,6 +796,66 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<RefOutsourcePartOrder>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefOutsourcePartOrder");
+
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.PurchaseOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<RefOutsourcePartTrack>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefOutsourcePartTrack");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+
+                entity.Property(e => e.PurchaseOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+            });
+
+            modelBuilder.Entity<RefOutsourceStepOrder>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefOutsourceStepOrder");
+
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.PurchaseOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<RefOutsourceStepTrack>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefOutsourceStepTrack");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(10)
+                    .IsFixedLength();
+
+                entity.Property(e => e.PurchaseOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<RefProduct>(entity =>

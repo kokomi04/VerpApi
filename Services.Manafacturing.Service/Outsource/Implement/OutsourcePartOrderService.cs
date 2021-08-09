@@ -664,26 +664,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return productionStepLinks;
         }
 
-        private async Task CheckMarkInvalidOutsourcePartRequest(long[] outsourcePartrequestDetaildIds)
-        {
-            var lsInValid = (await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
-               .Include(x => x.OutsourcePartRequest)
-               .Where(x => outsourcePartrequestDetaildIds.Contains(x.OutsourcePartRequestDetailId))
-               .ToListAsync())
-               .Select(x => new
-               {
-                   OutsourcePartRequestCode = x.OutsourcePartRequest.OutsourcePartRequestCode,
-                   MarkInvalid = x.OutsourcePartRequest.MarkInvalid
-               })
-               .Where(x => x.MarkInvalid)
-               .Select(x => x.OutsourcePartRequestCode)
-               .Distinct()
-               .ToArray();
-            if (lsInValid.Length > 0)
-                throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{String.Join(", ", lsInValid)}\" chưa xác thực với QTSX");
-
-        }
-
         private async Task<bool> UpdateOutsourcePartRequestStatus(IEnumerable<long> lsOutsourcePartRequestDetailId)
         {
             var stepIds = await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()

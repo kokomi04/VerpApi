@@ -138,4 +138,7 @@
   <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
     <value>Đã tồn tại mã code trong hệ thống</value>
   </data>
+  <data name="HasPurchaseOrder" xml:space="preserve">
+    <value>Yêu cầu gia công đã tạo đơn hàng gia công</value>
+  </data>
 </root>

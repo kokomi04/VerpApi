@@ -21,5 +21,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public string ProductionStepCollectionTitle { get; set; }
         public int OutsourceStepRequestStatusId { get; set; }
         public bool IsInvalid { get; set; }
+
+        public IEnumerable<PurchaseOrderSimple> PurchaseOrder { get; set; }
+
     }
 }

@@ -25,7 +25,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("search")]
-        public async Task<PageData<OutsourcePartRequestDetailInfo>> GetListRequestPart(
+        public async Task<PageData<OutsourcePartRequestSearchModel>> GetListRequestPart(
             [FromQuery] string keyword,
             [FromQuery] int page,
             [FromQuery] int size,
@@ -33,26 +33,26 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             [FromQuery] long toDate,
             [FromBody] Clause filters = null)
         {
-            return await _outsourcePartRequestService.GetListOutsourcePartRequest(keyword, page, size,fromDate, toDate, filters);
+            return await _outsourcePartRequestService.Search(keyword, page, size,fromDate, toDate, filters);
         }
 
         [HttpGet]
         [Route("{outsourcePartRequestId}")]
-        public async Task<OutsourcePartRequestInfo> GetRequestOutsourcePartExtraInfo([FromRoute] long outsourcePartRequestId)
+        public async Task<OutsourcePartRequestModel> GetRequestOutsourcePartExtraInfo([FromRoute] long outsourcePartRequestId)
         {
-            return await _outsourcePartRequestService.GetOutsourcePartRequestExtraInfo(outsourcePartRequestId);
+            return await _outsourcePartRequestService.GetOutsourcePartRequest(outsourcePartRequestId);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateRequestOutsourcePart([FromBody] OutsourcePartRequestInfo req)
+        public async Task<long> CreateRequestOutsourcePart([FromBody] OutsourcePartRequestModel req)
         {
             return await _outsourcePartRequestService.CreateOutsourcePartRequest(req);
         }
 
         [HttpPut]
         [Route("{outsourcePartRequestId}")]
-        public async Task<bool> UpdateRequestOutsourcePart([FromRoute] long outsourcePartRequestId, [FromBody] OutsourcePartRequestInfo req)
+        public async Task<bool> UpdateRequestOutsourcePart([FromRoute] long outsourcePartRequestId, [FromBody] OutsourcePartRequestModel req)
         {
             return await _outsourcePartRequestService.UpdateOutsourcePartRequest(outsourcePartRequestId, req);
         }

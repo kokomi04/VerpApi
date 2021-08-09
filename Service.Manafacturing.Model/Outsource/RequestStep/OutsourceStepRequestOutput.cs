@@ -30,6 +30,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public decimal TotalOutsourceOrderQuantity { get; set; }
         public int RoleType { get; set; }
         public string ProductionStepTitle { get; set; }
+
+        public string PurchaseOrderCode { get; set; }
+        public string PurchaseOrderId { get; set; }
     }
 
     public class OutsourceStepRequestMaterialsConsumption {
