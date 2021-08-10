@@ -276,7 +276,14 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductPriceConfigVersion = 551,
 
         [Description("Tính giá mặt hàng")]
-        ProductPriceInfo = 552
+        ProductPriceInfo = 552,
 
+        [Description("Kỳ kiểm kê")]
+        [GenCodeObject]
+        StockTakePeriod = 553,
+
+        [Description("Phiếu kiểm kê")]
+        [GenCodeObject]
+        StockTake = 554,
     }
 }
