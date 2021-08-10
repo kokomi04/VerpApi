@@ -23,6 +23,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public long? AvatarFileId { get; set; }
         public int EmployeeTypeId { get; set; }
         public int UserStatusId { get; set; }
+        public string PartnerId { get; set; }
 
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual ICollection<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }

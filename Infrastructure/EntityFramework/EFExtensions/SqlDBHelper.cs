@@ -123,7 +123,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
-            var dbParams = parammeters.CloneSqlParams();
 
             try
             {
@@ -138,10 +137,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                     if (dbContext is ISubsidiayRequestDbContext requestDbContext)
                     {
-                        dbParams.Add(requestDbContext.CreateSubSqlParam());
+                        command.Parameters.Add(requestDbContext.CreateSubSqlParam());
                     }
 
-                    foreach (var param in dbParams)
+                    foreach (var param in parammeters)
                     {
                         if (param.Value.IsNullObject())
                         {
@@ -168,7 +167,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         DataTable dt = new DataTable();
                         dt.Load(result);
                         st.Stop();
-                        _logger.LogInformation($"Executed DbCommand QueryDataTable ({st.ElapsedMilliseconds}ms) CommandTimeout={command.CommandTimeout}, CommandType = {command.CommandType} [Parametters={string.Join(", ", dbParams.Select(p => p.ParameterName + "=" + p.Value).ToArray())}], CommandText={command.CommandText}");
+                        _logger.LogInformation($"Executed DbCommand QueryDataTable ({st.ElapsedMilliseconds}ms) CommandTimeout={command.CommandTimeout}, CommandType = {command.CommandType} [Parametters={string.Join(", ", parammeters.Select(p => p.ParameterName + "=" + p.Value).ToArray())}], CommandText={command.CommandText}");
                         return dt;
                     }
                 }
@@ -177,7 +176,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", dbParams?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 

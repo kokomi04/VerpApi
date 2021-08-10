@@ -16,6 +16,7 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
         public string Title { get; set; }
         public string Description { get; set; }
         public string EvalSourceCodeJs { get; set; }
+        public string Fields { get; set; }
         public int UpdatedByUserId { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
 
@@ -45,6 +46,8 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
         public bool isTable { get; set; }
         public string TableConfig { get; set; }
         public bool? IsEditable { get; set; }
-        
+        public string OnChange { get; set; }
+
+
     }
 }

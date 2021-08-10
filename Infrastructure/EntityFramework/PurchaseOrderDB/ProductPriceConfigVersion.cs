@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string Title { get; set; }
         public string Description { get; set; }
         public string EvalSourceCodeJs { get; set; }
+        public string Fields { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }

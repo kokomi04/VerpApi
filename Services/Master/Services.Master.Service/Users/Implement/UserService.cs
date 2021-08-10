@@ -935,8 +935,11 @@ namespace VErp.Services.Master.Service.Users.Implement
                 UserStatusId = (int)e.UserStatusId,
             }).ToList();
             await _organizationContext.Employee.AddRangeAsync(employees);
-
             await _organizationContext.SaveChangesAsync();
+
+            employees.ForEach(x => x.PartnerId = string.Concat("NV", x.UserId));
+            await _organizationContext.SaveChangesAsync();
+            
             var rs = new List<(int userId, UserInfoInput userInfo)>();
             for (int i = 0; i < employees.Count(); i++)
             {

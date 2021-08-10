@@ -94,6 +94,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.LoanLimitation).HasColumnType("decimal(18, 5)");
 
+                entity.Property(e => e.PartnerId).HasMaxLength(32);
+
                 entity.Property(e => e.PhoneNumber).HasMaxLength(32);
 
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
@@ -200,6 +202,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.EmployeeCode).HasMaxLength(64);
 
                 entity.Property(e => e.FullName).HasMaxLength(128);
+
+                entity.Property(e => e.PartnerId).HasMaxLength(32);
 
                 entity.Property(e => e.Phone).HasMaxLength(64);
 

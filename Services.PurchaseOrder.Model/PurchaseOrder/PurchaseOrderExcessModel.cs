@@ -12,5 +12,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Specification { get; set; }
         public decimal Quantity { get; set; }
         public int? DecimalPlace { get; set; } = 12;
+        public long? ProductId { get; set; }
     }
 }

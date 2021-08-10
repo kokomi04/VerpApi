@@ -97,6 +97,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.IsChecked,
                             po.IsApproved,
                             po.PoProcessStatusId,
+                            po.PoDescription,
                             po.CreatedByUserId,
                             po.UpdatedByUserId,
                             po.CheckedByUserId,
@@ -212,6 +213,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     IsChecked = info.IsChecked,
                     IsApproved = info.IsApproved,
                     PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
+
+                    PoDescription = info.PoDescription,
+
                     CreatedByUserId = info.CreatedByUserId,
                     UpdatedByUserId = info.UpdatedByUserId,
                     CheckedByUserId = info.CheckedByUserId,
@@ -232,7 +236,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
                         join pod in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals pod.PurchaseOrderId
                         join p in _purchaseOrderDBContext.RefProduct on pod.ProductId equals p.ProductId into ps
@@ -269,6 +273,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.IsChecked,
                             po.IsApproved,
                             po.PoProcessStatusId,
+                            po.PoDescription,
+
                             po.CreatedByUserId,
                             po.UpdatedByUserId,
                             po.CheckedByUserId,
@@ -519,6 +525,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 IsChecked = info.IsChecked,
                 IsApproved = info.IsApproved,
                 PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
+                PoDescription = info.PoDescription,
                 CreatedByUserId = info.CreatedByUserId,
                 UpdatedByUserId = info.UpdatedByUserId,
                 CheckedByUserId = info.CheckedByUserId,
@@ -595,6 +602,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     Content = model.Content,
                     AdditionNote = model.AdditionNote,
                     PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
+                    PoDescription = model.PoDescription,
                     IsApproved = null,
                     IsChecked = null,
                     PoProcessStatusId = null,
@@ -740,6 +748,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.DeliveryFee = model.DeliveryFee;
                 info.OtherFee = model.OtherFee;
                 info.TotalMoney = model.TotalMoney;
+                info.PoDescription = model.PoDescription;
+
                 info.UpdatedByUserId = _currentContext.UserId;
                 info.CensorByUserId = null;
                 info.UpdatedDatetimeUtc = DateTime.UtcNow;
