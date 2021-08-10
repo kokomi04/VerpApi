@@ -103,7 +103,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
 
             var query = from c in _purchaseOrderDBContext.ProductPriceConfig
                         join v in _purchaseOrderDBContext.ProductPriceConfigVersion on c.ProductPriceConfigId equals v.ProductPriceConfigId
-                        where c.LastestProductPriceConfigVersionId == productPriceConfigVersionId
+                        where v.ProductPriceConfigVersionId == productPriceConfigVersionId
                         select new { Version = v, c.IsActived };
             var data = await query.FirstOrDefaultAsync();
             if (data == null)
@@ -232,6 +232,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             var items = _mapper.Map<IList<ProductPriceConfigItem>>(model.Items);
             foreach (var item in items)
             {
+                item.ProductPriceConfigItemId = 0;
                 item.ProductPriceConfigVersionId = versionInfo.ProductPriceConfigVersionId;
             }
 
