@@ -80,6 +80,12 @@ namespace Verp.Cache.RedisCache
 
             }
         }
+
+        public static string GetLockStockKeyKey(long stockTakePeriodId)
+        {
+            return $"STOCK_TAKE_PERIOD_LOCK_{stockTakePeriodId}";
+        }
+
         public static string GetLockReportKey(int reportTypeId)
         {
             return $"REPORT_LOCK_{reportTypeId}";
