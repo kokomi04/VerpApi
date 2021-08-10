@@ -103,7 +103,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (existedItem != null) return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
             }
 
-            var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false || x.ProductionStepLinkDataId.HasValue == false);
+            var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false);
             if (notExistsOutsourcePartId)
                 return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
 
