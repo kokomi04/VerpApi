@@ -31,7 +31,7 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
                 .ForMember(d => d.UpdatedDatetimeUtc, s => s.Ignore())
                 .ReverseMap()
                 .ForMember(d => d.Items, s => s.Ignore())
-                .ForMember(d => d.UpdatedDatetimeUtc, s => s.MapFrom(v=>v.UpdatedDatetimeUtc.GetUnix()));
+                .ForMember(d => d.UpdatedDatetimeUtc, s => s.MapFrom(v => v.UpdatedDatetimeUtc.GetUnix()));
         }
     }
 
@@ -46,6 +46,7 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
         public bool isTable { get; set; }
         public string TableConfig { get; set; }
         public bool? IsEditable { get; set; }
+        public bool IsForeignPrice { get; set; }
         public string OnChange { get; set; }
 
 

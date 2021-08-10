@@ -19,12 +19,15 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool isTable { get; set; }
         public string TableConfig { get; set; }
         public bool? IsEditable { get; set; }
+        public bool IsForeignPrice { get; set; }
+        public string OnChange { get; set; }
+
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
-        public string OnChange { get; set; }
+
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ProductPriceConfigVersion ProductPriceConfigVersion { get; set; }
