@@ -78,7 +78,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             foreach (var item in lst)
             {
                 var dataItem = _mapper.Map<ProductPriceConfigVersionModel>(item.Version);
-                dataItem.IsActived = item.IsActived;
+                dataItem.IsActived = item.IsActived ?? false;
                 data.Add(dataItem);
             }
 
@@ -111,7 +111,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
             var model = _mapper.Map<ProductPriceConfigVersionModel>(data.Version);
-            model.IsActived = data.IsActived;
+            model.IsActived = data.IsActived ?? false;
 
             var items = await _purchaseOrderDBContext.ProductPriceConfigItem
                 .Where(c => c.ProductPriceConfigVersionId == productPriceConfigVersionId)
