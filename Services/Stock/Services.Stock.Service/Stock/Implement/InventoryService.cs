@@ -1769,12 +1769,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
+        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
         {
             var packpages = _stockDbContext.Package.AsQueryable();
             if (packageIds?.Count > 0)
             {
                 packpages = packpages.Where(p => packageIds.Contains(p.PackageId));
+            }
+
+            if (productIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => productIds.Contains(p.ProductId));
             }
 
             var query = from pk in packpages
@@ -1842,8 +1847,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
             var packageList = new List<ProductPackageOutputModel>(total);
-            var productIds = packageData.Select(d => d.ProductId).ToList();
-            var pusDefaults = await _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId) && p.IsDefault).ToListAsync();
+            var dataProductIds = packageData.Select(d => d.ProductId).ToList();
+            var pusDefaults = await _stockDbContext.ProductUnitConversion.Where(p => dataProductIds.Contains(p.ProductId) && p.IsDefault).ToListAsync();
             foreach (var item in packageData)
             {
                 packageList.Add(new ProductPackageOutputModel()
