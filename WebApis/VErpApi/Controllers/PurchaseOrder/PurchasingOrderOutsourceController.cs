@@ -1,22 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.MasterEnum.PO;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
-using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ApiCore.ModelBinders;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
-using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Service;
 
 namespace VErpApi.Controllers.PurchaseOrder
@@ -27,6 +15,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         private readonly IPurchaseOrderOutsourceStepService _purchaseOrderOutsourceStepService;
         private readonly IPurchaseOrderOutsourcePartService _purchaseOrderOutsourcePartService;
         private readonly IPurchaseOrderOutsourcePropertyService _purchaseOrderOutsourcePropertyService;
+        private readonly IPurchaseOrderExcessService _purchaseOrderExcessService;
 
         private readonly IPurchaseOrderTrackService _purchaseOrderTrackService;
 
@@ -34,13 +23,26 @@ namespace VErpApi.Controllers.PurchaseOrder
             IPurchaseOrderOutsourcePartService purchaseOrderOutsourcePartService,
             IPurchaseOrderOutsourceStepService purchaseOrderOutsourceStepService,
             IPurchaseOrderOutsourcePropertyService purchaseOrderOutsourcePropertyService,
-            IPurchaseOrderTrackService purchaseOrderTrackService)
+            IPurchaseOrderTrackService purchaseOrderTrackService,
+            IPurchaseOrderExcessService purchaseOrderExcessService)
         {
             _purchaseOrderOutsourcePartService = purchaseOrderOutsourcePartService;
             _purchaseOrderOutsourceStepService = purchaseOrderOutsourceStepService;
             _purchaseOrderOutsourcePropertyService = purchaseOrderOutsourcePropertyService;
             _purchaseOrderTrackService = purchaseOrderTrackService;
+            _purchaseOrderExcessService = purchaseOrderExcessService;
         }
+
+        #region  Outsource-excess
+
+        [HttpPut]
+        [Route("outsourceExcess/{purchaseOrderExcessId}")]
+        public async Task<bool> UpdatePurchaseOrderExcess([FromRoute] long purchaseOrderExcessId, [FromBody] PurchaseOrderExcessModel model)
+        {
+            return await _purchaseOrderExcessService.UpdatePurchaseOrderExcess(purchaseOrderExcessId, model);
+        }
+
+        #endregion
 
         #region Outsource-Step
 

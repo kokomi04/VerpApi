@@ -1769,10 +1769,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> stockIds, int page = 1, int size = 20)
+        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
         {
+            var packpages = _stockDbContext.Package.AsQueryable();
+            if (packageIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => packageIds.Contains(p.PackageId));
+            }
 
-            var query = from pk in _stockDbContext.Package
+            var query = from pk in packpages
                         join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
                         from l in ls.DefaultIfEmpty()
                         join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
@@ -2118,7 +2123,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if ((puInfo.IsFreeStyle ?? false) == false)
                 {
-                  
+
 
                     var calcModel = new QuantityPairInputModel()
                     {

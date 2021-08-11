@@ -29,5 +29,8 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
 
         [Description("Số lượng mặt hàng lớn hơn số lượng yêu cầu của gia công")]
         PrimaryQuanityGreaterThanQuantityRequirment = 7,
+        
+        [Description("Không tìm thấy vật tư du thừa")]
+        ExcessNotFound = 8,
     }
 }

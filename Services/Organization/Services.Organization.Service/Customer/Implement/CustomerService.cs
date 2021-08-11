@@ -160,6 +160,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 foreach (var entity in customerEntities)
                 {
+                    entity.PartnerId = string.Concat("KH", entity.CustomerId);
+
                     foreach (var contact in contacts[entity])
                     {
                         contact.CustomerId = entity.CustomerId;
@@ -179,11 +181,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     bankAccountEntities.AddRange(bankAccounts[entity]);
                     customerAttachments.AddRange(attachments[entity]);
                 }
-
+                await _organizationContext.UpdateByBatch(customerEntities, false);
                 await _organizationContext.InsertByBatch(contactEntities, false);
                 await _organizationContext.InsertByBatch(bankAccountEntities, false);
                 await _organizationContext.InsertByBatch(customerAttachments, false);
 
+                _organizationContext.SaveChanges();
                 transaction.Commit();
             }
 

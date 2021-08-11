@@ -19,6 +19,13 @@ namespace VErpApi.Controllers.PurchaseOrder.ProductPrice
             _productPriceConfigService = productPriceConfigService;
         }
 
+        [HttpGet]
+        public async Task<IList<ProductPriceConfigVersionModel>> GetList([FromQuery] bool? isActived)
+        {
+            return await _productPriceConfigService.GetList(isActived);
+        }
+
+
         [HttpPost]
         public async Task<int> Create([FromBody] ProductPriceConfigVersionModel model)
         {

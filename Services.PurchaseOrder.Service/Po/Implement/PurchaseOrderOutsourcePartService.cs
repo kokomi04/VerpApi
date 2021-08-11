@@ -68,7 +68,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         
         public async Task<long> CreatePurchaseOrderOutsourcePart(PurchaseOrderInput model)
         {
-            return await CreatePurchaseOrderOutsource(model, EnumPurchasingOrderType.OutsourceStep);
+            return await CreatePurchaseOrderOutsource(model, EnumPurchasingOrderType.OutsourcePart);
         }
 
         public async Task<bool> UpdatePurchaseOrderOutsourcePart(long purchaseOrderId, PurchaseOrderInput model)
@@ -103,7 +103,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (existedItem != null) return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
             }
 
-            var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false || x.ProductionStepLinkDataId.HasValue == false);
+            var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false);
             if (notExistsOutsourcePartId)
                 return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
 
