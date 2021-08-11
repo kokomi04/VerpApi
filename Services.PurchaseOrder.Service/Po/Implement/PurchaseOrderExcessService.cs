@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.AppSettings.Model;
@@ -21,13 +22,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public PurchaseOrderExcessService(
             PurchaseOrderDBContext purchaseOrderDBContext,
-            AppSetting appSetting,
-            ILogger logger,
+            IOptions<AppSetting> appSetting,
+            ILogger<PurchaseOrderExcessService> logger,
             IActivityLogService activityLogService,
             IMapper mapper)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _appSetting = appSetting;
+            _appSetting = appSetting.Value;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
