@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool isTable { get; set; }
         public string TableConfig { get; set; }
         public bool? IsEditable { get; set; }
+        public bool IsPricing { get; set; }
         public bool IsForeignPrice { get; set; }
         public string OnChange { get; set; }
 
