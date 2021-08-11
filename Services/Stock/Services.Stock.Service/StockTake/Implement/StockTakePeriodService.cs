@@ -59,13 +59,25 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
         }
 
 
-        public async Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods(string keyword, int page, int size)
+        public async Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods(string keyword, int page, int size, long fromDate, long toDate, int[] stockIds)
         {
-            keyword = keyword.Trim();
+
             var stockTakePeriods = _stockContext.StockTakePeriod.AsQueryable();
+            var from = fromDate.UnixToDateTime();
+            var to = toDate.UnixToDateTime();
+
             if (!string.IsNullOrEmpty(keyword))
             {
+                keyword = keyword.Trim();
                 stockTakePeriods = stockTakePeriods.Where(stp => stp.StockTakePeriodCode.Contains(keyword) || stp.Content.Contains(keyword));
+            }
+            if (fromDate > 0 && toDate > 0)
+            {
+                stockTakePeriods = stockTakePeriods.Where(stp => stp.StockTakePeriodDate >= from && stp.StockTakePeriodDate <= to);
+            }
+            if(stockIds != null && stockIds.Length > 0)
+            {
+                stockTakePeriods = stockTakePeriods.Where(stp => stockIds.Contains(stp.StockId));
             }
             var total = await stockTakePeriods.CountAsync();
             var paged = (size > 0 ? stockTakePeriods.Skip((page - 1) * size).Take(size) : stockTakePeriods).ProjectTo<StockTakePeriotListModel>(_mapper.ConfigurationProvider).ToList();
@@ -108,7 +120,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
                 var stockTakePeriod = _mapper.Map<StockTakePeriod>(model);
 
-                stockTakePeriod.Status = (int)EnumStockTakeStatus.Waiting;
+                stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.Waiting;
                 _stockContext.StockTakePeriod.Add(stockTakePeriod);
                 await _stockContext.SaveChangesAsync();
 
@@ -207,5 +219,5 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 throw;
             }
         }
-    } 
+    }
 }

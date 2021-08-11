@@ -34,9 +34,9 @@ namespace VErpApi.Controllers.Stock.StockTake
       
         [HttpGet]
         [Route("")]
-        public async Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int[] stockIds)
         {
-            return await _stockTakePeriodService.GetStockTakePeriods(keyword, page, size);
+            return await _stockTakePeriodService.GetStockTakePeriods(keyword, page, size, fromDate, toDate, stockIds);
         }
 
      

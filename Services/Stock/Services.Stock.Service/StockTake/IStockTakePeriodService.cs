@@ -13,7 +13,7 @@ namespace VErp.Services.Stock.Service.StockTake
 {
     public interface IStockTakePeriodService
     {
-        Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods(string keyword, int page, int size);
+        Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods(string keyword, int page, int size, long fromDate, long toDate, int[] stockIds);
 
         Task<StockTakePeriotModel>CreateStockTakePeriod(StockTakePeriotModel model);
 
