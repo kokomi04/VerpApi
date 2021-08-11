@@ -260,6 +260,13 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasConstraintName("FK_PoAssignmentDetail_PurchasingSuggestDetail");
             });
 
+            modelBuilder.Entity<ProductPriceConfig>(entity =>
+            {
+                entity.Property(e => e.IsActived)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+            });
+
             modelBuilder.Entity<ProductPriceConfigItem>(entity =>
             {
                 entity.HasIndex(e => new { e.ProductPriceConfigVersionId, e.ItemKey })
@@ -268,9 +275,16 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
 
+                entity.Property(e => e.IsTable)
+                    .IsRequired()
+                    .HasColumnName("isTable")
+                    .HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.ItemKey)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.OnChange).HasColumnName("onChange");
 
                 entity.Property(e => e.Title).HasMaxLength(128);
 
@@ -290,6 +304,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasOne(d => d.ProductPriceConfig)
                     .WithMany(p => p.ProductPriceConfigVersion)
                     .HasForeignKey(d => d.ProductPriceConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductPriceConfigVersion_ProductPriceConfig");
             });
 
@@ -427,6 +442,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.PaymentInfo).HasMaxLength(512);
+
+                entity.Property(e => e.PoDescription).HasMaxLength(1024);
 
                 entity.Property(e => e.PurchaseOrderCode)
                     .IsRequired()
