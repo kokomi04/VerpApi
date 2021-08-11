@@ -7,6 +7,13 @@ namespace VErp.Commons.Enums.Stock
 {
     public enum EnumStockTakeStatus : int
     {
+        [Description("Đang thực hiện")]
+        Processing = 1,
+        [Description("Hoàn thành")]
+        Finish = 2,
+    }
+    public enum EnumStockTakePeriodStatus : int
+    {
         [Description("Đang chờ")]
         Waiting = 1,
         [Description("Đang thực hiện")]

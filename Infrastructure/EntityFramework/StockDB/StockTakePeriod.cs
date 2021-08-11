@@ -23,6 +23,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public bool IsDifference { get; set; }
+        public bool IsProcessed { get; set; }
 
         public virtual ICollection<StockTake> StockTake { get; set; }
         public virtual ICollection<StockTakeRepresentative> StockTakeRepresentative { get; set; }

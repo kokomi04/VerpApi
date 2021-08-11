@@ -95,7 +95,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 }
 
                 var stockTake = _mapper.Map<StockTakeEntity>(model);
-                
+                stockTake.StockStatus = (int)EnumStockTakeStatus.Processing;
+                stockTake.AccountancyStatus = (int)EnumStockTakeStatus.Processing;
                 _stockContext.StockTake.Add(stockTake);
 
                 await _stockContext.SaveChangesAsync();
@@ -148,7 +149,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             try
             {
                 _mapper.Map(model, stockTake);
-
+                stockTake.StockStatus = (int)EnumStockTakeStatus.Processing;
+                stockTake.AccountancyStatus = (int)EnumStockTakeStatus.Processing;
                 // Cập nhật chi tiết
                 var currentStockTakeDetails = _stockContext.StockTakeDetail.Where(std => std.StockTakeId == stockTakeId).ToList();
 

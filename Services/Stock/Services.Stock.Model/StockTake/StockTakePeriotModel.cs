@@ -17,15 +17,16 @@ namespace VErp.Services.Stock.Model.StockTake
         public long StockTakePeriodDate { get; set; }
         public long FinishDate { get; set; }
         public int StockId { get; set; }
-        public EnumStockTakeStatus Status { get; set; }
+        public EnumStockTakePeriodStatus Status { get; set; }
         public string Content { get; set; }
-
+        public bool IsDifference { get; set; }
+        public bool IsProcessed { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<StockTakePeriod, StockTakePeriotListModel>()
                 .ForMember(dest => dest.StockTakePeriodDate, opt => opt.MapFrom(x => x.StockTakePeriodDate.GetUnix()))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(x => (EnumStockTakeStatus)x.Status));
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.Status));
         }
     }
 
@@ -39,7 +40,7 @@ namespace VErp.Services.Stock.Model.StockTake
             profile.CreateMap<StockTakePeriod, StockTakePeriotModel>()
                 .ForMember(dest => dest.StockTakePeriodDate, opt => opt.MapFrom(x => x.StockTakePeriodDate.GetUnix()))
                 .ForMember(dest => dest.StockTake, opt => opt.MapFrom(x => x.StockTake))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(x => (EnumStockTakeStatus)x.Status))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.Status))
                 .ForMember(dest => dest.StockTakeRepresentative, opt => opt.MapFrom(x => x.StockTakeRepresentative))
                 .ReverseMap()
                 .ForMember(dest => dest.StockTakePeriodDate, opt => opt.MapFrom(x => x.StockTakePeriodDate.UnixToDateTime()))
