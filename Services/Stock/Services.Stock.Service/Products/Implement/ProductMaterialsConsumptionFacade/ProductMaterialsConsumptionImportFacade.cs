@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -24,15 +23,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 {
     public class ProductMaterialsConsumptionImportFacade
     {
-        private class SimpleProduct
-        {
-            public int ProductId { get; set; }
-            public string ProductCode { get; set; }
-            public string ProductName { get; set; }
-            public string UnitName { get; set; }
-            public string Specification { get; set; }
-        }
-
         private StockDBContext _stockDbContext;
 
         private IOrganizationHelperService _organizationHelperService;
@@ -42,13 +32,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private IProductBomService _productBomService;
         private IUnitService _unitService;
         private IProductService _productService;
+        private IProductMaterialsConsumptionService _productMaterialsConsumptionService;
+
 
         private IList<ImportProductMaterialsConsumptionExcelMapping> _importData;
         private IDictionary<string, UnitOutput> _units;
         private IDictionary<string, SimpleProduct> _existedProducts;
         private IDictionary<string, ProductType> _productTypes;
         private IDictionary<string, ProductCate> _productCates;
-
 
         private IList<ProductBomOutput> _boms;
         private ProductModel _productInfo;
@@ -58,7 +49,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
         private bool IsPreview;
 
-        public ProductMaterialsConsumptionImportFacade(bool isPreview){
+        public IList<MaterialsConsumptionByProduct> PreviewData { get; private set; }
+
+        public ProductMaterialsConsumptionImportFacade(bool isPreview)
+        {
             IsPreview = isPreview;
         }
 
@@ -103,6 +97,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             return this;
         }
 
+        public ProductMaterialsConsumptionImportFacade SetService(IProductMaterialsConsumptionService productMaterialsConsumptionService)
+        {
+            _productMaterialsConsumptionService = productMaterialsConsumptionService;
+            return this;
+        }
+
         public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int? productId)
         {
             ReadExcelData(mapping, stream);
@@ -131,10 +131,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     }
                     else
                     {
+                        PreviewData = new List<MaterialsConsumptionByProduct>();
                         var allUsageProductCode = _importData.Select(x => x.UsageProductCode).Distinct();
-                        var allProductBoms = await _productBomService.GetBoms(_existedProducts.Values.Where(x => allUsageProductCode.Contains(x.ProductCode)).Select(x => x.ProductId).ToArray());
+                        var allProductBoms = await _productBomService.GetBoms(_existedProducts.Values.Where(x => allUsageProductCode.Contains(x.ProductCode) && x.ProductId > 0).Select(x => x.ProductId).ToArray());
 
-                        LoadPreviewData(allProductBoms);
+                        await LoadPreviewData(allProductBoms);
                     }
 
                 }
@@ -240,29 +241,91 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
 
                 }
+            }
 
-                if (!IsPreview)
-                {
-                    await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(lsMaterialConsumption);
-                    await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, 0, $"Import vật liệu tiêu hao cho mặt hàng", lsMaterialConsumption.JsonSerialize());
+            if (!IsPreview)
+            {
+                await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(lsMaterialConsumption);
+                await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, 0, $"Import vật liệu tiêu hao cho mặt hàng", lsMaterialConsumption.JsonSerialize());
 
-                    await _stockDbContext.SaveChangesAsync();
-                }
-                
+                await _stockDbContext.SaveChangesAsync();
             }
         }
 
-        private void LoadPreviewData(IDictionary<int, IList<ProductBomOutput>> allProductBoms)
+        private async Task LoadPreviewData(IDictionary<int, IList<ProductBomOutput>> allProductBoms)
         {
             var allUsageProductCode = _importData.Select(x => x.UsageProductCode.NormalizeAsInternalName()).Distinct();
+            var rootProductIds = FoundRelationshipBom(allProductBoms);
+
+            var groupTitle = _importData.Select(x => x.GroupTitle.NormalizeAsInternalName()).Distinct().ToArray();
+            var groupIds = _groupConsumptions.Values.Where(x => groupTitle.Contains(x.Title.NormalizeAsInternalName())).Select(x => x.ProductMaterialsConsumptionGroupId).ToArray();
+
             foreach (var usageProductCode in allUsageProductCode)
             {
                 _existedProducts.TryGetValue(usageProductCode, out var rootProduct);
-                if (allProductBoms.ContainsKey(rootProduct.ProductId))
+                if (allProductBoms.ContainsKey(rootProduct.ProductId) && rootProductIds.Contains(rootProduct.ProductId))
                 {
 
+
+                    var productBom = (await _productBomService.GetBom(rootProduct.ProductId)).Where(x => !x.IsMaterial);
+                    var productMap = CalcProductBomTotalQuantity(productBom);
+
+                    var materialsConsumptionInherit = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+                        .Where(x => productBom.Select(y => y.ChildProductId).Contains(x.ProductId) && groupIds.Contains(x.ProductMaterialsConsumptionGroupId))
+                        .Include(x => x.MaterialsConsumption)
+                        .Include(x => x.ProductMaterialsConsumptionGroup)
+                        .Include(x => x.Product)
+                        .Select(x => new ProductMaterialsConsumptionPreview
+                        {
+                            Quantity = x.Quantity,
+                            GroupTitle = x.ProductMaterialsConsumptionGroup.Title,
+                            ProductExtraInfo = new SimpleProduct { ProductCode = x.Product.ProductCode, ProductName = x.Product.ProductName },
+                            ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.MaterialsConsumption.ProductCode, ProductName = x.MaterialsConsumption.ProductName },
+
+                        })
+                        .ToListAsync());
+
+                    var materialsInherit = LoopGetMaterialConsumInherit(materialsConsumptionInherit, productBom, productBom.Where(x => x.Level == 1), productMap);
+
+                    var materialsConsumption = _importData.Where(x => x.UsageProductCode.NormalizeAsInternalName() == usageProductCode)
+                    .Select(x => new ProductMaterialsConsumptionPreview
+                    {
+                        BomQuantity = 1,
+                        DepartmentName = x.DepartmentName ?? x.DepartmentCode,
+                        GroupTitle = x.GroupTitle,
+                        Quantity = x.Quantity,
+                        StepName = x.StepName,
+                        ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName },
+                        ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName },
+                    })
+                    .ToList();
+
+                    var exceptMaterialsConsumption = materialsInherit.Except(materialsConsumption, new ProductMaterialsConsumptionPreviewComparer())
+                        .Select(x => new ProductMaterialsConsumptionPreview
+                        {
+                            GroupTitle = x.GroupTitle,
+                            DepartmentName = x.DepartmentName,
+                            StepName = x.StepName,
+                            ProductExtraInfo = rootProduct,
+                            ProductMaterialsComsumptionExtraInfo = x.ProductMaterialsComsumptionExtraInfo
+                        });
+
+                    materialsConsumption.AddRange(exceptMaterialsConsumption);
+                    foreach (var m in materialsConsumption)
+                    {
+                        m.MaterialsConsumptionInherit = materialsInherit.Where(x => x.GroupTitle == m.GroupTitle
+                                        && x.ProductMaterialsComsumptionExtraInfo.ProductCode == m.ProductMaterialsComsumptionExtraInfo.ProductCode).ToList();
+                        m.BomQuantity = 1;
+                        m.TotalQuantityInheritance = m.MaterialsConsumptionInherit.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
+                    }
+
+                    PreviewData.Add(new MaterialsConsumptionByProduct
+                    {
+                        RootProduct = rootProduct,
+                        MaterialsComsump = materialsConsumption
+                    });
                 }
-                else
+                else if (rootProduct.ProductId == 0)
                 {
                     var materials = _importData.Where(x => x.UsageProductCode.NormalizeAsInternalName() == usageProductCode)
                     .GroupBy(x => x.GroupTitle.NormalizeAsInternalName())
@@ -278,120 +341,27 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     .SelectMany(v => v.Value)
                     .ToList();
 
-                }
-            }
-        }
-
-        private class ProductMaterialsConsumptionPreview
-        {
-            public string GroupTitle { get; set; }
-            public decimal Quantity { get; set; }
-            public string StepName { get; set; }
-            public string DepartmentName { get; set; }
-            public decimal TotalQuantityInheritance { get; set; } = 0;
-            public decimal BomQuantity { get; set; } = 1;
-            
-            public SimpleProduct ProductExtraInfo {get;set;}
-            public SimpleProduct ProductMaterialsComsumptionExtraInfo {get;set;}
-
-            public IList<ProductMaterialsConsumptionPreview> MaterialsConsumptionInheri { get; set; }
-
-        }
-
-        public async Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int productId)
-        {
-            var productBom = (await _productBomService.GetBom(productId)).Where(x => !x.IsMaterial);
-            var productMap = CalcProductBomTotalQuantity(productBom);
-
-            var materialsConsumptionInheri = (await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                .Where(x => productBom.Select(y => y.ChildProductId).Contains(x.ProductId))
-                .Include(x => x.MaterialsConsumption)
-                .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
-                .ToListAsync());
-
-            int minLevel = 1;
-            var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri, productBom, productBom.Where(x => x.Level == minLevel), productMap);
-
-            var materialsConsumption = await _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                            .Where(x => x.ProductId == productId)
-                            .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
-                            .ToListAsync();
-
-            var exceptMaterialsConsumption = materialsInheri.Except(materialsConsumption, new ProductMaterialsConsumptionBaseComparer())
-                .Select(x => new ProductMaterialsConsumptionOutput
-                {
-                    ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId,
-                    MaterialsConsumptionId = x.MaterialsConsumptionId,
-                    ProductId = productId,
-                    DepartmentId = x.DepartmentId,
-                    StepId = x.StepId,
-                    UnitId = x.UnitId,
-                    Description = x.Description
-                });
-
-            materialsConsumption.AddRange(exceptMaterialsConsumption);
-            foreach (var m in materialsConsumption)
-            {
-                m.MaterialsConsumptionInheri = materialsInheri.Where(x => x.ProductMaterialsConsumptionGroupId == m.ProductMaterialsConsumptionGroupId
-                                && x.MaterialsConsumptionId == m.MaterialsConsumptionId).ToList();
-                m.BomQuantity = 1;
-                m.TotalQuantityInheritance = m.MaterialsConsumptionInheri.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
-                //m.Description = string.Join(", ", m.MaterialsConsumptionInheri.Select(d => d.Description).Distinct().ToArray());                
-            }
-
-            return materialsConsumption;
-        }
-
-        private IList<ProductMaterialsConsumptionOutput> LoopGetMaterialConsumInheri(List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri
-            , IEnumerable<ProductBomOutput> productBom
-            , IEnumerable<ProductBomOutput> boms
-            , Dictionary<int?, decimal> productMap)
-        {
-            var result = new List<ProductMaterialsConsumptionOutput>();
-            foreach (var bom in boms)
-            {
-                var materials = materialsConsumptionInheri.Where(x => x.ProductId == bom.ChildProductId).ToList();
-                var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId).ToList();
-                var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri, productBom, childBom, productMap);
-
-                var exceptMaterials = materialsInheri.Except(materials, new ProductMaterialsConsumptionBaseComparer())
-                    .Select(x => new ProductMaterialsConsumptionOutput
+                    PreviewData.Add(new MaterialsConsumptionByProduct
                     {
-                        ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId,
-                        MaterialsConsumptionId = x.MaterialsConsumptionId,
-                        ProductId = bom.ChildProductId.GetValueOrDefault(),
-                        DepartmentId = x.DepartmentId,
-                        StepId = x.StepId,
-                        UnitId = x.UnitId,
-                        Description = x.Description
+                        RootProduct = rootProduct,
+                        MaterialsComsump = materials
                     });
-
-                materials.AddRange(exceptMaterials);
-                foreach (var m in materials)
-                {
-                    m.MaterialsConsumptionInheri = materialsInheri.Where(x => x.ProductMaterialsConsumptionGroupId == m.ProductMaterialsConsumptionGroupId
-                                    && x.MaterialsConsumptionId == m.MaterialsConsumptionId).ToList();
-                    m.BomQuantity = productMap.ContainsKey(m.ProductId) ? productMap[m.ProductId] : 1;
-                    m.TotalQuantityInheritance = m.MaterialsConsumptionInheri.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
                 }
-
-                result.AddRange(materials);
             }
-
-            return result;
         }
 
-        private Dictionary<int?, decimal> CalcProductBomTotalQuantity(IEnumerable<ProductBomOutput> productBom)
+        private Dictionary<string, decimal> CalcProductBomTotalQuantity(IEnumerable<ProductBomOutput> productBom)
         {
             var level1 = productBom.Where(x => x.Level == 1).ToArray();
-            var productMap = new Dictionary<int?, decimal>();
+            var productMap = new Dictionary<string, decimal>();
             foreach (var bom in level1)
             {
                 var totalQuantity = bom.Quantity; // không có tiêu hao
-                if (productMap.ContainsKey(bom.ChildProductId))
-                    productMap[bom.ChildProductId] += totalQuantity;
+                var productInfo = _existedProducts.Values.FirstOrDefault(x => x.ProductId == bom.ChildProductId);
+                if (productMap.ContainsKey(productInfo.ProductCode))
+                    productMap[productInfo.ProductCode] += totalQuantity;
                 else
-                    productMap.Add(bom.ChildProductId, totalQuantity);
+                    productMap.Add(productInfo.ProductCode, totalQuantity);
 
                 var childs = productBom.Where(x => x.ProductId == bom.ChildProductId);
 
@@ -401,19 +371,137 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             return productMap;
         }
 
-        private void LoopCalcProductBom(IEnumerable<ProductBomOutput> productBom, Dictionary<int?, decimal> productMap, IEnumerable<ProductBomOutput> level, decimal scale)
+        private void LoopCalcProductBom(IEnumerable<ProductBomOutput> productBom, Dictionary<string, decimal> productMap, IEnumerable<ProductBomOutput> level, decimal scale)
         {
             foreach (var bom in level)
             {
                 var totalQuantity = bom.Quantity * bom.Wastage * scale;
-                if (productMap.ContainsKey(bom.ChildProductId))
-                    productMap[bom.ChildProductId] += totalQuantity;
+                var productInfo = _existedProducts.Values.FirstOrDefault(x => x.ProductId == bom.ChildProductId);
+
+                if (productMap.ContainsKey(productInfo.ProductCode))
+                    productMap[productInfo.ProductCode] += totalQuantity;
                 else
-                    productMap.Add(bom.ChildProductId, totalQuantity);
+                    productMap.Add(productInfo.ProductCode, totalQuantity);
+
                 var childs = productBom.Where(x => x.ProductId == bom.ChildProductId);
                 LoopCalcProductBom(productBom, productMap, childs, totalQuantity);
             }
         }
+
+        private IList<ProductMaterialsConsumptionPreview> LoopGetMaterialConsumInherit(List<ProductMaterialsConsumptionPreview> materialsConsumptionInheri
+            , IEnumerable<ProductBomOutput> productBom
+            , IEnumerable<ProductBomOutput> boms
+            , Dictionary<string, decimal> productMap)
+        {
+            var result = new List<ProductMaterialsConsumptionPreview>();
+            foreach (var bom in boms)
+            {
+                var bomProductInfo = _existedProducts.Values.FirstOrDefault(x => x.ProductId == bom.ChildProductId);
+
+                var hasImport = _importData.Any(x => x.UsageProductCode == bomProductInfo.ProductCode);
+
+                var materials = hasImport ? _importData.Where(x => x.UsageProductCode == bomProductInfo.ProductCode)
+                    .Select(x => new ProductMaterialsConsumptionPreview
+                    {
+                        BomQuantity = 1,
+                        DepartmentName = x.DepartmentName ?? x.DepartmentCode,
+                        GroupTitle = x.GroupTitle,
+                        Quantity = x.Quantity,
+                        StepName = x.StepName,
+                        ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName },
+                        ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName },
+                    })
+                    .ToList()
+                    : materialsConsumptionInheri.Where(x => x.ProductExtraInfo.ProductCode == bomProductInfo.ProductCode).ToList();
+                var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId).ToList();
+                var materialsInheri = LoopGetMaterialConsumInherit(materialsConsumptionInheri, productBom, childBom, productMap);
+
+                var exceptMaterials = materialsInheri.Except(materials, new ProductMaterialsConsumptionPreviewComparer())
+                    .Select(x => new ProductMaterialsConsumptionPreview
+                    {
+                        GroupTitle = x.GroupTitle,
+                        ProductMaterialsComsumptionExtraInfo = x.ProductMaterialsComsumptionExtraInfo,
+                        ProductExtraInfo = bomProductInfo,
+                        DepartmentName = x.DepartmentName,
+                        StepName = x.StepName,
+                    });
+
+                materials.AddRange(exceptMaterials);
+                foreach (var m in materials)
+                {
+                    m.MaterialsConsumptionInherit = materialsInheri.Where(x => x.GroupTitle == m.GroupTitle
+                                    && x.ProductMaterialsComsumptionExtraInfo.ProductCode == m.ProductMaterialsComsumptionExtraInfo.ProductCode).ToList();
+
+                    m.BomQuantity = productMap.ContainsKey(m.ProductExtraInfo.ProductCode) ? productMap[m.ProductExtraInfo.ProductCode] : 1;
+                    m.TotalQuantityInheritance = m.MaterialsConsumptionInherit.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
+                }
+
+                result.AddRange(materials);
+            }
+
+            return result;
+        }
+
+        private IList<ProductMaterialsConsumptionPreview> CalcMaterialsConsumptionPreview(IEnumerable<ProductMaterialsConsumptionOutput> currentMaterialsConsumption)
+        {
+            var materials = new List<ProductMaterialsConsumptionPreview>();
+
+            if (currentMaterialsConsumption == null)
+                return materials;
+
+            foreach (var m in currentMaterialsConsumption)
+            {
+                var material = _existedProducts.Values.FirstOrDefault(x => x.ProductId == m.MaterialsConsumptionId);
+                var product = _existedProducts.Values.FirstOrDefault(x => x.ProductId == m.ProductId);
+                var step = _steps.Values.FirstOrDefault(x => x.StepId == m.StepId);
+                var department = _departments.FirstOrDefault(x => x.DepartmentId == m.DepartmentId);
+                var group = _groupConsumptions.Values.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId == m.ProductMaterialsConsumptionGroupId);
+
+                var item = new ProductMaterialsConsumptionPreview
+                {
+                    BomQuantity = m.BomQuantity,
+                    Quantity = m.Quantity,
+                    StepName = step?.StepName,
+                    DepartmentName = department?.DepartmentName,
+                    GroupTitle = group?.Title,
+                    ProductExtraInfo = product,
+                    ProductMaterialsComsumptionExtraInfo = material
+                };
+
+                if (_importData.Any(x => x.UsageProductCode == product.ProductCode && material.ProductCode == x.ProductCode))
+                {
+                    var row = _importData.FirstOrDefault(x => x.UsageProductCode == product.ProductCode && material.ProductCode == x.ProductCode);
+                    item = new ProductMaterialsConsumptionPreview
+                    {
+                        BomQuantity = m.BomQuantity,
+                        Quantity = row.Quantity,
+                        StepName = row.StepName,
+                        DepartmentName = row.DepartmentName ?? row.DepartmentCode,
+                        GroupTitle = row.GroupTitle,
+                        ProductExtraInfo = _existedProducts[row.UsageProductCode.NormalizeAsInternalName()],
+                        ProductMaterialsComsumptionExtraInfo = _existedProducts[row.ProductCode.NormalizeAsInternalName()]
+                    };
+                }
+
+                item.MaterialsConsumptionInherit = CalcMaterialsConsumptionPreview(m.MaterialsConsumptionInheri);
+                item.TotalQuantityInheritance = item.MaterialsConsumptionInherit.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
+
+                materials.Add(item);
+            }
+
+            return materials;
+        }
+
+        private int[] FoundRelationshipBom(IDictionary<int, IList<ProductBomOutput>> allProductBoms)
+        {
+            var allUsageProductCode = _importData.Select(x => x.UsageProductCode).Distinct();
+            var productIds = _existedProducts.Values.Where(x => allUsageProductCode.Contains(x.ProductCode)).Select(x => x.ProductId).Distinct().ToArray();
+
+            var childProductInBom = allProductBoms.Values.SelectMany(x => x).Select(x => x.ChildProductId).Distinct().ToList();
+
+            return productIds.Where(x => !childProductInBom.Contains(x) && x > 0).ToArray();
+        }
+
 
         private async Task RemoveOldMaterialConsumption(IEnumerable<int> productIds, int groupMaterialConsumptionId)
         {
@@ -446,11 +534,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 }).ToList();
             foreach (var unit in newUnits)
             {
-                var unitId = 0 ;
+                var unitId = 0;
 
                 if (!IsPreview)
                     unitId = await _unitService.AddUnit(unit);
-                
+
                 _units.Add(unit.UnitName.NormalizeAsInternalName(), new UnitOutput() { UnitId = unitId, UnitName = unit.UnitName, UnitStatusId = unit.UnitStatusId });
             }
 
@@ -564,10 +652,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             foreach (var product in newProducts)
             {
                 var productId = 0;
-                
+
                 if (!IsPreview)
                     productId = await _productService.AddProductToDb(product);
-                
+
                 _existedProducts.Add(product.ProductCode.NormalizeAsInternalName(), new SimpleProduct { ProductId = productId, ProductCode = product.ProductCode, ProductName = product.ProductName });
             }
         }

@@ -19,6 +19,7 @@ namespace VErp.Services.Stock.Service.Products
 
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportMaterialsConsumptionFromMapping(int? productId, ImportExcelMapping importExcelMapping, Stream stream);
+        Task<IList<MaterialsConsumptionByProduct>> ImportMaterialsConsumptionFromMappingAsPreviewData(int? productId, ImportExcelMapping mapping, Stream stream);
 
         Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int[] productIds);
         Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumption(int productId);
