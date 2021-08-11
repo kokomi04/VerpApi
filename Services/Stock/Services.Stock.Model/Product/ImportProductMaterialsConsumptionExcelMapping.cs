@@ -70,4 +70,59 @@ namespace VErp.Services.Stock.Model.Product
         public string Description { get; set; }
 
     }
+
+    public class MaterialsConsumptionByProduct
+    {
+        public SimpleProduct RootProduct { get; set; }
+        public IList<ProductMaterialsConsumptionPreview> MaterialsComsump { get; set; }
+    }
+
+    public class SimpleProduct
+    {
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string UnitName { get; set; }
+        public string Specification { get; set; }
+    }
+
+    public class ProductMaterialsConsumptionPreview
+    {
+        public string GroupTitle { get; set; }
+        public decimal Quantity { get; set; }
+        public string StepName { get; set; }
+        public string DepartmentName { get; set; }
+        public decimal TotalQuantityInheritance { get; set; } = 0;
+        public decimal BomQuantity { get; set; } = 1;
+
+        public SimpleProduct ProductExtraInfo { get; set; }
+        public SimpleProduct ProductMaterialsComsumptionExtraInfo { get; set; }
+
+        public IList<ProductMaterialsConsumptionPreview> MaterialsConsumptionInherit { get; set; }
+
+    }
+
+    public class ProductMaterialsConsumptionPreviewComparer : IEqualityComparer<ProductMaterialsConsumptionPreview>
+    {
+        public bool Equals(ProductMaterialsConsumptionPreview x, ProductMaterialsConsumptionPreview y)
+        {
+
+            if (Object.ReferenceEquals(x, y)) return true;
+
+            if (Object.ReferenceEquals(x, null) || Object.ReferenceEquals(y, null))
+                return false;
+
+            return x.GroupTitle == y.GroupTitle && x.ProductMaterialsComsumptionExtraInfo.ProductCode == y.ProductMaterialsComsumptionExtraInfo.ProductCode;
+        }
+
+        // If Equals() returns true for a pair of objects
+        // then GetHashCode() must return the same value for these objects.
+
+        public int GetHashCode(ProductMaterialsConsumptionPreview product)
+        {
+            if (Object.ReferenceEquals(product, null)) return 0;
+
+            return product.GroupTitle.GetHashCode() ^ product.ProductMaterialsComsumptionExtraInfo.ProductCode.GetHashCode();
+        }
+    }
 }
