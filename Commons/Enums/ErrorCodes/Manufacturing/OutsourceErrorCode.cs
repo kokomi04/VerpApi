@@ -19,5 +19,6 @@ namespace VErp.Commons.Enums.ErrorCodes
         NotFoundOutsourOrderDetail = 5,
         EarlyExistsProductionStepHadOutsourceRequest = 6,
         CanNotCreateOutsourceOrder = 7,
+        HasPurchaseOrder = 8,
     }
 }

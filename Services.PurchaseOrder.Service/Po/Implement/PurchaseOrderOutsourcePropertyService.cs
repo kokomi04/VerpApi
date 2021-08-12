@@ -28,6 +28,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             ICurrentContextService currentContext,
             IObjectGenCodeService objectGenCodeService,
             ICustomGenCodeHelperService customGenCodeHelperService,
+            IManufacturingHelperService manufacturingHelperService,
             IMapper mapper) : base(
                 purchaseOrderDBContext,
                 appSetting,
@@ -36,6 +37,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 currentContext,
                 objectGenCodeService,
                 customGenCodeHelperService,
+                manufacturingHelperService,
                 mapper)
         {
         }

@@ -138,4 +138,7 @@
   <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
     <value>Outsource order code is already existed</value>
   </data>
+  <data name="HasPurchaseOrder" xml:space="preserve">
+    <value>Outsource request already created purchase order</value>
+  </data>
 </root>

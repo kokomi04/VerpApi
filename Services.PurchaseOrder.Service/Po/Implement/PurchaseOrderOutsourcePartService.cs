@@ -32,6 +32,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             ICurrentContextService currentContext,
             IObjectGenCodeService objectGenCodeService,
             ICustomGenCodeHelperService customGenCodeHelperService,
+            IManufacturingHelperService manufacturingHelperService,
             IMapper mapper): base(
                 purchaseOrderDBContext,
                 appSetting,
@@ -40,6 +41,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 currentContext,
                 objectGenCodeService,
                 customGenCodeHelperService,
+                manufacturingHelperService,
                 mapper)
         {
         }
@@ -88,6 +90,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] arrOutsourcePartId)
         {
             return (await GetOutsourcePartRequest()).Where(x => arrOutsourcePartId.Contains(x.OutsourcePartRequestId)).ToList();
+        }
+
+        public async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId)
+        {
+            var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
+
+            return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
         }
         
         private async Task<RefOutsourcePartRequestModel> GetOutsourcePartRequest(long outsourcePartId)
