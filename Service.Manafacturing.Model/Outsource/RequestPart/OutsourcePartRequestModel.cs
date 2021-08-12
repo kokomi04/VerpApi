@@ -21,7 +21,17 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public long? RootProductId { get; set; }
         public long? ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
+        public decimal? RootProductQuantity { get; set; }
 
+        public long OutsourcePartRequestDate { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMap<OutsourcePartRequestModel, OutsourcePartRequest>()
+            .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
+            .ReverseMap()
+            .ForMember(m => m.OutsourcePartRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
+        }
     }
 
     public class OutsourcePartRequestInfo : OutsourcePartRequestModel, IMapFrom<OutsourcePartRequestDetailInfo>

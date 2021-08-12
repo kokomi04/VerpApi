@@ -33,6 +33,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         protected ICurrentContextService _currentContext;
         protected IObjectGenCodeService _objectGenCodeService;
         protected ICustomGenCodeHelperService _customGenCodeHelperService;
+        protected IManufacturingHelperService _manufacturingHelperService;
         protected IMapper _mapper;
 
         public PurchaseOrderOutsourceAbstract(
@@ -43,6 +44,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             ICurrentContextService currentContext,
             IObjectGenCodeService objectGenCodeService,
             ICustomGenCodeHelperService customGenCodeHelperService,
+            IManufacturingHelperService manufacturingHelperService,
             IMapper mapper)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -52,6 +54,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _currentContext = currentContext;
             _objectGenCodeService = objectGenCodeService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _manufacturingHelperService = manufacturingHelperService;
             _mapper = mapper;
         }
 
@@ -480,6 +483,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 Excess = excess,
                 Materials = materials
             };
+        }
+
+        protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId){
+            var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+            if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+            var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
+                .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                .ToArray();
+            return outsourceRequestId;
         }
 
         private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)

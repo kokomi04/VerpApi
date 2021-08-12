@@ -229,6 +229,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     };
                 }).ToList();
 
+            var inputDetails = request.OutsourceStepRequestData.Where(x => x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                .Select(x =>
+                {
+                    return new OutsourceStepRequestDetailOutput
+                    {
+                        ProductionStepLinkDataId = x.ProductionStepLinkDataId,
+                        Quantity = x.Quantity,
+                    };
+                }).ToList();
+
             return new OutsourceStepRequestOutput
             {
                 OutsourceStepRequestCode = request.OutsourceStepRequestCode,
@@ -238,6 +248,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 OutsourceStepRequestId = request.OutsourceStepRequestId,
                 OutsourceStepRequestDate = request.CreatedDatetimeUtc.GetUnix(),
                 DetailOutputs = outsourceDetails,
+                DetailInputs = inputDetails,
                 IsInvalid = request.IsInvalid,
                 OutsourceStepRequestStatusId = request.OutsourceStepRequestStatusId,
                 Setting = request.Setting.JsonDeserialize<OutsourceStepSetting>()
@@ -539,6 +550,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                     var arrPurchaseOrderId = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => x.OutsourceRequestId == rq.OutsourceStepRequestId)
                             .Select(x => x.PurchaseOrderId)
+                            .Distinct()
                             .ToListAsync();
 
                     var totalStatus = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()

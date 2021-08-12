@@ -98,6 +98,13 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchaseOrderOutsourceStepService.UpdatePurchaseOrderOutsourceStep(purchaseOrderId, model);
         }
 
+        [HttpPut]
+        [Route("outsourceStep/{purchaseOrderId}/updateStatusForRequest")]
+        public async Task<bool> UpdateStatusForOutsourceStepRequestInPurcharOrder([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderOutsourceStepService.UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
+        }
+
         #endregion
 
         #region Outsource-Part
@@ -152,6 +159,13 @@ namespace VErpApi.Controllers.PurchaseOrder
         public async Task<bool> UpdatePurchaseOrderOutsourcePart([FromRoute] long purchaseOrderId, [FromBody] PurchaseOrderInput model)
         {
             return await _purchaseOrderOutsourcePartService.UpdatePurchaseOrderOutsourcePart(purchaseOrderId, model);
+        }
+
+        [HttpPut]
+        [Route("outsourcePart/{purchaseOrderId}/updateStatusForRequest")]
+        public async Task<bool> UpdateStatusForOutsourcePartRequestInPurcharOrder([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderOutsourcePartService.UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
         }
 
         #endregion

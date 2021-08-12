@@ -26,12 +26,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         public PurchaseOrderOutsourceStepService(
             PurchaseOrderDBContext purchaseOrderDBContext,
             IOptions<AppSetting> appSetting,
-            ILogger<PurchaseOrderOutsourceStepService> logger,
+            ILogger<PurchaseOrderOutsourcePartService> logger,
             IActivityLogService activityLogService,
             ICurrentContextService currentContext,
             IObjectGenCodeService objectGenCodeService,
             ICustomGenCodeHelperService customGenCodeHelperService,
-            IMapper mapper): base(
+            IManufacturingHelperService manufacturingHelperService,
+            IMapper mapper) : base(
                 purchaseOrderDBContext,
                 appSetting,
                 logger,
@@ -39,9 +40,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 currentContext,
                 objectGenCodeService,
                 customGenCodeHelperService,
+                manufacturingHelperService,
                 mapper)
         {
-           
         }
 
         public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest()
@@ -87,11 +88,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return await GetPurchaseOrderOutsource(purchaseOrderId);
         }
 
-
         public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest(long[] arrOutsourceStepId)
         {
             return (await GetOutsourceStepRequest()).Where(x => arrOutsourceStepId.Contains(x.OutsourceStepRequestId)).ToList();
         }
+        public async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId)
+        {
+            var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
+
+            return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
+        }
+        
 
         private async Task<RefOutsourceStepRequestModel> GetOutsourceStepRequest(long outsourceStepRequestId)
         {

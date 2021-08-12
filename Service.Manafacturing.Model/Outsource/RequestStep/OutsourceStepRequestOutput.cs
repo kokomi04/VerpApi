@@ -21,6 +21,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 
         public ICollection<OutsourceStepRequestDetailOutput> DetailOutputs { get; set; }
         public ICollection<long> ProductionStepIds { get; set; }
+        public List<OutsourceStepRequestDetailOutput> DetailInputs { get; set; }
     }
 
     public class OutsourceStepRequestDetailOutput
@@ -40,4 +41,6 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public long ProductId {get;set;}
         public decimal Quantity {get;set;}
     }
+
+   
 }
