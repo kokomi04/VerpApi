@@ -1153,6 +1153,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         curField.ReferenceUrl = field.ReferenceUrl;
                         curField.IsBatchSelect = field.IsBatchSelect;
                         curField.OnClick = field.OnClick;
+
+                        curField.CustomButtonHtml = field.CustomButtonHtml;
+                        curField.CustomButtonOnClick = field.CustomButtonOnClick;
                     }
                 }
 
