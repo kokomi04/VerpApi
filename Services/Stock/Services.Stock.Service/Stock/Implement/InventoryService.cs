@@ -1782,13 +1782,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 packpages = packpages.Where(p => productIds.Contains(p.ProductId));
             }
 
+            if (stockIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => stockIds.Contains(p.StockId));
+            }
+
             var query = from pk in packpages
                         join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
                         from l in ls.DefaultIfEmpty()
                         join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
                         join s in _stockDbContext.ProductExtraInfo on p.ProductId equals s.ProductId
                         join pu in _stockDbContext.ProductUnitConversion on pk.ProductUnitConversionId equals pu.ProductUnitConversionId
-                        where stockIds.Contains(pk.StockId) && pk.PrimaryQuantityRemaining > 0
+                        where //stockIds.Contains(pk.StockId) &&
+                        pk.PrimaryQuantityRemaining > 0
                         select new
                         {
                             ProductId = p.ProductId,
