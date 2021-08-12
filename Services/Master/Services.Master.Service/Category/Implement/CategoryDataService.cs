@@ -1032,12 +1032,13 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     if (field == null && mappingField.FieldName != AccountantConstants.PARENT_ID_FIELD_NAME && !string.IsNullOrWhiteSpace(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
 
-                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
+                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains(((EnumDataType?)field?.DataTypeId).GetValueOrDefault()))
                     {
                         if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {rowIndx + mapping.FromRow}, trường {field.Title} sang kiểu ngày tháng");
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {rowIndx + mapping.FromRow}, trường {field?.Title} sang kiểu ngày tháng");
                         value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
                     }
+
 
 
                     rowData.Add(new CategoryImportExcelRowData()
