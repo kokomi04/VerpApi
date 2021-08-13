@@ -232,7 +232,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                                                           Quantity = r.Quantity,
                                                           DepartmentId = departmentId,
                                                           StepId = stepId,
-                                                          ProductMaterialsConsumptionGroupId = groupMaterialConsumptionId
+                                                          ProductMaterialsConsumptionGroupId = groupMaterialConsumptionId,
+                                                          Description = r.Description
                                                       };
 
                         lsMaterialConsumption.AddRange(newMaterialConsumptions);
@@ -281,7 +282,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                             GroupTitle = x.ProductMaterialsConsumptionGroup.Title,
                             ProductExtraInfo = new SimpleProduct { ProductCode = x.Product.ProductCode, ProductName = x.Product.ProductName },
                             ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.MaterialsConsumption.ProductCode, ProductName = x.MaterialsConsumption.ProductName },
-
+                            Description = x.Description
                         })
                         .ToListAsync());
 
@@ -297,6 +298,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         StepName = x.StepName,
                         ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName },
                         ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName },
+                        Description = x.Description,
                     })
                     .ToList();
 
@@ -307,7 +309,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                             DepartmentName = x.DepartmentName,
                             StepName = x.StepName,
                             ProductExtraInfo = rootProduct,
-                            ProductMaterialsComsumptionExtraInfo = x.ProductMaterialsComsumptionExtraInfo
+                            ProductMaterialsComsumptionExtraInfo = x.ProductMaterialsComsumptionExtraInfo,
+                            Description = x.Description
                         });
 
                     materialsConsumption.AddRange(exceptMaterialsConsumption);
@@ -336,7 +339,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         DepartmentName = GetDepartment(x.DepartmentCode, x.DepartmentName)?.DepartmentName,
                         StepName = GetStep(x.StepName)?.StepName,
                         ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName, UnitName = x.UnitName, Specification = x.UsageSpecification },
-                        ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName, UnitName = x.UnitName, Specification = x.Specification }
+                        ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName, UnitName = x.UnitName, Specification = x.Specification },
+                        Description = x.Description
                     }))
                     .SelectMany(v => v.Value)
                     .ToList();
@@ -410,6 +414,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         StepName = x.StepName,
                         ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName },
                         ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName },
+                        Description = x.Description
                     })
                     .ToList()
                     : materialsConsumptionInheri.Where(x => x.ProductExtraInfo.ProductCode == bomProductInfo.ProductCode).ToList();
@@ -424,6 +429,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         ProductExtraInfo = bomProductInfo,
                         DepartmentName = x.DepartmentName,
                         StepName = x.StepName,
+                        Description = x.Description
                     });
 
                 materials.AddRange(exceptMaterials);
@@ -465,7 +471,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     DepartmentName = department?.DepartmentName,
                     GroupTitle = group?.Title,
                     ProductExtraInfo = product,
-                    ProductMaterialsComsumptionExtraInfo = material
+                    ProductMaterialsComsumptionExtraInfo = material,
+                    Description = m.Description
                 };
 
                 if (_importData.Any(x => x.UsageProductCode == product.ProductCode && material.ProductCode == x.ProductCode))
@@ -479,7 +486,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         DepartmentName = row.DepartmentName ?? row.DepartmentCode,
                         GroupTitle = row.GroupTitle,
                         ProductExtraInfo = _existedProducts[row.UsageProductCode.NormalizeAsInternalName()],
-                        ProductMaterialsComsumptionExtraInfo = _existedProducts[row.ProductCode.NormalizeAsInternalName()]
+                        ProductMaterialsComsumptionExtraInfo = _existedProducts[row.ProductCode.NormalizeAsInternalName()],
+                        Description = row.Description
                     };
                 }
 
@@ -579,7 +587,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         Specification = p.First().Specification,
                     });
 
-            _existedProducts = (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName }).ToListAsync()).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
+            _existedProducts = (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId }).ToListAsync()).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
 
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
@@ -636,6 +644,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         ProductTypeId = type?.ProductTypeId,
                         ProductCateId = cate.ProductCateId,
                         UnitId = unit.UnitId,
+                        UnitName = unit.UnitName,
 
                         Extra = new ProductModelExtra()
                         {
@@ -656,7 +665,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 if (!IsPreview)
                     productId = await _productService.AddProductToDb(product);
 
-                _existedProducts.Add(product.ProductCode.NormalizeAsInternalName(), new SimpleProduct { ProductId = productId, ProductCode = product.ProductCode, ProductName = product.ProductName });
+                var unitName = product.UnitName;
+                if (product.UnitId > 0)
+                    unitName = _units.Values.FirstOrDefault(x => x.UnitId == product.UnitId)?.UnitName;
+
+                _existedProducts.Add(product.ProductCode.NormalizeAsInternalName(), new SimpleProduct { ProductId = productId, ProductCode = product.ProductCode, ProductName = product.ProductName, UnitName = unitName });
             }
         }
 

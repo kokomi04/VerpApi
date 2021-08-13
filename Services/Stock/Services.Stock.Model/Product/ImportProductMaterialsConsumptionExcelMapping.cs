@@ -66,7 +66,7 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Tên công đoạn (Nếu có)", GroupName = "Thông tin công đoạn")]
         public string StepName { get; set; }
 
-        [Display(Name = "Ghi chú", GroupName = "Khác")]
+        [Display(Name = "Ghi chú", GroupName = "Thông tin chung")]
         public string Description { get; set; }
 
     }
@@ -83,6 +83,7 @@ namespace VErp.Services.Stock.Model.Product
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public string UnitName { get; set; }
+        public int UnitId { get; set; }
         public string Specification { get; set; }
     }
 
@@ -94,12 +95,12 @@ namespace VErp.Services.Stock.Model.Product
         public string DepartmentName { get; set; }
         public decimal TotalQuantityInheritance { get; set; } = 0;
         public decimal BomQuantity { get; set; } = 1;
+        public string Description { get; set; }
 
         public SimpleProduct ProductExtraInfo { get; set; }
         public SimpleProduct ProductMaterialsComsumptionExtraInfo { get; set; }
 
         public IList<ProductMaterialsConsumptionPreview> MaterialsConsumptionInherit { get; set; }
-
     }
 
     public class ProductMaterialsConsumptionPreviewComparer : IEqualityComparer<ProductMaterialsConsumptionPreview>
