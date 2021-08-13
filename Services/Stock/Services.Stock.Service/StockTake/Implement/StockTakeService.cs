@@ -133,7 +133,16 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             var stockTake = await _stockContext.StockTake
                 .Include(st => st.StockTakeDetail)
                 .FirstOrDefaultAsync(st => st.StockTakeId == stockTakeId);
-            return _mapper.Map<StockTakeModel>(stockTake);
+
+            var packageIds = stockTake.StockTakeDetail.Where(d => d.PackageId.HasValue).Select(d => d.PackageId).ToList();
+
+            var packages = _stockContext.Package.Where(p => packageIds.Contains(p.PackageId)).ToDictionary(p => p.PackageId, p => p.PackageCode);
+            var result = _mapper.Map<StockTakeModel>(stockTake);
+            foreach(var item in result.StockTakeDetail)
+            {
+                if (item.PackageId.HasValue) item.PackageCode = packages[item.PackageId.Value];
+            }
+            return result;
         }
 
         public async Task<StockTakeModel> UpdateStockTake(long stockTakeId, StockTakeModel model)
