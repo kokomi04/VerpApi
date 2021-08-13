@@ -588,7 +588,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_BillOfMaterial_Product_ProductId");
             });
 
-
             modelBuilder.Entity<ProductCate>(entity =>
             {
                 entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
@@ -858,8 +857,6 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<StockTake>(entity =>
             {
-                entity.Property(e => e.Content).IsRequired();
-
                 entity.Property(e => e.StockTakeCode)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -873,7 +870,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<StockTakeDetail>(entity =>
             {
-                entity.Property(e => e.StockTakeQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.HasOne(d => d.StockTake)
                     .WithMany(p => p.StockTakeDetail)
