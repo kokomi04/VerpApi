@@ -45,8 +45,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
         public ProductModelExtra Extra { get; set; }
         public ProductModelStock StockInfo { get; set; }
-
-
+        public string UnitName { get; set; }
 
         public class ProductModelExtra
         {
