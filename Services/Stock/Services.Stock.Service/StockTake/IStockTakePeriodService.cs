@@ -22,5 +22,8 @@ namespace VErp.Services.Stock.Service.StockTake
         Task<StockTakePeriotModel> UpdateStockTakePeriod(long stockTakePeriodId, StockTakePeriotModel model);
 
         Task<bool> DeleteStockTakePeriod(long stockTakePeriodId);
+
+
+        Task<IList<StockRemainQuantity>> CalcStockRemainQuantity(CalcStockRemainInputModel body);
     }
 }

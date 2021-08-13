@@ -21,5 +21,7 @@ namespace VErp.Services.Stock.Service.StockTake
         Task<StockTakeModel> UpdateStockTake(long stockTakeId, StockTakeModel model);
 
         Task<bool> DeleteStockTake(long stockTakeId);
+
+        Task<bool> ApproveStockTake(long stockTakeId);
     }
 }

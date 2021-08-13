@@ -54,11 +54,17 @@ namespace VErpApi.Controllers.Stock.StockTake
 
 
         [HttpDelete]
-        [Route("{stockTakId}")]
+        [Route("{stockTakeId}")]
         public async Task<bool> DeleteStockTake([FromRoute] long stockTakeId)
         {
             return await _stockTakeService.DeleteStockTake(stockTakeId);
         }
 
+        [HttpPut]
+        [Route("approve/{stockTakeId}")]
+        public async Task<bool> ApproveStockTake([FromRoute] long stockTakeId)
+        {
+            return await _stockTakeService.ApproveStockTake(stockTakeId);
+        }
     }
 }

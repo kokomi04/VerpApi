@@ -69,5 +69,11 @@ namespace VErpApi.Controllers.Stock.StockTake
             return await _stockTakePeriodService.DeleteStockTakePeriod(stockTakePeriodId);
         }
 
+        [HttpPost]
+        [Route("remain-quantity")]
+        public async Task<IList<StockRemainQuantity>> CalcStockRemainQuantity([FromBody] CalcStockRemainInputModel body)
+        {
+            return await _stockTakePeriodService.CalcStockRemainQuantity(body);
+        }
     }
 }
