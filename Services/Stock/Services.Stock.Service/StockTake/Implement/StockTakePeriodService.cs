@@ -75,7 +75,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             {
                 stockTakePeriods = stockTakePeriods.Where(stp => stp.StockTakePeriodDate >= from && stp.StockTakePeriodDate <= to);
             }
-            if(stockIds != null && stockIds.Length > 0)
+            if (stockIds != null && stockIds.Length > 0)
             {
                 stockTakePeriods = stockTakePeriods.Where(stp => stockIds.Contains(stp.StockId));
             }
@@ -198,12 +198,13 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             result.StockTakeResult = stockTakePeriod.StockTake
                 .SelectMany(s => s.StockTakeDetail)
-                .GroupBy(d => d.ProductId)
+                .GroupBy(d => new { d.ProductId, d.ProductUnitConversionId })
                 .Select(g => new StockTakeResultModel
                 {
-                    ProductId = g.Key,
-                    PrimaryQuantity = g.Sum(d => d.PrimaryQuantity)
-
+                    ProductId = g.Key.ProductId,
+                    ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                    PrimaryQuantity = g.Sum(d => d.PrimaryQuantity),
+                    ProductUnitConversionQuantity = g.Sum(d => d.ProductUnitConversionQuantity.GetValueOrDefault())
                 }).ToList();
 
             return result;
@@ -231,6 +232,34 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 _logger.LogError(ex, "UpdateStockTakePeriod");
                 throw;
             }
+        }
+
+        public async Task<IList<StockRemainQuantity>> CalcStockRemainQuantity(CalcStockRemainInputModel data)
+        {
+            var stockTakePeriodDate = data.StockTakePeriodDate.UnixToDateTime();
+            var result = await (from id in _stockContext.InventoryDetail 
+                        join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                        where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriodDate && i.StockId == data.StockId && data.ProductIds.Contains(id.ProductId)
+                              select new
+                        {
+                            i.InventoryTypeId,
+                            id.ProductId,
+                            id.ProductUnitConversionId,
+                            id.PrimaryQuantity,
+                            id.ProductUnitConversionQuantity
+                        }).GroupBy(id => new
+                        {
+                            id.ProductId,
+                            id.ProductUnitConversionId
+                        }).Select(g => new StockRemainQuantity
+                        {
+                            ProductId = g.Key.ProductId,
+                            ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                            RemainQuantity = g.Sum(d => d.InventoryTypeId == (int) EnumInventoryType.Input? d.PrimaryQuantity : -d.PrimaryQuantity),
+                            ProductUnitConversionRemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity),
+                        }).ToListAsync();
+
+            return result;
         }
     }
 }

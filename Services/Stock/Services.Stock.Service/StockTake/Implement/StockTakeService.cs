@@ -138,7 +138,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             var packages = _stockContext.Package.Where(p => packageIds.Contains(p.PackageId)).ToDictionary(p => p.PackageId, p => p.PackageCode);
             var result = _mapper.Map<StockTakeModel>(stockTake);
-            foreach(var item in result.StockTakeDetail)
+            foreach (var item in result.StockTakeDetail)
             {
                 if (item.PackageId.HasValue) item.PackageCode = packages[item.PackageId.Value];
             }
@@ -170,7 +170,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     if (currentItem != null)
                     {
                         // Cập nhật
-                       _mapper.Map(item, currentItem);
+                        _mapper.Map(item, currentItem);
                         // Gỡ khỏi danh sách cũ
                         currentStockTakeDetails.Remove(currentItem);
                     }
@@ -241,6 +241,37 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 _logger.LogError(ex, "DeleteStockTake");
                 throw;
             }
+        }
+
+        public async Task<bool> ApproveStockTake(long stockTakeId)
+        {
+            var stockTake = _stockContext.StockTake
+                    .Where(p => p.StockTakeId == stockTakeId)
+                    .FirstOrDefault();
+
+            if (stockTake == null) throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            if ((stockTake.AccountancyRepresentativeId != _currentContextService.UserId || stockTake.AccountancyStatus != (int)EnumStockTakeStatus.Processing)
+                && (stockTake.StockRepresentativeId != _currentContextService.UserId || stockTake.StockStatus != (int)EnumStockTakeStatus.Processing))
+                throw new BadRequestException(GeneralCode.Forbidden);
+            try
+            {
+                if (stockTake.AccountancyRepresentativeId == _currentContextService.UserId && stockTake.AccountancyStatus == (int)EnumStockTakeStatus.Processing)
+                    stockTake.AccountancyStatus = (int)EnumStockTakeStatus.Finish;
+                if (stockTake.StockRepresentativeId == _currentContextService.UserId && stockTake.StockStatus == (int)EnumStockTakeStatus.Processing)
+                    stockTake.StockStatus = (int)EnumStockTakeStatus.Finish;
+
+                await _stockContext.SaveChangesAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.StockTake, stockTakeId, $"Xác nhận phiếu kiểm kê {stockTake.StockTakeCode}", _currentContextService.UserId.ToString());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ApproveStockTake");
+                throw;
+            }
+
         }
     }
 }

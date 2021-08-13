@@ -22,8 +22,8 @@ namespace VErp.Services.Stock.Model.StockTake
         {
             profile.CreateMap<StockTakeEntity, StockTakeListModel>()
                 .ForMember(dest => dest.StockTakeDate, opt => opt.MapFrom(x => x.StockTakeDate.GetUnix()))
-                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.StockStatus))
-                .ForMember(dest => dest.AccountancyStatus, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.AccountancyStatus));
+                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(x => (EnumStockTakeStatus)x.StockStatus))
+                .ForMember(dest => dest.AccountancyStatus, opt => opt.MapFrom(x => (EnumStockTakeStatus)x.AccountancyStatus));
         }
     }
 
@@ -37,8 +37,8 @@ namespace VErp.Services.Stock.Model.StockTake
             profile.CreateMap<StockTakeEntity, StockTakeModel>()
                 .ForMember(dest => dest.StockTakeDate, opt => opt.MapFrom(x => x.StockTakeDate.GetUnix()))
                 .ForMember(dest => dest.StockTakeDetail, opt => opt.MapFrom(x => x.StockTakeDetail))
-                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.StockStatus))
-                .ForMember(dest => dest.AccountancyStatus, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.AccountancyStatus))
+                .ForMember(dest => dest.StockStatus, opt => opt.MapFrom(x => (EnumStockTakeStatus)x.StockStatus))
+                .ForMember(dest => dest.AccountancyStatus, opt => opt.MapFrom(x => (EnumStockTakeStatus)x.AccountancyStatus))
                 .ReverseMap()
                 .ForMember(dest => dest.StockTakeDate, opt => opt.MapFrom(x => x.StockTakeDate.UnixToDateTime()))
                 .ForMember(dest => dest.StockTakeDetail, opt => opt.Ignore())
