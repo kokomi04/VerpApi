@@ -34,7 +34,7 @@ namespace VErp.Services.Stock.Model.StockTake
     {
         public ICollection<StockTakeListModel> StockTake { get; set; }
         public ICollection<StockTakeRepresentativeModel> StockTakeRepresentative { get; set; }
-
+        public ICollection<StockTakeResultModel> StockTakeResult { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<StockTakePeriod, StockTakePeriotModel>()
@@ -50,4 +50,13 @@ namespace VErp.Services.Stock.Model.StockTake
         }
 
     }
+
+    public class StockTakeResultModel
+    {
+        public int ProductId { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+        public int? ProductUnitConversionId { get; set; }
+        public decimal? ProductUnitConversionQuantity { get; set; }
+    }
+
 }

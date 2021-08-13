@@ -193,7 +193,20 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 .Include(p => p.StockTake)
                 .ThenInclude(st => st.StockTakeDetail)
                 .FirstOrDefaultAsync(p => p.StockTakePeriodId == stockTakePeriodId);
-            return _mapper.Map<StockTakePeriotModel>(stockTakePeriod);
+
+            var result = _mapper.Map<StockTakePeriotModel>(stockTakePeriod);
+
+            result.StockTakeResult = stockTakePeriod.StockTake
+                .SelectMany(s => s.StockTakeDetail)
+                .GroupBy(d => d.ProductId)
+                .Select(g => new StockTakeResultModel
+                {
+                    ProductId = g.Key,
+                    PrimaryQuantity = g.Sum(d => d.PrimaryQuantity)
+
+                }).ToList();
+
+            return result;
         }
 
         public async Task<StockTakePeriotModel> UpdateStockTakePeriod(long stockTakePeriodId, StockTakePeriotModel model)
