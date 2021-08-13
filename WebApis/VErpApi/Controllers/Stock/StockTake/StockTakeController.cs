@@ -47,9 +47,9 @@ namespace VErpApi.Controllers.Stock.StockTake
 
         [HttpPut]
         [Route("{stockTakeId}")]
-        public async Task<StockTakeModel> UpdateStockTake([FromRoute] long stockTakedId, [FromBody] StockTakeModel model)
+        public async Task<StockTakeModel> UpdateStockTake([FromRoute] long stockTakeId, [FromBody] StockTakeModel model)
         {
-            return await _stockTakeService.UpdateStockTake(stockTakedId, model);
+            return await _stockTakeService.UpdateStockTake(stockTakeId, model);
         }
 
 
