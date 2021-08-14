@@ -11,5 +11,6 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public decimal WorkpieceQuantity { get; set; }
         public string Note { get; set; }
         public string Specification { get; set; }
+        public int? UnitId { get; set; }
     }
 }
