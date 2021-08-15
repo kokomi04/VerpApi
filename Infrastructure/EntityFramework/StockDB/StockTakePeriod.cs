@@ -25,7 +25,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsDifference { get; set; }
         public bool IsProcessed { get; set; }
-
+        public DateTime? FinishDate { get; set; }
+        public virtual StockTakeAcceptanceCertificate StockTakeAcceptanceCertificate { get; set; }
         public virtual ICollection<StockTake> StockTake { get; set; }
         public virtual ICollection<StockTakeRepresentative> StockTakeRepresentative { get; set; }
     }

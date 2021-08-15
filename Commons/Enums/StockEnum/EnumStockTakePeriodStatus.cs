@@ -21,4 +21,14 @@ namespace VErp.Commons.Enums.Stock
         [Description("Hoàn thành")]
         Finish = 3,
     }
+
+    public enum EnumStockTakeAcceptanceCertificateStatus : int
+    {
+        [Description("Đang chờ")]
+        Waiting = 1,
+        [Description("Đã duyệt")]
+        Accepted = 2,
+        [Description("Từ chối")]
+        Rejected = 3,
+    }
 }

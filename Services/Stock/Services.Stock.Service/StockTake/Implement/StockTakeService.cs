@@ -61,6 +61,12 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
         public async Task<StockTakeModel> CreateStockTake(StockTakeModel model)
         {
+            var stockTakePeriod = _stockContext.StockTakePeriod
+           .FirstOrDefault(stp => stp.StockTakePeriodId == model.StockTakePeriodId);
+
+            if (stockTakePeriod == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(model.StockTakePeriodId));
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
@@ -108,7 +114,10 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     entity.StockTakeId = stockTake.StockTakeId;
                     _stockContext.StockTakeDetail.Add(entity);
                 }
-
+                // Đổi trạng thái kỳ kiểm kê
+                stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.Processing;
+                //Kiểm tra có chênh lệch
+                stockTakePeriod.IsDifference = CheckDifference(stockTakePeriod);
                 await _stockContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -147,11 +156,22 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
         public async Task<StockTakeModel> UpdateStockTake(long stockTakeId, StockTakeModel model)
         {
+            var stockTakePeriod = _stockContext.StockTakePeriod
+                .FirstOrDefault(stp => stp.StockTakePeriodId == model.StockTakePeriodId);
+
+            if (stockTakePeriod == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
+
             var stockTake = _stockContext.StockTake
              .FirstOrDefault(st => st.StockTakeId == stockTakeId);
 
             if (stockTake == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Phiếu kiểm kê không tồn tại");
+
+            if (string.IsNullOrEmpty(model.StockTakeCode)) new BadRequestException(GeneralCode.InvalidParams, "Mã phiếu kiểm kê không được để trống");
+            if (_stockContext.StockTake.Any(stp => stp.StockTakeCode == model.StockTakeCode && stp.StockTakeId != stockTakeId))
+                throw new BadRequestException(GeneralCode.ItemCodeExisted);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(model.StockTakePeriodId));
             using var trans = await _stockContext.Database.BeginTransactionAsync();
@@ -189,6 +209,10 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     item.IsDeleted = true;
                 }
 
+                // Đổi trạng thái kỳ kiểm kê
+                stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.Processing;
+                //Kiểm tra có chênh lệch
+                stockTakePeriod.IsDifference = CheckDifference(stockTakePeriod);
                 await _stockContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -205,6 +229,59 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             }
         }
 
+
+        private bool CheckDifference(StockTakePeriod stockTakePeriod)
+        {
+            // Thông tin kiểm kê
+            var stockTakeResult = (from std in _stockContext.StockTakeDetail
+                                   join st in _stockContext.StockTake on std.StockTakeId equals st.StockTakeId
+                                   where st.StockTakePeriodId == stockTakePeriod.StockTakePeriodId
+                                   select new
+                                   {
+                                       std.ProductId,
+                                       std.ProductUnitConversionId,
+                                       std.PrimaryQuantity
+                                   })
+                                     .GroupBy(d => new { d.ProductId, d.ProductUnitConversionId })
+                                     .Select(g => new StockTakeResultModel
+                                     {
+                                         ProductId = g.Key.ProductId,
+                                         ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                                         PrimaryQuantity = g.Sum(d => d.PrimaryQuantity)
+                                     }).ToList();
+
+            var productIds = stockTakeResult.Select(p => p.ProductId).ToList();
+
+            // Lấy thông tin tồn kho
+            var remainSystem = (from id in _stockContext.InventoryDetail
+                          join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                          where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriod.StockTakePeriodDate && i.StockId == stockTakePeriod.StockId && productIds.Contains(id.ProductId)
+                          select new
+                          {
+                              i.InventoryTypeId,
+                              id.ProductId,
+                              id.ProductUnitConversionId,
+                              id.PrimaryQuantity
+                          })
+                         .GroupBy(id => new
+                         {
+                             id.ProductId,
+                             id.ProductUnitConversionId
+                         }).Select(g => new 
+                         {
+                             ProductId = g.Key.ProductId,
+                             ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                             RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
+                         }).ToList();
+
+            foreach(var item in stockTakeResult)
+            {
+                var remain = remainSystem.FirstOrDefault(r => r.ProductId == item.ProductId && r.ProductUnitConversionId == item.ProductUnitConversionId);
+                if (remain == null || item.PrimaryQuantity.SubProductionDecimal(remain?.RemainQuantity??0) != 0) return true;
+            }
+            return false;
+        }
+
         public async Task<bool> DeleteStockTake(long stockTakeId)
         {
             var stockTake = _stockContext.StockTake
@@ -212,6 +289,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     .FirstOrDefault();
 
             if (stockTake == null) throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            var stockTakePeriod = _stockContext.StockTakePeriod
+                 .FirstOrDefault(stp => stp.StockTakePeriodId == stockTake.StockTakePeriodId);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(stockTake.StockTakePeriodId));
             using var trans = await _stockContext.Database.BeginTransactionAsync();
@@ -228,6 +308,11 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 {
                     stockTakeDetail.IsDeleted = true;
                 }
+
+                // Đổi trạng thái kỳ kiểm kê
+                stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.Processing;
+                //Kiểm tra có chênh lệch
+                stockTakePeriod.IsDifference = CheckDifference(stockTakePeriod);
 
                 await _stockContext.SaveChangesAsync();
                 trans.Commit();
