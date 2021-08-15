@@ -49,6 +49,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
         public virtual DbSet<StockTake> StockTake { get; set; }
+        public virtual DbSet<StockTakeAcceptanceCertificate> StockTakeAcceptanceCertificate { get; set; }
         public virtual DbSet<StockTakeDetail> StockTakeDetail { get; set; }
         public virtual DbSet<StockTakePeriod> StockTakePeriod { get; set; }
         public virtual DbSet<StockTakeRepresentative> StockTakeRepresentative { get; set; }
@@ -866,6 +867,24 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.StockTakePeriodId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_StockTake_StockTakePeriod");
+            });
+
+            modelBuilder.Entity<StockTakeAcceptanceCertificate>(entity =>
+            {
+                entity.HasKey(e => e.StockTakePeriodId)
+                    .HasName("PK__StockTak__910E85DD4CF3DA1B");
+
+                entity.Property(e => e.StockTakePeriodId).ValueGeneratedNever();
+
+                entity.Property(e => e.StockTakeAcceptanceCertificateCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.StockTakePeriod)
+                    .WithOne(p => p.StockTakeAcceptanceCertificate)
+                    .HasForeignKey<StockTakeAcceptanceCertificate>(d => d.StockTakePeriodId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockTakeAcceptanceCertificateId_StockTakePeriod");
             });
 
             modelBuilder.Entity<StockTakeDetail>(entity =>

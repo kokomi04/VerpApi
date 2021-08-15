@@ -75,5 +75,27 @@ namespace VErpApi.Controllers.Stock.StockTake
         {
             return await _stockTakePeriodService.CalcStockRemainQuantity(body);
         }
+
+        [HttpGet]
+        [Route("{stockTakePeriodId}/acceptance-certificate")]
+        public async Task<StockTakeAcceptanceCertificateModel> GetStockTakeAcceptanceCertificate([FromRoute] long stockTakePeriodId)
+        {
+            return await _stockTakePeriodService.GetStockTakeAcceptanceCertificate(stockTakePeriodId);
+        }
+
+        [HttpPost]
+        [Route("{stockTakePeriodId}/acceptance-certificate")]
+        public async Task<StockTakeAcceptanceCertificateModel> UpdateStockTakeAcceptanceCertificate([FromRoute] long stockTakePeriodId, [FromBody] StockTakeAcceptanceCertificateModel model)
+        {
+            return await _stockTakePeriodService.UpdateStockTakeAcceptanceCertificate(stockTakePeriodId, model);
+        }
+
+        [HttpPut]
+        [Route("{stockTakePeriodId}/acceptance-certificate/confirm")]
+        public async Task<bool> ConfirmStockTakeAcceptanceCertificate([FromRoute] long stockTakePeriodId, [FromBody] ConfirmAcceptanceCertificateModel model)
+        {
+            return await _stockTakePeriodService.ConfirmStockTakeAcceptanceCertificate(stockTakePeriodId, model);
+        }
+
     }
 }

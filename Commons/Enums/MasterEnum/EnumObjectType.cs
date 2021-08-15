@@ -285,5 +285,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Phiếu kiểm kê")]
         [GenCodeObject]
         StockTake = 554,
+
+        [Description("Phiếu xử lý kiểm kê")]
+        [GenCodeObject]
+        StockTakeAcceptanceCertificate = 555
     }
 }

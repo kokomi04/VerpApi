@@ -62,7 +62,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
         public async Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods(string keyword, int page, int size, long fromDate, long toDate, int[] stockIds)
         {
 
-            var stockTakePeriods = _stockContext.StockTakePeriod.AsQueryable();
+            var stockTakePeriods = _stockContext.StockTakePeriod.Include(stp => stp.StockTakeAcceptanceCertificate).AsQueryable();
             var from = fromDate.UnixToDateTime();
             var to = toDate.UnixToDateTime();
 
@@ -207,6 +207,40 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     ProductUnitConversionQuantity = g.Sum(d => d.ProductUnitConversionQuantity.GetValueOrDefault())
                 }).ToList();
 
+            var productIds = result.StockTakeResult.Select(p => p.ProductId).ToList();
+
+            // Lấy thông tin tồn kho
+            var remainSystem = (from id in _stockContext.InventoryDetail
+                                join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                                where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriod.StockTakePeriodDate && i.StockId == stockTakePeriod.StockId && productIds.Contains(id.ProductId)
+                                select new
+                                {
+                                    i.InventoryTypeId,
+                                    id.ProductId,
+                                    id.ProductUnitConversionId,
+                                    id.PrimaryQuantity,
+                                    id.ProductUnitConversionQuantity
+                                })
+                         .GroupBy(id => new
+                         {
+                             id.ProductId,
+                             id.ProductUnitConversionId
+                         }).Select(g => new StockRemainQuantity
+                         {
+                             ProductId = g.Key.ProductId,
+                             ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                             RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
+                             ProductUnitConversionRemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
+                         }).ToList();
+
+            foreach (var item in result.StockTakeResult)
+            {
+                var remain = remainSystem.FirstOrDefault(r => r.ProductId == item.ProductId && r.ProductUnitConversionId == item.ProductUnitConversionId);
+                item.StockRemainQuantity = remain?.RemainQuantity ?? 0;
+                item.StockProductUnitConversionRemainQuantity = remain?.ProductUnitConversionRemainQuantity;
+                item.StockQuantityDifference = item.PrimaryQuantity.SubProductionDecimal(remain?.RemainQuantity ?? 0);
+                item.StockProductUnitConversionQuantityDifference = item.ProductUnitConversionQuantity.GetValueOrDefault().SubProductionDecimal(remain?.ProductUnitConversionRemainQuantity ?? 0);
+            }
             return result;
         }
 
@@ -220,6 +254,10 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             try
             {
+                if (string.IsNullOrEmpty(model.StockTakePeriodCode)) new BadRequestException(GeneralCode.InvalidParams, "Mã kỳ kiểm kê không được để trống");
+                if (_stockContext.StockTakePeriod.Any(stp => stp.StockTakePeriodCode == model.StockTakePeriodCode && stp.StockTakePeriodId != stockTakePeriodId))
+                    throw new BadRequestException(GeneralCode.ItemCodeExisted);
+
                 _mapper.Map(model, stockTakePeriod);
                 await _stockContext.SaveChangesAsync();
 
@@ -237,29 +275,140 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
         public async Task<IList<StockRemainQuantity>> CalcStockRemainQuantity(CalcStockRemainInputModel data)
         {
             var stockTakePeriodDate = data.StockTakePeriodDate.UnixToDateTime();
-            var result = await (from id in _stockContext.InventoryDetail 
-                        join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
-                        where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriodDate && i.StockId == data.StockId && data.ProductIds.Contains(id.ProductId)
-                              select new
-                        {
-                            i.InventoryTypeId,
-                            id.ProductId,
-                            id.ProductUnitConversionId,
-                            id.PrimaryQuantity,
-                            id.ProductUnitConversionQuantity
-                        }).GroupBy(id => new
-                        {
-                            id.ProductId,
-                            id.ProductUnitConversionId
-                        }).Select(g => new StockRemainQuantity
-                        {
-                            ProductId = g.Key.ProductId,
-                            ProductUnitConversionId = g.Key.ProductUnitConversionId,
-                            RemainQuantity = g.Sum(d => d.InventoryTypeId == (int) EnumInventoryType.Input? d.PrimaryQuantity : -d.PrimaryQuantity),
-                            ProductUnitConversionRemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity),
-                        }).ToListAsync();
+            var result = await (from id in _stockContext.InventoryDetail
+                                join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                                where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriodDate && i.StockId == data.StockId && data.ProductIds.Contains(id.ProductId)
+                                select new
+                                {
+                                    i.InventoryTypeId,
+                                    id.ProductId,
+                                    id.ProductUnitConversionId,
+                                    id.PrimaryQuantity,
+                                    id.ProductUnitConversionQuantity
+                                }).GroupBy(id => new
+                                {
+                                    id.ProductId,
+                                    id.ProductUnitConversionId
+                                }).Select(g => new StockRemainQuantity
+                                {
+                                    ProductId = g.Key.ProductId,
+                                    ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                                    RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
+                                    ProductUnitConversionRemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity),
+                                }).ToListAsync();
 
             return result;
+        }
+
+        public async Task<StockTakeAcceptanceCertificateModel> GetStockTakeAcceptanceCertificate(long stockTakePeriodId)
+        {
+            var stockTakeAcceptanceCertificate = await _stockContext.StockTakeAcceptanceCertificate
+                .FirstOrDefaultAsync(ac => ac.StockTakePeriodId == stockTakePeriodId);
+            if (stockTakeAcceptanceCertificate == null) return null;
+            var result = _mapper.Map<StockTakeAcceptanceCertificateModel>(stockTakeAcceptanceCertificate);
+            return result;
+        }
+
+        public async Task<StockTakeAcceptanceCertificateModel> UpdateStockTakeAcceptanceCertificate(long stockTakePeriodId, StockTakeAcceptanceCertificateModel model)
+        {
+            var stockTakePeriod = _stockContext.StockTakePeriod
+               .FirstOrDefault(p => p.StockTakePeriodId == stockTakePeriodId);
+
+            if (stockTakePeriod == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
+            var stockTakeAcceptanceCertificate = await _stockContext.StockTakeAcceptanceCertificate
+                .FirstOrDefaultAsync(ac => ac.StockTakePeriodId == stockTakePeriodId);
+
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(0));
+            using var trans = await _stockContext.Database.BeginTransactionAsync();
+            try
+            {
+
+                model.StockTakePeriodId = stockTakePeriodId;
+                if (stockTakeAcceptanceCertificate == null)
+                {
+                    CustomGenCodeOutputModel currentConfig = null;
+                    if (string.IsNullOrEmpty(model.StockTakeAcceptanceCertificateCode))
+                    {
+                        currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.StockTakeAcceptanceCertificate, EnumObjectType.StockTakeAcceptanceCertificate, 0, null, model.StockTakeAcceptanceCertificateCode, null);
+                        if (currentConfig == null)
+                        {
+                            throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
+                        }
+                        bool isFirst = true;
+                        do
+                        {
+                            if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+
+                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, model.StockTakeAcceptanceCertificateCode, null);
+                            if (generated == null)
+                            {
+                                throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
+                            }
+                            model.StockTakeAcceptanceCertificateCode = generated.CustomCode;
+                            isFirst = false;
+                        } while (_stockContext.StockTakeAcceptanceCertificate.Any(o => o.StockTakeAcceptanceCertificateCode == model.StockTakeAcceptanceCertificateCode));
+                    }
+                    else
+                    {
+                        // Validate unique
+                        if (_stockContext.StockTakeAcceptanceCertificate.Any(o => o.StockTakeAcceptanceCertificateCode == model.StockTakeAcceptanceCertificateCode))
+                            throw new BadRequestException(GeneralCode.ItemCodeExisted);
+                    }
+                    stockTakeAcceptanceCertificate = _mapper.Map<StockTakeAcceptanceCertificate>(model);
+                    _stockContext.StockTakeAcceptanceCertificate.Add(stockTakeAcceptanceCertificate);
+                }
+                else
+                {
+                    if (string.IsNullOrEmpty(model.StockTakeAcceptanceCertificateCode)) new BadRequestException(GeneralCode.InvalidParams, "Mã phiếu xử lý không được để trống");
+                    if (_stockContext.StockTakeAcceptanceCertificate.Any(stp => stp.StockTakeAcceptanceCertificateCode == model.StockTakeAcceptanceCertificateCode && stp.StockTakePeriodId != stockTakePeriodId))
+                        throw new BadRequestException(GeneralCode.ItemCodeExisted);
+                    _mapper.Map(model, stockTakePeriod);
+                }
+                stockTakePeriod.Status = (int)EnumStockTakeAcceptanceCertificateStatus.Waiting;
+                await _stockContext.SaveChangesAsync();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.StockTakePeriod, stockTakePeriod.StockTakePeriodId, $"Update phiếu xử lý chênh lệch cho kỳ kiểm kê {stockTakePeriod.StockTakePeriodCode}", model.JsonSerialize());
+
+                return model;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "UpdateStockTakePeriod");
+                throw;
+            }
+        }
+
+        public async Task<bool> ConfirmStockTakeAcceptanceCertificate(long stockTakePeriodId, ConfirmAcceptanceCertificateModel status)
+        {
+
+            var stockTakePeriod = _stockContext.StockTakePeriod
+                    .Where(p => p.StockTakePeriodId == stockTakePeriodId)
+                    .FirstOrDefault();
+
+            if (stockTakePeriod == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
+            var acceptanceCertificate = _stockContext.StockTakeAcceptanceCertificate
+                   .Where(ac => ac.StockTakePeriodId == stockTakePeriodId)
+                   .FirstOrDefault();
+
+            if (acceptanceCertificate == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Phiếu xử lý không tồn tại");
+            try
+            {
+                acceptanceCertificate.StockTakeAcceptanceCertificateStatus = (int)status.StockTakeAcceptanceCertificateStatus;
+                await _stockContext.SaveChangesAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.StockTakeAcceptanceCertificate, stockTakePeriodId, $"Xác nhận phiếu xử lý {acceptanceCertificate.StockTakeAcceptanceCertificateCode}", status.ToString());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ApproveStockTakeAcceptanceCertificate");
+                throw;
+            }
+
         }
     }
 }
