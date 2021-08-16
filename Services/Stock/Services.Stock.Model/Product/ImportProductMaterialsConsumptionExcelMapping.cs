@@ -101,6 +101,8 @@ namespace VErp.Services.Stock.Model.Product
         public SimpleProduct ProductMaterialsComsumptionExtraInfo { get; set; }
 
         public IList<ProductMaterialsConsumptionPreview> MaterialsConsumptionInherit { get; set; }
+
+        public bool IsImported { get; set; } = false;
     }
 
     public class ProductMaterialsConsumptionPreviewComparer : IEqualityComparer<ProductMaterialsConsumptionPreview>
