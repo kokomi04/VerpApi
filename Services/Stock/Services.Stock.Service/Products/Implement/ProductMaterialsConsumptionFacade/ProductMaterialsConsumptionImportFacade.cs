@@ -280,8 +280,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         {
                             Quantity = x.Quantity,
                             GroupTitle = x.ProductMaterialsConsumptionGroup.Title,
-                            ProductExtraInfo = new SimpleProduct { ProductCode = x.Product.ProductCode, ProductName = x.Product.ProductName },
-                            ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.MaterialsConsumption.ProductCode, ProductName = x.MaterialsConsumption.ProductName },
+                            ProductExtraInfo = _existedProducts[x.Product.ProductCode.NormalizeAsInternalName()],
+                            ProductMaterialsComsumptionExtraInfo = _existedProducts[x.MaterialsConsumption.ProductCode.NormalizeAsInternalName()],
                             Description = x.Description
                         })
                         .ToListAsync());
@@ -296,9 +296,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         GroupTitle = x.GroupTitle,
                         Quantity = x.Quantity,
                         StepName = x.StepName,
-                        ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName },
-                        ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName },
+                        ProductExtraInfo = _existedProducts[x.UsageProductCode.NormalizeAsInternalName()],
+                        ProductMaterialsComsumptionExtraInfo = _existedProducts[x.ProductCode.NormalizeAsInternalName()],
                         Description = x.Description,
+                        IsImported = true
                     })
                     .ToList();
 
@@ -310,7 +311,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                             StepName = x.StepName,
                             ProductExtraInfo = rootProduct,
                             ProductMaterialsComsumptionExtraInfo = x.ProductMaterialsComsumptionExtraInfo,
-                            Description = x.Description
+                            Description = x.Description,
+                            IsImported = x.IsImported
                         });
 
                     materialsConsumption.AddRange(exceptMaterialsConsumption);
@@ -340,7 +342,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         StepName = GetStep(x.StepName)?.StepName,
                         ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName, UnitName = x.UnitName, Specification = x.UsageSpecification },
                         ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName, UnitName = x.UnitName, Specification = x.Specification },
-                        Description = x.Description
+                        Description = x.Description,
+                        IsImported = true
                     }))
                     .SelectMany(v => v.Value)
                     .ToList();
@@ -412,9 +415,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         GroupTitle = x.GroupTitle,
                         Quantity = x.Quantity,
                         StepName = x.StepName,
-                        ProductExtraInfo = new SimpleProduct { ProductCode = x.UsageProductCode, ProductName = x.UsageProductName },
-                        ProductMaterialsComsumptionExtraInfo = new SimpleProduct { ProductCode = x.ProductCode, ProductName = x.ProductName },
-                        Description = x.Description
+                        ProductExtraInfo = _existedProducts[x.UsageProductCode.NormalizeAsInternalName()],
+                        ProductMaterialsComsumptionExtraInfo = _existedProducts[x.ProductCode.NormalizeAsInternalName()],
+                        Description = x.Description,
+                        IsImported = true
                     })
                     .ToList()
                     : materialsConsumptionInheri.Where(x => x.ProductExtraInfo.ProductCode == bomProductInfo.ProductCode).ToList();
@@ -429,7 +433,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         ProductExtraInfo = bomProductInfo,
                         DepartmentName = x.DepartmentName,
                         StepName = x.StepName,
-                        Description = x.Description
+                        Description = x.Description,
+                        IsImported = x.IsImported
                     });
 
                 materials.AddRange(exceptMaterials);
@@ -587,8 +592,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         Specification = p.First().Specification,
                     });
 
-            _existedProducts = (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId }).ToListAsync()).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
-                .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+            _existedProducts = (from p in (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId }).ToListAsync())
+                                join u in _units.Values on p.UnitId equals u.UnitId into gu
+                                from u in gu.DefaultIfEmpty()
+                                select new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId, UnitName = u?.UnitName })
+            .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
+            .ToDictionary(p => p.Key, p => p.FirstOrDefault());
 
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
                 .Select(p =>
