@@ -71,112 +71,122 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var po = new PurchaseOrderModel()
+                try
                 {
-                    PurchaseOrderCode = model.PurchaseOrderCode,
-                    CustomerId = model.CustomerId,
-                    Date = model.Date.UnixToDateTime(),
-                    PaymentInfo = model.PaymentInfo,
-                    DeliveryDate = model.DeliveryDate?.UnixToDateTime(),
-                    DeliveryUserId = model.DeliveryUserId,
-                    DeliveryCustomerId = model.DeliveryCustomerId,
-                    DeliveryDestination = model.DeliveryDestination.JsonSerialize(),
-                    Content = model.Content,
-                    AdditionNote = model.AdditionNote,
-                    PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
-                    IsApproved = null,
-                    IsChecked = null,
-                    PoProcessStatusId = null,
-                    DeliveryFee = model.DeliveryFee,
-                    OtherFee = model.OtherFee,
-                    TotalMoney = model.TotalMoney,
-                    CensorByUserId = null,
-                    CensorDatetimeUtc = null,
-                    PurchaseOrderType = (int) purchaseOrderType,
-                    PropertyCalcId = model.PropertyCalcId,
-                    PoDescription = model.PoDescription
-                };
-
-                if (po.DeliveryDestination?.Length > 1024)
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
-                }
-
-                await _purchaseOrderDBContext.AddAsync(po);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                var poDetails = model.Details.Select(d =>
-                {
-
-                    return new PurchaseOrderDetail()
+                    var po = new PurchaseOrderModel()
                     {
-                        PurchaseOrderId = po.PurchaseOrderId,
-
-                        ProductId = d.ProductId,
-
-                        ProviderProductName = d.ProviderProductName,
-                        PrimaryQuantity = d.PrimaryQuantity,
-                        PrimaryUnitPrice = d.PrimaryUnitPrice,
-
-                        ProductUnitConversionId = d.ProductUnitConversionId,
-                        ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                        ProductUnitConversionPrice = d.ProductUnitConversionPrice,
-
-                        TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney,
-                        OrderCode = d.OrderCode,
-                        ProductionOrderCode = d.ProductionOrderCode,
-                        Description = d.Description,
-
-                        OutsourceRequestId = d.OutsourceRequestId,
-                        ProductionStepLinkDataId = d.ProductionStepLinkDataId
+                        PurchaseOrderCode = model.PurchaseOrderCode,
+                        CustomerId = model.CustomerId,
+                        Date = model.Date.UnixToDateTime(),
+                        PaymentInfo = model.PaymentInfo,
+                        DeliveryDate = model.DeliveryDate?.UnixToDateTime(),
+                        DeliveryUserId = model.DeliveryUserId,
+                        DeliveryCustomerId = model.DeliveryCustomerId,
+                        DeliveryDestination = model.DeliveryDestination.JsonSerialize(),
+                        Content = model.Content,
+                        AdditionNote = model.AdditionNote,
+                        PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
+                        IsApproved = null,
+                        IsChecked = null,
+                        PoProcessStatusId = null,
+                        DeliveryFee = model.DeliveryFee,
+                        OtherFee = model.OtherFee,
+                        TotalMoney = model.TotalMoney,
+                        CensorByUserId = null,
+                        CensorDatetimeUtc = null,
+                        PurchaseOrderType = (int)purchaseOrderType,
+                        PropertyCalcId = model.PropertyCalcId,
+                        PoDescription = model.PoDescription
                     };
-                }).ToList();
 
-
-                await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
-
-
-                if (model.FileIds?.Count > 0)
-                {
-                    await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
+                    if (po.DeliveryDestination?.Length > 1024)
                     {
-                        PurchaseOrderId = po.PurchaseOrderId,
-                        FileId = f,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        DeletedDatetimeUtc = null,
-                        IsDeleted = false
-                    }));
-                }
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    }
 
-                if (model.Excess?.Count > 0)
+                    await _purchaseOrderDBContext.AddAsync(po);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    var poDetails = model.Details.Select(d =>
+                    {
+
+                        return new PurchaseOrderDetail()
+                        {
+                            PurchaseOrderId = po.PurchaseOrderId,
+
+                            ProductId = d.ProductId,
+
+                            ProviderProductName = d.ProviderProductName,
+                            PrimaryQuantity = d.PrimaryQuantity,
+                            PrimaryUnitPrice = d.PrimaryUnitPrice,
+
+                            ProductUnitConversionId = d.ProductUnitConversionId,
+                            ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                            ProductUnitConversionPrice = d.ProductUnitConversionPrice,
+
+                            TaxInPercent = d.TaxInPercent,
+                            TaxInMoney = d.TaxInMoney,
+                            OrderCode = d.OrderCode,
+                            ProductionOrderCode = d.ProductionOrderCode,
+                            Description = d.Description,
+
+                            OutsourceRequestId = d.OutsourceRequestId,
+                            ProductionStepLinkDataId = d.ProductionStepLinkDataId
+                        };
+                    }).ToList();
+
+
+                    await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
+
+
+                    if (model.FileIds?.Count > 0)
+                    {
+                        await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
+                        {
+                            PurchaseOrderId = po.PurchaseOrderId,
+                            FileId = f,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            DeletedDatetimeUtc = null,
+                            IsDeleted = false
+                        }));
+                    }
+
+                    if (model.Excess?.Count > 0)
+                    {
+                        foreach (var excess in model.Excess)
+                            excess.PurchaseOrderId = po.PurchaseOrderId;
+
+                        await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(_mapper.Map<IList<PurchaseOrderExcess>>(model.Excess));
+                    }
+
+                    if (model.Materials?.Count > 0)
+                    {
+                        foreach (var material in model.Materials)
+                            material.PurchaseOrderId = po.PurchaseOrderId;
+
+                        await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(_mapper.Map<IList<PurchaseOrderMaterials>>(model.Materials));
+                    }
+
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    await CreatePurchaseOrderTracked(po.PurchaseOrderId);
+
+                    trans.Commit();
+
+                    await UpdateStatusForOutsourceRequestInPurcharOrder(po.PurchaseOrderId, purchaseOrderType);
+
+                    await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, po.PurchaseOrderId, $"Tạo PO {po.PurchaseOrderCode}", model.JsonSerialize());
+
+                    await ctx.ConfirmCode();
+
+                    return po.PurchaseOrderId;
+                }
+                catch (Exception ex)
                 {
-                    foreach (var excess in model.Excess)
-                        excess.PurchaseOrderId = po.PurchaseOrderId;
-
-                    await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(_mapper.Map<IList<PurchaseOrderExcess>>(model.Excess));
+                    await trans.RollbackAsync();
+                    throw ex;
                 }
-
-                if (model.Materials?.Count > 0)
-                {
-                    foreach (var material in model.Materials)
-                        material.PurchaseOrderId = po.PurchaseOrderId;
-
-                    await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(_mapper.Map<IList<PurchaseOrderMaterials>>(model.Materials));
-                }
-                
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                await CreatePurchaseOrderTracked(po.PurchaseOrderId);
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, po.PurchaseOrderId, $"Tạo PO {po.PurchaseOrderCode}", model.JsonSerialize());
-
-                await ctx.ConfirmCode();
-
-                return po.PurchaseOrderId;
             }
 
         }
@@ -192,179 +202,188 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
-
-                info.PurchaseOrderCode = model.PurchaseOrderCode;
-
-                info.CustomerId = model.CustomerId;
-                info.Date = model.Date.UnixToDateTime();
-                info.PaymentInfo = model.PaymentInfo;
-                info.DeliveryDate = model.DeliveryDate?.UnixToDateTime();
-                info.DeliveryUserId = model.DeliveryUserId;
-                info.DeliveryCustomerId = model.DeliveryCustomerId;
-
-                info.DeliveryDestination = model.DeliveryDestination.JsonSerialize();
-                info.Content = model.Content;
-                info.AdditionNote = model.AdditionNote;
-                info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff;
-                info.IsChecked = null;
-                info.IsApproved = null;
-                info.PoProcessStatusId = null;
-                info.DeliveryFee = model.DeliveryFee;
-                info.OtherFee = model.OtherFee;
-                info.TotalMoney = model.TotalMoney;
-                info.CensorByUserId = null;
-                info.CensorDatetimeUtc = null;
-                info.PoDescription = model.PoDescription;
-
-                if (info.DeliveryDestination?.Length > 1024)
+                try
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
-                }
+                    var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                    if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
+                    info.PurchaseOrderCode = model.PurchaseOrderCode;
 
-                var details = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                    info.CustomerId = model.CustomerId;
+                    info.Date = model.Date.UnixToDateTime();
+                    info.PaymentInfo = model.PaymentInfo;
+                    info.DeliveryDate = model.DeliveryDate?.UnixToDateTime();
+                    info.DeliveryUserId = model.DeliveryUserId;
+                    info.DeliveryCustomerId = model.DeliveryCustomerId;
 
-                var newDetails = new List<PurchaseOrderDetail>();
+                    info.DeliveryDestination = model.DeliveryDestination.JsonSerialize();
+                    info.Content = model.Content;
+                    info.AdditionNote = model.AdditionNote;
+                    info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff;
+                    info.IsChecked = null;
+                    info.IsApproved = null;
+                    info.PoProcessStatusId = null;
+                    info.DeliveryFee = model.DeliveryFee;
+                    info.OtherFee = model.OtherFee;
+                    info.TotalMoney = model.TotalMoney;
+                    info.CensorByUserId = null;
+                    info.CensorDatetimeUtc = null;
+                    info.PoDescription = model.PoDescription;
 
-                foreach (var item in model.Details)
-                {
-                    var found = false;
-                    foreach (var detail in details)
+                    if (info.DeliveryDestination?.Length > 1024)
                     {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    }
 
-                        if (item.PurchaseOrderDetailId == detail.PurchaseOrderDetailId)
+
+                    var details = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+
+                    var newDetails = new List<PurchaseOrderDetail>();
+
+                    foreach (var item in model.Details)
+                    {
+                        var found = false;
+                        foreach (var detail in details)
                         {
-                            found = true;
 
-                            detail.ProductId = item.ProductId;
-                            detail.ProviderProductName = item.ProviderProductName;
-                            detail.PrimaryQuantity = item.PrimaryQuantity;
-                            detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
+                            if (item.PurchaseOrderDetailId == detail.PurchaseOrderDetailId)
+                            {
+                                found = true;
 
-                            detail.ProductUnitConversionId = item.ProductUnitConversionId;
-                            detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
-                            detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
+                                detail.ProductId = item.ProductId;
+                                detail.ProviderProductName = item.ProviderProductName;
+                                detail.PrimaryQuantity = item.PrimaryQuantity;
+                                detail.PrimaryUnitPrice = item.PrimaryUnitPrice;
 
-                            detail.TaxInPercent = item.TaxInPercent;
-                            detail.TaxInMoney = item.TaxInMoney;
-                            detail.OrderCode = item.OrderCode;
-                            detail.ProductionOrderCode = item.ProductionOrderCode;
-                            detail.Description = item.Description;
+                                detail.ProductUnitConversionId = item.ProductUnitConversionId;
+                                detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
+                                detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
+
+                                detail.TaxInPercent = item.TaxInPercent;
+                                detail.TaxInMoney = item.TaxInMoney;
+                                detail.OrderCode = item.OrderCode;
+                                detail.ProductionOrderCode = item.ProductionOrderCode;
+                                detail.Description = item.Description;
 
 
-                            break;
+                                break;
+                            }
+                        }
+
+                        if (!found)
+                        {
+                            newDetails.Add(new PurchaseOrderDetail()
+                            {
+                                PurchaseOrderId = info.PurchaseOrderId,
+
+                                ProductId = item.ProductId,
+                                ProviderProductName = item.ProviderProductName,
+                                PrimaryQuantity = item.PrimaryQuantity,
+                                PrimaryUnitPrice = item.PrimaryUnitPrice,
+                                ProductUnitConversionId = item.ProductUnitConversionId,
+                                ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
+                                ProductUnitConversionPrice = item.ProductUnitConversionPrice,
+                                TaxInPercent = item.TaxInPercent,
+                                TaxInMoney = item.TaxInMoney,
+                                OrderCode = item.OrderCode,
+                                ProductionOrderCode = item.ProductionOrderCode,
+                                Description = item.Description,
+
+                                OutsourceRequestId = item.OutsourceRequestId,
+                                ProductionStepLinkDataId = item.ProductionStepLinkDataId
+                            });
                         }
                     }
 
-                    if (!found)
+                    var updatedIds = model.Details.Select(d => d.PurchaseOrderDetailId).ToList();
+
+                    var deleteDetails = details.Where(d => !updatedIds.Contains(d.PurchaseOrderDetailId));
+
+                    foreach (var detail in deleteDetails)
                     {
-                        newDetails.Add(new PurchaseOrderDetail()
+                        detail.IsDeleted = true;
+                    }
+
+                    await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(newDetails);
+
+                    var oldFiles = await _purchaseOrderDBContext.PurchaseOrderFile.Where(f => f.PurchaseOrderId == info.PurchaseOrderId).ToListAsync();
+
+                    if (oldFiles.Count > 0)
+                    {
+                        _purchaseOrderDBContext.PurchaseOrderFile.RemoveRange(oldFiles);
+                    }
+
+                    if (model.FileIds?.Count > 0)
+                    {
+                        await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
                         {
                             PurchaseOrderId = info.PurchaseOrderId,
-
-                            ProductId = item.ProductId,
-                            ProviderProductName = item.ProviderProductName,
-                            PrimaryQuantity = item.PrimaryQuantity,
-                            PrimaryUnitPrice = item.PrimaryUnitPrice,
-                            ProductUnitConversionId = item.ProductUnitConversionId,
-                            ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
-                            ProductUnitConversionPrice = item.ProductUnitConversionPrice,
-                            TaxInPercent = item.TaxInPercent,
-                            TaxInMoney = item.TaxInMoney,
-                            OrderCode = item.OrderCode,
-                            ProductionOrderCode = item.ProductionOrderCode,
-                            Description = item.Description,
-
-                            OutsourceRequestId = item.OutsourceRequestId,
-                            ProductionStepLinkDataId = item.ProductionStepLinkDataId
-                        });
+                            FileId = f,
+                            CreatedDatetimeUtc = DateTime.UtcNow,
+                            DeletedDatetimeUtc = null,
+                            IsDeleted = false
+                        }));
                     }
-                }
 
-                var updatedIds = model.Details.Select(d => d.PurchaseOrderDetailId).ToList();
+                    //materials
+                    var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials
+                                                            .Where(x => x.PurchaseOrderId == info.PurchaseOrderId)
+                                                            .ToListAsync();
 
-                var deleteDetails = details.Where(d => !updatedIds.Contains(d.PurchaseOrderDetailId));
-
-                foreach (var detail in deleteDetails)
-                {
-                    detail.IsDeleted = true;
-                }
-
-                await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(newDetails);
-
-                var oldFiles = await _purchaseOrderDBContext.PurchaseOrderFile.Where(f => f.PurchaseOrderId == info.PurchaseOrderId).ToListAsync();
-
-                if (oldFiles.Count > 0)
-                {
-                    _purchaseOrderDBContext.PurchaseOrderFile.RemoveRange(oldFiles);
-                }
-
-                if (model.FileIds?.Count > 0)
-                {
-                    await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
+                    foreach (var m in materials)
                     {
-                        PurchaseOrderId = info.PurchaseOrderId,
-                        FileId = f,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        DeletedDatetimeUtc = null,
-                        IsDeleted = false
-                    }));
+                        var s = model.Materials.FirstOrDefault(x => x.PurchaseOrderMaterialsId == m.PurchaseOrderMaterialsId);
+                        if (s != null)
+                            _mapper.Map(s, m);
+                        else m.IsDeleted = true;
+                    }
+
+                    var newMaterials = model.Materials
+                        .AsQueryable()
+                        .Where(x => x.PurchaseOrderMaterialsId <= 0)
+                        .ProjectTo<PurchaseOrderMaterials>(_mapper.ConfigurationProvider)
+                        .ToList();
+                    newMaterials.ForEach(x => x.PurchaseOrderId = info.PurchaseOrderId);
+
+                    await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(newMaterials);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    //excesses
+                    var excesses = await _purchaseOrderDBContext.PurchaseOrderExcess.Where(x => x.PurchaseOrderId == info.PurchaseOrderId)
+                        .ToListAsync();
+
+                    foreach (var m in excesses)
+                    {
+                        var s = model.Excess.FirstOrDefault(x => x.PurchaseOrderExcessId == m.PurchaseOrderExcessId);
+                        if (s != null)
+                            _mapper.Map(s, m);
+                        else m.IsDeleted = true;
+                    }
+
+                    var newExcesses = model.Excess
+                        .AsQueryable()
+                        .Where(x => x.PurchaseOrderExcessId <= 0)
+                        .ProjectTo<PurchaseOrderExcess>(_mapper.ConfigurationProvider)
+                        .ToList();
+                    newExcesses.ForEach(x => x.PurchaseOrderId = info.PurchaseOrderId);
+
+                    await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(newExcesses);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    trans.Commit();
+                    
+                    await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+
+                    await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật PO {info.PurchaseOrderCode}", info.JsonSerialize());
+
+                    return true;
+
                 }
-
-                //materials
-                var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials
-                                                        .Where(x => x.PurchaseOrderId == info.PurchaseOrderId)
-                                                        .ToListAsync();
-
-                foreach (var m in materials)
+                catch (Exception ex)
                 {
-                    var s = model.Materials.FirstOrDefault(x => x.PurchaseOrderMaterialsId == m.PurchaseOrderMaterialsId);
-                    if (s != null)
-                        _mapper.Map(s, m);
-                    else m.IsDeleted = true;
+                    await trans.RollbackAsync();
+                    throw ex;
                 }
-
-                var newMaterials = model.Materials
-                    .AsQueryable()
-                    .Where(x => x.PurchaseOrderMaterialsId <= 0)
-                    .ProjectTo<PurchaseOrderMaterials>(_mapper.ConfigurationProvider)
-                    .ToList();
-                newMaterials.ForEach(x => x.PurchaseOrderId = info.PurchaseOrderId);
-
-                await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(newMaterials);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                //excesses
-                var excesses = await _purchaseOrderDBContext.PurchaseOrderExcess.Where(x => x.PurchaseOrderId == info.PurchaseOrderId)
-                    .ToListAsync();
-
-                foreach (var m in excesses)
-                {
-                    var s = model.Excess.FirstOrDefault(x => x.PurchaseOrderExcessId == m.PurchaseOrderExcessId);
-                    if (s != null)
-                        _mapper.Map(s, m);
-                    else m.IsDeleted = true;
-                }
-
-                var newExcesses = model.Excess
-                    .AsQueryable()
-                    .Where(x => x.PurchaseOrderExcessId <= 0)
-                    .ProjectTo<PurchaseOrderExcess>(_mapper.ConfigurationProvider)
-                    .ToList();
-                newExcesses.ForEach(x => x.PurchaseOrderId = info.PurchaseOrderId);
-
-                await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(newExcesses);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật PO {info.PurchaseOrderCode}", info.JsonSerialize());
-
-                return true;
             }
         }
 
@@ -372,38 +391,48 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
-                if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
-
-
-                var oldDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
-                var oldExcess = await _purchaseOrderDBContext.PurchaseOrderExcess.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
-                var oldMaterials = await _purchaseOrderDBContext.PurchaseOrderMaterials.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
-
-                info.IsDeleted = true;
-
-                foreach (var item in oldDetails)
+                try
                 {
-                    item.IsDeleted = true;
-                }
+                    var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                    if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
-                foreach (var item in oldExcess)
+                    var oldDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                    var oldExcess = await _purchaseOrderDBContext.PurchaseOrderExcess.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                    var oldMaterials = await _purchaseOrderDBContext.PurchaseOrderMaterials.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+
+                    info.IsDeleted = true;
+
+                    foreach (var item in oldDetails)
+                    {
+                        item.IsDeleted = true;
+                    }
+
+                    foreach (var item in oldExcess)
+                    {
+                        item.IsDeleted = true;
+                    }
+
+                    foreach (var item in oldMaterials)
+                    {
+                        item.IsDeleted = true;
+                    }
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    trans.Commit();
+
+                    await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+
+                    await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
+
+                    return true;
+
+                }
+                catch (Exception ex)
                 {
-                    item.IsDeleted = true;
+                    await trans.RollbackAsync();
+                    throw;
                 }
-
-                foreach (var item in oldMaterials)
-                {
-                    item.IsDeleted = true;
-                }
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
-
-                return true;
             }
         }
 
@@ -491,8 +520,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
                 .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                .Distinct()
                 .ToArray();
             return outsourceRequestId;
+        }
+
+        private async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId, EnumPurchasingOrderType purchaseOrderType)
+        {
+            var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
+                return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
+                return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
+
+            return true;
         }
 
         private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
