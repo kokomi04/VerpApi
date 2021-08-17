@@ -902,8 +902,6 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<StockTakePeriod>(entity =>
             {
-                entity.Property(e => e.Content).IsRequired();
-
                 entity.Property(e => e.StockTakePeriodCode)
                     .IsRequired()
                     .HasMaxLength(128);

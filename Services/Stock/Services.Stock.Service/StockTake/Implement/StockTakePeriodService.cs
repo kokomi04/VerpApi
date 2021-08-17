@@ -320,6 +320,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             var stockTakeAcceptanceCertificate = await _stockContext.StockTakeAcceptanceCertificate
                 .FirstOrDefaultAsync(ac => ac.StockTakePeriodId == stockTakePeriodId);
 
+            if(_stockContext.StockTake.Any(st => st.StockTakePeriodId == stockTakePeriodId && (st.AccountancyStatus != (int)EnumStockTakeStatus.Finish || st.StockStatus != (int)EnumStockTakeStatus.Finish)))
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Tồn tại phiếu kiểm kê chưa hoàn thành");
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(0));
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
@@ -364,7 +367,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     if (string.IsNullOrEmpty(model.StockTakeAcceptanceCertificateCode)) new BadRequestException(GeneralCode.InvalidParams, "Mã phiếu xử lý không được để trống");
                     if (_stockContext.StockTakeAcceptanceCertificate.Any(stp => stp.StockTakeAcceptanceCertificateCode == model.StockTakeAcceptanceCertificateCode && stp.StockTakePeriodId != stockTakePeriodId))
                         throw new BadRequestException(GeneralCode.ItemCodeExisted);
-                    _mapper.Map(model, stockTakePeriod);
+                    _mapper.Map(model, stockTakeAcceptanceCertificate);
                 }
                 stockTakePeriod.Status = (int)EnumStockTakeAcceptanceCertificateStatus.Waiting;
                 await _stockContext.SaveChangesAsync();
@@ -409,6 +412,33 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 throw;
             }
 
+        }
+
+        public async Task<bool> DeleteStockTakeAcceptanceCertificate(long stockTakePeriodId)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(stockTakePeriodId));
+            using var trans = await _stockContext.Database.BeginTransactionAsync();
+            try
+            {
+                var acceptanceCertificate = _stockContext.StockTakeAcceptanceCertificate
+                    .Where(p => p.StockTakePeriodId == stockTakePeriodId)
+                    .FirstOrDefault();
+
+                if (acceptanceCertificate == null) throw new BadRequestException(GeneralCode.ItemNotFound);
+                _stockContext.StockTakeAcceptanceCertificate.Remove(acceptanceCertificate);
+
+                await _stockContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.StockTakePeriod, stockTakePeriodId, $"Xóa phiếu xử lý chênh lệch {acceptanceCertificate.StockTakeAcceptanceCertificateCode}", acceptanceCertificate.JsonSerialize());
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "DeleteStockTakeAcceptanceCertificate");
+                throw;
+            }
         }
     }
 }
