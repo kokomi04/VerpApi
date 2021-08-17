@@ -169,10 +169,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 productInfo.Color = model.Color;
 
-                productInfo.UnitId = model.UnitId;
 
                 defaultPuConversion.SecondaryUnitId = model.UnitId;
                 defaultPuConversion.ProductUnitConversionName = unitInfo.UnitName;
+                defaultPuConversion.DecimalPlace = productInfo.UnitId != model.UnitId ? unitInfo.DecimalPlace : defaultPuConversion.DecimalPlace;
+
+                productInfo.UnitId = model.UnitId;
 
                 productInfo.ProductCateId = model.ProductCateId;
 

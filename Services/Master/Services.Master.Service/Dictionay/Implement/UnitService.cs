@@ -62,6 +62,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             {
                 UnitName = data.UnitName,
                 UnitStatusId = (int)data.UnitStatusId,
+                DecimalPlace = data.DecimalPlace,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,
@@ -75,8 +76,6 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             return unit.UnitId;
         }
 
-
-
         public async Task<PageData<UnitOutput>> GetList(string keyword, EnumUnitStatus? unitStatusId, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
@@ -88,6 +87,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                      UnitId = u.UnitId,
                      UnitName = u.UnitName,
                      UnitStatusId = (EnumUnitStatus)u.UnitStatusId,
+                     DecimalPlace = u.DecimalPlace
                  }
              );
 
@@ -119,7 +119,8 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             {
                 UnitId = u.UnitId,
                 UnitName = u.UnitName,
-                UnitStatusId = (EnumUnitStatus)u.UnitStatusId
+                UnitStatusId = (EnumUnitStatus)u.UnitStatusId,
+                DecimalPlace = u.DecimalPlace
             }).FirstOrDefaultAsync(u => u.UnitId == unitId);
 
             if (roleInfo == null)
@@ -147,6 +148,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             unitInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             unitInfo.UnitName = data.UnitName;
             unitInfo.UnitStatusId = (int)data.UnitStatusId;
+            unitInfo.DecimalPlace = data.DecimalPlace;
             await _masterContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.Unit, unitId, $"Sửa đơn vị tính {data.UnitName}", data.JsonSerialize());
@@ -180,7 +182,8 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
                 {
                     UnitId = u.UnitId,
                     UnitName = u.UnitName,
-                    UnitStatusId = (EnumUnitStatus)u.UnitStatusId
+                    UnitStatusId = (EnumUnitStatus)u.UnitStatusId,
+                    DecimalPlace = u.DecimalPlace
                 }).ToListAsync();
         }
 

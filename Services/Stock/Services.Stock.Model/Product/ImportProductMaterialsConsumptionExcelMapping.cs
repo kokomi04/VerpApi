@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 
 namespace VErp.Services.Stock.Model.Product
 {
@@ -55,6 +56,7 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Số lượng sử dụng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập số lượng sử dụng")]
+        [GreaterThan(0, ErrorMessage = "Số lượng phải lớn hơn 0")]
         public decimal Quantity { get; set; }
 
 
@@ -101,6 +103,8 @@ namespace VErp.Services.Stock.Model.Product
         public SimpleProduct ProductMaterialsComsumptionExtraInfo { get; set; }
 
         public IList<ProductMaterialsConsumptionPreview> MaterialsConsumptionInherit { get; set; }
+
+        public bool IsImported { get; set; } = false;
     }
 
     public class ProductMaterialsConsumptionPreviewComparer : IEqualityComparer<ProductMaterialsConsumptionPreview>
