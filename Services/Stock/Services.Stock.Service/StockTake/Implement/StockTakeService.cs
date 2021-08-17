@@ -64,6 +64,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             var stockTakePeriod = _stockContext.StockTakePeriod
            .FirstOrDefault(stp => stp.StockTakePeriodId == model.StockTakePeriodId);
 
+            if (_stockContext.StockTakeAcceptanceCertificate.Any(ac => ac.StockTakePeriodId == model.StockTakePeriodId))
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Đã tồn tại phiếu xử lý chênh lệch. Cần xóa phiếu xử lý chênh lệch trước khi thay đổi thông tin kiểm kê.");
+
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
 
@@ -162,6 +165,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
 
+            if (_stockContext.StockTakeAcceptanceCertificate.Any(ac => ac.StockTakePeriodId == model.StockTakePeriodId))
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Đã tồn tại phiếu xử lý chênh lệch. Cần xóa phiếu xử lý chênh lệch trước khi thay đổi thông tin kiểm kê.");
 
             var stockTake = _stockContext.StockTake
              .FirstOrDefault(st => st.StockTakeId == stockTakeId);
@@ -254,30 +259,30 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             // Lấy thông tin tồn kho
             var remainSystem = (from id in _stockContext.InventoryDetail
-                          join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
-                          where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriod.StockTakePeriodDate && i.StockId == stockTakePeriod.StockId && productIds.Contains(id.ProductId)
-                          select new
-                          {
-                              i.InventoryTypeId,
-                              id.ProductId,
-                              id.ProductUnitConversionId,
-                              id.PrimaryQuantity
-                          })
+                                join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                                where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriod.StockTakePeriodDate && i.StockId == stockTakePeriod.StockId && productIds.Contains(id.ProductId)
+                                select new
+                                {
+                                    i.InventoryTypeId,
+                                    id.ProductId,
+                                    id.ProductUnitConversionId,
+                                    id.PrimaryQuantity
+                                })
                          .GroupBy(id => new
                          {
                              id.ProductId,
                              id.ProductUnitConversionId
-                         }).Select(g => new 
+                         }).Select(g => new
                          {
                              ProductId = g.Key.ProductId,
                              ProductUnitConversionId = g.Key.ProductUnitConversionId,
                              RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                          }).ToList();
 
-            foreach(var item in stockTakeResult)
+            foreach (var item in stockTakeResult)
             {
                 var remain = remainSystem.FirstOrDefault(r => r.ProductId == item.ProductId && r.ProductUnitConversionId == item.ProductUnitConversionId);
-                if (remain == null || item.PrimaryQuantity.SubProductionDecimal(remain?.RemainQuantity??0) != 0) return true;
+                if (remain == null || item.PrimaryQuantity.SubProductionDecimal(remain?.RemainQuantity ?? 0) != 0) return true;
             }
             return false;
         }

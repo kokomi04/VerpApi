@@ -31,5 +31,7 @@ namespace VErp.Services.Stock.Service.StockTake
         Task<StockTakeAcceptanceCertificateModel> UpdateStockTakeAcceptanceCertificate(long stockTakePeriodId, StockTakeAcceptanceCertificateModel model);
 
         Task<bool> ConfirmStockTakeAcceptanceCertificate(long stockTakePeriodId, ConfirmAcceptanceCertificateModel status);
+
+        Task<bool> DeleteStockTakeAcceptanceCertificate(long stockTakePeriodId);
     }
 }
