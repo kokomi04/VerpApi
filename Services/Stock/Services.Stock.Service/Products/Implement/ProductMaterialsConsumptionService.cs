@@ -254,6 +254,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, ICollection<ProductMaterialsConsumptionInput> model)
         {
+            var validate = await ValidateModelInput(model);
+
+            if (!validate.IsSuccess())
+            {
+                throw new BadRequestException(validate);
+            }
+
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -284,6 +291,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
         {
+            var validate = await ValidateModelInput(new[] { model });
+
+            if (!validate.IsSuccess())
+            {
+                throw new BadRequestException(validate);
+            }
+
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -380,6 +394,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .SetService(_productBomService)
                 .SetService(_unitService)
                 .SetService(this);
+        }
+
+        private async Task<Enum> ValidateModelInput(IEnumerable<ProductMaterialsConsumptionInput> model)
+        {
+            if (model.Any(x => x.Quantity <= 0))
+            {
+                return ProductErrorCode.QuantityOfMaterialsConsumptionIsZero;
+            }
+
+            return GeneralCode.InternalError;
         }
     }
 }
