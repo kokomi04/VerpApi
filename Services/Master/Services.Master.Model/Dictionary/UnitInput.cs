@@ -9,5 +9,6 @@ namespace VErp.Services.Master.Model.Dictionary
     {
         public string UnitName { get; set; }
         public EnumUnitStatus UnitStatusId { get; set; }
+        public int DecimalPlace { get; set; }
     }
 }

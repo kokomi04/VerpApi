@@ -211,19 +211,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     includeUnits.Add(new Unit
                     {
                         UnitName = row.Unit,
-                        UnitStatusId = (int)EnumUnitStatus.Using
+                        UnitStatusId = (int)EnumUnitStatus.Using,
+                        DecimalPlace = row.DecimalPlaceDefault.GetValueOrDefault()
+                        
                     });
                 }
                 for (int suffix = 2; suffix <= 5; suffix++)
                 {
                     var unitText = $"{productUnitConversionNamePropPrefix}0{suffix}";
+                    var decimalPlaceText = $"{productUnitDecimalPlacePropPrefix}0{suffix}";
                     var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
+                    var decimalPlace = (int?)typeInfo.GetProperty(decimalPlaceText).GetValue(row);
                     if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == unit.NormalizeAsInternalName()))
                     {
                         includeUnits.Add(new Unit
                         {
                             UnitName = unit,
-                            UnitStatusId = (int)EnumUnitStatus.Using
+                            UnitStatusId = (int)EnumUnitStatus.Using,
+                            DecimalPlace = decimalPlace.GetValueOrDefault()
                         });
                     }
                 }
