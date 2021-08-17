@@ -6,11 +6,14 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
 
@@ -23,13 +26,20 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContext;
         private readonly IMapper _mapper;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
 
-        public PurchaseOrderTrackService(PurchaseOrderDBContext purchaseOrderDBContext, ILogger<PurchaseOrderTrackService> logger, IActivityLogService activityLogService, IMapper mapper)
+        public PurchaseOrderTrackService(
+            PurchaseOrderDBContext purchaseOrderDBContext,
+            ILogger<PurchaseOrderTrackService> logger,
+            IActivityLogService activityLogService,
+            IMapper mapper,
+            IManufacturingHelperService manufacturingHelperService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _manufacturingHelperService = manufacturingHelperService;
         }
 
         public async Task<long> CreatePurchaseOrderTrack(long purchaseOrderId, purchaseOrderTrackedModel req)
@@ -42,6 +52,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
+                
                 return entity.PurchaseOrderTrackedId;
             }
             catch (Exception ex)
@@ -65,6 +78,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
+
                 return true;
             }
             catch (Exception ex)
@@ -89,6 +105,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
+
                 return true;
             }
             catch (Exception ex)
@@ -132,6 +151,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
+
                 return true;
             }
             catch (Exception ex)
@@ -140,6 +162,31 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 _logger.LogError(ex, "UpdatePurchaseOrderTrackByPurchaseOrderId");
                 throw;
             }
+        }
+
+        private async Task<(long[], EnumPurchasingOrderType)> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId)
+        {
+            var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+            if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+            var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
+                .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                .Distinct()
+                .ToArray();
+            return (outsourceRequestId, (EnumPurchasingOrderType) info.PurchaseOrderType);
+        }
+
+        private async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId)
+        {
+            var (outsourceRequestId, purchaseOrderType) = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
+                return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
+                return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
+
+            return true;
         }
     }
 }
