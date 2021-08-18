@@ -288,6 +288,12 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Phiếu xử lý kiểm kê")]
         [GenCodeObject]
-        StockTakeAcceptanceCertificate = 555
+        StockTakeAcceptanceCertificate = 555,
+
+        [Description("Lịch làm việc")]
+        Calendar = 600,
+
+        [Description("Lịch nghỉ")]
+        DayOffCalendar = 601
     }
 }
