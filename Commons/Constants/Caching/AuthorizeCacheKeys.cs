@@ -7,6 +7,7 @@ namespace VErp.Commons.Constants.Caching
 {
     public static class AuthorizeCacheKeys
     {
+        public static string AUTH_TAG = "AUTH_TAG";
         public static string UserInfoCacheKey(int userId)
         {
             return $"AUTH_USERINFO_{userId}";
