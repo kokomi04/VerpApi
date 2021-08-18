@@ -12,37 +12,47 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Cache.Caching;
+using VErp.Commons.Constants.Caching;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
+using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
     public class AuthorizeActionFilter : IAsyncActionFilter
-    {
+    {       
         private readonly AppSetting _appSetting;
         private readonly MasterDBContext _masterContext;
         private readonly ILogger _logger;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ICachingService _cachingService;
 
         public AuthorizeActionFilter(
            IOptionsSnapshot<AppSetting> appSetting
-           , ILogger<AuthorizeActionFilter> logger
+            , ILogger<AuthorizeActionFilter> logger
             , MasterDBContext masterContext
             , ICurrentContextService currentContextService
+            , ICachingService cachingService
        )
         {
             _appSetting = appSetting.Value;
             _masterContext = masterContext;
             _logger = logger;
             _currentContextService = currentContextService;
+            _cachingService = cachingService;
         }
+
+
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
@@ -51,7 +61,11 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 await next();
                 return;
             }
-            var ur = await _masterContext.User.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId);
+
+            var ur = await TryGetSet(UserInfoCacheKey(_currentContextService.UserId), () =>
+            {
+                return _masterContext.User.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId);
+            });
 
             if (ur.UserStatusId != (int)EnumUserStatus.Actived)
             {
@@ -104,7 +118,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var apiEndpointId = Utils.HashApiEndpointId(_appSetting.ServiceId, route, methodId);
 
-            var apiInfo = await _masterContext.ApiEndpoint.AsNoTracking().FirstOrDefaultAsync(a => a.ApiEndpointId == apiEndpointId);
+            (await ApiEndpoints()).TryGetValue(apiEndpointId, out var apiInfo);
 
             if (apiInfo == null)
             {
@@ -118,9 +132,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-            var apiModuleMapped = await _masterContext.ModuleApiEndpointMapping.FirstOrDefaultAsync(m => m.ModuleId == moduleId && m.ApiEndpointId == apiEndpointId);
 
-            if (apiModuleMapped == null)
+            if ((await ModuleApiEndpointMappings(moduleId))?.Contains(apiEndpointId) != true)
             {
                 var json = new ServiceResult
                 {
@@ -134,41 +147,27 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var userId = _currentContextService.UserId;
             var roleInfo = _currentContextService.RoleInfo;
-            var roleIds = new List<int>() { roleInfo.RoleId };
-
-            if (roleInfo.IsModulePermissionInherit && roleInfo.ChildrenRoleIds?.Count > 0)
-            {
-                roleIds.AddRange(roleInfo.ChildrenRoleIds);
-            }
 
             var (isValidateObject, objectTypeId, objectId, actionButtonId) = GetValidateObjectData(context);
 
             if (actionButtonId > 0 && objectTypeId.HasValue && objectId.HasValue)
             {
-                var actionInfo = await _masterContext.ActionButton.FirstOrDefaultAsync(a => a.ActionButtonId == actionButtonId && a.ObjectTypeId == (int)objectTypeId.Value && a.ObjectId == (int)objectId.Value);
-                if (actionInfo != null)
+
+                if ((await ActionButtons()).TryGetValue(actionButtonId, out var actionInfo) && actionInfo.ObjectTypeId == (int)objectTypeId.Value && actionInfo.ObjectId == (int)objectId.Value)
                 {
                     apiInfo.ActionId = actionInfo.ActionTypeId ?? 1;
                 }
             }
 
-
-            IQueryable<RolePermission> query;
+            var permission = 0;
             if (!isValidateObject)
             {
-                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ModuleId == moduleId);
+                permission = await RoleModulePermission(roleInfo, moduleId);
             }
             else
             {
-                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId);
+                permission = await RoleObjectPermission(roleInfo, objectTypeId.Value, objectId ?? 0);
             }
-
-            var lstPermission = await query.Select(p => p.Permission).ToListAsync();
-
-
-            var permission = 0;
-            if (lstPermission.Count > 0)
-                permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
 
             if ((permission & apiInfo.ActionId) == apiInfo.ActionId)
             {
@@ -221,6 +220,95 @@ namespace VErp.Infrastructure.ApiCore.Filters
             }
 
             return (false, null, null, actionButtonId);
+        }
+
+        private async Task<int> RoleObjectPermission(RoleInfo role, EnumObjectType objectTypeId, long objectId)
+        {
+            return await TryGetSet(RoleObjectPermissionCacheKey(role.RoleId, objectTypeId, objectId), async () =>
+            {
+                var roleIds = GetInheritRoleIds(role);
+                var lstPermissions = await _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId).Select(p => p.Permission).ToListAsync();
+                return AggregatePermission(lstPermissions);
+            });
+        }
+
+
+        private async Task<int> RoleModulePermission(RoleInfo role, int moduleId)
+        {
+            return await TryGetSet(RoleModulePermissionCacheKey(role.RoleId), async () =>
+            {
+                var roleIds = GetInheritRoleIds(role);
+                var lstPermissions = await _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ModuleId == moduleId).Select(p => p.Permission).ToListAsync();
+                return AggregatePermission(lstPermissions);
+            });
+        }
+
+        private IList<int> GetInheritRoleIds(RoleInfo roleInfo)
+        {
+            var roleIds = new List<int>() { roleInfo.RoleId };
+
+            if (roleInfo.IsModulePermissionInherit && roleInfo.ChildrenRoleIds?.Count > 0)
+            {
+                roleIds.AddRange(roleInfo.ChildrenRoleIds);
+            }
+            return roleIds;
+        }
+
+        private int AggregatePermission(IList<int> lstPermission)
+        {
+            var permission = 0;
+            if (lstPermission?.Count > 0)
+                permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
+            return permission;
+        }
+
+        private async Task<IDictionary<int, ActionButton>> ActionButtons()
+        {
+            return await TryGetSet(ActionButtonsCacheKey(), async () =>
+            {
+                return (await _masterContext.ActionButton.AsNoTracking().ToListAsync()).ToDictionary(e => e.ActionButtonId, e => e);
+            });
+        }
+
+        private async Task<HashSet<Guid>> ModuleApiEndpointMappings(int moduleId)
+        {
+            return await TryGetSet(ModuleApiEndpointMappingsCacheKey(moduleId), async () =>
+            {
+                return (await _masterContext.ModuleApiEndpointMapping.AsNoTracking().Where(m => m.ModuleId == moduleId).Select(p => p.ApiEndpointId).ToListAsync()).ToHashSet();
+            });
+        }
+
+
+        private async Task<IDictionary<Guid, ApiEndpoint>> ApiEndpoints()
+        {
+            if (EnviromentConfig.IsProduction)
+            {
+                return await TryGetSet(ApiEndpointsCacheKey(), async () =>
+                 {
+                     return (await _masterContext.ApiEndpoint.AsNoTracking().ToListAsync()).ToDictionary(e => e.ApiEndpointId, e => e);
+                 });
+            }
+            else
+            {
+                return await TryGetSetLong(ApiEndpointsCacheKey(), async () =>
+                {
+                    return (await _masterContext.ApiEndpoint.AsNoTracking().ToListAsync()).ToDictionary(e => e.ApiEndpointId, e => e);
+                });
+            }
+        }
+        //private T TryGetSet<T>(string key, Func<T> queryData)
+        //{
+        //    return _cachingService.TryGetSet(key, AUTHORIZED_CACHING_TIMEOUT, queryData);
+        //}
+
+        private Task<T> TryGetSet<T>(string key, Func<Task<T>> queryData)
+        {
+            return _cachingService.TryGetSet(key, AUTHORIZED_CACHING_TIMEOUT, queryData);
+        }
+
+        private Task<T> TryGetSetLong<T>(string key, Func<Task<T>> queryData)
+        {
+            return _cachingService.TryGetSet(key, AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT, queryData);
         }
     }
 }
