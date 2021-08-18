@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Cache.Caching;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -18,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.Activity;
 using RolePermissionEntity = VErp.Infrastructure.EF.MasterDB.RolePermission;
+using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
 {
@@ -32,6 +34,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly IStockHelperService _stockHelperService;
+        private readonly ICachingService _cachingService;
 
         public RoleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
@@ -42,6 +45,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             , IInputTypeHelperService inputTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IStockHelperService stockHelperService
+            , ICachingService cachingService
             )
         {
             _masterContext = masterContext;
@@ -53,6 +57,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _inputTypeHelperService = inputTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _stockHelperService = stockHelperService;
+            _cachingService = cachingService;
         }
 
         public async Task<int> AddRole(RoleInput role, EnumRoleType roleTypeId)
@@ -425,6 +430,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", permissions.JsonSerialize());
 
+
+                RemoveAuthCache();
+
                 return true;
             }
         }
@@ -496,6 +504,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 RoleId = d.RoleId
             }));
             await _masterContext.SaveChangesAsync();
+
+            RemoveAuthCache();
+
             return true;
         }
 
@@ -523,6 +534,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             await _masterContext.RoleDataPermission.AddRangeAsync(datPermissions);
             await _masterContext.SaveChangesAsync();
+
+            RemoveAuthCache();
             return true;
         }
 
@@ -552,6 +565,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             await _masterContext.RolePermission.AddRangeAsync(permissions);
             await _masterContext.SaveChangesAsync();
+
+            RemoveAuthCache();
             return true;
         }
 
@@ -580,7 +595,19 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }));
             await _masterContext.SaveChangesAsync();
 
+            RemoveAuthCache();
+
             return true;
+        }
+
+
+        public void RemoveAuthCache()
+        {
+            Task.Factory.StartNew(() =>
+            {
+                _cachingService.TryRemoveByTag(AUTH_TAG);
+            });
+
         }
 
         #region private
@@ -651,6 +678,9 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _masterContext.SaveChanges();
         }
 
+
+
+    
 
 
         #endregion

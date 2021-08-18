@@ -9,8 +9,10 @@ namespace Verp.Cache.Caching
     public interface ICachingService
     {
         T TryGet<T>(string key);
-        T TryGetSet<T>(string key, TimeSpan ttl, Func<T> queryData);
-        Task<T> TryGetSet<T>(string key, TimeSpan ttl, Func<Task<T>> queryData);
-        void TrySet<T>(string key, T value, TimeSpan ttl);
+        T TryGetSet<T>(string tag, string key, TimeSpan ttl, Func<T> queryData, TimeSpan? sliding = null);
+        Task<T> TryGetSet<T>(string tag, string key, TimeSpan ttl, Func<Task<T>> queryData, TimeSpan? sliding = null);
+        void TrySet<T>(string tag, string key, T value, TimeSpan ttl, TimeSpan? sliding = null);
+
+        void TryRemoveByTag(string tag);
     }
 }

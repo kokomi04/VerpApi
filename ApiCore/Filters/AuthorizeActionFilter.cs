@@ -30,7 +30,7 @@ using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
 namespace VErp.Infrastructure.ApiCore.Filters
 {
     public class AuthorizeActionFilter : IAsyncActionFilter
-    {       
+    {
         private readonly AppSetting _appSetting;
         private readonly MasterDBContext _masterContext;
         private readonly ILogger _logger;
@@ -88,7 +88,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-#if DEBUG
+#if !DEBUG
             await next();
             return;
 #endif
@@ -303,12 +303,12 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         private Task<T> TryGetSet<T>(string key, Func<Task<T>> queryData)
         {
-            return _cachingService.TryGetSet(key, AUTHORIZED_CACHING_TIMEOUT, queryData);
+            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
         }
 
         private Task<T> TryGetSetLong<T>(string key, Func<Task<T>> queryData)
         {
-            return _cachingService.TryGetSet(key, AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT, queryData);
+            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT, queryData);
         }
     }
 }

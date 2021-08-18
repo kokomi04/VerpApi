@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
@@ -18,10 +20,12 @@ namespace VErpApi.Controllers.System
     public class RolesController : VErpBaseController
     {
         private readonly IRoleService _roleService;
-        public RolesController(IRoleService roleService
-            )
+        private readonly ICurrentContextService _currentContextService;
+
+        public RolesController(IRoleService roleService, ICurrentContextService currentContextService)
         {
             _roleService = roleService;
+            _currentContextService = currentContextService;
         }
 
         /// <summary>
@@ -151,6 +155,17 @@ namespace VErpApi.Controllers.System
         public async Task<bool> Categorys(IList<CategoryPermissionModel> req)
         {
             return await _roleService.UpdateCategoryPermission(req);
+        }
+
+
+        [HttpGet]
+        [Route("RemoveAuthCache")]
+        [GlobalApi]
+        public bool CleanCache()
+        {
+            if (!_currentContextService.IsDeveloper) throw new BadRequestException("Clean auth caching require developer permission!");
+            _roleService.RemoveAuthCache();
+            return true;
         }
     }
 }

@@ -377,13 +377,13 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         private T TryGetSet<T>(string key, Func<T> queryData)
         {
-            return _cachingService.TryGetSet(key, AUTHORIZED_CACHING_TIMEOUT, queryData);
+            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
         }
 
 
         private T TryGetSetLong<T>(string key, Func<T> queryData)
         {
-            return _cachingService.TryGetSet(key, AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT, queryData);
+            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT, queryData);
         }
     }
 
