@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\Commons\GlobalObject\GlobalObject.csproj" />
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\Cache\MemCache\MemCache.csproj" />
     <ProjectReference Include="..\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
     <ProjectReference Include="..\Grpc\GrpcProto\GrpcProto.csproj" />
