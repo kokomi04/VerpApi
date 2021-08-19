@@ -261,7 +261,7 @@ namespace VErp.Commons.Library
                             {
                                 rowData.Add(columnName, GetCellString(cell)?.Trim()?.Trim('\''));
                             }
-                            catch
+                            catch(Exception e)
                             {
                                 rowData.Add(columnName, cell.StringCellValue.ToString()?.Trim()?.Trim('\''));
 
@@ -505,7 +505,16 @@ namespace VErp.Commons.Library
                 case CellType.Numeric:
                     if (DateUtil.IsCellDateFormatted(cell))
                     {
-                        return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        try
+                        {
+                            return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        }
+                        catch (Exception)
+                        {
+
+                            return Convert.ToDecimal(cell.NumericCellValue).ToString();
+                        }
+                        
                         //try
                         //{
                         //    return cell.DateCellValue.ToString();
