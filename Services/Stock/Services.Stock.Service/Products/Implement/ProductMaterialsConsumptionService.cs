@@ -398,12 +398,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private async Task<Enum> ValidateModelInput(IEnumerable<ProductMaterialsConsumptionInput> model)
         {
-            if (model.Any(x => x.Quantity <= 0))
-            {
-                return ProductErrorCode.QuantityOfMaterialsConsumptionIsZero;
+            foreach(var input in model){
+                if( input.Quantity <= 0)
+                    throw new BadRequestException(ProductErrorCode.QuantityOfMaterialsConsumptionIsZero, $"Số lượng sử dụng của NVL có mã \"{input.ProductCode}\" trong nhóm \"{input.ProductMaterialsConsumptionGroupCode}\" phải lơn hơn 0.");
             }
-
-            return GeneralCode.InternalError;
+            
+            return GeneralCode.Success;
         }
     }
 }

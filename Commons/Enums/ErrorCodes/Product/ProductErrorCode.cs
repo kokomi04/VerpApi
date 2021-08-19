@@ -30,7 +30,7 @@ namespace VErp.Commons.Enums.StandardEnum
         [Description("Tên mặt hàng không được để rỗng")]
         ProductNameEmpty = 10,
 
-        [Description("Số lượng của NVL tiêu hao bằng 0")]
+        [Description("Số lượng sử dụng của NVL tiêu hao bằng 0")]
         QuantityOfMaterialsConsumptionIsZero = 11,
     }
 }
