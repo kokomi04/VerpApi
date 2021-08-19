@@ -33,6 +33,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Text.Json;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ApiCore.BackgroundTasks;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Middleware;
@@ -90,6 +91,8 @@ namespace VErp.Infrastructure.ApiCore
                   EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
                   ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
               });
+
+            services.AddHostedService<SyncApiEndpointService>();
 
             services.AddControllers(options =>
             {
