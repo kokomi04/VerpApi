@@ -24,6 +24,7 @@ using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
 using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
 
@@ -36,6 +37,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
         private readonly ILogger _logger;
         private readonly ICurrentContextService _currentContextService;
         private readonly ICachingService _cachingService;
+        private readonly IAuthDataCacheService _authDataCacheService;
 
         public AuthorizeActionFilter(
            IOptionsSnapshot<AppSetting> appSetting
@@ -43,6 +45,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             , MasterDBContext masterContext
             , ICurrentContextService currentContextService
             , ICachingService cachingService
+            , IAuthDataCacheService authDataCacheService
        )
         {
             _appSetting = appSetting.Value;
@@ -50,6 +53,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             _logger = logger;
             _currentContextService = currentContextService;
             _cachingService = cachingService;
+            _authDataCacheService = authDataCacheService;
         }
 
 
@@ -62,10 +66,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-            var ur = await TryGetSet(UserInfoCacheKey(_currentContextService.UserId), () =>
-            {
-                return _masterContext.User.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId);
-            });
+            var ur = await _authDataCacheService.UserInfo(_currentContextService.UserId);
 
             if (ur.UserStatusId != (int)EnumUserStatus.Actived)
             {
@@ -118,7 +119,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var apiEndpointId = Utils.HashApiEndpointId(_appSetting.ServiceId, route, methodId);
 
-            (await ApiEndpoints()).TryGetValue(apiEndpointId, out var apiInfo);
+            (await _authDataCacheService.ApiEndpoints()).TryGetValue(apiEndpointId, out var apiInfo);
 
             if (apiInfo == null)
             {
@@ -144,21 +145,21 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 return;
             }
-
-            var userId = _currentContextService.UserId;
-            var roleInfo = _currentContextService.RoleInfo;
+            
 
             var (isValidateObject, objectTypeId, objectId, actionButtonId) = GetValidateObjectData(context);
 
             if (actionButtonId > 0 && objectTypeId.HasValue && objectId.HasValue)
             {
 
-                if ((await ActionButtons()).TryGetValue(actionButtonId, out var actionInfo) && actionInfo.ObjectTypeId == (int)objectTypeId.Value && actionInfo.ObjectId == (int)objectId.Value)
+                if ((await _authDataCacheService.ActionButtons()).TryGetValue(actionButtonId, out var actionInfo) && actionInfo.ObjectTypeId == (int)objectTypeId.Value && actionInfo.ObjectId == (int)objectId.Value)
                 {
                     apiInfo.ActionId = actionInfo.ActionTypeId ?? 1;
                 }
             }
 
+
+            var roleInfo = _currentContextService.RoleInfo;
             var permission = 0;
             if (!isValidateObject)
             {
@@ -262,53 +263,24 @@ namespace VErp.Infrastructure.ApiCore.Filters
             return permission;
         }
 
-        private async Task<IDictionary<int, ActionButton>> ActionButtons()
-        {
-            return await TryGetSet(ActionButtonsCacheKey(), async () =>
-            {
-                return (await _masterContext.ActionButton.AsNoTracking().ToListAsync()).ToDictionary(e => e.ActionButtonId, e => e);
-            });
-        }
 
         private async Task<HashSet<Guid>> ModuleApiEndpointMappings(int moduleId)
         {
-            return await TryGetSet(ModuleApiEndpointMappingsCacheKey(moduleId), async () =>
+            var t = AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT;
+            if (!EnviromentConfig.IsProduction)
+            {
+                t = AUTHORIZED_CACHING_TIMEOUT;
+            }
+            return await _cachingService.TryGetSet(AUTH_TAG, ModuleApiEndpointMappingsCacheKey(moduleId), t, async () =>
             {
                 return (await _masterContext.ModuleApiEndpointMapping.AsNoTracking().Where(m => m.ModuleId == moduleId).Select(p => p.ApiEndpointId).ToListAsync()).ToHashSet();
             });
         }
 
 
-        private async Task<IDictionary<Guid, ApiEndpoint>> ApiEndpoints()
-        {
-            if (EnviromentConfig.IsProduction)
-            {
-                return await TryGetSet(ApiEndpointsCacheKey(), async () =>
-                 {
-                     return (await _masterContext.ApiEndpoint.AsNoTracking().ToListAsync()).ToDictionary(e => e.ApiEndpointId, e => e);
-                 });
-            }
-            else
-            {
-                return await TryGetSetLong(ApiEndpointsCacheKey(), async () =>
-                {
-                    return (await _masterContext.ApiEndpoint.AsNoTracking().ToListAsync()).ToDictionary(e => e.ApiEndpointId, e => e);
-                });
-            }
-        }
-        //private T TryGetSet<T>(string key, Func<T> queryData)
-        //{
-        //    return _cachingService.TryGetSet(key, AUTHORIZED_CACHING_TIMEOUT, queryData);
-        //}
-
         private Task<T> TryGetSet<T>(string key, Func<Task<T>> queryData)
         {
             return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
-        }
-
-        private Task<T> TryGetSetLong<T>(string key, Func<Task<T>> queryData)
-        {
-            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT, queryData);
-        }
+        }       
     }
 }

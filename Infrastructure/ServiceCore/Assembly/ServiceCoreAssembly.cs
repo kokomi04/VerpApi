@@ -45,6 +45,7 @@ namespace VErp.Infrastructure.ServiceCore
 
             services.AddMemoryCache();
             services.AddScoped<ICachingService, MemCacheCachingService>();
+            services.AddScoped<IAuthDataCacheService, AuthDataCacheService>();
             return services;
         }
     }

@@ -31,11 +31,13 @@ namespace VErp.Infrastructure.ServiceCore.Service
     public class CurrentContextFactory : ICurrentContextFactory
     {
         private ICurrentContextService _currentContext;
+
         private bool _used = false;
 
         public CurrentContextFactory(HttpCurrentContextService currentContext)
         {
             _currentContext = currentContext;
+
         }
 
         public void SetCurrentContext(ICurrentContextService currentContext)
@@ -67,6 +69,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly Func<UnAuthorizeOrganizationContext> _organizationDBContext;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly ICachingService _cachingService;
+        private IAuthDataCacheService _authDataCacheService;
 
         private int _userId = 0;
         private string _userName = "";
@@ -86,6 +89,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             , Func<UnAuthorizeOrganizationContext> organizationDBContext
             , IServiceScopeFactory serviceScopeFactory
             , ICachingService cachingService
+            , IAuthDataCacheService authDataCacheService
             )
         {
             _appSetting = appSetting.Value;
@@ -95,6 +99,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _organizationDBContext = organizationDBContext;
             _serviceScopeFactory = serviceScopeFactory;
             _cachingService = cachingService;
+            _authDataCacheService = authDataCacheService;
             CrossServiceLogin();
         }
 
@@ -176,11 +181,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
             get
             {
                 if (!string.IsNullOrEmpty(_userName)) return _userName;
-
-                var userInfo = TryGetSet(UserInfoCacheKey(_userId), () =>
-                {
-                    return _masterDBContext().User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
-                });
+              
+                var userInfo = _authDataCacheService.UserInfo(_userId).GetAwaiter().GetResult();
 
                 if (userInfo != null)
                 {
@@ -265,10 +267,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 var masterDBContext = _masterDBContext();
 
-                var userInfo = TryGetSet(UserInfoCacheKey(_userId), () =>
-                {
-                    return _masterDBContext().User.AsNoTracking().FirstOrDefault(u => u.UserId == UserId);
-                });
+
+                var userInfo = _authDataCacheService.UserInfo(_userId).GetAwaiter().GetResult();
+
 
                 _roleInfo = TryGetSet(RoleInfoCacheKey(userInfo.RoleId ?? 0), () =>
                   {
