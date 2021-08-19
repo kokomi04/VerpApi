@@ -666,8 +666,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
                         DeletedDatetimeUtc = null,
-                        IntoMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice),
-                        IntoAfterTaxMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice) + Math.Round((decimal)((d.PrimaryQuantity * d.PrimaryUnitPrice) * (d.TaxInPercent / 100))),
+                        IntoMoney = d.IntoMoney,
+                        IntoAfterTaxMoney = d.IntoAfterTaxMoney,
                     };
                 }).ToList();
 
@@ -808,8 +808,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProductionOrderCode = item.ProductionOrderCode;
                             detail.Description = item.Description;
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
-                            detail.IntoMoney = Math.Round(detail.PrimaryQuantity * detail.PrimaryUnitPrice);
-                            detail.IntoAfterTaxMoney = detail.IntoMoney + Math.Round((decimal)(detail.IntoMoney * (detail.TaxInPercent / 100)));
+                            detail.IntoMoney = item.IntoMoney;
+                            detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
                             break;
                         }
                     }
@@ -841,8 +841,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
                             DeletedDatetimeUtc = null,
-                            IntoMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice),
-                            IntoAfterTaxMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice) + Math.Round((decimal)((item.PrimaryQuantity * item.PrimaryUnitPrice) * (item.TaxInPercent / 100))),
+                            IntoMoney = item.IntoMoney,
+                            IntoAfterTaxMoney = item.IntoAfterTaxMoney,
                         });
                     }
                 }
