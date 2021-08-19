@@ -28,6 +28,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public long? OutsourceRequestId { get; set; }
         public long? ProductionStepLinkDataId { get; set; }
+        public decimal? IntoMoney { get; set; }
+        public decimal? IntoAfterTaxMoney { get; set; }
 
         public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
         public virtual PurchaseOrder PurchaseOrder { get; set; }

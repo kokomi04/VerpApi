@@ -324,7 +324,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             CreatorFullName = creator.FullName,
                             CheckerFullName = checker.FullName,
                             CensorFullName = censor.FullName,
-                            po.PurchaseOrderType
+                            po.PurchaseOrderType,
+                            pod.IntoMoney,
+                            pod.IntoAfterTaxMoney,
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -477,7 +479,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CreatorFullName = info.CreatorFullName,
                     CheckerFullName = info.CheckerFullName,
                     CensorFullName = info.CensorFullName,
-                    PurchaseOrderType = info.PurchaseOrderType
+                    PurchaseOrderType = info.PurchaseOrderType,
+                    IntoMoney = info.IntoMoney,
+                    IntoAfterTaxMoney = info.IntoAfterTaxMoney,
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
@@ -566,7 +570,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         PoAssignmentDetail = assignmentDetailInfo,
                         PurchasingSuggestDetail = purchasingSuggestDetailInfo,
-
+                        IntoMoney = d.IntoMoney,
+                        IntoAfterTaxMoney = d.IntoAfterTaxMoney
                     };
                 }).ToList()
             };
@@ -660,7 +665,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
-                        DeletedDatetimeUtc = null
+                        DeletedDatetimeUtc = null,
+                        IntoMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice),
+                        IntoAfterTaxMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice) + Math.Round((decimal)((d.PrimaryQuantity * d.PrimaryUnitPrice) * (d.TaxInPercent / 100))),
                     };
                 }).ToList();
 
@@ -801,6 +808,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProductionOrderCode = item.ProductionOrderCode;
                             detail.Description = item.Description;
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
+                            detail.IntoMoney = Math.Round(detail.PrimaryQuantity * detail.PrimaryUnitPrice);
+                            detail.IntoAfterTaxMoney = detail.IntoMoney + Math.Round((decimal)(detail.IntoMoney * (detail.TaxInPercent / 100)));
                             break;
                         }
                     }
@@ -831,7 +840,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             CreatedDatetimeUtc = DateTime.UtcNow,
                             UpdatedDatetimeUtc = DateTime.UtcNow,
                             IsDeleted = false,
-                            DeletedDatetimeUtc = null
+                            DeletedDatetimeUtc = null,
+                            IntoMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice),
+                            IntoAfterTaxMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice) + Math.Round((decimal)((item.PrimaryQuantity * item.PrimaryUnitPrice) * (item.TaxInPercent / 100))),
                         });
                     }
                 }

@@ -476,6 +476,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.IntoAfterTaxMoney).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.PoAssignmentDetail)
