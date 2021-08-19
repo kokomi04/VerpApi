@@ -92,6 +92,9 @@ namespace VErp.Services.PurchaseOrder.Model
         public string CreatorFullName { get; set; }
         public string CheckerFullName { get; set; }
         public string CensorFullName { get; set; }
+
+        public decimal? IntoMoney { get; set; }
+        public decimal? IntoAfterTaxMoney { get; set; }
     }
 
 }
