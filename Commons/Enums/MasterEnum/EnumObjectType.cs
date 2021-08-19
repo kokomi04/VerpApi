@@ -294,6 +294,15 @@ namespace VErp.Commons.Enums.MasterEnum
         Calendar = 600,
 
         [Description("Lịch nghỉ")]
-        DayOffCalendar = 601
+        DayOffCalendar = 601,
+
+        [Description("Lịch làm việc")]
+        DepartmentCalendar = 602,
+
+        [Description("Lịch nghỉ của bộ phận")]
+        DepartmentDayOffCalendar = 603,
+
+        [Description("Lịch tăng ca của bộ phận")]
+        DepartmentOverHour = 604
     }
 }
