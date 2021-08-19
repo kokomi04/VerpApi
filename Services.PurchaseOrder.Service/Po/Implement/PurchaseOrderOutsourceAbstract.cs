@@ -132,8 +132,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             OutsourceRequestId = d.OutsourceRequestId,
                             ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                            IntoMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice),
-                            IntoAfterTaxMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice) + Math.Round((decimal)((d.PrimaryQuantity * d.PrimaryUnitPrice) * (d.TaxInPercent / 100))),
+                            IntoMoney = d.IntoMoney,
+                            IntoAfterTaxMoney = d.IntoAfterTaxMoney,
                         };
                     }).ToList();
 
@@ -266,8 +266,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
                                 detail.Description = item.Description;
-                                detail.IntoMoney = Math.Round(detail.PrimaryQuantity * detail.PrimaryUnitPrice);
-                                detail.IntoAfterTaxMoney = detail.IntoMoney + Math.Round((decimal)(detail.IntoMoney * (detail.TaxInPercent / 100)));
+                                detail.IntoMoney = item.IntoMoney;
+                                detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
 
                                 break;
                             }
@@ -294,8 +294,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 OutsourceRequestId = item.OutsourceRequestId,
                                 ProductionStepLinkDataId = item.ProductionStepLinkDataId,
-                                IntoMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice),
-                                IntoAfterTaxMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice) + Math.Round((decimal)((item.PrimaryQuantity * item.PrimaryUnitPrice) * (item.TaxInPercent / 100))),
+                                IntoMoney = item.IntoMoney,
+                                IntoAfterTaxMoney = item.IntoAfterTaxMoney,
                             });
                         }
                     }
@@ -511,7 +511,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         Description = d.Description,
 
                         OutsourceRequestId = d.OutsourceRequestId,
-                        ProductionStepLinkDataId = d.ProductionStepLinkDataId
+                        ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                        IntoAfterTaxMoney = d.IntoAfterTaxMoney,
+                        IntoMoney = d.IntoMoney
                     };
                 }).ToList(),
                 Excess = excess,
