@@ -1368,5 +1368,26 @@ namespace VErp.Commons.Library
             }
             return str;
         }
+
+        public static IEnumerable<string> GetRangeOfAllowValueForBoolean()
+        {
+            return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Concat(RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_FALSE);
+        }
+
+        public static bool HasValueInRangeOfAllowValueForBoolean(this string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Concat(RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_FALSE).Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
+        }
+
+        public static bool IsRangeOfAllowValueForBooleanTrueValue(this string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
+        }
     }
 }

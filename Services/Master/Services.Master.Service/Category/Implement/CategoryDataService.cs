@@ -211,8 +211,10 @@ namespace VErp.Services.Accountancy.Service.Category
             List<CategoryField> updateFields = new List<CategoryField>();
             foreach (CategoryField categoryField in categoryFields)
             {
-                var currentValue = categoryRow[categoryField.CategoryFieldName].ToString();
-                var updateValue = data[categoryField.CategoryFieldName];
+                if(!data.ContainsKey(categoryField.CategoryFieldName)) continue;
+
+                categoryRow.TryGetValue(categoryField.CategoryFieldName, out var currentValue);
+                data.TryGetValue(categoryField.CategoryFieldName, out var updateValue);
                 if (currentValue != updateValue)
                 {
                     updateFields.Add(categoryField);
@@ -540,8 +542,8 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     string regex = ((EnumDataType)field.DataTypeId).GetRegex();
                     if ((field.DataSize > 0 && valueItem.Length > field.DataSize)
-                        || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(valueItem, regex))
-                        || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem, field.RegularExpression)))
+                        || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(valueItem.NormalizeAsInternalName(), regex))
+                        || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem.NormalizeAsInternalName(), field.RegularExpression)))
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryValueInValid, new string[] { field.Title });
                     }
@@ -955,7 +957,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return titles;
         }
 
-        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExelMapping mapping, Stream stream)
+        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExcelMapping mapping, Stream stream)
         {
             var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
@@ -982,6 +984,13 @@ namespace VErp.Services.Accountancy.Service.Category
                 .Where(f => categoryId == f.CategoryId)
                 .ToList();
 
+            var uniqueFields = categoryFields.Where(x => x.IsUnique).ToList();
+            var requiredFields = categoryFields.Where(x => x.IsRequired || x.IsUnique).ToList();
+
+            var mappingFields = categoryFields.Where(x => mapping.MappingFields.Any(y => y.FieldName == x.CategoryFieldName)).ToList();
+
+            if (mappingFields.Where(x => x.IsRequired || x.IsUnique).Count() != requiredFields.Count)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Thiếu dữ liệu của các trường bắt buộc: {string.Join(", ", requiredFields.Select(x => x.Title))}");
 
             var refCategoryCodes = categoryFields.Select(f => f.RefTableCode).ToList();
 
@@ -991,7 +1000,9 @@ namespace VErp.Services.Accountancy.Service.Category
                                             select new
                                             {
                                                 f.CategoryFieldName,
-                                                c.CategoryCode
+                                                c.CategoryCode,
+                                                f.DataTypeId,
+                                                f.Title
                                             }
                                     ).ToListAsync())
                                     .GroupBy(f => f.CategoryCode)
@@ -1008,15 +1019,15 @@ namespace VErp.Services.Accountancy.Service.Category
             var rowDatas = new List<List<CategoryImportExcelRowData>>();
 
             var refCategoryDatasToQuery = new List<CategoryQueryRequest>();
-            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
+            for (var rowIndex = 0; rowIndex < data.Rows.Length; rowIndex++)
             {
-                var row = data.Rows[rowIndx];
+                var row = data.Rows[rowIndex];
 
                 var rowData = new List<CategoryImportExcelRowData>();
                 bool isIgnoreRow = false;
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+                for (int fieldIndex = 0; fieldIndex < mapping.MappingFields.Count && !isIgnoreRow; fieldIndex++)
                 {
-                    var mappingField = mapping.MappingFields[fieldIndx];
+                    var mappingField = mapping.MappingFields[fieldIndex];
 
                     string value = null;
                     if (row.ContainsKey(mappingField.Column))
@@ -1035,18 +1046,17 @@ namespace VErp.Services.Accountancy.Service.Category
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains(((EnumDataType?)field?.DataTypeId).GetValueOrDefault()))
                     {
                         if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {rowIndx + mapping.FromRow}, trường {field?.Title} sang kiểu ngày tháng");
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {rowIndex + mapping.FromRow}, trường {field?.Title} sang kiểu ngày tháng");
                         value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
                     }
 
-
-                    rowData.Add(new CategoryImportExcelRowData()
+                    if ((EnumDataType?)field?.DataTypeId == EnumDataType.Boolean)
                     {
-                        FieldMapping = mappingField,
-                        FieldConfig = field,
-                        CellValue = value
-                    });
+                        if (!value.HasValueInRangeOfAllowValueForBoolean())
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {rowIndex + mapping.FromRow}, trường {field?.Title} chỉ nhận các giá trị sau: {string.Join(", ", Utils.GetRangeOfAllowValueForBoolean())}");
 
+                        value = value.IsRangeOfAllowValueForBooleanTrueValue() ? "true" : "false";
+                    }
 
                     //collect ref data by category and it 's field data for query
 
@@ -1057,7 +1067,9 @@ namespace VErp.Services.Accountancy.Service.Category
                             throw new BadRequestException(GeneralCode.ItemNotFound, $"{field.RefTableCode}");
                         }
 
-                        if (refCategoryFields[field.RefTableCode].FirstOrDefault(f => f.CategoryFieldName == mappingField.RefFieldName) == null)
+                        var refField = refCategoryFields[field.RefTableCode].FirstOrDefault(f => f.CategoryFieldName == mappingField.RefFieldName);
+
+                        if (refField == null)
                         {
                             throw new BadRequestException(GeneralCode.ItemNotFound, $"{mappingField.RefFieldName}");
                         }
@@ -1080,9 +1092,31 @@ namespace VErp.Services.Accountancy.Service.Category
                             refCategoryToQuery.FieldQuery.Add(mappingField.RefFieldName, refValue);
                         }
 
+                        if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains(((EnumDataType?)refField?.DataTypeId).GetValueOrDefault()))
+                        {
+                            if (!DateTime.TryParse(value.ToString(), out DateTime date))
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {rowIndex + mapping.FromRow}, trường {field.Title}/ {refField?.Title} sang kiểu ngày tháng");
+                            value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
+                        }
+
+                        if ((EnumDataType)refField?.DataTypeId == EnumDataType.Boolean)
+                        {
+                            if (!value.HasValueInRangeOfAllowValueForBoolean())
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {rowIndex + mapping.FromRow}, trường {field.Title}/ {refField?.Title} chỉ nhận các giá trị sau: {string.Join(", ", Utils.GetRangeOfAllowValueForBoolean())}");
+
+                            value = value.IsRangeOfAllowValueForBooleanTrueValue() ? "true" : "false";
+                        }
+
                         if (!refValue.Contains(value))
                             refValue.Add(value);
                     }
+
+                    rowData.Add(new CategoryImportExcelRowData()
+                    {
+                        FieldMapping = mappingField,
+                        FieldConfig = field,
+                        CellValue = value
+                    });
                 }
 
                 if (!isIgnoreRow)
@@ -1091,6 +1125,22 @@ namespace VErp.Services.Accountancy.Service.Category
 
 
             var refCategoriesData = await GetRefCategoryDataByMultiField(refCategoryDatasToQuery);
+            var existsCategoryData = (await GetCategoryRows(categoryId, null, null, null,null, 0, 0, "", true)).List;
+
+            var oldUniqueCategoryData = existsCategoryData.Select(x => $@"[{string.Join(",", x.Where(x => uniqueFields.Any(u => u.CategoryFieldName == x.Key)).Select(x => x.Value))}]").ToList();
+            var uniqueRows = rowDatas.Select(x => x.Where(x => x.FieldConfig?.IsUnique == true)).Select(x => $@"[{string.Join(",", x.Select(x => x.CellValue))}]").ToList();
+
+            var duplicateUnique = uniqueRows.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+            if (duplicateUnique.Count > 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại nhiều giá trị {string.Join(", ", duplicateUnique)} mang tính định danh trong file import");
+
+            if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+            {
+                var existsUnique = uniqueRows.Where(x => oldUniqueCategoryData.Contains(x)).ToList();
+                if (existsUnique.Count > 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại giá trị {string.Join(", ", existsUnique)} mang tính định danh trong danh mục");
+            }
+                
 
             using (var trans = await _accountancyContext.Database.BeginTransactionAsync())
             {
@@ -1104,6 +1154,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     foreach (var rowData in rowDatas)
                     {
                         var rowInput = new Dictionary<string, string>();
+                        var uniqueValue = new Dictionary<string, string>();
 
                         var parentValue = "";
                         var parentRefFieldName = "";
@@ -1114,6 +1165,12 @@ namespace VErp.Services.Accountancy.Service.Category
 
                             var isParentField = cellData.FieldMapping.FieldName == AccountantConstants.PARENT_ID_FIELD_NAME;
                             var isRefFieldMapping = !string.IsNullOrWhiteSpace(cellData.FieldMapping.RefFieldName);
+
+                            if (cellData.FieldConfig?.IsUnique == true)
+                            {
+                                // isExistsRow = existsCategoryData.Where(x => x.ContainsKey(cellData.FieldMapping.FieldName) && x[cellData.FieldMapping.FieldName].ToString() == cellData.CellValue).Count() > 0;
+                                uniqueValue.Add(cellData.FieldMapping.FieldName, cellData.CellValue);
+                            }
 
                             if (isParentField)
                             {
@@ -1133,13 +1190,19 @@ namespace VErp.Services.Accountancy.Service.Category
 
                                 if (isRefField)
                                 {
+                                    var refField = refCategoryFields[cellData.FieldConfig.RefTableCode].FirstOrDefault(f => f.CategoryFieldName == cellData.FieldMapping.RefFieldName);
+                                    var field = categoryFields.FirstOrDefault(f => f.CategoryFieldName == cellData.FieldMapping.FieldName);
+
                                     if (string.IsNullOrWhiteSpace(cellData.FieldMapping.RefFieldName))
                                     {
                                         cellData.FieldMapping.RefFieldName = cellData.FieldConfig.RefTableField;
                                     }
 
+                                    if (refCategoriesData[cellData.FieldConfig.RefTableCode].Count() > 1)
+                                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều hơn 1 giá trị {field.Title}/ {refField.Title}: {cellData.CellValue} trong danh mục");
+
                                     var refCategoryRow = refCategoriesData[cellData.FieldConfig.RefTableCode]
-                                        .FirstOrDefault(c => c[cellData.FieldMapping.RefFieldName].ToString() == cellData.CellValue);
+                                        .FirstOrDefault(c => c[cellData.FieldMapping.RefFieldName].ToString().ToLower() == cellData.CellValue.ToLower());
 
                                     if (refCategoryRow != null)
                                     {
@@ -1149,7 +1212,7 @@ namespace VErp.Services.Accountancy.Service.Category
                                     }
                                     else
                                     {
-                                        throw new BadRequestException(GeneralCode.InvalidParams, $"Giá trị {cellData.CellValue} không tìm thấy trong danh mục");
+                                        throw new BadRequestException(GeneralCode.InvalidParams, $"Giá trị {field.Title}/ {refField.Title}: {cellData.CellValue} không tìm thấy trong danh mục");
                                     }
                                 }
                                 else
@@ -1160,11 +1223,21 @@ namespace VErp.Services.Accountancy.Service.Category
                             }
                         }
 
-                        var result = await AddCategoryRow(categoryId, rowInput);
+                        var categoryRowId = FoundCategoryDataRowId(existsCategoryData, uniqueValue);
 
-                        if (!string.IsNullOrWhiteSpace(parentValue))
+                        if (categoryRowId == 0)
                         {
-                            parentMappingData.Add(result, new CategoryParentData()
+                            categoryRowId = await AddCategoryRow(categoryId, rowInput);
+                        }
+                        else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                        {
+                            await UpdateCategoryRow(categoryId, categoryRowId, rowInput);
+                        }
+                        else categoryRowId = 0;
+
+                        if (!string.IsNullOrWhiteSpace(parentValue) && categoryRowId > 0)
+                        {
+                            parentMappingData.Add(categoryRowId, new CategoryParentData()
                             {
                                 ParentFieldName = parentRefFieldName,
                                 ParentValue = parentValue
@@ -1231,6 +1304,20 @@ namespace VErp.Services.Accountancy.Service.Category
 
             return true;
 
+        }
+
+        private int FoundCategoryDataRowId(IList<NonCamelCaseDictionary> existsCategoryData, Dictionary<string, string> uniqueValue)
+        {
+            int categoryRowId = 0;
+
+            var foundCategoryData = existsCategoryData;
+            foreach (var (key, value) in uniqueValue)
+                foundCategoryData = foundCategoryData.Where(x => x[key].ToString() == value).ToList();
+
+            if (foundCategoryData.Count == 1)
+                categoryRowId = (int)foundCategoryData.FirstOrDefault()[AccountantConstants.F_IDENTITY];
+
+            return categoryRowId;
         }
 
         private async Task<Dictionary<string, List<NonCamelCaseDictionary>>> GetRefCategoryDataByMultiField(IList<CategoryQueryRequest> categoryQueryRequests)
