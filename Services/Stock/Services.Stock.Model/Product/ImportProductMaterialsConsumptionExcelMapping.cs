@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 
 namespace VErp.Services.Stock.Model.Product
 {
@@ -55,6 +56,7 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Số lượng sử dụng", GroupName = "Thông tin chung")]
         [Required(ErrorMessage = "Vui lòng nhập số lượng sử dụng")]
+        [GreaterThan(0, ErrorMessage = "Số lượng phải lớn hơn 0")]
         public decimal Quantity { get; set; }
 
 
@@ -66,8 +68,66 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Tên công đoạn (Nếu có)", GroupName = "Thông tin công đoạn")]
         public string StepName { get; set; }
 
-        [Display(Name = "Ghi chú", GroupName = "Khác")]
+        [Display(Name = "Ghi chú", GroupName = "Thông tin chung")]
         public string Description { get; set; }
 
+    }
+
+    public class MaterialsConsumptionByProduct
+    {
+        public SimpleProduct RootProduct { get; set; }
+        public IList<ProductMaterialsConsumptionPreview> MaterialsComsump { get; set; }
+    }
+
+    public class SimpleProduct
+    {
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public string UnitName { get; set; }
+        public int UnitId { get; set; }
+        public string Specification { get; set; }
+    }
+
+    public class ProductMaterialsConsumptionPreview
+    {
+        public string GroupTitle { get; set; }
+        public decimal Quantity { get; set; }
+        public string StepName { get; set; }
+        public string DepartmentName { get; set; }
+        public decimal TotalQuantityInheritance { get; set; } = 0;
+        public decimal BomQuantity { get; set; } = 1;
+        public string Description { get; set; }
+
+        public SimpleProduct ProductExtraInfo { get; set; }
+        public SimpleProduct ProductMaterialsComsumptionExtraInfo { get; set; }
+
+        public IList<ProductMaterialsConsumptionPreview> MaterialsConsumptionInherit { get; set; }
+
+        public bool IsImported { get; set; } = false;
+    }
+
+    public class ProductMaterialsConsumptionPreviewComparer : IEqualityComparer<ProductMaterialsConsumptionPreview>
+    {
+        public bool Equals(ProductMaterialsConsumptionPreview x, ProductMaterialsConsumptionPreview y)
+        {
+
+            if (Object.ReferenceEquals(x, y)) return true;
+
+            if (Object.ReferenceEquals(x, null) || Object.ReferenceEquals(y, null))
+                return false;
+
+            return x.GroupTitle == y.GroupTitle && x.ProductMaterialsComsumptionExtraInfo.ProductCode == y.ProductMaterialsComsumptionExtraInfo.ProductCode;
+        }
+
+        // If Equals() returns true for a pair of objects
+        // then GetHashCode() must return the same value for these objects.
+
+        public int GetHashCode(ProductMaterialsConsumptionPreview product)
+        {
+            if (Object.ReferenceEquals(product, null)) return 0;
+
+            return product.GroupTitle.GetHashCode() ^ product.ProductMaterialsComsumptionExtraInfo.ProductCode.GetHashCode();
+        }
     }
 }

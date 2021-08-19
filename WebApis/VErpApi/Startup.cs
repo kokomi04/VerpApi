@@ -66,7 +66,7 @@ namespace VErp.WebApis.VErpApi
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
             _cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
-
+            
             services
                 .AddIdentityServer()
                 .AddSigningCredential(_cert)

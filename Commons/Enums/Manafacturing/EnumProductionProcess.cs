@@ -33,7 +33,9 @@ namespace VErp.Commons.Enums.Manafacturing
             [Description("Gia công chi tiết")]
             OutsourcePart = 1,
             [Description("Gia công công đoạn")]
-            OutsourceStep = 2
+            OutsourceStep = 2,
+            [Description("Gia công nguyên vật liệu")]
+            OutsourceMaterial = 3
         }
 
         public enum EnumProductionStepLinkDataType

@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.StockDB
         }
 
         public int PropertyId { get; set; }
+        public string PropertyCode { get; set; }
         public string PropertyName { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }

@@ -540,14 +540,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc)
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
         {
+            var fDate= fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
             var assignmentQuery = (
                 from a in _manufacturingDBContext.ProductionAssignment
                 join s in _manufacturingDBContext.ProductionStep.Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder) on a.ProductionStepId equals s.ProductionStepId
                 join o in _manufacturingDBContext.ProductionOrder on a.ProductionOrderId equals o.ProductionOrderId
                 join od in _manufacturingDBContext.ProductionOrderDetail on o.ProductionOrderId equals od.ProductionOrderId
-                where a.DepartmentId == departmentId
+                where a.DepartmentId == departmentId && (fDate != null && tDate != null ? o.Date >= fDate && o.Date <= tDate : true)
                 select new
                 {
                     o.ProductionOrderId,

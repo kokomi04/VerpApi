@@ -36,6 +36,11 @@ namespace VErp.Services.PurchaseOrder.Model
         public long UpdatedDatetimeUtc { get; set; }
         public long? CensorDatetimeUtc { get; set; }
         public long? CheckedDatetimeUtc { get; set; }
+
+        public int PurchaseOrderType { get; set; }
+        public long? DeliveryDate { get; set; }
+
+        public long? PropertyCalcId { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
@@ -48,6 +53,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public IList<long> FileIds { get; set; }
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
+
+        public IList<PurchaseOrderExcessModel> Excess {get;set;}
+        public IList<PurchaseOrderMaterialsModel> Materials {get;set;}
     }
 
     public class PurchaseOrderOutputDetail : PurchaseOrderInputDetail
@@ -81,7 +89,12 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public PoAssignmentDetailInfo PoAssignmentDetail { get; set; }
         public PurchasingSuggestDetailInfo PurchasingSuggestDetail { get; set; }
+        public string CreatorFullName { get; set; }
+        public string CheckerFullName { get; set; }
+        public string CensorFullName { get; set; }
 
+        public decimal? IntoMoney { get; set; }
+        public decimal? IntoAfterTaxMoney { get; set; }
     }
 
 }

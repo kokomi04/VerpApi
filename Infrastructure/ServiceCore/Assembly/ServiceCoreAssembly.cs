@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Verp.Cache.Caching;
+using Verp.Cache.MemCache;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -40,6 +42,10 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddScoped<ICurrentContextFactory, CurrentContextFactory>();
             services.AddScoped<IDocOpenXmlService, DocOpenXmlService>();
             services.AddScoped(di => di.GetRequiredService<ICurrentContextFactory>().GetCurrentContext());
+
+            services.AddMemoryCache();
+            services.AddScoped<ICachingService, MemCacheCachingService>();
+            services.AddScoped<IAuthDataCacheService, AuthDataCacheService>();
             return services;
         }
     }

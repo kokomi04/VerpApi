@@ -40,14 +40,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal? OrderQuantity { get; set; }
         public decimal? OrderedQuantity { get; set; }
         public string PartnerId { get; set; }
+        public string PartnerCode { get; set; }
+        public string PartnerName { get; set; }
+        public string PartnerTitle { get; set; }
         public string ProductTitle { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
+        public long VoucherTypeId { get; set; }
         public string OrderCode { get; set; }
+        public string ContainerNumber { get; set; }
         public int? ProductId { get; set; }
-        public string PartnerTitle { get; set; }
         public int UnitId { get; set; }
         public string UnitName { get; set; }
         public string Specification { get; set; }
-    }
+        public bool InvalidPlan { get; set; }
+}
 }

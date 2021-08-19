@@ -14,6 +14,9 @@ namespace VErp.Services.PurchaseOrder.Model
         [MinLength(1, ErrorMessage = "Vui lòng chọn mặt hàng")]
         public IList<PurchaseOrderInputDetail> Details { get; set; }
 
+        public IList<PurchaseOrderExcessModel> Excess { get; set; }
+        public IList<PurchaseOrderMaterialsModel> Materials { get; set; }
+
         public long Date { get; set; }
 
       
@@ -33,6 +36,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
         public string PoDescription { get; set; }
+
+        public long? PropertyCalcId { get; set; }
     }
 
     public interface IPurchaseOrderInputDetail
@@ -57,6 +62,9 @@ namespace VErp.Services.PurchaseOrder.Model
         string ProductionOrderCode { get; set; }
 
         string Description { get; set; }
+
+        decimal? IntoMoney { get; set; }
+        decimal? IntoAfterTaxMoney { get; set; }
     }
 
     public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
@@ -80,6 +88,11 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public string Description { get; set; }
 
+        public long? OutsourceRequestId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
+
+        public decimal? IntoMoney { get; set; }
+        public decimal? IntoAfterTaxMoney { get; set; }
 
     }
 

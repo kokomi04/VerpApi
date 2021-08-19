@@ -38,6 +38,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public decimal? LoanLimitation { get; set; }
         public int LoanBeginningTypeId { get; set; }
         public int? LoanManagerUserId { get; set; }
+        public string PartnerId { get; set; }
 
         public virtual ICollection<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual ICollection<CustomerBankAccount> CustomerBankAccount { get; set; }

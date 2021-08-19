@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
@@ -25,8 +26,23 @@ using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Commons.Library
 {
+
     public static class Utils
     {
+
+        public static ILoggerFactory LoggerFactory;
+
+        public static ILoggerFactory DefaultLoggerFactory
+        {
+            get
+            {
+                return Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
+                {
+                    builder.AddConsole();
+                });
+            }
+        }
+
         public static string RemoveDiacritics(this string str)
         {
             if (str == null) return null;
@@ -1351,6 +1367,27 @@ namespace VErp.Commons.Library
                 str += "...";
             }
             return str;
+        }
+
+        public static IEnumerable<string> GetRangeOfAllowValueForBoolean()
+        {
+            return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Concat(RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_FALSE);
+        }
+
+        public static bool HasValueInRangeOfAllowValueForBoolean(this string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Concat(RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_FALSE).Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
+        }
+
+        public static bool IsRangeOfAllowValueForBooleanTrueValue(this string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
         }
     }
 }

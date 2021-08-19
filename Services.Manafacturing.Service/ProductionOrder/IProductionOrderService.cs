@@ -17,11 +17,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId);
         Task<ProductionOrderInputModel> UpdateProductionOrder(long productionOrderId, ProductionOrderInputModel data);
         Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data);
+        Task<int> CreateMultipleProductionOrder(ProductionOrderInputModel[] data);
         Task<bool> DeleteProductionOrder(long productionOrderId);
         Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
         Task<IList<ProductOrderModel>> GetProductionOrders();
 
         Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data);
         Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status);
+        Task<bool> EditNote(long productionOrderDetailId, string note);
     }
 }

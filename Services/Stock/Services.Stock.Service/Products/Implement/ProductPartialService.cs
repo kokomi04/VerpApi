@@ -169,10 +169,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 productInfo.Color = model.Color;
 
-                productInfo.UnitId = model.UnitId;
 
                 defaultPuConversion.SecondaryUnitId = model.UnitId;
                 defaultPuConversion.ProductUnitConversionName = unitInfo.UnitName;
+                defaultPuConversion.DecimalPlace = productInfo.UnitId != model.UnitId ? unitInfo.DecimalPlace : defaultPuConversion.DecimalPlace;
+
+                productInfo.UnitId = model.UnitId;
 
                 productInfo.ProductCateId = model.ProductCateId;
 
@@ -366,7 +368,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 GrossWeight = productInfo.GrossWeight,
                 NetWeight = productInfo.NetWeight,
                 LoadAbility = productInfo.NetWeight,
-                ProductDescription = productInfo.ProductDescription,
+                SellDescription = productInfo.SellDescription,
 
                 ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers)
             };
@@ -390,7 +392,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.GrossWeight = model.GrossWeight;
                 productInfo.NetWeight = model.NetWeight;
                 productInfo.LoadAbility = model.NetWeight;
-                productInfo.ProductDescription = model.ProductDescription;
+                productInfo.SellDescription = model.SellDescription;
 
                 if (model.ProductCustomers == null)
                 {

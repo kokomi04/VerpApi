@@ -254,6 +254,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, ICollection<ProductMaterialsConsumptionInput> model)
         {
+            var validate = await ValidateModelInput(model);
+
+            if (!validate.IsSuccess())
+            {
+                throw new BadRequestException(validate);
+            }
+
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -284,6 +291,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
         {
+            var validate = await ValidateModelInput(new[] { model });
+
+            if (!validate.IsSuccess())
+            {
+                throw new BadRequestException(validate);
+            }
+
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -316,17 +330,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        public async Task<bool> ImportMaterialsConsumptionFromMapping(int productId, ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportMaterialsConsumptionFromMapping(int? productId, ImportExcelMapping mapping, Stream stream)
         {
-            var facade = new ProductMaterialsConsumptionInportFacade(_stockDbContext
-                , _organizationHelperService
-                , _manufacturingHelperService
-                , _activityLogService)
-                .SetService(_productService)
-                .SetService(_productBomService)
-                .SetService(_unitService);
+            var facade = InitializationFacade(false);
 
             return await facade.ProcessData(mapping, stream, productId);
+        }
+
+        public async Task<IList<MaterialsConsumptionByProduct>> ImportMaterialsConsumptionFromMappingAsPreviewData(int? productId, ImportExcelMapping mapping, Stream stream)
+        {
+            var facade = InitializationFacade(true);
+            var r = await facade.ProcessData(mapping, stream, productId);
+            if (!r) return null;
+            return facade.PreviewData;
         }
 
         public async Task<long> AddProductMaterialsConsumption(int productId, ProductMaterialsConsumptionInput model)
@@ -365,6 +381,29 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsum, _organizationHelperService, _manufacturingHelperService);
 
             return await exportFacade.Export(product.ProductCode);
+        }
+
+        private ProductMaterialsConsumptionImportFacade InitializationFacade(bool isPreview)
+        {
+            return new ProductMaterialsConsumptionImportFacade(isPreview)
+                .SetService(_stockDbContext)
+                .SetService(_organizationHelperService)
+                .SetService(_manufacturingHelperService)
+                .SetService(_activityLogService)
+                .SetService(_productService)
+                .SetService(_productBomService)
+                .SetService(_unitService)
+                .SetService(this);
+        }
+
+        private async Task<Enum> ValidateModelInput(IEnumerable<ProductMaterialsConsumptionInput> model)
+        {
+            foreach(var input in model){
+                if( input.Quantity <= 0)
+                    throw new BadRequestException(ProductErrorCode.QuantityOfMaterialsConsumptionIsZero, $"Số lượng sử dụng của NVL có mã \"{input.ProductCode}\" trong nhóm \"{input.ProductMaterialsConsumptionGroupCode}\" phải lơn hơn 0.");
+            }
+            
+            return GeneralCode.Success;
         }
     }
 }

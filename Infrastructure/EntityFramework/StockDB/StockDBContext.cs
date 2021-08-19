@@ -48,6 +48,11 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
+        public virtual DbSet<StockTake> StockTake { get; set; }
+        public virtual DbSet<StockTakeAcceptanceCertificate> StockTakeAcceptanceCertificate { get; set; }
+        public virtual DbSet<StockTakeDetail> StockTakeDetail { get; set; }
+        public virtual DbSet<StockTakePeriod> StockTakePeriod { get; set; }
+        public virtual DbSet<StockTakeRepresentative> StockTakeRepresentative { get; set; }
         public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -584,7 +589,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_BillOfMaterial_Product_ProductId");
             });
 
-
             modelBuilder.Entity<ProductCate>(entity =>
             {
                 entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
@@ -777,6 +781,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Property>(entity =>
             {
+                entity.Property(e => e.PropertyCode).HasMaxLength(128);
+
                 entity.Property(e => e.PropertyName).IsRequired();
             });
 
@@ -848,6 +854,68 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<StockTake>(entity =>
+            {
+                entity.Property(e => e.StockTakeCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.StockTakePeriod)
+                    .WithMany(p => p.StockTake)
+                    .HasForeignKey(d => d.StockTakePeriodId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockTake_StockTakePeriod");
+            });
+
+            modelBuilder.Entity<StockTakeAcceptanceCertificate>(entity =>
+            {
+                entity.HasKey(e => e.StockTakePeriodId)
+                    .HasName("PK__StockTak__910E85DD4CF3DA1B");
+
+                entity.Property(e => e.StockTakePeriodId).ValueGeneratedNever();
+
+                entity.Property(e => e.StockTakeAcceptanceCertificateCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.StockTakePeriod)
+                    .WithOne(p => p.StockTakeAcceptanceCertificate)
+                    .HasForeignKey<StockTakeAcceptanceCertificate>(d => d.StockTakePeriodId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockTakeAcceptanceCertificateId_StockTakePeriod");
+            });
+
+            modelBuilder.Entity<StockTakeDetail>(entity =>
+            {
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.HasOne(d => d.StockTake)
+                    .WithMany(p => p.StockTakeDetail)
+                    .HasForeignKey(d => d.StockTakeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockTakeDetail_StockTake");
+            });
+
+            modelBuilder.Entity<StockTakePeriod>(entity =>
+            {
+                entity.Property(e => e.StockTakePeriodCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<StockTakeRepresentative>(entity =>
+            {
+                entity.HasKey(e => new { e.StockTakePeriodId, e.UserId });
+
+                entity.HasOne(d => d.StockTakePeriod)
+                    .WithMany(p => p.StockTakeRepresentative)
+                    .HasForeignKey(d => d.StockTakePeriodId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StockTakeRepresentative_StockTakePeriod");
             });
 
             modelBuilder.Entity<VMappingOusideImportObject>(entity =>

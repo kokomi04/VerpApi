@@ -29,6 +29,9 @@ namespace VErp.Services.Master.Service.RolePermission
         Task<bool> GrantDataForAllRoles(EnumObjectType objectTypeId, long objectId);
 
         Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId);
-        
+
+        void RemoveAuthCache();
+
+
     }
 }

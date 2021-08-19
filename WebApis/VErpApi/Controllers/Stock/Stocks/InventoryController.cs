@@ -254,9 +254,9 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpGet]
         [Route("GetProductPackageListForExport")]
-        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> productIds, [FromQuery] IList<long> packageIds, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetProductPackageListForExport(keyword, isTwoUnit, stockIds, page, size);
+            return await _inventoryService.GetProductPackageListForExport(keyword, isTwoUnit, productIds, packageIds, stockIds, page, size);
         }
 
 

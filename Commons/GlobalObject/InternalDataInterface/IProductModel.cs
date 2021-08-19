@@ -30,7 +30,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal? GrossWeight { get; set; }
         public decimal? Measurement { get; set; }
         public decimal? LoadAbility { get; set; }
-        public string ProductDescription { get; set; }
+        public string SellDescription { get; set; }
         public string ProductNameEng { get; set; }
 
         public decimal? Quantitative { get; set; }
@@ -45,8 +45,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
         public ProductModelExtra Extra { get; set; }
         public ProductModelStock StockInfo { get; set; }
-
-
+        public string UnitName { get; set; }
 
         public class ProductModelExtra
         {

@@ -8,13 +8,13 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.Order
 {
-    public class OutsourceStepOrderOutput: OutsourceOrderModel, IMapFrom<OutsourceOrder>
+    public class OutsourceStepOrderOutput : OutsourceOrderModel, IMapFrom<OutsourceOrder>
     {
         public IList<OutsourceStepOrderDetailOutput> OutsourceOrderDetail { get; set; }
         public IList<OutsourceOrderMaterialsOutput> OutsourceOrderMaterials { get; set; }
-        // public IList<OutsourceOrderExcessOutput> OutsourceOrderExcesses { get; set; }
+        public IList<OutsourceOrderExcessOutput> OutsourceOrderExcesses { get; set; }
 
-        public void Mapping(Profile profile)
+        public override void Mapping(Profile profile)
         {
             profile.CreateMap<OutsourceOrder, OutsourceStepOrderOutput>()
                 .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
@@ -23,8 +23,8 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
                 .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonDeserialize<SuppliersModel>()))
                 .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore())
                 .ForMember(m => m.OutsourceOrderMaterials, v => v.Ignore())
+                .ForMember(m => m.OutsourceOrderExcesses, v => v.Ignore())
                 .ForMember(m => m.AttachmentFileId, v => v.MapFrom(m=>m.AttachmentFileId))
-                .ForMember(m => m.ExcessMaterialNotes, v => v.MapFrom(m=>m.ExcessMaterialNotes))
                 .ReverseMap()
                 .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore())
                 .ForMember(m => m.OutsourceOrderMaterials, v => v.Ignore())
@@ -32,13 +32,14 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
                 .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()))
                 .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonSerialize()))
                 .ForMember(m => m.Suppliers, v => v.MapFrom(m => m.Suppliers.JsonSerialize()))
-                .ForMember(m => m.ExcessMaterialNotes, v => v.MapFrom(m=>m.ExcessMaterialNotes))
                 .ForMember(m => m.AttachmentFileId, v => v.MapFrom(m => m.AttachmentFileId));
         }
     }
 
-    public class OutsourceOrderMaterialsOutput: OutsourceOrderMaterialsModel
+    public class OutsourceOrderMaterialsOutput : OutsourceOrderMaterialsModel
     {
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
         public string ProductTitle { get; set; }
         public int UnitId { get; set; }
         public decimal? QuantityRequirement { get; set; }
@@ -47,11 +48,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.Order
         public string ProductionOrderCode { get; set; }
     }
 
-    public class OutsourceOrderExcessOutput: OutsourceOrderExcessModel
+    public class OutsourceOrderExcessOutput : OutsourceOrderExcessModel
     {
-        public string ProductTitle { get; set; }
-        public int UnitId { get; set; }
-        public int? DecimalPlace { get; set; }
+        
     }
 
     public class OutsourceStepOrderDetailOutput : IMapFrom<OutsourceOrderDetail>

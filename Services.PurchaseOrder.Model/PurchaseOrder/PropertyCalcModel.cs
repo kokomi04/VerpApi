@@ -38,6 +38,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public IList<PropertyCalcPropertyModel> Properties { get; set; }
         public IList<PropertyCalcProductModel> Products { get; set; }
         public IList<PropertyCalcSummaryModel> Summary { get; set; }
+        public IList<CuttingWorkSheetModel> CuttingWorkSheet { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<PropertyCalcModel, PropertyCalc>()
@@ -46,6 +47,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
                 .ForMember(d => d.PropertyCalcProduct, s => s.MapFrom(m => m.Products))
                 .ForMember(d => d.PropertyCalcSummary, s => s.MapFrom(m => m.Summary))
                 .ForMember(d => d.PropertyCalcProperty, s => s.MapFrom(m => m.Properties))
+                .ForMember(d => d.CuttingWorkSheet, s => s.MapFrom(m => m.CuttingWorkSheet))
                 .ReverseMap()
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
         }

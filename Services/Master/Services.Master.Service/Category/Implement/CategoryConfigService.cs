@@ -847,8 +847,9 @@ namespace VErp.Services.Master.Service.Category
                 {
                     CategoryFieldId = field.CategoryFieldId,
                     FieldName = field.CategoryFieldName,
-                    FieldTitle = field.Title,
-                    RefCategory = null
+                    FieldTitle = GetTitleCategoryField(field),
+                    RefCategory = null,
+                    IsRequired = field.IsRequired
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
@@ -866,12 +867,14 @@ namespace VErp.Services.Master.Service.Category
                         IsTreeView = refCategory.CategoryInfo.IsTreeView,
 
                         Fields = refCategory.Fields
+                        .Where(x => string.IsNullOrWhiteSpace(x.RefTableCode) && !x.IsHidden)
                         .Select(f => new CategoryFieldNameModel()
                         {
                             CategoryFieldId = f.CategoryFieldId,
                             FieldName = f.CategoryFieldName,
-                            FieldTitle = f.Title,
-                            RefCategory = null
+                            FieldTitle = GetTitleCategoryField(f),
+                            RefCategory = null,
+                            IsRequired = f.IsRequired
                         }).ToList()
                     };
                 }
@@ -880,6 +883,17 @@ namespace VErp.Services.Master.Service.Category
             }
 
             return result;
+        }
+
+        private string GetTitleCategoryField(CategoryField field)
+        {
+            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
+            if (rangeValue.Length > 0)
+            {
+                return $"{field.Title} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
+            }
+
+            return field.Title;
         }
 
         public PageData<DataTypeModel> GetDataTypes(int page, int size)

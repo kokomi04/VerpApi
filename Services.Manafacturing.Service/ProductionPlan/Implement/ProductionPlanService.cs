@@ -66,7 +66,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             {
                 var productionOrderDetailIds = data.Select(d => d.Key).ToList();
                 var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
-                    .Include(pod => pod.ProductionOrder)
                     .Where(pod => productionOrderDetailIds.Contains(pod.ProductionOrderDetailId))
                     .ToList();
                 if (productionOrderDetails.Count != productionOrderDetailIds.Count)
@@ -133,13 +132,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     _manufacturingDBContext.SaveChanges();
                 }
 
+                // Map valid
+                var productionOrderIds = productionOrderDetails.Select(pod => pod.ProductionOrderId).Distinct().ToList();
+                var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => productionOrderIds.Contains(po.ProductionOrderId)).ToList();
+                foreach(var productionOrder in productionOrders)
+                {
+                    productionOrder.InvalidPlan = false;
+                }
+                _manufacturingDBContext.SaveChanges();
                 trans.Commit();
 
                 foreach (var item in data)
                 {
                     var productionOrderDetailId = item.Key;
                     var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrderDetail.ProductionOrder.ProductionOrderCode}", data.JsonSerialize());
+                    var productionOrder = productionOrders.Find(po => po.ProductionOrderId == productionOrderDetail.ProductionOrderId);
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", data.JsonSerialize());
                 }
 
                 var productionPlans = await _manufacturingDBContext.ProductionWeekPlan

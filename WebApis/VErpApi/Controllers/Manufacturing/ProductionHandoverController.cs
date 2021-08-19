@@ -43,9 +43,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("DepartmentHandover/{departmentId}")]
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate)
         {
-            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, filters);
+            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate);
         }
 
         [HttpGet]

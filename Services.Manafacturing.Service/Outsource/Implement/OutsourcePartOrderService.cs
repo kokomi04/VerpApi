@@ -111,8 +111,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     var materials = GetNewOutsourceOrderMaterials(order.OutsourceOrderId, req.OutsourceOrderMaterials);
                     _manufacturingDBContext.OutsourceOrderMaterials.AddRange(materials);
 
-                    // var excesses = GetNewOutsourceOrderExcesses(order.OutsourceOrderId, req.OutsourceOrderExcesses);
-                    // _manufacturingDBContext.OutsourceOrderExcess.AddRange(excesses);
+                    var excesses = GetNewOutsourceOrderExcesses(order.OutsourceOrderId, req.OutsourceOrderExcesses);
+                    _manufacturingDBContext.OutsourceOrderExcess.AddRange(excesses);
 
                     await _manufacturingDBContext.SaveChangesAsync();
 
@@ -153,12 +153,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     throw new BadRequestException(OutsourceErrorCode.NotFoundOutsourceOrder);
                 var outsourceOrderDetail = await _manufacturingDBContext.OutsourceOrderDetail.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
                 var materials = await _manufacturingDBContext.OutsourceOrderMaterials.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
-                // var excesses = await _manufacturingDBContext.OutsourceOrderExcess.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
+                var excesses = await _manufacturingDBContext.OutsourceOrderExcess.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
 
                 outsourceOrder.IsDeleted = true;
                 outsourceOrderDetail.ForEach(x => x.IsDeleted = true);
                 materials.ForEach(x => x.IsDeleted = true);
-                // excesses.ForEach(x => x.IsDeleted = true);
+                excesses.ForEach(x => x.IsDeleted = true);
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -261,10 +261,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ProjectTo<OutsourceOrderMaterialsOutput>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            // var excesses = await _manufacturingDBContext.OutsourceOrderExcess.AsNoTracking()
-            //     .Where(x => x.OutsourceOrderId == outsourceOrderId)
-            //     .ProjectTo<OutsourceOrderExcessOutput>(_mapper.ConfigurationProvider)
-            //     .ToListAsync();
+            var excesses = await _manufacturingDBContext.OutsourceOrderExcess.AsNoTracking()
+                .Where(x => x.OutsourceOrderId == outsourceOrderId)
+                .ProjectTo<OutsourceOrderExcessOutput>(_mapper.ConfigurationProvider)
+                .ToListAsync();
 
             var details = await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
                 .Where(x => x.OutsourceOrderId == outsourceOrderId)
@@ -300,6 +300,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             var productIds = mapProduct.Values.Select(x=>x.ProductId)
                 .Concat(materials.Select(x => (int)x.ProductId)).ToList();
+                // .Concat(excesses.Select(x => (int)x.ProductId)).ToList();
 
             var lsProductInfo = await _productHelperService.GetListProducts(productIds);
 
@@ -334,7 +335,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             outsourceOrder.OutsourceOrderDetails = details;
             outsourceOrder.OutsourceOrderMaterials = materials;
-            // outsourceOrder.OutsourceOrderExcesses = excesses;
+            outsourceOrder.OutsourceOrderExcesses = excesses;
 
             return outsourceOrder;
         }
@@ -352,7 +353,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 var details = await _manufacturingDBContext.OutsourceOrderDetail.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
                 var materials = await _manufacturingDBContext.OutsourceOrderMaterials.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
-                // var excesses = await _manufacturingDBContext.OutsourceOrderExcess.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
+                var excesses = await _manufacturingDBContext.OutsourceOrderExcess.Where(o => o.OutsourceOrderId == outsourceOrderId).ToListAsync();
 
                 _mapper.Map(req, order);
 
@@ -372,13 +373,13 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     else m.IsDeleted = true;
                 }
 
-                // foreach (var e in excesses)
-                // {
-                //     var s = req.OutsourceOrderExcesses.FirstOrDefault(x => x.OutsourceOrderExcessId == e.OutsourceOrderExcessId);
-                //     if (s != null)
-                //         _mapper.Map(s, e);
-                //     else e.IsDeleted = true;
-                // }
+                foreach (var e in excesses)
+                {
+                    var s = req.OutsourceOrderExcesses.FirstOrDefault(x => x.OutsourceOrderExcessId == e.OutsourceOrderExcessId);
+                    if (s != null)
+                        _mapper.Map(s, e);
+                    else e.IsDeleted = true;
+                }
 
                 var newDetails = GetNewOutsourceOrderDetail(order.OutsourceOrderId, req.OutsourceOrderDetails);
                 _manufacturingDBContext.OutsourceOrderDetail.AddRange(newDetails);
@@ -386,8 +387,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var newMaterials = GetNewOutsourceOrderMaterials(order.OutsourceOrderId, req.OutsourceOrderMaterials);
                 _manufacturingDBContext.OutsourceOrderMaterials.AddRange(newMaterials);
 
-                // var newExcesses = GetNewOutsourceOrderExcesses(order.OutsourceOrderId, req.OutsourceOrderExcesses);
-                // _manufacturingDBContext.OutsourceOrderExcess.AddRange(newExcesses);
+                var newExcesses = GetNewOutsourceOrderExcesses(order.OutsourceOrderId, req.OutsourceOrderExcesses);
+                _manufacturingDBContext.OutsourceOrderExcess.AddRange(newExcesses);
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -609,12 +610,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ProjectTo<OutsourceOrderMaterials>(_mapper.ConfigurationProvider).ToList();
         }
 
-        // private ICollection<OutsourceOrderExcess> GetNewOutsourceOrderExcesses(long outsourceOrderId, IList<OutsourceOrderExcessModel> model)
-        // {
-        //     foreach (var m in model) m.OutsourceOrderId = outsourceOrderId;
-        //     return model.AsQueryable().Where(x => x.OutsourceOrderExcessId <= 0)
-        //         .ProjectTo<OutsourceOrderExcess>(_mapper.ConfigurationProvider).ToList();
-        // }
+        private ICollection<OutsourceOrderExcess> GetNewOutsourceOrderExcesses(long outsourceOrderId, IList<OutsourceOrderExcessModel> model)
+        {
+            foreach (var m in model) m.OutsourceOrderId = outsourceOrderId;
+            return model.AsQueryable().Where(x => x.OutsourceOrderExcessId <= 0)
+                .ProjectTo<OutsourceOrderExcess>(_mapper.ConfigurationProvider).ToList();
+        }
 
         private IEnumerable<long> TracedStepStoreMaterials(long? currentStepId, IEnumerable<ProductionStepLinkModel> lsStepLink )
         {
@@ -661,26 +662,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 }
             }
             return productionStepLinks;
-        }
-
-        private async Task CheckMarkInvalidOutsourcePartRequest(long[] outsourcePartrequestDetaildIds)
-        {
-            var lsInValid = (await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
-               .Include(x => x.OutsourcePartRequest)
-               .Where(x => outsourcePartrequestDetaildIds.Contains(x.OutsourcePartRequestDetailId))
-               .ToListAsync())
-               .Select(x => new
-               {
-                   OutsourcePartRequestCode = x.OutsourcePartRequest.OutsourcePartRequestCode,
-                   MarkInvalid = x.OutsourcePartRequest.MarkInvalid
-               })
-               .Where(x => x.MarkInvalid)
-               .Select(x => x.OutsourcePartRequestCode)
-               .Distinct()
-               .ToArray();
-            if (lsInValid.Length > 0)
-                throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"YCGC \"{String.Join(", ", lsInValid)}\" chưa xác thực với QTSX");
-
         }
 
         private async Task<bool> UpdateOutsourcePartRequestStatus(IEnumerable<long> lsOutsourcePartRequestDetailId)

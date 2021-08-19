@@ -8,6 +8,9 @@ namespace VErp.Services.Stock.Model.Product
 {
     public class ProductMaterialsConsumptionInput: ProductMaterialsConsumptionBaseModel
     {
+        public string ProductCode { get; set; }
+        public string productName { get; set; }
+        public string ProductMaterialsConsumptionGroupCode { get; set; }
     }
 
     public class ProductMaterialsConsumptionBaseModel: IMapFrom<ProductMaterialsConsumption>

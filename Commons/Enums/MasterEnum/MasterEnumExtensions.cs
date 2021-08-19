@@ -78,5 +78,21 @@ namespace VErp.Commons.Enums.MasterEnum
             }
             throw new ArgumentException("Not found.", nameof(description));
         }
+
+        public static string[] GetRangeValue(this Enum value)
+        {
+            try
+            {
+                FieldInfo fi = value.GetType().GetField(value.ToString());
+                if (fi == null)
+                    return new string[] { };
+                var attributes = (RangeValueAttribute[])fi.GetCustomAttributes(typeof(RangeValueAttribute), false);
+                return (attributes.Length > 0) ? attributes[0].RangeValue : new string[] { };
+            }
+            catch (Exception)
+            {
+                return new string[] { };
+            }
+        }
     }
 }

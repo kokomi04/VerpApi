@@ -19,5 +19,13 @@ namespace VErp.Infrastructure.AppSettings
                 return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             }
         }
+
+        public static bool IsProduction
+        {
+            get
+            {
+                return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production";
+            }
+        }
     }
 }

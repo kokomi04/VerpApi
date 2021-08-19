@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.MasterDB;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 
 namespace VErp.Services.Master.Model.Category
 {
    
-    public class CategoryImportExelMapping
+    public class CategoryImportExcelMapping
     {
         public string SheetName { get; set; }
         public int FromRow { get; set; }
         public int ToRow { get; set; }
+        public EnumImportDuplicateOption? ImportDuplicateOptionId { get; set; }
         public IList<CategoryImportExcelMappingField> MappingFields { get; set; }
     }
 
