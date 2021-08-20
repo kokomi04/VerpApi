@@ -242,7 +242,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                             DayOfWeek = (int)day,
                             IsDayOff = newWorkingWeek.IsDayOff
                         };
-                        _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
+                        _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
                     }
                     else if (currentWorkingWeek.IsDayOff != newWorkingWeek.IsDayOff)
                     {
@@ -254,7 +254,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                                 DayOfWeek = (int)day,
                                 IsDayOff = newWorkingWeek.IsDayOff
                             };
-                            _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
+                            _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
                         }
                         else
                         {

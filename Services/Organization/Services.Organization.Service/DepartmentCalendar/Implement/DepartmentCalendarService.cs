@@ -349,7 +349,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             DayOfWeek = (int)day,
                             IsDayOff = newWorkingWeek.IsDayOff
                         };
-                        _organizationContext.DepartmentWorkingHourInfo.Add(currentWorkingHourInfo);
+                        _organizationContext.DepartmentWorkingWeekInfo.Add(currentWorkingWeek);
                     }
                     else if (currentWorkingWeek.IsDayOff != newWorkingWeek.IsDayOff)
                     {
@@ -362,7 +362,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                 DayOfWeek = (int)day,
                                 IsDayOff = newWorkingWeek.IsDayOff
                             };
-                            _organizationContext.DepartmentWorkingHourInfo.Add(currentWorkingHourInfo);
+                            _organizationContext.DepartmentWorkingWeekInfo.Add(currentWorkingWeek);
                         }
                         else
                         {
