@@ -137,9 +137,9 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 .Where(dof => dof.Day >= start && dof.Day <= end && dof.DepartmentId == departmentId)
                 .ToListAsync();
 
-
+            var lstDay = departmentDayOffCalendar.Select(dof => dof.Day).ToList();
             var dayOffCalendar = await _organizationContext.DayOffCalendar
-                .Where(dof => dof.Day >= start && dof.Day <= end && !departmentDayOffCalendar.Any(d => d.Day == dof.Day))
+                .Where(dof => dof.Day >= start && dof.Day <= end && !lstDay.Contains(dof.Day))
                 .Select(dof => new DepartmentDayOffCalendar
                 {
                     DepartmentId = departmentId,
