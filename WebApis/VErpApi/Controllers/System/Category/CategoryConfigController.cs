@@ -119,6 +119,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpGet]
         [Route("categoryfieldsByCode")]
+        [GlobalApi]
         public async Task<PageData<CategoryFieldModel>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFieldsByCode(categoryCode, keyword, page, size);
