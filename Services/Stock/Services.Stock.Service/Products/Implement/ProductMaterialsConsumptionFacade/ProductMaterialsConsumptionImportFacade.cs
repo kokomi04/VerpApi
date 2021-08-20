@@ -751,16 +751,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     ProductMaterialsConsumptionGroupCode = t.Value.NormalizeAsInternalName()
                 }).ToList();
 
-            if (!IsPreview)
-            {
-                await _stockDbContext.ProductMaterialsConsumptionGroup.AddRangeAsync(newGroups);
-                await _stockDbContext.SaveChangesAsync();
-            }
+            if (newGroups.Count > 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tồn tại nhóm NVL tiêu hao: \"{string.Join(", ", newGroups.Select(x => x.Title))}\" trên hệ thống.");
+            // if (!IsPreview)
+            // {
+            //     await _stockDbContext.ProductMaterialsConsumptionGroup.AddRangeAsync(newGroups);
+            //     await _stockDbContext.SaveChangesAsync();
+            // }
 
-            foreach (var t in newGroups)
-            {
-                _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
-            }
+            // foreach (var t in newGroups)
+            // {
+            //     _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
+            // }
         }
 
         private StepSimpleInfo GetStep(string StepName)
