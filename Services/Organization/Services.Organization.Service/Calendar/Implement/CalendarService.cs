@@ -29,12 +29,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
-
+        private readonly ICurrentContextService _currentContext;
         public CalendarService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<CalendarService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , ICurrentContextService currentContext
             )
         {
             _organizationContext = organizationContext;
@@ -42,6 +43,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _currentContext = currentContext;
         }
 
 
@@ -110,11 +112,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 .Where(ww => ww.StartDate > start && ww.StartDate <= end)
                 .ToListAsync();
             var lstDayOff = new List<DayOffCalendarModel>();
+
             for (var day = start; day <= end; day = day.AddDays(1))
             {
+                var clientDay = day.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault());
                 if (dayOffCalendar.Any(dof => dof.Day == day)) continue;
                 var workingWeek = changeWorkingWeeks.Where(w => w.DayOfWeek == (int)day.DayOfWeek && w.StartDate <= day).OrderByDescending(w => w.StartDate).FirstOrDefault();
-                if (workingWeek == null) workingWeek = workingWeeks.Where(w => w.DayOfWeek == (int)day.DayOfWeek).FirstOrDefault();
+                if (workingWeek == null) workingWeek = workingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek).FirstOrDefault();
                 if (workingWeek?.IsDayOff ?? false)
                 {
                     lstDayOff.Add(new DayOffCalendarModel

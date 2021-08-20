@@ -29,12 +29,13 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
-
+        private readonly ICurrentContextService _currentContext;
         public DepartmentCalendarService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<DepartmentCalendarService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , ICurrentContextService currentContext
             )
         {
             _organizationContext = organizationContext;
@@ -42,6 +43,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _currentContext = currentContext;
         }
 
 
@@ -204,9 +206,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             var lstDayOff = new List<DepartmentDayOffCalendarModel>();
             for (var day = start; day <= end; day = day.AddDays(1))
             {
+                var clientDay = day.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault());
                 if (departmentDayOffCalendar.Any(dof => dof.Day == day)) continue;
                 var workingWeek = departmentChangeWorkingWeeks.Where(w => w.DayOfWeek == (int)day.DayOfWeek && w.StartDate <= day).OrderByDescending(w => w.StartDate).FirstOrDefault();
-                if (workingWeek == null) workingWeek = departmentWorkingWeeks.Where(w => w.DayOfWeek == (int)day.DayOfWeek).FirstOrDefault();
+                if (workingWeek == null) workingWeek = departmentWorkingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek).FirstOrDefault();
                 if (workingWeek?.IsDayOff ?? false)
                 {
                     lstDayOff.Add(new DepartmentDayOffCalendarModel
