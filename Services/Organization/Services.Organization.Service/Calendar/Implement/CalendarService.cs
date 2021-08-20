@@ -107,6 +107,19 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
                .ToListAsync();
 
+            foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+            {
+                if (!workingWeeks.Any(d => d.DayOfWeek == (int)day))
+                {
+                    workingWeeks.Add(new WorkingWeekInfo
+                    {
+                        DayOfWeek = (int)day,
+                        IsDayOff = false,
+                        StartDate = start
+                    });
+                }
+            }
+
             // Lấy thông tin thay đổi trong khoảng thời gian
             var changeWorkingWeeks = await _organizationContext.WorkingWeekInfo
                 .Where(ww => ww.StartDate > start && ww.StartDate <= end)
@@ -172,6 +185,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 .FirstOrDefaultAsync(dof => dof.Day == day.UnixToDateTime());
                 if (dayOff == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Ngày nghỉ không tồn tại");
                 _organizationContext.DayOffCalendar.Remove(dayOff);
+                _organizationContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.DayOffCalendar, day, $"Xóa ngày nghỉ {day.UnixToDateTime()}", dayOff.JsonSerialize());
                 return true;
             }
@@ -198,7 +212,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 {
                     currentWorkingHourInfo = new WorkingHourInfo
                     {
-                        StartDate = now,
+                        StartDate = DateTime.MinValue,
                         WorkingHourPerDay = data.WorkingHourPerDay
                     };
                     _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
@@ -242,7 +256,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     {
                         currentWorkingWeek = new WorkingWeekInfo
                         {
-                            StartDate = now,
+                            StartDate = DateTime.MinValue,
                             DayOfWeek = (int)day,
                             IsDayOff = newWorkingWeek.IsDayOff
                         };

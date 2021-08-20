@@ -183,6 +183,21 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                     .ToListAsync();
             }
 
+            foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+            {
+                if (!departmentWorkingWeeks.Any(d => d.DayOfWeek == (int)day))
+                {
+                    departmentWorkingWeeks.Add(new DepartmentWorkingWeekInfo
+                    {
+                        DepartmentId = departmentId,
+                        DayOfWeek = (int)day,
+                        IsDayOff = false,
+                        StartDate = start,
+                        SubsidiaryId = _currentContext.SubsidiaryId
+                    });
+                }
+            }
+
             // Lấy thông tin thay đổi trong khoảng thời gian
             var departmentChangeWorkingWeeks = await _organizationContext.DepartmentWorkingWeekInfo
                 .Where(ww => ww.StartDate > start && ww.StartDate <= end && ww.DepartmentId == departmentId)
@@ -271,6 +286,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 if (dayOff == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Ngày nghỉ không tồn tại hoặc là ngày nghỉ chung của công ty");
 
                 _organizationContext.DepartmentDayOffCalendar.Remove(dayOff);
+                _organizationContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.DepartmentDayOffCalendar, day, $"Xóa ngày nghỉ {day.UnixToDateTime()} cho bộ phận {department.DepartmentName}", dayOff.JsonSerialize());
                 return true;
             }
@@ -302,7 +318,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                     currentWorkingHourInfo = new DepartmentWorkingHourInfo
                     {
                         DepartmentId = departmentId,
-                        StartDate = now,
+                        StartDate = DateTime.MinValue,
                         WorkingHourPerDay = data.WorkingHourPerDay
                     };
                     _organizationContext.DepartmentWorkingHourInfo.Add(currentWorkingHourInfo);
@@ -348,7 +364,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                         currentWorkingWeek = new DepartmentWorkingWeekInfo
                         {
                             DepartmentId = departmentId,
-                            StartDate = now,
+                            StartDate = DateTime.MinValue,
                             DayOfWeek = (int)day,
                             IsDayOff = newWorkingWeek.IsDayOff
                         };
@@ -464,6 +480,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 if (overHour == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin tăng ca không tồn tại");
 
                 _organizationContext.DepartmentOverHourInfo.Remove(overHour);
+                _organizationContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.DepartmentOverHour, departmentOverHourInfoId, $"Xóa thông tin tăng ca cho bộ phận {department.DepartmentName}", overHour.JsonSerialize());
                 return true;
             }
