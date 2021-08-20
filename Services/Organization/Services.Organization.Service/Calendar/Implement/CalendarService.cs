@@ -240,7 +240,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                         {
                             StartDate = now,
                             DayOfWeek = (int)day,
-                            IsDayOff = currentWorkingWeek.IsDayOff
+                            IsDayOff = newWorkingWeek.IsDayOff
                         };
                         _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
                     }
@@ -252,7 +252,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                             {
                                 StartDate = now,
                                 DayOfWeek = (int)day,
-                                IsDayOff = currentWorkingWeek.IsDayOff
+                                IsDayOff = newWorkingWeek.IsDayOff
                             };
                             _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
                         }
