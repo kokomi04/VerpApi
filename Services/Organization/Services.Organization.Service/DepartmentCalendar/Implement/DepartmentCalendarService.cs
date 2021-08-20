@@ -347,7 +347,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             DepartmentId = departmentId,
                             StartDate = now,
                             DayOfWeek = (int)day,
-                            IsDayOff = currentWorkingWeek.IsDayOff
+                            IsDayOff = newWorkingWeek.IsDayOff
                         };
                         _organizationContext.DepartmentWorkingHourInfo.Add(currentWorkingHourInfo);
                     }
@@ -360,7 +360,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                 DepartmentId = departmentId,
                                 StartDate = now,
                                 DayOfWeek = (int)day,
-                                IsDayOff = currentWorkingWeek.IsDayOff
+                                IsDayOff = newWorkingWeek.IsDayOff
                             };
                             _organizationContext.DepartmentWorkingHourInfo.Add(currentWorkingHourInfo);
                         }
