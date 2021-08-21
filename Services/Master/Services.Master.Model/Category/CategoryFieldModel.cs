@@ -73,6 +73,7 @@ namespace VErp.Services.Master.Model.Category
     public class CategoryFieldReferModel
     {
         public string CategoryCode { get; set; }
+        public string CategoryTitle { get; set; }
         public string CategoryFieldName { get; set; }
         public string Title { get; set; }
     }
