@@ -25,6 +25,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? FromPackageId { set; get; }
 
         public long? ToPackageId { set; get; }
+        public string ToPackageCode { get; set; }
         public string FromPackageCode { get; set; }
         public int? PackageOptionId { set; get; }
 

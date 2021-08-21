@@ -27,14 +27,23 @@ namespace VErpApi.Controllers.Stock.Inventory
     public class InventoryController : VErpBaseController
     {
         private readonly IInventoryService _inventoryService;
+        private readonly IInventoryBillInputService _inventoryBillInputService;
+        private readonly IInventoryBillOutputService _inventoryBillOutputService;
         private readonly IFileService _fileService;
         private readonly IFileProcessDataService _fileProcessDataService;
 
-        public InventoryController(IInventoryService iventoryService, IFileService fileService, IFileProcessDataService fileProcessDataService)
+        public InventoryController(
+            IInventoryService iventoryService, 
+            IInventoryBillInputService inventoryBillInputService, 
+            IInventoryBillOutputService inventoryBillOutputService,
+            IFileService fileService, 
+            IFileProcessDataService fileProcessDataService)
         {
             _inventoryService = iventoryService;
             _fileService = fileService;
             _fileProcessDataService = fileProcessDataService;
+            _inventoryBillInputService = inventoryBillInputService;
+            _inventoryBillOutputService = inventoryBillOutputService;
         }
 
 
@@ -99,7 +108,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("AddInventoryInput")]
         public async Task<long> AddInventoryInput([FromBody] InventoryInModel req)
         {
-            return await _inventoryService.AddInventoryInput(req);
+            return await _inventoryBillInputService.AddInventoryInput(req);
 
         }
 
@@ -112,7 +121,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("AddInventoryOutput")]
         public async Task<long> AddInventoryOutput([FromBody] InventoryOutModel req)
         {
-            return await _inventoryService.AddInventoryOutput(req);
+            return await _inventoryBillOutputService.AddInventoryOutput(req);
 
         }
 
@@ -127,7 +136,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("UpdateInventoryInput/{inventoryId}")]
         public async Task<bool> UpdateInventoryInput([FromRoute] long inventoryId, [FromBody] InventoryInModel req)
         {
-            return await _inventoryService.UpdateInventoryInput(inventoryId, req);
+            return await _inventoryBillInputService.UpdateInventoryInput(inventoryId, req);
         }
 
 
@@ -141,7 +150,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("UpdateInventoryOutput/{inventoryId}")]
         public async Task<bool> UpdateInventoryOutput([FromRoute] long inventoryId, [FromBody] InventoryOutModel req)
         {
-            return await _inventoryService.UpdateInventoryOutput(inventoryId, req);
+            return await _inventoryBillOutputService.UpdateInventoryOutput(inventoryId, req);
         }
 
         /// <summary>
@@ -157,10 +166,10 @@ namespace VErpApi.Controllers.Stock.Inventory
             switch (type)
             {
                 case EnumInventoryType.Input:
-                    return await _inventoryService.DeleteInventoryInput(inventoryId);
+                    return await _inventoryBillInputService.DeleteInventoryInput(inventoryId);
 
                 case EnumInventoryType.Output:
-                    return await _inventoryService.DeleteInventoryOutput(inventoryId);
+                    return await _inventoryBillOutputService.DeleteInventoryOutput(inventoryId);
                 default:
                     throw new BadRequestException(GeneralCode.InvalidParams);
             }
@@ -176,7 +185,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApproveInventoryInput([FromRoute] long inventoryId)
         {
-            return await _inventoryService.ApproveInventoryInput(inventoryId);
+            return await _inventoryBillInputService.ApproveInventoryInput(inventoryId);
         }
 
 
@@ -190,7 +199,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApproveInventoryOutput([FromRoute] long inventoryId)
         {
-            return await _inventoryService.ApproveInventoryOutput(inventoryId);
+            return await _inventoryBillOutputService.ApproveInventoryOutput(inventoryId);
         }
 
         /// <summary>
@@ -218,7 +227,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("GetProductListForImport")]
         public async Task<PageData<ProductListOutput>> GetProductListForImport([FromQuery] string keyword, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetProductListForImport(keyword: keyword, stockIdList: stockIdList, page: page, size: size);
+            return await _inventoryBillInputService.GetProductListForImport(keyword: keyword, stockIdList: stockIdList, page: page, size: size);
         }
 
 
@@ -234,7 +243,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("GetProductListForExport")]
         public async Task<PageData<ProductListOutput>> GetProductListForExport([FromQuery] string keyword, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetProductListForExport(keyword: keyword, stockIdList: stockIdList, page: page, size: size);
+            return await _inventoryBillOutputService.GetProductListForExport(keyword: keyword, stockIdList: stockIdList, page: page, size: size);
         }
 
         /// <summary>
@@ -249,7 +258,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("GetPackageListForExport")]
         public async Task<PageData<PackageOutputModel>> GetPackageListForExport([FromQuery] int productId, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
+            return await _inventoryBillOutputService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
         }
 
       
@@ -284,7 +293,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("{inventoryId}/InputGetAffectedPackages")]
         public async Task<IList<CensoredInventoryInputProducts>> InputGetAffectedPackages([FromRoute] int inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] InventoryInModel req)
         {
-            return await _inventoryService.InputUpdateGetAffectedPackages(inventoryId, fromDate, toDate, req);
+            return await _inventoryBillInputService.InputUpdateGetAffectedPackages(inventoryId, fromDate, toDate, req);
         }
 
         [HttpPut]
@@ -292,7 +301,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [VErpAction(EnumActionType.Censor)]
         public async Task<bool> ApprovedInputDataUpdate([FromRoute] long inventoryId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] ApprovedInputDataSubmitModel req)
         {
-            return await _inventoryService.ApprovedInputDataUpdate(inventoryId, fromDate, toDate, req);
+            return await _inventoryBillInputService.ApprovedInputDataUpdate(inventoryId, fromDate, toDate, req);
         }
 
         [HttpGet]
