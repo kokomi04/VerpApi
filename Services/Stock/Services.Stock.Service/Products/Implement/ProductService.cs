@@ -782,6 +782,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.Height,
                   p.Long,
                   p.Width,
+                  p.CreatedDatetimeUtc,
                   //p.CustomerId,
 
                   p.PackingMethod,
@@ -829,7 +830,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
 
             var total = await query.CountAsync();
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstData = await query.OrderByDescending(p=>p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var unitIds = lstData.Select(p => p.UnitId).ToList();
             var unitInfos = await _unitService.GetListByIds(unitIds);

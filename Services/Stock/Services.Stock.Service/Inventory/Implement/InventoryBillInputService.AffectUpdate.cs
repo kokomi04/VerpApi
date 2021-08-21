@@ -17,7 +17,7 @@ using VErp.Services.Stock.Model.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public partial class InventoryService
+    public partial class InventoryBillInputService
     {
         public async Task<IList<CensoredInventoryInputProducts>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req)
         {

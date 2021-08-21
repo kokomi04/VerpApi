@@ -366,7 +366,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<PackageOutputModel>> GetList(int stockId = 0, string keyword = "", int page = 1, int size = 10)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from p in _stockDbContext.Package
                         join l in _stockDbContext.Location on p.LocationId equals l.LocationId into pl
                         from lo in pl.DefaultIfEmpty()
@@ -452,6 +452,147 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             pageAge.PackageCode = code;
             return ctx;
         }
+
+
+
+        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
+        {
+            var packpages = _stockDbContext.Package.AsQueryable();
+            if (packageIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => packageIds.Contains(p.PackageId));
+            }
+
+            if (productIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => productIds.Contains(p.ProductId));
+            }
+
+            if (stockIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => stockIds.Contains(p.StockId));
+            }
+
+            if (productUnitConversionIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => productUnitConversionIds.Contains(p.ProductUnitConversionId));
+            }
+
+            var query = from pk in packpages
+                        join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
+                        from l in ls.DefaultIfEmpty()
+                        join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
+                        join s in _stockDbContext.ProductExtraInfo on p.ProductId equals s.ProductId
+                        join pu in _stockDbContext.ProductUnitConversion on pk.ProductUnitConversionId equals pu.ProductUnitConversionId
+                        where //stockIds.Contains(pk.StockId) &&
+                        pk.PrimaryQuantityRemaining > 0
+                        select new
+                        {
+                            ProductId = p.ProductId,
+                            ProductCode = p.ProductCode,
+                            ProductName = p.ProductName,
+                            Specification = s.Specification,
+                            MainImageFileId = p.MainImageFileId,
+                            UnitId = p.UnitId,
+                            PackageId = pk.PackageId,
+
+                            PackageTypeId = pk.PackageTypeId,
+
+                            PackageCode = pk.PackageCode,
+                            PackageDescription = pk.Description,
+
+                            LocationId = pk.LocationId,
+                            LocationName = l == null ? null : l.Name,
+
+                            StockId = pk.StockId,
+
+                            Date = pk.Date,
+                            ExpiryTime = pk.ExpiryTime,
+
+                            ProductUnitConversionIsDefault = pu.IsDefault,
+
+                            ProductUnitConversionId = pu.ProductUnitConversionId,
+                            ProductUnitConversionname = pu.ProductUnitConversionName,
+
+                            PrimaryQuantityWaiting = pk.PrimaryQuantityWaiting,
+                            PrimaryQuantityRemaining = pk.PrimaryQuantityRemaining,
+
+                            ProductUnitConversionWaitting = pk.ProductUnitConversionWaitting,
+                            ProductUnitConversionRemaining = pk.ProductUnitConversionRemaining,
+
+                            POCode = pk.Pocode,
+                            pk.OrderCode,
+                            ProductionOrderCode = pk.ProductionOrderCode,
+                        };
+            if (isTwoUnit.HasValue)
+            {
+                query = query.Where(p => p.ProductUnitConversionIsDefault == !isTwoUnit.Value);
+            }
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(p => p.PackageCode.Contains(keyword)
+                 || p.ProductCode.Contains(keyword)
+                 || p.ProductName.Contains(keyword)
+                 || p.POCode.Contains(keyword)
+                 || p.ProductionOrderCode.Contains(keyword)
+                 || p.LocationName.Contains(keyword)
+                );
+            }
+            var total = await query.CountAsync();
+
+            var packageData = size > 0 ? await query.OrderByDescending(p => p.ProductUnitConversionRemaining).AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync() : await query.AsNoTracking().ToListAsync();
+
+
+            var packageList = new List<ProductPackageOutputModel>(total);
+            var dataProductIds = packageData.Select(d => d.ProductId).ToList();
+            var pusDefaults = await _stockDbContext.ProductUnitConversion.Where(p => dataProductIds.Contains(p.ProductId) && p.IsDefault).ToListAsync();
+            foreach (var item in packageData)
+            {
+                packageList.Add(new ProductPackageOutputModel()
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    Specification = item.Specification,
+                    MainImageFileId = item.MainImageFileId,
+                    UnitId = item.UnitId,
+                    UnitName = pusDefaults.FirstOrDefault(d => d.ProductId == item.ProductId)?.ProductUnitConversionName,
+
+                    PackageId = item.PackageId,
+
+                    PackageTypeId = item.PackageTypeId,
+
+                    PackageCode = item.PackageCode,
+                    PackageDescription = item.PackageDescription,
+
+                    LocationId = item.LocationId,
+                    LocationName = item.LocationName,
+                    StockId = item.StockId,
+
+                    Date = item.Date?.GetUnix(),
+                    ExpiryTime = item.ExpiryTime?.GetUnix(),
+
+                    ProductUnitConversionIsDefault = item.ProductUnitConversionIsDefault,
+
+                    ProductUnitConversionId = item.ProductUnitConversionId,
+                    ProductUnitConversionName = item.ProductUnitConversionname,
+
+                    PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
+                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
+
+                    ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
+                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
+
+                    POCode = item.POCode,
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode
+                });
+
+            }
+            return (packageList, total);
+
+        }
+
 
     }
 }
