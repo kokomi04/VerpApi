@@ -83,6 +83,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var group = _stockDbContext.ProductMaterialsConsumptionGroup.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId == groupId);
             if (group == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy vật tư tiêu hao");
+
+            var hasGroupUsed = _stockDbContext.ProductMaterialsConsumption.AsNoTracking().Any(x => x.ProductMaterialsConsumptionGroupId == groupId);
+            if (hasGroupUsed)
+                throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa nhóm do đã được sử dụng ");
+            
             group.IsDeleted = true;
             await _stockDbContext.SaveChangesAsync();
             return true;

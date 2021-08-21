@@ -236,7 +236,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         private async Task<int> RoleModulePermission(RoleInfo role, int moduleId)
         {
-            return await TryGetSet(RoleModulePermissionCacheKey(role.RoleId), async () =>
+            return await TryGetSet(RoleModulePermissionCacheKey(role.RoleId, moduleId), async () =>
             {
                 var roleIds = GetInheritRoleIds(role);
                 var lstPermissions = await _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ModuleId == moduleId).Select(p => p.Permission).ToListAsync();

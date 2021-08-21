@@ -38,9 +38,9 @@ namespace VErp.Commons.Constants.Caching
             return $"AUTH_ACTION_BUTTONS";
         }
 
-        public static string RoleModulePermissionCacheKey(int roleId)
+        public static string RoleModulePermissionCacheKey(int roleId, int moduleId)
         {
-            return $"AUTH_ROLE_MODULE_PERMISSION_{roleId}";
+            return $"AUTH_ROLE_MODULE_PERMISSION_{roleId}_{moduleId}";
         }
 
         public static string RoleObjectPermissionCacheKey(int roleId, EnumObjectType objectTypeId, long objectId)
