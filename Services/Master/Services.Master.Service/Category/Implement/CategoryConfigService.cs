@@ -882,6 +882,12 @@ namespace VErp.Services.Master.Service.Category
                 result.Fields.Add(fileData);
             }
 
+            result.Fields.Add(new CategoryFieldNameModel
+            {
+                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
+                FieldTitle = "Cột kiểm tra",
+            });
+
             return result;
         }
 

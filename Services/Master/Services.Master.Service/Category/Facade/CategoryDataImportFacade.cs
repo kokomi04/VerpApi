@@ -171,9 +171,16 @@ namespace VErp.Services.Master.Service.Category
                     row.TryGetValue(mf.Column, out var value);
 
                     if (string.IsNullOrWhiteSpace(value) && mf.IsRequire)
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {i + mapping.FromRow} cột {mf.Column}, giá trị của trường \"{mf.Title}\" không được để trống");
+                    {
+                        categoryDataRow = new Dictionary<string, string>();
+                        break;
+                    }
 
-                    if (string.IsNullOrEmpty(value)) continue;
+                    if (string.IsNullOrWhiteSpace(value) && _uniqueFields.Any(x=>x.CategoryFieldName == mf.FieldName))
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu không được để trống, dòng {i + mapping.FromRow} cột {mf.Column}, trường \"{mf.Title}\" là trường dữ liệu bắt buộc trong danh mục {_category.Title}");
+
+                    if (string.IsNullOrWhiteSpace(value) || mf.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty)
+                        continue;
 
                     if (!string.IsNullOrWhiteSpace(mf.RefFieldName))
                     {
@@ -229,7 +236,8 @@ namespace VErp.Services.Master.Service.Category
                     categoryDataRow.Add(mf.FieldName, value);
                 }
 
-                _CategoryDataRows.Add(categoryDataRow);
+                if (categoryDataRow.Count > 0)
+                    _CategoryDataRows.Add(categoryDataRow);
 
             }
         }
@@ -374,12 +382,12 @@ namespace VErp.Services.Master.Service.Category
         private void ValidateCategoryFieldRequirement(CategoryImportExcelMapping mapping)
         {
             _uniqueFields = _categoryFields.Where(x => x.IsUnique).ToArray();
-            var requiredFields = _categoryFields.Where(x => x.IsRequired || x.IsUnique).ToList();
+            // var requiredFields = _categoryFields.Where(x => x.IsRequired || x.IsUnique).ToList();
 
             var mappingFields = _categoryFields.Where(x => mapping.MappingFields.Any(y => y.FieldName == x.CategoryFieldName)).ToList();
 
-            if (mappingFields.Where(x => x.IsRequired || x.IsUnique).Count() != requiredFields.Count)
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Thiếu dữ liệu của các trường bắt buộc: {string.Join(", ", requiredFields.Select(x => x.Title))} trong file excel");
+            if (mappingFields.Where(x => x.IsUnique).Count() != _uniqueFields.Length)
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Chưa cấu hình trường bắt buộc: {string.Join(", ", _uniqueFields.Select(x => x.Title))} ");
         }
 
         private async Task ReadExcelData(CategoryImportExcelMapping mapping, Stream stream)
