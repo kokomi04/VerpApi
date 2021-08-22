@@ -822,6 +822,10 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Status).HasDefaultValueSql("((0))");
 
+                entity.Property(e => e.StockCode)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
                 entity.Property(e => e.StockKeeperName).HasMaxLength(64);
 
                 entity.Property(e => e.StockName)

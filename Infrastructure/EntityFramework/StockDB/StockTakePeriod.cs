@@ -26,6 +26,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDifference { get; set; }
         public bool IsProcessed { get; set; }
         public DateTime? FinishDate { get; set; }
+        public DateTime? FinishAcDate { get; set; }
 
         public virtual StockTakeAcceptanceCertificate StockTakeAcceptanceCertificate { get; set; }
         public virtual ICollection<StockTake> StockTake { get; set; }

@@ -10,6 +10,8 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar
     public interface IDepartmentCalendarService
     {
         Task<DepartmentWeekCalendarModel> GetCurrentDepartmentCalendar(int departmentId);
+        Task<IList<DepartmentCalendarListModel>> GetListDepartmentCalendar(int[] departmentIds, long startDate, long endDate);
+
         Task<DepartmentWeekCalendarModel> UpdateDepartmentWeekCalendar(int departmentId, DepartmentWeekCalendarModel data);
 
         Task<IList<DepartmentDayOffCalendarModel>> GetDepartmentDayOffCalendar(int departmentId, long startDate, long endDate);

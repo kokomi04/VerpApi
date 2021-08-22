@@ -85,6 +85,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
         }
         public async Task<StockTakePeriotModel> CreateStockTakePeriod(StockTakePeriotModel model)
         {
+            var stock = _stockContext.Stock.FirstOrDefault(s => s.StockId == model.StockId);
+            if(stock == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Kho kiểm không tồn tại");
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(0));
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
@@ -92,7 +94,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 CustomGenCodeOutputModel currentConfig = null;
                 if (string.IsNullOrEmpty(model.StockTakePeriodCode))
                 {
-                    currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.StockTakePeriod, EnumObjectType.StockTakePeriod, 0, null, model.StockTakePeriodCode, null);
+                    currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.StockTakePeriod, EnumObjectType.StockTakePeriod, 0, null, stock.StockCode, null);
                     if (currentConfig == null)
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
@@ -102,7 +104,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     {
                         if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, model.StockTakePeriodCode, null);
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, stock.StockCode, null);
                         if (generated == null)
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
@@ -121,6 +123,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 var stockTakePeriod = _mapper.Map<StockTakePeriod>(model);
 
                 stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.Waiting;
+                stockTakePeriod.FinishAcDate = null;
+                stockTakePeriod.FinishDate = null;
                 _stockContext.StockTakePeriod.Add(stockTakePeriod);
                 await _stockContext.SaveChangesAsync();
 
@@ -258,6 +262,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 if (_stockContext.StockTakePeriod.Any(stp => stp.StockTakePeriodCode == model.StockTakePeriodCode && stp.StockTakePeriodId != stockTakePeriodId))
                     throw new BadRequestException(GeneralCode.ItemCodeExisted);
 
+                var stockTakeRepresentative = _stockContext.StockTakeRepresentative.Where(r => r.StockTakePeriodId == stockTakePeriodId).ToList();
+                _stockContext.StockTakeRepresentative.RemoveRange(stockTakeRepresentative);
+
                 _mapper.Map(model, stockTakePeriod);
                 await _stockContext.SaveChangesAsync();
 
@@ -320,7 +327,10 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             var stockTakeAcceptanceCertificate = await _stockContext.StockTakeAcceptanceCertificate
                 .FirstOrDefaultAsync(ac => ac.StockTakePeriodId == stockTakePeriodId);
 
-            if(_stockContext.StockTake.Any(st => st.StockTakePeriodId == stockTakePeriodId && (st.AccountancyStatus != (int)EnumStockTakeStatus.Finish || st.StockStatus != (int)EnumStockTakeStatus.Finish)))
+            if(!_stockContext.StockTake.Any(st => st.StockTakePeriodId == stockTakePeriodId))
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tồn tại phiếu kiểm kê nào");
+
+            if (_stockContext.StockTake.Any(st => st.StockTakePeriodId == stockTakePeriodId && (st.AccountancyStatus != (int)EnumStockTakeStatus.Finish || st.StockStatus != (int)EnumStockTakeStatus.Finish)))
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Tồn tại phiếu kiểm kê chưa hoàn thành");
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(0));
@@ -360,6 +370,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                             throw new BadRequestException(GeneralCode.ItemCodeExisted);
                     }
                     stockTakeAcceptanceCertificate = _mapper.Map<StockTakeAcceptanceCertificate>(model);
+                    stockTakeAcceptanceCertificate.StockTakeAcceptanceCertificateStatus = (int)EnumStockTakeAcceptanceCertificateStatus.Waiting;
                     _stockContext.StockTakeAcceptanceCertificate.Add(stockTakeAcceptanceCertificate);
                 }
                 else
@@ -368,8 +379,12 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     if (_stockContext.StockTakeAcceptanceCertificate.Any(stp => stp.StockTakeAcceptanceCertificateCode == model.StockTakeAcceptanceCertificateCode && stp.StockTakePeriodId != stockTakePeriodId))
                         throw new BadRequestException(GeneralCode.ItemCodeExisted);
                     _mapper.Map(model, stockTakeAcceptanceCertificate);
+                    stockTakeAcceptanceCertificate.StockTakeAcceptanceCertificateStatus = (int)EnumStockTakeAcceptanceCertificateStatus.Waiting;
                 }
-                stockTakePeriod.Status = (int)EnumStockTakeAcceptanceCertificateStatus.Waiting;
+                // Cập nhật trạng thái kỳ
+                stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.Finish;
+                stockTakePeriod.FinishDate = _stockContext.StockTake.Max(st => st.StockTakeDate);
+                stockTakePeriod.FinishAcDate = null;
                 await _stockContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.StockTakePeriod, stockTakePeriod.StockTakePeriodId, $"Update phiếu xử lý chênh lệch cho kỳ kiểm kê {stockTakePeriod.StockTakePeriodCode}", model.JsonSerialize());
@@ -401,6 +416,14 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             try
             {
                 acceptanceCertificate.StockTakeAcceptanceCertificateStatus = (int)status.StockTakeAcceptanceCertificateStatus;
+
+                if(status.StockTakeAcceptanceCertificateStatus == EnumStockTakeAcceptanceCertificateStatus.Accepted)
+                {
+                    // Cập nhật trạng thái kỳ
+                    stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.FinishAC;
+                    stockTakePeriod.FinishAcDate = acceptanceCertificate.StockTakeAcceptanceCertificateDate;
+                }
+
                 await _stockContext.SaveChangesAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.StockTakeAcceptanceCertificate, stockTakePeriodId, $"Xác nhận phiếu xử lý {acceptanceCertificate.StockTakeAcceptanceCertificateCode}", status.ToString());
@@ -420,12 +443,18 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
+                var stockTakePeriod = _stockContext.StockTakePeriod.FirstOrDefault(stp => stp.StockTakePeriodId == stockTakePeriodId);
+                if (stockTakePeriod == null) throw new BadRequestException(GeneralCode.ItemNotFound);
                 var acceptanceCertificate = _stockContext.StockTakeAcceptanceCertificate
                     .Where(p => p.StockTakePeriodId == stockTakePeriodId)
                     .FirstOrDefault();
 
                 if (acceptanceCertificate == null) throw new BadRequestException(GeneralCode.ItemNotFound);
                 _stockContext.StockTakeAcceptanceCertificate.Remove(acceptanceCertificate);
+
+                stockTakePeriod.Status = (int)EnumStockTakePeriodStatus.Processing;
+                stockTakePeriod.FinishAcDate = null;
+                stockTakePeriod.FinishDate = null;
 
                 await _stockContext.SaveChangesAsync();
                 trans.Commit();
