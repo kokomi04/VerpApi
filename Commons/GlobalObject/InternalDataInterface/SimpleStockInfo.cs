@@ -15,5 +15,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         /// Tên kho
         /// </summary>
         public string StockName { get; set; }
+        public string StockCode { get; set; }
     }
 }

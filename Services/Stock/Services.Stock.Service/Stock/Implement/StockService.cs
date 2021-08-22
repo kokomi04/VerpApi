@@ -53,6 +53,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (_stockContext.Stock.Any(q => q.StockName.ToLower() == req.StockName.ToLower()))
                 throw new BadRequestException(StockErrorCode.StockNameAlreadyExisted);
 
+            // Validate unique
+            if (_stockContext.Stock.Any(st => st.StockCode == req.StockCode))
+                throw new BadRequestException(StockErrorCode.StockCodeAlreadyExisted);
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 try
@@ -61,6 +65,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         //StockId = req.StockId,
                         StockName = req.StockName,
+                        StockCode = req.StockCode,
                         Description = req.Description,
                         StockKeeperId = req.StockKeeperId,
                         StockKeeperName = req.StockKeeperName,
@@ -103,6 +108,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 StockId = stockInfo.StockId,
                 StockName = stockInfo.StockName,
+                StockCode = stockInfo.StockCode,
                 Description = stockInfo.Description,
                 StockKeeperId = stockInfo.StockKeeperId,
                 StockKeeperName = stockInfo.StockKeeperName,
@@ -117,6 +123,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var checkExistsName = await _stockContext.Stock.AnyAsync(p => p.StockName == req.StockName && p.StockId != stockId);
             if (checkExistsName)
+            {
+                throw new BadRequestException(StockErrorCode.StockNameAlreadyExisted);
+            }
+
+            var checkExistsCode = await _stockContext.Stock.AnyAsync(p => p.StockCode == req.StockCode && p.StockId != stockId);
+            if (checkExistsCode)
             {
                 throw new BadRequestException(StockErrorCode.StockCodeAlreadyExisted);
             }
@@ -136,6 +148,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     //stockInfo.StockId = req.StockId;
                     stockInfo.StockName = req.StockName;
+                    stockInfo.StockCode = req.StockCode;
                     stockInfo.Description = req.Description;
                     stockInfo.StockKeeperId = req.StockKeeperId;
                     stockInfo.StockKeeperName = req.StockKeeperName;
@@ -194,14 +207,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<StockOutput>> GetAll(string keyword, int page, int size, Clause filters)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from p in _stockContext.Stock
                         select p;
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query
-                        where q.StockName.Contains(keyword)
+                        where q.StockName.Contains(keyword) || q.StockCode.Contains(keyword)
                         select q;
             }
 
@@ -217,6 +230,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     StockId = item.StockId,
                     StockName = item.StockName,
+                    StockCode = item.StockCode,
                     Description = item.Description,
                     StockKeeperId = item.StockKeeperId,
                     StockKeeperName = item.StockKeeperName,
@@ -243,7 +257,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = from q in query
-                        where q.StockName.Contains(keyword)
+                        where q.StockName.Contains(keyword) || q.StockCode.Contains(keyword)
                         select q;
             }
 
@@ -257,6 +271,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     StockId = item.StockId,
                     StockName = item.StockName,
+                    StockCode = item.StockCode,
                     Description = item.Description,
                     StockKeeperId = item.StockKeeperId,
                     StockKeeperName = item.StockKeeperName,
@@ -274,7 +289,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return await _stockContext.Stock.Select(s => new SimpleStockInfo()
             {
                 StockId = s.StockId,
-                StockName = s.StockName
+                StockName = s.StockName,
+                StockCode = s.StockCode
             }).ToListAsync();
         }
 

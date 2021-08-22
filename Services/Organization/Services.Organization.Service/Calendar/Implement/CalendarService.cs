@@ -130,7 +130,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             {
                 var clientDay = day.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault());
                 if (dayOffCalendar.Any(dof => dof.Day == day)) continue;
-                var workingWeek = changeWorkingWeeks.Where(w => w.DayOfWeek == (int)day.DayOfWeek && w.StartDate <= day).OrderByDescending(w => w.StartDate).FirstOrDefault();
+                var workingWeek = changeWorkingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek && w.StartDate <= day).OrderByDescending(w => w.StartDate).FirstOrDefault();
                 if (workingWeek == null) workingWeek = workingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek).FirstOrDefault();
                 if (workingWeek?.IsDayOff ?? false)
                 {
