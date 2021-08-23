@@ -1,4 +1,4 @@
-﻿import axios, {AxiosInstance } from 'axios'
+﻿import axios, { AxiosInstance } from 'axios'
 class ApiServiceCore {
     _axios;
     constructor() {
@@ -29,6 +29,9 @@ class ApiServiceCore {
     }
 
     get(url, params, configs = null) {
+        if (url.indexOf('http') == 0) {
+            return axios.create().get(url, { params: params, ...configs });
+        }
         return this._axios.get(url, { params: params, ...configs });
     }
 

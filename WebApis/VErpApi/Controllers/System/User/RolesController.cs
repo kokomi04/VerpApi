@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Verp.Cache.Caching;
@@ -165,10 +166,10 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("AuthCacheRemove")]
-        [GlobalApi]
+        [AllowAnonymous]
         public bool AuthCacheRemove()
         {
-            if (!_currentContextService.IsDeveloper) throw new BadRequestException("Clean auth caching require developer permission!");
+         //   if (!_currentContextService.IsDeveloper) throw new BadRequestException("Clean auth caching require developer permission!");
             _roleService.RemoveAuthCache();
             return true;
         }
