@@ -33,6 +33,13 @@ namespace VErpApi.Controllers.System
             return await _departmentCalendarService.GetCurrentDepartmentCalendar(departmentId);
         }
 
+        [HttpPost]
+        [Route("multiple")]
+        public async Task<IList<DepartmentCalendarListModel>> GetListDepartmentCalendar([FromQuery] long startDate, [FromQuery] long endDate, [FromBody] int[] departmentIds)
+        {
+            return await _departmentCalendarService.GetListDepartmentCalendar(departmentIds, startDate, endDate);
+        }
+
         [HttpPut]
         [Route("{departmentId}")]
         public async Task<DepartmentWeekCalendarModel> UpdateDepartmentWeekCalendar([FromRoute] int departmentId, [FromBody] DepartmentWeekCalendarModel data)
