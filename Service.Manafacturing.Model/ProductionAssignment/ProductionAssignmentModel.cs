@@ -50,7 +50,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public bool IsChange(ProductionAssignmentEntity entity)
         {
             var isChange = entity.AssignmentQuantity != AssignmentQuantity
-                || entity.Productivity != Productivity
                 || entity.ProductionStepLinkDataId != ProductionStepLinkDataId
                 || entity.StartDate.GetUnix() != StartDate
                 || entity.EndDate.GetUnix() != EndDate
@@ -85,7 +84,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public ProductionAssignmentModel[] ProductionAssignments { get; set; }
         public ProductionStepWorkInfoInputModel ProductionStepWorkInfo { get; set; }
 
-        public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
+        //public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
     }
 
     public class GeneralProductionStepAssignmentModel
@@ -98,6 +97,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class GeneralAssignmentModel
     {
         public GeneralProductionStepAssignmentModel[] ProductionStepAssignment { get; set; }
-        public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
+        //public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
     }
 }
