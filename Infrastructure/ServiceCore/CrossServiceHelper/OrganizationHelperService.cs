@@ -9,7 +9,6 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Organization.Model.DepartmentCalendar;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
@@ -21,7 +20,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<BusinessInfoModel> BusinessInfo();
         Task<IList<DepartmentSimpleModel>> GetDepartmentSimples(int[] departmentId);
         Task<IList<DepartmentSimpleModel>> GetAllDepartmentSimples();
-        Task<IList<DepartmentCalendarListModel>> GetListDepartmentCalendar(long startDate, long endDate, int[] departmentIds);
+        Task<IList<DepartmentCalendarSimpleModel>> GetListDepartmentCalendar(long startDate, long endDate, int[] departmentIds);
     }
 
 
@@ -46,9 +45,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         {
             return (await _httpCrossService.Post<PageData<BasicCustomerListModel>>($"api/internal/InternalCustomer", new { }))?.List;
         }
-        public async Task<IList<DepartmentCalendarListModel>> GetListDepartmentCalendar(long startDate, long endDate, int[] departmentIds)
+        public async Task<IList<DepartmentCalendarSimpleModel>> GetListDepartmentCalendar(long startDate, long endDate, int[] departmentIds)
         {
-            return await _httpCrossService.Post<IList<DepartmentCalendarListModel>>($"api/internal/InternalDepartmentCalendar/multiple?startDate={startDate}&endDate={endDate}", departmentIds);
+            return await _httpCrossService.Post<IList<DepartmentCalendarSimpleModel>>($"api/internal/InternalDepartmentCalendar/multiple?startDate={startDate}&endDate={endDate}", departmentIds);
         }
 
         public async Task<BaseCustomerModel> CustomerInfo(int customerId)
