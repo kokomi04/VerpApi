@@ -70,7 +70,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     {
                         mainTable.AutoFitContents();
 
-                        var rows = mainTable.Descendants<TableRow>();
+                        var rows = mainTable.Descendants<TableRow>().ToList();
                         var index = rows.IndexOf(tRowDetect);
 
                         if (rows.Count() > 1)
