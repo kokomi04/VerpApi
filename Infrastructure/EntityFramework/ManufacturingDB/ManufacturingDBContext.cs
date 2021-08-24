@@ -15,7 +15,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
         }
 
-        public virtual DbSet<DepartmentTimeTable> DepartmentTimeTable { get; set; }
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual DbSet<OutsourceOrderExcess> OutsourceOrderExcess { get; set; }
@@ -70,14 +69,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<DepartmentTimeTable>(entity =>
-            {
-                entity.HasKey(e => new { e.DepartmentId, e.WorkDate })
-                    .HasName("PK_ProductionAssignment_copy2_copy1");
-
-                entity.Property(e => e.HourPerDay).HasColumnType("decimal(18, 5)");
-            });
-
             modelBuilder.Entity<OutsourceOrder>(entity =>
             {
                 entity.HasIndex(e => e.PropertyCalcId)
@@ -333,8 +324,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProductionStepId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Productivity).HasColumnType("decimal(18, 5)");
 
                 entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.ProductionAssignment)

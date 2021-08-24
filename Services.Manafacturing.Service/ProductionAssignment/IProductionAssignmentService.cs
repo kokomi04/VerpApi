@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId);
         Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId);
 
-        Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info, DepartmentTimeTableModel[] timeTable);
+        Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info);
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
 
@@ -28,7 +28,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         //Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate);
 
-        Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate);
+        //Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate);
 
         Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId);
 
