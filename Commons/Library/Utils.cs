@@ -1374,10 +1374,15 @@ namespace VErp.Commons.Library
             return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Concat(RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_FALSE);
         }
 
+        /// <summary>
+        /// Trả về "true" nếu giá trị nằm trong phạm vị giá trị cho phép của kiểu boolean. Và ngược lại
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public static bool HasValueInRangeOfAllowValueForBoolean(this string value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return false;
+                return true;
 
             return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Concat(RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_FALSE).Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
         }
