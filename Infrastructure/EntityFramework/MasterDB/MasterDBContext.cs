@@ -32,6 +32,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
+        public virtual DbSet<I18nLanguage> I18nLanguage { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
@@ -394,6 +395,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(255);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<I18nLanguage>(entity =>
+            {
+                entity.Property(e => e.En).HasMaxLength(1024);
+
+                entity.Property(e => e.Key)
+                    .IsRequired()
+                    .HasMaxLength(1024);
+
+                entity.Property(e => e.Vi).HasMaxLength(1024);
             });
 
             modelBuilder.Entity<Menu>(entity =>
