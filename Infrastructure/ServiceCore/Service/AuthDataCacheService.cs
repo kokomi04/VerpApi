@@ -90,7 +90,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 t = AUTHORIZED_CACHING_TIMEOUT;
             }
 
-            return await _cachingService.TryGetSet(AUTH_TAG, ActionButtonsCacheKey(), t, async () =>
+            return await _cachingService.TryGetSet(AUTH_TAG, ApiEndpointsCacheKey(), t, async () =>
             {
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
