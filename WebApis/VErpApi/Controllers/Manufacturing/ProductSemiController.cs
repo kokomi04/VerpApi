@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductSemi;
 using VErp.Services.Manafacturing.Service.ProductSemi;
@@ -75,6 +77,8 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productSemiId}/conversions")]
         public async Task<long> AddProductSemiConversion([FromRoute] long productSemiId, [FromBody]ProductSemiConversionModel model)
         {
+            if (model == null) throw GeneralCode.InvalidParams.BadRequest();
+
             model.ProductSemiId = productSemiId;
             return await _productSemiConversionService.AddProductSemiConversion(model);
         }
@@ -83,6 +87,8 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productSemiId}/conversions/{conversionId}")]
         public async Task<bool> UpdateProductSemiConversion([FromRoute] long productSemiId, [FromRoute] long conversionId, [FromBody] ProductSemiConversionModel model)
         {
+            if (model == null) throw GeneralCode.InvalidParams.BadRequest();
+
             model.ProductSemiId = productSemiId;
             return await _productSemiConversionService.UpdateProductSemiConversion(conversionId, model);
         }
@@ -91,7 +97,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productSemiId}/conversions/{conversionId}")]
         public async Task<bool> DeleteProductSemiConversion([FromRoute] long productSemiId, [FromRoute] long conversionId)
         {
-            return await _productSemiConversionService.DeleteProductSemiConversion(conversionId);
+            return await _productSemiConversionService.DeleteProductSemiConversion(productSemiId,conversionId);
         }
 
         [HttpGet]
@@ -105,16 +111,16 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("more")]
         public async Task<long[]> CreateListProductSemi([FromBody] IList<ProductSemiModel> models)
         {
-            if(models.Count > 0)
+            if(models?.Count > 0)
                 return await _productSemiService.CreateListProductSemi(models);
-            return new long[] { };
+            return Array.Empty<long>();
         }
 
         [HttpPut]
         [Route("more")]
         public async Task<bool> UpdateListProductSemi([FromBody] IList<ProductSemiModel> models)
         {
-            if (models.Count > 0)
+            if (models?.Count > 0)
                 return await _productSemiService.UpdateListProductSemi(models);
             return true;
         }

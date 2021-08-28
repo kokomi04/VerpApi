@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -13,9 +11,9 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Service.Products;
 using static VErp.Services.Stock.Model.Inventory.InventoryDetailRowValue;
+using static VErp.Services.Stock.Service.Resources.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -44,8 +42,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
                 {
-                    case nameof(InventoryExcelParseModel.PackageOptionId):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                    case nameof(InventoryExcelParseModel.PackageOptionId):                        
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.PackageOptionId = EnumPackageOption.Create;
                         }
@@ -99,7 +97,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 if (productInfo == null || productInfo.Count == 0)
                 {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName}");
+                    throw GeneralCode.ItemNotFound.BadRequestFormat(ProductNotFound, $"{item.ProductCode} {item.ProductName}");
                 }
 
                 if (productInfo.Count > 1)
@@ -107,7 +105,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productInfo = productInfo.Where(p => p.ProductName == item.ProductName).ToList();
 
                     if (productInfo.Count != 1)
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {productInfo.Count} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw ProductFoundMoreThanOne.BadRequestFormat(productInfo.Count, $"{item.ProductCode} {item.ProductName}");
                 }
 
                 long? toPackageId = null;
@@ -124,7 +122,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     packageInfo = packages?.FirstOrDefault(p => p.PackageCode.Equals(item.FromPackageCode, StringComparison.OrdinalIgnoreCase));
                     if (packageInfo == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy kiện {item.FromPackageCode}, mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PackageCodeOfProductNotFound.BadRequestFormat(item.FromPackageCode, $"{item.ProductCode} {item.ProductName}");
                     }
                     fromPackageId = packageInfo.PackageId;
                 }
@@ -135,7 +133,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     packageInfo = packages?.FirstOrDefault(p => p.PackageCode.Equals(item.ToPackageCode, StringComparison.OrdinalIgnoreCase));
                     if (packageInfo == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy kiện {item.FromPackageCode}, mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PackageCodeOfProductNotFound.BadRequestFormat(item.ToPackageCode, $"{item.ProductCode} {item.ProductName}");
+
                     }
                     toPackageId = packageInfo.PackageId;
                 }
@@ -163,19 +162,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                     if (pus.Count == 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PuConversionOfProductNotFound.BadRequestFormat(item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");                        
                     }
                     if (pus.Count > 1)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {pus.Count} đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PuConversionOfProductFoundMoreThanOne.BadRequestFormat(pus.Count, item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");
                     }
 
                     if (packageInfo != null && packageInfo.ProductUnitConversionId != pus[0].ProductUnitConversionId)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đơn vị chuyển đổi {item.ProductUnitConversionName} khác với kiện {packageInfo.PackageCode} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PuConversionDiffToPackage.BadRequestFormat(item.ProductUnitConversionName, packageInfo.PackageCode, $"{item.ProductCode} {item.ProductName}");
                     }
                     productUnitConversionId = pus[0].ProductUnitConversionId;
-
                 }
                 else
                 {
@@ -189,7 +187,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         var puDefault = productInfo[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
                         if (puDefault == null)
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu đơn vị tính default lỗi, mặt hàng {item.ProductCode} {item.ProductName}");
+                            throw PuConversionDefaultError.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
 
                         }
 
@@ -207,7 +205,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     packageInfo = packages?.FirstOrDefault(p => p.PackageTypeId == (int)EnumPackageType.Default && p.ProductUnitConversionId == productUnitConversionId);
                     if (packageInfo == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy kiện để xuất, mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw NoPackageForInventoryOutput.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
                     }
                     fromPackageId = packageInfo.PackageId;
 

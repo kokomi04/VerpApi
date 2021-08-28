@@ -20,16 +20,16 @@ using Microsoft.Data.SqlClient;
 using VErp.Infrastructure.EF.EFExtensions;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Stock.Service.Resources.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class ProductAttachmentService : IProductAttachmentService
     {
         private readonly StockDBContext _stockDbContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductAttachmentService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -38,10 +38,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IMapper mapper)
         {
             _stockDbContext = stockContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
         public async Task<IList<ProductAttachmentModel>> GetAttachments(int productId)
@@ -105,7 +103,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
 
             await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", req.JsonSerialize());
+
+            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateAttachment)
+                .MessageResourceFormatDatas(product.ProductCode)
+                .ObjectId(productId)
+                .JsonData(req.JsonSerialize())
+                .CreateLog();
+
             return true;
         }
     }

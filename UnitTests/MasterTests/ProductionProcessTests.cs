@@ -37,9 +37,9 @@ namespace MasterTests
         }
 
         [Fact]
-        public async Task TestFoundProductionStepLinkDataOutsource()
+        public void TestFoundProductionStepLinkDataOutsource()
         {
-            var productionOrderId = 10022;
+            //var productionOrderId = 10022;
             try
             {
                 //await productionProcessService.FoundProductionStepLinkDataOutsource(productionOrderId);

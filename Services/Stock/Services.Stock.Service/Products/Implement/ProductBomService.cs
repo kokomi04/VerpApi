@@ -27,6 +27,8 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Product.Bom;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Stock.Service.Resources.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -42,6 +44,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IProductService _productService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
         private readonly IPropertyService _propertyService;
+        private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -62,6 +65,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _productService = productService;
             _manufacturingHelperService = manufacturingHelperService;
             _propertyService = propertyService;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
         public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
@@ -122,7 +126,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await UpdateProductBomDb(productId, bomInfo);
                 await trans.CommitAsync();
             }
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", bomInfo.JsonSerialize());
+
+            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateBom)
+             .MessageResourceFormatDatas(product.ProductCode)
+             .ObjectId(productId)
+             .JsonData(bomInfo.JsonSerialize())
+             .CreateLog();
+
             return true;
         }
 
@@ -140,7 +150,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Validate data
             // Validate child product id
             var childIds = bomInfo.Bom.Select(b => b.ChildProductId).Distinct().ToList();
-            if (_stockDbContext.Product.Count(p => childIds.Contains(p.ProductId)) != childIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound, "Vật tư không tồn tại");
+            if (_stockDbContext.Product.Count(p => childIds.Contains(p.ProductId)) != childIds.Count) throw ProductErrorCode.ProductNotFound.BadRequest();
 
             if (bomInfo.Bom.Any(b => b.ProductId == b.ChildProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Không được chọn vật tư là chính sản phẩm");
 

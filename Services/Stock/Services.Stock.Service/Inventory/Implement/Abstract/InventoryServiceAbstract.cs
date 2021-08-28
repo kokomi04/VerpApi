@@ -16,30 +16,34 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Service.Resources.Inventory;
+using VErp.Commons.Library.Formaters;
+using VErp.Services.Stock.Service.Resources.Inventory.Abstract;
+using static VErp.Services.Stock.Service.Resources.Inventory.Abstract.InventoryAbstractMessage;
+using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public abstract class InventoryServiceAbstract
+    public abstract class InventoryServiceAbstract : InventoryBillDateAbstract
     {
-
         protected readonly ILogger _logger;
-        protected readonly StockDBContext _stockDbContext;      
         protected readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductionOrderHelperService _productionOrderHelperService;
         private readonly IProductionHandoverService _productionHandoverService;
-
-        public InventoryServiceAbstract(StockDBContext stockContext            
+        private readonly ICurrentContextService _currentContextService;
+        public InventoryServiceAbstract(StockDBContext stockContext
             , ILogger logger
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverService productionHandoverService
-            )
+            , ICurrentContextService currentContextService
+            ) : base(stockContext)
         {
-            _stockDbContext = stockContext;
             _logger = logger;
             _customGenCodeHelperService = customGenCodeHelperService;
             _productionOrderHelperService = productionOrderHelperService;
             _productionHandoverService = productionHandoverService;
+            _currentContextService = currentContextService;
         }
 
 
@@ -100,37 +104,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryId = inventoryId ?? 0;
             if (await _stockDbContext.Inventory.AnyAsync(q => q.InventoryId != inventoryId && q.InventoryCode == inventoryCode))
             {
-                throw new BadRequestException(InventoryErrorCode.InventoryCodeAlreadyExisted);
+                throw InventoryErrorCode.InventoryCodeAlreadyExisted.BadRequest();
             }
         }
 
 
         protected async Task ValidateInventoryConfig(DateTime? billDate, DateTime? oldDate)
         {
-            if (billDate != null || oldDate != null)
-            {
-
-                var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-                var sqlParams = new List<SqlParameter>
-                {
-                    result
-                };
-
-                if (oldDate.HasValue)
-                {
-                    sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
-                }
-
-                if (billDate.HasValue)
-                {
-                    sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
-                }
-
-                await _stockDbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
-
-                if (!(result.Value as bool?).GetValueOrDefault())
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chứng từ không được phép trước ngày chốt sổ");
-            }
+            await ValidateBill(billDate, oldDate);
         }
 
         /// <summary>
@@ -177,16 +158,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }).FirstOrDefaultAsync();
                 if (errorInfo == null)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Có phiếu bị lỗi. Không thể lấy thông tin chi tiết lỗi");
+                    throw BillDetailErrorUnknown.BadRequest();
                 }
                 else
                 {
 
-                    var message = $"Số lượng \"{errorInfo.ProductCode}\" trong kho tại thời điểm {errorInfo.Date:dd-MM-yyyy} phiếu " +
-                        $"{(errorInfo.InventoryTypeId == (int)EnumInventoryType.Input ? "Nhập" : "Xuất")} {errorInfo.InventoryCode} không đủ. Số tồn là " +
-                       $"{errorInfo.PrimaryQuantityRemaning.Value.Format()} không hợp lệ";
+                    //var message = $"Số lượng \"{errorInfo.ProductCode}\" trong kho tại thời điểm {errorInfo.Date:dd-MM-yyyy} phiếu " +
+                    //    $"{(errorInfo.InventoryTypeId == (int)EnumInventoryType.Input ? "Nhập" : "Xuất")} {errorInfo.InventoryCode} không đủ. Số tồn là " +
+                    //   $"{errorInfo.PrimaryQuantityRemaning.Value.Format()} không hợp lệ";
 
-                    throw new BadRequestException(GeneralCode.InvalidParams, message);
+                    var date = errorInfo.Date.AddMinutes(_currentContextService.TimeZoneOffset ?? 0);
+                    var billInfo = errorInfo.InventoryTypeId == (int)EnumInventoryType.Input ? InventoryInput : InventoryOuput;
+                    billInfo += " " + errorInfo.InventoryCode;
+
+                    throw BillDetailError.BadRequestFormat(errorInfo.ProductCode, date.Format(), billInfo, errorInfo.PrimaryQuantityRemaning.Value.Format());
 
                 }
             }
@@ -196,46 +181,55 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status)
         {
-            // update trạng thái cho lệnh sản xuất
-            var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
-            var requirementDetails = _stockDbContext.InventoryRequirementDetail
-                .Include(rd => rd.InventoryRequirement)
-                .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId))
-                .ToList();
-            var productionOrderCodes = requirementDetails
-                .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode))
-                .Select(rd => rd.ProductionOrderCode)
-                .Distinct()
-                .ToList();
-
-            Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
-
-            foreach (var productionOrderCode in productionOrderCodes)
+            try
             {
-                var parammeters = new SqlParameter[]
+                // update trạng thái cho lệnh sản xuất
+                var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
+                var requirementDetails = _stockDbContext.InventoryRequirementDetail
+                    .Include(rd => rd.InventoryRequirement)
+                    .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId))
+                    .ToList();
+                var productionOrderCodes = requirementDetails
+                    .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode))
+                    .Select(rd => rd.ProductionOrderCode)
+                    .Distinct()
+                    .ToList();
+
+                Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
+
+                foreach (var productionOrderCode in productionOrderCodes)
                 {
+                    var parammeters = new SqlParameter[]
+                    {
                         new SqlParameter("@ProductionOrderCode", productionOrderCode)
-                };
-                var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
-                inventoryMap.Add(productionOrderCode, resultData);
-                await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderCode, resultData, status);
-            }
+                    };
+                    var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+                    inventoryMap.Add(productionOrderCode, resultData);
+                    await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderCode, resultData, status);
+                }
 
-            // update trạng thái cho phân công công việc
-            var assignments = requirementDetails
-                .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode) && rd.DepartmentId.GetValueOrDefault() > 0)
-                .Select(rd => new
+                // update trạng thái cho phân công công việc
+                var assignments = requirementDetails
+                    .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode) && rd.DepartmentId.GetValueOrDefault() > 0)
+                    .Select(rd => new
+                    {
+                        ProductionOrderCode = rd.ProductionOrderCode,
+                        DepartmentId = rd.DepartmentId.Value
+                    })
+                    .Distinct()
+                    .ToList();
+
+                foreach (var assignment in assignments)
                 {
-                    ProductionOrderCode = rd.ProductionOrderCode,
-                    DepartmentId = rd.DepartmentId.Value
-                })
-                .Distinct()
-                .ToList();
-
-            foreach (var assignment in assignments)
-            {
-                await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderCode, assignment.DepartmentId, inventoryMap[assignment.ProductionOrderCode]);
+                    await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderCode, assignment.DepartmentId, inventoryMap[assignment.ProductionOrderCode]);
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, UpdateProductionOrderStatusError);
+                throw new Exception(UpdateProductionOrderStatusError + ": " + ex.Message, ex);
+            }
+
         }
 
 

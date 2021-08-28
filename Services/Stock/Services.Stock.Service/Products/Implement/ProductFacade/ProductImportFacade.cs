@@ -16,7 +16,9 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Services.Stock.Model.Product;
+using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 {
@@ -27,6 +29,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private StockDBContext _stockContext;
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
+
         public ProductImportFacade(StockDBContext stockContext, MasterDBContext masterDBContext, IOrganizationHelperService organizationHelperService)
         {
             _stockContext = stockContext;
@@ -100,7 +103,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     case nameof(ProductImportModel.StockIds):
                         var stockNames = value.Split(",");
                         var stockIds = stockNames.Where(s => stocks.ContainsKey(s)).Select(s => stocks[s]).ToList();
-                        if (stockIds.Count != stockNames.Length) throw new BadRequestException(GeneralCode.InvalidParams, $"Danh sách kho {value} không đúng");
+                        if (stockIds.Count != stockNames.Length) throw StockNameNotFound.BadRequestFormat(value);
                         if (stockIds.Count > 0) entity.StockIds = stockIds;
                         return true;
                     case nameof(ProductImportModel.QuantitativeUnitTypeId):
@@ -109,21 +112,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         return true;
 
                     case nameof(ProductImportModel.IsProduct):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.IsProduct = true;
                         }
                         else entity.IsProduct = false;
                         return true;
                     case nameof(ProductImportModel.IsProductSemi):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.IsProductSemi = true;
                         }
                         else entity.IsProductSemi = false;
                         return true;
                     case nameof(ProductImportModel.IsMaterials):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.IsMaterials = true;
                         }
@@ -154,7 +157,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                             if (!customerByCodes.ContainsKey(code))
                             {
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy khách hàng có mã {value} trong hệ thống!");
+                                throw CustomerWithCodeNotFound.BadRequestFormat(value);
                             }
                             entity.CustomerId = customerByCodes[code].Value;
                         }
@@ -167,7 +170,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                             if (!customerByNames.ContainsKey(code))
                             {
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy khách hàng có tên {value} trong hệ thống!");
+                                throw CustomerWithNameNotFound.BadRequestFormat(value);
                             }
 
                             entity.CustomerId = customerByNames[code].Value;
@@ -183,7 +186,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 {
                     if (int.TryParse(value, out var v) && v < 0 || v > 12)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Độ chính xác {value} không đúng, độ chính xác phải >=0 và <=12");
+                        throw PuDecimalPlaceNotValid.BadRequestFormat(value, 0, 12);
                     }
                 }
 
@@ -213,7 +216,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         UnitName = row.Unit,
                         UnitStatusId = (int)EnumUnitStatus.Using,
                         DecimalPlace = row.DecimalPlaceDefault.GetValueOrDefault()
-                        
+
                     });
                 }
                 for (int suffix = 2; suffix <= 5; suffix++)
@@ -292,9 +295,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             if (mapping.ImportDuplicateOptionId == null || mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
             {
                 if (dupCodes.Count > 0)
-                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Tồn tại nhiều mặt hàng {string.Join(",", dupCodes)} trong file import");
+                    throw ImportMultipleProductsFound.BadRequestFormat(string.Join(",", dupCodes));
                 if (existsProductCodes.Count > 0)
-                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", existsProductCodes)} đã tồn tại trong hệ thống");
+                    throw ProductCodeAlreadyExisted.BadRequestFormat(string.Join(",", existsProductCodes));
             }
             //else
             //{
@@ -317,33 +320,33 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 var rowNumber = "";
                 if (p is MappingDataRowAbstract entity)
                 {
-                    rowNumber = ", dòng " + entity.RowNumber;
+                    rowNumber = ",  " + ImportRowTitle + entity.RowNumber;
                 }
 
-                if(p.IsMaterials == false && p.IsProduct == false && p.IsProductSemi == false)
+                if (p.IsMaterials == false && p.IsProduct == false && p.IsProductSemi == false)
                 {
                     p.IsProduct = true;
                 }
 
-                if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
-                {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
-                }
+                //if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
+                //{
+                //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
+                //}
 
+                var productCodeRowTitle = p.ProductCode + " " + rowNumber;
                 if (defaultCateId == null && string.IsNullOrWhiteSpace(p.ProductCate))
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
+                    throw ImportNeedProductCateForProduct.BadRequestFormat(productCodeRowTitle);
                 }
 
                 if (string.IsNullOrWhiteSpace(p.Unit))
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần định nghĩa đơn vị tính cho mặt hàng {p.ProductCode} {rowNumber}");
+                    throw UnitOfProductNotFound.BadRequestFormat(productCodeRowTitle);
                 }
 
                 if (string.IsNullOrWhiteSpace(p.ProductName))
                 {
-
-                    throw new BadRequestException(ProductErrorCode.ProductNameEmpty, $"Yêu cầu tên mặt hàng có mã {p.ProductCode} {rowNumber}");
+                    throw ProductNameOfCodeEmpty.BadRequestFormat(productCodeRowTitle);
                 }
             });
             var updateProducts = data.Where(x => existsProductCodes.Contains(x.ProductCode?.ToLower()))
@@ -614,7 +617,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 ProductUnitConversionName = row.Unit,
                                 SecondaryUnitId =row.Unit.IsNullObject()?0: units[row.Unit.NormalizeAsInternalName()],
                                 FactorExpression = "1",
-                                ConversionDescription = "Mặc định",
+                                ConversionDescription = "Default",
                                 IsDefault = true,
                                 IsFreeStyle = false,
                                 DecimalPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault??DECIMAL_PLACE_DEFAULT : DECIMAL_PLACE_DEFAULT,
@@ -638,13 +641,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
                         if (!(eval > 0))
                         {
-                            throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, $"Biểu thức chuyển đổi {exp} của mặt hàng {row.ProductCode} không đúng");
+                            throw PuConversionExpressionInvalid.BadRequestFormat(exp, row.ProductCode);
                         }
                     }
                     catch (Exception)
                     {
-
-                        throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, $"Lỗi không thể tính toán biểu thức đơn vị chuyển đổi {exp}  của mặt hàng {row.ProductCode}");
+                        throw PuConversionExpressionError.BadRequestFormat(exp, row.ProductCode);
                     }
 
                     lstUnitConverions.Add(new ProductUnitConversionUpdate()

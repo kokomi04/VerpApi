@@ -11,12 +11,16 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Product.Bom;
+using VErp.Services.Stock.Service.Resources.Product;
+using VErp.Services.Stock.Service.Resources.Product.ProductImport;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 {
@@ -25,7 +29,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private StockDBContext _stockDbContext;
         private IUnitService _unitService;
         private IProductService _productService;
-        private IActivityLogService _activityLogService;
+        //private IActivityLogService _activityLogService;
         private IProductBomService _productBomService;
 
         private IList<ProductBomImportModel> _importData;
@@ -41,6 +45,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private IDictionary<string, List<ProductBomImportModel>> _bomByProductCodes;
 
         private IManufacturingHelperService _manufacturingHelperService;
+        private ObjectActivityLogFacade _productActivityLog;
 
         private bool IsPreview = false;
         public IList<ProductBomByProduct> PreviewData { get; private set; }
@@ -69,7 +74,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
         public ProductBomImportFacade SetService(IActivityLogService activityLogService)
         {
-            _activityLogService = activityLogService;
+            //_activityLogService = activityLogService;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
             return this;
         }
 
@@ -92,15 +98,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return _id--;
         }
 
+        private ImportExcelMapping _mapping = null;
         public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream)
         {
+            _mapping = mapping;
+
             _steps = await _manufacturingHelperService.GetSteps();
 
             ReadExcelData(mapping, stream);
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                using (var logBath = _activityLogService.BeginBatchLog())
+                using (var logBath = _productActivityLog.BeginBatchLog())
                 {
                     await AddMissingProductType();
                     await AddMissingProductCate();
@@ -128,7 +137,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 switch (propertyName)
                 {
                     case nameof(ProductBomImportModel.IsMaterial):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.IsMaterial = true;
                         }
@@ -147,14 +156,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     case nameof(ProductBomImportModel.OutputStepName):
                         if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? inputStepId) && inputStepId.HasValue))
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
+                            throw ProductBomImportValidationMessage.StepNotFound.BadRequestFormat(value);
                         }
                         entity.OutputStepName = value;
                         return true;
                     case nameof(ProductBomImportModel.InputStepName):
                         if (!string.IsNullOrEmpty(value) && !(TryGetStepId(value, out int? outputStepId) && outputStepId.HasValue))
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Công đoạn \"{value}\" không có trên hệ thống");
+                            throw ProductBomImportValidationMessage.StepNotFound.BadRequestFormat(value);
                         }
                         entity.InputStepName = value;
                         return true;
@@ -169,7 +178,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         entity.Properties = new HashSet<int>();
                     }
 
-                    if (!entity.Properties.Contains(propertyId) && value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                    if (!entity.Properties.Contains(propertyId) && value.IsRangeOfAllowValueForBooleanTrueValue())
                     {
                         entity.Properties.Add(propertyId);
                     }
@@ -287,7 +296,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                     await _productBomService.UpdateProductBomDb(rootProductInfo.ProductId, updateModel);
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductBom, rootProductInfo.ProductId, $"Import chi tiết bom cho mặt hàng {rootProductInfo.ProductCode}, tên hàng {rootProductInfo.ProductName} (import)", new { productBoms, productMaterials }.JsonSerialize());
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportBom)
+                        .MessageResourceFormatDatas(rootProductInfo.ProductCode)
+                        .ObjectId(rootProductInfo.ProductId)
+                        .JsonData(new{ _mapping, productBoms, productMaterials }.JsonSerialize())
+                        .CreateLog();                    
                 }
                 else
                 {
@@ -521,6 +534,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 .Select(p =>
                 {
 
+                    var productTitle = $"{p.Value.ProductCode} {p.Value.ProductName}";
+
                     ProductType type = null;
 
                     if (string.IsNullOrWhiteSpace(p.Value.ProductTypeCode.NormalizeAsInternalName()))
@@ -533,7 +548,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                         if (type == null)
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy loại mã mặt hàng {p.Value.ProductTypeCode} cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                            throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductTypeCode, productTitle);
                         }
                     }
 
@@ -543,8 +558,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     {
                         cate = _productCates.FirstOrDefault(c => c.Value.IsDefault).Value;
                         if (cate == null)
-                        {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục mặc định cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                        {                            
+                            throw ImportProductCateDefaultOfProductNotFound.BadRequestFormat(productTitle);
 
                         }
                     }
@@ -554,7 +569,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                         if (cate == null)
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục {p.Value.ProductCateName} mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                            throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductCateName, productTitle);                           
                         }
                     }
 
@@ -562,7 +577,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
                     if (unit == null || unit.Length <= 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính \"{p.Value.UnitName}\" cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                        throw UnitOfProductNotFound.BadRequestFormat(productTitle);                        
                     }
 
                     return new ProductModel

@@ -43,6 +43,8 @@ using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using System.Data;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Services.Stock.Service.Resources.Inventory.Abstract;
+using VErp.Infrastructure.ServiceCore.Facade;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -51,11 +53,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         //const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER;
 
         private readonly MasterDBContext _masterDBContext;
-        private readonly AppSetting _appSetting;
         private readonly IActivityLogService _activityLogService;
-        private readonly IUnitService _unitService;
         private readonly IFileService _fileService;
-        private readonly IAsyncRunnerService _asyncRunner;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IStockHelperService _stockHelperService;
         private readonly IProductHelperService _productHelperService;
@@ -81,14 +80,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductionHandoverService productionHandoverService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            ) :base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService)
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
         {
             _masterDBContext = masterDBContext;
-            _appSetting = appSetting.Value;
             _activityLogService = activityLogService;
-            _unitService = unitService;
             _fileService = fileService;
-            _asyncRunner = asyncRunner;
             _organizationHelperService = organizationHelperService;
             _stockHelperService = stockHelperService;
             _productHelperService = productHelperService;
@@ -554,7 +550,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 CategoryId = 1,
                 CategoryCode = "Inventory",
-                CategoryTitle = "Xuất/Nhập kho",
+                CategoryTitle = "Inventory",
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
@@ -569,8 +565,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var result = new CategoryNameModel()
             {
                 CategoryId = 1,
-                CategoryCode = inventoryTypeId == EnumInventoryType.Input ? "InventoryInput" : "InventoryOutput",
-                CategoryTitle = inventoryTypeId == EnumInventoryType.Input ? "Nhập kho" : "Xuất kho",
+                CategoryCode = inventoryTypeId == EnumInventoryType.Input ? "Input" : "Output",
+                CategoryTitle = inventoryTypeId == EnumInventoryType.Input ? InventoryAbstractMessage.InventoryInput : InventoryAbstractMessage.InventoryOuput,
                 IsTreeView = false,
                 Fields = Utils.GetFieldNameModels<InventoryExcelParseModel>((int)inventoryTypeId)
             };
@@ -637,14 +633,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 foreach (var item in insertedData)
                 {
-                    if (model.Type == EnumInventoryType.Input)
-                    {
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Nhập tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
-                    }
-                    else
-                    {
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, item.Key, $"Xuất tồn đầu {item.Value.inventoryCode}", item.Value.data.JsonSerialize());
-                    }
+                    await ImportedLogBuilder(model.Type)
+                        .MessageResourceFormatDatas(item.Value.inventoryCode)
+                        .ObjectId(item.Key)
+                        .JsonData(item.Value.data.JsonSerialize())
+                        .CreateLog();
                 }
 
                 foreach (var item in genCodeContexts)
@@ -654,6 +647,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 return inventoryId;
             }
+        }
+
+        private ObjectActivityLogModelBuilder<string> ImportedLogBuilder(EnumInventoryType inventoryType)
+        {
+            return inventoryType == EnumInventoryType.Input
+                ? _inventoryBillInputService.ImportedLogBuilder()
+                : _inventoryBillOutputService.ImportedLogBuilder();
         }
 
     }

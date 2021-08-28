@@ -8,6 +8,7 @@ namespace VErp.Commons.Library.Model
 {
     public class ImportExcelMapping
     {
+        public string FileName { get; set; }
         public string SheetName { get; set; }
         public int FromRow { get; set; }
         public int ToRow { get; set; }

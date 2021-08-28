@@ -49,9 +49,24 @@ namespace VErp.Commons.GlobalObject
             return new BadRequestException(code);
         }
 
+        public static BadRequestException BadRequest(this Enum code, string message)
+        {
+            return new BadRequestException(code, message);
+        }
+
+        public static BadRequestException BadRequestFormat(this Enum code, string messageFormat, params object[] args)
+        {
+            return new BadRequestException(code, messageFormat.Format(args));
+        }
+
         public static BadRequestException BadRequest(this string message)
         {
             return new BadRequestException(message);
+        }
+
+        public static BadRequestException BadRequest(this string message, Enum code)
+        {
+            return new BadRequestException(code, message);
         }
 
         public static BadRequestException BadRequest(this (Enum code, string message) error)

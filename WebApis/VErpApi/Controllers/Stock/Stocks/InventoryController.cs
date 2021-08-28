@@ -315,6 +315,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("importFromMapping")]
         public async Task<long> ImportFromMapping([FromFormString] InventoryOpeningImportModel data, IFormFile file)
         {
+            if (data == null) throw GeneralCode.InvalidParams.BadRequest();
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);

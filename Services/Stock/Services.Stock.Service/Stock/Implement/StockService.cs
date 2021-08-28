@@ -24,15 +24,19 @@ using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Stock.Service.Resources.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public class StockService : IStockService
     {
         private readonly StockDBContext _stockContext;
-        private readonly IActivityLogService _activityLogService;
         private readonly IRoleHelperService _roleHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _stockActivityLog;
+
+
         public StockService(
             StockDBSubsidiaryContext stockContext
             , IActivityLogService activityLogService
@@ -41,9 +45,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             )
         {
             _stockContext = stockContext;
-            _activityLogService = activityLogService;
             _roleHelperService = roleHelperService;
             _currentContextService = currentContextService;
+            _stockActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Stock);
         }
 
 
@@ -81,8 +85,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-
-                    await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Thêm mới kho {stockInfo.StockName}", req.JsonSerialize());
+                    await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Create)
+                      .MessageResourceFormatDatas(req.StockCode)
+                      .ObjectId(stockInfo.StockId)
+                      .JsonData(req.JsonSerialize())
+                      .CreateLog();
 
                     await _roleHelperService.GrantDataForAllRoles(EnumObjectType.Stock, stockInfo.StockId);
 
@@ -159,7 +166,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Cập nhật thông tin kho hàng {stockInfo.StockName}", req.JsonSerialize());
+                    
+                    await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Update)
+                      .MessageResourceFormatDatas(req.StockCode)
+                      .ObjectId(stockInfo.StockId)
+                      .JsonData(req.JsonSerialize())
+                      .CreateLog();
 
                     return true;
                 }
@@ -191,8 +203,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
+                    
 
-                    await _activityLogService.CreateLog(EnumObjectType.Stock, stockInfo.StockId, $"Xóa kho {stockInfo.StockName}", stockInfo.JsonSerialize());
+                    await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Delete)
+                      .MessageResourceFormatDatas(stockInfo.StockCode)
+                      .ObjectId(stockInfo.StockId)
+                      .JsonData(stockInfo.JsonSerialize())
+                      .CreateLog();
 
                     return true;
                 }

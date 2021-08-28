@@ -16,44 +16,46 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Service.Resources.Product;
+using static VErp.Services.Stock.Service.Resources.Product.ConsumptionGroupValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class ProductMaterialsConsumptionGroupService : IProductMaterialsConsumptionGroupService
     {
         private readonly StockDBContext _stockDbContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
-
+        private readonly ObjectActivityLogFacade _consumptionGroupActivityLog;
 
         public ProductMaterialsConsumptionGroupService(StockDBContext stockContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<ProductBomService> logger
             , IActivityLogService activityLogService
             , IMapper mapper)
         {
             _stockDbContext = stockContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
+            _consumptionGroupActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ConsumptionGroup);
         }
 
         public async Task<int> AddProductMaterialsConsumptionGroup(ProductMaterialsConsumptionGroupModel model)
         {
             var group = _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().FirstOrDefault(x => x.ProductMaterialsConsumptionGroupCode == model.ProductMaterialsConsumptionGroupCode);
             if (group != null)
-                throw new BadRequestException(GeneralCode.GeneralError, "Đã tồn tại mã nhóm vật tư tiêu hao");
+                throw CodeAlreadyExisted.BadRequestFormat(model.ProductMaterialsConsumptionGroupCode);
 
             var entity = _mapper.Map<ProductMaterialsConsumptionGroup>(model);
             _stockDbContext.ProductMaterialsConsumptionGroup.Add(entity);
             await _stockDbContext.SaveChangesAsync();
+
+            await _consumptionGroupActivityLog.LogBuilder(() => ConsumptionGroupActivityLogMessage.Create)
+               .MessageResourceFormatDatas(model.ProductMaterialsConsumptionGroupCode)
+               .ObjectId(group.ProductMaterialsConsumptionGroupId)
+               .JsonData(model.JsonSerialize())
+               .CreateLog();
 
             return entity.ProductMaterialsConsumptionGroupId;
         }
@@ -62,19 +64,25 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var group = _stockDbContext.ProductMaterialsConsumptionGroup.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId == groupId);
             if (group == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy vật tư tiêu hao");
+                throw ConsumptionGroupNotFound.BadRequest();
 
-            if(group.ProductMaterialsConsumptionGroupCode != model.ProductMaterialsConsumptionGroupCode)
+            if (group.ProductMaterialsConsumptionGroupCode != model.ProductMaterialsConsumptionGroupCode)
             {
                 var check = _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking()
                     .FirstOrDefault(x => x.ProductMaterialsConsumptionGroupCode == model.ProductMaterialsConsumptionGroupCode
                         && groupId != x.ProductMaterialsConsumptionGroupId);
                 if (check != null)
-                    throw new BadRequestException(GeneralCode.GeneralError, "Đã tồn tại mã nhóm vật tư tiêu hao");
+                    throw CodeAlreadyExisted.BadRequestFormat(model.ProductMaterialsConsumptionGroupCode);
             }
 
             _mapper.Map(model, group);
             await _stockDbContext.SaveChangesAsync();
+
+            await _consumptionGroupActivityLog.LogBuilder(() => ConsumptionGroupActivityLogMessage.Update)
+                .MessageResourceFormatDatas(model.ProductMaterialsConsumptionGroupCode)
+                .ObjectId(group.ProductMaterialsConsumptionGroupId)
+                .JsonData(model.JsonSerialize())
+                .CreateLog();
             return true;
         }
 
@@ -82,14 +90,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var group = _stockDbContext.ProductMaterialsConsumptionGroup.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId == groupId);
             if (group == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy vật tư tiêu hao");
+                throw ConsumptionGroupNotFound.BadRequest();
 
             var hasGroupUsed = _stockDbContext.ProductMaterialsConsumption.AsNoTracking().Any(x => x.ProductMaterialsConsumptionGroupId == groupId);
             if (hasGroupUsed)
-                throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa nhóm do đã được sử dụng ");
-            
+                throw CanNotDeleteConsumptionGroupInUsed.BadRequest();
+
             group.IsDeleted = true;
             await _stockDbContext.SaveChangesAsync();
+
+            await _consumptionGroupActivityLog.LogBuilder(() => ConsumptionGroupActivityLogMessage.Delete)
+              .MessageResourceFormatDatas(group.ProductMaterialsConsumptionGroupCode)
+              .ObjectId(group.ProductMaterialsConsumptionGroupId)
+              .JsonData(group.JsonSerialize())
+              .CreateLog();
             return true;
         }
 
@@ -97,7 +111,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var group = await _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking().FirstOrDefaultAsync(x => x.ProductMaterialsConsumptionGroupId == groupId);
             if (group == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy vật tư tiêu hao");
+                throw ConsumptionGroupNotFound.BadRequest();
 
             return _mapper.Map<ProductMaterialsConsumptionGroupModel>(group);
         }
@@ -105,7 +119,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<PageData<ProductMaterialsConsumptionGroupModel>> SearchProductMaterialsConsumptionGroup(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = _stockDbContext.ProductMaterialsConsumptionGroup.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(keyword))
             {

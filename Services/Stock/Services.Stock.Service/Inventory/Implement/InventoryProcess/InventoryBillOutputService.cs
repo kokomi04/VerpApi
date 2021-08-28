@@ -13,12 +13,14 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Formaters;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
@@ -28,17 +30,20 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
+using VErp.Services.Stock.Service.Resources.InventoryProcess;
+using static VErp.Services.Stock.Service.Resources.InventoryProcess.InventoryBillOutputMessage;
+using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public class InventoryBillOutputService: InventoryServiceAbstract, IInventoryBillOutputService
+    public class InventoryBillOutputService : InventoryServiceAbstract, IInventoryBillOutputService
     {
         const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER;
 
-        private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
+        private readonly ObjectActivityLogFacade _invOutputActivityLog;
 
         public InventoryBillOutputService(
             StockDBContext stockContext
@@ -50,12 +55,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverService productionHandoverService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService)
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
         {
-            _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContextService = currentContextService;
             _productService = productService;
+            _invOutputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
+        }
+
+
+        public ObjectActivityLogModelBuilder<string> ImportedLogBuilder()
+        {
+            return _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.Import);
         }
 
         /// <summary>
@@ -73,9 +84,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var inventoryId = await AddInventoryOutputDb(req);
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryId, $"Thêm mới phiếu xuất kho, mã: {req.InventoryCode}", req.JsonSerialize());
 
                     await ctx.ConfirmCode();
+
+                    await _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.Create)
+                       .MessageResourceFormatDatas(req.InventoryCode)
+                       .ObjectId(inventoryId)
+                       .JsonData(req.JsonSerialize())
+                       .CreateLog();
+
                     return inventoryId;
                 }
             }
@@ -98,7 +115,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
-                var inventoryObj = new Inventory
+                var inventoryObj = new InventoryEntity
                 {
                     StockId = req.StockId,
                     InventoryCode = req.InventoryCode,
@@ -131,18 +148,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockDbContext.SaveChangesAsync();
                 }
 
-                var processInventoryOut = await ProcessInventoryOut(inventoryObj, req);
+                var data = await ProcessInventoryOut(inventoryObj, req);
 
-                if (!processInventoryOut.Code.IsSuccess())
-                {
-                    throw new BadRequestException(processInventoryOut.Code, processInventoryOut.Message);
-                }
-
-                var totalMoney = InputCalTotalMoney(processInventoryOut.Data);
+                var totalMoney = InputCalTotalMoney(data);
 
                 inventoryObj.TotalMoney = totalMoney;
 
-                await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
+                await _stockDbContext.InventoryDetail.AddRangeAsync(data);
                 await _stockDbContext.SaveChangesAsync();
 
 
@@ -204,16 +216,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(GeneralCode.InvalidParams);
                         }
 
-                        var processInventoryOut = await ProcessInventoryOut(inventoryObj, req);
+                        var data = await ProcessInventoryOut(inventoryObj, req);
 
-                        if (!processInventoryOut.Code.IsSuccess())
-                        {
-                            trans.Rollback();
-                            throw new BadRequestException(processInventoryOut.Code, processInventoryOut.Message);
-                        }
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(processInventoryOut.Data);
+                        await _stockDbContext.InventoryDetail.AddRangeAsync(data);
 
-                        var totalMoney = InputCalTotalMoney(processInventoryOut.Data);
+                        var totalMoney = InputCalTotalMoney(data);
 
                         inventoryObj.TotalMoney = totalMoney;
 
@@ -263,8 +270,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         trans.Commit();
 
-                        var messageLog = string.Format("Cập nhật phiếu xuất kho, mã: {0}", inventoryObj.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
+                        await _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.Update)
+                            .MessageResourceFormatDatas(req.InventoryCode)
+                            .ObjectId(inventoryId)
+                            .JsonData(req.JsonSerialize())
+                            .CreateLog();
                     }
                     catch (Exception ex)
                     {
@@ -409,17 +419,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 }
 
 
-                                var message = $"Số dư trong kho mặt hàng {productInfo.ProductCode} ({original[detail.FromPackageId.Value].Format()} {productInfo.ProductUnitConversionName}) không đủ để xuất ";
+                                var balance = $"{original[detail.FromPackageId.Value].Format()} {productInfo.ProductUnitConversionName}";
+
                                 var samPackages = inventoryDetails.Where(d => d.FromPackageId == detail.FromPackageId);
 
                                 var total = samPackages.Sum(d => d.PrimaryQuantity).Format();
 
-                                message += $" < {total} {productInfo.ProductUnitConversionName} = "
-                                    + string.Join(" + ", samPackages.Select(d => d.PrimaryQuantity.Format()));
+                                var totalOut = $" < {total} {productInfo.ProductUnitConversionName} = " + string.Join(" + ", samPackages.Select(d => d.PrimaryQuantity.Format()));
 
                                 trans.Rollback();
 
-                                throw new BadRequestException(InventoryErrorCode.NotEnoughQuantity, message);
+                                throw NotEnoughBalanceInStock.BadRequestFormat(productInfo.ProductCode, balance, totalOut);
                             }
 
                             ValidatePackage(fromPackageInfo);
@@ -455,21 +465,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
-
-                        try
-                        {
-                            await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Processing);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Lỗi cập nhật trạng thái lệnh sản xuất");
-                            throw new Exception("Lỗi cập nhật trạng thái lệnh sản xuất: " + ex.Message, ex);
-                        }
+                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Processing);
 
                         trans.Commit();
 
-                        var messageLog = $"Duyệt phiếu xuất kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
+                        await _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.Approve)
+                            .MessageResourceFormatDatas(inventoryObj.InventoryCode)
+                            .ObjectId(inventoryId)
+                            .JsonData(inventoryObj.JsonSerialize())
+                            .CreateLog();
 
                         return true;
                     }
@@ -534,7 +538,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         trans.Commit();
 
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryOutput, inventoryObj.InventoryId, string.Format("Xóa phiếu xuất kho, mã phiếu {0}", inventoryObj.InventoryCode), new { InventoryId = inventoryId }.JsonSerialize());
+                        await _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.Delete)
+                            .MessageResourceFormatDatas(inventoryObj.InventoryCode)
+                            .ObjectId(inventoryId)
+                            .JsonData(inventoryObj.JsonSerialize())
+                            .CreateLog();
 
                         return true;
                     }
@@ -638,7 +646,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             foreach (var item in packageData)
             {
                 var locationObj = item.LocationId > 0 ? locationData.FirstOrDefault(q => q.LocationId == item.LocationId) : null;
-                var locationOutputModel = locationObj != null ? new VErp.Services.Stock.Model.Location.LocationOutput
+                var locationOutputModel = locationObj != null ? new Model.Location.LocationOutput
                 {
                     LocationId = locationObj.LocationId,
                     StockId = locationObj.StockId,
@@ -681,7 +689,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ProcessInventoryOut(Inventory inventory, InventoryOutModel req)
+        private async Task<IList<InventoryDetail>> ProcessInventoryOut(InventoryEntity inventory, InventoryOutModel req)
         {
             var productIds = req.OutProducts.Select(p => p.ProductId).Distinct().ToList();
 
@@ -697,20 +705,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             foreach (var detail in req.OutProducts)
             {
                 var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
-                if (fromPackageInfo == null) return PackageErrorCode.PackageNotFound;
+                if (fromPackageInfo == null) throw PackageErrorCode.PackageNotFound.BadRequest();
 
                 if (fromPackageInfo.ProductId != detail.ProductId
                     || fromPackageInfo.ProductUnitConversionId != detail.ProductUnitConversionId
                     || fromPackageInfo.StockId != req.StockId)
                 {
                     _logger.LogInformation($"InventoryService.ProcessInventoryOut error InvalidPackage. ProductId: {detail.ProductId} , FromPackageId: {detail.FromPackageId}, ProductUnitConversionId: {detail.ProductUnitConversionId}");
-                    return InventoryErrorCode.InvalidPackage;
+                    throw InventoryErrorCode.InvalidPackage.BadRequest();
                 }
 
                 var productInfo = productInfos.FirstOrDefault(p => p.ProductId == detail.ProductId);
                 if (productInfo == null)
                 {
-                    return ProductErrorCode.ProductNotFound;
+                    throw ProductErrorCode.ProductNotFound.BadRequest();
                 }
 
                 var primaryQualtity = detail.PrimaryQuantity;
@@ -721,33 +729,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (puInfo == null)
                 {
                     _logger.LogInformation($"InventoryService.ProcessInventoryOut error ProductUnitConversionNotFound. ProductId: {detail.ProductId} , FromPackageId: {detail.FromPackageId}, ProductUnitConversionId: {detail.ProductUnitConversionId}");
-                    return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
+                    throw ProductUnitConversionErrorCode.ProductUnitConversionNotFound.BadRequest();
                 }
 
                 if (puInfo.ProductId != detail.ProductId)
                 {
-                    return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
+                    throw ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct.BadRequest();
                 }
 
-                var primaryUnit = productUnitConversions.FirstOrDefault(c => c.IsDefault && c.ProductId == productInfo.ProductId);
 
-                var errorMessage = $"Số dư trong kiện {fromPackageInfo.PackageCode} mặt hàng {productInfo.ProductCode} ({fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}) ";
-                var samPackages = req.OutProducts.Where(d => d.FromPackageId == detail.FromPackageId);
-
-                var totalOut = samPackages.Sum(d => d.PrimaryQuantity);
-                var isEnough = totalOut < fromPackageInfo.PrimaryQuantityRemaining;
-
-                errorMessage += $" {(isEnough ? ">=" : "<")} {totalOut.Format()} {primaryUnit?.ProductUnitConversionName} ";
-                if (!isEnough)
-                {
-                    errorMessage += " không đủ để xuất";
-                }
 
                 if (fromPackageInfo.PrimaryQuantityRemaining == 0 || fromPackageInfo.ProductUnitConversionRemaining == 0)
                 {
                     _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {detail.ProductId} , packageId: {fromPackageInfo.PackageId} PrimaryQuantityRemaining: {fromPackageInfo.PrimaryQuantityRemaining}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}, req: {req.JsonSerialize()} ");
 
-                    return (InventoryErrorCode.NotEnoughQuantity, errorMessage);
+
+                    //return (InventoryErrorCode.NotEnoughQuantity, errorMessage);
+                    throw NotEnoughBalancePackageQuantityZero.BadRequest();
                 }
 
                 //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
@@ -786,7 +784,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 if (!(detail.ProductUnitConversionQuantity > 0))
                 {
                     _logger.LogInformation($"InventoryService.ProcessInventoryOut error PrimaryUnitConversionError. ProductId: {detail.ProductId} , FromPackageId: {detail.FromPackageId}, ProductUnitConversionId: {detail.ProductUnitConversionId}, FactorExpression: {puInfo.FactorExpression}, PrimaryQuantity: {detail.PrimaryQuantity}, ProductUnitConversionQuantity: {detail.ProductUnitConversionQuantity}");
-                    return ProductUnitConversionErrorCode.PrimaryUnitConversionError;
+                    throw ProductUnitConversionErrorCode.PrimaryUnitConversionError.BadRequest();
                 }
 
 
@@ -804,9 +802,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (primaryQualtity > fromPackageInfo.PrimaryQuantityRemaining)
                 {
+                    var primaryUnit = productUnitConversions.FirstOrDefault(c => c.IsDefault && c.ProductId == productInfo.ProductId);
+                    var remaining = $"{fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}";
+
+                    var samPackages = req.OutProducts.Where(d => d.FromPackageId == detail.FromPackageId);
+
+                    var totalOut = samPackages.Sum(d => d.PrimaryQuantity);
+
+                    var totalOutMess = $"{totalOut.Format()} {primaryUnit?.ProductUnitConversionName}";
+
                     _logger.LogInformation($"InventoryService.ProcessInventoryOut error NotEnoughQuantity. ProductId: {detail.ProductId} , ProductUnitConversionQuantity: {detail.ProductUnitConversionQuantity}, ProductUnitConversionRemaining: {fromPackageInfo.ProductUnitConversionRemaining}");
 
-                    return (InventoryErrorCode.NotEnoughQuantity, errorMessage);
+                    throw NotEnoughBalanceInPackage.BadRequestFormat(fromPackageInfo.PackageCode, productInfo.ProductCode, remaining, totalOutMess);
                 }
 
                 inventoryDetailList.Add(new InventoryDetail
@@ -846,7 +853,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return inventoryDetailList;
         }
 
-        private async Task<Enum> RollbackInventoryOutput(Inventory inventory)
+        private async Task<Enum> RollbackInventoryOutput(InventoryEntity inventory)
         {
             var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventory.InventoryId).ToListAsync();
 

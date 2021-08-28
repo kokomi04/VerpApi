@@ -20,6 +20,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Service.Products;
+using static VErp.Services.Stock.Service.Resources.Inventory.InventoryFileData.InventoryImportFacadeMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -70,7 +71,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             var stockInfo = await _stockDbContext.Stock.FirstOrDefaultAsync(s => s.StockId == model.StockId);
             if (stockInfo == null)
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy thông tin kho trong hệ thống");
+                throw StockInfoNotFound.BadRequest(GeneralCode.ItemNotFound);
             }
 
             var reader = new ExcelReader(stream);
@@ -126,7 +127,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 if (string.IsNullOrWhiteSpace(item.ProductCode)) continue;
 
                 if (item.Qty1 <= 0)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {item.ProductCode} {item.ProductName} không đúng!");
+                    throw ProductQuantityInvalid.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
 
                 var productObj = GetProduct(item);
 
@@ -137,7 +138,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
                     if (productUnitConversionObj == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.Unit2} sản phẩm {item.ProductCode}");
+                        throw ProductUniConversionNameNotFound.BadRequestFormat(item.Unit2, item.ProductCode);
                     }
                 }
                 else
@@ -145,7 +146,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
                     if (productUnitConversionObj == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính {item.Unit2} sản phẩm {item.ProductCode}");
+                        throw PuConversionDefaultError.BadRequestFormat(item.ProductCode);
                     }
                 }
 
@@ -255,7 +256,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 if (string.IsNullOrWhiteSpace(item.ProductCode)) continue;
 
                 if (item.Qty1 <= 0)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {item.ProductCode} {item.ProductName} không đúng!");
+                    throw ProductQuantityInvalid.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
 
                 var productObj = GetProduct(item);
 
@@ -266,7 +267,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
                     if (productUnitConversionObj == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.Unit2} sản phẩm {item.ProductCode}");
+                        throw ProductUniConversionNameNotFound.BadRequestFormat(item.Unit2, item.ProductCode);
                     }
                 }
                 else
@@ -274,7 +275,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
                     if (productUnitConversionObj == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính {item.Unit2} sản phẩm {item.ProductCode}");
+                        throw PuConversionDefaultError.BadRequestFormat(item.ProductCode);
                     }
                 }
 
@@ -314,7 +315,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 var productInfo = productInfoByIds[item.ProductId];
                 var puInfo = _productUnitsByProduct[item.ProductId].FirstOrDefault(u => u.ProductUnitConversionId == item.ProductUnitConversionId);
 
-                if (packageInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy kiện nào chứa sản phẩm {productInfo.ProductCode} đơn vị {puInfo?.ProductUnitConversionName}");
+                if (packageInfo == null) throw PuProductPackageNotFound.BadRequestFormat(productInfo.ProductCode, puInfo?.ProductUnitConversionName);
 
                 item.FromPackageId = packageInfo.PackageId;
             }
@@ -398,7 +399,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productbyNames = productbyNames.Where(p => p.ProductName == item.ProductName).ToList();
                     if (productbyNames.Count != 1)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều hơn 1 mặt hàng có tên {item.ProductCode} {item.ProductName} trong hệ thống!");
+                        throw ProductFoundMoreThanOne.BadRequestFormat(productbyNames.Count, $"{item.ProductCode} {item.ProductName}");
                     }
                     else
                     {
@@ -408,7 +409,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             }
 
             if (productObj == null)
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName} trong hệ thống!");
+                throw ProductNotFound.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
+
             return productObj;
         }
 
@@ -589,10 +591,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private ProductModel CreateProductModel(OpeningBalanceModel p)
         {
             _productTypes.TryGetValue(p.CatePrefixCode.NormalizeAsInternalName(), out var productType);
-            if (productType == null) throw new BadRequestException(GeneralCode.InvalidParams, "Chưa nhập loại mã mặt hàng. Vui lòng kiểm tra lại");
-
+          
             _productCates.TryGetValue(p.CateName.NormalizeAsInternalName(), out var productCate);
-            if (productCate == null) throw new BadRequestException(GeneralCode.InvalidParams, "Chưa nhập danh mục mặt hàng. Vui lòng kiểm tra lại");
+            if (productCate == null) throw ProductCateEmpty.BadRequest();
 
             return new ProductModel()
             {
@@ -602,7 +603,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 IsCanBuy = true,
                 IsCanSell = true,
                 MainImageFileId = null,
-                ProductTypeId = productType.ProductTypeId,
+                ProductTypeId = productType?.ProductTypeId,
                 ProductCateId = productCate.ProductCateId,
                 BarcodeConfigId = null,
                 BarcodeStandardId = null,
@@ -667,8 +668,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 }
             }
         }
-
-
 
     }
 
