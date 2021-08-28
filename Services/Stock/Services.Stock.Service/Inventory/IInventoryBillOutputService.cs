@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Package;
@@ -11,6 +12,8 @@ namespace VErp.Services.Stock.Service.Stock
 {
     public interface IInventoryBillOutputService
     {
+        ObjectActivityLogModelBuilder<string> ImportedLogBuilder();
+
         Task<long> AddInventoryOutputDb(InventoryOutModel req);
 
         ///// <summary>

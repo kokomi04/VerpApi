@@ -38,16 +38,16 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
         {
             var entity = _mapper.Map<ProductSemiConversion>(model);
             _manuDBContext.ProductSemiConversion.Add(entity);
-             await _manuDBContext.SaveChangesAsync();
+            await _manuDBContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Tạo mới bán thành phẩm chuyển đổi", entity.JsonSerialize());
 
             return entity.ProductSemiConversionId;
         }
 
-        public async Task<bool> DeleteProductSemiConversion(long productSemiConversionId)
+        public async Task<bool> DeleteProductSemiConversion(long productSemiId, long productSemiConversionId)
         {
-            var entity = await _manuDBContext.ProductSemiConversion.FirstOrDefaultAsync(x => x.ProductSemiConversionId == productSemiConversionId);
+            var entity = await _manuDBContext.ProductSemiConversion.FirstOrDefaultAsync(x => x.ProductSemiId == productSemiId && x.ProductSemiConversionId == productSemiConversionId);
             if (entity == null)
                 throw new BadRequestException(ProductSemiErrorCode.NotFoundProductSemiConversion);
 

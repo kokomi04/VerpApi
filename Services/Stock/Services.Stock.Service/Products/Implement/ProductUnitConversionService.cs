@@ -24,24 +24,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
     {
         private readonly StockDBContext _stockDbContext;
         private readonly MasterDBContext _masterDBContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IUnitService _unitService;
 
-        public ProductUnitConversionService(StockDBContext stockContext, MasterDBContext masterDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<ProductUnitConversionService> logger
-            , IActivityLogService activityLogService
-            , IUnitService unitService
-        )
+        public ProductUnitConversionService(StockDBContext stockContext, MasterDBContext masterDBContext)
         {
             _stockDbContext = stockContext;
             _masterDBContext = masterDBContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _unitService = unitService;
         }
 
         public async Task<PageData<ProductUnitConversionOutput>> GetList(int productId, int page = 0, int size = 0)
@@ -59,7 +46,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unitList = await _masterDBContext.Unit.AsNoTracking().Where(q => secondUnitIdList.Contains(q.UnitId)).ToListAsync();
 
-            var resultFromDb = new List<VErp.Infrastructure.EF.StockDB.ProductUnitConversion>(total);
+            var resultFromDb = new List<ProductUnitConversion>(total);
             if (page > 0 && size > 0)
                 resultFromDb = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
             else

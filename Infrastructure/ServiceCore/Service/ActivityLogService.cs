@@ -24,7 +24,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
-        ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType objectTypeId);
+        ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId);        
 
         Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "");
 
@@ -100,7 +100,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return await CreateLog(objectTypeId, objectId, string.Format(messageFormat, messageResourceFormatData), jsonData, action, ignoreBatch, type, messageResourceFormatData.JsonSerialize());
         }
 
-        public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType objectTypeId)
+        public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId)
         {
             return new ObjectActivityLogFacade(objectTypeId, this);
         }

@@ -45,14 +45,7 @@ namespace VErpApi.Controllers.System
             }
             return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, SubsidiaryId, (int)EnumActionType.View, EnumMessageType.Comment, req.Message);
         }
-
-        /// <summary>
-        /// Lấy danh sách ghi chú 
-        /// </summary>
-        /// <param name="objectId"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
+     
         [HttpGet]
         [Route("")]
         public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)

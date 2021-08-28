@@ -28,4 +28,23 @@
     <ProjectReference Include="..\GlobalObject\GlobalObject.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Resources\Formaters\DateTimeFormaterFormat.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DateTimeFormaterFormat.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Formaters\DateTimeFormaterFormat.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>DateTimeFormaterFormat.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Parsers\" />
+  </ItemGroup>
+
 </Project>

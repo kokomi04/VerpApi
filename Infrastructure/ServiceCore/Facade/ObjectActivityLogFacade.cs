@@ -4,6 +4,8 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Service;
 using static VErp.Infrastructure.ServiceCore.Service.ActivityLogService;
 
@@ -11,28 +13,33 @@ namespace VErp.Infrastructure.ServiceCore.Facade
 {
     public class ObjectActivityLogFacade
     {
-        private readonly EnumObjectType objectTypeId;
-        private readonly IActivityLogService activityLogService;
+        private readonly EnumObjectType? _objectTypeId;
+        private readonly IActivityLogService _activityLogService;
 
-        public ObjectActivityLogFacade(EnumObjectType objectTypeId, IActivityLogService activityLogService)
+        public ObjectActivityLogFacade(EnumObjectType? objectTypeId, IActivityLogService activityLogService)
         {
-            this.objectTypeId = objectTypeId;
-            this.activityLogService = activityLogService;
+            this._objectTypeId = objectTypeId;
+            this._activityLogService = activityLogService;
         }
 
-        public Task<bool> CreateLog(long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "")
+
+        public Task<bool> CreateLog(long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", EnumObjectType? objectTypeId = null)
         {
-            return activityLogService.CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, messageResourceName, messageResourceFormatData);
+            objectTypeId = objectTypeId ?? _objectTypeId;
+            if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
+            return _activityLogService.CreateLog(objectTypeId.Value, objectId, message, jsonData, action, ignoreBatch, messageResourceName, messageResourceFormatData);
         }
 
-        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, string jsonData, EnumActionType? action = null, bool ignoreBatch = false)
+        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null)
         {
-            return activityLogService.CreateLog(objectTypeId, objectId, messageResourceName, jsonData, action, ignoreBatch, messageResourceFormatData);
+            objectTypeId = objectTypeId ?? _objectTypeId;
+            if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
+            return _activityLogService.CreateLog(objectTypeId.Value, objectId, messageResourceName, jsonData, action, ignoreBatch, messageResourceFormatData);
         }
 
         public ActivityLogBatchs BeginBatchLog()
         {
-            return activityLogService.BeginBatchLog();
+            return _activityLogService.BeginBatchLog();
         }
 
         public ObjectActivityLogModelBuilder<T> LogBuilder<T>(Expression<Func<T>> messageResourceName)
@@ -48,7 +55,8 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         private object[] messageResourceFormatData;
         private string jsonData;
         private EnumActionType? action = null;
-        private bool ignoreBatch  = false;
+        private bool ignoreBatch = false;
+        private EnumObjectType? objectTypeId;
 
         private readonly ObjectActivityLogFacade facade;
 
@@ -63,6 +71,13 @@ namespace VErp.Infrastructure.ServiceCore.Facade
             this.objectId = objectId;
             return this;
         }
+
+        public ObjectActivityLogModelBuilder<T> ObjectType(EnumObjectType objectTypeId)
+        {
+            this.objectTypeId = objectTypeId;
+            return this;
+        }
+
         public ObjectActivityLogModelBuilder<T> MessageResourceName(Expression<Func<T>> messageResourceName)
         {
             this.messageResourceName = messageResourceName;
@@ -99,7 +114,7 @@ namespace VErp.Infrastructure.ServiceCore.Facade
 
         public async Task CreateLog()
         {
-            await facade.CreateLog<T>(objectId, messageResourceName, messageResourceFormatData, jsonData, action, ignoreBatch);
+            await facade.CreateLog<T>(objectId, messageResourceName, messageResourceFormatData, jsonData, action, ignoreBatch, objectTypeId);
         }
     }
 

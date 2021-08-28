@@ -132,7 +132,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Services.Manafacturing.Serv
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectExtensions", "Commons\ObjectExtensions\ObjectExtensions.csproj", "{BC411162-1A60-4796-BBBB-38BBEC7227B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Caching", "Infrastructure\Cache\Caching\Caching.csproj", "{BCF3A8DF-7934-4532-8430-FD55EEF528C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Caching", "Infrastructure\Cache\Caching\Caching.csproj", "{BCF3A8DF-7934-4532-8430-FD55EEF528C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -380,6 +380,7 @@ Global
 		{BCF3A8DF-7934-4532-8430-FD55EEF528C3} = {6E047406-F8AF-40AD-804C-7B6EA4103D70}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
+		RESX_NeutralResourcesLanguage = vi-VN
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}
 	EndGlobalSection
 EndGlobal

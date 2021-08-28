@@ -14,6 +14,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Service.Resources.InventoryProcess;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -37,17 +38,31 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
             {
-                var data = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req);
+                var (affectedInventoryIds, isDeleted) = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req);
 
-                foreach (var changedInventoryId in data)
+                foreach (var changedInventoryId in affectedInventoryIds)
                 {
                     await ReCalculateRemainingAfterUpdate(changedInventoryId, inventoryId);
                 }
 
                 trans.Commit();
 
-                var messageLog = string.Format("Cập nhật & duyệt phiếu nhập kho đã duyệt, mã: {0}", req?.Inventory?.InventoryCode);
-                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, messageLog, req.JsonSerialize());
+
+                await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.UpdateAndApprove)
+                   .MessageResourceFormatDatas(req?.Inventory?.InventoryCode)
+                   .ObjectId(inventoryId)
+                   .JsonData(req.JsonSerialize())
+                   .CreateLog();
+
+                if (isDeleted)
+                {
+                    await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.DeleteCauseByNoProduct)
+                     .MessageResourceFormatDatas(req?.Inventory?.InventoryCode)
+                     .ObjectId(inventoryId)
+                     .Action(EnumActionType.Delete)
+                     .JsonData(req.JsonSerialize())
+                     .CreateLog();
+                }
 
                 return true;
             }
@@ -164,8 +179,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data };
         }
 
-        private async Task<HashSet<long>> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
+        private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
+
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
 
             if (!inventoryInfo.IsApproved)
@@ -210,7 +226,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (!isDelete)
             {
-                var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.Date, newDetails);
+                var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.Date, newDetails, inventoryInfo.InventoryCode);
                 if (!r.IsSuccess())
                 {
                     throw new BadRequestException(r);
@@ -225,8 +241,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryInfo.IsDeleted = true;
                 inventoryInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
                 inventoryInfo.UpdatedByUserId = _currentContextService.UserId;
-
-                await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Xóa phiếu {inventoryInfo.InventoryCode} do không tồn tại mặt hàng nào", req.JsonSerialize(), EnumActionType.Delete);
             }
 
 
@@ -237,7 +251,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 updateResult.Add(inventoryId);
             }
 
-            return updateResult;
+            return (updateResult, inventoryInfo.IsDeleted);
         }
 
         private async Task ApprovedInputDataUpdateAction_Normalize(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products)

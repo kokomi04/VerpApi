@@ -254,6 +254,8 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductSemiConversion = 323,
         [Description("Quy trình sản xuất mẫu")]
         ProductionProcessMold = 324,
+        [Description("Nhóm vật tư tiêu hao")]
+        ConsumptionGroup = 325,
 
 
         [Description("Kế hoạch sản xuất")]

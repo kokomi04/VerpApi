@@ -34,6 +34,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// Lấy danh sách phiếu yêu cầu vật tư
         /// </summary>
         /// <param name="keyword"></param>
+        /// <param name="productIds"></param>
         /// <param name="purchasingRequestStatusId"></param>
         /// <param name="poProcessStatusId"></param>
         /// <param name="isApproved"></param>

@@ -5,38 +5,40 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
+using static VErp.Services.Stock.Service.Resources.InventoryProcess.CensoredInventoryInputUpdateContextTitle;
+using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
     public class CensoredInventoryInputUpdateContext
     {
         //private StockDBContext stockDbContext;
-        private readonly IQueryable<Package> packages;
-        private readonly IQueryable<PackageRef> packageRefs;
-        private readonly IQueryable<InventoryDetailAffectModel> inventoryAffectDetails;
-        private readonly IList<CensoredInventoryInputObject> affectObjects;
-        private readonly InventoryDetail inventoryDetail;
-        private readonly Inventory inventory;
-        private readonly DateTime FromDate;
-        private readonly DateTime ToDate;
-        private readonly int otherInputId = -1;
-        private readonly int otherOutputputId = -2;
+        private readonly IQueryable<Package> _packages;
+        private readonly IQueryable<PackageRef> _packageRefs;
+        private readonly IQueryable<InventoryDetailAffectModel> _inventoryAffectDetails;
+        private readonly IList<CensoredInventoryInputObject> _affectObjects;
+        private readonly InventoryDetail _inventoryDetail;
+        private readonly InventoryEntity _inventory;
+        private readonly DateTime _fromDate;
+        private readonly DateTime _toDate;
+        private readonly int OTHER_INVENTORY_INPUT_ID = -1;
+        private readonly int OTHER_INVENTORY_OUTPUT_ID = -2;
 
-        public CensoredInventoryInputUpdateContext(StockDBContext stockDbContext, Inventory inventory, InventoryDetail inventoryDetail, long fromDate, long toDate)
+        public CensoredInventoryInputUpdateContext(StockDBContext stockDbContext, InventoryEntity inventory, InventoryDetail inventoryDetail, long fromDate, long toDate)
         {
-            FromDate = fromDate.UnixToDateTime().Value;
-            ToDate = toDate.UnixToDateTime().Value;
+            this._fromDate = fromDate.UnixToDateTime().Value;
+            this._toDate = toDate.UnixToDateTime().Value;
 
             //this.stockDbContext = stockDbContext;
-            this.affectObjects = new List<CensoredInventoryInputObject>();
-            this.inventory = inventory;
-            this.inventoryDetail = inventoryDetail;
+            this._affectObjects = new List<CensoredInventoryInputObject>();
+            this._inventory = inventory;
+            this._inventoryDetail = inventoryDetail;
 
-            packages = stockDbContext.Package
+            _packages = stockDbContext.Package
                    .Where(p => p.StockId == inventory.StockId && p.ProductId == inventoryDetail.ProductId && p.ProductUnitConversionId == inventoryDetail.ProductUnitConversionId)
                    .AsQueryable();
 
-            packageRefs = (
+            _packageRefs = (
                 from r in stockDbContext.PackageRef
                 join p in stockDbContext.Package on r.PackageId equals p.PackageId
                 //join pf in _stockDbContext.Package on r.RefPackageId equals pf.PackageId
@@ -46,7 +48,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 select r
                 ).AsQueryable();
 
-            inventoryAffectDetails = (
+            _inventoryAffectDetails = (
                 from id in stockDbContext.InventoryDetail
                 join iv in stockDbContext.Inventory on id.InventoryId equals iv.InventoryId
                 where iv.StockId == inventory.StockId &&
@@ -69,7 +71,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public IList<CensoredInventoryInputObject> GetAffectObjects(decimal newPrimaryQuantity, decimal newProductUnitConversionQuantity)
         {
-            var topPackage = packages.FirstOrDefault(p => p.PackageId == inventoryDetail.ToPackageId);
+            var topPackage = _packages.FirstOrDefault(p => p.PackageId == _inventoryDetail.ToPackageId);
 
             //Lấy thông tin về phiếu nhập vào Kiện
             AffectInventoryInput(newPrimaryQuantity, newProductUnitConversionQuantity);
@@ -99,37 +101,37 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
-            return affectObjects;
+            return _affectObjects;
         }
 
         private void AffectInventoryInput(decimal newPrimaryQuantity, decimal newProductUnitConversionQuantity)
         {
-            affectObjects.Add(new CensoredInventoryInputObject()
+            _affectObjects.Add(new CensoredInventoryInputObject()
             {
-                ObjectId = inventoryDetail.InventoryDetailId,
-                ObjectCode = inventory.InventoryCode,
+                ObjectId = _inventoryDetail.InventoryDetailId,
+                ObjectCode = _inventory.InventoryCode,
                 ObjectTypeId = EnumObjectType.InventoryDetail,
                 IsRoot = true,
                 IsCurrentFlow = true,
 
-                OldPrimaryQuantity = inventoryDetail.PrimaryQuantity,
+                OldPrimaryQuantity = _inventoryDetail.PrimaryQuantity,
                 NewPrimaryQuantity = newPrimaryQuantity,
 
-                OldProductUnitConversionQuantity = inventoryDetail.ProductUnitConversionQuantity,
+                OldProductUnitConversionQuantity = _inventoryDetail.ProductUnitConversionQuantity,
                 NewProductUnitConversionQuantity = newProductUnitConversionQuantity,
 
                 Children = new List<TransferToObject>()
                     {
                         new TransferToObject {
                             IsEditable = false,
-                            ObjectId = inventoryDetail.ToPackageId.Value,
+                            ObjectId = _inventoryDetail.ToPackageId.Value,
                             ObjectTypeId = EnumObjectType.Package,
                             PackageOperationTypeId = EnumPackageOperationType.Join,
 
-                            OldTransferPrimaryQuantity = inventoryDetail.PrimaryQuantity,
+                            OldTransferPrimaryQuantity = _inventoryDetail.PrimaryQuantity,
                             NewTransferPrimaryQuantity = newPrimaryQuantity,
 
-                            OldTransferProductUnitConversionQuantity = inventoryDetail.ProductUnitConversionQuantity,
+                            OldTransferProductUnitConversionQuantity = _inventoryDetail.ProductUnitConversionQuantity,
                             NewTransferProductUnitConversionQuantity = newProductUnitConversionQuantity,
                         }
                     }
@@ -138,11 +140,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private void AffectAddParentPackages(long packageId)
         {
-            var refParentPackages = packageRefs.Where(r => r.PackageId == packageId).ToList();
+            var refParentPackages = _packageRefs.Where(r => r.PackageId == packageId).ToList();
 
             var refParentPackageIds = refParentPackages.Select(r => r.RefPackageId);
 
-            var refParentPackageInfos = packages.Where(p => refParentPackageIds.Contains(p.PackageId)).ToList();
+            var refParentPackageInfos = _packages.Where(p => refParentPackageIds.Contains(p.PackageId)).ToList();
 
             foreach (var r in refParentPackageInfos)
             {
@@ -179,22 +181,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             }
                 };
 
-                if (!affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
+                if (!_affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
                 {
-                    affectObjects.Add(newObject);
+                    _affectObjects.Add(newObject);
                 }
             }
 
         }
 
-        private CensoredInventoryInputObject OtherInventoryInput = null;
+        private CensoredInventoryInputObject _otherInventoryInput = null;
         private void AffectAddParentInputs(long packageId)
         {
-            var refInventoryIns = inventoryAffectDetails.Where(id => id.ToPackageId == packageId).ToList();
+            var refInventoryIns = _inventoryAffectDetails.Where(id => id.ToPackageId == packageId).ToList();
 
             foreach (var r in refInventoryIns)
             {
-                if (r.InventoryDetailId == inventoryDetail.InventoryDetailId)
+                if (r.InventoryDetailId == _inventoryDetail.InventoryDetailId)
                 {
                     var newObject = new CensoredInventoryInputObject()
                     {
@@ -226,19 +228,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             }
                     };
 
-                    if (!affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
+                    if (!_affectObjects.Any(a => a.ObjectKey == newObject.ObjectKey))
                     {
-                        affectObjects.Add(newObject);
+                        _affectObjects.Add(newObject);
                     }
                 }
                 else
                 {
-                    if (OtherInventoryInput == null)
+                    if (_otherInventoryInput == null)
                     {
-                        OtherInventoryInput = new CensoredInventoryInputObject()
+                        _otherInventoryInput = new CensoredInventoryInputObject()
                         {
-                            ObjectId = otherInputId,
-                            ObjectCode = "Phiếu nhập khác",
+                            ObjectId = OTHER_INVENTORY_INPUT_ID,
+                            ObjectCode = OtherInventoryOutputCode,
                             ObjectTypeId = EnumObjectType.InventoryDetail,
                             IsRoot = false,
 
@@ -251,18 +253,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             Children = new List<TransferToObject>()
                         };
 
-                        affectObjects.Add(OtherInventoryInput);
+                        _affectObjects.Add(_otherInventoryInput);
 
                     }
 
 
-                    OtherInventoryInput.OldPrimaryQuantity += r.PrimaryQuantity;
-                    OtherInventoryInput.NewPrimaryQuantity += r.PrimaryQuantity;
+                    _otherInventoryInput.OldPrimaryQuantity += r.PrimaryQuantity;
+                    _otherInventoryInput.NewPrimaryQuantity += r.PrimaryQuantity;
 
-                    OtherInventoryInput.OldProductUnitConversionQuantity += r.ProductUnitConversionQuantity;
-                    OtherInventoryInput.NewProductUnitConversionQuantity += r.ProductUnitConversionQuantity;
+                    _otherInventoryInput.OldProductUnitConversionQuantity += r.ProductUnitConversionQuantity;
+                    _otherInventoryInput.NewProductUnitConversionQuantity += r.ProductUnitConversionQuantity;
 
-                    var child = OtherInventoryInput.Children.FirstOrDefault(c => c.ObjectTypeId == EnumObjectType.Package && c.ObjectId == packageId);
+                    var child = _otherInventoryInput.Children.FirstOrDefault(c => c.ObjectTypeId == EnumObjectType.Package && c.ObjectId == packageId);
                     if (child != null)
                     {
                         child.OldTransferPrimaryQuantity += r.PrimaryQuantity;
@@ -273,7 +275,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     else
                     {
-                        OtherInventoryInput.Children.Add(
+                        _otherInventoryInput.Children.Add(
                                         new TransferToObject
                                         {
                                             IsEditable = false,
@@ -296,9 +298,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         private IList<long> AffectAddChildren(long packageId)
         {
-            var packageInfo = packages.FirstOrDefault(p => p.PackageId == packageId);
+            var packageInfo = _packages.FirstOrDefault(p => p.PackageId == packageId);
 
-            var childrenPackages = packageRefs.Where(p => p.RefPackageId == packageId).ToList();
+            var childrenPackages = _packageRefs.Where(p => p.RefPackageId == packageId).ToList();
 
             var currentPackageNode = new CensoredInventoryInputObject()
             {
@@ -330,21 +332,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             AffectAddChildrenOut(currentPackageNode, packageId);
 
-            if (!affectObjects.Any(o => o.ObjectKey == currentPackageNode.ObjectKey))
-                affectObjects.Add(currentPackageNode);
+            if (!_affectObjects.Any(o => o.ObjectKey == currentPackageNode.ObjectKey))
+                _affectObjects.Add(currentPackageNode);
 
             return childrenPackages.Select(c => c.PackageId).ToList();
         }
 
-        private CensoredInventoryInputObject OtherInventoryOutput = null;
+        private CensoredInventoryInputObject _otherInventoryOutput = null;
         private void AffectAddChildrenOut(CensoredInventoryInputObject currentPackageNode, long packageId)
         {
 
-            var childrenInventoryOuts = inventoryAffectDetails.Where(id => id.FromPackageId == packageId).ToList();
+            var childrenInventoryOuts = _inventoryAffectDetails.Where(id => id.FromPackageId == packageId).ToList();
 
             foreach (var iv in childrenInventoryOuts)
             {
-                if (iv.Date >= FromDate && iv.Date <= ToDate)
+                if (iv.Date >= _fromDate && iv.Date <= _toDate)
                 {
                     currentPackageNode.Children.Add(new TransferToObject()
                     {
@@ -377,19 +379,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Children = null
                     };
 
-                    if (!affectObjects.Any(o => o.ObjectKey == outObject.ObjectKey))
-                        affectObjects.Add(outObject);
+                    if (!_affectObjects.Any(o => o.ObjectKey == outObject.ObjectKey))
+                        _affectObjects.Add(outObject);
                 }
                 else
                 {
-                    if (OtherInventoryOutput == null)
+                    if (_otherInventoryOutput == null)
                     {
-                        OtherInventoryOutput = new CensoredInventoryInputObject()
+                        _otherInventoryOutput = new CensoredInventoryInputObject()
                         {
                             IsRoot = false,
                             IsCurrentFlow = true,
-                            ObjectId = otherOutputputId,
-                            ObjectCode = "Phiếu xuất khác",
+                            ObjectId = OTHER_INVENTORY_OUTPUT_ID,
+                            ObjectCode = OtherInventoryOutputCode,
                             ObjectTypeId = EnumObjectType.InventoryDetail,
 
                             OldPrimaryQuantity = 0,
@@ -401,22 +403,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             Children = null
                         };
 
-                        affectObjects.Add(OtherInventoryOutput);
+                        _affectObjects.Add(_otherInventoryOutput);
                     }
 
-                    OtherInventoryOutput.OldPrimaryQuantity += iv.PrimaryQuantity;
-                    OtherInventoryOutput.NewPrimaryQuantity += iv.PrimaryQuantity;
+                    _otherInventoryOutput.OldPrimaryQuantity += iv.PrimaryQuantity;
+                    _otherInventoryOutput.NewPrimaryQuantity += iv.PrimaryQuantity;
 
-                    OtherInventoryOutput.OldProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
-                    OtherInventoryOutput.NewProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
+                    _otherInventoryOutput.OldProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
+                    _otherInventoryOutput.NewProductUnitConversionQuantity += iv.ProductUnitConversionQuantity;
 
-                    var currentOutput = currentPackageNode.Children.FirstOrDefault(c => c.ObjectTypeId == EnumObjectType.InventoryDetail && c.ObjectId == otherOutputputId);
+                    var currentOutput = currentPackageNode.Children.FirstOrDefault(c => c.ObjectTypeId == EnumObjectType.InventoryDetail && c.ObjectId == OTHER_INVENTORY_OUTPUT_ID);
                     if (currentOutput == null)
                     {
                         currentOutput = new TransferToObject()
                         {
                             IsEditable = false,
-                            ObjectId = otherOutputputId,
+                            ObjectId = OTHER_INVENTORY_OUTPUT_ID,
                             ObjectTypeId = EnumObjectType.InventoryDetail,
                             PackageOperationTypeId = EnumPackageOperationType.Split,
 

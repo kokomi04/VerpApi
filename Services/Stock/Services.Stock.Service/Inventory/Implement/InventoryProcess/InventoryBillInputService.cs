@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,13 +8,10 @@ using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
@@ -27,6 +23,10 @@ using VErp.Services.Stock.Service.Products;
 using VErp.Commons.Library.Model;
 using System.Data;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Infrastructure.ServiceCore.Facade;
+using static VErp.Services.Stock.Service.Resources.InventoryProcess.InventoryBillInputMessage;
+using VErp.Services.Stock.Service.Resources.InventoryProcess;
+using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -34,10 +34,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     {
         //const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER;
 
-        private readonly IActivityLogService _activityLogService;
+        
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
+        private readonly ObjectActivityLogFacade _invInputActivityLog;
+        private readonly ObjectActivityLogFacade _packageActivityLog;
 
         public InventoryBillInputService(
             StockDBContext stockContext
@@ -49,14 +51,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverService productionHandoverService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService)
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
         {
-            _activityLogService = activityLogService;
+         
             _asyncRunner = asyncRunner;
             _currentContextService = currentContextService;
             _productService = productService;
+            _invInputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryInput);
+
+            _packageActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Package); ;
         }
 
+
+        public ObjectActivityLogModelBuilder<string> ImportedLogBuilder()
+        {
+            return _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Import);
+        }
 
         /// <summary>
         /// Thêm mới phiếu nhập kho
@@ -74,9 +84,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var inventoryId = await AddInventoryInputDB(req);
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryId, $"Thêm mới phiếu nhập kho, mã: {req.InventoryCode}", req.JsonSerialize());
-
                     await ctx.ConfirmCode();
+
+                    await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Create)
+                       .MessageResourceFormatDatas(req.InventoryCode)
+                       .ObjectId(inventoryId)
+                       .JsonData(req.JsonSerialize())
+                       .CreateLog();
+
 
                     return inventoryId;
                 }
@@ -98,7 +113,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var stockInfo = await _stockDbContext.Stock.AsNoTracking().FirstOrDefaultAsync(s => s.StockId == req.StockId);
             if (stockInfo == null)
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy kho");
+                throw GeneralCode.ItemNotFound.BadRequest(StockInfoNotFound);
             }
 
             //using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
@@ -117,7 +132,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
 
-                var inventoryObj = new Inventory
+                var inventoryObj = new InventoryEntity
                 {
                     StockId = req.StockId,
                     InventoryCode = req.InventoryCode,
@@ -277,9 +292,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
-
-                        var messageLog = string.Format("Cập nhật phiếu nhập kho, mã: {0}", inventoryObj.InventoryCode);
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, messageLog, req.JsonSerialize());
+                        await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Update)
+                            .MessageResourceFormatDatas(req.InventoryCode)
+                            .ObjectId(inventoryId)
+                            .JsonData(req.JsonSerialize())
+                            .CreateLog();
                     }
                     catch (Exception ex)
                     {
@@ -302,7 +319,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        protected void InventoryInputUpdateData(Inventory inventoryObj, InventoryInModel req, decimal totalMoney)
+        protected void InventoryInputUpdateData(InventoryEntity inventoryObj, InventoryInModel req, decimal totalMoney)
         {
             var issuedDate = req.Date.UnixToDateTime().Value;
 
@@ -379,7 +396,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, string.Format("Xóa phiếu nhập kho, mã phiếu {0}", inventoryObj.InventoryCode), inventoryObj.JsonSerialize());
+
+                        await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Delete)
+                          .MessageResourceFormatDatas(inventoryObj.InventoryCode)
+                          .ObjectId(inventoryId)
+                          .JsonData(inventoryObj.JsonSerialize())
+                          .CreateLog();
 
                         return true;
                     }
@@ -445,7 +467,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
 
-                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails);
+                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails, inventoryObj.InventoryCode);
 
                         if (!r.IsSuccess())
                         {
@@ -455,21 +477,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
-                        try
-                        {
-                            await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Lỗi cập nhật trạng thái lệnh sản xuất");
-                            throw new Exception("Lỗi cập nhật trạng thái lệnh sản xuất: " + ex.Message, ex);
-                        }
+
+                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished);
 
 
                         trans.Commit();
 
-                        var messageLog = $"Duyệt phiếu nhập kho, mã: {inventoryObj.InventoryCode}";
-                        await _activityLogService.CreateLog(EnumObjectType.InventoryInput, inventoryObj.InventoryId, messageLog, new { InventoryId = inventoryId }.JsonSerialize());
+
+                        await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Approve)
+                        .MessageResourceFormatDatas(inventoryObj.InventoryCode)
+                        .ObjectId(inventoryId)
+                        .JsonData(inventoryObj.JsonSerialize())
+                        .CreateLog();
+
 
                         return true;
                     }
@@ -523,7 +543,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #region Private helper method
 
-        private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails)
+        private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails, string inventoryCode)
         {
             var inputTransfer = new List<InventoryDetailToPackage>();
             var billPackages = new List<PackageEntity>();
@@ -552,7 +572,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         case EnumPackageOption.Create:
 
-                            var newPackage = await CreateNewPackage(stockId, date, item);
+                            var newPackage = await CreateNewPackage(stockId, date, item, inventoryCode);
                             item.ToPackageId = newPackage.PackageId;
                             break;
 
@@ -568,7 +588,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                              );
                             if (packageInfo == null)
                             {
-                                var createPackage = await CreateNewPackage(stockId, date, item);
+                                var createPackage = await CreateNewPackage(stockId, date, item, inventoryCode);
                                 item.ToPackageId = createPackage.PackageId;
                                 billPackages.Add(createPackage);
                             }
@@ -587,7 +607,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                 else
                 {
-                    var newPackage = await CreateNewPackage(stockId, date, item);
+                    var newPackage = await CreateNewPackage(stockId, date, item, inventoryCode);
 
                     item.ToPackageId = newPackage.PackageId;
                 }
@@ -672,16 +692,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={puInfo.FactorExpression}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
                         //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError,
-                            $"Không thể tính giá trị đơn vị chuyển đổi \"{puInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\", kiểm tra lại độ sai số đơn vị");
+                        throw PuConversionError.BadRequestFormat(puInfo.ProductUnitConversionName, productInfo.ProductCode);
                     }
                 }
 
                 if (!isApproved && details.ProductUnitConversionQuantity <= 0)
                 {
                     //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
-                    throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError,
-                        $"Không thể tính giá trị đơn vị chuyển đổi \"{puInfo.ProductUnitConversionName}\" sản phẩm \"{productInfo.ProductCode}\", kiểm tra lại độ sai số đơn vị");
+                    throw PuConversionError.BadRequestFormat(puInfo.ProductUnitConversionName, productInfo.ProductCode);
                 }
 
                 // }
@@ -832,7 +850,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return ensureDefaultPackage;
         }
 
-        private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail)
+        private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail, string inventoryCode)
         {
             var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Package, EnumObjectType.Package, 0, null, null, date.GetUnix());
 
@@ -854,13 +872,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductUnitConversionRemaining = detail.ProductUnitConversionQuantity,
                 Date = date,
                 ExpiryTime = null,
+                Description = inventoryCode
             };
             await _stockDbContext.Package.AddAsync(newPackage);
             await _stockDbContext.SaveChangesAsync();
 
             await _customGenCodeHelperService.ConfirmCode(config.CurrentLastValue);
 
-            await _activityLogService.CreateLog(EnumObjectType.Package, newPackage.PackageId, "Tạo thông tin kiện", newPackage.JsonSerialize());
+            await _packageActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.CreatePackage)
+               .MessageResourceFormatDatas(newPackage.PackageCode, inventoryCode)
+               .ObjectId(newPackage.PackageId)
+               .JsonData(newPackage.JsonSerialize())
+               .CreateLog();
+
 
             return newPackage;
         }

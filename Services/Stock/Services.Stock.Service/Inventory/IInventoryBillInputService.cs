@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
@@ -17,7 +18,9 @@ namespace VErp.Services.Stock.Service.Stock
     /// </summary>
     public interface IInventoryBillInputService
     {
-      
+
+        ObjectActivityLogModelBuilder<string> ImportedLogBuilder();
+
         /// <summary>
         /// Thêm mới phiếu nhập kho
         /// </summary>      
