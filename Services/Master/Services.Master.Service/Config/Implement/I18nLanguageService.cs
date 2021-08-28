@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -15,11 +16,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 {
     public interface II18nLanguageService
     {
+        Task<long> AddI18n(I18nLanguageModel model);
         Task<long> AddMissingKeyI18n(string key);
-        Task<bool> DeleteI18n(IList<long> Ids);
+        Task<bool> DeleteI18n(long id);
         Task<NonCamelCaseDictionary> GetI18nByLanguage(string language);
         Task<PageData<I18nLanguageModel>> SearchI18n(string keyword, int size, int page);
-        Task<bool> UpdateI18n(IList<I18nLanguageModel> models);
+        Task<bool> UpdateI18n(long i18nLanguageId, I18nLanguageModel model);
     }
 
     public class I18nLanguageService : II18nLanguageService
@@ -64,6 +66,10 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<long> AddMissingKeyI18n(string key)
         {
+            var hasKey = await _masterDbContext.I18nLanguage.AnyAsync(x => x.Key == key);
+            if (hasKey)
+                return 0;
+
             var entity = new I18nLanguage
             {
                 Key = key,
@@ -76,33 +82,50 @@ namespace VErp.Services.Master.Service.Config.Implement
             return entity.I18nLanguageId;
         }
 
-        public async Task<bool> UpdateI18n(IList<I18nLanguageModel> models)
+        public async Task<long> AddI18n(I18nLanguageModel model)
         {
-            var existsI18n = await _masterDbContext.I18nLanguage.Where(i => models.Select(x => x.I18nLanguageId).Contains(i.I18nLanguageId)).ToListAsync();
-            var addI18n = models.Where(x => x.I18nLanguageId <= 0).ToList();
 
-            foreach (var e in existsI18n)
+            var hasKey = await _masterDbContext.I18nLanguage.AnyAsync(x => x.Key == model.Key);
+            if (hasKey)
+                throw new BadRequestException(I18nLanguageErrorCode.AlreadyExistsKeyCode);
+
+            var entity = _mapper.Map<I18nLanguage>(model);
+            _masterDbContext.I18nLanguage.Add(entity);
+
+            await _masterDbContext.SaveChangesAsync();
+
+            return entity.I18nLanguageId;
+        }
+
+        public async Task<bool> UpdateI18n(long i18nLanguageId, I18nLanguageModel model)
+        {
+            var existsI18n = await _masterDbContext.I18nLanguage.Where(i => i.I18nLanguageId == i18nLanguageId).FirstOrDefaultAsync();
+            if (existsI18n == null)
+                throw new BadRequestException(I18nLanguageErrorCode.ItemNotFound);
+
+            if (existsI18n.Key != model.Key)
             {
-                var model = models.FirstOrDefault(x => x.I18nLanguageId == e.I18nLanguageId);
-
-                _mapper.Map(model, e);
+                var hasKey = await _masterDbContext.I18nLanguage.AnyAsync(x => x.Key == model.Key);
+                if (hasKey)
+                    throw new BadRequestException(I18nLanguageErrorCode.AlreadyExistsKeyCode);
             }
 
-            await _masterDbContext.I18nLanguage.AddRangeAsync(_mapper.Map<IList<I18nLanguage>>(addI18n));
+            existsI18n.Vi = model.Vi;
+            existsI18n.En = model.En;
+            existsI18n.Key = model.Key;
 
             await _masterDbContext.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<bool> DeleteI18n(IList<long> Ids)
+        public async Task<bool> DeleteI18n(long id)
         {
-            var existsI18n = await _masterDbContext.I18nLanguage.Where(i => Ids.Contains(i.I18nLanguageId)).ToListAsync();
+            var existsI18n = await _masterDbContext.I18nLanguage.Where(i => i.I18nLanguageId == id).FirstOrDefaultAsync();
+            if (existsI18n == null)
+                throw new BadRequestException(I18nLanguageErrorCode.ItemNotFound);
 
-            foreach (var e in existsI18n)
-            {
-                e.IsDeleted = true;
-            }
+            existsI18n.IsDeleted = true;
 
             await _masterDbContext.SaveChangesAsync();
 
