@@ -29,7 +29,8 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost, Route("missingKey")]
-        [AllowAnonymous]
+        [GlobalApi]
+        // [AllowAnonymous]
         public async Task<long> AddMissingKeyI18n([FromQuery] string key)
         {
             return await _i18NLanguageService.AddMissingKeyI18n(key);
@@ -42,7 +43,8 @@ namespace VErpApi.Controllers.System
         }
         
         [HttpGet, Route("")]
-        [AllowAnonymous]
+        // [AllowAnonymous]
+        [GlobalApi]
         public async Task<NonCamelCaseDictionary> GetI18nByLanguage([FromQuery] string language)
         {
             return await _i18NLanguageService.GetI18nByLanguage(language);
