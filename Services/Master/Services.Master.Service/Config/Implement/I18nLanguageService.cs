@@ -70,16 +70,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             if (hasKey)
                 return 0;
 
-            var entity = new I18nLanguage
+            var model = new I18nLanguageModel
             {
                 Key = key,
+                Vi = key,
+                En = $"{key} (En)"
             };
 
-            _masterDbContext.I18nLanguage.Add(entity);
-
-            await _masterDbContext.SaveChangesAsync();
-
-            return entity.I18nLanguageId;
+            return await AddI18n(model);
         }
 
         public async Task<long> AddI18n(I18nLanguageModel model)
