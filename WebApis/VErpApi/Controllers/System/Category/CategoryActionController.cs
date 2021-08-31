@@ -15,7 +15,7 @@ using VErp.Services.Master.Service.Category;
 
 namespace VErpApi.Controllers.System.Category
 {
-    [Route("api/CategoryAction")]
+    [Route("api/categoryAction")]
 
     public class CategoryActionController : VErpBaseController
     {

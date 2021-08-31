@@ -22,14 +22,14 @@ using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Service.Category.Implement
 {
-    public class CateogryActionService : ActionButtonHelperServiceAbstract, ICategoryActionService
+    public class CategoryActionService : ActionButtonHelperServiceAbstract, ICategoryActionService
     {
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterDBContext;
         private readonly IActionButtonHelperService _actionButtonHelperService;
 
-        public CateogryActionService(MasterDBContext masterDBContext
+        public CategoryActionService(MasterDBContext masterDBContext
             , IActivityLogService activityLogService
             , IMapper mapper
             , IRoleHelperService roleHelperService
