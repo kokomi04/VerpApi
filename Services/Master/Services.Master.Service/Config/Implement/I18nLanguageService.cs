@@ -58,9 +58,15 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 Type type = v.GetType();
                 var property = type.GetProperties().FirstOrDefault(x => x.Name.ToLower() == language.ToLower());
-                if (property != null)
-                    return property.GetValue(v, null);
-                return null;
+                if (property != null) {
+                    var value = property.GetValue(v, null);
+
+                    if (null == value || string.IsNullOrEmpty(value.ToString())) value = v.Key;
+
+                    return value;
+                }
+
+                return v.Key;
             });
         }
 
@@ -73,8 +79,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             var model = new I18nLanguageModel
             {
                 Key = key,
-                Vi = key,
-                En = $"{key} (En)"
+                //Vi = key,
+                //En = $"{key} (En)"
             };
 
             return await AddI18n(model);
