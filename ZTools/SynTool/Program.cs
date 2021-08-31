@@ -58,7 +58,7 @@ namespace SynTool
             }
 
 
-            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\" {tableOnly} Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj";
+            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\" {tableOnly} Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj --no-pluralize";
             Console.WriteLine("\n\n" + cmd + "\n\n");
             Console.WriteLine(Bash(cmd));
 
