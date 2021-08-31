@@ -210,10 +210,10 @@ namespace VErp.Infrastructure.ApiCore
             ConfigureHelthCheck(app);
 
             //if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseDatabaseErrorPage();
-            }
+            //{
+            //    app.UseDeveloperExceptionPage();
+            //    app.UseDatabaseErrorPage();
+            //}
             //else
             //{
             //    app.UseExceptionHandler("/Home/Error");

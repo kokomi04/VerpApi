@@ -57,6 +57,8 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             {
                 File.Delete(GetPhysicalFilePath(fielPath));
             }
+
+            await Task.CompletedTask;
         }
 
         public async Task<string> CopyFile(string fileName, string sourceFile)
@@ -69,7 +71,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 File.Copy(GetPhysicalFilePath(sourceFile), GetPhysicalFilePath(filePath));
             }
 
-            return filePath;
+            return await Task.FromResult(filePath);
         }
 
         public async Task<SimpleFileInfo> Upload(EnumObjectType objectTypeId, EnumFileType fileTypeId, IFormFile file)

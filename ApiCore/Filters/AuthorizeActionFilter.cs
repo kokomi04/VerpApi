@@ -94,10 +94,12 @@ namespace VErp.Infrastructure.ApiCore.Filters
             return;
 #endif
 
-            var headers = context.HttpContext.Request.Headers;
+            //var headers = context.HttpContext.Request.Headers;
+#pragma warning disable CS0162 // Unreachable code detected
             var moduleIds = new StringValues();
+#pragma warning restore CS0162 // Unreachable code detected
 
-            headers.TryGetValue(VerpHeaders.X_Module, out moduleIds);
+            context.HttpContext.Request.Headers.TryGetValue(VerpHeaders.X_Module, out moduleIds);
 
             if (moduleIds.Count == 0)
             {

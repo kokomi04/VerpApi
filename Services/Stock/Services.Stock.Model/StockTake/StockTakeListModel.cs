@@ -32,7 +32,7 @@ namespace VErp.Services.Stock.Model.StockTake
     {
         public ICollection<StockTakeDetailModel> StockTakeDetail { get; set; }
 
-        public void Mapping(Profile profile)
+        public new void Mapping(Profile profile)
         {
             profile.CreateMap<StockTakeEntity, StockTakeModel>()
                 .ForMember(dest => dest.StockTakeDate, opt => opt.MapFrom(x => x.StockTakeDate.GetUnix()))

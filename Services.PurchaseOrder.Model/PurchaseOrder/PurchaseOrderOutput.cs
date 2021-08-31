@@ -47,7 +47,7 @@ namespace VErp.Services.PurchaseOrder.Model
     {
         public string PaymentInfo { get; set; }
 
-        public long? DeliveryDate { get; set; }
+        //public long? DeliveryDate { get; set; }
         public int? DeliveryUserId { get; set; }
         public int? DeliveryCustomerId { get; set; }
 

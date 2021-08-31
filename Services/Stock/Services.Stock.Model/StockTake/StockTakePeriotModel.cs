@@ -38,7 +38,7 @@ namespace VErp.Services.Stock.Model.StockTake
         public ICollection<StockTakeListModel> StockTake { get; set; }
         public ICollection<StockTakeRepresentativeModel> StockTakeRepresentative { get; set; }
         public ICollection<StockTakeResultModel> StockTakeResult { get; set; }
-        public void Mapping(Profile profile)
+        public new void Mapping(Profile profile)
         {
             profile.CreateMap<StockTakePeriod, StockTakePeriotModel>()
                 .ForMember(dest => dest.StockTakePeriodDate, opt => opt.MapFrom(x => x.StockTakePeriodDate.GetUnix()))

@@ -184,10 +184,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     return po.PurchaseOrderId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
-                    throw ex;
+                    throw;
                 }
             }
 
@@ -384,10 +384,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return true;
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -443,7 +443,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return true;
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
                     throw;
@@ -574,7 +574,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         protected virtual async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
         {
-            return GeneralCode.InternalError;
+            return await Task.FromResult(GeneralCode.InternalError);
         }
         
         private async Task<bool> CreatePurchaseOrderTracked(long purchaseOrderId)
