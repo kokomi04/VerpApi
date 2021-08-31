@@ -273,7 +273,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
             }
-            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Any(m => string.IsNullOrEmpty(m.ExcessMaterial))))
+            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Any(m => !m.ProductId.HasValue && string.IsNullOrEmpty(m.ExcessMaterial))))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
             }

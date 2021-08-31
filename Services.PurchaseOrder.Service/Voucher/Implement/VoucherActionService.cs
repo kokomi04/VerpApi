@@ -92,7 +92,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return result;
         }
 
-
+        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

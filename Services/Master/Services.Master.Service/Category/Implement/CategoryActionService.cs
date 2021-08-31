@@ -14,31 +14,29 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Accountancy.Model.Input;
-using VErp.Services.Accountancy.Model.Data;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Services.Accountancy.Service.Input.Implement
+namespace VErp.Services.Master.Service.Category.Implement
 {
-    public class InputActionService : ActionButtonHelperServiceAbstract, IInputActionService
+    public class CateogryActionService : ActionButtonHelperServiceAbstract, ICategoryActionService
     {
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
-        private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly MasterDBContext _masterDBContext;
         private readonly IActionButtonHelperService _actionButtonHelperService;
 
-        public InputActionService(AccountancyDBContext accountancyDBContext
+        public CateogryActionService(MasterDBContext masterDBContext
             , IActivityLogService activityLogService
             , IMapper mapper
             , IRoleHelperService roleHelperService
             , IActionButtonHelperService actionButtonHelperService
-            ) : base(actionButtonHelperService, EnumObjectType.InputType)
+            ) : base(actionButtonHelperService, EnumObjectType.Category)
         {
-            _accountancyDBContext = accountancyDBContext;
+            _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;
             _mapper = mapper;
             _actionButtonHelperService = actionButtonHelperService;
@@ -46,26 +44,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         protected override async Task<string> GetObjectTitle(int objectId)
         {
-            var info = await _accountancyDBContext.InputType.FirstOrDefaultAsync(v => v.InputTypeId == objectId);
-            if (info == null) throw new BadRequestException(InputErrorCode.InputTypeNotFound);
+            var info = await _masterDBContext.Category.FirstOrDefaultAsync(v => v.CategoryId == objectId);
+            if (info == null) throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             return info.Title;
         }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
         {
-            var inputTypeId = objectId;
-            var inputBillId = billId;
+            var categoryId = objectId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await _actionButtonHelperService.ActionButtonInfo(inputActionId, EnumObjectType.InputType, inputTypeId);
+            var action = await _actionButtonHelperService.ActionButtonInfo(categoryActionId, EnumObjectType.Category, categoryId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
 
-            if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == action.ObjectId && b.FId == inputBillId))
-                throw new BadRequestException(InputErrorCode.InputValueBillNotFound);
+            if (!_masterDBContext.Category.Any(b => b.CategoryId == categoryId))
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
 
-            var fields = _accountancyDBContext.InputField
-                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
-                .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+            var fields = _masterDBContext.CategoryField
+                .Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -75,14 +72,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
                     messageParam,
-                    new SqlParameter("@InputTypeId", action.ObjectId),
-                    new SqlParameter("@InputBill_F_Id", inputBillId)
+                    new SqlParameter("@CategoryId", categoryId),
                 };
 
-                DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
-                parammeters.Add(new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" });
+                foreach (var field in fields)
+                {
+                    data.TryGetValue(field.Key, out var celValue);
+                    parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
+                }
 
-                var resultData = await _accountancyDBContext.QueryDataTable(action.SqlAction, parammeters);
+                var resultData = await _masterDBContext.QueryDataTable(action.SqlAction, parammeters);
                 result = resultData.ConvertData();
             }
             var code = (resultParam.Value as int?).GetValueOrDefault();
@@ -96,7 +95,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
+        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
         {
             throw new NotImplementedException();
         }

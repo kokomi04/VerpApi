@@ -300,6 +300,14 @@ namespace VErp.Services.Master.Service.Category
                 category.MenuId = data.MenuId;
                 category.ParentTitle = data.ParentTitle;
                 category.DefaultOrder = data.DefaultOrder;
+
+                category.PreLoadAction = data.PreLoadAction;
+                category.PostLoadAction = data.PostLoadAction;
+                category.AfterLoadAction = data.AfterLoadAction;
+                category.BeforeSubmitAction = data.BeforeSubmitAction;
+                category.BeforeSaveAction = data.BeforeSaveAction;
+                category.AfterSaveAction = data.AfterSaveAction;
+
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ

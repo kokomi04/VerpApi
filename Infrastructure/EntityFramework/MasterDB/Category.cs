@@ -28,6 +28,12 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int? MenuId { get; set; }
         public string ParentTitle { get; set; }
         public string DefaultOrder { get; set; }
+        public string PreLoadAction { get; set; }
+        public string PostLoadAction { get; set; }
+        public string AfterLoadAction { get; set; }
+        public string BeforeSubmitAction { get; set; }
+        public string BeforeSaveAction { get; set; }
+        public string AfterSaveAction { get; set; }
 
         public virtual CategoryGroup CategoryGroup { get; set; }
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }
