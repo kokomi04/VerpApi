@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class StockDBContext : DbContext
@@ -60,6 +62,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<File>(entity =>
             {
                 entity.Property(e => e.ContentType).HasMaxLength(128);
@@ -80,13 +84,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Inventory>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryCode })
-                    .HasName("IX_Inventory_InventoryCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryCode }, "IX_Inventory_InventoryCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
-                entity.HasIndex(e => new { e.InventoryCode, e.IsDeleted, e.IsApproved, e.SubsidiaryId })
-                    .HasName("IX_Inventory_IsApproved");
+                entity.HasIndex(e => new { e.IsDeleted, e.IsApproved, e.SubsidiaryId }, "IX_Inventory_IsApproved");
 
                 entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
 
@@ -133,14 +135,13 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryDetail>(entity =>
             {
-                entity.HasIndex(e => new { e.InventoryId, e.PrimaryQuantity, e.IsDeleted, e.SubsidiaryId, e.InventoryRequirementDetailId })
-                    .HasName("IX_InventoryDetail_InventoryRequirementDetailId");
+                entity.HasIndex(e => new { e.IsDeleted, e.OrderCode }, "IDX_InventoryDetail_OrderCode");
 
-                entity.HasIndex(e => new { e.InventoryId, e.ProductId, e.PrimaryQuantity, e.ProductUnitConversionId, e.IsDeleted })
-                    .HasName("IDX_InventoryDetail_Product");
+                entity.HasIndex(e => e.IsDeleted, "IDX_InventoryDetail_Product");
 
-                entity.HasIndex(e => new { e.ProductId, e.RefObjectCode, e.OrderCode, e.Pocode, e.ProductionOrderCode, e.InventoryId, e.IsDeleted, e.SubsidiaryId })
-                    .HasName("IDX_InventoryDetail_Search");
+                entity.HasIndex(e => new { e.InventoryId, e.IsDeleted, e.SubsidiaryId }, "IDX_InventoryDetail_Search");
+
+                entity.HasIndex(e => new { e.IsDeleted, e.SubsidiaryId, e.InventoryRequirementDetailId }, "IX_InventoryDetail_InventoryRequirementDetailId");
 
                 entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
 
@@ -159,9 +160,9 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PackageOptionId).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Pocode)
-                    .HasColumnName("POCode")
                     .HasMaxLength(64)
-                    .IsUnicode(false);
+                    .IsUnicode(false)
+                    .HasColumnName("POCode");
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
@@ -270,8 +271,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryRequirement>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryTypeId, e.InventoryRequirementCode })
-                    .HasName("IX_InventoryRequirement_InventoryRequirementCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryTypeId, e.InventoryRequirementCode }, "IX_InventoryRequirement_InventoryRequirementCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -311,9 +311,9 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.OutsourceStepRequestCode).HasMaxLength(64);
 
                 entity.Property(e => e.Pocode)
-                    .HasColumnName("POCode")
                     .HasMaxLength(64)
-                    .IsUnicode(false);
+                    .IsUnicode(false)
+                    .HasColumnName("POCode");
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
@@ -387,8 +387,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Package>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.PackageCode })
-                    .HasName("IX_Package_PackageCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.PackageCode }, "IX_Package_PackageCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0) AND [PackageCode]<>'' AND [PackageCode] IS NOT NULL)");
 
@@ -410,8 +409,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.PackageTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Pocode)
-                    .HasColumnName("POCode")
                     .HasMaxLength(64)
+                    .HasColumnName("POCode")
                     .HasComment("Purchasing Order Code");
 
                 entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
@@ -482,13 +481,11 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Product>(entity =>
             {
-                entity.HasIndex(e => e.ProductCode)
-                    .HasName("idx_Product_ProductCode");
-
-                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductCode })
-                    .HasName("IX_Product_ProductCode_Unique")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductCode }, "IX_Product_ProductCode_Unique")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
+
+                entity.HasIndex(e => e.ProductCode, "idx_Product_ProductCode");
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
@@ -636,8 +633,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductMaterial>(entity =>
             {
-                entity.HasIndex(e => e.RootProductId)
-                    .HasName("IDX_RootProductId");
+                entity.HasIndex(e => e.RootProductId, "IDX_RootProductId");
 
                 entity.Property(e => e.PathProductIds).IsRequired();
 
@@ -692,8 +688,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductProperty>(entity =>
             {
-                entity.HasIndex(e => e.RootProductId)
-                    .HasName("IDX_RootProductId");
+                entity.HasIndex(e => e.RootProductId, "IDX_RootProductId");
 
                 entity.Property(e => e.PathProductIds).IsRequired();
 
@@ -810,8 +805,8 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
 
                 entity.Property(e => e.SoCt)
-                    .HasColumnName("so_ct")
-                    .HasMaxLength(512);
+                    .HasMaxLength(512)
+                    .HasColumnName("so_ct");
             });
 
             modelBuilder.Entity<Stock>(entity =>
@@ -839,8 +834,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<StockProduct>(entity =>
             {
-                entity.HasIndex(e => new { e.StockId, e.ProductId, e.ProductUnitConversionId })
-                    .HasName("idx_StockProduct_StockId_ProductId_ProductUnitConversionId")
+                entity.HasIndex(e => new { e.StockId, e.ProductId, e.ProductUnitConversionId }, "idx_StockProduct_StockId_ProductId_ProductUnitConversionId")
                     .IsUnique();
 
                 entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");

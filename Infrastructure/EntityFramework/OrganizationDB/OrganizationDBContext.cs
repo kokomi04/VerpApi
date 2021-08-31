@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class OrganizationDBContext : DbContext
@@ -45,6 +47,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<BusinessInfo>(entity =>
             {
                 entity.Property(e => e.Address)
@@ -80,8 +84,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<Customer>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.CustomerCode })
-                    .HasName("IX_Customer_CustomerCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.CustomerCode }, "IX_Customer_CustomerCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -193,8 +196,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<Department>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.DepartmentCode })
-                    .HasName("IX_Department_DepartmentCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.DepartmentCode }, "IX_Department_DepartmentCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -218,8 +220,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<DepartmentCapacityBalance>(entity =>
             {
-                entity.HasIndex(e => new { e.DepartmentId, e.StartDate, e.EndDate })
-                    .HasName("UCI_DepartmentCapacityBalance")
+                entity.HasIndex(e => new { e.DepartmentId, e.StartDate, e.EndDate }, "UCI_DepartmentCapacityBalance")
                     .IsUnique();
 
                 entity.Property(e => e.WorkingHours).HasColumnType("decimal(18, 5)");
@@ -257,8 +258,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             {
                 entity.HasKey(e => e.UserId);
 
-                entity.HasIndex(e => new { e.SubsidiaryId, e.EmployeeCode })
-                    .HasName("IX_Employee_EmployeeCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.EmployeeCode }, "IX_Employee_EmployeeCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 

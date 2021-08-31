@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionHandover
@@ -24,8 +26,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? HandoverDatetime { get; set; }
         public long ProductionOrderId { get; set; }
         public string Note { get; set; }
-
-        public virtual ProductionAssignment ProductionAssignment { get; set; }
-        public virtual ProductionAssignment ProductionAssignmentNavigation { get; set; }
     }
 }

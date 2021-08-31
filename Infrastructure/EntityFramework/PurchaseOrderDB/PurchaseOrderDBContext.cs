@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchaseOrderDBContext : DbContext
@@ -71,6 +73,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<CuttingExcessMaterial>(entity =>
             {
                 entity.HasKey(e => new { e.CuttingWorkSheetId, e.ExcessMaterial });
@@ -130,8 +134,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<MaterialCalc>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.MaterialCalcCode })
-                    .HasName("IX_MaterialCalc_MaterialCalcCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.MaterialCalcCode }, "IX_MaterialCalc_MaterialCalcCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -155,8 +158,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<MaterialCalcProduct>(entity =>
             {
-                entity.HasIndex(e => new { e.MaterialCalcId, e.ProductId })
-                    .HasName("IX_MaterialCalcProduct_ProductId")
+                entity.HasIndex(e => new { e.MaterialCalcId, e.ProductId }, "IX_MaterialCalcProduct_ProductId")
                     .IsUnique();
 
                 entity.HasOne(d => d.MaterialCalc)
@@ -212,7 +214,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PoAssignment>(entity =>
             {
-                entity.HasIndex(e => e.PoAssignmentCode)
+                entity.HasIndex(e => e.PoAssignmentCode, "IX_PoAssignment_PoAssignmentCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0) AND [PoAssignmentCode] IS NOT NULL AND [PoAssignmentCode]<>'')");
 
@@ -269,8 +271,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<ProductPriceConfigItem>(entity =>
             {
-                entity.HasIndex(e => new { e.ProductPriceConfigVersionId, e.ItemKey })
-                    .HasName("IX_ProductPriceConfigItem")
+                entity.HasIndex(e => new { e.ProductPriceConfigVersionId, e.ItemKey }, "IX_ProductPriceConfigItem")
                     .IsUnique();
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
@@ -348,8 +349,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PropertyCalcProduct>(entity =>
             {
-                entity.HasIndex(e => new { e.PropertyCalcId, e.ProductId })
-                    .HasName("IX_MaterialCalcProduct_ProductId_copy1")
+                entity.HasIndex(e => new { e.PropertyCalcId, e.ProductId }, "IX_MaterialCalcProduct_ProductId_copy1")
                     .IsUnique();
 
                 entity.HasOne(d => d.PropertyCalc)
@@ -427,7 +427,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchaseOrder>(entity =>
             {
-                entity.HasIndex(e => e.PurchaseOrderCode)
+                entity.HasIndex(e => e.PurchaseOrderCode, "IX_PurchaseOrder_PurchaseOrderCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -458,6 +458,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
+                entity.Property(e => e.IntoAfterTaxMoney).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
@@ -475,10 +479,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
-
-                entity.Property(e => e.IntoAfterTaxMoney).HasColumnType("decimal(18, 4)");
-
-                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -555,7 +555,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchasingRequest>(entity =>
             {
-                entity.HasIndex(e => e.PurchasingRequestCode)
+                entity.HasIndex(e => e.PurchasingRequestCode, "IX_PurchasingRequest_PurchasingRequestCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -613,7 +613,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchasingSuggest>(entity =>
             {
-                entity.HasIndex(e => e.PurchasingSuggestCode)
+                entity.HasIndex(e => e.PurchasingSuggestCode, "IX_PurchasingSuggest_PurchasingSuggestCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -846,8 +846,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<VoucherAreaField>(entity =>
             {
-                entity.HasIndex(e => new { e.VoucherTypeId, e.VoucherFieldId })
-                    .HasName("IX_InputAreaField")
+                entity.HasIndex(e => new { e.VoucherTypeId, e.VoucherFieldId }, "IX_InputAreaField")
                     .IsUnique();
 
                 entity.Property(e => e.Column).HasDefaultValueSql("((1))");
@@ -896,8 +895,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasKey(e => e.FId)
                     .HasName("PK_InputValueBill");
 
-                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode })
-                    .HasName("IX_VoucherBill_BillCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode }, "IX_VoucherBill_BillCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
