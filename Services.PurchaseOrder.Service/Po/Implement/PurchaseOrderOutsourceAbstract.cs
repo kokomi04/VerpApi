@@ -426,7 +426,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+                    var outsourceRequestId = oldDetails
+                    .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                    .Distinct()
+                    .Where(x => x > 0)
+                    .ToArray();
+
+                    if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart)
+                        return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
+
+                    if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep)
+                        return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
@@ -528,6 +538,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
                 .Select(x => x.OutsourceRequestId.GetValueOrDefault())
                 .Distinct()
+                .Where(x => x > 0)
                 .ToArray();
             return outsourceRequestId;
         }
@@ -536,10 +547,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
 
-            if (purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
+            if (outsourceRequestId.Length > 0 && purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
                 return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
 
-            if (purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
+            if (outsourceRequestId.Length > 0 && purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
                 return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
             return true;

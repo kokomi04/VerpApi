@@ -39,6 +39,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IPurchasingSuggestService _purchasingSuggestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -51,7 +52,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
-           )
+           , IManufacturingHelperService manufacturingHelperService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _appSetting = appSetting.Value;
@@ -63,6 +64,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _purchasingSuggestService = purchasingSuggestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _manufacturingHelperService = manufacturingHelperService;
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
@@ -1286,6 +1288,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Kiểm tra từ chối  PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
                 return true;
@@ -1324,6 +1328,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
@@ -1365,6 +1371,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Từ chối PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
                 return true;
@@ -1393,6 +1401,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Gửi duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
@@ -1698,6 +1708,28 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             public long PurchasingSuggestDetailId { get; set; }
             public int ProductId { get; set; }
             public int CustomerId { get; set; }
+        }
+
+
+        protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId)
+        {
+            var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
+                .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                .Distinct()
+                .ToArray();
+            return await Task.FromResult(outsourceRequestId);
+        }
+        private async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId, EnumPurchasingOrderType purchaseOrderType)
+        {
+            var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
+                return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
+                return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
+
+            return true;
         }
     }
 }
