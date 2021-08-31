@@ -49,7 +49,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from ogc in _masterDbContext.CustomGenCode.AsNoTracking()
                         where ogc.IsActived
                         select ogc;
@@ -555,7 +555,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 {
                     throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
                 }
-                if (config.TempValue.HasValue && config.TempValue.Value != config.LastValue)
+                if (config.TempValue.HasValue && config.TempValue.Value > config.LastValue)
                 {
                     config.LastValue = config.TempValue.Value;
                     config.LastCode = config.TempCode;

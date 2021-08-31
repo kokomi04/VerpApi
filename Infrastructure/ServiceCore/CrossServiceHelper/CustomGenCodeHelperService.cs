@@ -307,7 +307,10 @@ public class GenerateCodeConfigData
             {
                 code = (await customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, fId, refCode, date))?.CustomCode;
                 existedItem = await GetExistedItem(query, code, checkExisted);
-
+                if (existedItem != null)
+                {
+                    await configOption.Ctx.ConfirmCode();
+                }
                 lastValue++;
 
                 if (baseValueChains != null)
