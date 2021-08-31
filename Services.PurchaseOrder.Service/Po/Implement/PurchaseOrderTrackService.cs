@@ -24,7 +24,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly ICurrentContextService _currentContext;
         private readonly IMapper _mapper;
         private readonly IManufacturingHelperService _manufacturingHelperService;
 
