@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class Unit
@@ -12,6 +14,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsDeleted { get; set; }
         public int UnitStatusId { get; set; }
         public int SubsidiaryId { get; set; }
-        public int DecimalPlace {get;set;}
+        public int DecimalPlace { get; set; }
     }
 }

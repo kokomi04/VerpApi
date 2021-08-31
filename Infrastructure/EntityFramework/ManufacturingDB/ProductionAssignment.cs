@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionAssignment
@@ -9,8 +11,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
             ProductionAssignmentDetail = new HashSet<ProductionAssignmentDetail>();
             ProductionConsumMaterial = new HashSet<ProductionConsumMaterial>();
-            ProductionHandoverProductionAssignment = new HashSet<ProductionHandover>();
-            ProductionHandoverProductionAssignmentNavigation = new HashSet<ProductionHandover>();
             ProductionScheduleTurnShift = new HashSet<ProductionScheduleTurnShift>();
         }
 
@@ -28,8 +28,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }
         public virtual ICollection<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual ICollection<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
-        public virtual ICollection<ProductionHandover> ProductionHandoverProductionAssignment { get; set; }
-        public virtual ICollection<ProductionHandover> ProductionHandoverProductionAssignmentNavigation { get; set; }
         public virtual ICollection<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
     }
 }
