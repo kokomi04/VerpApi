@@ -54,11 +54,15 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<NonCamelCaseDictionary> GetI18nByLanguage(string language)
         {
-            return (await _masterDbContext.I18nLanguage.ToListAsync()).ToNonCamelCaseDictionary(k => k.Key, v =>
+            return (await _masterDbContext.I18nLanguage.ToListAsync())
+            .GroupBy(x => x.Key)
+            .Select(x => x.First())
+            .ToNonCamelCaseDictionary(k => k.Key, v =>
             {
                 Type type = v.GetType();
                 var property = type.GetProperties().FirstOrDefault(x => x.Name.ToLower() == language.ToLower());
-                if (property != null) {
+                if (property != null)
+                {
                     var value = property.GetValue(v, null);
 
                     if (null == value || string.IsNullOrEmpty(value.ToString())) value = v.Key;
