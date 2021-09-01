@@ -28,7 +28,7 @@ using AutoMapper.QueryableExtensions;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.Stock;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.StockTake;
+using Verp.Resources.Stock.StockTake;
 
 namespace VErp.Services.Stock.Service.StockTake.Implement
 {

@@ -19,7 +19,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.Location;
+using Verp.Resources.Stock.Location;
 
 namespace VErp.Services.Stock.Service.Location.Implement
 {

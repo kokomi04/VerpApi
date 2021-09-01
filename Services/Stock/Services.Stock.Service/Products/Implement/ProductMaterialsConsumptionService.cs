@@ -22,8 +22,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade;
-using VErp.Services.Stock.Service.Resources.Product;
-using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
+using Verp.Resources.Stock.Product;
+using static Verp.Resources.Stock.Product.ProductMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {

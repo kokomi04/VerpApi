@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using VErp.Commons.Library.Resources.Formaters;
+using Verp.Resources.Library.Formaters;
 
 namespace VErp.Commons.Library.Formaters
 {

@@ -28,7 +28,7 @@ using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Product.Bom;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.Product;
+using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {

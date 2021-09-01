@@ -18,8 +18,8 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model.ProductPrice;
-using VErp.Services.PurchaseOrder.Service.Resources;
 using VErp.Commons.Library;
+using Verp.Resources.PurchaseOrder.ProductPriceConfig;
 
 namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
 {

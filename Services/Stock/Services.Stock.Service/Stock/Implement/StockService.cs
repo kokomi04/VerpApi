@@ -25,7 +25,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.Stock;
+using Verp.Resources.Stock.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {

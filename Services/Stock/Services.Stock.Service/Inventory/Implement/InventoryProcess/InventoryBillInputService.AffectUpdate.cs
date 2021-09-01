@@ -14,7 +14,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Service.Resources.InventoryProcess;
+using Verp.Resources.Stock.InventoryProcess;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {

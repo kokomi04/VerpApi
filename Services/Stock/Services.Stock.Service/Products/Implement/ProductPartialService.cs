@@ -16,10 +16,10 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using AutoMapper;
 using VErp.Services.Stock.Model.Product.Partial;
-using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
-using static VErp.Services.Stock.Service.Resources.Product.ProductPartialValidationMessage;
+using static Verp.Resources.Stock.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductPartialValidationMessage;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.Product;
+using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {

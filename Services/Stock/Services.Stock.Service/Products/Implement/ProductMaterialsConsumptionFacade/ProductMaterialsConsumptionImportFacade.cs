@@ -18,9 +18,9 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Service.Resources.Product;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductMessage;
+using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade
 {

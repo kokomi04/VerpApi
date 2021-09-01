@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -10,21 +10,6 @@
     <ProjectReference Include="..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Service.Manafacturing.Model\Services.Manafacturing.Model.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Resources\OutsourceMaterialActivityMessage.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>OutsourceMaterialActivityMessage.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Resources\OutsourceMaterialActivityMessage.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
