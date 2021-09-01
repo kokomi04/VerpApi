@@ -1254,6 +1254,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Đã kiểm tra PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
                 return true;
