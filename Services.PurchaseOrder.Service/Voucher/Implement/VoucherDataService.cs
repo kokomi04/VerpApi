@@ -831,7 +831,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     {
                         filterValue = filterValue.Substring(start, length);
                     }
-
+                    if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
                     filters = filters.Replace(match[i].Value, filterValue);
                 }
 
@@ -851,7 +851,18 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
-                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                // Check tồn tại
+                var checkExistedReferSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
+                var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, value) };
+                result = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                if (result == null || result.Rows.Count == 0)
+                {
+                    throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                }
+                else
+                {
+                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                }
             }
         }
 
@@ -1874,16 +1885,23 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             if (!string.IsNullOrEmpty(field.Filters))
                             {
                                 var filters = field.Filters;
-                                var pattern = @"@{(?<word>\w+)}";
+                                var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
                                 Regex rx = new Regex(pattern);
                                 MatchCollection match = rx.Matches(field.Filters);
+
                                 for (int i = 0; i < match.Count; i++)
                                 {
                                     var fieldName = match[i].Groups["word"].Value;
+                                    var startText = match[i].Groups["start"].Value;
+                                    var lengthText = match[i].Groups["length"].Value;
                                     mapRow.TryGetValue(fieldName, out string filterValue);
                                     if (string.IsNullOrEmpty(filterValue))
                                     {
                                         info.TryGetValue(fieldName, out filterValue);
+                                    }
+                                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+                                    {
+                                        filterValue = filterValue.Substring(start, length);
                                     }
                                     if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
                                     filters = filters.Replace(match[i].Value, filterValue);
@@ -1900,8 +1918,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                             var referData = await _purchaseOrderDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
-                            {
-                                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
+                            { 
+                                // Check tồn tại
+                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                                var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
+                                referData = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                                if (referData == null || referData.Rows.Count == 0)
+                                {
+                                    throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
+                                }
+                                else
+                                {
+                                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
+                                }
                             }
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
