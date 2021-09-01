@@ -880,7 +880,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
-                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                // Check tồn tại
+                var checkExistedReferSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
+                var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, value) };
+                result = await _accountancyDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                if (result == null || result.Rows.Count == 0)
+                {
+                    throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                }
+                else
+                {
+                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                }
             }
         }
 
@@ -1902,7 +1913,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
                                 Regex rx = new Regex(pattern);
                                 MatchCollection match = rx.Matches(field.Filters);
-                              
+
                                 for (int i = 0; i < match.Count; i++)
                                 {
                                     var fieldName = match[i].Groups["word"].Value;
@@ -1933,7 +1944,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             var referData = await _accountancyDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
+                                // Check tồn tại
+                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                                var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
+                                referData = await _accountancyDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                                if (referData == null || referData.Rows.Count == 0)
+                                {
+                                    throw new BadRequestException(InputErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
+                                }
+                                else
+                                {
+                                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
+                                }
                             }
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
