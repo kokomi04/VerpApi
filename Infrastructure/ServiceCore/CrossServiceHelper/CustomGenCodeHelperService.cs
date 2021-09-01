@@ -27,7 +27,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> MapObjectCustomGenCode(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes);
 
         Task<CustomGenCodeOutputModel> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date);
-        Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date);
+        Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string parentCode, long? date);
         //Task<bool> ConfirmCode(int? customGenCodeId, string baseValue);
         Task<bool> ConfirmCode(CustomGenCodeBaseValueModel lastBaseValue);
 
@@ -109,7 +109,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Get<CustomGenCodeOutputModel>($"api/internal/InternalCustomGenCode/currentConfig", queries);
         }
 
-        public async Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date)
+        public async Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string parentCode, long? date)
         {
             //if(_appSetting.GrpcInternal?.Address?.Contains("https") == true)
             //{
@@ -132,7 +132,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 customGenCodeId,
                 lastValue,
                 fId,
-                code,
+                code = parentCode,
                 date
             };
             return await _httpCrossService.Get<CustomCodeGeneratedModel>($"api/internal/InternalCustomGenCode/generateCode", queries);
@@ -236,11 +236,11 @@ public class GenerateCodeConfig
     /// </summary>
     /// <param name="fId">ID of current object</param>
     /// <param name="date">%DATE(xxx)%</param>
-    /// <param name="refCode">%CODE%</param>
+    /// <param name="parentCode">%CODE%</param>
     /// <returns></returns>
-    public GenerateCodeConfigData SetConfigData(long fId, long? date = null, string refCode = "")
+    public GenerateCodeConfigData SetConfigData(long fId, long? date = null, string parentCode = "")
     {
-        RefCode = refCode;
+        RefCode = parentCode;
         FId = fId;
         Date = date;
         return new GenerateCodeConfigData(this);

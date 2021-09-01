@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class StockTakePeriod
@@ -26,6 +28,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDifference { get; set; }
         public bool IsProcessed { get; set; }
         public DateTime? FinishDate { get; set; }
+        public DateTime? FinishAcDate { get; set; }
+
         public virtual StockTakeAcceptanceCertificate StockTakeAcceptanceCertificate { get; set; }
         public virtual ICollection<StockTake> StockTake { get; set; }
         public virtual ICollection<StockTakeRepresentative> StockTakeRepresentative { get; set; }

@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.AccountancyDB
 {
     public partial class AccountancyDBContext : DbContext
@@ -36,6 +38,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<CalcPeriod>(entity =>
             {
                 entity.Property(e => e.Description).HasMaxLength(512);
@@ -79,8 +83,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
             modelBuilder.Entity<InputAreaField>(entity =>
             {
-                entity.HasIndex(e => new { e.InputTypeId, e.InputFieldId })
-                    .HasName("IX_InputAreaField")
+                entity.HasIndex(e => new { e.InputTypeId, e.InputFieldId }, "IX_InputAreaField")
                     .IsUnique();
 
                 entity.Property(e => e.Column).HasDefaultValueSql("((1))");
@@ -125,8 +128,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.HasKey(e => e.FId)
                     .HasName("PK_InputValueBill");
 
-                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode })
-                    .HasName("IX_InputBill_BillCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.BillCode }, "IX_InputBill_BillCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -237,8 +239,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
             modelBuilder.Entity<OutsideImportMappingFunction>(entity =>
             {
-                entity.HasIndex(e => e.FunctionName)
-                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                entity.HasIndex(e => e.FunctionName, "IX_AccountancyOutsiteMappingFunction")
                     .IsUnique();
 
                 entity.Property(e => e.Description).HasMaxLength(512);

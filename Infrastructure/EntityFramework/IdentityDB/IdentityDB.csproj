@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>VErp.Infrastructure.EF.IdentityDB</RootNamespace>
     <AssemblyName>VErp.Infrastructure.EF.IdentityDB</AssemblyName>
   </PropertyGroup>

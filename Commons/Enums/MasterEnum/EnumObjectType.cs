@@ -254,6 +254,8 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductSemiConversion = 323,
         [Description("Quy trình sản xuất mẫu")]
         ProductionProcessMold = 324,
+        [Description("Nhóm vật tư tiêu hao")]
+        ConsumptionGroup = 325,
 
 
         [Description("Kế hoạch sản xuất")]
@@ -288,6 +290,21 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Phiếu xử lý kiểm kê")]
         [GenCodeObject]
-        StockTakeAcceptanceCertificate = 555
+        StockTakeAcceptanceCertificate = 555,
+
+        [Description("Lịch làm việc")]
+        Calendar = 600,
+
+        [Description("Lịch nghỉ")]
+        DayOffCalendar = 601,
+
+        [Description("Lịch làm việc")]
+        DepartmentCalendar = 602,
+
+        [Description("Lịch nghỉ của bộ phận")]
+        DepartmentDayOffCalendar = 603,
+
+        [Description("Lịch tăng ca của bộ phận")]
+        DepartmentOverHour = 604
     }
 }

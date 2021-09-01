@@ -46,15 +46,7 @@ namespace VErpApi.Controllers.Stock.Products
             _productPartialService = productPartialService;
         }
 
-        /// <summary>
-        /// Tìm kiếm sản phẩm
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <param name="productTypeIds"></param>
-        /// <param name="productCateIds"></param>
-        /// <returns></returns>
+     
         [HttpGet]
         [Route("")]
         [GlobalApi]
@@ -89,10 +81,11 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("importFromMapping")]
         public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (file == null)
+            if (file == null|| mapping==null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
+            mapping.FileName = file.FileName;
             return await _productService.ImportProductFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
@@ -212,16 +205,12 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productService.DeleteProduct(productId);
         }
 
-        /// <summary>
-        /// Upload file
-        /// </summary>
-        /// <param name="fileTypeId"></param>
-        /// <param name="file"></param>
-        /// <returns></returns>
+       
         [HttpPost]
         [Route("File/{fileTypeId}")]
-        public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
+        public async Task<long> UploadImage([FromRoute] EnumFileType? fileTypeId, [FromForm] IFormFile file)
         {
+            if (fileTypeId == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _fileService.Upload(EnumObjectType.Product, string.Empty, file);
         }
 

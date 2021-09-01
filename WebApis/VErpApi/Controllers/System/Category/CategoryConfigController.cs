@@ -60,6 +60,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpPost]
         [Route("categoryFieldsByCodes")]
+        [GlobalApi]
         public async Task<List<CategoryFieldReferModel>> GetCategoryFieldsByCodes([FromBody] string[] categoryCodes)
         {
             return await _categoryConfigService.GetCategoryFieldsByCodes(categoryCodes);
@@ -118,6 +119,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpGet]
         [Route("categoryfieldsByCode")]
+        [GlobalApi]
         public async Task<PageData<CategoryFieldModel>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFieldsByCode(categoryCode, keyword, page, size);
@@ -190,7 +192,8 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpGet]
         [Route("{categoryId}/ViewInfo")]
-        public async Task<CategoryViewModel> ReportTypeViewInfo([FromRoute] int categoryId)
+        [GlobalApi]
+        public async Task<CategoryViewModel> CategoryViewInfo([FromRoute] int categoryId)
         {
             return await _categoryConfigService
                 .CategoryViewGetInfo(categoryId)
@@ -199,7 +202,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpGet]
         [Route("config/{categoryId}/ViewInfo")]
-        public async Task<CategoryViewModel> ReportTypeViewInfoConfig([FromRoute] int categoryId)
+        public async Task<CategoryViewModel> CategoryViewInfoConfig([FromRoute] int categoryId)
         {
             return await _categoryConfigService
                 .CategoryViewGetInfo(categoryId, true)

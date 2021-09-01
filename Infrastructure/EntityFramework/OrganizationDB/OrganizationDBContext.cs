@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class OrganizationDBContext : DbContext
@@ -20,7 +22,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
+        public virtual DbSet<DayOffCalendar> DayOffCalendar { get; set; }
         public virtual DbSet<Department> Department { get; set; }
+        public virtual DbSet<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }
+        public virtual DbSet<DepartmentDayOffCalendar> DepartmentDayOffCalendar { get; set; }
+        public virtual DbSet<DepartmentOverHourInfo> DepartmentOverHourInfo { get; set; }
+        public virtual DbSet<DepartmentWorkingHourInfo> DepartmentWorkingHourInfo { get; set; }
+        public virtual DbSet<DepartmentWorkingWeekInfo> DepartmentWorkingWeekInfo { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
@@ -31,12 +39,16 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
         public virtual DbSet<SystemParameter> SystemParameter { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
+        public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
+        public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<BusinessInfo>(entity =>
             {
                 entity.Property(e => e.Address)
@@ -72,6 +84,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<Customer>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.CustomerCode }, "IX_Customer_CustomerCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.Address).HasMaxLength(128);
 
                 entity.Property(e => e.CustomerCode).HasMaxLength(128);
@@ -171,8 +187,19 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_CustomerContact_Customer");
             });
 
+            modelBuilder.Entity<DayOffCalendar>(entity =>
+            {
+                entity.HasKey(e => new { e.SubsidiaryId, e.Day });
+
+                entity.Property(e => e.Content).HasMaxLength(255);
+            });
+
             modelBuilder.Entity<Department>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.DepartmentCode }, "IX_Department_DepartmentCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.DepartmentCode)
                     .IsRequired()
                     .HasMaxLength(32);
@@ -191,9 +218,49 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_Department_SelfKey");
             });
 
+            modelBuilder.Entity<DepartmentCapacityBalance>(entity =>
+            {
+                entity.HasIndex(e => new { e.DepartmentId, e.StartDate, e.EndDate }, "UCI_DepartmentCapacityBalance")
+                    .IsUnique();
+
+                entity.Property(e => e.WorkingHours).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.Department)
+                    .WithMany(p => p.DepartmentCapacityBalance)
+                    .HasForeignKey(d => d.DepartmentId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DepartmentCapacityBalance_Department");
+            });
+
+            modelBuilder.Entity<DepartmentDayOffCalendar>(entity =>
+            {
+                entity.HasKey(e => new { e.DepartmentId, e.SubsidiaryId, e.Day });
+
+                entity.Property(e => e.Content).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<DepartmentOverHourInfo>(entity =>
+            {
+                entity.Property(e => e.Content).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<DepartmentWorkingHourInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.DepartmentId, e.StartDate, e.SubsidiaryId });
+            });
+
+            modelBuilder.Entity<DepartmentWorkingWeekInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.DepartmentId, e.DayOfWeek, e.SubsidiaryId, e.StartDate });
+            });
+
             modelBuilder.Entity<Employee>(entity =>
             {
                 entity.HasKey(e => e.UserId);
+
+                entity.HasIndex(e => new { e.SubsidiaryId, e.EmployeeCode }, "IX_Employee_EmployeeCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
 
                 entity.Property(e => e.Address).HasMaxLength(512);
 
@@ -333,6 +400,18 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasKey(e => new { e.UserId, e.DataKey });
 
                 entity.Property(e => e.DataKey).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<WorkingHourInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.StartDate, e.SubsidiaryId })
+                    .HasName("PK_WorkingHourHistory");
+            });
+
+            modelBuilder.Entity<WorkingWeekInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.DayOfWeek, e.SubsidiaryId, e.StartDate })
+                    .HasName("PK_WorkingWeek");
             });
 
             OnModelCreatingPartial(modelBuilder);

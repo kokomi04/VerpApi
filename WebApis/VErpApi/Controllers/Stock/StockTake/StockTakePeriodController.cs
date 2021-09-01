@@ -90,6 +90,13 @@ namespace VErpApi.Controllers.Stock.StockTake
             return await _stockTakePeriodService.UpdateStockTakeAcceptanceCertificate(stockTakePeriodId, model);
         }
 
+        [HttpDelete]
+        [Route("{stockTakePeriodId}/acceptance-certificate")]
+        public async Task<bool> DeleteStockTakeAcceptanceCertificate([FromRoute] long stockTakePeriodId)
+        {
+            return await _stockTakePeriodService.DeleteStockTakeAcceptanceCertificate(stockTakePeriodId);
+        }
+
         [HttpPut]
         [Route("{stockTakePeriodId}/acceptance-certificate/confirm")]
         public async Task<bool> ConfirmStockTakeAcceptanceCertificate([FromRoute] long stockTakePeriodId, [FromBody] ConfirmAcceptanceCertificateModel model)

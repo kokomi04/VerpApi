@@ -17,10 +17,13 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade;
+using VErp.Services.Stock.Service.Resources.Product;
+using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -38,6 +41,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private readonly IProductService _productService;
         private readonly IUnitService _unitService;
+
+        private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductMaterialsConsumptionService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -60,6 +65,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _manufacturingHelperService = manufacturingHelperService;
             _productService = productService;
             _unitService = unitService;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
 
@@ -157,39 +163,39 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
         }
 
-        private async Task<bool> FindMaterialsConsumpMissing(int productId, List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri)
-        {
-            var materialsConsumption = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
-                            .Where(x => x.ProductId == productId)
-                            .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
-                            .ToList();
+        //private async Task<bool> FindMaterialsConsumpMissing(int productId, List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri)
+        //{
+        //    var materialsConsumption = _stockDbContext.ProductMaterialsConsumption.AsNoTracking()
+        //                    .Where(x => x.ProductId == productId)
+        //                    .ProjectTo<ProductMaterialsConsumptionOutput>(_mapper.ConfigurationProvider)
+        //                    .ToList();
 
-            var newTemp = (materialsConsumptionInheri.Where(x => IsCheckNotExistsMaterialsConsumpOrGroup(materialsConsumption, x))
-                .Select(x => new ProductMaterialsConsumption
-                {
-                    ProductId = productId,
-                    MaterialsConsumptionId = x.MaterialsConsumptionId,
-                    Quantity = 0,
-                    ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId
-                })
-                .ToArray()).GroupBy(x => new { x.ProductMaterialsConsumptionGroupId, x.MaterialsConsumptionId })
-                .Select(x => x.First());
+        //    var newTemp = (materialsConsumptionInheri.Where(x => IsCheckNotExistsMaterialsConsumpOrGroup(materialsConsumption, x))
+        //        .Select(x => new ProductMaterialsConsumption
+        //        {
+        //            ProductId = productId,
+        //            MaterialsConsumptionId = x.MaterialsConsumptionId,
+        //            Quantity = 0,
+        //            ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId
+        //        })
+        //        .ToArray()).GroupBy(x => new { x.ProductMaterialsConsumptionGroupId, x.MaterialsConsumptionId })
+        //        .Select(x => x.First());
 
-            await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(newTemp);
-            await _stockDbContext.SaveChangesAsync();
+        //    await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(newTemp);
+        //    await _stockDbContext.SaveChangesAsync();
 
-            return true;
-        }
+        //    return true;
+        //}
 
-        private bool IsCheckNotExistsMaterialsConsumpOrGroup(IEnumerable<ProductMaterialsConsumptionOutput> materials, ProductMaterialsConsumptionOutput item)
-        {
-            if (materials.Count() == 0) return true;
+        //private bool IsCheckNotExistsMaterialsConsumpOrGroup(IEnumerable<ProductMaterialsConsumptionOutput> materials, ProductMaterialsConsumptionOutput item)
+        //{
+        //    if (materials.Count() == 0) return true;
 
-            var groups = materials.Where(x => x.ProductMaterialsConsumptionGroupId == item.ProductMaterialsConsumptionGroupId);
-            if (groups.Count() == 0) return true;
+        //    var groups = materials.Where(x => x.ProductMaterialsConsumptionGroupId == item.ProductMaterialsConsumptionGroupId);
+        //    if (groups.Count() == 0) return true;
 
-            return !groups.Any(x => x.MaterialsConsumptionId == item.MaterialsConsumptionId);
-        }
+        //    return !groups.Any(x => x.MaterialsConsumptionId == item.MaterialsConsumptionId);
+        //}
 
         private IList<ProductMaterialsConsumptionOutput> LoopCalcMaterialsConsump(IEnumerable<ProductBomOutput> productBom
             , IEnumerable<ProductBomOutput> level
@@ -254,12 +260,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, ICollection<ProductMaterialsConsumptionInput> model)
         {
-            var validate = await ValidateModelInput(model);
-
-            if (!validate.IsSuccess())
-            {
-                throw new BadRequestException(validate);
-            }
+            ValidateModelInput(model);
 
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
@@ -285,18 +286,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _stockDbContext.ProductMaterialsConsumption.AddRange(newMaterials);
 
             await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, productId, $"Cập nhật vật tư tiêu hao cho sản phẩm '{product.ProductCode}/ {product.ProductName}'", model.JsonSerialize());
+
+            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateMaterialConsumption)
+             .MessageResourceFormatDatas(product.ProductCode)
+             .ObjectId(productId)
+             .JsonData(model.JsonSerialize())
+             .CreateLog();
+
+
             return true;
         }
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
         {
-            var validate = await ValidateModelInput(new[] { model });
-
-            if (!validate.IsSuccess())
-            {
-                throw new BadRequestException(validate);
-            }
+            ValidateModelInput(new[] { model });
 
             var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == productId);
             if (product == null)
@@ -306,11 +309,22 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (material == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
+            var materialProducInfo = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => p.ProductId == material.MaterialsConsumptionId);
+
+            if (materialProducInfo == null)
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+
             model.ProductId = productId;
             _mapper.Map(model, material);
 
             await _stockDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, productMaterialsConsumptionId, $"Cập nhật vật tư tiêu hao {productMaterialsConsumptionId}", model.JsonSerialize());
+
+            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateDetailMaterialConsumption)
+           .MessageResourceFormatDatas(materialProducInfo.ProductCode, product.ProductCode)
+           .ObjectId(productId)
+           .JsonData(model.JsonSerialize())
+           .CreateLog();
+
             return true;
         }
 
@@ -320,7 +334,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 CategoryId = 1,
                 CategoryCode = "ProductMaterialsConsumption",
-                CategoryTitle = "Định mức vật tư tiêu hao",
+                CategoryTitle = ProductConsumptionImportAsCateTitle,
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
@@ -396,14 +410,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .SetService(this);
         }
 
-        private async Task<Enum> ValidateModelInput(IEnumerable<ProductMaterialsConsumptionInput> model)
+        private void ValidateModelInput(IEnumerable<ProductMaterialsConsumptionInput> model)
         {
-            if (model.Any(x => x.Quantity <= 0))
+            foreach (var input in model)
             {
-                return ProductErrorCode.QuantityOfMaterialsConsumptionIsZero;
+                if (input.Quantity <= 0)
+                    throw ProductMaterialConsumptionQuantityError.BadRequestFormat(input.ProductCode, input.ProductMaterialsConsumptionGroupCode);
             }
-
-            return GeneralCode.InternalError;
         }
     }
 }

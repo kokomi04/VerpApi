@@ -13,21 +13,26 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Service.Resources.Product;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade
 {
     public class ProductMaterialsConsumptionImportFacade
     {
+        private ObjectActivityLogFacade _productActivityLog;
+
         private StockDBContext _stockDbContext;
 
         private IOrganizationHelperService _organizationHelperService;
         private IManufacturingHelperService _manufacturingHelperService;
-        private IActivityLogService _activityLogService;
+        //private IActivityLogService _activityLogService;
 
         private IProductBomService _productBomService;
         private IUnitService _unitService;
@@ -93,7 +98,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
         public ProductMaterialsConsumptionImportFacade SetService(IActivityLogService activityLogService)
         {
-            _activityLogService = activityLogService;
+            //_activityLogService = activityLogService;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
             return this;
         }
 
@@ -103,8 +109,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             return this;
         }
 
+
+        private ImportExcelMapping _mapping = null;
         public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int? productId)
         {
+            _mapping = mapping;
             ReadExcelData(mapping, stream);
 
             if (productId.HasValue)
@@ -113,7 +122,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             await ValidExcelData();
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                using (var logBath = _activityLogService.BeginBatchLog())
+                using (var logBath = _productActivityLog.BeginBatchLog())
                 {
                     await AddMissingProductType();
                     await AddMissingProductCate();
@@ -152,7 +161,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                                                         .Where(x => !_boms.Any(b => b.ProductCode == x.UsageProductCode))
                                                         .Select(x => x.UsageProductCode).ToList();
             if (notExistsUsageProductInBom.Count() > 0)
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Xuất hiện các chi tiết sử dụng không tồn tại trong BOM mặt hàng. Các chi tiết sử dụng: \"{string.Join(", ", notExistsUsageProductInBom)}\"");
+                throw ImportConsumBomNotExistedInProduct.BadRequestFormat(string.Join(", ", notExistsUsageProductInBom));
 
         }
 
@@ -169,7 +178,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 }).ToList();
 
             if (hasGreatThanTwoUsageProductUsingMaterialConsumption.Count > 0)
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Xuất hiện chi tiết sử dụng có mã trùng nhau cùng sử dụng vật liệu tiêu hao trong cùng 1 nhóm. Các vật liệu tiêu hao: \"{string.Join(", ", hasGreatThanTwoUsageProductUsingMaterialConsumption.Select(x => x.productCode))}\"");
+                throw ImportConsumDuplicateSamePartInSameGroup.BadRequestFormat(string.Join(", ", hasGreatThanTwoUsageProductUsingMaterialConsumption.Select(x => x.productCode)));
 
             _departments = await _organizationHelperService.GetAllDepartmentSimples();
             _steps = (await _manufacturingHelperService.GetSteps()).GroupBy(x => x.StepName.NormalizeAsInternalName())
@@ -182,13 +191,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
                 var department = _departments.FirstOrDefault(x => x.DepartmentCode == row.DepartmentCode || x.DepartmentName == row.DepartmentName);
                 if (department == null)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy bộ phận \"{row.DepartmentCode} {row.DepartmentName}\" của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
+                    throw DepartmentOfMaterialNotFound.BadRequestFormat($"{row.DepartmentCode} {row.DepartmentName}", row.ProductCode);
 
                 if (string.IsNullOrWhiteSpace(row.StepName))
                     continue;
 
                 if (!_steps.ContainsKey(row.StepName.NormalizeAsInternalName()))
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy công đoạn \"{row.StepName}\" của mã sản phẩm \"{row.ProductCode}\" trong hệ thống");
+                    throw StepOfMaterialNotFound.BadRequestFormat(row.StepName, row.ProductCode);
             }
         }
 
@@ -247,9 +256,22 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             if (!IsPreview)
             {
                 await _stockDbContext.ProductMaterialsConsumption.AddRangeAsync(lsMaterialConsumption);
-                await _activityLogService.CreateLog(EnumObjectType.ProductMaterialsConsumption, 0, $"Import vật liệu tiêu hao cho mặt hàng", lsMaterialConsumption.JsonSerialize());
+
+                var productIds = lsMaterialConsumption.Select(c => c.ProductId).Distinct().ToList();
+
+                var products = await _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
 
                 await _stockDbContext.SaveChangesAsync();
+                foreach (var p in products)
+                {
+                    var consumps = lsMaterialConsumption.Where(c => c.ProductId == p.ProductId).ToList();
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportConsumption)
+                     .MessageResourceFormatDatas(p.ProductCode)
+                     .ObjectId(p.ProductId)
+                     .JsonData(new { _mapping, consumps }.JsonSerialize())
+                     .CreateLog();
+                }
+
             }
         }
 
@@ -604,6 +626,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 {
                     ProductType type = null;
 
+                    var productTitle = $"{p.Value.ProductCode} {p.Value.ProductName}";
                     if (string.IsNullOrWhiteSpace(p.Value.ProductTypeCode.NormalizeAsInternalName()))
                     {
                         type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
@@ -614,7 +637,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
                         if (type == null)
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy loại mã mặt hàng {p.Value.ProductTypeCode} cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                            throw ImportProductTypeOfProductNotFound.BadRequestFormat(p.Value.ProductTypeCode, productTitle);
                         }
                     }
 
@@ -625,7 +648,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         cate = _productCates.FirstOrDefault(c => c.Value.IsDefault).Value;
                         if (cate == null)
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục mặc định cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                            throw ImportProductCateDefaultOfProductNotFound.BadRequestFormat(productTitle);
 
                         }
                     }
@@ -635,14 +658,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
                         if (cate == null)
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy danh mục {p.Value.ProductCateName} mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                            throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductCateName, productTitle);
                         }
                     }
 
                     _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
                     if (unit == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị tính \"{p.Value.UnitName}\" cho mặt hàng {p.Value.ProductCode} {p.Value.ProductName}");
+                        throw UnitOfProductNotFound.BadRequestFormat(productTitle);
                     }
 
                     return new ProductModel
@@ -751,16 +774,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     ProductMaterialsConsumptionGroupCode = t.Value.NormalizeAsInternalName()
                 }).ToList();
 
-            if (!IsPreview)
-            {
-                await _stockDbContext.ProductMaterialsConsumptionGroup.AddRangeAsync(newGroups);
-                await _stockDbContext.SaveChangesAsync();
-            }
+            if (newGroups.Count > 0)
+                throw ImportConsumptionGroupNotFound.BadRequestFormat(string.Join(", ", newGroups.Select(x => x.Title)));
+            // if (!IsPreview)
+            // {
+            //     await _stockDbContext.ProductMaterialsConsumptionGroup.AddRangeAsync(newGroups);
+            //     await _stockDbContext.SaveChangesAsync();
+            // }
 
-            foreach (var t in newGroups)
-            {
-                _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
-            }
+                // foreach (var t in newGroups)
+                // {
+                //     _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
+                // }
         }
 
         private StepSimpleInfo GetStep(string StepName)

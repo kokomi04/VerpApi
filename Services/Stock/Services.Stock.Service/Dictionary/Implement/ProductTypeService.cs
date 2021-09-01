@@ -12,9 +12,11 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
+using VErp.Services.Stock.Service.Resources.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {
@@ -25,6 +27,8 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _productTypeActivityLog;
+
         public ProductTypeService(
             StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -38,6 +42,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _productTypeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductType);
         }
 
         public async Task<int> AddProductType(ProductTypeInput req)
@@ -81,7 +86,11 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await UpdateSortOrder(productType);
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Thêm mới loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
+            await _productTypeActivityLog.LogBuilder(() => ProductTypeActivityMessage.Create)
+               .MessageResourceFormatDatas(productType.ProductTypeName)
+               .ObjectId(productType.ProductTypeId)
+               .JsonData(req.JsonSerialize())
+               .CreateLog();
 
             return productType.ProductTypeId;
         }
@@ -111,7 +120,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await UpdateSortOrder(productType);
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Xóa loại sản phẩm {productType.ProductTypeName}", productType.JsonSerialize());
+            await _productTypeActivityLog.LogBuilder(() => ProductTypeActivityMessage.Delete)
+            .MessageResourceFormatDatas(productType.ProductTypeName)
+            .ObjectId(productType.ProductTypeId)
+            .JsonData(productType.JsonSerialize())
+            .CreateLog();
+
 
             return true;
         }
@@ -141,7 +155,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
         public async Task<PageData<ProductTypeOutput>> GetList(string keyword, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = (from c in _stockContext.ProductType select c);
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -170,7 +184,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             {
                 lstQuery = lstQuery.Skip((page - 1) * size).Take(size);
             }
-        
+
             return (await lstQuery.ToListAsync(), total);
         }
 
@@ -201,7 +215,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await UpdateSortOrder(productType);
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductType, productType.ProductTypeId, $"Cập nhật loại sản phẩm {productType.ProductTypeName}", req.JsonSerialize());
+            await _productTypeActivityLog.LogBuilder(() => ProductTypeActivityMessage.Update)
+              .MessageResourceFormatDatas(productType.ProductTypeName)
+              .ObjectId(productType.ProductTypeId)
+              .JsonData(productType.JsonSerialize())
+              .CreateLog();
+
 
             return true;
         }

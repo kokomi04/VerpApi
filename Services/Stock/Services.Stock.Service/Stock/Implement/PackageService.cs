@@ -15,11 +15,13 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Location;
 using VErp.Services.Stock.Model.Package;
+using VErp.Services.Stock.Service.Resources.Stock;
 using PackageModel = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -31,6 +33,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly ObjectActivityLogFacade _packageActivityLog;
+
+
         public PackageService(StockDBContext stockContext
            , IOptions<AppSetting> appSetting
            , ILogger<PackageService> logger
@@ -42,6 +47,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _packageActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Package); ;
         }
 
         public async Task<bool> UpdatePackage(long packageId, PackageInputModel req)
@@ -62,7 +68,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await _stockDbContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Package, obj.PackageId, $"Cập nhật thông tin kiện {obj.PackageCode} ", req.JsonSerialize());
+
+            await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Update)
+              .MessageResourceFormatDatas(obj.PackageCode)
+              .ObjectId(obj.PackageId)
+              .JsonData(req.JsonSerialize())
+              .CreateLog();
 
             return true;
         }
@@ -194,12 +205,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 trans.Commit();
 
-                var message = $"Tách kiện {packageInfo.PackageCode} thành {string.Join(", ", req.ToPackages.Select(p => p.PackageCode))}";
 
-                await _activityLogService.CreateLog(EnumObjectType.Package, packageId, message, packageRefs.JsonSerialize());
+                await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Split)
+                  .MessageResourceFormatDatas(packageInfo.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
+                  .ObjectId(packageInfo.PackageId)
+                  .JsonData(new { req, packageRefs }.JsonSerialize())
+                  .CreateLog();
+
                 foreach (var newPackage in newPackages)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.Package, newPackage.PackageId, message, packageRefs.JsonSerialize());
+                    await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Split)
+                      .MessageResourceFormatDatas(packageInfo.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
+                      .ObjectId(newPackage.PackageId)
+                      .JsonData(new { req, packageRefs, newPackage }.JsonSerialize())
+                      .CreateLog();
                 }
             }
 
@@ -299,16 +318,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 trans.Commit();
 
 
-                var message = $"Gộp kiện {string.Join(", ", fromPackages.Select(p => p.PackageCode))} thành {req.PackageCode}";
-
-                await _activityLogService.CreateLog(EnumObjectType.Package, newPackage.PackageId, message, packageRefs.JsonSerialize());
-
-                foreach (var p in fromPackages)
-                {
-                    await _activityLogService.CreateLog(EnumObjectType.Package, p.PackageId, message, packageRefs.JsonSerialize());
-                }
-
                 await ctx.ConfirmCode();
+
+                await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Join)
+                 .MessageResourceFormatDatas(string.Join(", ", fromPackages.Select(p => p.PackageCode)), newPackage.PackageCode)
+                 .ObjectId(newPackage.PackageId)
+                 .JsonData(new { req, packageRefs }.JsonSerialize())
+                 .CreateLog();
+
+                foreach (var oldPackage in fromPackages)
+                {
+                    await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Join)
+                      .MessageResourceFormatDatas(string.Join(", ", fromPackages.Select(p => p.PackageCode)), newPackage.PackageCode)
+                      .ObjectId(oldPackage.PackageId)
+                      .JsonData(new { req, packageRefs, oldPackage }.JsonSerialize())
+                      .CreateLog();
+                }
 
                 return newPackage.PackageId;
             }
@@ -366,7 +391,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         public async Task<PageData<PackageOutputModel>> GetList(int stockId = 0, string keyword = "", int page = 1, int size = 10)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from p in _stockDbContext.Package
                         join l in _stockDbContext.Location on p.LocationId equals l.LocationId into pl
                         from lo in pl.DefaultIfEmpty()
@@ -452,6 +477,147 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             pageAge.PackageCode = code;
             return ctx;
         }
+
+
+
+        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
+        {
+            var packpages = _stockDbContext.Package.AsQueryable();
+            if (packageIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => packageIds.Contains(p.PackageId));
+            }
+
+            if (productIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => productIds.Contains(p.ProductId));
+            }
+
+            if (stockIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => stockIds.Contains(p.StockId));
+            }
+
+            if (productUnitConversionIds?.Count > 0)
+            {
+                packpages = packpages.Where(p => productUnitConversionIds.Contains(p.ProductUnitConversionId));
+            }
+
+            var query = from pk in packpages
+                        join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
+                        from l in ls.DefaultIfEmpty()
+                        join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
+                        join s in _stockDbContext.ProductExtraInfo on p.ProductId equals s.ProductId
+                        join pu in _stockDbContext.ProductUnitConversion on pk.ProductUnitConversionId equals pu.ProductUnitConversionId
+                        where //stockIds.Contains(pk.StockId) &&
+                        pk.PrimaryQuantityRemaining > 0
+                        select new
+                        {
+                            ProductId = p.ProductId,
+                            ProductCode = p.ProductCode,
+                            ProductName = p.ProductName,
+                            Specification = s.Specification,
+                            MainImageFileId = p.MainImageFileId,
+                            UnitId = p.UnitId,
+                            PackageId = pk.PackageId,
+
+                            PackageTypeId = pk.PackageTypeId,
+
+                            PackageCode = pk.PackageCode,
+                            PackageDescription = pk.Description,
+
+                            LocationId = pk.LocationId,
+                            LocationName = l == null ? null : l.Name,
+
+                            StockId = pk.StockId,
+
+                            Date = pk.Date,
+                            ExpiryTime = pk.ExpiryTime,
+
+                            ProductUnitConversionIsDefault = pu.IsDefault,
+
+                            ProductUnitConversionId = pu.ProductUnitConversionId,
+                            ProductUnitConversionname = pu.ProductUnitConversionName,
+
+                            PrimaryQuantityWaiting = pk.PrimaryQuantityWaiting,
+                            PrimaryQuantityRemaining = pk.PrimaryQuantityRemaining,
+
+                            ProductUnitConversionWaitting = pk.ProductUnitConversionWaitting,
+                            ProductUnitConversionRemaining = pk.ProductUnitConversionRemaining,
+
+                            POCode = pk.Pocode,
+                            pk.OrderCode,
+                            ProductionOrderCode = pk.ProductionOrderCode,
+                        };
+            if (isTwoUnit.HasValue)
+            {
+                query = query.Where(p => p.ProductUnitConversionIsDefault == !isTwoUnit.Value);
+            }
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(p => p.PackageCode.Contains(keyword)
+                 || p.ProductCode.Contains(keyword)
+                 || p.ProductName.Contains(keyword)
+                 || p.POCode.Contains(keyword)
+                 || p.ProductionOrderCode.Contains(keyword)
+                 || p.LocationName.Contains(keyword)
+                );
+            }
+            var total = await query.CountAsync();
+
+            var packageData = size > 0 ? await query.OrderByDescending(p => p.ProductUnitConversionRemaining).AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync() : await query.AsNoTracking().ToListAsync();
+
+
+            var packageList = new List<ProductPackageOutputModel>(total);
+            var dataProductIds = packageData.Select(d => d.ProductId).ToList();
+            var pusDefaults = await _stockDbContext.ProductUnitConversion.Where(p => dataProductIds.Contains(p.ProductId) && p.IsDefault).ToListAsync();
+            foreach (var item in packageData)
+            {
+                packageList.Add(new ProductPackageOutputModel()
+                {
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    Specification = item.Specification,
+                    MainImageFileId = item.MainImageFileId,
+                    UnitId = item.UnitId,
+                    UnitName = pusDefaults.FirstOrDefault(d => d.ProductId == item.ProductId)?.ProductUnitConversionName,
+
+                    PackageId = item.PackageId,
+
+                    PackageTypeId = item.PackageTypeId,
+
+                    PackageCode = item.PackageCode,
+                    PackageDescription = item.PackageDescription,
+
+                    LocationId = item.LocationId,
+                    LocationName = item.LocationName,
+                    StockId = item.StockId,
+
+                    Date = item.Date?.GetUnix(),
+                    ExpiryTime = item.ExpiryTime?.GetUnix(),
+
+                    ProductUnitConversionIsDefault = item.ProductUnitConversionIsDefault,
+
+                    ProductUnitConversionId = item.ProductUnitConversionId,
+                    ProductUnitConversionName = item.ProductUnitConversionname,
+
+                    PrimaryQuantityWaiting = item.PrimaryQuantityWaiting,
+                    PrimaryQuantityRemaining = item.PrimaryQuantityRemaining,
+
+                    ProductUnitConversionWaitting = item.ProductUnitConversionWaitting,
+                    ProductUnitConversionRemaining = item.ProductUnitConversionRemaining,
+
+                    POCode = item.POCode,
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode
+                });
+
+            }
+            return (packageList, total);
+
+        }
+
 
     }
 }

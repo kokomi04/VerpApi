@@ -608,8 +608,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                    join ps in _stockContext.ProductStockInfo on p.ProductId equals ps.ProductId
                                    join pe in _stockContext.ProductExtraInfo on p.ProductId equals pe.ProductId into pse
                                    from pe in pse.DefaultIfEmpty()
-                                   join ucs in _stockContext.ProductUnitConversion on new { p.ProductId, p.UnitId } equals new { ucs.ProductId, UnitId = ucs.SecondaryUnitId } into gucs
-                                   from ucs in gucs.DefaultIfEmpty()
+
                                    join sr in StockRemaningAsQueryable on p.ProductId equals sr.ProductId into gsr
                                    from sr in gsr.DefaultIfEmpty()
                                        //    join u in _masterDBContext.Unit on p.UnitId equals u.UnitId into gu
@@ -626,9 +625,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                        p.ProductCateId,
                                        AmountWarningMin = ps.AmountWarningMin ?? 0,
                                        AmountWarningMax = ps.AmountWarningMax ?? 0,
-                                       ucs.ProductUnitConversionId,
-                                       ucs.DecimalPlace,
-                                       sr.TotalQuantityRemaning,
+                                       TotalQuantityRemaning = sr == null ? (decimal?)null : sr.TotalQuantityRemaning,
                                        IsReachMin = ps.AmountWarningMin >= sr.TotalQuantityRemaning,
                                        IsReachMax = ps.AmountWarningMax <= sr.TotalQuantityRemaning,
                                        //    u.UnitName
@@ -653,12 +650,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var total = productInfoQuery.Count();
-            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();
-
-            var primaryUnitIdList = productInfoPaged.Select(q => q.UnitId).ToList();
-
-            var primaryUnitDataList = await _masterDBContext.Unit.Where(q => primaryUnitIdList.Contains(q.UnitId)).AsNoTracking().ToListAsync();
-
+            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();         
+          
             var stockProductDataList = (from sp in stockProductAsQueryable
                                         join s in _stockContext.Stock.AsQueryable() on sp.StockId equals s.StockId
                                         select new
@@ -670,22 +663,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                             sp.ProductUnitConversionId,
                                             sp.ProductUnitConversionRemaining,
                                         }).ToList();
+            var productIds = productInfoPaged.Select(p => p.ProductId).ToList();
 
-            var result = productInfoPaged.Select(pi => new StockProductQuantityWarning
+            var puDefault = (await _stockContext.ProductUnitConversion.Where(u => u.IsDefault && productIds.Contains(u.ProductId)).ToListAsync())
+                .ToDictionary(u => u.ProductId, u => u);
+
+            var result = productInfoPaged.Select(pi =>
             {
-                ProductId = pi.ProductId,
-                ProductCode = pi.ProductCode,
-                ProductName = pi.ProductName,
-                Specification = pi.Specification,
-                PrimaryUnitId = pi.UnitId,
-                PrimaryUnitName = primaryUnitDataList.FirstOrDefault(q => q.UnitId == pi.UnitId)?.UnitName,
-                AmountWarningMin = pi.AmountWarningMin,
-                AmountWarningMax = pi.AmountWarningMax,
-                MainImageFileId = pi.MainImageFileId,
-                DecimalPlace = pi.DecimalPlace,
-                TotalPrimaryQuantityRemaining = pi.TotalQuantityRemaning,
-                IsReachMin = pi.IsReachMin,
-                IsReachMax = pi.IsReachMax,
+                puDefault.TryGetValue(pi.ProductId, out var productPu);
+                return new StockProductQuantityWarning
+                {
+                    ProductId = pi.ProductId,
+                    ProductCode = pi.ProductCode,
+                    ProductName = pi.ProductName,
+                    Specification = pi.Specification,
+                    PrimaryUnitId = pi.UnitId,
+                    PrimaryUnitName = productPu.ProductUnitConversionName,
+                    AmountWarningMin = pi.AmountWarningMin,
+                    AmountWarningMax = pi.AmountWarningMax,
+                    MainImageFileId = pi.MainImageFileId,
+                    DecimalPlace = productPu.DecimalPlace,
+                    TotalPrimaryQuantityRemaining = pi.TotalQuantityRemaning ?? 0,
+                    IsReachMin = pi.IsReachMin,
+                    IsReachMax = pi.IsReachMax,
+                };
             }).ToList();
 
             return (result, total);

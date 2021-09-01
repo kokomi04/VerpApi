@@ -32,6 +32,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>EnumPurchasingRequestTypeDescription.resx</DependentUpon>
     </Compile>
+    <Compile Update="Resources\Stock\InventoryErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InventoryErrorCodeDescription.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -50,6 +55,10 @@
     <EmbeddedResource Update="Resources\PO\EnumPurchasingRequestTypeDescription.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>EnumPurchasingRequestTypeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Resources\Stock\InventoryErrorCodeDescription.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>InventoryErrorCodeDescription.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

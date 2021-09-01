@@ -410,16 +410,7 @@ namespace VErp.Commons.Library
             var ex = propertyInfo.Name.ToMemberOf<T>();
             return asc ? query.OrderBy(ex) : query.OrderByDescending(ex);
         }
-        public static string Format(this decimal number, int decimalplace = 16)
-        {
-            var format = new StringBuilder();
-            format.Append("#,#.");
-            for (var i = 1; i < decimalplace; i++)
-            {
-                format.Append("#");
-            }
-            return number.ToString(format.ToString());
-        }
+      
 
         public static decimal AddDecimal(this decimal a, decimal b)
         {
@@ -1270,13 +1261,14 @@ namespace VErp.Commons.Library
 
         public static T DeepClone<T>(this T a)
         {
-            using (MemoryStream stream = new MemoryStream())
-            {
-                BinaryFormatter formatter = new BinaryFormatter();
-                formatter.Serialize(stream, a);
-                stream.Position = 0;
-                return (T)formatter.Deserialize(stream);
-            }
+            return a.JsonSerialize().JsonDeserialize<T>();
+            // using (MemoryStream stream = new MemoryStream())
+            // {
+            //     BinaryFormatter formatter = new BinaryFormatter();
+            //     formatter.Serialize(stream, a);
+            //     stream.Position = 0;
+            //     return (T)formatter.Deserialize(stream);
+            // }
         }
 
 
@@ -1394,5 +1386,7 @@ namespace VErp.Commons.Library
 
             return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
         }
+
+
     }
 }

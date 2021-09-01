@@ -29,6 +29,8 @@ namespace MasterTests
         private readonly IProductService productService;
         private readonly IUnitService unitService;
         private readonly IInventoryService inventoryService;
+        private readonly IInventoryBillInputService inventoryBillInputService;
+        private readonly IInventoryBillOutputService inventoryBillOutputService;
         private readonly IStockService stockService;
 
         public InventoryTests()
@@ -38,6 +40,8 @@ namespace MasterTests
             productService = webHost.Services.GetService<IProductService>();
             unitService = webHost.Services.GetService<IUnitService>();
             inventoryService = webHost.Services.GetService<IInventoryService>();
+            inventoryBillInputService = webHost.Services.GetService<IInventoryBillInputService>();
+            inventoryBillOutputService = webHost.Services.GetService<IInventoryBillOutputService>();
             stockService = webHost.Services.GetService<IStockService>();
         }
 
@@ -115,31 +119,31 @@ namespace MasterTests
             //TEST-INV-1-1 
             var inv11 = await InputInventory(stockId, "TEST-INV-1-1", new DateTime(2020, 1, 1), P(productId1, 20));
 
-            Assert.True((await inventoryService.ApproveInventoryInput(inv11.Data)));
+            Assert.True((await inventoryBillInputService.ApproveInventoryInput(inv11.Data)));
 
 
 
             //TEST-OUV-1-1
             var outv11 = await OutputInventory(stockId, "TEST-OUV-1-1", new DateTime(2020, 1, 1), P(productId1, 15));
-            Assert.True((await inventoryService.ApproveInventoryOutput(outv11.Data)));
+            Assert.True((await inventoryBillOutputService.ApproveInventoryOutput(outv11.Data)));
 
             //TEST-INV-1-2 
             var inv12 = await InputInventory(stockId, "TEST-INV-1-2", new DateTime(2020, 1, 1), P(productId1, 10));
-            Assert.True((await inventoryService.ApproveInventoryInput(inv12.Data)));
+            Assert.True((await inventoryBillInputService.ApproveInventoryInput(inv12.Data)));
 
             //TEST-OUV-1-2
             var outv12 = await OutputInventory(stockId, "TEST-OUV-1-2", new DateTime(2020, 1, 1), P(productId1, 5), P(productId1, 10));
-            Assert.True((await inventoryService.ApproveInventoryOutput(outv12.Data)));
+            Assert.True((await inventoryBillOutputService.ApproveInventoryOutput(outv12.Data)));
 
             //TEST-INV-1-3
             var inv13 = await InputInventory(stockId, "TEST-INV-1-3", new DateTime(2020, 1, 1), P(productId1, 10));
-            Assert.True((await inventoryService.ApproveInventoryInput(inv13.Data)));
+            Assert.True((await inventoryBillInputService.ApproveInventoryInput(inv13.Data)));
 
 
             /*Day2*/
             //TEST-INV-2-1
             var inv21 = await InputInventory(stockId, "TEST-INV-2-1", new DateTime(2020, 1, 2), P(productId1, 10), P(productId1, 2));
-            Assert.True((await inventoryService.ApproveInventoryInput(inv21.Data)));
+            Assert.True((await inventoryBillInputService.ApproveInventoryInput(inv21.Data)));
 
             //TEST-INV-2-2 2/1/2020
             await InputInventory(stockId, "TEST-INV-2-2", new DateTime(2020, 1, 2), P(productId1, 5));
@@ -147,11 +151,11 @@ namespace MasterTests
 
             //TEST-OUV-2-1
             var outv21 = await OutputInventory(stockId, "TEST-OUV-2-1", new DateTime(2020, 1, 2), P(productId1, 5), P(productId1, 2));
-            Assert.True((await inventoryService.ApproveInventoryOutput(outv21.Data)));
+            Assert.True((await inventoryBillOutputService.ApproveInventoryOutput(outv21.Data)));
 
             //TEST-INV-2-3
             var inv23 = await InputInventory(stockId, "TEST-INV-2-3", new DateTime(2020, 1, 2), P(productId1, 2), P(productId1, 6));
-            Assert.True((await inventoryService.ApproveInventoryInput(inv23.Data)));
+            Assert.True((await inventoryBillInputService.ApproveInventoryInput(inv23.Data)));
 
             //TEST-OUV-2-2
             await OutputInventory(stockId, "TEST-OUV-2-2", new DateTime(2020, 1, 2), P(productId1, 10));
@@ -160,16 +164,16 @@ namespace MasterTests
             /*Day3*/
             //TEST-OUV-4-1
             var outv41 = await OutputInventory(stockId, "TEST-OUV-4-1", new DateTime(2020, 1, 4), P(productId1, 5), P(productId1, 5), P(productId1, 5));
-            Assert.True((await inventoryService.ApproveInventoryOutput(outv41.Data)));
+            Assert.True((await inventoryBillOutputService.ApproveInventoryOutput(outv41.Data)));
 
             //TEST-INV-4-1
             var inv41 = await InputInventory(stockId, "TEST-INV-4-1", new DateTime(2020, 1, 4), P(productId1, 10));
-            Assert.True((await inventoryService.ApproveInventoryInput(inv41.Data)));
+            Assert.True((await inventoryBillInputService.ApproveInventoryInput(inv41.Data)));
 
 
             //TEST-OUV-4-2
             var outv42 = await OutputInventory(stockId, "TEST-OUV-4-2", new DateTime(2020, 1, 4), P(productId1, 5));
-            Assert.True((await inventoryService.ApproveInventoryOutput(outv42.Data)));
+            Assert.True((await inventoryBillOutputService.ApproveInventoryOutput(outv42.Data)));
 
 
             Assert.Equal(10, await GetBalanceByDate(new DateTime(2020, 1, 1), stockId, productId1.ProductId));
@@ -196,8 +200,8 @@ namespace MasterTests
             //--Increase date
             var update23Model = InputInventoryCreationModel(stockId, inventory23Code, new DateTime(2020, 1, 4), P(productId1, newP1Quantity, oldP1Detail.InventoryDetailId), P(productId1, newP2Quantity));
 
-            var affectDetails = await inventoryService.InputUpdateGetAffectedPackages(inventory23Id, affect23From, affect23To, update23Model);
-            Assert.True((await inventoryService.ApprovedInputDataUpdate(inventory23Id, affect23From, affect23To, new ApprovedInputDataSubmitModel()
+            var affectDetails = await inventoryBillInputService.InputUpdateGetAffectedPackages(inventory23Id, affect23From, affect23To, update23Model);
+            Assert.True((await inventoryBillInputService.ApprovedInputDataUpdate(inventory23Id, affect23From, affect23To, new ApprovedInputDataSubmitModel()
             {
                 Inventory = update23Model,
                 AffectDetails = affectDetails
@@ -207,8 +211,8 @@ namespace MasterTests
             //--Decrease date
             update23Model = InputInventoryCreationModel(stockId, inventory23Code, new DateTime(2020, 1, 2), P(productId1, oldP1Quantity, oldP1Detail.InventoryDetailId), P(productId1, oldP2Quantity));
 
-            affectDetails = await inventoryService.InputUpdateGetAffectedPackages(inventory23Id, affect23From, affect23To, update23Model);
-            Assert.True((await inventoryService.ApprovedInputDataUpdate(inventory23Id, affect23From, affect23To, new ApprovedInputDataSubmitModel()
+            affectDetails = await inventoryBillInputService.InputUpdateGetAffectedPackages(inventory23Id, affect23From, affect23To, update23Model);
+            Assert.True((await inventoryBillInputService.ApprovedInputDataUpdate(inventory23Id, affect23From, affect23To, new ApprovedInputDataSubmitModel()
             {
                 Inventory = update23Model,
                 AffectDetails = affectDetails
@@ -227,27 +231,27 @@ namespace MasterTests
             var out21_newP2Quantity = 3;
 
             var updatedOut21Model = OutputInventoryCreationModel(stockId, inventory21Code, new DateTime(2020, 1, 4), P(productId1, out21_newP1Quantity), P(productId1, out21_newP2Quantity));
-            Assert.True((await inventoryService.UpdateInventoryOutput(inventory21Id, updatedOut21Model)));
-            Assert.True((await inventoryService.ApproveInventoryOutput(inventory21Id)));
+            Assert.True((await inventoryBillOutputService.UpdateInventoryOutput(inventory21Id, updatedOut21Model)));
+            Assert.True((await inventoryBillOutputService.ApproveInventoryOutput(inventory21Id)));
 
             updatedOut21Model = OutputInventoryCreationModel(stockId, inventory21Code, new DateTime(2020, 1, 2), P(productId1, out21_oldP1Quantity), P(productId1, out21_oldP2Quantity));
-            Assert.True((await inventoryService.UpdateInventoryOutput(inventory21Id, updatedOut21Model)));
-            Assert.True((await inventoryService.ApproveInventoryOutput(inventory21Id)));
+            Assert.True((await inventoryBillOutputService.UpdateInventoryOutput(inventory21Id, updatedOut21Model)));
+            Assert.True((await inventoryBillOutputService.ApproveInventoryOutput(inventory21Id)));
 
 
             //Test delete inventory input
 
             update23Model = InputInventoryCreationModel(stockId, inventory23Code, new DateTime(2020, 1, 2));
 
-            affectDetails = await inventoryService.InputUpdateGetAffectedPackages(inventory23Id, affect23From, affect23To, update23Model);
-            Assert.True((await inventoryService.ApprovedInputDataUpdate(inventory23Id, affect23From, affect23To, new ApprovedInputDataSubmitModel()
+            affectDetails = await inventoryBillInputService.InputUpdateGetAffectedPackages(inventory23Id, affect23From, affect23To, update23Model);
+            Assert.True((await inventoryBillInputService.ApprovedInputDataUpdate(inventory23Id, affect23From, affect23To, new ApprovedInputDataSubmitModel()
             {
                 Inventory = update23Model,
                 AffectDetails = affectDetails
             })));
 
             inv23 = await InputInventory(stockId, inventory23Code, new DateTime(2020, 1, 2), P(productId1, 2), P(productId1, 6));
-            Assert.True((await inventoryService.ApproveInventoryInput(inv23.Data)));
+            Assert.True((await inventoryBillInputService.ApproveInventoryInput(inv23.Data)));
 
 
             Assert.Equal(10, await GetBalanceByDate(new DateTime(2020, 1, 1), stockId, productId1.ProductId));
@@ -257,10 +261,10 @@ namespace MasterTests
             Assert.Equal(13, await GetBalanceByDate(new DateTime(2020, 1, 4), stockId, productId1.ProductId));
 
             //Test delete inventory output
-            await inventoryService.DeleteInventoryOutput(inventory21Id);
+            await inventoryBillOutputService.DeleteInventoryOutput(inventory21Id);
 
             outv21 = await OutputInventory(stockId, inventory21Code, new DateTime(2020, 1, 2), P(productId1, out21_oldP1Quantity), P(productId1, out21_oldP2Quantity));
-            await inventoryService.ApproveInventoryOutput(outv21.Data);
+            await inventoryBillOutputService.ApproveInventoryOutput(outv21.Data);
 
             Assert.Equal(10, await GetBalanceByDate(new DateTime(2020, 1, 1), stockId, productId1.ProductId));
 
@@ -285,7 +289,7 @@ namespace MasterTests
 
         private async Task<ServiceResult<long>> InputInventory(int stockId, string inventoryCode, DateTime date, params InventoryProductCreationModel[] creationModels)
         {
-            var result = await inventoryService.AddInventoryInput(InputInventoryCreationModel(stockId, inventoryCode, date, creationModels));
+            var result = await inventoryBillInputService.AddInventoryInput(InputInventoryCreationModel(stockId, inventoryCode, date, creationModels));
 
             return result;
         }
@@ -318,7 +322,7 @@ namespace MasterTests
 
         private async Task<ServiceResult<long>> OutputInventory(int stockId, string inventoryCode, DateTime date, params InventoryProductCreationModel[] creationModels)
         {
-            var result = await inventoryService.AddInventoryOutput(OutputInventoryCreationModel(stockId, inventoryCode, date, creationModels));
+            var result = await inventoryBillOutputService.AddInventoryOutput(OutputInventoryCreationModel(stockId, inventoryCode, date, creationModels));
 
             return result;
         }
@@ -481,7 +485,7 @@ namespace MasterTests
                 productInfo = await _stockDBContext.Product.FirstOrDefaultAsync(p => p.ProductCode == productCode);
             }
 
-            var productUnitConversion = await _stockDBContext.ProductUnitConversion.FirstOrDefaultAsync(p => p.ProductId == productInfo.ProductId && !p.IsDefault);
+            var productUnitConversion = await _stockDBContext.ProductUnitConversion.FirstOrDefaultAsync(p => p.ProductId == productInfo.ProductId && p.IsDefault);
 
 
             return new ProductData()
@@ -534,7 +538,7 @@ namespace MasterTests
                 stockInfo = await _stockDBContext.Stock.FirstOrDefaultAsync(p => p.StockName == stockName);
 
             }
-
+            
             return stockInfo;
 
         }

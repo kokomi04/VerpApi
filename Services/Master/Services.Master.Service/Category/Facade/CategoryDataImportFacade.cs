@@ -36,7 +36,7 @@ namespace VErp.Services.Master.Service.Category
         private Dictionary<string, List<NonCamelCaseDictionary>> _refCategoryDataForProperty;
         private Dictionary<string, IEnumerable<RefCategoryProperty>> _refCategoryFields;
         private CategoryField[] _uniqueFields;
-        private List<Dictionary<string, string>> _CategoryDataRows;
+        private List<Dictionary<string, string>> _categoryDataRows;
 
         public CategoryDataImportFacade(int categoryId, MasterDBContext accountancyContext, ICategoryDataService categoryDataService, IActivityLogService activityLogService, ICurrentContextService currentContextService)
         {
@@ -64,7 +64,7 @@ namespace VErp.Services.Master.Service.Category
 
             var lsUpdateRow = new List<Dictionary<string, string>>();
             var lsAddRow = new List<Dictionary<string, string>>();
-            foreach (var row in _CategoryDataRows)
+            foreach (var row in _categoryDataRows)
             {
                 var oldRow = existsCategoryData.FirstOrDefault(x => EqualityBetweenTwoCategory(x, row, _uniqueFields));
 
@@ -147,7 +147,7 @@ namespace VErp.Services.Master.Service.Category
 
         private async Task MappingCategoryDate(CategoryImportExcelMapping mapping)
         {
-            _CategoryDataRows = new List<Dictionary<string, string>>();
+            _categoryDataRows = new List<Dictionary<string, string>>();
 
             var mapField = (from mf in mapping.MappingFields
                             join cf in _categoryFields on mf.FieldName equals cf.CategoryFieldName into gcf
@@ -237,9 +237,11 @@ namespace VErp.Services.Master.Service.Category
                 }
 
                 if (categoryDataRow.Count > 0)
-                    _CategoryDataRows.Add(categoryDataRow);
+                    _categoryDataRows.Add(categoryDataRow);
 
             }
+
+            await Task.CompletedTask;
         }
 
         private async Task RefCategoryForParent(CategoryImportExcelMapping mapping)
@@ -395,6 +397,7 @@ namespace VErp.Services.Master.Service.Category
             var reader = new ExcelReader(stream);
             _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
+            await Task.CompletedTask;
         }
 
         private async Task<Dictionary<string, List<NonCamelCaseDictionary>>> GetRefCategoryDataByMultiField(IList<CategoryQueryRequest> categoryQueryRequests)

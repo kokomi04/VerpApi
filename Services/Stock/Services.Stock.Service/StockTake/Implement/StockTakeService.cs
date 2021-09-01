@@ -28,6 +28,8 @@ using AutoMapper.QueryableExtensions;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.Stock;
 using StockTakeEntity = VErp.Infrastructure.EF.StockDB.StockTake;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Stock.Service.Resources.StockTake;
 
 namespace VErp.Services.Stock.Service.StockTake.Implement
 {
@@ -40,6 +42,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ILogger _logger;
+        private readonly ObjectActivityLogFacade _stockTakeActivityLog;
+
+
         public StockTakeService(
             StockDBSubsidiaryContext stockContext
             , IActivityLogService activityLogService
@@ -57,12 +62,16 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _logger = logger;
+            _stockTakeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.StockTake);
         }
 
         public async Task<StockTakeModel> CreateStockTake(StockTakeModel model)
         {
             var stockTakePeriod = _stockContext.StockTakePeriod
            .FirstOrDefault(stp => stp.StockTakePeriodId == model.StockTakePeriodId);
+
+            if (_stockContext.StockTakeAcceptanceCertificate.Any(ac => ac.StockTakePeriodId == model.StockTakePeriodId))
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Đã tồn tại phiếu xử lý chênh lệch. Cần xóa phiếu xử lý chênh lệch trước khi thay đổi thông tin kiểm kê.");
 
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
@@ -71,34 +80,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
-                CustomGenCodeOutputModel currentConfig = null;
-                if (string.IsNullOrEmpty(model.StockTakeCode))
-                {
-                    currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.StockTake, EnumObjectType.StockTake, 0, null, model.StockTakeCode, null);
-                    if (currentConfig == null)
-                    {
-                        throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
-                    }
-                    bool isFirst = true;
-                    do
-                    {
-                        if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
-
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, model.StockTakeCode, null);
-                        if (generated == null)
-                        {
-                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
-                        }
-                        model.StockTakeCode = generated.CustomCode;
-                        isFirst = false;
-                    } while (_stockContext.StockTake.Any(st => st.StockTakeCode == model.StockTakeCode));
-                }
-                else
-                {
-                    // Validate unique
-                    if (_stockContext.StockTake.Any(st => st.StockTakeCode == model.StockTakeCode))
-                        throw new BadRequestException(GeneralCode.ItemCodeExisted);
-                }
+                var ctx = await GenerateStockTakeCode(null, model, stockTakePeriod);
 
                 var stockTake = _mapper.Map<StockTakeEntity>(model);
                 stockTake.StockStatus = (int)EnumStockTakeStatus.Processing;
@@ -123,10 +105,13 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 trans.Commit();
                 model.StockTakeId = stockTake.StockTakeId;
 
-                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
+                await ctx.ConfirmCode();
 
-                await _activityLogService.CreateLog(EnumObjectType.StockTake, stockTake.StockTakeId, $"Thêm mới phiếu kiểm kê {stockTake.StockTakeCode}", model.JsonSerialize());
-
+                await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Create)
+                .MessageResourceFormatDatas(stockTake.StockTakeCode)
+                .ObjectId(stockTake.StockTakeId)
+                .JsonData(model.JsonSerialize())
+                .CreateLog();
                 return model;
             }
             catch (Exception ex)
@@ -135,6 +120,24 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 _logger.LogError(ex, "CreateStockTake");
                 throw;
             }
+        }
+
+
+        private async Task<GenerateCodeContext> GenerateStockTakeCode(int? stockTakeId, StockTakeModel model, StockTakePeriod period)
+        {
+            model.StockTakeCode = (model.StockTakeCode ?? "").Trim();
+
+         
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.StockTake)
+                .SetConfigData(period.StockTakePeriodId, model.StockTakeDate, period.StockTakePeriodCode)
+                .TryValidateAndGenerateCode(_stockContext.StockTake, model.StockTakeCode, (s, code) => s.StockTakeId != stockTakeId && s.StockTakeCode == code);
+
+            model.StockTakeCode = code;
+
+            return ctx;
         }
 
         public async Task<StockTakeModel> GetStockTake(long stockTakeId)
@@ -162,6 +165,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
 
+            if (_stockContext.StockTakeAcceptanceCertificate.Any(ac => ac.StockTakePeriodId == model.StockTakePeriodId))
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Đã tồn tại phiếu xử lý chênh lệch. Cần xóa phiếu xử lý chênh lệch trước khi thay đổi thông tin kiểm kê.");
 
             var stockTake = _stockContext.StockTake
              .FirstOrDefault(st => st.StockTakeId == stockTakeId);
@@ -217,7 +222,12 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
                 trans.Commit();
                 model.StockTakeId = stockTake.StockTakeId;
-                await _activityLogService.CreateLog(EnumObjectType.StockTake, stockTake.StockTakeId, $"Cập nhật phiếu kiểm kê {stockTake.StockTakeCode}", model.JsonSerialize());
+                
+                await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(stockTake.StockTakeCode)
+                   .ObjectId(stockTake.StockTakeId)
+                   .JsonData(model.JsonSerialize())
+                   .CreateLog();
 
                 return model;
             }
@@ -254,30 +264,30 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             // Lấy thông tin tồn kho
             var remainSystem = (from id in _stockContext.InventoryDetail
-                          join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
-                          where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriod.StockTakePeriodDate && i.StockId == stockTakePeriod.StockId && productIds.Contains(id.ProductId)
-                          select new
-                          {
-                              i.InventoryTypeId,
-                              id.ProductId,
-                              id.ProductUnitConversionId,
-                              id.PrimaryQuantity
-                          })
+                                join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                                where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriod.StockTakePeriodDate && i.StockId == stockTakePeriod.StockId && productIds.Contains(id.ProductId)
+                                select new
+                                {
+                                    i.InventoryTypeId,
+                                    id.ProductId,
+                                    id.ProductUnitConversionId,
+                                    id.PrimaryQuantity
+                                })
                          .GroupBy(id => new
                          {
                              id.ProductId,
                              id.ProductUnitConversionId
-                         }).Select(g => new 
+                         }).Select(g => new
                          {
                              ProductId = g.Key.ProductId,
                              ProductUnitConversionId = g.Key.ProductUnitConversionId,
                              RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity)
                          }).ToList();
 
-            foreach(var item in stockTakeResult)
+            foreach (var item in stockTakeResult)
             {
                 var remain = remainSystem.FirstOrDefault(r => r.ProductId == item.ProductId && r.ProductUnitConversionId == item.ProductUnitConversionId);
-                if (remain == null || item.PrimaryQuantity.SubProductionDecimal(remain?.RemainQuantity??0) != 0) return true;
+                if (remain == null || item.PrimaryQuantity.SubProductionDecimal(remain?.RemainQuantity ?? 0) != 0) return true;
             }
             return false;
         }
@@ -317,7 +327,12 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _stockContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.StockTake, stockTakeId, $"Xóa phiếu kiểm kê {stockTake.StockTakeCode}", stockTake.JsonSerialize());
+                await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(stockTake.StockTakeCode)
+                   .ObjectId(stockTake.StockTakeId)
+                   .JsonData(stockTake.JsonSerialize())
+                   .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -348,7 +363,12 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
                 await _stockContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.StockTake, stockTakeId, $"Xác nhận phiếu kiểm kê {stockTake.StockTakeCode}", _currentContextService.UserId.ToString());
+                await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Approve)
+                 .MessageResourceFormatDatas(stockTake.StockTakeCode)
+                 .ObjectId(stockTake.StockTakeId)
+                 .JsonData(stockTake.JsonSerialize())
+                 .CreateLog();
+
                 return true;
             }
             catch (Exception ex)

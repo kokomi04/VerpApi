@@ -219,7 +219,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim().ToLower();
-            
+
             _objectCustomGenCodeMappings = await _masterDbContext.ObjectCustomGenCodeMapping.ToListAsync();
             _customGenCodes = await _masterDbContext.CustomGenCode.ToListAsync();
 
@@ -266,13 +266,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             result.Add(
                      GetObjectGenCodeMappingTypeModel(
                      moduleTypeId: EnumModuleType.Stock,
-                     targeObjectTypeId: EnumObjectType.RequestInventoryInput,                    
+                     targeObjectTypeId: EnumObjectType.RequestInventoryInput,
                      fieldName: "Mã yêu cầu nhập kho")
                  );
             result.Add(
                    GetObjectGenCodeMappingTypeModel(
                    moduleTypeId: EnumModuleType.Stock,
-                   targeObjectTypeId: EnumObjectType.RequestInventoryOutput,                
+                   targeObjectTypeId: EnumObjectType.RequestInventoryOutput,
                    fieldName: "Mã yêu cầu xuất kho")
                );
 
@@ -347,6 +347,24 @@ namespace VErp.Services.Master.Service.Config.Implement
                     fieldName: "Mã chi tiết mặt hàng")
                 );
 
+            result.Add(
+                  GetObjectGenCodeMappingTypeModel(
+                  moduleTypeId: EnumModuleType.Stock,
+                  targeObjectTypeId: EnumObjectType.StockTakePeriod,
+                  fieldName: "Mã kỳ kiểm kê")
+              );
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Stock,
+                targeObjectTypeId: EnumObjectType.StockTake,
+                fieldName: "Mã phiếu kiểm kê")
+            );
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Stock,
+                targeObjectTypeId: EnumObjectType.StockTakeAcceptanceCertificate,
+                fieldName: "Mã phiếu xử lý")
+            );
             return result;
         }
 

@@ -945,6 +945,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         {
                             titles.Add(new MapObjectOutputModel
                             {
+                                CategoryTitle = item.CategoryTitle,
                                 CategoryCode = item.CategoryCode,
                                 Filters = item.Filters,
                                 CategoryFieldName = item.CategoryFieldName,

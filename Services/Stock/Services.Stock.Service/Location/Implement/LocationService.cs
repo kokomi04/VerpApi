@@ -18,16 +18,15 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Stock.Service.Resources.Location;
 
 namespace VErp.Services.Stock.Service.Location.Implement
 {
     public class LocationService : ILocationService
     {
         private readonly StockDBContext _stockDbContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IUnitService _unitService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _locationActivityLog;
 
         public LocationService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -36,10 +35,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
             , IActivityLogService activityLogService)
         {
             _stockDbContext = stockContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _unitService = unitService;
-            _activityLogService = activityLogService;
+            _locationActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Location);
         }
 
 
@@ -70,7 +66,11 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Thêm mới vị trí {locationInfo.Name} kho {locationInfo.StockId}", req.JsonSerialize());
+                    await _locationActivityLog.LogBuilder(() => LocationActivityLogMessage.Create)
+                        .MessageResourceFormatDatas(locationInfo.Name)
+                        .ObjectId(locationInfo.LocationId)
+                        .JsonData(req.JsonSerialize())
+                        .CreateLog();
 
                     return locationInfo.StockId;
                 }
@@ -104,7 +104,11 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Xóa vị trí {locationInfo.Name} kho: {locationInfo.StockId}", locationInfo.JsonSerialize());
+                    await _locationActivityLog.LogBuilder(() => LocationActivityLogMessage.Delete)
+                      .MessageResourceFormatDatas(locationInfo.Name)
+                      .ObjectId(locationInfo.LocationId)
+                      .JsonData(locationInfo.JsonSerialize())
+                      .CreateLog();
 
                     return true;
                 }
@@ -119,7 +123,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
         public async Task<PageData<LocationOutput>> GetList(int stockId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from l in _stockDbContext.Location
                         join s in _stockDbContext.Stock on l.StockId equals s.StockId
                         select new LocationOutput
@@ -221,7 +225,11 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.Location, locationInfo.LocationId, $"Cập nhật thông tin vị trí {locationInfo.Name} kho hàng Id: {locationInfo.StockId}", req.JsonSerialize());
+                    await _locationActivityLog.LogBuilder(() => LocationActivityLogMessage.Update)
+                     .MessageResourceFormatDatas(locationInfo.Name)
+                     .ObjectId(locationInfo.LocationId)
+                     .JsonData(req.JsonSerialize())
+                     .CreateLog();
 
                     return true;
                 }

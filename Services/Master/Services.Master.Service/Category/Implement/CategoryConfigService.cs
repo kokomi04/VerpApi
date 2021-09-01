@@ -588,7 +588,8 @@ namespace VErp.Services.Master.Service.Category
                 {
                     CategoryCode = c.CategoryCode,
                     CategoryFieldName = f.CategoryFieldName,
-                    Title = f.Title
+                    Title = f.Title,
+                    CategoryTitle = c.Title
                 }).ToListAsync();
 
             return lst;

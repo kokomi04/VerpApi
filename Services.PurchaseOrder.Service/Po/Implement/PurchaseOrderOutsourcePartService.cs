@@ -65,7 +65,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     r.QuantityProcessed = c.TotalQuantity;
             }
 
-            return results;
+            return results.OrderByDescending(x => x.OutsourcePartRequestId).ToList();
         }
         
         public async Task<long> CreatePurchaseOrderOutsourcePart(PurchaseOrderInput model)

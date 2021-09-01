@@ -132,8 +132,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             OutsourceRequestId = d.OutsourceRequestId,
                             ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                            IntoMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice),
-                            IntoAfterTaxMoney = Math.Round(d.PrimaryQuantity * d.PrimaryUnitPrice) + Math.Round((decimal)((d.PrimaryQuantity * d.PrimaryUnitPrice) * (d.TaxInPercent / 100))),
+                            IntoMoney = d.IntoMoney,
+                            IntoAfterTaxMoney = d.IntoAfterTaxMoney,
                         };
                     }).ToList();
 
@@ -184,10 +184,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     return po.PurchaseOrderId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
-                    throw ex;
+                    throw;
                 }
             }
 
@@ -266,8 +266,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
                                 detail.Description = item.Description;
-                                detail.IntoMoney = Math.Round(detail.PrimaryQuantity * detail.PrimaryUnitPrice);
-                                detail.IntoAfterTaxMoney = detail.IntoMoney + Math.Round((decimal)(detail.IntoMoney * (detail.TaxInPercent / 100)));
+                                detail.IntoMoney = item.IntoMoney;
+                                detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
 
                                 break;
                             }
@@ -294,8 +294,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 OutsourceRequestId = item.OutsourceRequestId,
                                 ProductionStepLinkDataId = item.ProductionStepLinkDataId,
-                                IntoMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice),
-                                IntoAfterTaxMoney = Math.Round(item.PrimaryQuantity * item.PrimaryUnitPrice) + Math.Round((decimal)((item.PrimaryQuantity * item.PrimaryUnitPrice) * (item.TaxInPercent / 100))),
+                                IntoMoney = item.IntoMoney,
+                                IntoAfterTaxMoney = item.IntoAfterTaxMoney,
                             });
                         }
                     }
@@ -384,10 +384,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return true;
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -426,14 +426,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+                    var outsourceRequestId = oldDetails
+                    .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                    .Distinct()
+                    .Where(x => x > 0)
+                    .ToArray();
+
+                    if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart)
+                        return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
+
+                    if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep)
+                        return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
                     return true;
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
                     throw;
@@ -511,7 +521,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         Description = d.Description,
 
                         OutsourceRequestId = d.OutsourceRequestId,
-                        ProductionStepLinkDataId = d.ProductionStepLinkDataId
+                        ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                        IntoAfterTaxMoney = d.IntoAfterTaxMoney,
+                        IntoMoney = d.IntoMoney
                     };
                 }).ToList(),
                 Excess = excess,
@@ -526,6 +538,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
                 .Select(x => x.OutsourceRequestId.GetValueOrDefault())
                 .Distinct()
+                .Where(x => x > 0)
                 .ToArray();
             return outsourceRequestId;
         }
@@ -534,10 +547,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
 
-            if (purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
+            if (outsourceRequestId.Length > 0 && purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
                 return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
 
-            if (purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
+            if (outsourceRequestId.Length > 0 && purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
                 return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
             return true;
@@ -561,7 +574,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         protected virtual async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
         {
-            return GeneralCode.InternalError;
+            return await Task.FromResult(GeneralCode.InternalError);
         }
         
         private async Task<bool> CreatePurchaseOrderTracked(long purchaseOrderId)

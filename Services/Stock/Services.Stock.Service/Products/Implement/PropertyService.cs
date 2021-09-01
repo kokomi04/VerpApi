@@ -26,28 +26,28 @@ using VErp.Commons.Library.Model;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Stock.Service.Resources.Product;
+using static VErp.Services.Stock.Service.Resources.Product.PropertyValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
     public class PropertyService : IPropertyService
     {
         private readonly StockDBContext _stockDbContext;
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _propertyActivityLog;
 
         public PropertyService(StockDBContext stockContext
-            , IOptions<AppSetting> appSetting
             , ILogger<PropertyService> logger
             , IActivityLogService activityLogService
             , IMapper mapper)
         {
             _stockDbContext = stockContext;
-            _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
+            _propertyActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Property);
         }
 
         public async Task<int> CreateProperty(PropertyModel req)
@@ -55,15 +55,21 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
             {
-                var propertyEntity = await _stockDbContext.Property.FirstOrDefaultAsync(p => p.PropertyName == req.PropertyName);
-                if(propertyEntity != null) throw new BadRequestException(GeneralCode.InvalidParams, "Tên thuộc tính đã tồn tại");
-                propertyEntity = _mapper.Map<Property>(req);
+                await Validate(null, req);
+
+                var propertyEntity = _mapper.Map<Property>(req);
 
                 await _stockDbContext.Property.AddAsync(propertyEntity);
                 await _stockDbContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.Property, propertyEntity.PropertyId, $"Tạo mới thuộc tính sản phẩm {propertyEntity.PropertyId}", req.JsonSerialize());
+
+                await _propertyActivityLog.LogBuilder(() => PropertyActivityLogMessage.Create)
+                 .MessageResourceFormatDatas(req.PropertyCode)
+                 .ObjectId(propertyEntity.PropertyId)
+                 .JsonData(req.JsonSerialize())
+                 .CreateLog();
+
                 return propertyEntity.PropertyId;
 
             }
@@ -82,16 +88,21 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 var propertyEntity = await _stockDbContext.Property.FirstOrDefaultAsync(p => p.PropertyId == propertyId);
                 if (propertyEntity == null)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thuộc tính sản phẩm không tồn tại");
+                    throw PropertyNotFound.BadRequest();
 
-                if(_stockDbContext.ProductProperty.Any(mp => mp.ProductPropertyId == propertyId))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thuộc tính sản phẩm đang được sử dụng trong BOM");
+                if (_stockDbContext.ProductProperty.Any(mp => mp.ProductPropertyId == propertyId))
+                    throw CanNotDeletePropertyInUsed.BadRequest();
 
                 propertyEntity.IsDeleted = true;
                 await _stockDbContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductSemi, propertyEntity.PropertyId, $"Xóa thuộc tính sản phẩm {propertyEntity.PropertyId}", propertyEntity.JsonSerialize());
+
+                await _propertyActivityLog.LogBuilder(() => PropertyActivityLogMessage.Delete)
+                 .MessageResourceFormatDatas(propertyEntity.PropertyCode)
+                 .ObjectId(propertyEntity.PropertyId)
+                 .JsonData(propertyEntity.JsonSerialize())
+                 .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -113,7 +124,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<PropertyModel> GetProperty(int propertyId)
         {
             var property = await _stockDbContext.Property.Where(p => p.PropertyId == propertyId).FirstOrDefaultAsync();
-            if (property == null) throw new BadRequestException(GeneralCode.InvalidParams, "Thuộc tính sản phẩm không tồn tại");
+            if (property == null) throw PropertyNotFound.BadRequest();
             return _mapper.Map<PropertyModel>(property);
         }
 
@@ -122,16 +133,22 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
             {
-                var propertyEntity = await _stockDbContext.Property.FirstOrDefaultAsync(p => p.PropertyName == req.PropertyName && p.PropertyId != propertyId);
-                if (propertyEntity != null) throw new BadRequestException(GeneralCode.InvalidParams, "Tên thuộc sản phẩm tính đã tồn tại");
-                propertyEntity = await _stockDbContext.Property.FirstOrDefaultAsync(p => p.PropertyId == propertyId);
+                await Validate(propertyId, req);
+
+                var propertyEntity = await _stockDbContext.Property.FirstOrDefaultAsync(p => p.PropertyId == propertyId);
                 if (propertyEntity == null)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thuộc tính không tồn tại");
+                    throw PropertyNotFound.BadRequest();
                 req.PropertyId = propertyId;
                 _mapper.Map(req, propertyEntity);
                 await _stockDbContext.SaveChangesAsync();
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.Property, propertyEntity.PropertyId, $"Cập nhật thuộc tính sản phẩm {propertyEntity.PropertyId}", req.JsonSerialize());
+
+                await _propertyActivityLog.LogBuilder(() => PropertyActivityLogMessage.Update)
+                 .MessageResourceFormatDatas(propertyEntity.PropertyCode)
+                 .ObjectId(propertyEntity.PropertyId)
+                 .JsonData(req.JsonSerialize())
+                 .CreateLog();
+
                 return propertyId;
             }
             catch (Exception ex)
@@ -140,6 +157,16 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 _logger.LogError("UpdateProperty", ex);
                 throw;
             }
+        }
+
+        private async Task Validate(int? propertyId, PropertyModel req)
+        {
+            var propertyEntity = await _stockDbContext.Property.FirstOrDefaultAsync(p => p.PropertyName == req.PropertyName && p.PropertyId != propertyId);
+            if (propertyEntity != null) throw NameAlreadyExisted.BadRequestFormat(req.PropertyName);
+
+            propertyEntity = await _stockDbContext.Property.FirstOrDefaultAsync(p => p.PropertyCode == req.PropertyCode && p.PropertyId != propertyId);
+            if (propertyEntity != null) throw CodeAlreadyExisted.BadRequestFormat(req.PropertyCode);
+
         }
     }
 }

@@ -12,15 +12,21 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Cache.Caching;
+using VErp.Commons.Constants.Caching;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
+using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
@@ -30,19 +36,27 @@ namespace VErp.Infrastructure.ApiCore.Filters
         private readonly MasterDBContext _masterContext;
         private readonly ILogger _logger;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ICachingService _cachingService;
+        private readonly IAuthDataCacheService _authDataCacheService;
 
         public AuthorizeActionFilter(
            IOptionsSnapshot<AppSetting> appSetting
-           , ILogger<AuthorizeActionFilter> logger
+            , ILogger<AuthorizeActionFilter> logger
             , MasterDBContext masterContext
             , ICurrentContextService currentContextService
+            , ICachingService cachingService
+            , IAuthDataCacheService authDataCacheService
        )
         {
             _appSetting = appSetting.Value;
             _masterContext = masterContext;
             _logger = logger;
             _currentContextService = currentContextService;
+            _cachingService = cachingService;
+            _authDataCacheService = authDataCacheService;
         }
+
+
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
@@ -51,7 +65,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 await next();
                 return;
             }
-            var ur = await _masterContext.User.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId);
+
+            var ur = await _authDataCacheService.UserInfo(_currentContextService.UserId);
 
             if (ur.UserStatusId != (int)EnumUserStatus.Actived)
             {
@@ -79,10 +94,12 @@ namespace VErp.Infrastructure.ApiCore.Filters
             return;
 #endif
 
-            var headers = context.HttpContext.Request.Headers;
+            //var headers = context.HttpContext.Request.Headers;
+#pragma warning disable CS0162 // Unreachable code detected
             var moduleIds = new StringValues();
+#pragma warning restore CS0162 // Unreachable code detected
 
-            headers.TryGetValue(VerpHeaders.X_Module, out moduleIds);
+            context.HttpContext.Request.Headers.TryGetValue(VerpHeaders.X_Module, out moduleIds);
 
             if (moduleIds.Count == 0)
             {
@@ -104,7 +121,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             var apiEndpointId = Utils.HashApiEndpointId(_appSetting.ServiceId, route, methodId);
 
-            var apiInfo = await _masterContext.ApiEndpoint.AsNoTracking().FirstOrDefaultAsync(a => a.ApiEndpointId == apiEndpointId);
+            (await _authDataCacheService.ApiEndpoints()).TryGetValue(apiEndpointId, out var apiInfo);
 
             if (apiInfo == null)
             {
@@ -118,9 +135,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
 
-            var apiModuleMapped = await _masterContext.ModuleApiEndpointMapping.FirstOrDefaultAsync(m => m.ModuleId == moduleId && m.ApiEndpointId == apiEndpointId);
 
-            if (apiModuleMapped == null)
+            if ((await ModuleApiEndpointMappings(moduleId))?.Contains(apiEndpointId) != true)
             {
                 var json = new ServiceResult
                 {
@@ -131,44 +147,30 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 return;
             }
-
-            var userId = _currentContextService.UserId;
-            var roleInfo = _currentContextService.RoleInfo;
-            var roleIds = new List<int>() { roleInfo.RoleId };
-
-            if (roleInfo.IsModulePermissionInherit && roleInfo.ChildrenRoleIds?.Count > 0)
-            {
-                roleIds.AddRange(roleInfo.ChildrenRoleIds);
-            }
+            
 
             var (isValidateObject, objectTypeId, objectId, actionButtonId) = GetValidateObjectData(context);
 
             if (actionButtonId > 0 && objectTypeId.HasValue && objectId.HasValue)
             {
-                var actionInfo = await _masterContext.ActionButton.FirstOrDefaultAsync(a => a.ActionButtonId == actionButtonId && a.ObjectTypeId == (int)objectTypeId.Value && a.ObjectId == (int)objectId.Value);
-                if (actionInfo != null)
+
+                if ((await _authDataCacheService.ActionButtons()).TryGetValue(actionButtonId, out var actionInfo) && actionInfo.ObjectTypeId == (int)objectTypeId.Value && actionInfo.ObjectId == (int)objectId.Value)
                 {
                     apiInfo.ActionId = actionInfo.ActionTypeId ?? 1;
                 }
             }
 
 
-            IQueryable<RolePermission> query;
+            var roleInfo = _currentContextService.RoleInfo;
+            var permission = 0;
             if (!isValidateObject)
             {
-                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ModuleId == moduleId);
+                permission = await RoleModulePermission(roleInfo, moduleId);
             }
             else
             {
-                query = _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId);
+                permission = await RoleObjectPermission(roleInfo, objectTypeId.Value, objectId ?? 0);
             }
-
-            var lstPermission = await query.Select(p => p.Permission).ToListAsync();
-
-
-            var permission = 0;
-            if (lstPermission.Count > 0)
-                permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
 
             if ((permission & apiInfo.ActionId) == apiInfo.ActionId)
             {
@@ -222,5 +224,65 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             return (false, null, null, actionButtonId);
         }
+
+        private async Task<int> RoleObjectPermission(RoleInfo role, EnumObjectType objectTypeId, long objectId)
+        {
+            return await TryGetSet(RoleObjectPermissionCacheKey(role.RoleId, objectTypeId, objectId), async () =>
+            {
+                var roleIds = GetInheritRoleIds(role);
+                var lstPermissions = await _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ObjectTypeId == (int)objectTypeId && p.ObjectId == objectId).Select(p => p.Permission).ToListAsync();
+                return AggregatePermission(lstPermissions);
+            });
+        }
+
+
+        private async Task<int> RoleModulePermission(RoleInfo role, int moduleId)
+        {
+            return await TryGetSet(RoleModulePermissionCacheKey(role.RoleId, moduleId), async () =>
+            {
+                var roleIds = GetInheritRoleIds(role);
+                var lstPermissions = await _masterContext.RolePermission.Where(p => roleIds.Contains(p.RoleId) && p.ModuleId == moduleId).Select(p => p.Permission).ToListAsync();
+                return AggregatePermission(lstPermissions);
+            });
+        }
+
+        private IList<int> GetInheritRoleIds(RoleInfo roleInfo)
+        {
+            var roleIds = new List<int>() { roleInfo.RoleId };
+
+            if (roleInfo.IsModulePermissionInherit && roleInfo.ChildrenRoleIds?.Count > 0)
+            {
+                roleIds.AddRange(roleInfo.ChildrenRoleIds);
+            }
+            return roleIds;
+        }
+
+        private int AggregatePermission(IList<int> lstPermission)
+        {
+            var permission = 0;
+            if (lstPermission?.Count > 0)
+                permission = lstPermission.Aggregate((p1, p2) => p1 | p2);
+            return permission;
+        }
+
+
+        private async Task<HashSet<Guid>> ModuleApiEndpointMappings(int moduleId)
+        {
+            var t = AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT;
+            if (!EnviromentConfig.IsProduction)
+            {
+                t = AUTHORIZED_CACHING_TIMEOUT;
+            }
+            return await _cachingService.TryGetSet(AUTH_TAG, ModuleApiEndpointMappingsCacheKey(moduleId), t, async () =>
+            {
+                return (await _masterContext.ModuleApiEndpointMapping.AsNoTracking().Where(m => m.ModuleId == moduleId).Select(p => p.ApiEndpointId).ToListAsync()).ToHashSet();
+            });
+        }
+
+
+        private Task<T> TryGetSet<T>(string key, Func<Task<T>> queryData)
+        {
+            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
+        }       
     }
 }
