@@ -20,7 +20,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Service.Products;
-using static VErp.Services.Stock.Service.Resources.Inventory.InventoryFileData.InventoryImportFacadeMessage;
+using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFacadeMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {

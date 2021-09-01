@@ -21,8 +21,8 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Service.Resources.Product;
-using static VErp.Services.Stock.Service.Resources.Product.ConsumptionGroupValidationMessage;
+using Verp.Resources.Stock.Product;
+using static Verp.Resources.Stock.Product.ConsumptionGroupValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {

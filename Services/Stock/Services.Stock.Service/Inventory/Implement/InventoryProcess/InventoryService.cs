@@ -43,8 +43,8 @@ using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using System.Data;
 using VErp.Commons.Enums.Manafacturing;
-using VErp.Services.Stock.Service.Resources.Inventory.Abstract;
 using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Stock.Inventory.Abstract;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {

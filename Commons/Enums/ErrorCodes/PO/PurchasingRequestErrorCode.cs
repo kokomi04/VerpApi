@@ -4,7 +4,7 @@ using System.Text;
 using System.ComponentModel;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
-using VErp.Commons.Enums.Resources.ErrorCodes.PO;
+using Verp.Resources.Enums.ErrorCodes.PO;
 
 namespace VErp.Commons.Enums.ErrorCodes
 {

@@ -24,8 +24,8 @@ using VErp.Commons.Enums.Stock;
 using System.Data;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.InventoryProcess;
-using static VErp.Services.Stock.Service.Resources.InventoryProcess.InventoryRequirementMessage;
+using Verp.Resources.Stock.InventoryProcess;
+using static Verp.Resources.Stock.InventoryProcess.InventoryRequirementMessage;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement

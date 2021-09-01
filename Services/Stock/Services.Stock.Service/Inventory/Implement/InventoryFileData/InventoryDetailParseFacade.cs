@@ -13,7 +13,7 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Products;
 using static VErp.Services.Stock.Model.Inventory.InventoryDetailRowValue;
-using static VErp.Services.Stock.Service.Resources.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
+using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {

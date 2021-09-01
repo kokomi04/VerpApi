@@ -5,7 +5,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
-using static VErp.Services.Stock.Service.Resources.InventoryProcess.CensoredInventoryInputUpdateContextTitle;
+using static Verp.Resources.Stock.InventoryProcess.CensoredInventoryInputUpdateContextTitle;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement

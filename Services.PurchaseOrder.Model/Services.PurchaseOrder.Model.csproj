@@ -10,22 +10,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\Commons\Library\Library.csproj" />
+    <ProjectReference Include="..\Commons\Resources\Resources.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Resources\PurchasingRequestMessage.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>PurchasingRequestMessage.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Resources\PurchasingRequestMessage.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>PurchasingRequestMessage.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

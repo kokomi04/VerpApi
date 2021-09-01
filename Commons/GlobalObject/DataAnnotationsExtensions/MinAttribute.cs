@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Text;
-using VErp.Commons.GlobalObject.DataAnnotationsExtensions.Resources;
+using Verp.Resources.GlobalObject;
 
 namespace VErp.Commons.GlobalObject.DataAnnotationsExtensions
 {

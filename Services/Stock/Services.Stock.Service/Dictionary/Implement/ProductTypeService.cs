@@ -16,7 +16,7 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
-using VErp.Services.Stock.Service.Resources.Dictionary;
+using Verp.Resources.Stock.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {

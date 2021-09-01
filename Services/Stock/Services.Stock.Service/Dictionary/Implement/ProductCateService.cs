@@ -16,7 +16,7 @@ using VErp.Services.Stock.Model.Dictionary;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.Dictionary;
+using Verp.Resources.Stock.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {

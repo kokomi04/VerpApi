@@ -28,8 +28,8 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using AutoMapper;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.Product;
-using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductMessage;
+using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {

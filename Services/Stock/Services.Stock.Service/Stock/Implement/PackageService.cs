@@ -21,7 +21,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Stock.Model.Location;
 using VErp.Services.Stock.Model.Package;
-using VErp.Services.Stock.Service.Resources.Stock;
+using Verp.Resources.Stock.Stock;
 using PackageModel = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement

@@ -134,6 +134,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectExtensions", "Commons
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Caching", "Infrastructure\Cache\Caching\Caching.csproj", "{BCF3A8DF-7934-4532-8430-FD55EEF528C3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources", "Commons\Resources\Resources.csproj", "{D9EAC874-E87B-457F-9552-BF880C4A27AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -316,6 +318,10 @@ Global
 		{BCF3A8DF-7934-4532-8430-FD55EEF528C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BCF3A8DF-7934-4532-8430-FD55EEF528C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BCF3A8DF-7934-4532-8430-FD55EEF528C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9EAC874-E87B-457F-9552-BF880C4A27AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9EAC874-E87B-457F-9552-BF880C4A27AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9EAC874-E87B-457F-9552-BF880C4A27AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9EAC874-E87B-457F-9552-BF880C4A27AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -378,9 +384,10 @@ Global
 		{86997C8B-1883-496D-9AF3-3FF87BEC1A7C} = {72A64ACE-D590-4694-B351-B0A5D31FC985}
 		{BC411162-1A60-4796-BBBB-38BBEC7227B7} = {FE26A100-80D3-4095-B513-AE3D39A2A216}
 		{BCF3A8DF-7934-4532-8430-FD55EEF528C3} = {6E047406-F8AF-40AD-804C-7B6EA4103D70}
+		{D9EAC874-E87B-457F-9552-BF880C4A27AE} = {FE26A100-80D3-4095-B513-AE3D39A2A216}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		RESX_NeutralResourcesLanguage = vi-VN
 		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}
+		RESX_NeutralResourcesLanguage = vi-VN
 	EndGlobalSection
 EndGlobal

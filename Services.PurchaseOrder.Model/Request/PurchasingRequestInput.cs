@@ -3,12 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Services.PurchaseOrder.Model.Resources;
-
 namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchasingRequestInput : IMapFrom<PurchasingRequest>

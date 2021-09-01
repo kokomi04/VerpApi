@@ -27,8 +27,8 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Services.Stock.Service.Resources.Product;
-using static VErp.Services.Stock.Service.Resources.Product.PropertyValidationMessage;
+using static Verp.Resources.Stock.Product.PropertyValidationMessage;
+using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {

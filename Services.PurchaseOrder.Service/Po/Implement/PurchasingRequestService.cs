@@ -28,10 +28,10 @@ using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using Org.BouncyCastle.Ocsp;
 using Verp.Cache.RedisCache;
-using VErp.Services.PurchaseOrder.Service.Resources;
 using VErp.Infrastructure.ServiceCore.Facade;
 using System.Linq.Expressions;
 using VErp.Commons.ObjectExtensions.Extensions;
+using Verp.Resources.PurchaseOrder.PurchasingRequest;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {

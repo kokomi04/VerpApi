@@ -16,10 +16,9 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Service.Resources.Inventory;
+using Verp.Resources.Stock.Inventory;
 using VErp.Commons.Library.Formaters;
-using VErp.Services.Stock.Service.Resources.Inventory.Abstract;
-using static VErp.Services.Stock.Service.Resources.Inventory.Abstract.InventoryAbstractMessage;
+using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
