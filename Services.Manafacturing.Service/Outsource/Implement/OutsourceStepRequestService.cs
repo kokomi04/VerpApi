@@ -541,6 +541,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     var data = (from d in _manufacturingDBContext.OutsourceStepRequestData
                                 join ld in _manufacturingDBContext.ProductionStepLinkData on d.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                                where d.OutsourceStepRequestId == rq.OutsourceStepRequestId && d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
                                 select new
                                 {
                                     d.ProductionStepLinkDataId,
