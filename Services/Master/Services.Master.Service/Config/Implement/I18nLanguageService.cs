@@ -83,7 +83,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             var model = new I18nLanguageModel
             {
                 Key = key,
-                //Vi = key,
+                Vi = key,
                 //En = $"{key} (En)"
             };
 
