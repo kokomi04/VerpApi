@@ -859,6 +859,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         filterValue = filterValue.Substring(start, length);
                     }
+                    if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
 
                     filters = filters.Replace(match[i].Value, filterValue);
                 }
@@ -1898,16 +1899,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             if (!string.IsNullOrEmpty(field.Filters))
                             {
                                 var filters = field.Filters;
-                                var pattern = @"@{(?<word>\w+)}";
+                                var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
                                 Regex rx = new Regex(pattern);
                                 MatchCollection match = rx.Matches(field.Filters);
+                              
                                 for (int i = 0; i < match.Count; i++)
                                 {
                                     var fieldName = match[i].Groups["word"].Value;
+                                    var startText = match[i].Groups["start"].Value;
+                                    var lengthText = match[i].Groups["length"].Value;
                                     mapRow.TryGetValue(fieldName, out string filterValue);
                                     if (string.IsNullOrEmpty(filterValue))
                                     {
                                         info.TryGetValue(fieldName, out filterValue);
+                                    }
+                                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+                                    {
+                                        filterValue = filterValue.Substring(start, length);
                                     }
                                     if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
                                     filters = filters.Replace(match[i].Value, filterValue);

@@ -40,7 +40,7 @@ namespace VErp.Commons.Enums.StandardEnum
         RequiredFieldIsEmpty = 15,
         [Description("Trường thông tin {0} có giá trị đã tồn tại")]
         UniqueValueAlreadyExisted = 16,
-        [Description("Thông tin giá trị dòng {0} của trường {1} không tồn tại")]
+        [Description("Thông tin giá trị dòng {0} của trường {1} không tồn tại hoặc không thỏa mãn điều kiện lọc")]
         ReferValueNotFound = 17,
         [Description("Dòng thông tin không tồn tại")]
         InputRowNotFound = 18,
