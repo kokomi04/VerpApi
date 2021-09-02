@@ -117,13 +117,37 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotEnoughBalanceInPackage" xml:space="preserve">
-    <value>Số dư trong kiện {0} mặt hàng {1} ({2}) &lt;  {3} không đủ để xuất</value>
+  <data name="CanNotChangeStock" xml:space="preserve">
+    <value>Can not change stock at in/out inventory</value>
   </data>
-  <data name="NotEnoughBalanceInStock" xml:space="preserve">
-    <value>Số dư trong kho mặt hàng {0} ({1}) không đủ để xuất {2}</value>
+  <data name="InOuputAffectObjectsInvalid" xml:space="preserve">
+    <value>Invalid reference packages/inventory bills quantity (output &lt;= input)</value>
   </data>
-  <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
-    <value>Không có số dư trong kiện</value>
+  <data name="InvalidPackage" xml:space="preserve">
+    <value>Invalid package (product or unit does not matches)</value>
+  </data>
+  <data name="InventoryAlreadyApproved" xml:space="preserve">
+    <value>The inventory bill was already approved</value>
+  </data>
+  <data name="InventoryAlreadyExisted" xml:space="preserve">
+    <value>The inventory bill already existed</value>
+  </data>
+  <data name="InventoryCodeAlreadyExisted" xml:space="preserve">
+    <value>The inventory code already existed</value>
+  </data>
+  <data name="InventoryCodeEmpty" xml:space="preserve">
+    <value>The inventory code is empty</value>
+  </data>
+  <data name="InventoryNotApprovedYet" xml:space="preserve">
+    <value>The inventory bill was not approved yet</value>
+  </data>
+  <data name="InventoryNotFound" xml:space="preserve">
+    <value>The inventory bill was not found</value>
+  </data>
+  <data name="NotEnoughQuantity" xml:space="preserve">
+    <value>The balance of package is not enough</value>
+  </data>
+  <data name="NotSupportedYet" xml:space="preserve">
+    <value>This function was not supported yet</value>
   </data>
 </root>

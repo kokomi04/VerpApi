@@ -117,13 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotEnoughBalanceInPackage" xml:space="preserve">
-    <value>Số dư trong kiện {0} mặt hàng {1} ({2}) &lt;  {3} không đủ để xuất</value>
+  <data name="Approve" xml:space="preserve">
+    <value>Approved input inventory {0}</value>
   </data>
-  <data name="NotEnoughBalanceInStock" xml:space="preserve">
-    <value>Số dư trong kho mặt hàng {0} ({1}) không đủ để xuất {2}</value>
+  <data name="Create" xml:space="preserve">
+    <value>Created input inventory {0}</value>
   </data>
-  <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
-    <value>Không có số dư trong kiện</value>
+  <data name="CreatePackage" xml:space="preserve">
+    <value>Created package {0} from input inventory {1}</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Deleted output inventory {0}</value>
+  </data>
+  <data name="DeleteCauseByNoProduct" xml:space="preserve">
+    <value>Deleted the inventory {0} cause by no product</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>Imported from excel the input inventory {0}</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Updated input inventory {0}</value>
+  </data>
+  <data name="UpdateAndApprove" xml:space="preserve">
+    <value>Updated and approved the input inventory {0}</value>
   </data>
 </root>

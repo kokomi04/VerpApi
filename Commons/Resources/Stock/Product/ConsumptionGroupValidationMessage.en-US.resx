@@ -117,13 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotEnoughBalanceInPackage" xml:space="preserve">
-    <value>Số dư trong kiện {0} mặt hàng {1} ({2}) &lt;  {3} không đủ để xuất</value>
+  <data name="CanNotDeleteConsumptionGroupInUsed" xml:space="preserve">
+    <value>The consumption group in used</value>
   </data>
-  <data name="NotEnoughBalanceInStock" xml:space="preserve">
-    <value>Số dư trong kho mặt hàng {0} ({1}) không đủ để xuất {2}</value>
+  <data name="CodeAlreadyExisted" xml:space="preserve">
+    <value>The consumption group code {0} already existed</value>
   </data>
-  <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
-    <value>Không có số dư trong kiện</value>
+  <data name="ConsumptionGroupNotFound" xml:space="preserve">
+    <value>The consumption group was not found</value>
   </data>
 </root>

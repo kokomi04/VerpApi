@@ -117,13 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotEnoughBalanceInPackage" xml:space="preserve">
-    <value>Số dư trong kiện {0} mặt hàng {1} ({2}) &lt;  {3} không đủ để xuất</value>
+  <data name="ChangeInRequestCodeNotAllow" xml:space="preserve">
+    <value>Changes the inventory request code do not allow</value>
   </data>
-  <data name="NotEnoughBalanceInStock" xml:space="preserve">
-    <value>Số dư trong kho mặt hàng {0} ({1}) không đủ để xuất {2}</value>
+  <data name="DuplicateProduct" xml:space="preserve">
+    <value>Duplicate products are found</value>
   </data>
-  <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
-    <value>Không có số dư trong kiện</value>
+  <data name="InvRequestDetailNeedAssignToStock" xml:space="preserve">
+    <value>Need to assign stock for each products</value>
+  </data>
+  <data name="InvRequestIsApprovedBefore" xml:space="preserve">
+    <value>The inventory request was approved before</value>
+  </data>
+  <data name="InvRequestIsNotWaitingCensor" xml:space="preserve">
+    <value>The inventory request was not in waiting status</value>
+  </data>
+  <data name="InvRequestNotFound" xml:space="preserve">
+    <value>The inventory request was not found</value>
+  </data>
+  <data name="ProductsMustBeCreated" xml:space="preserve">
+    <value>All products must be created in product category</value>
   </data>
 </root>

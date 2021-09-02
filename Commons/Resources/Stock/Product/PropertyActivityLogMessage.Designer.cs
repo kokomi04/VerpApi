@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa thuộc tính {0).
+        ///   Looks up a localized string similar to Xóa thuộc tính {0}.
         /// </summary>
         public static string Delete {
             get {

@@ -117,13 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotEnoughBalanceInPackage" xml:space="preserve">
-    <value>Số dư trong kiện {0} mặt hàng {1} ({2}) &lt;  {3} không đủ để xuất</value>
+  <data name="BillDateLocked" xml:space="preserve">
+    <value>The bill date must be greater than the closing date</value>
   </data>
-  <data name="NotEnoughBalanceInStock" xml:space="preserve">
-    <value>Số dư trong kho mặt hàng {0} ({1}) không đủ để xuất {2}</value>
+  <data name="BillDetailError" xml:space="preserve">
+    <value>The balance of {0} at {1} of the bill {2} is not enough. The balance is {3}, that 's invalid</value>
   </data>
-  <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
-    <value>Không có số dư trong kiện</value>
+  <data name="BillDetailErrorUnknown" xml:space="preserve">
+    <value>Has some bills error. The error detail is missing</value>
+  </data>
+  <data name="InventoryInput" xml:space="preserve">
+    <value>Input Inventory</value>
+  </data>
+  <data name="InventoryOuput" xml:space="preserve">
+    <value>Output Inventory</value>
+  </data>
+  <data name="UpdateProductionOrderStatusError" xml:space="preserve">
+    <value>Error while update production order status {0}</value>
   </data>
 </root>

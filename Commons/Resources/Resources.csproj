@@ -290,7 +290,7 @@
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Inventory\Abstract\InventoryAbstractMessage.resx">
       <LastGenOutput>InventoryAbstractMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Inventory\InventoryFileData\InventoryDetailParseFacadeMessage.resx">
       <LastGenOutput>InventoryDetailParseFacadeMessage.Designer.cs</LastGenOutput>
