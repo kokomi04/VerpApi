@@ -79,12 +79,12 @@ namespace VErp.Services.Accountancy.Service.Category
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     resultParam,
-                    messageParam,
+                    messageParam
                 };
                 foreach (var field in fields)
                 {
                     data.TryGetValue(field.Key, out var celValue);
-                    parammeters.Add(new SqlParameter($"@{field.Key}",(field.Value).GetSqlValue(celValue)));
+                    parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
                 }
                 resultData = (await _masterContext.QueryDataTable(script, parammeters)).ConvertData();
             }
@@ -135,9 +135,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
             // Before saving action (SQL)
 
-            
-            var fieldParam = categoryFields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
-                 .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
+
+            var fieldParam = _masterContext.CategoryField
+                .Where(f => category.CategoryId == f.CategoryId)
+                .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
             var result = await ProcessActionAsync(category.BeforeSaveAction, data, fieldParam, EnumActionType.Add);
 
             if (result.Code != 0)
@@ -252,7 +253,7 @@ namespace VErp.Services.Accountancy.Service.Category
             List<CategoryField> updateFields = new List<CategoryField>();
             foreach (CategoryField categoryField in categoryFields)
             {
-                if(!data.ContainsKey(categoryField.CategoryFieldName)) continue;
+                if (!data.ContainsKey(categoryField.CategoryFieldName)) continue;
 
                 categoryRow.TryGetValue(categoryField.CategoryFieldName, out var currentValue);
                 data.TryGetValue(categoryField.CategoryFieldName, out var updateValue);
@@ -279,7 +280,8 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check value
             CheckValue(data, categoryFields);
 
-            var fieldParam = categoryFields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+            var fieldParam = _masterContext.CategoryField
+                .Where(f => category.CategoryId == f.CategoryId)
                 .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
             var result = await ProcessActionAsync(category.BeforeSaveAction, data, fieldParam, EnumActionType.Update);
 
@@ -720,7 +722,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var fields = (from f in _masterContext.CategoryField
                           join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                           where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
@@ -814,7 +816,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (!category.IsTreeView)
             {
-                dataSql.Append(string.IsNullOrEmpty(orderBy) ? string.IsNullOrEmpty(category.DefaultOrder)? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY {category.DefaultOrder}" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
+                dataSql.Append(string.IsNullOrEmpty(orderBy) ? string.IsNullOrEmpty(category.DefaultOrder) ? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY {category.DefaultOrder}" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
                 if (size > 0)
                 {
                     dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
@@ -1019,6 +1021,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return true;
 
         }
-       
+
     }
 }

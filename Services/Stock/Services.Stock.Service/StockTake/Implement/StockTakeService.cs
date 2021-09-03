@@ -104,6 +104,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
                 trans.Commit();
                 model.StockTakeId = stockTake.StockTakeId;
+                model.StockStatus = EnumStockTakeStatus.Processing;
+                model.AccountancyStatus = EnumStockTakeStatus.Processing;
 
                 await ctx.ConfirmCode();
 
@@ -127,7 +129,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
         {
             model.StockTakeCode = (model.StockTakeCode ?? "").Trim();
 
-         
+
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var code = await ctx
@@ -222,7 +224,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
                 trans.Commit();
                 model.StockTakeId = stockTake.StockTakeId;
-                
+                model.StockStatus = EnumStockTakeStatus.Processing;
+                model.AccountancyStatus = EnumStockTakeStatus.Processing;
+
                 await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Update)
                    .MessageResourceFormatDatas(stockTake.StockTakeCode)
                    .ObjectId(stockTake.StockTakeId)
