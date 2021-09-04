@@ -48,6 +48,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int PurchaseOrderType { get; set; }
         public long? PropertyCalcId { get; set; }
+        public decimal? TaxInPercent { get; set; }
 
         public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
         public virtual ICollection<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }

@@ -26,6 +26,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public string PoDescription { get; set; }
+        public decimal? TaxInPercent { get; set; }
 
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
