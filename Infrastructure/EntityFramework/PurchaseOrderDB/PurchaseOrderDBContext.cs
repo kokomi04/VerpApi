@@ -458,7 +458,13 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
+                entity.Property(e => e.CurrencyCode).HasMaxLength(30);
+
                 entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ExchangedMoney).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.IntoAfterTaxMoney).HasColumnType("decimal(18, 4)");
 

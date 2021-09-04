@@ -31,6 +31,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long? ProductionStepLinkDataId { get; set; }
         public decimal? IntoMoney { get; set; }
         public decimal? IntoAfterTaxMoney { get; set; }
+        public string CurrencyCode { get; set; }
+        public decimal? ExchangeRate { get; set; }
+        public decimal? ExchangedMoney { get; set; }
 
         public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
         public virtual PurchaseOrder PurchaseOrder { get; set; }

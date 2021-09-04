@@ -66,6 +66,10 @@ namespace VErp.Services.PurchaseOrder.Model
 
         decimal? IntoMoney { get; set; }
         decimal? IntoAfterTaxMoney { get; set; }
+
+        string CurrencyCode { get; set; }
+        decimal? ExchangeRate { get; set; }
+        decimal? ExchangedMoney { get; set; }
     }
 
     public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
@@ -94,6 +98,10 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public decimal? IntoMoney { get; set; }
         public decimal? IntoAfterTaxMoney { get; set; }
+
+        public string CurrencyCode { get; set; }
+        public decimal? ExchangeRate { get; set; }
+        public decimal? ExchangedMoney { get; set; }
 
     }
 
