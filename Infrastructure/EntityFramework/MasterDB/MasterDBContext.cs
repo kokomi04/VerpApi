@@ -419,8 +419,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.En).HasMaxLength(1024);
 
                 entity.Property(e => e.Key)
-                    .IsRequired()
-                    .HasMaxLength(1024);
+                    .HasMaxLength(1024)
+                    .UseCollation("SQL_Latin1_General_CP1_CS_AS");
 
                 entity.Property(e => e.Vi).HasMaxLength(1024);
             });
