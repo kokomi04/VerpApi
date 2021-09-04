@@ -28,7 +28,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using AutoMapper;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
 using VErp.Infrastructure.ServiceCore.Facade;
-using static Verp.Resources.Stock.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement

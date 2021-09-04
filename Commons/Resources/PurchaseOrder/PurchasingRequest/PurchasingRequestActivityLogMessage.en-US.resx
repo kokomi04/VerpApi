@@ -118,24 +118,24 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="PurchasingRequestApproved" xml:space="preserve">
-    <value>Approved purchasing request  {0}</value>
+    <value>Approved purchasing request "{0}"</value>
   </data>
   <data name="PurchasingRequestCreate" xml:space="preserve">
-    <value>Created purchasing request {0}</value>
+    <value>Created purchasing request "{0}"</value>
   </data>
   <data name="PurchasingRequestDelete" xml:space="preserve">
-    <value>Deleted purchasing request {0}</value>
+    <value>Deleted purchasing request "{0}"</value>
   </data>
   <data name="PurchasingRequestRejected" xml:space="preserve">
-    <value>Rejected purchasing request  {0}</value>
+    <value>Rejected purchasing request "{0}"</value>
   </data>
   <data name="PurchasingRequestSentToCensor" xml:space="preserve">
-    <value>Sent to censor purchasing request  {0}</value>
+    <value>Sent to censor purchasing request "{0}"</value>
   </data>
   <data name="PurchasingRequestUpdate" xml:space="preserve">
-    <value>Updated purchasing request {0}</value>
+    <value>Updated purchasing request "{0}"</value>
   </data>
   <data name="PurchasingRequestUpdatedProgress" xml:space="preserve">
-    <value>Updated purchasing request {0} progress state {1}</value>
+    <value>Updated purchasing request "{0}" progress state "{1}"</value>
   </data>
 </root>

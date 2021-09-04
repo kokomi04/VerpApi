@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Location {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới vị trí lưu kho {0}.
+        ///   Looks up a localized string similar to Thêm mới vị trí lưu kho &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Location {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa vị trí lưu kho {0}.
+        ///   Looks up a localized string similar to Xóa vị trí lưu kho &quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.Location {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật vị trí lưu kho {0}.
+        ///   Looks up a localized string similar to Cập nhật vị trí lưu kho &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {

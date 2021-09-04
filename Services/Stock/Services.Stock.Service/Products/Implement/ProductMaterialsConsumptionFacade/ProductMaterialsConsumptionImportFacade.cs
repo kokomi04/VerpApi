@@ -19,7 +19,7 @@ using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using static Verp.Resources.Stock.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade

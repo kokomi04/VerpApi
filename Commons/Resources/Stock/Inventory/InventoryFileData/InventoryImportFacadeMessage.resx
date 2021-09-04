@@ -121,22 +121,22 @@
     <value>Chưa nhập danh mục mặt hàng. Vui lòng kiểm tra lại</value>
   </data>
   <data name="ProductFoundMoreThanOne" xml:space="preserve">
-    <value>Tìm thấy {0} mặt hàng {1}</value>
+    <value>Tìm thấy {0} mặt hàng "{1}"</value>
   </data>
   <data name="ProductNotFound" xml:space="preserve">
-    <value>Không tìm thấy mặt hàng {0}</value>
+    <value>Không tìm thấy mặt hàng "{0}"</value>
   </data>
   <data name="ProductQuantityInvalid" xml:space="preserve">
-    <value>Số lượng ở mặt hàng {0} không đúng!</value>
+    <value>Số lượng ở mặt hàng "{0}" không đúng!</value>
   </data>
   <data name="ProductUniConversionNameNotFound" xml:space="preserve">
-    <value>Không tìm thấy đơn vị chuyển đổi {0} mặt hàng {1}</value>
+    <value>Không tìm thấy đơn vị chuyển đổi "{0}" mặt hàng "{1}"</value>
   </data>
   <data name="PuConversionDefaultError" xml:space="preserve">
-    <value>Dữ liệu đơn vị tính chính lỗi, mặt hàng {0}</value>
+    <value>Dữ liệu đơn vị tính chính lỗi, mặt hàng "{0}"</value>
   </data>
   <data name="PuProductPackageNotFound" xml:space="preserve">
-    <value>Không tìm thấy kiện nào chứa sản phẩm {0} đơn vị {1}</value>
+    <value>Không tìm thấy kiện nào chứa sản phẩm "{0}" đơn vị "{1}"</value>
   </data>
   <data name="StockInfoNotFound" xml:space="preserve">
     <value>Không tìm thấy thông tin kho trong hệ thống</value>

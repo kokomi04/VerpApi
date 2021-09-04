@@ -118,21 +118,21 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="RequireInputCreate" xml:space="preserve">
-    <value>Thêm mới yêu cầu nhập kho, mã: {0}</value>
+    <value>Thêm mới yêu cầu nhập kho "{0}"</value>
   </data>
   <data name="RequireInputDelete" xml:space="preserve">
-    <value>Xóa yêu cầu nhập kho, mã: {0}</value>
+    <value>Xóa yêu cầu nhập kho "{0}"</value>
   </data>
   <data name="RequireInputUpdate" xml:space="preserve">
-    <value>Cập nhật yêu cầu nhập kho, mã: {0}</value>
+    <value>Cập nhật yêu cầu nhập kho "{0}"</value>
   </data>
   <data name="RequireOutputCreate" xml:space="preserve">
-    <value>Thêm mới yêu cầu xuất kho, mã: {0}</value>
+    <value>Thêm mới yêu cầu xuất kho "{0}"</value>
   </data>
   <data name="RequireOutputDelete" xml:space="preserve">
-    <value>Xóa yêu cầu xuất kho, mã: {0}</value>
+    <value>Xóa yêu cầu xuất kho "{0}"</value>
   </data>
   <data name="RequireOutputUpdate" xml:space="preserve">
-    <value>Cập nhật yêu cầu xuất kho, mã: {0}</value>
+    <value>Cập nhật yêu cầu xuất kho "{0}"</value>
   </data>
 </root>

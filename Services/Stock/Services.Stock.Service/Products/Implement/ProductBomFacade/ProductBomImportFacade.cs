@@ -20,7 +20,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Product.Bom;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using static Verp.Resources.Stock.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 {

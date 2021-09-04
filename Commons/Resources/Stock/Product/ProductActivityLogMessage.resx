@@ -118,48 +118,48 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="CopyBom" xml:space="preserve">
-    <value>Sao chép BOM mặt hàng từ {0} sang {1}</value>
+    <value>Sao chép BOM mặt hàng từ "{0}" sang "{1}"</value>
   </data>
   <data name="CopyConsumption" xml:space="preserve">
-    <value>Sao chép vật tư tiêu hao mặt hàng từ {0} sang {1}</value>
+    <value>Sao chép vật tư tiêu hao mặt hàng từ "{0}" sang "{1}"</value>
   </data>
   <data name="Create" xml:space="preserve">
-    <value>Thêm mới mặt hàng {0}</value>
+    <value>Thêm mới mặt hàng "{0}"</value>
   </data>
   <data name="CreateProductPart" xml:space="preserve">
-    <value>Thêm mới chi tiết mặt hàng {0}</value>
+    <value>Thêm mới chi tiết mặt hàng "{0}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Xóa mặt hàng {0}</value>
+    <value>Xóa mặt hàng "{0}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật mặt hàng {0}</value>
+    <value>Cập nhật mặt hàng "{0}"</value>
   </data>
   <data name="UpdateAttachment" xml:space="preserve">
-    <value>Cập nhật tệp đính kèm cho mặt hàng {0}</value>
+    <value>Cập nhật tệp đính kèm cho mặt hàng "{0}"</value>
   </data>
   <data name="UpdateBom" xml:space="preserve">
-    <value>Cập nhật BOM mặt hàng {0}</value>
+    <value>Cập nhật BOM mặt hàng "{0}"</value>
   </data>
   <data name="UpdateDetailMaterialConsumption" xml:space="preserve">
-    <value>Cập nhật vật tư tiêu hao {0} cho mặt hàng {1}</value>
+    <value>Cập nhật vật tư tiêu hao "{0}" cho mặt hàng "{1}"</value>
   </data>
   <data name="UpdateGeneralInfo" xml:space="preserve">
-    <value>Cập nhật TT chung mặt hàng {0}</value>
+    <value>Cập nhật TT chung mặt hàng "{0}"</value>
   </data>
   <data name="UpdateMaterialConsumption" xml:space="preserve">
-    <value>Cập nhật vật tư tiêu hao mặt hàng {0}</value>
+    <value>Cập nhật vật tư tiêu hao mặt hàng "{0}"</value>
   </data>
   <data name="UpdateSellInfo" xml:space="preserve">
-    <value>Cập nhật TT bán mặt hàng {0}</value>
+    <value>Cập nhật TT bán mặt hàng "{0}"</value>
   </data>
   <data name="UpdateStockInfo" xml:space="preserve">
-    <value>Cập nhật TT lưu kho mặt hàng {0}</value>
+    <value>Cập nhật TT lưu kho mặt hàng "{0}"</value>
   </data>
   <data name="ImportBom" xml:space="preserve">
-    <value>Import Bom cho mặt hàng {0}</value>
+    <value>Import Bom cho mặt hàng "{0}"</value>
   </data>
   <data name="ImportConsumption" xml:space="preserve">
-    <value>Import vật tư tiêu hao cho mặt hàng {0}</value>
+    <value>Import vật tư tiêu hao cho mặt hàng "{0}"</value>
   </data>
 </root>

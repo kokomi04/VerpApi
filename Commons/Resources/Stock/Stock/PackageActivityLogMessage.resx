@@ -98,12 +98,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật thông tin kiện {0}</value>
+    <value>Cập nhật thông tin kiện "{0}"</value>
   </data>
   <data name="Split" xml:space="preserve">
-    <value>Tách kiện {0} thành {1}</value>
+    <value>Tách kiện "{0}" thành {1}</value>
   </data>
   <data name="Join" xml:space="preserve">
-    <value>Gộp kiện {0} thành {1}</value>
+    <value>Gộp kiện {0} thành "{1}"</value>
   </data>
 </root>

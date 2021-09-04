@@ -61,7 +61,7 @@ namespace Verp.Resources.Master.ReuseContent {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới nội dung thường sử dụng {0}: {1}.
+        ///   Looks up a localized string similar to Thêm mới nội dung thường sử dụng &quot;{0}&quot;: {1}.
         /// </summary>
         public static string Create {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Master.ReuseContent {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa nội dung thường sử dụng {0}: {1}.
+        ///   Looks up a localized string similar to Xóa nội dung thường sử dụng &quot;{0}&quot;: {1}.
         /// </summary>
         public static string Delete {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Master.ReuseContent {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật nội dung thường sử dụng {0}: {1}.
+        ///   Looks up a localized string similar to Cập nhật nội dung thường sử dụng &quot;{0}&quot;: {1}.
         /// </summary>
         public static string Update {
             get {

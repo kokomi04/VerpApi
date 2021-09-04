@@ -193,6 +193,12 @@ namespace VErp.Commons.Library
             return JsonConvert.DeserializeObject<T>(obj);
         }
 
+        public static object JsonDeserialize(this string obj)
+        {
+            if (string.IsNullOrWhiteSpace(obj)) return null;
+            return JsonConvert.DeserializeObject(obj);
+        }
+
         public static object JsonDeserialize(this string obj, Type type)
         {
             if (string.IsNullOrWhiteSpace(obj))

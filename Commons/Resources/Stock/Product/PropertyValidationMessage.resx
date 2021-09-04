@@ -101,12 +101,12 @@
     <value>Không thể xóa thuộc tính đang sử dụng</value>
   </data>
   <data name="CodeAlreadyExisted" xml:space="preserve">
-    <value>Mã {0} đã tồn tại</value>
+    <value>Mã "{0}" đã tồn tại</value>
   </data>
   <data name="PropertyNotFound" xml:space="preserve">
     <value>Không tìm thấy thuộc tính</value>
   </data>
   <data name="NameAlreadyExisted" xml:space="preserve">
-    <value>Tên thuộc tính {0} đã tồn tại</value>
+    <value>Tên thuộc tính "{0}" đã tồn tại</value>
   </data>
 </root>

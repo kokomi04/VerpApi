@@ -118,12 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Create" xml:space="preserve">
-    <value>Tạo đơn hàng gia công nguyên vật liệu {0}</value>
+    <value>Tạo đơn hàng gia công nguyên vật liệu "{0}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Xóa đơn hàng gia công nguyên vật liệu {0}</value>
+    <value>Xóa đơn hàng gia công nguyên vật liệu "{0}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật đơn hàng gia công nguyên vật liệu {0}</value>
+    <value>Cập nhật đơn hàng gia công nguyên vật liệu "{0}"</value>
   </data>
 </root>

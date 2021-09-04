@@ -18,7 +18,7 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Services.Stock.Model.Product;
-using static Verp.Resources.Stock.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 {

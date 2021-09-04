@@ -98,7 +98,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="CodeAlreadyExisted" xml:space="preserve">
-    <value>Mã {0} đã tồn tại</value>
+    <value>Mã "{0}" đã tồn tại</value>
   </data>
   <data name="ConsumptionGroupNotFound" xml:space="preserve">
     <value>Không tìm thấy nhóm vật tư tiêu hao</value>

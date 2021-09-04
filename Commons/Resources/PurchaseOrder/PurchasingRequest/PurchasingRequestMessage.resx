@@ -121,28 +121,28 @@
     <value>Không thể xóa yêu cầu vật tư khi đang tồn tại đề nghị vật tư được liên kết {0}</value>
   </data>
   <data name="ErrorCalcQuantity" xml:space="preserve">
-    <value>Lỗi tính toán số lượng mặt hàng {0}</value>
+    <value>Lỗi tính toán số lượng mặt hàng "{0}"</value>
   </data>
   <data name="FoundNumberProduct" xml:space="preserve">
-    <value>Tìm thấy {0} mặt hàng {1}</value>
+    <value>Tìm thấy {0} mặt hàng "{1}"</value>
   </data>
   <data name="FoundNumberPuOfProduct" xml:space="preserve">
-    <value>Tìm thấy {0} đơn vị chuyển đổi {1} mặt hàng {2}</value>
+    <value>Tìm thấy {0} đơn vị chuyển đổi "{1}" mặt hàng "{2}"</value>
   </data>
   <data name="InvalidQuantity" xml:space="preserve">
-    <value>Số lượng không hợp lệ mặt hàng {0}</value>
+    <value>Số lượng không hợp lệ mặt hàng "{0}"</value>
   </data>
   <data name="NoProductFound" xml:space="preserve">
-    <value>Không tìm thấy mặt hàng  {0}</value>
+    <value>Không tìm thấy mặt hàng "{0}"</value>
   </data>
   <data name="NoPuOfProductFound" xml:space="preserve">
-    <value>Đơn vị chuyển đổi {0} của mặt hàng {1} không tìm thấy</value>
+    <value>Đơn vị chuyển đổi "{0}" của mặt hàng "{1}" không tìm thấy</value>
   </data>
   <data name="PuConversionDoesNotBelongToProduct" xml:space="preserve">
     <value>Đơn vị chuyển đổi không thuộc về mặt hàng</value>
   </data>
   <data name="PuDefaultError" xml:space="preserve">
-    <value>Không tìm thấy đơn vị tính của mặt hàng {0}</value>
+    <value>Không tìm thấy đơn vị tính của mặt hàng "{0}"</value>
   </data>
   <data name="PurchasingRequestPreventFrom" xml:space="preserve">
     <value>Không thể sửa YCVT từ {0}</value>

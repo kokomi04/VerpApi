@@ -16,8 +16,7 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using AutoMapper;
 using VErp.Services.Stock.Model.Product.Partial;
-using static Verp.Resources.Stock.Product.ProductMessage;
-using static Verp.Resources.Stock.Product.ProductPartialValidationMessage;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.Stock.Product;
 

@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tạo mới thuộc tính {0}.
+        ///   Looks up a localized string similar to Tạo mới thuộc tính &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa thuộc tính {0).
+        ///   Looks up a localized string similar to Xóa thuộc tính &quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật thuộc tính {0}.
+        ///   Looks up a localized string similar to Cập nhật thuộc tính &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {

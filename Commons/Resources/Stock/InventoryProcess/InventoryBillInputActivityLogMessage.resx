@@ -118,27 +118,27 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Approve" xml:space="preserve">
-    <value>Duyệt phiếu nhập kho, mã: {0}</value>
+    <value>Duyệt phiếu nhập kho "{0}"</value>
   </data>
   <data name="Create" xml:space="preserve">
-    <value>Thêm mới phiếu nhập kho, mã: {0}</value>
+    <value>Thêm mới phiếu nhập kho "{0}"</value>
   </data>
   <data name="CreatePackage" xml:space="preserve">
-    <value>Tạo kiện {0} từ phiếu nhập {1}</value>
+    <value>Tạo kiện {0} từ phiếu nhập "{1}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Xóa phiếu nhập kho, mã: {0}</value>
+    <value>Xóa phiếu nhập kho "{0}"</value>
   </data>
   <data name="DeleteCauseByNoProduct" xml:space="preserve">
-    <value>Xóa phiếu {0} do không tồn tại mặt hàng nào</value>
+    <value>Xóa phiếu "{0}" do không tồn tại mặt hàng nào</value>
   </data>
   <data name="Import" xml:space="preserve">
-    <value>Nhập từ excel phiếu nhập kho, mã {0}</value>
+    <value>Nhập từ excel phiếu nhập kho "{0}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật phiếu nhập kho, mã: {0}</value>
+    <value>Cập nhật phiếu nhập kho "{0}"</value>
   </data>
   <data name="UpdateAndApprove" xml:space="preserve">
-    <value>Cập nhật &amp; duyệt phiếu nhập kho đã duyệt, mã: {0}</value>
+    <value>Cập nhật &amp; duyệt phiếu nhập kho đã duyệ "{0}"</value>
   </data>
 </root>

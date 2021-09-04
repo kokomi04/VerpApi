@@ -118,12 +118,12 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Create" xml:space="preserve">
-    <value>Thêm mới nội dung thường sử dụng {0}: {1}</value>
+    <value>Thêm mới nội dung thường sử dụng "{0}": {1}</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Xóa nội dung thường sử dụng {0}: {1}</value>
+    <value>Xóa nội dung thường sử dụng "{0}": {1}</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật nội dung thường sử dụng {0}: {1}</value>
+    <value>Cập nhật nội dung thường sử dụng "{0}": {1}</value>
   </data>
 </root>

@@ -1,13 +1,16 @@
 ﻿using ActivityLogDB;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Resources;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -123,8 +126,31 @@ namespace VErp.Services.Master.Service.Activity.Implement
                  .ToDictionary(u => u.UserId, u => u);
 
             var result = new List<UserActivityLogOuputModel>(ualDataList.Count);
+
+            var resouces = new Dictionary<string, ResourceManager>();
             foreach (var item in ualDataList)
             {
+                var message = item.Message;
+                if (!string.IsNullOrWhiteSpace(item.MessageResourceName))
+                {
+                    string format = "";
+                    try
+                    {
+                        var data = item.MessageResourceFormatData.JsonDeserialize<object[]>();
+                        format = ResourcesAssembly.GetResouceString(item.MessageResourceName);
+                        if (!string.IsNullOrWhiteSpace(format))
+                        {
+                            message = string.Format(format, data);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "ResourceFormat {0}", format);
+                    }
+
+
+                }
+
                 userInfos.TryGetValue(item.UserId, out var userInfo);
                 var actLogOutput = new UserActivityLogOuputModel
                 {
@@ -133,11 +159,11 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     FullName = userInfo?.FullName,
                     AvatarFileId = userInfo?.AvatarFileId,
                     ActionId = (EnumActionType?)item.ActionId,
-                    Message = item.Message,
+                    Message = message,
                     CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
                     MessageTypeId = (EnumMessageType)item.MessageTypeId,
-                    MessageResourceName = item.MessageResourceName,
-                    MessageResourceFormatData = item.MessageResourceFormatData,
+                    //MessageResourceName = item.MessageResourceName,
+                    //MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId
                 };
                 result.Add(actLogOutput);

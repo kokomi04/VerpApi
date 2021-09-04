@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Sao chép BOM mặt hàng từ {0} sang {1}.
+        ///   Looks up a localized string similar to Sao chép BOM mặt hàng từ &quot;{0}&quot; sang &quot;{1}&quot;.
         /// </summary>
         public static string CopyBom {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Sao chép vật tư tiêu hao mặt hàng từ {0} sang {1}.
+        ///   Looks up a localized string similar to Sao chép vật tư tiêu hao mặt hàng từ &quot;{0}&quot; sang &quot;{1}&quot;.
         /// </summary>
         public static string CopyConsumption {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới mặt hàng {0}.
+        ///   Looks up a localized string similar to Thêm mới mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -88,7 +88,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới chi tiết mặt hàng {0}.
+        ///   Looks up a localized string similar to Thêm mới chi tiết mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string CreateProductPart {
             get {
@@ -97,7 +97,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa mặt hàng {0}.
+        ///   Looks up a localized string similar to Xóa mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -106,7 +106,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import Bom cho mặt hàng {0}.
+        ///   Looks up a localized string similar to Import Bom cho mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string ImportBom {
             get {
@@ -115,7 +115,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Import vật tư tiêu hao cho mặt hàng {0}.
+        ///   Looks up a localized string similar to Import vật tư tiêu hao cho mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string ImportConsumption {
             get {
@@ -124,7 +124,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {
@@ -133,7 +133,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật tệp đính kèm cho mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật tệp đính kèm cho mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateAttachment {
             get {
@@ -142,7 +142,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật BOM mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật BOM mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateBom {
             get {
@@ -151,7 +151,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật vật tư tiêu hao {0} cho mặt hàng {1}.
+        ///   Looks up a localized string similar to Cập nhật vật tư tiêu hao &quot;{0}&quot; cho mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string UpdateDetailMaterialConsumption {
             get {
@@ -160,7 +160,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật TT chung mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật TT chung mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateGeneralInfo {
             get {
@@ -169,7 +169,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật vật tư tiêu hao mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật vật tư tiêu hao mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateMaterialConsumption {
             get {
@@ -178,7 +178,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật TT bán mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật TT bán mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateSellInfo {
             get {
@@ -187,7 +187,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật TT lưu kho mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật TT lưu kho mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateStockInfo {
             get {

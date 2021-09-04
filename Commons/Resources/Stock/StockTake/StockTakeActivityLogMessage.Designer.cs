@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xác nhận phiếu kiểm kê {0}.
+        ///   Looks up a localized string similar to Xác nhận phiếu kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string Approve {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tạo mới phiếu kiểm kê {0}.
+        ///   Looks up a localized string similar to Tạo mới phiếu kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa phiếu kiểm kê {0}.
+        ///   Looks up a localized string similar to Xóa phiếu kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -88,7 +88,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật phiếu kiểm kê {0}.
+        ///   Looks up a localized string similar to Cập nhật phiếu kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {
