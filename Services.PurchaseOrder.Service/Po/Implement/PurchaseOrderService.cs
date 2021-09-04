@@ -302,7 +302,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             pod.ProductUnitConversionQuantity,
                             pod.ProductUnitConversionPrice,
 
-                            pod.TaxInPercent,
+                            po.TaxInPercent,
                             pod.TaxInMoney,
                             pod.Description,
 
@@ -544,6 +544,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 PurchaseOrderType = info.PurchaseOrderType,
 
+                TaxInPercent = info.TaxInPercent,
+
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d =>
                 {
@@ -564,7 +566,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
@@ -624,7 +625,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorDatetimeUtc = null,
                     IsDeleted = false,
                     DeletedDatetimeUtc = null,
-                    PurchaseOrderType = (int)EnumPurchasingOrderType.Default
+                    PurchaseOrderType = (int)EnumPurchasingOrderType.Default,
+                    TaxInPercent = model.TaxInPercent
                 };
 
                 if (po.DeliveryDestination?.Length > 1024)
@@ -659,7 +661,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
@@ -765,6 +766,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.CensorDatetimeUtc = null;
                 info.IsDeleted = false;
                 info.DeletedDatetimeUtc = null;
+                info.TaxInPercent = model.TaxInPercent;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
@@ -804,7 +806,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                             detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
-                            detail.TaxInPercent = item.TaxInPercent;
                             detail.TaxInMoney = item.TaxInMoney;
                             detail.OrderCode = item.OrderCode;
                             detail.ProductionOrderCode = item.ProductionOrderCode;
@@ -834,7 +835,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionId = item.ProductUnitConversionId,
                             ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = item.ProductUnitConversionPrice,
-                            TaxInPercent = item.TaxInPercent,
                             TaxInMoney = item.TaxInMoney,
                             OrderCode = item.OrderCode,
                             ProductionOrderCode = item.ProductionOrderCode,
@@ -1027,7 +1027,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     Money = item.Money ?? 0,
 
-                    TaxInPercent = item.TaxInPercent,
                     TaxInMoney = item.TaxInMoney
                 };
 

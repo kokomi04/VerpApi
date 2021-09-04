@@ -96,7 +96,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CensorDatetimeUtc = null,
                         PurchaseOrderType = (int)purchaseOrderType,
                         PropertyCalcId = model.PropertyCalcId,
-                        PoDescription = model.PoDescription
+                        PoDescription = model.PoDescription,
+                        TaxInPercent = model.TaxInPercent,
                     };
 
                     if (po.DeliveryDestination?.Length > 1024)
@@ -124,7 +125,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                            TaxInPercent = d.TaxInPercent,
                             TaxInMoney = d.TaxInMoney,
                             OrderCode = d.OrderCode,
                             ProductionOrderCode = d.ProductionOrderCode,
@@ -231,6 +231,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     info.CensorByUserId = null;
                     info.CensorDatetimeUtc = null;
                     info.PoDescription = model.PoDescription;
+                    info.TaxInPercent = model.TaxInPercent;
 
                     if (info.DeliveryDestination?.Length > 1024)
                     {
@@ -261,7 +262,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                                 detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
-                                detail.TaxInPercent = item.TaxInPercent;
                                 detail.TaxInMoney = item.TaxInMoney;
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
@@ -286,7 +286,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductUnitConversionId = item.ProductUnitConversionId,
                                 ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                 ProductUnitConversionPrice = item.ProductUnitConversionPrice,
-                                TaxInPercent = item.TaxInPercent,
                                 TaxInMoney = item.TaxInMoney,
                                 OrderCode = item.OrderCode,
                                 ProductionOrderCode = item.ProductionOrderCode,
@@ -498,6 +497,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 PropertyCalcId = info.PropertyCalcId,
 
+                TaxInPercent = info.TaxInPercent,
+
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d =>
                 {
@@ -514,7 +515,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        TaxInPercent = d.TaxInPercent,
                         TaxInMoney = d.TaxInMoney,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,

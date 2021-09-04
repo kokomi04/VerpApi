@@ -36,6 +36,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
         public string PoDescription { get; set; }
+        public decimal? TaxInPercent { get; set; }
 
         public long? PropertyCalcId { get; set; }
     }
@@ -55,7 +56,7 @@ namespace VErp.Services.PurchaseOrder.Model
         decimal ProductUnitConversionQuantity { get; set; }
         decimal ProductUnitConversionPrice { get; set; }
 
-        decimal? TaxInPercent { get; set; }
+        // decimal? TaxInPercent { get; set; }
         decimal? TaxInMoney { get; set; }
 
         string OrderCode { get; set; }
@@ -81,7 +82,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionPrice { get; set; }
 
-        public decimal? TaxInPercent { get; set; }
+        // public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
