@@ -134,6 +134,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                             IntoMoney = d.IntoMoney,
                             IntoAfterTaxMoney = d.IntoAfterTaxMoney,
+
+                            CurrencyCode = d.CurrencyCode,
+                            ExchangedMoney = d.ExchangedMoney,
+                            ExchangeRate = d.ExchangeRate
                         };
                     }).ToList();
 
@@ -269,6 +273,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.IntoMoney = item.IntoMoney;
                                 detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
 
+                                detail.CurrencyCode = item.CurrencyCode;
+                                detail.ExchangedMoney = item.ExchangedMoney;
+                                detail.ExchangeRate = item.ExchangeRate;
                                 break;
                             }
                         }
@@ -295,6 +302,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductionStepLinkDataId = item.ProductionStepLinkDataId,
                                 IntoMoney = item.IntoMoney,
                                 IntoAfterTaxMoney = item.IntoAfterTaxMoney,
+
+                                CurrencyCode = item.CurrencyCode,
+                                ExchangedMoney = item.ExchangedMoney,
+                                ExchangeRate = item.ExchangeRate
                             });
                         }
                     }
@@ -523,7 +534,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         OutsourceRequestId = d.OutsourceRequestId,
                         ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                         IntoAfterTaxMoney = d.IntoAfterTaxMoney,
-                        IntoMoney = d.IntoMoney
+                        IntoMoney = d.IntoMoney,
+
+                        CurrencyCode = d.CurrencyCode,
+                        ExchangedMoney = d.ExchangedMoney,
+                        ExchangeRate = d.ExchangeRate
                     };
                 }).ToList(),
                 Excess = excess,

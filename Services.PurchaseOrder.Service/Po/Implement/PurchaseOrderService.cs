@@ -329,6 +329,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.PurchaseOrderType,
                             pod.IntoMoney,
                             pod.IntoAfterTaxMoney,
+
+                            pod.CurrencyCode,
+                            pod.ExchangedMoney,
+                            pod.ExchangeRate
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -484,6 +488,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchaseOrderType = info.PurchaseOrderType,
                     IntoMoney = info.IntoMoney,
                     IntoAfterTaxMoney = info.IntoAfterTaxMoney,
+
+                    CurrencyCode = info.CurrencyCode,
+                    ExchangedMoney = info.ExchangedMoney,
+                    ExchangeRate = info.ExchangeRate
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
@@ -574,7 +582,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         PoAssignmentDetail = assignmentDetailInfo,
                         PurchasingSuggestDetail = purchasingSuggestDetailInfo,
                         IntoMoney = d.IntoMoney,
-                        IntoAfterTaxMoney = d.IntoAfterTaxMoney
+                        IntoAfterTaxMoney = d.IntoAfterTaxMoney,
+
+                        CurrencyCode = d.CurrencyCode,
+                        ExchangedMoney = d.ExchangedMoney,
+                        ExchangeRate = d.ExchangeRate
                     };
                 }).ToList()
             };
@@ -671,6 +683,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         DeletedDatetimeUtc = null,
                         IntoMoney = d.IntoMoney,
                         IntoAfterTaxMoney = d.IntoAfterTaxMoney,
+
+                        CurrencyCode = d.CurrencyCode,
+                        ExchangeRate = d.ExchangeRate,
+                        ExchangedMoney = d.ExchangedMoney
                     };
                 }).ToList();
 
@@ -813,6 +829,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                             detail.IntoMoney = item.IntoMoney;
                             detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
+                            detail.CurrencyCode = item.CurrencyCode;
+                            detail.ExchangeRate = item.ExchangeRate;
+                            detail.ExchangedMoney = item.ExchangedMoney;
                             break;
                         }
                     }
@@ -845,6 +864,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             DeletedDatetimeUtc = null,
                             IntoMoney = item.IntoMoney,
                             IntoAfterTaxMoney = item.IntoAfterTaxMoney,
+                            CurrencyCode = item.CurrencyCode,
+                            ExchangeRate = item.ExchangeRate,
+                            ExchangedMoney = item.ExchangedMoney,
                         });
                     }
                 }
