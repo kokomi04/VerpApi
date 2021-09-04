@@ -23,7 +23,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade;
 using Verp.Resources.Stock.Product;
-using static Verp.Resources.Stock.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {

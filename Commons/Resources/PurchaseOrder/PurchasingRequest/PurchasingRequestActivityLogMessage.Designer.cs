@@ -62,7 +62,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Duyệt yêu cầu VTHH {0}.
+        ///   Looks up a localized string similar to Duyệt yêu cầu VTHH &quot;{0}&quot;.
         /// </summary>
         public static string PurchasingRequestApproved {
             get {
@@ -71,7 +71,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới phiếu yêu cầu VTHH {0}.
+        ///   Looks up a localized string similar to Thêm mới phiếu yêu cầu VTHH &quot;{0}&quot;.
         /// </summary>
         public static string PurchasingRequestCreate {
             get {
@@ -80,7 +80,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa phiếu yêu cầu VTHH  {0}.
+        ///   Looks up a localized string similar to Xóa phiếu yêu cầu VTHH &quot;{0}&quot;.
         /// </summary>
         public static string PurchasingRequestDelete {
             get {
@@ -89,7 +89,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Từ chối yêu cầu VTHH {0}.
+        ///   Looks up a localized string similar to Từ chối yêu cầu VTHH &quot;{0}&quot;.
         /// </summary>
         public static string PurchasingRequestRejected {
             get {
@@ -98,7 +98,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Gửi duyệt yêu cầu VTHH {0}.
+        ///   Looks up a localized string similar to Gửi duyệt yêu cầu VTHH &quot;{0}&quot;.
         /// </summary>
         public static string PurchasingRequestSentToCensor {
             get {
@@ -107,7 +107,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật phiếu yêu cầu VTHH {0}.
+        ///   Looks up a localized string similar to Cập nhật phiếu yêu cầu VTHH &quot;{0}&quot;.
         /// </summary>
         public static string PurchasingRequestUpdate {
             get {
@@ -116,7 +116,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật tiến độ yêu cầu VTHH {0}: {1}.
+        ///   Looks up a localized string similar to Cập nhật tiến độ yêu cầu VTHH &quot;{0}&quot;: {1}.
         /// </summary>
         public static string PurchasingRequestUpdatedProgress {
             get {

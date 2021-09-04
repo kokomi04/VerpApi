@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Dictionary {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới loại mã mặt hàng {0}.
+        ///   Looks up a localized string similar to Thêm mới loại mã mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Dictionary {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa loại mã mặt hàng {0}.
+        ///   Looks up a localized string similar to Xóa loại mã mặt hàng&quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.Dictionary {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật loại mã mặt hàng {0}.
+        ///   Looks up a localized string similar to Cập nhật loại mã mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {

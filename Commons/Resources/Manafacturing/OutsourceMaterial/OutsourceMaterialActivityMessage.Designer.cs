@@ -61,7 +61,7 @@ namespace Verp.Resources.Manafacturing.OutsourceMaterial {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tạo đơn hàng gia công nguyên vật liệu {0}.
+        ///   Looks up a localized string similar to Tạo đơn hàng gia công nguyên vật liệu &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Manafacturing.OutsourceMaterial {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa đơn hàng gia công nguyên vật liệu {0}.
+        ///   Looks up a localized string similar to Xóa đơn hàng gia công nguyên vật liệu &quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Manafacturing.OutsourceMaterial {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật đơn hàng gia công nguyên vật liệu {0}.
+        ///   Looks up a localized string similar to Cập nhật đơn hàng gia công nguyên vật liệu &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {

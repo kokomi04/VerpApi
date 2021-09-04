@@ -118,21 +118,21 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="RequireInputCreate" xml:space="preserve">
-    <value>Created input inventory requirement {0}</value>
+    <value>Created input inventory requirement "{0}"</value>
   </data>
   <data name="RequireInputDelete" xml:space="preserve">
-    <value>Deleted input inventory requirement {0}</value>
+    <value>Deleted input inventory requirement "{0}"</value>
   </data>
   <data name="RequireInputUpdate" xml:space="preserve">
-    <value>Updated input inventory requirement {0}</value>
+    <value>Updated input inventory requirement "{0}"</value>
   </data>
   <data name="RequireOutputCreate" xml:space="preserve">
-    <value>Created output inventory requirement {0}</value>
+    <value>Created output inventory requirement "{0}"</value>
   </data>
   <data name="RequireOutputDelete" xml:space="preserve">
-    <value>Deleted output inventory requirement {0}</value>
+    <value>Deleted output inventory requirement "{0}"</value>
   </data>
   <data name="RequireOutputUpdate" xml:space="preserve">
-    <value>Updated output inventory requirement {0}</value>
+    <value>Updated output inventory requirement "{0}"</value>
   </data>
 </root>

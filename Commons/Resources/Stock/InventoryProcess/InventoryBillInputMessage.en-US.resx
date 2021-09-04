@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="PuConversionError" xml:space="preserve">
-    <value>Can not convert the unit {0} of product {1}. Check the convert expression</value>
+    <value>Can not convert the unit "{0}" of product "{1}". Check the convert expression</value>
   </data>
   <data name="StockInfoNotFound" xml:space="preserve">
     <value>Stock info was not found</value>

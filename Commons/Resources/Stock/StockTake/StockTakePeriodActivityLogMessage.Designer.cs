@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xác nhận phiếu xử lý chênh lệch kỳ kiểm kê {0}.
+        ///   Looks up a localized string similar to Xác nhận phiếu xử lý chênh lệch kỳ kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string ConfirmAcceptanceCerfificate {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tạo mới kỳ kiểm kê {0}.
+        ///   Looks up a localized string similar to Tạo mới kỳ kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa kỳ kiểm kê {0}.
+        ///   Looks up a localized string similar to Xóa kỳ kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -88,7 +88,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa phiếu xử lý chênh lệch kỳ kiểm kê {0}.
+        ///   Looks up a localized string similar to Xóa phiếu xử lý chênh lệch kỳ kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string DeleteAcceptanceCerfificate {
             get {
@@ -97,7 +97,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật kỳ kiểm kê {0}.
+        ///   Looks up a localized string similar to Cập nhật kỳ kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {
@@ -106,7 +106,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Update phiếu xử lý chênh lệch cho kỳ kiểm kê {0}.
+        ///   Looks up a localized string similar to Update phiếu xử lý chênh lệch cho kỳ kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string UpdateAcceptanceCerfificate {
             get {

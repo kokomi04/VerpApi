@@ -62,7 +62,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy kiện để xuất, mặt hàng {0}.
+        ///   Looks up a localized string similar to Không tìm thấy kiện để xuất, mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string NoPackageForInventoryOutput {
             get {
@@ -71,7 +71,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy kiện {0}, mặt hàng {1}.
+        ///   Looks up a localized string similar to Không tìm thấy kiện &quot;{0}&quot;, mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string PackageCodeOfProductNotFound {
             get {
@@ -80,7 +80,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tìm thấy {0} mặt hàng {1}.
+        ///   Looks up a localized string similar to Tìm thấy {0} mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string ProductFoundMoreThanOne {
             get {
@@ -89,7 +89,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy mặt hàng {0}.
+        ///   Looks up a localized string similar to Không tìm thấy mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string ProductNotFound {
             get {
@@ -98,7 +98,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Dữ liệu đơn vị tính chính lỗi, mặt hàng {0}.
+        ///   Looks up a localized string similar to Dữ liệu đơn vị tính chính lỗi, mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string PuConversionDefaultError {
             get {
@@ -107,7 +107,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Đơn vị chuyển đổi {0} khác với kiện {1} mặt hàng {2}.
+        ///   Looks up a localized string similar to Đơn vị chuyển đổi &quot;{0}&quot; khác với kiện &quot;{1}&quot; mặt hàng &quot;{2}&quot;.
         /// </summary>
         public static string PuConversionDiffToPackage {
             get {
@@ -116,7 +116,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tìm thấy {0} đơn vị chuyển đổi {1} mặt hàng {2}.
+        ///   Looks up a localized string similar to Tìm thấy {0} đơn vị chuyển đổi &quot;{1}&quot; mặt hàng &quot;{2}&quot;.
         /// </summary>
         public static string PuConversionOfProductFoundMoreThanOne {
             get {
@@ -125,7 +125,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy đơn vị chuyển đổi {0} mặt hàng {1}.
+        ///   Looks up a localized string similar to Không tìm thấy đơn vị chuyển đổi &quot;{0}&quot; mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string PuConversionOfProductNotFound {
             get {

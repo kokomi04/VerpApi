@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Stock {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Gộp kiện {0} thành {1}.
+        ///   Looks up a localized string similar to Gộp kiện {0} thành &quot;{1}&quot;.
         /// </summary>
         public static string Join {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Stock {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tách kiện {0} thành {1}.
+        ///   Looks up a localized string similar to Tách kiện &quot;{0}&quot; thành {1}.
         /// </summary>
         public static string Split {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.Stock {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật thông tin kiện {0}.
+        ///   Looks up a localized string similar to Cập nhật thông tin kiện &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {

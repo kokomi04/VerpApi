@@ -118,18 +118,18 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Approve" xml:space="preserve">
-    <value>Approved output inventory {0}</value>
+    <value>Approved output inventory "{0}"</value>
   </data>
   <data name="Create" xml:space="preserve">
-    <value>Created output inventory {0}</value>
+    <value>Created output inventory "{0}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Deleted output inventory {0}</value>
+    <value>Deleted output inventory "{0}"</value>
   </data>
   <data name="Import" xml:space="preserve">
-    <value>Imported output inventory {0}</value>
+    <value>Imported output inventory "{0}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Updated output inventory {0}</value>
+    <value>Updated output inventory "{0}"</value>
   </data>
 </root>

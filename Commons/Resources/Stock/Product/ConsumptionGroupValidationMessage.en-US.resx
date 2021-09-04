@@ -121,7 +121,7 @@
     <value>The consumption group in used</value>
   </data>
   <data name="CodeAlreadyExisted" xml:space="preserve">
-    <value>The consumption group code {0} already existed</value>
+    <value>The consumption group code "{0}" already existed</value>
   </data>
   <data name="ConsumptionGroupNotFound" xml:space="preserve">
     <value>The consumption group was not found</value>

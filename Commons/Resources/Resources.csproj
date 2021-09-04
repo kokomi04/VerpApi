@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -157,13 +157,8 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
-    <Compile Update="Stock\Product\ProductMessage.Designer.cs">
-      <DependentUpon>ProductMessage.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-    </Compile>
-    <Compile Update="Stock\Product\ProductPartialValidationMessage.Designer.cs">
-      <DependentUpon>ProductPartialValidationMessage.resx</DependentUpon>
+    <Compile Update="Stock\Product\ProductValidationMessage.Designer.cs">
+      <DependentUpon>ProductValidationMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
@@ -202,23 +197,23 @@
   <ItemGroup>
     <EmbeddedResource Update="Enums\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.resx">
       <LastGenOutput>OutsourceErrorCodeDescription.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Enums\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.resx">
       <LastGenOutput>PurchasingRequestErrorCodeDescription.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Enums\PO\EnumPoProcessStatusDescription.resx">
       <LastGenOutput>EnumPoProcessStatusDescription.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Enums\PO\EnumPurchasingRequestTypeDescription.resx">
       <LastGenOutput>EnumPurchasingRequestTypeDescription.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Enums\Stock\InventoryErrorCodeDescription.resx">
       <LastGenOutput>InventoryErrorCodeDescription.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="GlobalObject\ValidatorResources.resx">
       <LastGenOutput>ValidatorResources.Designer.cs</LastGenOutput>
@@ -226,23 +221,23 @@
     </EmbeddedResource>
     <EmbeddedResource Update="Library\Formaters\DateTimeFormaterFormat.resx">
       <LastGenOutput>DateTimeFormaterFormat.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Manafacturing\OutsourceMaterial\OutsourceMaterialActivityMessage.resx">
       <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Master\ReuseContent\ReuseContentActivityMessage.resx">
       <LastGenOutput>ReuseContentActivityMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.resx">
       <LastGenOutput>ProductPriceConfigActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\PurchasingRequest\PurchasingRequestActivityLogMessage.resx">
       <LastGenOutput>PurchasingRequestActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\PurchasingRequest\PurchasingRequestMessage.resx">
       <LastGenOutput>PurchasingRequestMessage.Designer.cs</LastGenOutput>
@@ -250,43 +245,43 @@
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Dictionary\ProductCateActivityMessage.resx">
       <LastGenOutput>ProductCateActivityMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Dictionary\ProductCateValidationMessage.resx">
       <LastGenOutput>ProductCateValidationMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Dictionary\ProductTypeActivityMessage.resx">
       <LastGenOutput>ProductTypeActivityMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\CensoredInventoryInputUpdateContextTitle.resx">
       <LastGenOutput>CensoredInventoryInputUpdateContextTitle.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillInputActivityLogMessage.resx">
       <LastGenOutput>InventoryBillInputActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillInputMessage.resx">
       <LastGenOutput>InventoryBillInputMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillOutputActivityMessage.resx">
       <LastGenOutput>InventoryBillOutputActivityMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillOutputMessage.resx">
       <LastGenOutput>InventoryBillOutputMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\InventoryRequirementActivityLogMessage.resx">
       <LastGenOutput>InventoryRequirementActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\InventoryRequirementMessage.resx">
       <LastGenOutput>InventoryRequirementMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Inventory\Abstract\InventoryAbstractMessage.resx">
       <LastGenOutput>InventoryAbstractMessage.Designer.cs</LastGenOutput>
@@ -294,63 +289,59 @@
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Inventory\InventoryFileData\InventoryDetailParseFacadeMessage.resx">
       <LastGenOutput>InventoryDetailParseFacadeMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Inventory\InventoryFileData\InventoryImportFacadeMessage.resx">
       <LastGenOutput>InventoryImportFacadeMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Location\LocationActivityLogMessage.resx">
       <LastGenOutput>LocationActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ConsumptionGroupActivityLogMessage.resx">
       <LastGenOutput>ConsumptionGroupActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ConsumptionGroupValidationMessage.resx">
       <LastGenOutput>ConsumptionGroupValidationMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ProductActivityLogMessage.resx">
       <LastGenOutput>ProductActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ProductImport\ProductBomImportValidationMessage.resx">
       <LastGenOutput>ProductBomImportValidationMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
-    <EmbeddedResource Update="Stock\Product\ProductMessage.resx">
-      <LastGenOutput>ProductMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Stock\Product\ProductPartialValidationMessage.resx">
-      <LastGenOutput>ProductPartialValidationMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+    <EmbeddedResource Update="Stock\Product\ProductValidationMessage.resx">
+      <LastGenOutput>ProductValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\PropertyActivityLogMessage.resx">
       <LastGenOutput>PropertyActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\PropertyValidationMessage.resx">
       <LastGenOutput>PropertyValidationMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\StockTake\StockTakeActivityLogMessage.resx">
       <LastGenOutput>StockTakeActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\StockTake\StockTakePeriodActivityLogMessage.resx">
       <LastGenOutput>StockTakePeriodActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Stock\PackageActivityLogMessage.resx">
       <LastGenOutput>PackageActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Stock\StockActivityLogMessage.resx">
       <LastGenOutput>StockActivityLogMessage.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
   </ItemGroup>
 

@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Mã {0} đã tồn tại.
+        ///   Looks up a localized string similar to Mã &quot;{0}&quot; đã tồn tại.
         /// </summary>
         public static string CodeAlreadyExisted {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tên thuộc tính {0} đã tồn tại.
+        ///   Looks up a localized string similar to Tên thuộc tính &quot;{0}&quot; đã tồn tại.
         /// </summary>
         public static string NameAlreadyExisted {
             get {

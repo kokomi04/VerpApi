@@ -118,15 +118,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Approve" xml:space="preserve">
-    <value>Confirmed inventory record {0}</value>
+    <value>Confirmed inventory record "{0}"</value>
   </data>
   <data name="Create" xml:space="preserve">
-    <value>Created inventory record {0}</value>
+    <value>Created inventory record "{0}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Deleted inventory record {0}</value>
+    <value>Deleted inventory record "{0}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Updated inventory record {0}</value>
+    <value>Updated inventory record "{0}"</value>
   </data>
 </root>

@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới yêu cầu nhập kho, mã: {0}.
+        ///   Looks up a localized string similar to Thêm mới yêu cầu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string RequireInputCreate {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa yêu cầu nhập kho, mã: {0}.
+        ///   Looks up a localized string similar to Xóa yêu cầu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string RequireInputDelete {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật yêu cầu nhập kho, mã: {0}.
+        ///   Looks up a localized string similar to Cập nhật yêu cầu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string RequireInputUpdate {
             get {
@@ -88,7 +88,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới yêu cầu xuất kho, mã: {0}.
+        ///   Looks up a localized string similar to Thêm mới yêu cầu xuất kho &quot;{0}&quot;.
         /// </summary>
         public static string RequireOutputCreate {
             get {
@@ -97,7 +97,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa yêu cầu xuất kho, mã: {0}.
+        ///   Looks up a localized string similar to Xóa yêu cầu xuất kho &quot;{0}&quot;.
         /// </summary>
         public static string RequireOutputDelete {
             get {
@@ -106,7 +106,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật yêu cầu xuất kho, mã: {0}.
+        ///   Looks up a localized string similar to Cập nhật yêu cầu xuất kho &quot;{0}&quot;.
         /// </summary>
         public static string RequireOutputUpdate {
             get {

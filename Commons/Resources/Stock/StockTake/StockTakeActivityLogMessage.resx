@@ -98,15 +98,15 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.3500.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Create" xml:space="preserve">
-    <value>Tạo mới phiếu kiểm kê {0}</value>
+    <value>Tạo mới phiếu kiểm kê "{0}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật phiếu kiểm kê {0}</value>
+    <value>Cập nhật phiếu kiểm kê "{0}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Xóa phiếu kiểm kê {0}</value>
+    <value>Xóa phiếu kiểm kê "{0}"</value>
   </data>
   <data name="Approve" xml:space="preserve">
-    <value>Xác nhận phiếu kiểm kê {0}</value>
+    <value>Xác nhận phiếu kiểm kê "{0}"</value>
   </data>
 </root>

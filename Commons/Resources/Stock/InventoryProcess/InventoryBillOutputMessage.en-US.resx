@@ -118,10 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="NotEnoughBalanceInPackage" xml:space="preserve">
-    <value>The balance of package {0} of product {1} ({2}) &lt; {3} was not enough</value>
+    <value>The balance of package "{0}" of product "{1}" ({2}) &lt; {3} was not enough</value>
   </data>
   <data name="NotEnoughBalanceInStock" xml:space="preserve">
-    <value>The balance of product {0} {1} was not enough {2}</value>
+    <value>The balance of product "{0}" ({1}) was not enough {2}</value>
   </data>
   <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
     <value>The package was empty</value>

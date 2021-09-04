@@ -22,14 +22,14 @@ namespace Verp.Resources.Stock.Product {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class ProductMessage {
+    public class ProductValidationMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal ProductMessage() {
+        internal ProductValidationMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Stock.Product {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Stock.Product.ProductMessage", typeof(ProductMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Stock.Product.ProductValidationMessage", typeof(ProductValidationMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy khách hàng có mã {0}.
+        ///   Looks up a localized string similar to Không tìm thấy khách hàng có mã &quot;{0}&quot;.
         /// </summary>
         public static string CustomerWithCodeNotFound {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy khách hàng có tên {0}.
+        ///   Looks up a localized string similar to Không tìm thấy khách hàng có tên &quot;{0}&quot;.
         /// </summary>
         public static string CustomerWithNameNotFound {
             get {
@@ -97,7 +97,16 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy bộ phận {0} sử dụng mặt hàng {1}.
+        ///   Looks up a localized string similar to Không tìm thấy đơn vị tính mặc định.
+        /// </summary>
+        public static string DefaultProductUnitNotFound {
+            get {
+                return ResourceManager.GetString("DefaultProductUnitNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy bộ phận &quot;{0}&quot; sử dụng mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string DepartmentOfMaterialNotFound {
             get {
@@ -133,7 +142,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy nhóm vật tư tiêu hao {0}.
+        ///   Looks up a localized string similar to Không tìm thấy nhóm vật tư tiêu hao &quot;{0}&quot;.
         /// </summary>
         public static string ImportConsumptionGroupNotFound {
             get {
@@ -142,7 +151,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tồn tại nhiều hơn 1 mặt hàng {0}.
+        ///   Looks up a localized string similar to Tồn tại nhiều hơn 1 mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string ImportMultipleProductsFound {
             get {
@@ -151,7 +160,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cần chọn danh mục cho mặt hàng {0}.
+        ///   Looks up a localized string similar to Cần chọn danh mục cho mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string ImportNeedProductCateForProduct {
             get {
@@ -160,7 +169,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy mặc định cho mặt hàng {0}.
+        ///   Looks up a localized string similar to Không tìm thấy mặc định cho mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string ImportProductCateDefaultOfProductNotFound {
             get {
@@ -169,7 +178,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy danh mục {0} cho mặt hàng {1}.
+        ///   Looks up a localized string similar to Không tìm thấy danh mục &quot;{0}&quot; cho mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string ImportProductCateOfProductNotFound {
             get {
@@ -178,7 +187,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy loại mã {0} cho mặt hàng {1}.
+        ///   Looks up a localized string similar to Không tìm thấy loại mã &quot;{0}&quot; cho mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string ImportProductTypeOfProductNotFound {
             get {
@@ -205,7 +214,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Mã mặt hàng {0} đã tồn tại.
+        ///   Looks up a localized string similar to Mã mặt hàng &quot;{0}&quot; đã tồn tại.
         /// </summary>
         public static string ProductCodeAlreadyExisted {
             get {
@@ -232,7 +241,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Số lượng sử dụng của NVL có mã {0} trong nhóm {1} phải lơn hơn 0.
+        ///   Looks up a localized string similar to Số lượng sử dụng của NVL có mã &quot;{0}&quot; trong nhóm &quot;{1}&quot; phải lơn hơn 0.
         /// </summary>
         public static string ProductMaterialConsumptionQuantityError {
             get {
@@ -241,7 +250,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tên mặt hàng có mã {0} không được để trống.
+        ///   Looks up a localized string similar to Tên mặt hàng có mã &quot;{0}&quot; không được để trống.
         /// </summary>
         public static string ProductNameOfCodeEmpty {
             get {
@@ -250,7 +259,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lỗi không thể tính toán biểu thức đơn vị chuyển đổi {0}  của mặt hàng {1}.
+        ///   Looks up a localized string similar to Lỗi không thể tính toán biểu thức đơn vị chuyển đổi &quot;{0}&quot; của mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string PuConversionExpressionError {
             get {
@@ -259,7 +268,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Biểu thức chuyển đổi {0} của mặt hàng {1} không đúng.
+        ///   Looks up a localized string similar to Biểu thức chuyển đổi &quot;{0}&quot; của mặt hàng &quot;{1}&quot; không đúng.
         /// </summary>
         public static string PuConversionExpressionInvalid {
             get {
@@ -277,7 +286,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy công đoạn {0} sử dụng mặt hàng {1}.
+        ///   Looks up a localized string similar to Không tìm thấy công đoạn &quot;{0}&quot; sử dụng mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string StepOfMaterialNotFound {
             get {
@@ -286,7 +295,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Kho không tồn tại {0}.
+        ///   Looks up a localized string similar to Kho không tồn tại &quot;{0}&quot;.
         /// </summary>
         public static string StockNameNotFound {
             get {
@@ -295,7 +304,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy đơn vị tính mặt hàng {0}.
+        ///   Looks up a localized string similar to Không tìm thấy đơn vị tính mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UnitOfProductNotFound {
             get {

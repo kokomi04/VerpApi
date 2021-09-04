@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Product.ProductImport {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Công đoạn {0}  không có trên hệ thống.
+        ///   Looks up a localized string similar to Công đoạn &quot;{0}&quot;  không có trên hệ thống.
         /// </summary>
         public static string StepNotFound {
             get {

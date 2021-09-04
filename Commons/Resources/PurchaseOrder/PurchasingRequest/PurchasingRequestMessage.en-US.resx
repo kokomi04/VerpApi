@@ -121,28 +121,28 @@
     <value>Can not delete purchasing request because there are some linked purchasing suggests {0}</value>
   </data>
   <data name="ErrorCalcQuantity" xml:space="preserve">
-    <value>Error while calculate quantity item {0}</value>
+    <value>Error while calculate quantity item "{0}"</value>
   </data>
   <data name="FoundNumberProduct" xml:space="preserve">
-    <value>{0} items  {1} found</value>
+    <value>{0} items  "{1}" found</value>
   </data>
   <data name="FoundNumberPuOfProduct" xml:space="preserve">
-    <value>There were {0} product units {1} of item {2} found</value>
+    <value>There were {0} product unit "{1}" of item "{2}" found</value>
   </data>
   <data name="InvalidQuantity" xml:space="preserve">
-    <value>Invalid quantity of item {0}</value>
+    <value>Invalid quantity of item "{0}"</value>
   </data>
   <data name="NoProductFound" xml:space="preserve">
-    <value>No items  {0} found</value>
+    <value>No items "{0}" found</value>
   </data>
   <data name="NoPuOfProductFound" xml:space="preserve">
-    <value>Product units {0} of item {1} was not found</value>
+    <value>Product unit "{0}" of item "{1}" was not found</value>
   </data>
   <data name="PuConversionDoesNotBelongToProduct" xml:space="preserve">
-    <value>The unit conversion does not belong to the product </value>
+    <value>The unit conversion does not belong to the product</value>
   </data>
   <data name="PuDefaultError" xml:space="preserve">
-    <value>Default unit of item {0} was not found</value>
+    <value>Default unit of item "{0}" was not found</value>
   </data>
   <data name="PurchasingRequestPreventFrom" xml:space="preserve">
     <value>Can not edit purchasing request from {0}</value>

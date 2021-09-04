@@ -61,7 +61,7 @@ namespace Verp.Resources.GlobalObject {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lỗi trường {0} phải có giá trị lớn hơn {1}.
+        ///   Looks up a localized string similar to Lỗi trường &quot;{0}&quot; phải có giá trị lớn hơn {1}.
         /// </summary>
         public static string GreaterThanAttribute_Invalid {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.GlobalObject {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lỗi trường {0} phải lớn hơn hoặc bằng {1}.
+        ///   Looks up a localized string similar to Lỗi trường &quot;{0}&quot; phải lớn hơn hoặc bằng {1}.
         /// </summary>
         public static string MinAttribute_Invalid {
             get {

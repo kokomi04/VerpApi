@@ -118,48 +118,48 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="CopyBom" xml:space="preserve">
-    <value>Copy the BOM from {0} to {1}</value>
+    <value>Copy the BOM from "{0}" to "{1}"</value>
   </data>
   <data name="CopyConsumption" xml:space="preserve">
-    <value>Copy the consumptions from {0} to {1}</value>
+    <value>Copy the consumptions from "{0}" to "{1}"</value>
   </data>
   <data name="Create" xml:space="preserve">
-    <value>Created product {0}</value>
+    <value>Created product "{0}"</value>
   </data>
   <data name="CreateProductPart" xml:space="preserve">
-    <value>Created product part {0}</value>
+    <value>Created product part "{0}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Deleted product {0}</value>
+    <value>Deleted product "{0}"</value>
   </data>
   <data name="ImportBom" xml:space="preserve">
-    <value>Imported BOM for product {0}</value>
+    <value>Imported BOM for product "{0}"</value>
   </data>
   <data name="ImportConsumption" xml:space="preserve">
-    <value>Imported consumption for product {0}</value>
+    <value>Imported consumption for product "{0}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Updated product {0}</value>
+    <value>Updated product "{0}"</value>
   </data>
   <data name="UpdateAttachment" xml:space="preserve">
-    <value>Updated files for product {0}</value>
+    <value>Updated files for product "{0}"</value>
   </data>
   <data name="UpdateBom" xml:space="preserve">
-    <value>Updated BOM for product {0}</value>
+    <value>Updated BOM for product "{0}"</value>
   </data>
   <data name="UpdateDetailMaterialConsumption" xml:space="preserve">
-    <value>Imported consumption {0} for product {1}</value>
+    <value>Imported consumption "{0}" for product "{1}"</value>
   </data>
   <data name="UpdateGeneralInfo" xml:space="preserve">
-    <value>Updated general product info {0}</value>
+    <value>Updated general product info "{0}"</value>
   </data>
   <data name="UpdateMaterialConsumption" xml:space="preserve">
-    <value>Updated consumption for product {0}</value>
+    <value>Updated consumption for product "{0}"</value>
   </data>
   <data name="UpdateSellInfo" xml:space="preserve">
-    <value>Updated sell product info {0}</value>
+    <value>Updated sell product info "{0}"</value>
   </data>
   <data name="UpdateStockInfo" xml:space="preserve">
-    <value>Updated stock product info {0}</value>
+    <value>Updated stock product info "{0}"</value>
   </data>
 </root>

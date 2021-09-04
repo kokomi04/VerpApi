@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Duyệt phiếu nhập kho, mã: {0}.
+        ///   Looks up a localized string similar to Duyệt phiếu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string Approve {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới phiếu nhập kho, mã: {0}.
+        ///   Looks up a localized string similar to Thêm mới phiếu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string Create {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tạo kiện {0} từ phiếu nhập {1}.
+        ///   Looks up a localized string similar to Tạo kiện {0} từ phiếu nhập &quot;{1}&quot;.
         /// </summary>
         public static string CreatePackage {
             get {
@@ -88,7 +88,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa phiếu nhập kho, mã: {0}.
+        ///   Looks up a localized string similar to Xóa phiếu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string Delete {
             get {
@@ -97,7 +97,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa phiếu {0} do không tồn tại mặt hàng nào.
+        ///   Looks up a localized string similar to Xóa phiếu &quot;{0}&quot; do không tồn tại mặt hàng nào.
         /// </summary>
         public static string DeleteCauseByNoProduct {
             get {
@@ -106,7 +106,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Nhập từ excel phiếu nhập kho, mã {0}.
+        ///   Looks up a localized string similar to Nhập từ excel phiếu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string Import {
             get {
@@ -115,7 +115,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật phiếu nhập kho, mã: {0}.
+        ///   Looks up a localized string similar to Cập nhật phiếu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {
@@ -124,7 +124,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật &amp; duyệt phiếu nhập kho đã duyệt, mã: {0}.
+        ///   Looks up a localized string similar to Cập nhật &amp; duyệt phiếu nhập kho đã duyệ &quot;{0}&quot;.
         /// </summary>
         public static string UpdateAndApprove {
             get {

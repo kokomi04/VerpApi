@@ -70,7 +70,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lỗi tính toán số lượng mặt hàng {0}.
+        ///   Looks up a localized string similar to Lỗi tính toán số lượng mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string ErrorCalcQuantity {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tìm thấy {0} mặt hàng {1}.
+        ///   Looks up a localized string similar to Tìm thấy {0} mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string FoundNumberProduct {
             get {
@@ -88,7 +88,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tìm thấy {0} đơn vị chuyển đổi {1} mặt hàng {2}.
+        ///   Looks up a localized string similar to Tìm thấy {0} đơn vị chuyển đổi &quot;{1}&quot; mặt hàng &quot;{2}&quot;.
         /// </summary>
         public static string FoundNumberPuOfProduct {
             get {
@@ -97,7 +97,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Số lượng không hợp lệ mặt hàng {0}.
+        ///   Looks up a localized string similar to Số lượng không hợp lệ mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string InvalidQuantity {
             get {
@@ -106,7 +106,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy mặt hàng  {0}.
+        ///   Looks up a localized string similar to Không tìm thấy mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string NoProductFound {
             get {
@@ -115,7 +115,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Đơn vị chuyển đổi {0} của mặt hàng {1} không tìm thấy.
+        ///   Looks up a localized string similar to Đơn vị chuyển đổi &quot;{0}&quot; của mặt hàng &quot;{1}&quot; không tìm thấy.
         /// </summary>
         public static string NoPuOfProductFound {
             get {
@@ -133,7 +133,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy đơn vị tính của mặt hàng {0}.
+        ///   Looks up a localized string similar to Không tìm thấy đơn vị tính của mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string PuDefaultError {
             get {

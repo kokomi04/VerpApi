@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Số dư trong kiện {0} mặt hàng {1} ({2}) &lt;  {3} không đủ để xuất.
+        ///   Looks up a localized string similar to Số dư trong kiện &quot;{0}&quot; mặt hàng &quot;{1}&quot; ({2}) &lt;  {3} không đủ để xuất.
         /// </summary>
         public static string NotEnoughBalanceInPackage {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Số dư trong kho mặt hàng {0} ({1}) không đủ để xuất {2}.
+        ///   Looks up a localized string similar to Số dư trong kho mặt hàng &quot;{0}&quot; ({1}) không đủ để xuất {2}.
         /// </summary>
         public static string NotEnoughBalanceInStock {
             get {

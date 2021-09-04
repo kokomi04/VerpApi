@@ -118,27 +118,27 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="NoPackageForInventoryOutput" xml:space="preserve">
-    <value>Không tìm thấy kiện để xuất, mặt hàng {0}</value>
+    <value>Không tìm thấy kiện để xuất, mặt hàng "{0}"</value>
   </data>
   <data name="PackageCodeOfProductNotFound" xml:space="preserve">
-    <value>Không tìm thấy kiện {0}, mặt hàng {1}</value>
+    <value>Không tìm thấy kiện "{0}", mặt hàng "{1}"</value>
   </data>
   <data name="ProductFoundMoreThanOne" xml:space="preserve">
-    <value>Tìm thấy {0} mặt hàng {1}</value>
+    <value>Tìm thấy {0} mặt hàng "{1}"</value>
   </data>
   <data name="ProductNotFound" xml:space="preserve">
-    <value>Không tìm thấy mặt hàng {0}</value>
+    <value>Không tìm thấy mặt hàng "{0}"</value>
   </data>
   <data name="PuConversionDefaultError" xml:space="preserve">
-    <value>Dữ liệu đơn vị tính chính lỗi, mặt hàng {0}</value>
+    <value>Dữ liệu đơn vị tính chính lỗi, mặt hàng "{0}"</value>
   </data>
   <data name="PuConversionDiffToPackage" xml:space="preserve">
-    <value>Đơn vị chuyển đổi {0} khác với kiện {1} mặt hàng {2}</value>
+    <value>Đơn vị chuyển đổi "{0}" khác với kiện "{1}" mặt hàng "{2}"</value>
   </data>
   <data name="PuConversionOfProductFoundMoreThanOne" xml:space="preserve">
-    <value>Tìm thấy {0} đơn vị chuyển đổi {1} mặt hàng {2}</value>
+    <value>Tìm thấy {0} đơn vị chuyển đổi "{1}" mặt hàng "{2}"</value>
   </data>
   <data name="PuConversionOfProductNotFound" xml:space="preserve">
-    <value>Không tìm thấy đơn vị chuyển đổi {0} mặt hàng {1}</value>
+    <value>Không tìm thấy đơn vị chuyển đổi "{0}" mặt hàng "{1}"</value>
   </data>
 </root>
