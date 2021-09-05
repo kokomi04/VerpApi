@@ -77,10 +77,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverService productionHandoverService
+            , IProductionHandoverHelperService productionHandoverHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;

@@ -11,15 +11,15 @@ using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
-    public interface IProductionHandoverService
+    public interface IProductionHandoverHelperService
     {
         Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, DataTable inventories);
     }
-    public class ProductionHandoverService : IProductionHandoverService
+    public class ProductionHandoverHelperService : IProductionHandoverHelperService
     {
         private readonly IHttpCrossService _httpCrossService;
 
-        public ProductionHandoverService(IHttpCrossService httpCrossService)
+        public ProductionHandoverHelperService(IHttpCrossService httpCrossService)
         {
             _httpCrossService = httpCrossService;
         }

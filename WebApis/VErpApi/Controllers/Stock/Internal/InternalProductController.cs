@@ -48,6 +48,13 @@ namespace VErpApi.Controllers.Stock.Internal
             return await _productService.ProductInfo(productId);
         }
 
+        [HttpPost]
+        [Route("GetByIds")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
+        {
+            return (await _productService.GetListByIds(productIds)).ToList();
+        }
 
         [HttpPost]
         [Route("validateProductUnitConversion")]

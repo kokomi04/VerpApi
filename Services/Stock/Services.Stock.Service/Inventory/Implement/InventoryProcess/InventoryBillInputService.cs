@@ -50,8 +50,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverService productionHandoverService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
+            , IProductionHandoverHelperService productionHandoverHelperService
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
          
             _asyncRunner = asyncRunner;
