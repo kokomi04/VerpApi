@@ -106,7 +106,7 @@ namespace Verp.Resources.Stock.StockTake {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Update phiếu xử lý chênh lệch cho kỳ kiểm kê &quot;{0}&quot;.
+        ///   Looks up a localized string similar to Cập nhật phiếu xử lý chênh lệch cho kỳ kiểm kê &quot;{0}&quot;.
         /// </summary>
         public static string UpdateAcceptanceCerfificate {
             get {

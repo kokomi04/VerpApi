@@ -107,7 +107,7 @@
     <value>Cập nhật kỳ kiểm kê "{0}"</value>
   </data>
   <data name="UpdateAcceptanceCerfificate" xml:space="preserve">
-    <value>Update phiếu xử lý chênh lệch cho kỳ kiểm kê "{0}"</value>
+    <value>Cập nhật phiếu xử lý chênh lệch cho kỳ kiểm kê "{0}"</value>
   </data>
   <data name="ConfirmAcceptanceCerfificate" xml:space="preserve">
     <value>Xác nhận phiếu xử lý chênh lệch kỳ kiểm kê "{0}"</value>
