@@ -791,8 +791,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
             departmentIds = otherAssignments.Select(a => a.DepartmentId).Distinct().ToList();
-            var startDateUnix = otherAssignments.Min(a => a.StartDate).GetUnix();
-            var endDateUnix = otherAssignments.Max(a => a.EndDate).GetUnix();
+            var startDateUnix = productionTime.StartDate.GetUnix();
+            var endDateUnix = productionTime.EndDate.GetUnix();
+            if (otherAssignments.Count > 0)
+            {
+                var minDate = otherAssignments.Min(a => a.StartDate).GetUnix();
+                var maxDate = otherAssignments.Max(a => a.EndDate).GetUnix();
+                startDateUnix = startDateUnix < minDate ? startDateUnix : minDate;
+                endDateUnix = endDateUnix > maxDate ? endDateUnix : maxDate;
+            }
+
+
+
             // Lấy thông tin phong ban
             var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(startDateUnix, endDateUnix, departmentIds.ToArray()));
 

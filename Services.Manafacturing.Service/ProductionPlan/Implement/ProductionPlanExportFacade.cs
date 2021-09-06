@@ -190,7 +190,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     {
                         style = centerCell;
                     }
-                    if (new[] { 4, 5, 6, 8, 9, 10, 11 }.Contains(i))
+                    if (new[] { 4, 5, 7, 9, 10, 11 }.Contains(i))
                     {
                         style = numberCell;
                     }
