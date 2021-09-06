@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
@@ -37,6 +38,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
+        [GlobalApi]
         public async Task<bool> AddNote(AddNoteInput req)
         {
             if (req == null)
@@ -48,6 +50,7 @@ namespace VErpApi.Controllers.System
      
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
         {
             return await _activityService.GetListUserActivityLog(objectId, objectTypeId, page, size);
