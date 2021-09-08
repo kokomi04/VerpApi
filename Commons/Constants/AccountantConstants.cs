@@ -8,16 +8,12 @@ namespace VErp.Commons.Constants
 {
     public static class AccountantConstants
     {
-        public static readonly List<EnumFormType> SELECT_FORM_TYPES = new List<EnumFormType>() { EnumFormType.Select, EnumFormType.SearchTable, EnumFormType.MultiSelect };
-        public static readonly List<EnumFormType> JOIN_FORM_TYPES = new List<EnumFormType>() { EnumFormType.Select, EnumFormType.SearchTable };
-        public static readonly List<EnumDataType> TIME_TYPES = new List<EnumDataType>() { EnumDataType.Date, EnumDataType.DateRange, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year };
-
+       
         public const int INPUT_TYPE_FIELD_NUMBER = 101;
         public const int CONVERT_VALUE_TO_NUMBER_FACTOR = 100000;
         public const string INPUT_TYPE_FIELDNAME_FORMAT = "Field{0}";
         public const string F_IDENTITY = "F_Id";
-        public const string PARENT_ID_TITLE = "Đối tượng cha";
-        public const string PARENT_ID_FIELD_NAME = "ParentId";
+
         public const string IDENTITY_AREA = "IdentityArea";
         public const string IDENTITY_AREA_TITLE = "Thông tin định danh";
 

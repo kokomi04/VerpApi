@@ -64,7 +64,7 @@ namespace VErp.Services.Master.Service.Category
 
         public async Task<IList<CategoryFullModel>> GetAllCategoryConfig()
         {
-            var v =  await _masterContext.Category
+            var v = await _masterContext.Category
                .Include(c => c.OutSideDataConfig)
                .ThenInclude(o => o.OutsideDataFieldConfig)
                .Include(c => c.CategoryField)
@@ -281,12 +281,12 @@ namespace VErp.Services.Master.Service.Category
                     if (data.IsTreeView)
                     {
                         // Create ParentId Field
-                        await _masterContext.AddColumn(data.CategoryCode, "ParentId", EnumDataType.Int, -1, 0, null, true);
+                        await _masterContext.AddColumn(data.CategoryCode, CategoryFieldConstants.ParentId, EnumDataType.Int, -1, 0, null, true);
                     }
                     else
                     {
                         // Drop ParentId Field
-                        await _masterContext.DeleteColumn(data.CategoryCode, "ParentId");
+                        await _masterContext.DeleteColumn(data.CategoryCode, CategoryFieldConstants.ParentId);
                     }
 
                 }
@@ -850,6 +850,7 @@ namespace VErp.Services.Master.Service.Category
                     .First()
                 );
 
+
             foreach (var field in fields)
             {
                 var fileData = new CategoryFieldNameModel()
@@ -867,6 +868,7 @@ namespace VErp.Services.Master.Service.Category
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
                     }
+                   
 
                     fileData.RefCategory = new CategoryNameModel()
                     {
@@ -875,8 +877,7 @@ namespace VErp.Services.Master.Service.Category
                         CategoryTitle = refCategory.CategoryInfo.CategoryTitle,
                         IsTreeView = refCategory.CategoryInfo.IsTreeView,
 
-                        Fields = refCategory.Fields
-                        .Where(x => string.IsNullOrWhiteSpace(x.RefTableCode) && !x.IsHidden)
+                        Fields = GetRefFields(refCategory.Fields)
                         .Select(f => new CategoryFieldNameModel()
                         {
                             CategoryFieldId = f.CategoryFieldId,
@@ -891,6 +892,27 @@ namespace VErp.Services.Master.Service.Category
                 result.Fields.Add(fileData);
             }
 
+
+            if (result.IsTreeView)
+            {
+                var parentRef = result.DeepClone();
+
+                var refFileds = GetRefFields(fields)
+                    .Select(f => f.CategoryFieldName)
+                    .ToList();
+
+                parentRef.Fields = parentRef.Fields.Where(f => refFileds.Contains(f.FieldName)).ToList();
+
+                result.Fields.Insert(0, new CategoryFieldNameModel()
+                {
+                    CategoryFieldId = CategoryFieldConstants.ParentId_FiledId,
+                    FieldName = CategoryFieldConstants.ParentId,
+                    FieldTitle = category.Title + " cha",
+                    IsRequired = false,
+                    RefCategory = parentRef,
+                });
+            }
+
             result.Fields.Add(new CategoryFieldNameModel
             {
                 FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
@@ -898,6 +920,12 @@ namespace VErp.Services.Master.Service.Category
             });
 
             return result;
+        }
+
+        private IList<CategoryField> GetRefFields(IList<CategoryField> fields)
+        {
+            return fields.Where(x => string.IsNullOrWhiteSpace(x.RefTableCode) && !x.IsHidden && x.DataTypeId != (int)EnumDataType.Boolean && !((EnumDataType)x.DataTypeId).IsTimeType())
+                 .ToList();
         }
 
         private string GetTitleCategoryField(CategoryField field)

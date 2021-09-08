@@ -82,8 +82,8 @@ namespace VErp.Services.Master.Service.Category
                     if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại nhiều \"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}\", giá trị mang tính định danh trong file excel.");
                     
-                    if(!row.ContainsKey(AccountantConstants.PARENT_ID_FIELD_NAME))
-                        row.Add(AccountantConstants.PARENT_ID_FIELD_NAME, oldRow[AccountantConstants.PARENT_ID_FIELD_NAME].ToString());
+                    if(!row.ContainsKey(CategoryFieldConstants.ParentId))
+                        row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
 
                     row.Add(AccountantConstants.F_IDENTITY, oldRow[AccountantConstants.F_IDENTITY].ToString());
                     lsUpdateRow.Add(row);
@@ -188,7 +188,7 @@ namespace VErp.Services.Master.Service.Category
                         {
                             value = string.Empty;
                         }
-                        else if (mf.FieldName == AccountantConstants.PARENT_ID_FIELD_NAME)
+                        else if (mf.FieldName == CategoryFieldConstants.ParentId)
                         {
                             var fieldInfo = _categoryFields.FirstOrDefault(x => x.CategoryFieldName == mf.RefFieldName);
                             value = TransformValueByDataType(mapping, i, value, fieldInfo, mf.Column);
@@ -246,10 +246,10 @@ namespace VErp.Services.Master.Service.Category
 
         private async Task RefCategoryForParent(CategoryImportExcelMapping mapping)
         {
-            var hasParent = mapping.MappingFields.Any(m => m.FieldName == AccountantConstants.PARENT_ID_FIELD_NAME);
+            var hasParent = mapping.MappingFields.Any(m => m.FieldName == CategoryFieldConstants.ParentId);
             if (hasParent)
             {
-                var mapField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == AccountantConstants.PARENT_ID_FIELD_NAME);
+                var mapField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == CategoryFieldConstants.ParentId);
 
                 var query = new CategoryQueryRequest()
                 {
@@ -275,15 +275,16 @@ namespace VErp.Services.Master.Service.Category
 
                 (await GetRefCategoryDataByMultiField(new[] { query })).TryGetValue(_category.CategoryCode, out _refCategoryDataForParent);
 
+
             }
         }
 
         private async Task RefCategoryForProperty(CategoryImportExcelMapping mapping)
         {
-            var hasRefProperty = mapping.MappingFields.Any(m => !string.IsNullOrWhiteSpace(m.RefFieldName) && !m.FieldName.Equals(AccountantConstants.PARENT_ID_FIELD_NAME));
+            var hasRefProperty = mapping.MappingFields.Any(m => !string.IsNullOrWhiteSpace(m.RefFieldName) && !m.FieldName.Equals(CategoryFieldConstants.ParentId));
             if (hasRefProperty)
             {
-                var groupRefTable = (from mf in mapping.MappingFields.Where(m => !string.IsNullOrWhiteSpace(m.RefFieldName) && !m.FieldName.Equals(AccountantConstants.PARENT_ID_FIELD_NAME))
+                var groupRefTable = (from mf in mapping.MappingFields.Where(m => !string.IsNullOrWhiteSpace(m.RefFieldName) && !m.FieldName.Equals(CategoryFieldConstants.ParentId))
                                      join cf in _categoryFields on mf.FieldName equals cf.CategoryFieldName
                                      select new
                                      {
