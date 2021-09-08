@@ -33,10 +33,10 @@ namespace VErpApi.Controllers.Stock.Inventory
         private readonly IFileProcessDataService _fileProcessDataService;
 
         public InventoryController(
-            IInventoryService iventoryService, 
-            IInventoryBillInputService inventoryBillInputService, 
+            IInventoryService iventoryService,
+            IInventoryBillInputService inventoryBillInputService,
             IInventoryBillOutputService inventoryBillOutputService,
-            IFileService fileService, 
+            IFileService fileService,
             IFileProcessDataService fileProcessDataService)
         {
             _inventoryService = iventoryService;
@@ -261,7 +261,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryBillOutputService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
         }
 
-      
+
 
 
         /// <summary>
@@ -279,9 +279,9 @@ namespace VErpApi.Controllers.Stock.Inventory
             }
 
             var currentUserId = UserId;
-            if (model.Type == EnumInventoryType.Input)
+            if (model.InventoryTypeId == EnumInventoryType.Input)
                 return await _fileProcessDataService.ImportInventoryInputOpeningBalance(currentUserId, model);
-            else if (model.Type == EnumInventoryType.Output)
+            else if (model.InventoryTypeId == EnumInventoryType.Output)
                 return await _fileProcessDataService.ImportInventoryOutput(currentUserId, model);
             else
                 throw new BadRequestException(GeneralCode.InvalidParams);
@@ -313,14 +313,15 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<long> ImportFromMapping([FromFormString] InventoryOpeningImportModel data, IFormFile file)
+        public async Task<long> ImportFromMapping([FromFormString] ImportExcelMappingExtra<InventoryOpeningBalanceModel> data, IFormFile file)
         {
             if (data == null) throw GeneralCode.InvalidParams.BadRequest();
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inventoryService.InventoryImport(data.Mapping, file.OpenReadStream(), data.Info).ConfigureAwait(true);
+            data.Mapping.FileName = file.FileName;
+            return await _inventoryService.InventoryImport(data.Mapping, file.OpenReadStream(), data.Extra).ConfigureAwait(true);
         }
 
 

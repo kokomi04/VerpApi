@@ -4,9 +4,11 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
+using VErp.Services.PurchaseOrder.Model.Request;
 
 namespace VErp.Services.PurchaseOrder.Service
 {
@@ -22,7 +24,9 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<bool> Update(long purchaseOrderId, PurchaseOrderInput req);
 
-        IAsyncEnumerable<PurchaseOrderExcelParseDetail> ParseInvoiceDetails(SingleInvoicePoExcelMappingModel mapping, Stream stream);
+        CategoryNameModel GetFieldDataForMapping();
+
+        IAsyncEnumerable<PurchaseOrderExcelParseDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream);
 
         Task<bool> SentToCensor(long purchaseOrderId);
 

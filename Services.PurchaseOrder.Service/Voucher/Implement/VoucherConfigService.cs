@@ -1023,7 +1023,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
             }
 
-            if (!PurchaseOrderConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
+            if (!DataTypeConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {
                 data.RefTableField = null;
                 if (data.FormTypeId != EnumFormType.Input)

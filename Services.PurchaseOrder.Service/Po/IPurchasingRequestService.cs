@@ -10,6 +10,7 @@ using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.Request;
 using System.IO;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.PurchaseOrder.Service
 {
@@ -27,7 +28,9 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<long> Create(EnumPurchasingRequestType requestType, PurchasingRequestInput model);
 
-        IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream);
+        CategoryNameModel GetFieldDataForMapping();
+
+        IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream);
 
         Task<bool> Update(EnumPurchasingRequestType purchasingRequestTypeId, long purchasingRequestId, PurchasingRequestInput model);
 

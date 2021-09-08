@@ -2050,7 +2050,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var selectFormFields = (from iaf in _accountancyDBContext.InputAreaField
                                     join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
-                                    where iaf.InputTypeId == inputTypeId && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+                                    where iaf.InputTypeId == inputTypeId && DataTypeConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
                                     select new
                                     {
                                         itf.RefTableTitle,
