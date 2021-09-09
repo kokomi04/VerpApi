@@ -98,6 +98,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         PropertyCalcId = model.PropertyCalcId,
                         PoDescription = model.PoDescription,
                         TaxInPercent = model.TaxInPercent,
+                        TaxInMoney = model.TaxInMoney,
+                        CurrencyId = model.CurrencyId,
+                        ExchangeRate = model.ExchangeRate
                     };
 
                     if (po.DeliveryDestination?.Length > 1024)
@@ -125,7 +128,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                            TaxInMoney = d.TaxInMoney,
                             OrderCode = d.OrderCode,
                             ProductionOrderCode = d.ProductionOrderCode,
                             Description = d.Description,
@@ -133,11 +135,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             OutsourceRequestId = d.OutsourceRequestId,
                             ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                             IntoMoney = d.IntoMoney,
-                            IntoAfterTaxMoney = d.IntoAfterTaxMoney,
 
-                            CurrencyCode = d.CurrencyCode,
                             ExchangedMoney = d.ExchangedMoney,
-                            ExchangeRate = d.ExchangeRate
                         };
                     }).ToList();
 
@@ -236,6 +235,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     info.CensorDatetimeUtc = null;
                     info.PoDescription = model.PoDescription;
                     info.TaxInPercent = model.TaxInPercent;
+                    info.TaxInMoney = model.TaxInMoney;
+
+                    info.CurrencyId = model.CurrencyId;
+                    info.ExchangeRate = model.ExchangeRate;
 
                     if (info.DeliveryDestination?.Length > 1024)
                     {
@@ -266,16 +269,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                                 detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
-                                detail.TaxInMoney = item.TaxInMoney;
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
                                 detail.Description = item.Description;
                                 detail.IntoMoney = item.IntoMoney;
-                                detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
 
-                                detail.CurrencyCode = item.CurrencyCode;
                                 detail.ExchangedMoney = item.ExchangedMoney;
-                                detail.ExchangeRate = item.ExchangeRate;
                                 break;
                             }
                         }
@@ -293,7 +292,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductUnitConversionId = item.ProductUnitConversionId,
                                 ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                 ProductUnitConversionPrice = item.ProductUnitConversionPrice,
-                                TaxInMoney = item.TaxInMoney,
                                 OrderCode = item.OrderCode,
                                 ProductionOrderCode = item.ProductionOrderCode,
                                 Description = item.Description,
@@ -301,11 +299,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 OutsourceRequestId = item.OutsourceRequestId,
                                 ProductionStepLinkDataId = item.ProductionStepLinkDataId,
                                 IntoMoney = item.IntoMoney,
-                                IntoAfterTaxMoney = item.IntoAfterTaxMoney,
 
-                                CurrencyCode = item.CurrencyCode,
                                 ExchangedMoney = item.ExchangedMoney,
-                                ExchangeRate = item.ExchangeRate
                             });
                         }
                     }
@@ -509,6 +504,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PropertyCalcId = info.PropertyCalcId,
 
                 TaxInPercent = info.TaxInPercent,
+                TaxInMoney = info.TaxInMoney,
+
+                CurrencyId = info.CurrencyId,
+                ExchangeRate = info.ExchangeRate,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d =>
@@ -526,19 +525,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        TaxInMoney = d.TaxInMoney,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,
 
                         OutsourceRequestId = d.OutsourceRequestId,
                         ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                        IntoAfterTaxMoney = d.IntoAfterTaxMoney,
                         IntoMoney = d.IntoMoney,
 
-                        CurrencyCode = d.CurrencyCode,
                         ExchangedMoney = d.ExchangedMoney,
-                        ExchangeRate = d.ExchangeRate
                     };
                 }).ToList(),
                 Excess = excess,

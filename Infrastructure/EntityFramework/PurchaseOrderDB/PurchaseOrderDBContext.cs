@@ -439,6 +439,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.DeliveryFee).HasColumnType("decimal(18, 4)");
 
+                entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.PaymentInfo).HasMaxLength(512);
@@ -449,6 +451,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
@@ -458,15 +462,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.CurrencyCode).HasMaxLength(30);
-
                 entity.Property(e => e.Description).HasMaxLength(512);
-
-                entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ExchangedMoney).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.IntoAfterTaxMoney).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
 
@@ -483,8 +482,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.ProviderProductName).HasMaxLength(128);
-
-                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -633,6 +630,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
+
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
 
@@ -653,10 +654,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
-
-                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
-
-                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 

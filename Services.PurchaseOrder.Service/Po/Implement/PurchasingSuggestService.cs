@@ -104,6 +104,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
                 CensorDatetimeUtc = info.CensorDatetimeUtc?.GetUnix(),
 
+                TaxInPercent = info.TaxInPercent,
+                TaxInMoney = info.TaxInMoney,
+
                 RejectCount = info.RejectCount,
                 Content = info.Content,
                 FileIds = files.Select(f => f.FileId).ToList(),
@@ -128,9 +131,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductionOrderCode = d.ProductionOrderCode,
 
                         CustomerId = d.CustomerId,
-
-                        TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney,
 
                         Description = d.Description
                     };
@@ -245,8 +245,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             d.PurchasingRequestDetailId,
 
                             d.PrimaryUnitPrice,
-                            d.TaxInPercent,
-                            d.TaxInMoney,
+                            s.TaxInPercent,
+                            s.TaxInMoney,
                             d.Description
                         };
 
@@ -368,7 +368,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CreatedByUserId = _currentContext.UserId,
                         UpdatedByUserId = _currentContext.UserId,
                         CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        TaxInMoney = model.TaxInMoney,
+                        TaxInPercent = model.TaxInPercent
                     };
 
                     await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
@@ -420,6 +422,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     info.UpdatedByUserId = _currentContext.UserId;
                     info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
+                    info.TaxInPercent = model.TaxInPercent;
+                    info.TaxInMoney = model.TaxInMoney;
+
                     var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                     var newDetails = new List<PurchasingSuggestDetail>();
@@ -448,9 +453,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                                 detail.CustomerId = item.CustomerId;
-
-                                detail.TaxInPercent = item.TaxInPercent;
-                                detail.TaxInMoney = item.TaxInMoney;
 
                                 detail.Description = item.Description;
 
@@ -1582,9 +1584,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 IsDeleted = false,
                 DeletedDatetimeUtc = null,
                 CustomerId = d.CustomerId,
-
-                TaxInPercent = d.TaxInPercent,
-                TaxInMoney = d.TaxInMoney,
 
                 OrderCode = d.OrderCode,
                 ProductionOrderCode = d.ProductionOrderCode,

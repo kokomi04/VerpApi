@@ -27,6 +27,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public string PoDescription { get; set; }
         public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
 
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -42,6 +43,9 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? DeliveryDate { get; set; }
 
         public long? PropertyCalcId { get; set; }
+
+        public long? CurrencyId { get; set; }
+        public decimal? ExchangeRate { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
@@ -82,7 +86,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal ProductUnitConversionPrice { get; set; }
 
 
-        public decimal? TaxInMoney { get; set; }
+        // public decimal? TaxInMoney { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
@@ -94,10 +98,10 @@ namespace VErp.Services.PurchaseOrder.Model
         public string CensorFullName { get; set; }
 
         public decimal? IntoMoney { get; set; }
-        public decimal? IntoAfterTaxMoney { get; set; }
+        // public decimal? IntoAfterTaxMoney { get; set; }
 
-        public string CurrencyCode { get; set; }
-        public decimal? ExchangeRate { get; set; }
+        // public string CurrencyCode { get; set; }
+        // public decimal? ExchangeRate { get; set; }
         public decimal? ExchangedMoney { get; set; }
     }
 
