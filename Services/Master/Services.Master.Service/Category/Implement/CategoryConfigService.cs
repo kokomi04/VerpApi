@@ -775,16 +775,24 @@ namespace VErp.Services.Master.Service.Category
 
         public async Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames)
         {
-            return await (from f in _masterContext.CategoryField
-                          join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                          where categoryCodes.Contains(c.CategoryCode) && fieldNames.Contains(f.CategoryFieldName)
-                          select new ReferFieldModel
-                          {
-                              CategoryCode = c.CategoryCode,
-                              CategoryFieldName = f.CategoryFieldName,
-                              DataTypeId = f.DataTypeId,
-                              DataSize = f.DataSize
-                          }).ToListAsync();
+            var query = from f in _masterContext.CategoryField
+                        join c in _masterContext.Category on f.CategoryId equals c.CategoryId
+                        where categoryCodes.Contains(c.CategoryCode)
+                        select new ReferFieldModel
+                        {
+                            IsHidden = f.IsHidden,                            
+                            CategoryCode = c.CategoryCode,
+                            CategoryFieldName = f.CategoryFieldName,
+                            CategoryFieldTitle = f.Title,
+                            DataTypeId = f.DataTypeId,
+                            DataSize = f.DataSize
+                        };
+            if (fieldNames?.Count > 0)
+            {
+                query = query.Where(f => fieldNames.Contains(f.CategoryFieldName));
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping(int categoryId)
@@ -805,7 +813,7 @@ namespace VErp.Services.Master.Service.Category
 
             var result = new CategoryNameModel()
             {
-                CategoryId = category.CategoryId,
+                //CategoryId = category.CategoryId,
                 CategoryCode = category.CategoryCode,
                 CategoryTitle = category.Title,
                 IsTreeView = category.IsTreeView,
@@ -855,7 +863,7 @@ namespace VErp.Services.Master.Service.Category
             {
                 var fileData = new CategoryFieldNameModel()
                 {
-                    CategoryFieldId = field.CategoryFieldId,
+                    ///CategoryFieldId = field.CategoryFieldId,
                     FieldName = field.CategoryFieldName,
                     FieldTitle = GetTitleCategoryField(field),
                     RefCategory = null,
@@ -868,11 +876,11 @@ namespace VErp.Services.Master.Service.Category
                     {
                         throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
                     }
-                   
+
 
                     fileData.RefCategory = new CategoryNameModel()
                     {
-                        CategoryId = refCategory.CategoryInfo.CategoryId,
+                        //CategoryId = refCategory.CategoryInfo.CategoryId,
                         CategoryCode = refCategory.CategoryInfo.CategoryCode,
                         CategoryTitle = refCategory.CategoryInfo.CategoryTitle,
                         IsTreeView = refCategory.CategoryInfo.IsTreeView,
@@ -880,7 +888,7 @@ namespace VErp.Services.Master.Service.Category
                         Fields = GetRefFields(refCategory.Fields)
                         .Select(f => new CategoryFieldNameModel()
                         {
-                            CategoryFieldId = f.CategoryFieldId,
+                            //CategoryFieldId = f.CategoryFieldId,
                             FieldName = f.CategoryFieldName,
                             FieldTitle = GetTitleCategoryField(f),
                             RefCategory = null,
@@ -905,7 +913,7 @@ namespace VErp.Services.Master.Service.Category
 
                 result.Fields.Insert(0, new CategoryFieldNameModel()
                 {
-                    CategoryFieldId = CategoryFieldConstants.ParentId_FiledId,
+                    //CategoryFieldId = CategoryFieldConstants.ParentId_FiledId,
                     FieldName = CategoryFieldConstants.ParentId,
                     FieldTitle = category.Title + " cha",
                     IsRequired = false,

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
@@ -28,7 +29,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<bool> DeleteVoucherBill(int inputTypeId, long inputValueBillId);
 
-        Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
+        Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId);
+
+        Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 
         Task<(MemoryStream Stream, string FileName)> ExportVoucherBill(int inputTypeId, long fId);
 

@@ -567,7 +567,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "Employee",
                 CategoryTitle = "Nhân Viên",
                 IsTreeView = false,

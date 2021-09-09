@@ -114,7 +114,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             await AddMissingProducts();
         }
 
-        public async Task<InventoryInModel> GetInputInventoryModel()
+        public InventoryInModel GetInputInventoryModel()
         {
             var inventoryInputList = new List<InventoryInModel>();
 

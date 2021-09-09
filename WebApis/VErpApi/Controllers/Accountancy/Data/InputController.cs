@@ -18,6 +18,7 @@ using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -94,9 +95,16 @@ namespace VErpApi.Controllers.Accountancy.Data
             return await _inputDataService.DeleteBill(inputTypeId, fId).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("{inputTypeId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId)
+        {
+            return await _inputDataService.GetFieldDataForMapping(inputTypeId);
+        }
+
         [HttpPost]
         [Route("{inputTypeId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportBillExelMapping mapping, IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {

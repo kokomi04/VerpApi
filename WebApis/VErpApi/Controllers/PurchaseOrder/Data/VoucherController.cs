@@ -17,6 +17,7 @@ using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Commons.Library.Model;
 
 namespace VErpApi.Controllers.PurchaseOrder.Data
 {
@@ -90,9 +91,17 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
             return await _voucherDataService.DeleteVoucherBill(voucherTypeId, fId).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("{voucherTypeId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int voucherTypeId)
+        {
+            return await _voucherDataService.GetFieldDataForMapping(voucherTypeId);
+        }
+      
+
         [HttpPost]
         [Route("{voucherTypeId}/importFromMapping")]
-        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] ImportBillExelMapping mapping, IFormFile file)
+        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {

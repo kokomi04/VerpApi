@@ -533,7 +533,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "Customer",
                 CategoryTitle = "Đối tác",
                 IsTreeView = false,
