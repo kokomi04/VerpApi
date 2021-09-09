@@ -332,7 +332,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "ProductMaterialsConsumption",
                 CategoryTitle = ProductConsumptionImportAsCateTitle,
                 IsTreeView = false,

@@ -28,6 +28,7 @@ using Newtonsoft.Json;
 using System.IO;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.DynamicBill;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -42,7 +43,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IHttpCrossService _httpCrossService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly IVoucherConfigService _voucherConfigService;
 
@@ -53,7 +54,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
-            , IHttpCrossService httpCrossService
+            , ICategoryHelperService httpCategoryHelperService
             , IOutsideMappingHelperService outsideMappingHelperService
             , IVoucherConfigService voucherConfigService
             )
@@ -64,7 +65,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
-            _httpCrossService = httpCrossService;
+            _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
             _voucherConfigService = voucherConfigService;
         }
@@ -1046,11 +1047,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 var refTableTitle = field.VoucherField.RefTableTitle.Split(',')[0];
 
-                var categoryFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-                {
-                    CategoryCodes = new List<string>() { field.VoucherField.RefTableCode },
-                    FieldNames = new List<string>() { refTableTitle, field.VoucherField.RefTableField }
-                });
+                var categoryFields = await _httpCategoryHelperService.GetReferFields(new List<string>() { field.VoucherField.RefTableCode }, new List<string>() { refTableTitle, field.VoucherField.RefTableField });
 
                 var refField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == field.VoucherField.RefTableField);
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
@@ -1716,6 +1713,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                           join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
                           join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                           where af.VoucherTypeId == voucherTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != PurchaseOrderConstants.F_IDENTITY
+                          orderby a.SortOrder, af.SortOrder
                           select new ValidateVoucherField
                           {
                               VoucherAreaFieldId = af.VoucherAreaFieldId,
@@ -1733,11 +1731,88 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                               RegularExpression = af.RegularExpression,
                               IsMultiRow = a.IsMultiRow,
                               RequireFilters = af.RequireFilters,
-                              IsReadOnly = f.IsReadOnly
+                              IsReadOnly = f.IsReadOnly,
+                              IsHidden = af.IsHidden
                           }).ToListAsync();
         }
 
-        public async Task<bool> ImportVoucherBillFromMapping(int voucherTypeId, ImportBillExelMapping mapping, Stream stream)
+
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId)
+        {
+            var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.AsNoTracking().FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
+
+
+            // Lấy thông tin field
+            var fields = await GetVoucherFields(voucherTypeId);
+
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = inputTypeInfo.InputTypeId,
+                CategoryCode = voucherTypeInfo.VoucherTypeCode,
+                CategoryTitle = voucherTypeInfo.Title,
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            fields = fields
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY)
+                .ToList();
+
+            var referTableNames = fields.Select(f => f.RefTableCode).ToList();
+
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, null);
+            var refCategoryFields = referFields.GroupBy(f => f.CategoryCode).ToDictionary(f => f.Key, f => f.ToList());
+
+            foreach (var field in fields)
+            {
+                var fileData = new CategoryFieldNameModel()
+                {
+                    //CategoryFieldId = field.InputAreaFieldId,
+                    FieldName = field.FieldName,
+                    FieldTitle = GetTitleCategoryField(field),
+                    RefCategory = null,
+                    IsRequired = field.IsRequire
+                };
+
+                if (!string.IsNullOrWhiteSpace(field.RefTableCode))
+                {
+                    if (!refCategoryFields.TryGetValue(field.RefTableCode, out var refCategory))
+                    {
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
+                    }
+
+
+                    fileData.RefCategory = new CategoryNameModel()
+                    {
+                        //CategoryId = 0,
+                        CategoryCode = refCategory.FirstOrDefault()?.CategoryCode,
+                        CategoryTitle = field.Title,
+                        IsTreeView = false,
+
+                        Fields = GetRefFields(refCategory)
+                        .Select(f => new CategoryFieldNameModel()
+                        {
+                            //CategoryFieldId = f.id,
+                            FieldName = f.CategoryFieldName,
+                            FieldTitle = GetTitleCategoryField(f),
+                            RefCategory = null,
+                            IsRequired = false
+                        }).ToList()
+                    };
+                }
+
+                result.Fields.Add(fileData);
+            }
+
+            result.Fields.Add(new CategoryFieldNameModel
+            {
+                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
+                FieldTitle = "Cột kiểm tra",
+            });
+
+            return result;
+        }
+        public async Task<bool> ImportVoucherBillFromMapping(int voucherTypeId, ImportExcelMapping mapping, Stream stream)
         {
             var voucherType = await GetVoucherTypExecInfo(voucherTypeId);
 
@@ -1750,17 +1825,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             if (mapping.MappingFields.Where(mf => mf.IsRequire).Any(mf => !fields.Exists(f => f.FieldName == mf.FieldName))) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu không tìm thấy");
 
-            var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
+            var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
 
-            var referFields = await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-            {
-                CategoryCodes = referTableNames,
-                FieldNames = referMapingFields.Select(f => f.RefTableField).ToList()
-            });
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
 
 
-            var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
+            var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == AccountantConstants.BILL_CODE);
             if (columnKey == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Định danh mã chứng từ không đúng, vui lòng chọn lại");
@@ -1862,13 +1933,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         else
                         {
                             int suffix = 0;
-                            var paramName = $"@{mappingField.RefTableField}_{suffix}";
-                            var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
+                            var paramName = $"@{mappingField.RefFieldName}_{suffix}";
+                            var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
                             if (referField == null)
                             {
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu tham chiếu tới trường {mappingField.FieldName} không tồn tại");
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu liên quan (tham chiếu) tới \"{field.Title}\" ({mappingField.FieldName}) không tồn tại");
                             }
-                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                             var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                             suffix++;
                             if (!string.IsNullOrEmpty(field.Filters))
@@ -2021,11 +2092,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                         itf.RefTableCode
                                     }).ToList();
 
-            var refDataTypes = (await _httpCrossService.Post<List<ReferFieldModel>>($"api/internal/InternalCategory/ReferFields", new
-            {
-                CategoryCodes = selectFormFields.Select(f => f.RefTableCode).ToList(),
-                FieldNames = selectFormFields.Select(f => f.RefTableTitle.Split(',')[0]).ToList()
-            })).Distinct().ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
+            var refDataTypes = (await _httpCategoryHelperService.GetReferFields(selectFormFields.Select(f => f.RefTableCode).ToList(), selectFormFields.Select(f => f.RefTableTitle.Split(',')[0]).ToList()))
+                .Distinct()
+                .ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
 
             var writer = new ExcelWriter();
             int endRow = 0;
@@ -2160,6 +2229,33 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return false;
         }
 
+        private IList<ReferFieldModel> GetRefFields(IList<ReferFieldModel> fields)
+        {
+            return fields.Where(x => !x.IsHidden && x.DataTypeId != (int)EnumDataType.Boolean && !((EnumDataType)x.DataTypeId).IsTimeType())
+                 .ToList();
+        }
+
+        private string GetTitleCategoryField(ValidateVoucherField field)
+        {
+            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
+            if (rangeValue.Length > 0)
+            {
+                return $"{field.Title} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
+            }
+
+            return field.Title;
+        }
+
+        private string GetTitleCategoryField(ReferFieldModel field)
+        {
+            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
+            if (rangeValue.Length > 0)
+            {
+                return $"{field.CategoryFieldTitle} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
+            }
+
+            return field.CategoryFieldTitle;
+        }
         private object ExtractBillDate(NonCamelCaseDictionary info)
         {
             object oldDateValue = null;
@@ -2355,6 +2451,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public bool IsMultiRow { get; set; }
             public string RequireFilters { get; set; }
             public bool IsReadOnly { get; set; }
+            public bool IsHidden { get; set; }
         }
     }
 }

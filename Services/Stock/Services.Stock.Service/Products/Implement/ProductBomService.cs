@@ -302,7 +302,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "ProductBom",
                 CategoryTitle = "Bill of Material",
                 IsTreeView = false,

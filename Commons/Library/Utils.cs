@@ -1249,7 +1249,7 @@ namespace VErp.Commons.Library
                 var fileMapping = new CategoryFieldNameModel()
                 {
                     GroupName = groupName,
-                    CategoryFieldId = prop.Name.GetHashCode(),
+                    //CategoryFieldId = prop.Name.GetHashCode(),
                     FieldName = prop.Name,
                     FieldTitle = title,
                     IsRequired = isRequired != null,
@@ -1269,7 +1269,7 @@ namespace VErp.Commons.Library
                     fileMapping.RefCategory = new CategoryNameModel()
                     {
                         CategoryCode = prop.PropertyType.Name,
-                        CategoryId = prop.PropertyType.Name.GetHashCode(),
+                        //CategoryId = prop.PropertyType.Name.GetHashCode(),
                         CategoryTitle = title,
                         Fields = childFields
                     };

@@ -940,7 +940,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "PurchaseOrder",
                 CategoryTitle = "PurchaseOrder",
                 IsTreeView = false,

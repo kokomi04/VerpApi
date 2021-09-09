@@ -548,7 +548,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "Inventory",
                 CategoryTitle = "Inventory",
                 IsTreeView = false,
@@ -564,7 +564,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = inventoryTypeId == EnumInventoryType.Input ? "Input" : "Output",
                 CategoryTitle = inventoryTypeId == EnumInventoryType.Input ? InventoryAbstractMessage.InventoryInput : InventoryAbstractMessage.InventoryOuput,
                 IsTreeView = false,
@@ -603,7 +603,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     if (model.InventoryTypeId == EnumInventoryType.Input)
                     {
-                        var inventoryData = await inventoryExport.GetInputInventoryModel();
+                        var inventoryData = inventoryExport.GetInputInventoryModel();
                         if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
                         {
                             throw new BadRequestException("No products found!");

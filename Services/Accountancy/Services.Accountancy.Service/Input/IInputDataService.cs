@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Data;
@@ -27,7 +28,9 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
 
-        Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
+        Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId);
+
+        Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 
         Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId);
 
