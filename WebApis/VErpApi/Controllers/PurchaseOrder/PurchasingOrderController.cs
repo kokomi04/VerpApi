@@ -9,6 +9,7 @@ using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -17,6 +18,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
+using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service;
 
 namespace VErpApi.Controllers.PurchaseOrder
@@ -113,15 +115,23 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetFieldDataForMapping()
+        {
+            return _purchaseOrderService.GetFieldDataForMapping();
+        }
+
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchaseOrderExcelParseDetail> parseDetailsFromExcelMapping([FromFormString] SingleInvoicePoExcelMappingModel mapping, IFormFile file)
+        public IAsyncEnumerable<PurchaseOrderExcelParseDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
         {
-            if (file == null)
+            if (file == null || data == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return _purchaseOrderService.ParseInvoiceDetails(mapping, file.OpenReadStream());
+            data.Mapping.FileName = file.FileName;
+            return _purchaseOrderService.ParseInvoiceDetails(data.Mapping, data.Extra, file.OpenReadStream());
         }
 
         /// <summary>

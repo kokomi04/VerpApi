@@ -193,6 +193,12 @@ namespace VErp.Commons.Library
             return JsonConvert.DeserializeObject<T>(obj);
         }
 
+        public static object JsonDeserialize(this string obj)
+        {
+            if (string.IsNullOrWhiteSpace(obj)) return null;
+            return JsonConvert.DeserializeObject(obj);
+        }
+
         public static object JsonDeserialize(this string obj, Type type)
         {
             if (string.IsNullOrWhiteSpace(obj))
@@ -410,7 +416,7 @@ namespace VErp.Commons.Library
             var ex = propertyInfo.Name.ToMemberOf<T>();
             return asc ? query.OrderBy(ex) : query.OrderByDescending(ex);
         }
-      
+
 
         public static decimal AddDecimal(this decimal a, decimal b)
         {
@@ -690,10 +696,7 @@ namespace VErp.Commons.Library
         }
 
 
-        public static bool IsTimeType(this EnumDataType type)
-        {
-            return AccountantConstants.TIME_TYPES.Contains(type);
-        }
+      
 
         public static bool Convertible(this EnumDataType oldType, EnumDataType newType)
         {
@@ -833,13 +836,19 @@ namespace VErp.Commons.Library
 
         public static bool IsSelectForm(this EnumFormType formType)
         {
-            return AccountantConstants.SELECT_FORM_TYPES.Contains(formType);
+            return DataTypeConstants.SELECT_FORM_TYPES.Contains(formType);
         }
 
         public static bool IsJoinForm(this EnumFormType formType)
         {
-            return AccountantConstants.JOIN_FORM_TYPES.Contains(formType);
+            return DataTypeConstants.JOIN_FORM_TYPES.Contains(formType);
         }
+
+        public static bool IsTimeType(this EnumDataType type)
+        {
+            return DataTypeConstants.TIME_TYPES.Contains(type);
+        }
+
 
         public static int CompareValue(this EnumDataType dataType, object value1, object value2)
         {
@@ -874,6 +883,8 @@ namespace VErp.Commons.Library
                 default: return 0;
             }
         }
+
+     
 
         public static bool StringContains(this object value1, object value2)
         {
@@ -1037,6 +1048,31 @@ namespace VErp.Commons.Library
                 }
             }
             return obj;
+        }
+
+        public static List<T> ConvertDataModel<T>(this DataTable data) where T: NonCamelCaseDictionary, new()
+        {
+            var lst = new List<T>();
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                var row = data.Rows[i];
+                var dic = new T();
+                foreach (DataColumn c in data.Columns)
+                {
+                    var v = row[c];
+                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                    {
+                        var vInDateTime = (v as DateTime?).GetUnix();
+                        dic.Add(c.ColumnName, vInDateTime);
+                    }
+                    else
+                    {
+                        dic.Add(c.ColumnName, row[c]);
+                    }
+                }
+                lst.Add(dic);
+            }
+            return lst;
         }
 
         public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)

@@ -43,8 +43,8 @@ using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using System.Data;
 using VErp.Commons.Enums.Manafacturing;
-using VErp.Services.Stock.Service.Resources.Inventory.Abstract;
 using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Stock.Inventory.Abstract;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -77,10 +77,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverService productionHandoverService
+            , IProductionHandoverHelperService productionHandoverHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;
@@ -601,28 +601,36 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     inventoryExport.SetStockDBContext(_stockDbContext);
                     await inventoryExport.ProcessExcelFile(mapping, stream, model);
 
-                    if (model.Type == EnumInventoryType.Input)
+                    if (model.InventoryTypeId == EnumInventoryType.Input)
                     {
-                        var inventoryData = inventoryExport.GetInputInventoryModels();
-
-                        foreach (var item in inventoryData)
+                        var inventoryData = await inventoryExport.GetInputInventoryModel();
+                        if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
                         {
-                            genCodeContexts.Add(await GenerateInventoryCode(model.Type, item, baseValueChains));
+                            throw new BadRequestException("No products found!");
+                        }
+                        inventoryData.InventoryCode = model.InventoryCode;
+                        //foreach (var item in inventoryData)
+                        {
+                            genCodeContexts.Add(await GenerateInventoryCode(model.InventoryTypeId, inventoryData, baseValueChains));
 
-                            inventoryId = await _inventoryBillInputService.AddInventoryInputDB(item);
-                            insertedData.Add(inventoryId, (item.InventoryCode, item));
+                            inventoryId = await _inventoryBillInputService.AddInventoryInputDB(inventoryData);
+                            insertedData.Add(inventoryId, (inventoryData.InventoryCode, inventoryData));
                         }
                     }
                     else
                     {
-                        var inventoryData = await inventoryExport.GetOutputInventoryModels();
-
-                        foreach (var item in inventoryData)
+                        var inventoryData = await inventoryExport.GetOutputInventoryModel();
+                        if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
                         {
-                            genCodeContexts.Add(await GenerateInventoryCode(model.Type, item, baseValueChains));
+                            throw new BadRequestException("No products found!");
+                        }
+                        inventoryData.InventoryCode = model.InventoryCode;
+                        //foreach (var item in inventoryData)
+                        {
+                            genCodeContexts.Add(await GenerateInventoryCode(model.InventoryTypeId, inventoryData, baseValueChains));
 
-                            inventoryId = await _inventoryBillOutputService.AddInventoryOutputDb(item);
-                            insertedData.Add(inventoryId, (item.InventoryCode, item));
+                            inventoryId = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
+                            insertedData.Add(inventoryId, (inventoryData.InventoryCode, inventoryData));
                         }
 
                     }
@@ -633,7 +641,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 foreach (var item in insertedData)
                 {
-                    await ImportedLogBuilder(model.Type)
+                    await ImportedLogBuilder(model.InventoryTypeId)
                         .MessageResourceFormatDatas(item.Value.inventoryCode)
                         .ObjectId(item.Key)
                         .JsonData(item.Value.data.JsonSerialize())

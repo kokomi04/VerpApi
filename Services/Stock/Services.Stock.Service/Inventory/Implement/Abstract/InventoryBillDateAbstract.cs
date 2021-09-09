@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
-using static VErp.Services.Stock.Service.Resources.Inventory.Abstract.InventoryAbstractMessage;
+using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 
 
 namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract

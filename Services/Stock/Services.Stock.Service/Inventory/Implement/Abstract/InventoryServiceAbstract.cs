@@ -16,10 +16,9 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Service.Resources.Inventory;
+using Verp.Resources.Stock.Inventory;
 using VErp.Commons.Library.Formaters;
-using VErp.Services.Stock.Service.Resources.Inventory.Abstract;
-using static VErp.Services.Stock.Service.Resources.Inventory.Abstract.InventoryAbstractMessage;
+using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -29,20 +28,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         protected readonly ILogger _logger;
         protected readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductionOrderHelperService _productionOrderHelperService;
-        private readonly IProductionHandoverService _productionHandoverService;
+        private readonly IProductionHandoverHelperService _productionHandoverHelperService;
         private readonly ICurrentContextService _currentContextService;
         public InventoryServiceAbstract(StockDBContext stockContext
             , ILogger logger
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverService productionHandoverService
+            , IProductionHandoverHelperService productionHandoveHelperService
             , ICurrentContextService currentContextService
             ) : base(stockContext)
         {
             _logger = logger;
             _customGenCodeHelperService = customGenCodeHelperService;
             _productionOrderHelperService = productionOrderHelperService;
-            _productionHandoverService = productionHandoverService;
+            _productionHandoverHelperService = productionHandoveHelperService;
             _currentContextService = currentContextService;
         }
 
@@ -221,7 +220,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 foreach (var assignment in assignments)
                 {
-                    await _productionHandoverService.ChangeAssignedProgressStatus(assignment.ProductionOrderCode, assignment.DepartmentId, inventoryMap[assignment.ProductionOrderCode]);
+                    await _productionHandoverHelperService.ChangeAssignedProgressStatus(assignment.ProductionOrderCode, assignment.DepartmentId, inventoryMap[assignment.ProductionOrderCode]);
                 }
             }
             catch (Exception ex)

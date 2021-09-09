@@ -79,12 +79,12 @@ namespace VErp.Services.Accountancy.Service.Category
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     resultParam,
-                    messageParam,
+                    messageParam
                 };
                 foreach (var field in fields)
                 {
                     data.TryGetValue(field.Key, out var celValue);
-                    parammeters.Add(new SqlParameter($"@{field.Key}",(field.Value).GetSqlValue(celValue)));
+                    parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
                 }
                 resultData = (await _masterContext.QueryDataTable(script, parammeters)).ConvertData();
             }
@@ -135,9 +135,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
             // Before saving action (SQL)
 
-            
-            var fieldParam = categoryFields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
-                 .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
+
+            var fieldParam = _masterContext.CategoryField
+                .Where(f => category.CategoryId == f.CategoryId)
+                .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
             var result = await ProcessActionAsync(category.BeforeSaveAction, data, fieldParam, EnumActionType.Add);
 
             if (result.Code != 0)
@@ -150,7 +151,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (category.IsTreeView)
             {
-                dataTable.Columns.Add("ParentId", typeof(int));
+                dataTable.Columns.Add(CategoryFieldConstants.ParentId, typeof(int));
             }
             dataTable.Columns.Add("CreatedByUserId", typeof(int));
             dataTable.Columns.Add("CreatedDatetimeUtc", typeof(DateTime));
@@ -161,7 +162,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in categoryFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
 
                 dataTable.Columns.Add(field.CategoryFieldName, ((EnumDataType)field.DataTypeId).GetColumnDataType());
             }
@@ -169,14 +170,14 @@ namespace VErp.Services.Accountancy.Service.Category
             var dataRow = dataTable.NewRow();
             if (category.IsTreeView)
             {
-                data.TryGetValue("ParentId", out string value);
+                data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    dataRow["ParentId"] = int.Parse(value);
+                    dataRow[CategoryFieldConstants.ParentId] = int.Parse(value);
                 }
                 else
                 {
-                    dataRow["ParentId"] = DBNull.Value;
+                    dataRow[CategoryFieldConstants.ParentId] = DBNull.Value;
                 }
             }
             dataRow["CreatedByUserId"] = _currentContextService.UserId;
@@ -188,7 +189,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in categoryFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
                 data.TryGetValue(field.CategoryFieldName, out string value);
                 dataRow[field.CategoryFieldName] = ((EnumDataType)field.DataTypeId).GetSqlValue(value);
 
@@ -227,7 +228,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
 
-            var categoryFields = _masterContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
+            var categoryFields = _masterContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != CategoryFieldConstants.F_Id).ToList();
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
 
@@ -235,9 +236,9 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check parent row
             if (category.IsTreeView)
             {
-                categoryRow.TryGetValue("ParentId", out object oParent);
+                categoryRow.TryGetValue(CategoryFieldConstants.ParentId, out object oParent);
                 string cParent = oParent?.ToString() ?? string.Empty;
-                data.TryGetValue("ParentId", out string uParent);
+                data.TryGetValue(CategoryFieldConstants.ParentId, out string uParent);
                 uParent ??= string.Empty;
 
                 isParentChange = cParent != uParent;
@@ -252,7 +253,7 @@ namespace VErp.Services.Accountancy.Service.Category
             List<CategoryField> updateFields = new List<CategoryField>();
             foreach (CategoryField categoryField in categoryFields)
             {
-                if(!data.ContainsKey(categoryField.CategoryFieldName)) continue;
+                if (!data.ContainsKey(categoryField.CategoryFieldName)) continue;
 
                 categoryRow.TryGetValue(categoryField.CategoryFieldName, out var currentValue);
                 data.TryGetValue(categoryField.CategoryFieldName, out var updateValue);
@@ -279,7 +280,8 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check value
             CheckValue(data, categoryFields);
 
-            var fieldParam = categoryFields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+            var fieldParam = _masterContext.CategoryField
+                .Where(f => category.CategoryId == f.CategoryId)
                 .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
             var result = await ProcessActionAsync(category.BeforeSaveAction, data, fieldParam, EnumActionType.Update);
 
@@ -293,14 +295,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (isParentChange)
             {
-                dataTable.Columns.Add("ParentId", typeof(int));
+                dataTable.Columns.Add(CategoryFieldConstants.ParentId, typeof(int));
             }
             dataTable.Columns.Add("UpdatedByUserId", typeof(int));
             dataTable.Columns.Add("UpdatedDatetimeUtc", typeof(DateTime));
 
             foreach (var field in updateFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
                 dataTable.Columns.Add(field.CategoryFieldName, ((EnumDataType)field.DataTypeId).GetColumnDataType());
             }
 
@@ -308,14 +310,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (isParentChange)
             {
-                data.TryGetValue("ParentId", out string value);
+                data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    dataRow["ParentId"] = int.Parse(value);
+                    dataRow[CategoryFieldConstants.ParentId] = int.Parse(value);
                 }
                 else
                 {
-                    dataRow["ParentId"] = DBNull.Value;
+                    dataRow[CategoryFieldConstants.ParentId] = DBNull.Value;
                 }
             }
 
@@ -324,7 +326,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in updateFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
                 data.TryGetValue(field.CategoryFieldName, out string value);
                 dataRow[field.CategoryFieldName] = ((EnumDataType)field.DataTypeId).GetSqlValue(value);
 
@@ -606,7 +608,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private async Task CheckParentRowAsync(Dictionary<string, string> data, CategoryEntity category, int? categoryRowId = null)
         {
-            data.TryGetValue("ParentId", out string value);
+            data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
             int parentId = 0;
             if (!string.IsNullOrEmpty(value))
             {
@@ -685,7 +687,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             StringBuilder sql = new StringBuilder();
             sql.Append($"SELECT [{tableName}].F_Id,");
-            foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id" && f.CategoryFieldName != "ParentId"))
+            foreach (var field in fields.Where(f => f.CategoryFieldName != CategoryFieldConstants.F_Id && f.CategoryFieldName != CategoryFieldConstants.ParentId))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
                 if (((EnumFormType)field.FormTypeId).IsJoinForm()
@@ -720,7 +722,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var fields = (from f in _masterContext.CategoryField
                           join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                           where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
@@ -814,7 +816,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (!category.IsTreeView)
             {
-                dataSql.Append(string.IsNullOrEmpty(orderBy) ? string.IsNullOrEmpty(category.DefaultOrder)? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY {category.DefaultOrder}" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
+                dataSql.Append(string.IsNullOrEmpty(orderBy) ? string.IsNullOrEmpty(category.DefaultOrder) ? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY {category.DefaultOrder}" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
                 if (size > 0)
                 {
                     dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
@@ -842,37 +844,36 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)
         {
-            List<NonCamelCaseDictionary> result = new List<NonCamelCaseDictionary>();
-
-            var ids = categoryRows.Select(r => (int)r["F_Id"]).ToList();
-            var parentIds = categoryRows.Where(r => r["ParentId"] != DBNull.Value).Select(r => (int)r["ParentId"]).Where(id => !ids.Contains(id)).ToList();
+          
+            var ids = categoryRows.Select(r => (int)r[CategoryFieldConstants.F_Id]).ToList();
+            var parentIds = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
             while (parentIds.Count > 0)
             {
-                var parents = lstAll.Where(r => parentIds.Contains((int)r["F_Id"])).ToList();
+                var parents = lstAll.Where(r => parentIds.Contains((int)r[CategoryFieldConstants.F_Id])).ToList();
                 foreach (var parent in parents)
                 {
                     parent["IsDisable"] = true;
                     categoryRows.Add(parent);
-                    ids.Add((int)parent["F_Id"]);
+                    ids.Add((int)parent[CategoryFieldConstants.F_Id]);
                 }
-                parentIds = parents.Where(r => r["ParentId"] != DBNull.Value).Select(r => (int)r["ParentId"]).Where(id => !ids.Contains(id)).ToList();
+                parentIds = parents.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
             }
         }
 
         private List<NonCamelCaseDictionary> SortCategoryRows(List<NonCamelCaseDictionary> categoryRows)
         {
             int level = 0;
-            categoryRows = categoryRows.OrderBy(r => (int)r["F_Id"]).ToList();
+            categoryRows = categoryRows.OrderBy(r => (int)r[CategoryFieldConstants.F_Id]).ToList();
             List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
 
-            var items = categoryRows.Where(r => r["ParentId"] == DBNull.Value || !categoryRows.Any(p => (int)p["F_Id"] == (int)r["ParentId"])).ToList();
-            categoryRows = categoryRows.Where(r => r["ParentId"] != DBNull.Value && categoryRows.Any(p => (int)p["F_Id"] == (int)r["ParentId"])).ToList();
+            var items = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] == DBNull.Value || !categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
+            categoryRows = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
 
             foreach (var item in items)
             {
                 item["CategoryRowLevel"] = level;
                 nodes.Add(item);
-                nodes.AddRange(GetChilds(ref categoryRows, (int)item["F_Id"], level));
+                nodes.AddRange(GetChilds(ref categoryRows, (int)item[CategoryFieldConstants.F_Id], level));
             }
 
             return nodes;
@@ -882,13 +883,13 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             level++;
             List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
-            var items = categoryRows.Where(r => r["ParentId"] != DBNull.Value && (int)r["ParentId"] == categoryRowId).ToList();
-            categoryRows.RemoveAll(r => r["ParentId"] != DBNull.Value && (int)r["ParentId"] == categoryRowId);
+            var items = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && (int)r[CategoryFieldConstants.ParentId] == categoryRowId).ToList();
+            categoryRows.RemoveAll(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && (int)r[CategoryFieldConstants.ParentId] == categoryRowId);
             foreach (var item in items)
             {
                 item["CategoryRowLevel"] = level;
                 nodes.Add(item);
-                nodes.AddRange(GetChilds(ref categoryRows, (int)item["F_Id"], level));
+                nodes.AddRange(GetChilds(ref categoryRows, (int)item[CategoryFieldConstants.F_Id], level));
             }
             return nodes;
         }
@@ -1019,6 +1020,6 @@ namespace VErp.Services.Accountancy.Service.Category
             return true;
 
         }
-       
+
     }
 }

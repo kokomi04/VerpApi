@@ -30,8 +30,8 @@ using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
-using VErp.Services.Stock.Service.Resources.InventoryProcess;
-using static VErp.Services.Stock.Service.Resources.InventoryProcess.InventoryBillOutputMessage;
+using Verp.Resources.Stock.InventoryProcess;
+using static Verp.Resources.Stock.InventoryProcess.InventoryBillOutputMessage;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -54,8 +54,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverService productionHandoverService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
+            , IProductionHandoverHelperService productionHandoverHelperService
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
             _asyncRunner = asyncRunner;
             _currentContextService = currentContextService;

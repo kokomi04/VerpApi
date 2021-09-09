@@ -103,7 +103,7 @@ namespace VErp.Commons.GlobalObject
 
         public BadRequestException Build()
         {
-            return formatString.BadRequestFormat(objs);
+            return formatString.BadRequestFormat(objs.ToArray());
         }
     }
 }

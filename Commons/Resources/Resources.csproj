@@ -1,0 +1,348 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>Verp.Resources</AssemblyName>
+    <RootNamespace>Verp.Resources</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Update="Enums\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.Designer.cs">
+      <DependentUpon>OutsourceErrorCodeDescription.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.Designer.cs">
+      <DependentUpon>PurchasingRequestErrorCodeDescription.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Enums\PO\EnumPoProcessStatusDescription.Designer.cs">
+      <DependentUpon>EnumPoProcessStatusDescription.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Enums\PO\EnumPurchasingRequestTypeDescription.Designer.cs">
+      <DependentUpon>EnumPurchasingRequestTypeDescription.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Enums\Stock\InventoryErrorCodeDescription.Designer.cs">
+      <DependentUpon>InventoryErrorCodeDescription.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="GlobalObject\ValidatorResources.Designer.cs">
+      <DependentUpon>ValidatorResources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Library\Formaters\DateTimeFormaterFormat.Designer.cs">
+      <DependentUpon>DateTimeFormaterFormat.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Manafacturing\OutsourceMaterial\OutsourceMaterialActivityMessage.Designer.cs">
+      <DependentUpon>OutsourceMaterialActivityMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Master\ReuseContent\ReuseContentActivityMessage.Designer.cs">
+      <DependentUpon>ReuseContentActivityMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.Designer.cs">
+      <DependentUpon>ProductPriceConfigActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="PurchaseOrder\PurchasingRequest\PurchasingRequestActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchasingRequestActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\PurchasingRequest\PurchasingRequestMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchasingRequestMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Stock\Dictionary\ProductCateActivityMessage.Designer.cs">
+      <DependentUpon>ProductCateActivityMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Dictionary\ProductCateValidationMessage.Designer.cs">
+      <DependentUpon>ProductCateValidationMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Dictionary\ProductTypeActivityMessage.Designer.cs">
+      <DependentUpon>ProductTypeActivityMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\InventoryProcess\CensoredInventoryInputUpdateContextTitle.Designer.cs">
+      <DependentUpon>CensoredInventoryInputUpdateContextTitle.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\InventoryProcess\InventoryBillInputActivityLogMessage.Designer.cs">
+      <DependentUpon>InventoryBillInputActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\InventoryProcess\InventoryBillInputMessage.Designer.cs">
+      <DependentUpon>InventoryBillInputMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\InventoryProcess\InventoryBillOutputActivityMessage.Designer.cs">
+      <DependentUpon>InventoryBillOutputActivityMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\InventoryProcess\InventoryBillOutputMessage.Designer.cs">
+      <DependentUpon>InventoryBillOutputMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\InventoryProcess\InventoryRequirementActivityLogMessage.Designer.cs">
+      <DependentUpon>InventoryRequirementActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\InventoryProcess\InventoryRequirementMessage.Designer.cs">
+      <DependentUpon>InventoryRequirementMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Inventory\Abstract\InventoryAbstractMessage.Designer.cs">
+      <DependentUpon>InventoryAbstractMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Inventory\InventoryFileData\InventoryDetailParseFacadeMessage.Designer.cs">
+      <DependentUpon>InventoryDetailParseFacadeMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Inventory\InventoryFileData\InventoryImportFacadeMessage.Designer.cs">
+      <DependentUpon>InventoryImportFacadeMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Location\LocationActivityLogMessage.Designer.cs">
+      <DependentUpon>LocationActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\ConsumptionGroupActivityLogMessage.Designer.cs">
+      <DependentUpon>ConsumptionGroupActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\ConsumptionGroupValidationMessage.Designer.cs">
+      <DependentUpon>ConsumptionGroupValidationMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\ProductActivityLogMessage.Designer.cs">
+      <DependentUpon>ProductActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\ProductImport\ProductBomImportValidationMessage.Designer.cs">
+      <DependentUpon>ProductBomImportValidationMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\ProductValidationMessage.Designer.cs">
+      <DependentUpon>ProductValidationMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\PropertyActivityLogMessage.Designer.cs">
+      <DependentUpon>PropertyActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\PropertyValidationMessage.Designer.cs">
+      <DependentUpon>PropertyValidationMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\StockTake\StockTakeActivityLogMessage.Designer.cs">
+      <DependentUpon>StockTakeActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\StockTake\StockTakePeriodActivityLogMessage.Designer.cs">
+      <DependentUpon>StockTakePeriodActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Stock\PackageActivityLogMessage.Designer.cs">
+      <DependentUpon>PackageActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Stock\StockActivityLogMessage.Designer.cs">
+      <DependentUpon>StockActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Enums\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.resx">
+      <LastGenOutput>OutsourceErrorCodeDescription.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.resx">
+      <LastGenOutput>PurchasingRequestErrorCodeDescription.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\PO\EnumPoProcessStatusDescription.resx">
+      <LastGenOutput>EnumPoProcessStatusDescription.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\PO\EnumPurchasingRequestTypeDescription.resx">
+      <LastGenOutput>EnumPurchasingRequestTypeDescription.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\Stock\InventoryErrorCodeDescription.resx">
+      <LastGenOutput>InventoryErrorCodeDescription.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="GlobalObject\ValidatorResources.resx">
+      <LastGenOutput>ValidatorResources.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Library\Formaters\DateTimeFormaterFormat.resx">
+      <LastGenOutput>DateTimeFormaterFormat.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\OutsourceMaterial\OutsourceMaterialActivityMessage.resx">
+      <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\ReuseContent\ReuseContentActivityMessage.resx">
+      <LastGenOutput>ReuseContentActivityMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.resx">
+      <LastGenOutput>ProductPriceConfigActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\PurchasingRequest\PurchasingRequestActivityLogMessage.resx">
+      <LastGenOutput>PurchasingRequestActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\PurchasingRequest\PurchasingRequestMessage.resx">
+      <LastGenOutput>PurchasingRequestMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Dictionary\ProductCateActivityMessage.resx">
+      <LastGenOutput>ProductCateActivityMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Dictionary\ProductCateValidationMessage.resx">
+      <LastGenOutput>ProductCateValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Dictionary\ProductTypeActivityMessage.resx">
+      <LastGenOutput>ProductTypeActivityMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\InventoryProcess\CensoredInventoryInputUpdateContextTitle.resx">
+      <LastGenOutput>CensoredInventoryInputUpdateContextTitle.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillInputActivityLogMessage.resx">
+      <LastGenOutput>InventoryBillInputActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillInputMessage.resx">
+      <LastGenOutput>InventoryBillInputMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillOutputActivityMessage.resx">
+      <LastGenOutput>InventoryBillOutputActivityMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\InventoryProcess\InventoryBillOutputMessage.resx">
+      <LastGenOutput>InventoryBillOutputMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\InventoryProcess\InventoryRequirementActivityLogMessage.resx">
+      <LastGenOutput>InventoryRequirementActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\InventoryProcess\InventoryRequirementMessage.resx">
+      <LastGenOutput>InventoryRequirementMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Inventory\Abstract\InventoryAbstractMessage.resx">
+      <LastGenOutput>InventoryAbstractMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Inventory\InventoryFileData\InventoryDetailParseFacadeMessage.resx">
+      <LastGenOutput>InventoryDetailParseFacadeMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Inventory\InventoryFileData\InventoryImportFacadeMessage.resx">
+      <LastGenOutput>InventoryImportFacadeMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Location\LocationActivityLogMessage.resx">
+      <LastGenOutput>LocationActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\ConsumptionGroupActivityLogMessage.resx">
+      <LastGenOutput>ConsumptionGroupActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\ConsumptionGroupValidationMessage.resx">
+      <LastGenOutput>ConsumptionGroupValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\ProductActivityLogMessage.resx">
+      <LastGenOutput>ProductActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\ProductImport\ProductBomImportValidationMessage.resx">
+      <LastGenOutput>ProductBomImportValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\ProductValidationMessage.resx">
+      <LastGenOutput>ProductValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\PropertyActivityLogMessage.resx">
+      <LastGenOutput>PropertyActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\PropertyValidationMessage.resx">
+      <LastGenOutput>PropertyValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\StockTake\StockTakeActivityLogMessage.resx">
+      <LastGenOutput>StockTakeActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\StockTake\StockTakePeriodActivityLogMessage.resx">
+      <LastGenOutput>StockTakePeriodActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Stock\PackageActivityLogMessage.resx">
+      <LastGenOutput>PackageActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Stock\StockActivityLogMessage.resx">
+      <LastGenOutput>StockActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

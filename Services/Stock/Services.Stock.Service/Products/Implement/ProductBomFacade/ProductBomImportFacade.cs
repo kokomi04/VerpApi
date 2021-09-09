@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
+using Verp.Resources.Stock.Product.ProductImport;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -17,10 +19,8 @@ using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Product.Bom;
-using VErp.Services.Stock.Service.Resources.Product;
-using VErp.Services.Stock.Service.Resources.Product.ProductImport;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using static VErp.Services.Stock.Service.Resources.Product.ProductMessage;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 {

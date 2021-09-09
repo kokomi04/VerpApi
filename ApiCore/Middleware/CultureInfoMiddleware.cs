@@ -34,12 +34,14 @@ namespace VErp.Infrastructure.ApiCore.Middleware
             var language = GetLanguageHeader();
             if (!string.IsNullOrWhiteSpace(language))
             {
-                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo(language);
-            }
+                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(language);
+                            }
             else
             {
-                Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultureInfo("vi-VN");
+                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("vi-VN");
             }
+
+            Thread.CurrentThread.CurrentUICulture = Thread.CurrentThread.CurrentCulture;
 
             await _next.Invoke(context);
         }

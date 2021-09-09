@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,7 +17,9 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
@@ -26,16 +30,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
-
+        private readonly IProductHelperService _productHelperService;
+        private readonly IProductCateHelperService _productCateHelperService;
+        private readonly IProductBomHelperService _productBomHelperService;
         public ProductionPlanService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionPlanService> logger
-            , IMapper mapper)
+            , IMapper mapper
+            , IProductHelperService productHelperService
+            , IProductCateHelperService productCateHelperService
+            , IProductBomHelperService productBomHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _productHelperService = productHelperService;
+            _productCateHelperService = productCateHelperService;
+            _productBomHelperService = productBomHelperService;
         }
 
         public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(long startDate, long endDate)
@@ -111,13 +123,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                             var currentProductionWeekPlanDetails = allProductionWeekPlanDetails.Where(pd => pd.ProductionWeekPlanId == currentProductionWeekPlan.ProductionWeekPlanId).ToList();
                             _manufacturingDBContext.ProductionWeekPlanDetail.RemoveRange(currentProductionWeekPlanDetails);
                         }
-                        foreach(var detail in productionWeekPlanModel.ProductionWeekPlanDetail)
+                        foreach (var detail in productionWeekPlanModel.ProductionWeekPlanDetail)
                         {
                             var productionWeekPlanDetail = _mapper.Map<ProductionWeekPlanDetail>(detail);
                             productionWeekPlanDetail.ProductionWeekPlanId = currentProductionWeekPlan.ProductionWeekPlanId;
                             _manufacturingDBContext.ProductionWeekPlanDetail.AddRange(productionWeekPlanDetail);
                         }
-                        
+
                     }
 
 
@@ -135,7 +147,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 // Map valid
                 var productionOrderIds = productionOrderDetails.Select(pod => pod.ProductionOrderId).Distinct().ToList();
                 var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => productionOrderIds.Contains(po.ProductionOrderId)).ToList();
-                foreach(var productionOrder in productionOrders)
+                foreach (var productionOrder in productionOrders)
                 {
                     productionOrder.InvalidPlan = false;
                 }
@@ -202,6 +214,57 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 _logger.LogError(ex, "DeleteProductWeekPlan");
                 throw;
             }
+        }
+
+        public async Task<(Stream stream, string fileName, string contentType)> ProductionPlanExport(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
+        {
+            var productionPlanExport = new ProductionPlanExportFacade();
+            productionPlanExport.SetProductionPlanService(this);
+            productionPlanExport.SetProductHelperService(_productHelperService);
+            productionPlanExport.SetProductCateHelperService(_productCateHelperService);
+            productionPlanExport.SetProductBomHelperService(_productBomHelperService);
+            return await productionPlanExport.Export(startDate, endDate, data, mappingFunctionKeys);
+        }
+
+        public async Task<IList<ProductionOrderListModel>> GetProductionOrders(long startDate, long endDate)
+        {
+
+            var parammeters = new List<SqlParameter>();
+
+            var sql = new StringBuilder(
+                @$";WITH tmp AS (
+                    SELECT ");
+
+
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.Date) AS RowNum,");
+
+
+            sql.Append(@" g.ProductionOrderId
+                        FROM(
+                            SELECT * FROM vProductionOrderDetail v");
+            if (startDate > 0 && endDate > 0)
+            {
+                sql.Append(" WHERE ");
+                sql.Append("v.Date >= @FromDate AND v.Date <= @ToDate");
+                parammeters.Add(new SqlParameter("@FromDate", startDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", endDate.UnixToDateTime()));
+            }
+
+            sql.Append(
+                   @") g
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.ProductionOrderStatus ");
+
+
+            sql.Append(@")
+                SELECT v.* FROM tmp t
+                LEFT JOIN vProductionOrderDetail v ON t.ProductionOrderId = v.ProductionOrderId ");
+
+            sql.Append(" ORDER BY t.RowNum");
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
+
+            return lst;
         }
     }
 }

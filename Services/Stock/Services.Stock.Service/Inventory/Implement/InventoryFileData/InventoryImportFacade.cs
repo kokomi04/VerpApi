@@ -20,7 +20,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Service.Products;
-using static VErp.Services.Stock.Service.Resources.Inventory.InventoryFileData.InventoryImportFacadeMessage;
+using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFacadeMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -114,7 +114,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             await AddMissingProducts();
         }
 
-        public IList<InventoryInModel> GetInputInventoryModels()
+        public async Task<InventoryInModel> GetInputInventoryModel()
         {
             var inventoryInputList = new List<InventoryInModel>();
 
@@ -167,78 +167,73 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             }
 
 
-            if (newInventoryInputModel.Count > 0)
+
+            //var groupList = newInventoryInputModel.GroupBy(g => g.RefObjectCode).ToList();
+            //var index = 1;
+
+            //foreach (var g in groupList)
+            //{
+            //    var details = g.ToList();
+            //    foreach(var d in details)
+            //    {
+            //        d.PackageOptionId = EnumPackageOption.NoPackageManager;
+            //        d.ToPackageId = null;
+            //        d.RefObjectCode = string.Format("PN_TonDau_{0}_{1}_{2}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), d.RefObjectCode);
+            //    }
+
+            //    var newInventory = new InventoryInModel
+            //    {
+            //        StockId = _model.StockId,
+            //        InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
+            //        Date = _model.IssuedDate,
+            //        Shipper = string.Empty,
+            //        Content = "Nhập tồn kho ban đầu từ excel",
+            //        CustomerId = null,
+            //        Department = string.Empty,
+            //        StockKeeperUserId = null,
+            //        BillCode = string.Empty,
+            //        BillSerial = string.Empty,
+            //        BillDate = _model.IssuedDate,
+            //        FileIdList = null,
+            //        InProducts = details
+            //    };
+
+            //    inventoryInputList.Add(newInventory);
+
+            //    index++;
+            //}
+
+            foreach (var d in newInventoryInputModel)
             {
-                //var groupList = newInventoryInputModel.GroupBy(g => g.RefObjectCode).ToList();
-                //var index = 1;
-
-                //foreach (var g in groupList)
-                //{
-                //    var details = g.ToList();
-                //    foreach(var d in details)
-                //    {
-                //        d.PackageOptionId = EnumPackageOption.NoPackageManager;
-                //        d.ToPackageId = null;
-                //        d.RefObjectCode = string.Format("PN_TonDau_{0}_{1}_{2}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), d.RefObjectCode);
-                //    }
-
-                //    var newInventory = new InventoryInModel
-                //    {
-                //        StockId = _model.StockId,
-                //        InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                //        Date = _model.IssuedDate,
-                //        Shipper = string.Empty,
-                //        Content = "Nhập tồn kho ban đầu từ excel",
-                //        CustomerId = null,
-                //        Department = string.Empty,
-                //        StockKeeperUserId = null,
-                //        BillCode = string.Empty,
-                //        BillSerial = string.Empty,
-                //        BillDate = _model.IssuedDate,
-                //        FileIdList = null,
-                //        InProducts = details
-                //    };
-
-                //    inventoryInputList.Add(newInventory);
-
-                //    index++;
-                //}
-
-                foreach (var d in newInventoryInputModel)
-                {
-                    d.PackageOptionId = EnumPackageOption.NoPackageManager;
-                    d.ToPackageId = null;
-                    d.RefObjectCode = string.Format("PN_TonDau_{0}_{1}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), d.RefObjectCode);
-                }
-
-                var newInventory = new InventoryInModel
-                {
-                    StockId = _model.StockId,
-                    InventoryCode = string.Format("PN_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                    Date = _model.IssuedDate,
-
-                    Shipper = string.Empty,
-                    Content = "Nhập tồn kho ban đầu từ excel",
-                    CustomerId = null,
-                    Department = string.Empty,
-                    StockKeeperUserId = null,
-                    BillCode = string.Empty,
-                    BillSerial = string.Empty,
-                    BillDate = _model.IssuedDate,
-                    FileIdList = null,
-                    InProducts = newInventoryInputModel,
-                    AccountancyAccountNumber = _model.AccountancyAccountNumber
-                };
-
-                inventoryInputList.Add(newInventory);
-
+                d.PackageOptionId = EnumPackageOption.NoPackageManager;
+                d.ToPackageId = null;
+                //d.RefObjectCode = string.Format("PN_TonDau_{0}_{1}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), d.RefObjectCode);
             }
 
-            return inventoryInputList;
+            var newInventory = new InventoryInModel
+            {
+                StockId = _model.StockId,
+                //InventoryCode = string.Format("PN_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
+                Date = _model.IssuedDate,
+
+                Shipper = string.Empty,
+                Content = "Nhập kho từ excel",
+                CustomerId = null,
+                Department = string.Empty,
+                StockKeeperUserId = null,
+                BillCode = string.Empty,
+                BillSerial = string.Empty,
+                BillDate = _model.IssuedDate,
+                FileIdList = null,
+                InProducts = newInventoryInputModel,
+                AccountancyAccountNumber = _model.AccountancyAccountNumber
+            };
+
+            return newInventory;
         }
 
 
-        public async Task<IList<InventoryOutModel>> GetOutputInventoryModels()
+        public async Task<InventoryOutModel> GetOutputInventoryModel()
         {
             var inventoryOutList = new List<InventoryOutModel>();
 
@@ -320,71 +315,59 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 item.FromPackageId = packageInfo.PackageId;
             }
 
-            if (newInventoryOutProductModel.Count > 0)
+            //var groupList = newInventoryOutProductModel.GroupBy(g => g.RefObjectCode).ToList();
+            //var index = 1;
+
+            //foreach (var g in groupList)
+            //{
+            //    var details = g.ToList();
+            //    foreach (var d in details)
+            //    {
+            //        d.RefObjectCode = string.Format("PX_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"));
+            //    }
+
+            //    var newInventory = new InventoryOutModel
+            //    {
+            //        StockId = _model.StockId,
+            //        InventoryCode = string.Format("PX_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
+            //        Date = _model.IssuedDate,
+            //        Shipper = string.Empty,
+            //        Content = "Xuất kho ban đầu từ excel",
+            //        CustomerId = null,
+            //        Department = string.Empty,
+            //        StockKeeperUserId = null,
+            //        BillCode = string.Empty,
+            //        BillSerial = string.Empty,
+            //        BillDate = _model.IssuedDate,
+            //        FileIdList = null,
+            //        OutProducts = details
+            //    };
+
+            //    inventoryOutList.Add(newInventory);
+
+            //    index++;
+            //}
+
+
+            var newInventory = new InventoryOutModel
             {
-                //var groupList = newInventoryOutProductModel.GroupBy(g => g.RefObjectCode).ToList();
-                //var index = 1;
+                StockId = _model.StockId,
+                //InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
+                Date = _model.IssuedDate,
+                Shipper = string.Empty,
+                Content = "Xuất kho từ excel",
+                CustomerId = null,
+                Department = string.Empty,
+                StockKeeperUserId = null,
+                BillCode = string.Empty,
+                BillSerial = string.Empty,
+                BillDate = _model.IssuedDate,
+                FileIdList = null,
+                OutProducts = newInventoryOutProductModel,
+                AccountancyAccountNumber = _model.AccountancyAccountNumber
+            };
 
-                //foreach (var g in groupList)
-                //{
-                //    var details = g.ToList();
-                //    foreach (var d in details)
-                //    {
-                //        d.RefObjectCode = string.Format("PX_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"));
-                //    }
-
-                //    var newInventory = new InventoryOutModel
-                //    {
-                //        StockId = _model.StockId,
-                //        InventoryCode = string.Format("PX_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                //        Date = _model.IssuedDate,
-                //        Shipper = string.Empty,
-                //        Content = "Xuất kho ban đầu từ excel",
-                //        CustomerId = null,
-                //        Department = string.Empty,
-                //        StockKeeperUserId = null,
-                //        BillCode = string.Empty,
-                //        BillSerial = string.Empty,
-                //        BillDate = _model.IssuedDate,
-                //        FileIdList = null,
-                //        OutProducts = details
-                //    };
-
-                //    inventoryOutList.Add(newInventory);
-
-                //    index++;
-                //}
-
-
-                foreach (var d in newInventoryOutProductModel)
-                {
-                    d.RefObjectCode = string.Format("PX_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"));
-                }
-
-                var newInventory = new InventoryOutModel
-                {
-                    StockId = _model.StockId,
-                    InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                    Date = _model.IssuedDate,
-                    Shipper = string.Empty,
-                    Content = "Xuất kho ban đầu từ excel",
-                    CustomerId = null,
-                    Department = string.Empty,
-                    StockKeeperUserId = null,
-                    BillCode = string.Empty,
-                    BillSerial = string.Empty,
-                    BillDate = _model.IssuedDate,
-                    FileIdList = null,
-                    OutProducts = newInventoryOutProductModel,
-                    AccountancyAccountNumber = _model.AccountancyAccountNumber
-                };
-
-                inventoryOutList.Add(newInventory);
-
-
-            }
-
-            return inventoryOutList;
+            return newInventory;
         }
 
         private Product GetProduct(OpeningBalanceModel item)
@@ -591,7 +574,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private ProductModel CreateProductModel(OpeningBalanceModel p)
         {
             _productTypes.TryGetValue(p.CatePrefixCode.NormalizeAsInternalName(), out var productType);
-          
+
             _productCates.TryGetValue(p.CateName.NormalizeAsInternalName(), out var productCate);
             if (productCate == null) throw ProductCateEmpty.BadRequest();
 

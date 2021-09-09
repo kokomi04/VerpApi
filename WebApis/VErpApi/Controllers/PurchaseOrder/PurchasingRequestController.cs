@@ -8,6 +8,7 @@ using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
@@ -170,17 +171,25 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingRequestService.Delete(null, null, productionOrderId, purchasingRequestId).ConfigureAwait(true);
         }
+       
 
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetFieldDataForMapping()
+        {
+            return _purchasingRequestService.GetFieldDataForMapping();
+        }
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchasingRequestInputDetail> parseDetailsFromExcelMapping([FromFormString] SingleInvoicePurchasingRequestExcelMappingModel mapping, IFormFile file)
+        public  IAsyncEnumerable<PurchasingRequestInputDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
         {
-            if (file == null)
+            if (file == null || data == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return _purchasingRequestService.ParseInvoiceDetails(mapping, file.OpenReadStream());
+            data.Mapping.FileName = file.FileName;
+            return _purchasingRequestService.ParseInvoiceDetails(data.Mapping, data.Extra, file.OpenReadStream());
         }
 
         /// <summary>

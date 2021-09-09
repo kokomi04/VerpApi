@@ -144,7 +144,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             value = filters[paramName];
                             if (!value.IsNullObject())
                             {
-                                if (AccountantConstants.TIME_TYPES.Contains(filterFiled.DataTypeId))
+                                if (filterFiled.DataTypeId.IsTimeType())
                                 {
                                     value = Convert.ToInt64(value);
                                 }

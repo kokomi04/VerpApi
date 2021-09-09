@@ -9,57 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ObjectExtensions\ObjectExtensions.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="Resources\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>OutsourceErrorCodeDescription.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>PurchasingRequestErrorCodeDescription.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\PO\EnumPoProcessStatusDescription.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>EnumPoProcessStatusDescription.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\PO\EnumPurchasingRequestTypeDescription.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>EnumPurchasingRequestTypeDescription.resx</DependentUpon>
-    </Compile>
-    <Compile Update="Resources\Stock\InventoryErrorCodeDescription.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>InventoryErrorCodeDescription.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Resources\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>OutsourceErrorCodeDescription.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>PurchasingRequestErrorCodeDescription.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\PO\EnumPoProcessStatusDescription.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>EnumPoProcessStatusDescription.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\PO\EnumPurchasingRequestTypeDescription.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>EnumPurchasingRequestTypeDescription.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Resources\Stock\InventoryErrorCodeDescription.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>InventoryErrorCodeDescription.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
+    <ProjectReference Include="..\Resources\Resources.csproj" />
   </ItemGroup>
 
 </Project>

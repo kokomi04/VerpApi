@@ -2014,7 +2014,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var selectFormFields = (from iaf in _purchaseOrderDBContext.VoucherAreaField
                                     join itf in _purchaseOrderDBContext.VoucherField on iaf.VoucherFieldId equals itf.VoucherFieldId
-                                    where iaf.VoucherTypeId == voucherTypeId && PurchaseOrderConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+                                    where iaf.VoucherTypeId == voucherTypeId && DataTypeConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
                                     select new
                                     {
                                         itf.RefTableTitle,

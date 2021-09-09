@@ -24,8 +24,8 @@ using VErp.Commons.Library.Model;
 using System.Data;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ServiceCore.Facade;
-using static VErp.Services.Stock.Service.Resources.InventoryProcess.InventoryBillInputMessage;
-using VErp.Services.Stock.Service.Resources.InventoryProcess;
+using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
+using Verp.Resources.Stock.InventoryProcess;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -50,8 +50,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverService productionHandoverService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverService, currentContextService)
+            , IProductionHandoverHelperService productionHandoverHelperService
+            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
          
             _asyncRunner = asyncRunner;
