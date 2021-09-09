@@ -143,7 +143,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                     Money = item.Money ?? 0,
 
-                    TaxInMoney = item.TaxInMoney
+                    //TaxInMoney = item.TaxInMoney
                 };
 
             }

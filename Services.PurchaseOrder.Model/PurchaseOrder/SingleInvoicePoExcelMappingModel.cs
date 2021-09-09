@@ -78,10 +78,10 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         [Display(Name = "Thành tiền", GroupName = "TT về lượng")]
         public decimal? Money { get; set; }
 
-        [Display(Name = "Thuế theo phần trăm", GroupName = "TT về lượng")]
-        public decimal TaxInPercent { get; set; }
-        [Display(Name = "Thuế theo tiền", GroupName = "TT về lượng")]
-        public decimal TaxInMoney { get; set; }
+        //[Display(Name = "Thuế theo phần trăm", GroupName = "TT về lượng")]
+        //public decimal TaxInPercent { get; set; }
+        //[Display(Name = "Thuế theo tiền", GroupName = "TT về lượng")]
+        //public decimal TaxInMoney { get; set; }
 
         [Display(Name = "Mã đơn hàng", GroupName = "Bổ sung")]
         public string OrderCode { get; set; }
