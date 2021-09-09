@@ -31,6 +31,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public decimal? TaxInMoney { get; set; }
+        public decimal? TaxInPercent { get; set; }
 
         public virtual ICollection<PoAssignment> PoAssignment { get; set; }
         public virtual ICollection<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }

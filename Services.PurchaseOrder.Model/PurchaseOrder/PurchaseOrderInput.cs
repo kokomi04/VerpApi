@@ -37,8 +37,12 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal TotalMoney { get; set; }
         public string PoDescription { get; set; }
         public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
 
         public long? PropertyCalcId { get; set; }
+
+        public long? CurrencyId { get; set; }
+        public decimal? ExchangeRate { get; set; }
     }
 
     public interface IPurchaseOrderInputDetail
@@ -57,7 +61,7 @@ namespace VErp.Services.PurchaseOrder.Model
         decimal ProductUnitConversionPrice { get; set; }
 
         // decimal? TaxInPercent { get; set; }
-        decimal? TaxInMoney { get; set; }
+        // decimal? TaxInMoney { get; set; }
 
         string OrderCode { get; set; }
         string ProductionOrderCode { get; set; }
@@ -65,10 +69,10 @@ namespace VErp.Services.PurchaseOrder.Model
         string Description { get; set; }
 
         decimal? IntoMoney { get; set; }
-        decimal? IntoAfterTaxMoney { get; set; }
+        // decimal? IntoAfterTaxMoney { get; set; }
 
-        string CurrencyCode { get; set; }
-        decimal? ExchangeRate { get; set; }
+        // string CurrencyCode { get; set; }
+        // decimal? ExchangeRate { get; set; }
         decimal? ExchangedMoney { get; set; }
     }
 
@@ -87,7 +91,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal ProductUnitConversionPrice { get; set; }
 
         // public decimal? TaxInPercent { get; set; }
-        public decimal? TaxInMoney { get; set; }
+        // public decimal? TaxInMoney { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
 
@@ -97,10 +101,10 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? ProductionStepLinkDataId { get; set; }
 
         public decimal? IntoMoney { get; set; }
-        public decimal? IntoAfterTaxMoney { get; set; }
+        // public decimal? IntoAfterTaxMoney { get; set; }
 
-        public string CurrencyCode { get; set; }
-        public decimal? ExchangeRate { get; set; }
+        // public string CurrencyCode { get; set; }
+        // public decimal? ExchangeRate { get; set; }
         public decimal? ExchangedMoney { get; set; }
 
     }

@@ -11,6 +11,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Content { get; set; }
         public IList<long> FileIds { get; set; }
         public List<PurchasingSuggestDetailInputModel> Details { set; get; }
+        public decimal? TaxInMoney { get; set; }
+        public decimal? TaxInPercent { get; set; }
     }
 
     public class PurchasingSuggestDetailInputModel
@@ -28,9 +30,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal ProductUnitConversionPrice { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
-
-        public decimal? TaxInPercent { get; set; }
-        public decimal? TaxInMoney { get; set; }
 
         public string Description { get; set; }
 

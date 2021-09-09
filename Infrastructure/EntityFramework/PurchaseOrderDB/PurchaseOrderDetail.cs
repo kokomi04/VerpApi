@@ -19,7 +19,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int ProductUnitConversionId { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionPrice { get; set; }
-        public decimal? TaxInMoney { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
@@ -30,9 +29,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long? OutsourceRequestId { get; set; }
         public long? ProductionStepLinkDataId { get; set; }
         public decimal? IntoMoney { get; set; }
-        public decimal? IntoAfterTaxMoney { get; set; }
-        public string CurrencyCode { get; set; }
-        public decimal? ExchangeRate { get; set; }
         public decimal? ExchangedMoney { get; set; }
 
         public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
