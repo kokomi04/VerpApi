@@ -107,6 +107,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 TaxInPercent = info.TaxInPercent,
                 TaxInMoney = info.TaxInMoney,
 
+                TotalMoney = info.TotalMoney,
+
                 RejectCount = info.RejectCount,
                 Content = info.Content,
                 FileIds = files.Select(f => f.FileId).ToList(),
@@ -132,7 +134,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         CustomerId = d.CustomerId,
 
-                        Description = d.Description
+                        Description = d.Description,
+                        IntoMoney = d.IntoMoney
                     };
                 }
                 ).ToList()
@@ -247,7 +250,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             d.PrimaryUnitPrice,
                             s.TaxInPercent,
                             s.TaxInMoney,
-                            d.Description
+                            d.Description,
+                            d.IntoMoney,
+                            s.TotalMoney
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -336,7 +341,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     Description = info.Description,
 
-                    RequestDetail = requestDetailInfo
+                    RequestDetail = requestDetailInfo,
+                    TotalMoney = info.TotalMoney,
+                    IntoMoney = info.IntoMoney
                 });
             }
 
@@ -370,7 +377,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         TaxInMoney = model.TaxInMoney,
-                        TaxInPercent = model.TaxInPercent
+                        TaxInPercent = model.TaxInPercent,
+                        TotalMoney = model.TotalMoney
                     };
 
                     await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
@@ -425,6 +433,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     info.TaxInPercent = model.TaxInPercent;
                     info.TaxInMoney = model.TaxInMoney;
 
+                    info.TotalMoney = model.TotalMoney;
+
                     var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                     var newDetails = new List<PurchasingSuggestDetail>();
@@ -455,6 +465,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.CustomerId = item.CustomerId;
 
                                 detail.Description = item.Description;
+
+                                detail.IntoMoney = item.IntoMoney;
 
                                 break;
                             }
@@ -1588,7 +1600,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 OrderCode = d.OrderCode,
                 ProductionOrderCode = d.ProductionOrderCode,
 
-                Description = d.Description
+                Description = d.Description,
+                IntoMoney = d.IntoMoney
             };
         }
 

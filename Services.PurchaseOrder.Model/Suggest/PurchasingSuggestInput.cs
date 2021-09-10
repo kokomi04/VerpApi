@@ -13,6 +13,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public List<PurchasingSuggestDetailInputModel> Details { set; get; }
         public decimal? TaxInMoney { get; set; }
         public decimal? TaxInPercent { get; set; }
+        public decimal? TotalMoney { get; set; }
     }
 
     public class PurchasingSuggestDetailInputModel
@@ -32,7 +33,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string ProductionOrderCode { get; set; }
 
         public string Description { get; set; }
-
+        public decimal? IntoMoney { get; set; }
     }
 
    
