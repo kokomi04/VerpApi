@@ -554,6 +554,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchaseOrderType = info.PurchaseOrderType,
 
                 TaxInPercent = info.TaxInPercent,
+                CurrencyId = info.CurrencyId,
+                ExchangeRate = info.ExchangeRate,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.Select(d =>
