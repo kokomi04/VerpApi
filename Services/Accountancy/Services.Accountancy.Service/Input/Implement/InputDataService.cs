@@ -1741,11 +1741,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, true);
         }
 
-        private async Task<List<ValidateField>> GetInputFields(int inputTypeId)
+        private async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null)
         {
+            var area = _accountancyDBContext.InputArea.AsQueryable();
+            if (areaId > 0)
+            {
+                area = area.Where(a => a.InputAreaId == areaId);
+            }
             return await (from af in _accountancyDBContext.InputAreaField
                           join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                          join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+                          join a in area on af.InputAreaId equals a.InputAreaId
                           where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
                           orderby a.SortOrder, af.SortOrder
                           select new ValidateField
@@ -1770,13 +1775,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId)
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId)
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
 
 
             // Lấy thông tin field
-            var fields = await GetInputFields(inputTypeId);
+            var fields = await GetInputFields(inputTypeId, areaId);
 
             var result = new CategoryNameModel()
             {
@@ -1786,9 +1791,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-
+          
             fields = fields
-                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY)                
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY)
                 .ToList();
 
             var referTableNames = fields.Select(f => f.RefTableCode).ToList();
@@ -1819,7 +1824,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         //CategoryId = 0,
                         CategoryCode = refCategory.FirstOrDefault()?.CategoryCode,
-                        CategoryTitle = field.Title,
+                        CategoryTitle = refCategory.FirstOrDefault()?.CategoryTitle,
                         IsTreeView = false,
 
                         Fields = GetRefFields(refCategory)

@@ -93,11 +93,11 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpGet]
         [Route("{voucherTypeId}/fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int voucherTypeId)
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int voucherTypeId, [FromQuery] int? areaId = null)
         {
-            return await _voucherDataService.GetFieldDataForMapping(voucherTypeId);
+            return await _voucherDataService.GetFieldDataForMapping(voucherTypeId, areaId);
         }
-      
+
 
         [HttpPost]
         [Route("{voucherTypeId}/importFromMapping")]
@@ -144,7 +144,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
 
         [HttpPost("OrderByCodes")]
-        [VErpAction(EnumActionType.View)]        
+        [VErpAction(EnumActionType.View)]
         public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes([FromBody] IList<string> orderCodes)
         {
             return await _voucherDataService.OrderByCodes(orderCodes);
