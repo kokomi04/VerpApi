@@ -782,6 +782,7 @@ namespace VErp.Services.Master.Service.Category
                         {
                             IsHidden = f.IsHidden,                            
                             CategoryCode = c.CategoryCode,
+                            CategoryTitle = c.Title,
                             CategoryFieldName = f.CategoryFieldName,
                             CategoryFieldTitle = f.Title,
                             DataTypeId = f.DataTypeId,

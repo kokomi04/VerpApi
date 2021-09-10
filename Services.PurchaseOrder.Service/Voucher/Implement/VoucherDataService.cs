@@ -1707,11 +1707,17 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }, true);
         }
 
-        private async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId)
+        private async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null)
         {
+            var area = _purchaseOrderDBContext.VoucherArea.AsQueryable();
+            if (areaId > 0)
+            {
+                area = area.Where(a => a.VoucherAreaId == areaId);
+
+            }
             return await (from af in _purchaseOrderDBContext.VoucherAreaField
                           join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-                          join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
+                          join a in area on af.VoucherAreaId equals a.VoucherAreaId
                           where af.VoucherTypeId == voucherTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != PurchaseOrderConstants.F_IDENTITY
                           orderby a.SortOrder, af.SortOrder
                           select new ValidateVoucherField
@@ -1737,13 +1743,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         }
 
 
-        public async Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId)
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId)
         {
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.AsNoTracking().FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
 
 
             // Lấy thông tin field
-            var fields = await GetVoucherFields(voucherTypeId);
+            var fields = await GetVoucherFields(voucherTypeId, areaId);
 
             var result = new CategoryNameModel()
             {
@@ -1786,7 +1792,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     {
                         //CategoryId = 0,
                         CategoryCode = refCategory.FirstOrDefault()?.CategoryCode,
-                        CategoryTitle = field.Title,
+                        CategoryTitle = refCategory.FirstOrDefault()?.CategoryTitle,
                         IsTreeView = false,
 
                         Fields = GetRefFields(refCategory)

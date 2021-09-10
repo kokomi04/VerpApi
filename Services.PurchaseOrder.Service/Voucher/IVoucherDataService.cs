@@ -29,7 +29,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<bool> DeleteVoucherBill(int inputTypeId, long inputValueBillId);
 
-        Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId);
+        Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId = null);
 
         Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 
