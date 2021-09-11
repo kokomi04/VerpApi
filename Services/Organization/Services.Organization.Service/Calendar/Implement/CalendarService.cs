@@ -255,10 +255,10 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             using var trans = await _organizationContext.Database.BeginTransactionAsync();
             try
             {
-                DateTime now = DateTime.UtcNow.Date;
+                DateTime time = data.StartDate.HasValue? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
                 // Update workingHour per day
                 var currentWorkingHourInfo = await _organizationContext.WorkingHourInfo
-                  .Where(wh => wh.StartDate <= now)
+                  .Where(wh => wh.StartDate <= time)
                   .OrderByDescending(wh => wh.StartDate)
                   .FirstOrDefaultAsync();
 
@@ -273,11 +273,11 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 }
                 else if (currentWorkingHourInfo.WorkingHourPerDay != data.WorkingHourPerDay)
                 {
-                    if (currentWorkingHourInfo.StartDate < now)
+                    if (currentWorkingHourInfo.StartDate < time)
                     {
                         currentWorkingHourInfo = new WorkingHourInfo
                         {
-                            StartDate = now,
+                            StartDate = time,
                             WorkingHourPerDay = data.WorkingHourPerDay
                         };
                         _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
@@ -291,7 +291,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 // Update working week
 
                 var workingWeeks = await _organizationContext.WorkingWeekInfo
-                    .Where(ww => ww.StartDate <= now)
+                    .Where(ww => ww.StartDate <= time)
                     .GroupBy(ww => ww.DayOfWeek)
                     .Select(g => new
                     {
@@ -318,11 +318,11 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     }
                     else if (currentWorkingWeek.IsDayOff != newWorkingWeek.IsDayOff)
                     {
-                        if (currentWorkingWeek.StartDate < now)
+                        if (currentWorkingWeek.StartDate < time)
                         {
                             currentWorkingWeek = new WorkingWeekInfo
                             {
-                                StartDate = now,
+                                StartDate = time,
                                 DayOfWeek = (int)day,
                                 IsDayOff = newWorkingWeek.IsDayOff
                             };
@@ -339,7 +339,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 _organizationContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, now.GetUnix(), $"Cập nhật lịch làm việc ngày {now.ToString()}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Cập nhật lịch làm việc ngày {time.ToString()}", data.JsonSerialize());
 
                 return await GetCurrentCalendar();
             }
