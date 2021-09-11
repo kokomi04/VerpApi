@@ -33,6 +33,12 @@ namespace VErpApi.Controllers.System
             return await _calendarService.GetCurrentCalendar();
         }
 
+        [HttpGet]
+        [Route("all")]
+        public async Task<IList<WeekCalendarModel>> GetCalendar()
+        {
+            return await _calendarService.GetCalendar();
+        }
 
         [HttpPut]
         [Route("")]

@@ -10,6 +10,7 @@ namespace VErp.Services.Organization.Service.Calendar
     public interface ICalendarService
     {
         Task<WeekCalendarModel> GetCurrentCalendar();
+        Task<IList<WeekCalendarModel>> GetCalendar();
         Task<WeekCalendarModel> UpdateWeekCalendar(WeekCalendarModel data);
 
         Task<IList<DayOffCalendarModel>> GetDayOffCalendar(long startDate, long endDate);

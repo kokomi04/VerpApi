@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
         }
 
+        public virtual DbSet<MonthPlan> MonthPlan { get; set; }
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
         public virtual DbSet<OutsourceOrderExcess> OutsourceOrderExcess { get; set; }
@@ -65,6 +66,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepDetail> StepDetail { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
+        public virtual DbSet<WeekPlan> WeekPlan { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -72,6 +74,21 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
+            modelBuilder.Entity<MonthPlan>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.MonthNote).HasMaxLength(512);
+
+                entity.Property(e => e.MonthPlanName)
+                    .IsRequired()
+                    .HasMaxLength(512);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
 
             modelBuilder.Entity<OutsourceOrder>(entity =>
             {
@@ -944,6 +961,21 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.StepGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<WeekPlan>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.WeekNote).HasMaxLength(512);
+
+                entity.Property(e => e.WeekPlanName)
+                    .IsRequired()
+                    .HasMaxLength(512);
             });
 
             OnModelCreatingPartial(modelBuilder);
