@@ -1264,7 +1264,7 @@ namespace VErp.Commons.Library
 
                     MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
                     MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null });
+                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false });
 
                     fileMapping.RefCategory = new CategoryNameModel()
                     {
