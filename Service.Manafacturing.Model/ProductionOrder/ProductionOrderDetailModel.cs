@@ -54,5 +54,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string UnitName { get; set; }
         public string Specification { get; set; }
         public bool InvalidPlan { get; set; }
+        public string CustomerPO { get; set; }
 }
 }
