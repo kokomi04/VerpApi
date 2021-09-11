@@ -38,7 +38,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
         }
 
-        public async IAsyncEnumerable<PurchaseOrderExcelParseDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream)
+        public async IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream)
         {
             var rowDatas = SingleInvoiceParseExcel(mapping, extra, stream).ToList();
 
@@ -125,7 +125,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     productUnitConversionId = puDefault.ProductUnitConversionId;
                 }
 
-                yield return new PurchaseOrderExcelParseDetail()
+                yield return new PurchaseOrderInputDetail()
                 {
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
@@ -141,7 +141,9 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     ProductUnitConversionQuantity = item.ProductUnitConversionQuantity ?? 0,
                     ProductUnitConversionPrice = item.ProductUnitConversionPrice ?? 0,
 
-                    Money = item.Money ?? 0,
+                    IntoMoney = item.IntoMoney,
+
+                    ExchangedMoney = item.ExchangedMoney
 
                     //TaxInMoney = item.TaxInMoney
                 };

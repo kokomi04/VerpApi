@@ -109,11 +109,6 @@ namespace VErp.Services.PurchaseOrder.Model
 
     }
 
-    public class PurchaseOrderExcelParseDetail : PurchaseOrderInputDetail
-    {
-        public decimal Money { get; set; }
-    }
-
     public class DeliveryDestinationModel
     {
         public string DeliverTo { get; set; }

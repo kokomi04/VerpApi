@@ -75,8 +75,11 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public decimal? ProductUnitConversionQuantity { get; set; }
         [Display(Name = "Giá theo Đơn vị chuyển đổi", GroupName = "TT về lượng")]
         public decimal? ProductUnitConversionPrice { get; set; }
-        [Display(Name = "Thành tiền", GroupName = "TT về lượng")]
-        public decimal? Money { get; set; }
+        [Display(Name = "Thành tiền ngoại tệ", GroupName = "TT về lượng")]
+        public decimal? IntoMoney { get; set; }
+        [Display(Name = "Thành tiền VNĐ", GroupName = "TT về lượng")]
+        public decimal? ExchangedMoney { get; set; }
+
 
         //[Display(Name = "Thuế theo phần trăm", GroupName = "TT về lượng")]
         //public decimal TaxInPercent { get; set; }
@@ -89,5 +92,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string ProductionOrderCode { get; set; }
         [Display(Name = "Mô tả", GroupName = "Bổ sung")]
         public string Description { get; set; }
+
+        
     }
 }

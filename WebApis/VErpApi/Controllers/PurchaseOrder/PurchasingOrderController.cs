@@ -124,7 +124,7 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchaseOrderExcelParseDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
+        public IAsyncEnumerable<PurchaseOrderInputDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
         {
             if (file == null || data == null)
             {

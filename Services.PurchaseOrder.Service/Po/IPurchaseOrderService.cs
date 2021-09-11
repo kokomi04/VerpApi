@@ -26,7 +26,7 @@ namespace VErp.Services.PurchaseOrder.Service
 
         CategoryNameModel GetFieldDataForMapping();
 
-        IAsyncEnumerable<PurchaseOrderExcelParseDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream);
+        IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream);
 
         Task<bool> SentToCensor(long purchaseOrderId);
 
