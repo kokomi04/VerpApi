@@ -87,6 +87,60 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             return result;
         }
 
+        public async Task<IList<WeekCalendarModel>> GetCalendar()
+        {
+
+            var workingHourInfos = await _organizationContext.WorkingHourInfo
+                .ToListAsync();
+
+            var allWorkingWeeks = await _organizationContext.WorkingWeekInfo
+                .ToListAsync();
+
+            var timePoints = workingHourInfos.Select(wh => wh.StartDate).Union(allWorkingWeeks.Select(ww => ww.StartDate)).Distinct().OrderBy(tp => tp).ToList();
+
+            var result = new List<WeekCalendarModel>();
+            foreach (var timePoint in timePoints)
+            {
+                var workingHourInfo = workingHourInfos
+                    .Where(wh => wh.StartDate <= timePoint)
+                    .OrderByDescending(wh => wh.StartDate)
+                    .FirstOrDefault();
+
+                var workingWeeks = allWorkingWeeks
+                    .Where(ww => ww.StartDate <= timePoint)
+                    .GroupBy(ww => ww.DayOfWeek)
+                    .Select(g => new
+                    {
+                        DayOfWeek = g.Key,
+                        StartDate = g.Max(ww => ww.StartDate)
+                    })
+                    .Join(allWorkingWeeks, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
+                    .AsQueryable()
+                    .ProjectTo<WorkingWeekInfoModel>(_mapper.ConfigurationProvider)
+                    .ToList();
+
+                foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                {
+                    if (!workingWeeks.Any(d => d.DayOfWeek == day))
+                    {
+                        workingWeeks.Add(new WorkingWeekInfoModel
+                        {
+                            DayOfWeek = day,
+                            IsDayOff = false
+                        });
+                    }
+                }
+
+                result.Add(new WeekCalendarModel
+                {
+                    WorkingHourPerDay = workingHourInfo?.WorkingHourPerDay ?? OrganizationConstants.WORKING_HOUR_PER_DAY,
+                    WorkingWeek = workingWeeks
+                });
+            }
+
+            return result;
+        }
+
         public async Task<IList<DayOffCalendarModel>> GetDayOffCalendar(long startDate, long endDate)
         {
             var start = startDate.UnixToDateTime().Value;
