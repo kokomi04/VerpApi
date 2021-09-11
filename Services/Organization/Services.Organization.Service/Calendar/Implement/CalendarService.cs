@@ -133,6 +133,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
                 result.Add(new WeekCalendarModel
                 {
+                    StartDate = timePoint.GetUnix(),
                     WorkingHourPerDay = workingHourInfo?.WorkingHourPerDay ?? OrganizationConstants.WORKING_HOUR_PER_DAY,
                     WorkingWeek = workingWeeks
                 });
