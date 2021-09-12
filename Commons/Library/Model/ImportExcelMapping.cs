@@ -27,7 +27,7 @@ namespace VErp.Commons.Library.Model
         public string FieldName { get; set; }
         public string RefFieldName { get; set; }
         public string Column { get; set; }
-        public bool IsRequire { get; set; }
+        public bool IsIgnoredIfEmpty { get; set; }
     }
 
     public class ImportExcelRowData
