@@ -31,6 +31,7 @@ using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Master.Service.Category;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Accountancy.Service.Category
 {
@@ -1012,7 +1013,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return titles;
         }
 
-        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExcelMapping mapping, Stream stream)
         {
             var facade = new CategoryDataImportFacade(categoryId, _masterContext, this, _activityLogService, _currentContextService);
             await facade.ImportData(mapping, stream);

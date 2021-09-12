@@ -108,12 +108,13 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpPost]
         [Route("{categoryId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] CategoryImportExcelMapping mapping, IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
+            mapping.FileName = file.FileName;
             return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
     }

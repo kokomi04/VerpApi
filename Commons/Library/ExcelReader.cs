@@ -106,6 +106,7 @@ namespace VErp.Commons.Library
             return data.ToArray();
         }
 
+     
 
         public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
         {
@@ -335,7 +336,7 @@ namespace VErp.Commons.Library
                     if (row.ContainsKey(mappingField.Column))
                         value = row[mappingField.Column]?.ToString();
 
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsIgnoredIfEmpty)
                     {
                         isIgnoreRow = true;
                         continue;
@@ -390,7 +391,7 @@ namespace VErp.Commons.Library
                 //bool isIgnoreRow = false;
 
 
-                var checkFieldsMapping = mapping.MappingFields.Where(f => f.IsRequire || f.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
+                var checkFieldsMapping = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty || f.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
 
                 if (checkFieldsMapping.Any(f => string.IsNullOrWhiteSpace(row[f.Column])))
                 {

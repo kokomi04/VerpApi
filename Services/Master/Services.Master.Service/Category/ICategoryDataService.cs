@@ -7,6 +7,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model;
 using VErp.Services.Master.Model.Category;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Master.Service.Category
 {
@@ -26,6 +27,6 @@ namespace VErp.Services.Master.Service.Category
 
         Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues);
 
-        Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExcelMapping mapping, Stream stream);
+        Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExcelMapping mapping, Stream stream);
     }
 }

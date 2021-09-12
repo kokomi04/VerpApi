@@ -47,7 +47,7 @@ namespace VErp.Services.Master.Service.Category
             _currentContextService = currentContextService;
         }
 
-        public async Task<bool> ImportData(CategoryImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportData(ImportExcelMapping mapping, Stream stream)
         {
             _category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == _categoryId);
 
@@ -145,7 +145,7 @@ namespace VErp.Services.Master.Service.Category
             return isEqual;
         }
 
-        private async Task MappingCategoryDate(CategoryImportExcelMapping mapping)
+        private async Task MappingCategoryDate(ImportExcelMapping mapping)
         {
             _categoryDataRows = new List<Dictionary<string, string>>();
 
@@ -157,12 +157,12 @@ namespace VErp.Services.Master.Service.Category
                                 mf.Column,
                                 mf.FieldName,
                                 mf.RefFieldName,
-                                mf.IsRequire,
+                                mf.IsIgnoredIfEmpty,
                                 cf?.RefTableCode,
                                 cf?.Title,
                                 cf?.DataTypeId
                             });
-
+           
             foreach (var (row, i) in _importData.Rows.Select((value, i) => (value, i)))
             {
                 var categoryDataRow = new Dictionary<string, string>();
@@ -170,7 +170,7 @@ namespace VErp.Services.Master.Service.Category
                 {
                     row.TryGetValue(mf.Column, out var value);
 
-                    if (string.IsNullOrWhiteSpace(value) && mf.IsRequire)
+                    if (string.IsNullOrWhiteSpace(value) && mf.IsIgnoredIfEmpty)
                     {
                         categoryDataRow = new Dictionary<string, string>();
                         break;
@@ -244,7 +244,7 @@ namespace VErp.Services.Master.Service.Category
             await Task.CompletedTask;
         }
 
-        private async Task RefCategoryForParent(CategoryImportExcelMapping mapping)
+        private async Task RefCategoryForParent(ImportExcelMapping mapping)
         {
             var hasParent = mapping.MappingFields.Any(m => m.FieldName == CategoryFieldConstants.ParentId);
             if (hasParent)
@@ -279,7 +279,7 @@ namespace VErp.Services.Master.Service.Category
             }
         }
 
-        private async Task RefCategoryForProperty(CategoryImportExcelMapping mapping)
+        private async Task RefCategoryForProperty(ImportExcelMapping mapping)
         {
             var hasRefProperty = mapping.MappingFields.Any(m => !string.IsNullOrWhiteSpace(m.RefFieldName) && !m.FieldName.Equals(CategoryFieldConstants.ParentId));
             if (hasRefProperty)
@@ -336,7 +336,7 @@ namespace VErp.Services.Master.Service.Category
             }
         }
 
-        private string TransformValueByDataType(CategoryImportExcelMapping mapping, int i, string value, CategoryField fieldInfo, string column)
+        private string TransformValueByDataType(ImportExcelMapping mapping, int i, string value, CategoryField fieldInfo, string column)
         {
             if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains(((EnumDataType?)fieldInfo?.DataTypeId).GetValueOrDefault()))
             {
@@ -356,7 +356,7 @@ namespace VErp.Services.Master.Service.Category
             return value;
         }
 
-        private async Task GetCategoryFieldInfo(CategoryImportExcelMapping mapping)
+        private async Task GetCategoryFieldInfo(ImportExcelMapping mapping)
         {
             _categoryFields = _accountancyContext.CategoryField
                             .AsNoTracking()
@@ -382,7 +382,7 @@ namespace VErp.Services.Master.Service.Category
 
         }
 
-        private void ValidateCategoryFieldRequirement(CategoryImportExcelMapping mapping)
+        private void ValidateCategoryFieldRequirement(ImportExcelMapping mapping)
         {
             _uniqueFields = _categoryFields.Where(x => x.IsUnique).ToArray();
             // var requiredFields = _categoryFields.Where(x => x.IsRequired || x.IsUnique).ToList();
@@ -393,7 +393,7 @@ namespace VErp.Services.Master.Service.Category
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Chưa cấu hình trường bắt buộc: {string.Join(", ", _uniqueFields.Select(x => x.Title))} ");
         }
 
-        private async Task ReadExcelData(CategoryImportExcelMapping mapping, Stream stream)
+        private async Task ReadExcelData(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
             _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
