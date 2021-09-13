@@ -154,5 +154,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _validateProductionOrderService.ValidateProductionOrder(productionOrderId);
         }
 
+        [HttpGet]
+        [Route("capacity")]
+        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionOrderService.GetProductionCapacity(startDate, endDate);
+        }
     }
 }

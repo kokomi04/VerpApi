@@ -202,7 +202,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                       join g in _manufacturingDBContext.ProductionStep
                                       on new { ps.ProductionStepId, IsDeleted = false, IsGroup = false, IsFinish = false } equals new { ProductionStepId = g.ParentId.Value, IsDeleted = g.IsDeleted, IsGroup = g.IsGroup.Value, IsFinish = g.IsFinish }
                                       join ldr in _manufacturingDBContext.ProductionStepLinkDataRole
-                                      on new { ps.ProductionStepId, Type = (int)EnumProductionStepLinkDataRoleType.Output } equals new { ldr.ProductionStepId, Type = ldr.ProductionStepLinkDataRoleTypeId }
+                                      on new { g.ProductionStepId, Type = (int)EnumProductionStepLinkDataRoleType.Output } equals new { ldr.ProductionStepId, Type = ldr.ProductionStepLinkDataRoleTypeId }
                                       join ld in _manufacturingDBContext.ProductionStepLinkData on ldr.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
                                       where !ps.IsDeleted && !ps.IsFinish && ps.IsGroup.Value && productionOrderIds.Contains(ps.ContainerId) && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.StepId.HasValue
                                       select new ProductionWordloadInfo
@@ -241,7 +241,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var calcTime = (endDate > toDate ? toDate : endDate) - (startDate < fromDate ? fromDate : startDate);
                 foreach (var item in group)
                 {
-                    item.Quantity = item.Quantity * calcTime / assignmentTime;
+                    item.Quantity = assignmentTime > 0? item.Quantity * calcTime / assignmentTime : 0;
                 }
             }
 
@@ -322,15 +322,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 foreach (var departmentStepId in departmentStepIds)
                 {
                     if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
-                    var stepWorkHour = productionCapacityDetail.Sum(pc => pc.Value[departmentStepId].Sum(w => w.WorkHour));
-                    departmentHour[departmentStepId] += totalHour * stepWorkHour / totalWorkHour;
+                    var stepWorkHour = productionCapacityDetail.Sum(pc => pc.Value.ContainsKey(departmentStepId)? pc.Value[departmentStepId].Sum(w => w.WorkHour) : 0);
+                    departmentHour[departmentStepId] += totalWorkHour > 0 ? totalHour * stepWorkHour / totalWorkHour : 0;
                 }
             }
 
 
             var result = new ProductionCapacityModel
             {
-                StepInfo = stepInfo
+                StepInfo = stepInfo,
+                DepartmentHour = departmentHour
             };
 
 
@@ -349,7 +350,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     ProductionOrderId = productionCapacity.Key.ProductionOrderId,
                     ProductionOrderCode = productionCapacity.Key.ProductionOrderCode,
-                    ProductionCapacityDetail = productionCapacityDetail[productionCapacity.Key.ProductionOrderId],
+                    ProductionCapacityDetail = productionCapacityDetail.ContainsKey(productionCapacity.Key.ProductionOrderId) 
+                    ? productionCapacityDetail[productionCapacity.Key.ProductionOrderId]
+                    : new Dictionary<int, List<ProductionCapacityDetailModel>>(),
                     ProductionOrderDetail = productionOrderDetail
                 });
             }
