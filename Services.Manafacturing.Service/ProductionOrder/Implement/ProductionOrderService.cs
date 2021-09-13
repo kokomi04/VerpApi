@@ -141,7 +141,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.ProductionOrderStatus ");
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -241,7 +241,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var calcTime = (endDate > toDate ? toDate : endDate) - (startDate < fromDate ? fromDate : startDate);
                 foreach (var item in group)
                 {
-                    item.Quantity = assignmentTime > 0? item.Quantity * calcTime / assignmentTime : 0;
+                    item.Quantity = assignmentTime > 0 ? item.Quantity * calcTime / assignmentTime : 0;
                 }
             }
 
@@ -322,7 +322,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 foreach (var departmentStepId in departmentStepIds)
                 {
                     if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
-                    var stepWorkHour = productionCapacityDetail.Sum(pc => pc.Value.ContainsKey(departmentStepId)? pc.Value[departmentStepId].Sum(w => w.WorkHour) : 0);
+                    var stepWorkHour = productionCapacityDetail.Sum(pc => pc.Value.ContainsKey(departmentStepId) ? pc.Value[departmentStepId].Sum(w => w.WorkHour) : 0);
                     departmentHour[departmentStepId] += totalWorkHour > 0 ? totalHour * stepWorkHour / totalWorkHour : 0;
                 }
             }
@@ -350,7 +350,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     ProductionOrderId = productionCapacity.Key.ProductionOrderId,
                     ProductionOrderCode = productionCapacity.Key.ProductionOrderCode,
-                    ProductionCapacityDetail = productionCapacityDetail.ContainsKey(productionCapacity.Key.ProductionOrderId) 
+                    ProductionCapacityDetail = productionCapacityDetail.ContainsKey(productionCapacity.Key.ProductionOrderId)
                     ? productionCapacityDetail[productionCapacity.Key.ProductionOrderId]
                     : new Dictionary<int, List<ProductionCapacityDetailModel>>(),
                     ProductionOrderDetail = productionOrderDetail
@@ -403,6 +403,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                if (data.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
+                if (data.StartDate > data.PlanEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
+                if (data.PlanEndDate > data.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
                 if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
@@ -510,8 +513,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     if (item.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                     if (item.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                    if (item.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
                     if (item.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
-
+                    if (item.StartDate > item.PlanEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
+                    if (item.PlanEndDate > item.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                     if (item.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
                         .Where(x => x.Count() > 1)
                         .Count() > 0)
@@ -566,6 +571,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                if (data.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
+                if (data.StartDate > data.PlanEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
+                if (data.PlanEndDate > data.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
                 if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
                     .Where(x => x.Count() > 1)
