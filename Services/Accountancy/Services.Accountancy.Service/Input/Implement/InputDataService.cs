@@ -2041,7 +2041,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             if (referData == null || referData.Rows.Count == 0)
                             {
                                 // Check tồn tại
-                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                                 var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                                 referData = await _accountancyDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
                                 if (referData == null || referData.Rows.Count == 0)

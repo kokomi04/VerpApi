@@ -2005,7 +2005,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             if (referData == null || referData.Rows.Count == 0)
                             { 
                                 // Check tồn tại
-                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                                 var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                                 referData = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
                                 if (referData == null || referData.Rows.Count == 0)
