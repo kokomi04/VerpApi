@@ -42,6 +42,8 @@ namespace VErp.Commons.Enums.StandardEnum
         UniqueValueAlreadyExisted = 16,
         [Description("Thông tin giá trị dòng {0} của trường {1} không tồn tại")]
         ReferValueNotFound = 17,
+        [Description("Thông tin giá trị dòng {0} của trường {1} không thỏa mãn điều kiện lọc")]
+        ReferValueNotValidFilter = 117,
         [Description("Dòng thông tin không tồn tại")]
         VoucherRowNotFound = 18,
         [Description("vùng dữ liệu đang trực thuộc chứng từ")]
