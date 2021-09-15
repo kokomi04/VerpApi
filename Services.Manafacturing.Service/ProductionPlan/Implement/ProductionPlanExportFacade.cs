@@ -52,7 +52,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         }
         public async Task<(Stream stream, string fileName, string contentType)> Export(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
         {
-            maxColumnIndex = 8 + data.ProductCateIds.Length;
+            maxColumnIndex = 11 + data.ProductCateIds.Length;
             productionPlanInfo = await _productionPlanService.GetProductionOrders(startDate, endDate);
             productCates = (await _productCateHelperService.Search(null, string.Empty, -1, -1, string.Empty, true)).List.Where(pc => data.ProductCateIds.Contains(pc.ProductCateId)).ToList();
             var productIds = productionPlanInfo.Select(p => p.ProductId.Value).Distinct().ToList();
@@ -146,22 +146,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var fRow = currentRow;
 
             sheet.EnsureCell(fRow, 0).SetCellValue($"Khách hàng");
-            sheet.EnsureCell(fRow, 1).SetCellValue($"PO");
-            sheet.EnsureCell(fRow, 2).SetCellValue($"Mã hàng");
-            sheet.EnsureCell(fRow, 3).SetCellValue($"Mô tả");
-            sheet.EnsureCell(fRow, 4).SetCellValue($"Số cont");
-            sheet.EnsureCell(fRow, 5).SetCellValue($"Số lượng");
-            sheet.EnsureCell(fRow, 6).SetCellValue($"Đơn vị");
-            sheet.EnsureCell(fRow, 7).SetCellValue($"Ngày hoàn thành");
-            sheet.EnsureCell(fRow, 8).SetCellValue($"Ghi chú");
-            int colIndx = 9;
+            sheet.EnsureCell(fRow, 1).SetCellValue($"Đơn hàng");
+            sheet.EnsureCell(fRow, 2).SetCellValue($"PO của khách");
+            sheet.EnsureCell(fRow, 3).SetCellValue($"Mã hàng");
+            sheet.EnsureCell(fRow, 4).SetCellValue($"Tên hàng");
+            sheet.EnsureCell(fRow, 5).SetCellValue($"Số cont");
+            sheet.EnsureCell(fRow, 6).SetCellValue($"Số lượng");
+            sheet.EnsureCell(fRow, 7).SetCellValue($"Đơn vị");
+            sheet.EnsureCell(fRow, 8).SetCellValue($"Ngày bắt đầu");
+            sheet.EnsureCell(fRow, 9).SetCellValue($"Hoàn thành hàng trắng");
+            sheet.EnsureCell(fRow, 10).SetCellValue($"Ngày hoàn thành");
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Ghi chú");
+            int colIndx = 12;
             foreach (var productCate in productCates)
             {
                 sheet.EnsureCell(fRow, colIndx).SetCellValue($"{productCate.ProductCateName}");
                 colIndx++;
             }
 
-    
+
             for (var j = 0; j <= maxColumnIndex; j++)
             {
                 sheet.SetHeaderCellStyle(fRow, j);
@@ -175,38 +178,44 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
         private async Task WriteTableDetailData()
         {
-       
-            var centerCell = sheet.GetCellStyle(hAlign: HorizontalAlignment.Center, isBorder: true);
+
+            // var centerCell = sheet.GetCellStyle(hAlign: HorizontalAlignment.Center, isBorder: true);
+
             var normalCell = sheet.GetCellStyle(isBorder: true);
 
             var numberCell = sheet.GetCellStyle(isBorder: true, dataFormat: "#,##0");
+            var dateCell = sheet.GetCellStyle(isBorder: true, dataFormat: "dd/MM/yyyy");
 
             foreach (var item in productionPlanInfo)
             {
                 for (var i = 0; i <= maxColumnIndex; i++)
                 {
                     var style = normalCell;
-                    if (i == 0 || i == 3 || i == 6)
-                    {
-                        style = centerCell;
-                    }
-                    if (new[] { 4, 5, 7, 9, 10, 11 }.Contains(i))
+                    if (i == 6)
                     {
                         style = numberCell;
+                    }
+                    else if(i == 8 || i == 9 || i == 10)
+                    {
+                        style = dateCell;
                     }
                     sheet.EnsureCell(currentRow, i).CellStyle = style;
                 }
 
                 sheet.EnsureCell(currentRow, 0).SetCellValue(string.IsNullOrEmpty(item.PartnerName) ? item.PartnerCode : $"{item.PartnerCode} ({item.PartnerName})");
                 sheet.EnsureCell(currentRow, 1).SetCellValue(item.OrderCode);
-                sheet.EnsureCell(currentRow, 2).SetCellValue(item.ProductCode);
-                sheet.EnsureCell(currentRow, 3).SetCellValue(item.ProductName);
-                sheet.EnsureCell(currentRow, 4).SetCellValue(item.ContainerNumber);
-                sheet.EnsureCell(currentRow, 5).SetCellValue((double)(item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()));
-                sheet.EnsureCell(currentRow, 6).SetCellValue(item.UnitName);
-                sheet.EnsureCell(currentRow, 7).SetCellValue(item.EndDate.UnixToDateTime().Value);
-                sheet.EnsureCell(currentRow, 8).SetCellValue(item.Note);
-                int colIndx = 9;
+                sheet.EnsureCell(currentRow, 2).SetCellValue(item.CustomerPO);
+                sheet.EnsureCell(currentRow, 3).SetCellValue(item.ProductCode);
+                sheet.EnsureCell(currentRow, 4).SetCellValue(item.ProductName);
+                sheet.EnsureCell(currentRow, 5).SetCellValue(item.ContainerNumber);
+                sheet.EnsureCell(currentRow, 6).SetCellValue((double)(item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()));
+                sheet.EnsureCell(currentRow, 7).SetCellValue(item.UnitName);
+                sheet.EnsureCell(currentRow, 8).SetCellValue(item.StartDate.UnixToDateTime().Value);
+                sheet.EnsureCell(currentRow, 9).SetCellValue(item.PlanEndDate.UnixToDateTime().Value);
+                sheet.EnsureCell(currentRow, 10).SetCellValue(item.EndDate.UnixToDateTime().Value);
+                sheet.EnsureCell(currentRow, 11).SetCellValue(item.Note);
+
+                int colIndx = 12;
                 foreach (var productCate in productCates)
                 {
                     sheet.EnsureCell(currentRow, colIndx).SetCellValue((double)((item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()) * productCateQuantity[item.ProductId.Value][productCate.ProductCateId]));
