@@ -87,5 +87,14 @@ namespace Verp.Resources.PurchaseOrder.ProductPriceConfig {
                 return ResourceManager.GetString("Updated", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật giá cho các hạng mục tính giá &quot;{0}&quot;.
+        /// </summary>
+        public static string UpdatedItemsPricing {
+            get {
+                return ResourceManager.GetString("UpdatedItemsPricing", resourceCulture);
+            }
+        }
     }
 }
