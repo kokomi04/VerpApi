@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -15,28 +14,20 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
-using VErp.Services.Master.Service.Activity;
-using VErp.Services.Master.Model.Activity;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using AutoMapper.QueryableExtensions;
 using AutoMapper;
 using System.IO;
 using VErp.Services.PurchaseOrder.Model.Request;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using Org.BouncyCastle.Ocsp;
 using Verp.Cache.RedisCache;
 using VErp.Infrastructure.ServiceCore.Facade;
-using System.Linq.Expressions;
-using VErp.Commons.ObjectExtensions.Extensions;
 using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.Library.Model;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement
-{
+namespace VErp.Services.PurchaseOrder.Service.Implement {
     public class PurchasingRequestService : IPurchasingRequestService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;

@@ -11,11 +11,11 @@
     <ProjectReference Include="..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\Commons\Resources\Resources.csproj" />
+    <ProjectReference Include="..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
     <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
-    <ProjectReference Include="..\Services\Master\Services.Master.Service\Services.Master.Service.csproj" />
   </ItemGroup>
 
 </Project>
