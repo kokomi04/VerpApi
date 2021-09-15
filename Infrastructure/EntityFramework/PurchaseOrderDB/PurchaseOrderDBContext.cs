@@ -31,9 +31,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual DbSet<ProductPriceConfig> ProductPriceConfig { get; set; }
         public virtual DbSet<ProductPriceConfigItem> ProductPriceConfigItem { get; set; }
+        public virtual DbSet<ProductPriceConfigItemPrice> ProductPriceConfigItemPrice { get; set; }
         public virtual DbSet<ProductPriceConfigVersion> ProductPriceConfigVersion { get; set; }
-        public virtual DbSet<ProductPriceInfo> ProductPriceInfo { get; set; }
-        public virtual DbSet<ProductPriceInfoItem> ProductPriceInfoItem { get; set; }
         public virtual DbSet<PropertyCalc> PropertyCalc { get; set; }
         public virtual DbSet<PropertyCalcProduct> PropertyCalcProduct { get; set; }
         public virtual DbSet<PropertyCalcProductDetail> PropertyCalcProductDetail { get; set; }
@@ -264,6 +263,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<ProductPriceConfig>(entity =>
             {
+                entity.Property(e => e.Currency).HasMaxLength(128);
+
                 entity.Property(e => e.IsActived)
                     .IsRequired()
                     .HasDefaultValueSql("((1))");
@@ -296,6 +297,29 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasConstraintName("FK_ProductPriceConfigItem_ProductPriceConfigVersion");
             });
 
+            modelBuilder.Entity<ProductPriceConfigItemPrice>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.IsEditable)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.IsForeignPrice)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.ItemKey).HasMaxLength(128);
+
+                entity.Property(e => e.Price).HasColumnType("decimal(18, 4)");
+
+                entity.HasOne(d => d.ProductPriceConfig)
+                    .WithMany(p => p.ProductPriceConfigItemPrice)
+                    .HasForeignKey(d => d.ProductPriceConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductPriceConfigItemPrice_ProductPriceConfig");
+            });
+
             modelBuilder.Entity<ProductPriceConfigVersion>(entity =>
             {
                 entity.Property(e => e.Description).HasMaxLength(1024);
@@ -307,35 +331,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.ProductPriceConfigId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductPriceConfigVersion_ProductPriceConfig");
-            });
-
-            modelBuilder.Entity<ProductPriceInfo>(entity =>
-            {
-                entity.Property(e => e.FinalPrice).HasColumnType("decimal(18, 4)");
-
-                entity.HasOne(d => d.ProductPriceConfigVersion)
-                    .WithMany(p => p.ProductPriceInfo)
-                    .HasForeignKey(d => d.ProductPriceConfigVersionId)
-                    .HasConstraintName("FK_ProductPriceInfo_ProductPriceConfigVersion");
-            });
-
-            modelBuilder.Entity<ProductPriceInfoItem>(entity =>
-            {
-                entity.Property(e => e.Description).HasMaxLength(1024);
-
-                entity.Property(e => e.Title).HasMaxLength(128);
-
-                entity.HasOne(d => d.ProductPriceConfigItem)
-                    .WithMany(p => p.ProductPriceInfoItem)
-                    .HasForeignKey(d => d.ProductPriceConfigItemId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductPriceInfoItem_ProductPriceConfigItem");
-
-                entity.HasOne(d => d.ProductPriceInfo)
-                    .WithMany(p => p.ProductPriceInfoItem)
-                    .HasForeignKey(d => d.ProductPriceInfoId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductPriceInfoItem_ProductPriceInfo");
             });
 
             modelBuilder.Entity<PropertyCalc>(entity =>

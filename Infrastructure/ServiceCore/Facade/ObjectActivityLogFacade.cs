@@ -116,6 +116,11 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         {
             await facade.CreateLog<T>(objectId, messageResourceName, messageResourceFormatData, jsonData, action, ignoreBatch, objectTypeId);
         }
+
+        public object JsonData(object p)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

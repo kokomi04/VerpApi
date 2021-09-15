@@ -126,4 +126,7 @@
   <data name="Updated" xml:space="preserve">
     <value>Cập nhật công thức tính giá  "{0}"</value>
   </data>
+  <data name="UpdatedItemsPricing" xml:space="preserve">
+    <value>Cập nhật giá cho các hạng mục tính giá "{0}"</value>
+  </data>
 </root>

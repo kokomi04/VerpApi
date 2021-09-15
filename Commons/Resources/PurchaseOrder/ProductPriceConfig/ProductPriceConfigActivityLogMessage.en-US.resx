@@ -126,4 +126,7 @@
   <data name="Updated" xml:space="preserve">
     <value>Updated product price calc config "{0}"</value>
   </data>
+  <data name="UpdatedItemsPricing" xml:space="preserve">
+    <value>Updates items pricing for config "{0}"</value>
+  </data>
 </root>

@@ -5,19 +5,16 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
-    public partial class ProductPriceConfigVersion
+    public partial class ProductPriceConfigItemPrice
     {
-        public ProductPriceConfigVersion()
-        {
-            ProductPriceConfigItem = new HashSet<ProductPriceConfigItem>();
-        }
-
-        public int ProductPriceConfigVersionId { get; set; }
+        public long ProductPriceConfigItemPriceId { get; set; }
+        public int SubsidiaryId { get; set; }
         public int ProductPriceConfigId { get; set; }
-        public string Title { get; set; }
+        public bool? IsForeignPrice { get; set; }
+        public bool? IsEditable { get; set; }
+        public string ItemKey { get; set; }
+        public decimal? Price { get; set; }
         public string Description { get; set; }
-        public string EvalSourceCodeJs { get; set; }
-        public string Fields { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -26,6 +23,5 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ProductPriceConfig ProductPriceConfig { get; set; }
-        public virtual ICollection<ProductPriceConfigItem> ProductPriceConfigItem { get; set; }
     }
 }
