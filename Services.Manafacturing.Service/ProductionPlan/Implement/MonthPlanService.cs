@@ -216,6 +216,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var model = _mapper.Map<MonthPlanModel>(monthPlan);
             model.WeekPlans = await _manufacturingDBContext.WeekPlan
                 .Where(wp => wp.MonthPlanId == monthPlanId)
+                .OrderByDescending(wp => wp.StartDate)
                 .ProjectTo<WeekPlanModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
@@ -266,9 +267,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             }
             if (filters != null)
             {
-                monthPlans = monthPlans.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
+                monthPlans = monthPlans.InternalFilter(filters);
             }
-
+            if(string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "StartDate";
+                asc = false;
+            }
+            monthPlans = monthPlans.InternalOrderBy(orderByFieldName, asc);
             var total = await monthPlans.CountAsync();
 
             var lstMonthPlans = (size > 0 ? monthPlans.Skip((page - 1) * size).Take(size) : monthPlans).ProjectTo<MonthPlanModel>(_mapper.ConfigurationProvider).ToList();
