@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.ErrorCodes.PO;
@@ -13,7 +12,6 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
@@ -21,15 +19,13 @@ using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement
-{
+namespace VErp.Services.PurchaseOrder.Service.Implement {
     public class PurchaseOrderService : IPurchaseOrderService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
@@ -38,7 +34,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
-        private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IPurchasingSuggestService _purchasingSuggestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -51,7 +46,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
-           , IObjectGenCodeService objectGenCodeService
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
@@ -63,7 +57,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _purchasingSuggestService = purchasingSuggestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;

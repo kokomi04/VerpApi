@@ -17,7 +17,6 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
@@ -31,7 +30,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         protected ILogger _logger;
         protected IActivityLogService _activityLogService;
         protected ICurrentContextService _currentContext;
-        protected IObjectGenCodeService _objectGenCodeService;
         protected ICustomGenCodeHelperService _customGenCodeHelperService;
         protected IManufacturingHelperService _manufacturingHelperService;
         protected IMapper _mapper;
@@ -42,7 +40,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             ILogger logger,
             IActivityLogService activityLogService,
             ICurrentContextService currentContext,
-            IObjectGenCodeService objectGenCodeService,
             ICustomGenCodeHelperService customGenCodeHelperService,
             IManufacturingHelperService manufacturingHelperService,
             IMapper mapper)
@@ -52,7 +49,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _manufacturingHelperService = manufacturingHelperService;
             _mapper = mapper;

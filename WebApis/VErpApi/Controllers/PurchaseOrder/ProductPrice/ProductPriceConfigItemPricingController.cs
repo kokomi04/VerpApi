@@ -1,16 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.PurchaseOrder.Model.ProductPrice;
 using VErp.Services.PurchaseOrder.Service.ProductPrice;
-using VErp.Services.PurchaseOrder.Service.ProductPrice.Implement;
 
-namespace VErpApi.Controllers.PurchaseOrder.ProductPrice
-{
+namespace VErpApi.Controllers.PurchaseOrder.ProductPrice {
     [Route("api/ProductPrice/ItemPricing")]
     public class ProductPriceConfigItemPricingController : VErpBaseController
     {

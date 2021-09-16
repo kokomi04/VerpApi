@@ -32,6 +32,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
+        public virtual DbSet<HrAction> HrAction { get; set; }
+        public virtual DbSet<HrArea> HrArea { get; set; }
+        public virtual DbSet<HrAreaField> HrAreaField { get; set; }
+        public virtual DbSet<HrField> HrField { get; set; }
+        public virtual DbSet<HrType> HrType { get; set; }
+        public virtual DbSet<HrTypeGlobalSetting> HrTypeGlobalSetting { get; set; }
+        public virtual DbSet<HrTypeGroup> HrTypeGroup { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
@@ -312,6 +319,133 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_EmployeeSubsidiary_Employee");
+            });
+
+            modelBuilder.Entity<HrAction>(entity =>
+            {
+                entity.Property(e => e.HractionCode)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .HasColumnName("HRActionCode");
+
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrAction)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAction_HRType");
+            });
+
+            modelBuilder.Entity<HrArea>(entity =>
+            {
+                entity.Property(e => e.Columns).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.HrAreaCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrArea)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRArea_HRType");
+            });
+
+            modelBuilder.Entity<HrAreaField>(entity =>
+            {
+                entity.HasIndex(e => new { e.HrTypeId, e.HrFieldId }, "IX_InputAreaField")
+                    .IsUnique();
+
+                entity.Property(e => e.Column).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.InputStyleJson).HasMaxLength(512);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
+
+                entity.HasOne(d => d.HrArea)
+                    .WithMany(p => p.HrAreaField)
+                    .HasForeignKey(d => d.HrAreaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAreaField_HRArea");
+
+                entity.HasOne(d => d.HrField)
+                    .WithMany(p => p.HrAreaField)
+                    .HasForeignKey(d => d.HrFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAreaField_HRField");
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrAreaField)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAreaField_HRType");
+            });
+
+            modelBuilder.Entity<HrField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrArea)
+                    .WithMany(p => p.HrField)
+                    .HasForeignKey(d => d.HrAreaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrField_HrArea");
+            });
+
+            modelBuilder.Entity<HrType>(entity =>
+            {
+                entity.Property(e => e.HrTypeCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrTypeGroup)
+                    .WithMany(p => p.HrType)
+                    .HasForeignKey(d => d.HrTypeGroupId)
+                    .HasConstraintName("FK_HRType_HRTypeGroup");
+            });
+
+            modelBuilder.Entity<HrTypeGroup>(entity =>
+            {
+                entity.Property(e => e.HrTypeGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<ObjectProcessObject>(entity =>

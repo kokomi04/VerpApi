@@ -33,6 +33,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly ICategoryHelperService _categoryHelperService;
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
+        private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IStockHelperService _stockHelperService;
         private readonly ICachingService _cachingService;
 
@@ -46,7 +47,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             , IVoucherTypeHelperService voucherTypeHelperService
             , IStockHelperService stockHelperService
             , ICachingService cachingService
-            )
+            , IOrganizationHelperService organizationHelperService)
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
@@ -58,6 +59,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _voucherTypeHelperService = voucherTypeHelperService;
             _stockHelperService = stockHelperService;
             _cachingService = cachingService;
+            _organizationHelperService = organizationHelperService;
         }
 
         public async Task<int> AddRole(RoleInput role, EnumRoleType roleTypeId)
@@ -104,6 +106,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             var inputTypes = roleTypeId == EnumRoleType.Administrator ? await _inputTypeHelperService.GetInputTypeSimpleList() : null;
 
             var voucherTypes = roleTypeId == EnumRoleType.Administrator ? await _voucherTypeHelperService.GetVoucherTypeSimpleList() : null;
+            var hrTypes = roleTypeId == EnumRoleType.Administrator ? await _organizationHelperService.GetHrTypeSimpleList() : null;
 
             var stocks = roleTypeId == EnumRoleType.Administrator ? await _stockHelperService.GetAllStock() : null;
 
@@ -175,6 +178,23 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                     lstPermissions.Add(permission);
                                 }
                                 break;
+
+                            case (int)EnumModule.Hr:
+                                foreach (var c in hrTypes)
+                                {
+                                    var permission = new RolePermissionEntity
+                                    {
+                                        CreatedDatetimeUtc = DateTime.UtcNow,
+                                        ModuleId = m.ModuleId,
+                                        RoleId = roleInfo.RoleId,
+                                        Permission = int.MaxValue,
+                                        ObjectTypeId = (int)EnumObjectType.HrType,
+                                        ObjectId = c.HrTypeId,
+                                    };
+                                    lstPermissions.Add(permission);
+                                }
+                                break;
+
                             default:
 
                                 var modulePermission = new RolePermissionEntity
