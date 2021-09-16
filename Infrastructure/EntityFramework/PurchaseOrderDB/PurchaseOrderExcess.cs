@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
         public long? ProductId { get; set; }
+        public int? SortOrder { get; set; }
 
         public virtual PurchaseOrder PurchaseOrder { get; set; }
     }

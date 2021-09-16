@@ -62,5 +62,8 @@ namespace VErp.Services.PurchaseOrder.Model.Request
         public string ProductionOrderCode { get; set; }
         [Display(Name = "Mô tả", GroupName = "Bổ sung")]
         public string Description { get; set; }
+
+        [Display(Name = "Thứ tự sắp xếp", GroupName = "Bổ sung")]
+        public int? SortOrder { get; set; }
     }
 }

@@ -11,5 +11,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal Quantity { get; set; }
         public long? OutsourceRequestId { get; set; }
         public long? ProductionStepLinkDataId { get; set; }
+        public int? SortOrder { get; set; }
     }
 }

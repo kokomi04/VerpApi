@@ -12,7 +12,8 @@ using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
 
-namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade {
+namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
+{
     public class PurchaseOrderParseExcelFacade
     {
         private readonly IProductHelperService _productHelperService;
@@ -127,7 +128,9 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade {
 
                     IntoMoney = item.IntoMoney,
 
-                    ExchangedMoney = item.ExchangedMoney
+                    ExchangedMoney = item.ExchangedMoney,
+
+                    SortOrder = item.SortOrder
 
                     //TaxInMoney = item.TaxInMoney
                 };
