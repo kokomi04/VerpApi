@@ -49,6 +49,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long VoucherTypeId { get; set; }
         public string OrderCode { get; set; }
         public string ContainerNumber { get; set; }
+        public int ContainerQuantity { get; set; }
         public int? ProductId { get; set; }
         public int UnitId { get; set; }
         public string UnitName { get; set; }
