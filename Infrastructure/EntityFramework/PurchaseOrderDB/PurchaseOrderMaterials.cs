@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsDeleted { get; set; }
         public long? OutsourceRequestId { get; set; }
         public long? ProductionStepLinkDataId { get; set; }
+        public int? SortOrder { get; set; }
 
         public virtual PurchaseOrder PurchaseOrder { get; set; }
     }

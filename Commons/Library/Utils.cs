@@ -398,7 +398,7 @@ namespace VErp.Commons.Library
             return Expression.Lambda<Func<T, object>>(unaryExpression, parameter);
         }
 
-        public static IQueryable<T> SortByFieldName<T>(this IQueryable<T> query, string filedName, bool asc)
+        public static IOrderedQueryable<T> SortByFieldName<T>(this IQueryable<T> query, string filedName, bool asc)
         {
             var type = typeof(T);
 
@@ -411,7 +411,7 @@ namespace VErp.Commons.Library
                     break;
                 }
             }
-            if (propertyInfo == null) return query;
+            if (propertyInfo == null) return query.OrderBy(s => 1);
 
             var ex = propertyInfo.Name.ToMemberOf<T>();
             return asc ? query.OrderBy(ex) : query.OrderByDescending(ex);
@@ -696,7 +696,7 @@ namespace VErp.Commons.Library
         }
 
 
-      
+
 
         public static bool Convertible(this EnumDataType oldType, EnumDataType newType)
         {
@@ -884,7 +884,7 @@ namespace VErp.Commons.Library
             }
         }
 
-     
+
 
         public static bool StringContains(this object value1, object value2)
         {
@@ -1050,7 +1050,7 @@ namespace VErp.Commons.Library
             return obj;
         }
 
-        public static List<T> ConvertDataModel<T>(this DataTable data) where T: NonCamelCaseDictionary, new()
+        public static List<T> ConvertDataModel<T>(this DataTable data) where T : NonCamelCaseDictionary, new()
         {
             var lst = new List<T>();
             for (var i = 0; i < data.Rows.Count; i++)

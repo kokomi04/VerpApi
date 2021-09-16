@@ -7,7 +7,7 @@ namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchaseOrderInput
     {
-        public int CustomerId { get; set; }        
+        public int CustomerId { get; set; }
         public IList<long> FileIds { get; set; }
 
         [Required(ErrorMessage = "")]
@@ -19,7 +19,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long Date { get; set; }
 
-      
+
         public string PurchaseOrderCode { get; set; }
 
         [MaxLength(512)]
@@ -74,6 +74,7 @@ namespace VErp.Services.PurchaseOrder.Model
         // string CurrencyCode { get; set; }
         // decimal? ExchangeRate { get; set; }
         decimal? ExchangedMoney { get; set; }
+        int? SortOrder { get; set; }
     }
 
     public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
@@ -106,6 +107,7 @@ namespace VErp.Services.PurchaseOrder.Model
         // public string CurrencyCode { get; set; }
         // public decimal? ExchangeRate { get; set; }
         public decimal? ExchangedMoney { get; set; }
+        public int? SortOrder { get; set; }
 
     }
 

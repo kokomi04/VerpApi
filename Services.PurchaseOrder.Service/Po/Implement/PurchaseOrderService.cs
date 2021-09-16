@@ -25,7 +25,8 @@ using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement {
+namespace VErp.Services.PurchaseOrder.Service.Implement
+{
     public class PurchaseOrderService : IPurchaseOrderService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
@@ -305,6 +306,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                             pod.OrderCode,
                             pod.ProductionOrderCode,
 
+                            pod.SortOrder,
+
 
                             c.CustomerCode,
                             c.CustomerName,
@@ -393,7 +396,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             }
 
             var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
             var additionResult = await (from q in query
                                         group q by 1 into g
                                         select new
@@ -485,7 +488,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
                     CurrencyId = info.CurrencyId,
                     ExchangedMoney = info.ExchangedMoney,
-                    ExchangeRate = info.ExchangeRate
+                    ExchangeRate = info.ExchangeRate,
+                    SortOrder = info.SortOrder
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
@@ -551,7 +555,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 ExchangeRate = info.ExchangeRate,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
+                Details = details.OrderBy(d => d.SortOrder)
+                .Select(d =>
                 {
                     assignmentDetails.TryGetValue(d.PoAssignmentDetailId ?? 0, out var assignmentDetailInfo);
 
@@ -579,6 +584,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                         IntoMoney = d.IntoMoney,
 
                         ExchangedMoney = d.ExchangedMoney,
+                        SortOrder = d.SortOrder
                     };
                 }).ToList()
             };
@@ -678,10 +684,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                         DeletedDatetimeUtc = null,
                         IntoMoney = d.IntoMoney,
 
-                        ExchangedMoney = d.ExchangedMoney
+                        ExchangedMoney = d.ExchangedMoney,
+                        SortOrder = d.SortOrder
                     };
                 }).ToList();
 
+                var sortOrder = 1;
+                foreach (var item in poDetails)
+                {
+                    item.SortOrder = sortOrder++;
+                }
 
                 await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
 
@@ -776,7 +788,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 info.DeletedDatetimeUtc = null;
                 info.TaxInPercent = model.TaxInPercent;
                 info.TaxInMoney = model.TaxInMoney;
-                
+
                 info.CurrencyId = model.CurrencyId;
                 info.ExchangeRate = model.ExchangeRate;
 
@@ -824,6 +836,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                             detail.IntoMoney = item.IntoMoney;
                             detail.ExchangedMoney = item.ExchangedMoney;
+                            detail.SortOrder = item.SortOrder;
                             break;
                         }
                     }
@@ -855,6 +868,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                             DeletedDatetimeUtc = null,
                             IntoMoney = item.IntoMoney,
                             ExchangedMoney = item.ExchangedMoney,
+                            SortOrder = item.SortOrder
                         });
                     }
                 }
@@ -888,6 +902,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                         DeletedDatetimeUtc = null,
                         IsDeleted = false
                     }));
+                }
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                var allDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                var sortOrder = 1;
+                foreach (var item in allDetails)
+                {
+                    item.SortOrder = sortOrder++;
                 }
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -952,7 +975,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                  .ParseInvoiceDetails(mapping, extra, stream);
         }
 
-       
+
 
         public async Task<bool> Checked(long purchaseOrderId)
         {
@@ -1167,6 +1190,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 join sd in _purchaseOrderDBContext.PurchaseOrderDetail on s.PurchaseOrderId equals sd.PurchaseOrderId
                 join r in _purchaseOrderDBContext.PurchasingSuggestDetail on sd.PurchasingSuggestDetailId equals r.PurchasingSuggestDetailId
                 where purchasingSuggestIds.Contains(r.PurchasingSuggestId)
+                orderby sd.SortOrder
                 select new
                 {
                     r.PurchasingSuggestId,
@@ -1195,6 +1219,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 join sd in _purchaseOrderDBContext.PurchaseOrderDetail on s.PurchaseOrderId equals sd.PurchaseOrderId
                 join r in _purchaseOrderDBContext.PoAssignmentDetail on sd.PoAssignmentDetailId equals r.PoAssignmentDetailId
                 where poAssignmentIds.Contains(r.PoAssignmentId)
+                orderby sd.SortOrder
                 select new
                 {
                     r.PoAssignmentId,

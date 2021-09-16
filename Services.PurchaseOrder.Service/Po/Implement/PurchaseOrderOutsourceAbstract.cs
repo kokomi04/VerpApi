@@ -22,7 +22,7 @@ using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
-   
+
     public abstract class PurchaseOrderOutsourceAbstract
     {
         protected PurchaseOrderDBContext _purchaseOrderDBContext;
@@ -133,9 +133,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             IntoMoney = d.IntoMoney,
 
                             ExchangedMoney = d.ExchangedMoney,
+                            SortOrder = d.SortOrder
                         };
                     }).ToList();
 
+                    var sortOrder = 1;
+                    foreach (var item in poDetails)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
 
                     await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
 
@@ -157,7 +163,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         foreach (var excess in model.Excess)
                             excess.PurchaseOrderId = po.PurchaseOrderId;
 
-                        await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(_mapper.Map<IList<PurchaseOrderExcess>>(model.Excess));
+                        var lst = _mapper.Map<IList<PurchaseOrderExcess>>(model.Excess).OrderBy(s => s.SortOrder).ToList();
+                        sortOrder = 1;
+                        foreach (var item in lst)
+                        {
+                            item.SortOrder = sortOrder++;
+                        }
+                        await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(lst);
                     }
 
                     if (model.Materials?.Count > 0)
@@ -165,7 +177,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         foreach (var material in model.Materials)
                             material.PurchaseOrderId = po.PurchaseOrderId;
 
-                        await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(_mapper.Map<IList<PurchaseOrderMaterials>>(model.Materials));
+                        var lst = _mapper.Map<IList<PurchaseOrderMaterials>>(model.Materials).OrderBy(s => s.SortOrder).ToList();
+                        sortOrder = 1;
+                        foreach (var item in lst)
+                        {
+                            item.SortOrder = sortOrder++;
+                        }
+                        await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync();
                     }
 
 
@@ -271,6 +289,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.IntoMoney = item.IntoMoney;
 
                                 detail.ExchangedMoney = item.ExchangedMoney;
+
+                                detail.SortOrder = item.SortOrder;
                                 break;
                             }
                         }
@@ -297,6 +317,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 IntoMoney = item.IntoMoney,
 
                                 ExchangedMoney = item.ExchangedMoney,
+                                SortOrder = item.SortOrder
                             });
                         }
                     }
@@ -376,8 +397,32 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(newExcesses);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
+                    var allDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                    var allExcesses = await _purchaseOrderDBContext.PurchaseOrderExcess.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                    var allMaterials = await _purchaseOrderDBContext.PurchaseOrderMaterials.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+
+                    var sortOrder = 1;
+                    foreach (var item in allDetails)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
+
+                    sortOrder = 1;
+                    foreach (var item in allExcesses)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
+
+                    sortOrder = 1;
+                    foreach (var item in allMaterials)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
                     trans.Commit();
-                    
+
                     await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật PO {info.PurchaseOrderCode}", info.JsonSerialize());
@@ -506,7 +551,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 ExchangeRate = info.ExchangeRate,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
+                Details = details.OrderBy(d => d.SortOrder)
+                .Select(d =>
                 {
                     return new PurchaseOrderOutputDetail()
                     {
@@ -530,14 +576,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         IntoMoney = d.IntoMoney,
 
                         ExchangedMoney = d.ExchangedMoney,
+                        SortOrder = d.SortOrder
                     };
                 }).ToList(),
-                Excess = excess,
-                Materials = materials
+                Excess = excess.OrderBy(e => e.SortOrder).ToList(),
+                Materials = materials.OrderBy(m => m.SortOrder).ToList()
             };
         }
 
-        protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId){
+        protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId)
+        {
             var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
             if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
@@ -582,7 +630,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             return await Task.FromResult(GeneralCode.InternalError);
         }
-        
+
         private async Task<bool> CreatePurchaseOrderTracked(long purchaseOrderId)
         {
             var track = new purchaseOrderTrackedModel

@@ -26,6 +26,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int? SortOrder { get; set; }
 
         public virtual PoAssignment PoAssignment { get; set; }
         public virtual PurchasingSuggestDetail PurchasingSuggestDetail { get; set; }

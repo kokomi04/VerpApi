@@ -63,6 +63,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public decimal? TotalMoney { get; set; }
         public decimal? IntoMoney { get; set; }
+        public int? SortOrder { get; set; }
 
         public PurchasingRequestDetailInfo RequestDetail { get; set; }
 

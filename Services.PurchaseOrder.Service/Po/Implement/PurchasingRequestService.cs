@@ -27,7 +27,8 @@ using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.Library.Model;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement {
+namespace VErp.Services.PurchaseOrder.Service.Implement
+{
     public class PurchasingRequestService : IPurchasingRequestService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
@@ -81,7 +82,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
             var data = _mapper.Map<PurchasingRequestOutput>(info);
 
-            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
+                .OrderBy(d => d.SortOrder)
+                .ToList();
 
             return data;
         }
@@ -101,7 +104,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
             var data = _mapper.Map<PurchasingRequestOutput>(info);
 
-            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
+                    .OrderBy(d => d.SortOrder)
+                    .ToList();
 
             return data;
         }
@@ -200,7 +205,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                             d.PrimaryQuantity,
                             d.ProductUnitConversionId,
                             d.ProductUnitConversionQuantity,
-                            d.Description
+                            d.Description,
+                            d.SortOrder
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -247,7 +253,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
 
             var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(s => s.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
             var result = new List<PurchasingRequestOutputListByProduct>();
             foreach (var info in pagedData)
             {
@@ -278,7 +284,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                     ProductUnitConversionQuantity = info.ProductUnitConversionQuantity,
 
                     Description = info.Description,
-                    PurchasingRequestTypeId = (EnumPurchasingRequestType)info.PurchasingRequestTypeId
+                    PurchasingRequestTypeId = (EnumPurchasingRequestType)info.PurchasingRequestTypeId,
+                    SortOrder = info.SortOrder
+
                 });
             }
 
@@ -373,10 +381,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
+                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d))
+                    .OrderBy(d => d.SortOrder)
+                    .ToList();
 
+                var sortOrder = 1;
                 foreach (var item in purchasingRequestDetailList)
                 {
+                    item.SortOrder = sortOrder++;
                     item.PurchasingRequestId = purchasingRequest.PurchasingRequestId;
 
                     item.CreatedDatetimeUtc = DateTime.UtcNow;
@@ -476,9 +488,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                     }
 
 
-                    var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
+                    var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d))
+                        .OrderBy(d => d.SortOrder)
+                        .ToList();
+                    var sortOrder = 1;
                     foreach (var item in purchasingRequestDetailList)
                     {
+                        item.SortOrder = sortOrder++;
+
                         item.PurchasingRequestId = purchasingRequestId;
 
                         item.CreatedDatetimeUtc = DateTime.UtcNow;
@@ -760,7 +777,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
             var data = _mapper.Map<PurchasingRequestOutput>(info);
 
-            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
+                    .OrderBy(d => d.SortOrder)
+                    .ToList();
 
             return data;
         }
