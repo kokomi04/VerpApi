@@ -935,7 +935,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                            {
                                s.StepId,
                                sd.DepartmentId,
-                               sd.Quantity,
+                               s.Productivity,
                                sd.NumberOfPerson,
                                s.UnitId
                            })
@@ -945,7 +945,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     .ToDictionary(g => g.Key, g => g.ToDictionary(sd => sd.DepartmentId, sd => new ProductivityModel
                     {
                         NumberOfPerson = sd.NumberOfPerson,
-                        ProductivityPerPerson = sd.Quantity,
+                        ProductivityPerPerson = sd.Productivity.GetValueOrDefault(),
                         UnitId = sd.UnitId
                     }));
         }
