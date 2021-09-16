@@ -116,6 +116,11 @@ namespace Verp.Cache.RedisCache
             return $"VOUCHERTYPE_LOCK_{voucherTypeId}";
         }
 
+        public static string GetLockHrTypeKey(int hrTypeId)
+        {
+            return $"HRTYPE_LOCK_{hrTypeId}";
+        }
+
         public static string GetLockStockResourceKey(int stockId)
         {
             return $"STOCK_LOCK_{stockId}";

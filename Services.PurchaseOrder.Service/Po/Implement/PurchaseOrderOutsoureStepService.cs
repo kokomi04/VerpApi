@@ -15,11 +15,9 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement
-{
+namespace VErp.Services.PurchaseOrder.Service.Implement {
 
     public class PurchaseOrderOutsourceStepService : PurchaseOrderOutsourceAbstract, IPurchaseOrderOutsourceStepService
     {
@@ -29,7 +27,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             ILogger<PurchaseOrderOutsourcePartService> logger,
             IActivityLogService activityLogService,
             ICurrentContextService currentContext,
-            IObjectGenCodeService objectGenCodeService,
             ICustomGenCodeHelperService customGenCodeHelperService,
             IManufacturingHelperService manufacturingHelperService,
             IMapper mapper) : base(
@@ -38,7 +35,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 logger,
                 activityLogService,
                 currentContext,
-                objectGenCodeService,
                 customGenCodeHelperService,
                 manufacturingHelperService,
                 mapper)

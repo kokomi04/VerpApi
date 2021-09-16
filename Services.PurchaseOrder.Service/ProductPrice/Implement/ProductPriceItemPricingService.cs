@@ -1,28 +1,20 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.PurchaseOrder.ProductPriceConfig;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model.ProductPrice;
 using VErp.Commons.Library;
 
-namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
-{
-  
+namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement {
+
 
     public class ProductPriceItemPricingService : IProductPriceItemPricingService
     {

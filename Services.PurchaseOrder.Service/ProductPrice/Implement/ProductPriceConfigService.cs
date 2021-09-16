@@ -3,10 +3,8 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -16,13 +14,11 @@ using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model.ProductPrice;
 using VErp.Commons.Library;
 using Verp.Resources.PurchaseOrder.ProductPriceConfig;
 
-namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
-{
+namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement {
     public class ProductPriceConfigService : IProductPriceConfigService
     {
 
@@ -32,7 +28,6 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
-        private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IPurchasingSuggestService _purchasingSuggestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -46,7 +41,6 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
-           , IObjectGenCodeService objectGenCodeService
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
@@ -59,7 +53,6 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _purchasingSuggestService = purchasingSuggestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
