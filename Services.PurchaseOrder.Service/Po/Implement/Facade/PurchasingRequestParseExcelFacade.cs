@@ -11,7 +11,8 @@ using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.Library.Model;
-namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade {
+namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
+{
     public class PurchasingRequestParseExcelFacade
     {
         private readonly IProductHelperService _productHelperService;
@@ -164,7 +165,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade {
 
                 item.ProductInternalName = item.ProductName?.NormalizeAsInternalName();
             }
-            return data;
+            return data.OrderBy(d => d.SortOrder).ToList();
         }
 
     }

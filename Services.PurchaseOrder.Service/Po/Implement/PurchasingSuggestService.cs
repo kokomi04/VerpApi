@@ -95,32 +95,33 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 RejectCount = info.RejectCount,
                 Content = info.Content,
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
-                {
-                    requestDetailInfos.TryGetValue(d.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
+                Details = details.OrderBy(d => d.SortOrder).Select(d =>
+                  {
+                      requestDetailInfos.TryGetValue(d.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
 
-                    return new PurchasingSuggestDetailOutputModel()
-                    {
-                        RequestDetail = requestDetailInfo,
+                      return new PurchasingSuggestDetailOutputModel()
+                      {
+                          RequestDetail = requestDetailInfo,
 
-                        PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
-                        ProductId = d.ProductId,
-                        PrimaryQuantity = d.PrimaryQuantity,
-                        PrimaryUnitPrice = d.PrimaryUnitPrice,
+                          PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
+                          ProductId = d.ProductId,
+                          PrimaryQuantity = d.PrimaryQuantity,
+                          PrimaryUnitPrice = d.PrimaryUnitPrice,
 
-                        ProductUnitConversionId = d.ProductUnitConversionId,
-                        ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                        ProductUnitConversionPrice = d.ProductUnitConversionPrice,
+                          ProductUnitConversionId = d.ProductUnitConversionId,
+                          ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                          ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        OrderCode = d.OrderCode,
-                        ProductionOrderCode = d.ProductionOrderCode,
+                          OrderCode = d.OrderCode,
+                          ProductionOrderCode = d.ProductionOrderCode,
 
-                        CustomerId = d.CustomerId,
+                          CustomerId = d.CustomerId,
 
-                        Description = d.Description,
-                        IntoMoney = d.IntoMoney
-                    };
-                }
+                          Description = d.Description,
+                          IntoMoney = d.IntoMoney,
+                          SortOrder = d.SortOrder
+                      };
+                  }
                 ).ToList()
             };
 
@@ -1248,7 +1249,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         .ToList();
 
                     var sortOrder = 1;
-                    foreach(var item in poAssignmentDetails)
+                    foreach (var item in poAssignmentDetails)
                     {
                         item.SortOrder = sortOrder++;
                     }
@@ -1315,7 +1316,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 detail.TaxInPercent = item.TaxInPercent;
                                 detail.TaxInMoney = item.TaxInMoney;
-                                
+
                                 detail.SortOrder = item.SortOrder;
                                 break;
                             }
@@ -1340,7 +1341,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     var allDetails = await _purchaseOrderDBContext.PoAssignmentDetail.Where(d => d.PoAssignmentId == poAssignmentId).ToListAsync();
                     var sortOrder = 1;
-                    foreach(var item in allDetails)
+                    foreach (var item in allDetails)
                     {
                         item.SortOrder = sortOrder++;
                     }

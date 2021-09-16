@@ -166,7 +166,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 item.ProductInternalName = item.ProductName?.NormalizeAsInternalName();
             }
-            return data;
+            return data.OrderBy(d=>d.SortOrder).ToList();
         }
 
     }

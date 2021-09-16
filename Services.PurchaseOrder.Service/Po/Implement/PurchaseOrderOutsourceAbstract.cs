@@ -551,7 +551,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 ExchangeRate = info.ExchangeRate,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
+                Details = details.OrderBy(d => d.SortOrder)
+                .Select(d =>
                 {
                     return new PurchaseOrderOutputDetail()
                     {
@@ -578,8 +579,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         SortOrder = d.SortOrder
                     };
                 }).ToList(),
-                Excess = excess,
-                Materials = materials
+                Excess = excess.OrderBy(e => e.SortOrder).ToList(),
+                Materials = materials.OrderBy(m => m.SortOrder).ToList()
             };
         }
 

@@ -555,7 +555,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 ExchangeRate = info.ExchangeRate,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
+                Details = details.OrderBy(d => d.SortOrder)
+                .Select(d =>
                 {
                     assignmentDetails.TryGetValue(d.PoAssignmentDetailId ?? 0, out var assignmentDetailInfo);
 
@@ -907,7 +908,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 var allDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
                 var sortOrder = 1;
-                foreach(var item in allDetails)
+                foreach (var item in allDetails)
                 {
                     item.SortOrder = sortOrder++;
                 }
