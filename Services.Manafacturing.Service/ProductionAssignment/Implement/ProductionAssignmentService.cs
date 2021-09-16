@@ -139,7 +139,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 if (productionStepAssignments.ProductionAssignments.Any(a => a.ProductionOrderId != productionOrderId || a.ProductionStepId != productionStepAssignments.ProductionStepId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin kế công đoạn sản xuất giữa các tổ không khớp");
                 if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
-                if (productionStepAssignments.ProductionAssignments.Any(a => a.Productivity <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Năng suất không hợp lệ");
+                //if (productionStepAssignments.ProductionAssignments.Any(a => a.Productivity <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Năng suất không hợp lệ");
 
                 var linkDatas = step.ProductionStepLinkDataRole
                 .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
@@ -330,7 +330,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
-            if (data.Any(a => a.Productivity <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Năng suất không hợp lệ");
+            //if (data.Any(a => a.Productivity <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Năng suất không hợp lệ");
 
             var productionOderDetails = (
                 from po in _manufacturingDBContext.ProductionOrder

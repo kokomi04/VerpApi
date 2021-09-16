@@ -256,13 +256,13 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                                        std.ProductUnitConversionId,
                                        std.PrimaryQuantity
                                    })
-                                     .GroupBy(d => new { d.ProductId, d.ProductUnitConversionId })
-                                     .Select(g => new StockTakeResultModel
-                                     {
-                                         ProductId = g.Key.ProductId,
-                                         ProductUnitConversionId = g.Key.ProductUnitConversionId,
-                                         PrimaryQuantity = g.Sum(d => d.PrimaryQuantity)
-                                     }).ToList();
+                                   .GroupBy(d => new { d.ProductId, d.ProductUnitConversionId })
+                                   .Select(g => new StockTakeResultModel
+                                   {
+                                       ProductId = g.Key.ProductId,
+                                       ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                                       PrimaryQuantity = g.Sum(d => d.PrimaryQuantity)
+                                   }).ToList();
 
             var productIds = stockTakeResult.Select(p => p.ProductId).ToList();
 
