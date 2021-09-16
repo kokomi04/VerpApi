@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Infrastructure\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
     <ProjectReference Include="..\Services.Organization.Model\Services.Organization.Model.csproj" />

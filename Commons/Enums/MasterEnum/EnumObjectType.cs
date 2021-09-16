@@ -305,6 +305,19 @@ namespace VErp.Commons.Enums.MasterEnum
         DepartmentDayOffCalendar = 603,
 
         [Description("Lịch tăng ca của bộ phận")]
-        DepartmentOverHour = 604
+        DepartmentOverHour = 604,
+        
+        [Description("Nhóm chứng từ hành chính nhân sự")]
+        HrTypeGroup = 1036,
+
+        [Description("Loại chứng từ hành chính nhân sự")]
+        HrType = 1037,
+
+        [Description("Cấu hình chứng từ hành chính nhân sự")]
+        HrTypeGlobalSetting = 1038,
+         [Description("Trường dữ liệu vùng chứng từ hành chính nhân sự")]
+        HrAreaField = 1039,
+        [Description("Dòng chứng từ hành chính nhân sự")]
+        HrTypeRow = 1040
     }
 }

@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\..\Commons\GlobalObject\GlobalObject.csproj" />
     <ProjectReference Include="..\..\..\Infrastructure\EntityFramework\OrganizationDB\OrganizationDB.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\ServiceCore\ServiceCore.csproj" />
   </ItemGroup>
 
 </Project>
