@@ -71,6 +71,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     StockId = item.StockId,
                     StockName = item.StockName,
+                    StockCode = item.StockCode,
                     Description = item.Description,
                     StockKeeperId = item.StockKeeperId,
                     StockKeeperName = item.StockKeeperName,
