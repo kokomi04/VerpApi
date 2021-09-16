@@ -70,6 +70,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
         {
+            if (productIds.Count == 0) return new List<ProductElementModel>();
+
             if (!_stockDbContext.Product.Any(p => productIds.Contains(p.ProductId))) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             var parammeters = new SqlParameter[]
