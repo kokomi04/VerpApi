@@ -47,6 +47,13 @@ namespace VErpApi.Controllers.System
             return await _calendarService.UpdateWeekCalendar(data);
         }
 
+        [HttpDelete]
+        [Route("startDate")]
+        public async Task<bool> DeleteWeekCalendar([FromRoute] long startDate)
+        {
+            return await _calendarService.DeleteWeekCalendar(startDate);
+        }
+
         [HttpGet]
         [Route("dayoff")]
         public async Task<IList<DayOffCalendarModel>> GetDayOffCalendar([FromQuery] long startDate, [FromQuery] long endDate)

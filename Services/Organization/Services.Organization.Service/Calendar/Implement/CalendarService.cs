@@ -251,12 +251,50 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             }
         }
 
+        public async Task<bool> DeleteWeekCalendar(long startDate)
+        {
+            using var trans = await _organizationContext.Database.BeginTransactionAsync();
+            try
+            {
+                DateTime time = startDate.UnixToDateTime().Value;
+                var workingHourInfo = await _organizationContext.WorkingHourInfo.FirstOrDefaultAsync(wh => wh.StartDate == time);
+
+                if (workingHourInfo != null)
+                {
+                    _organizationContext.WorkingHourInfo.Remove(workingHourInfo);
+                }
+
+                var workingWeeks = await _organizationContext.WorkingWeekInfo
+                  .Where(ww => ww.StartDate == time)
+                  .ToListAsync();
+
+                if(workingWeeks.Count > 0)
+                {
+                    _organizationContext.WorkingWeekInfo.RemoveRange(workingWeeks);
+                }
+
+                await _organizationContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Xóa thay đổi lịch làm việc ngày {time.ToString()}", string.Empty);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "DeleteCalendar");
+                throw;
+            }
+        }
+
+
         public async Task<WeekCalendarModel> UpdateWeekCalendar(WeekCalendarModel data)
         {
             using var trans = await _organizationContext.Database.BeginTransactionAsync();
             try
             {
-                DateTime time = data.StartDate.HasValue? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
+                DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
                 // Update workingHour per day
                 var currentWorkingHourInfo = await _organizationContext.WorkingHourInfo
                   .Where(wh => wh.StartDate <= time)
