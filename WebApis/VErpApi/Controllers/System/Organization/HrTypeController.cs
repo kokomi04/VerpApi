@@ -82,9 +82,9 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("areas/{hrAreaId}/fields")]
-        public async Task<HrFieldInputModel> AddHrField([FromRoute] int hrAreaId, [FromBody] HrFieldInputModel hrAreaField)
+        public async Task<HrFieldInputModel> AddHrField([FromRoute] int hrAreaId, [FromBody] HrFieldInputModel hrField)
         {
-            return await _hrAreaService.AddHrField(hrAreaId, hrAreaField).ConfigureAwait(true);
+            return await _hrAreaService.AddHrField(hrAreaId, hrField).ConfigureAwait(true);
         }
 
         [HttpPut]
@@ -122,12 +122,12 @@ namespace VErpApi.Controllers.System
             return await _hrTypeService.AddHrType(category).ConfigureAwait(true);
         }
 
-        // [HttpPost]
-        // [Route("{hrTypeId}/clone")]
-        // public async Task<int> CloneHrType([FromRoute] int hrTypeId)
-        // {
-        //     return await _hrTypeService.CloneHrType(hrTypeId).ConfigureAwait(true);
-        // }
+        [HttpPost]
+        [Route("{hrTypeId}/clone")]
+        public async Task<int> CloneHrType([FromRoute] int hrTypeId)
+        {
+            return await _hrTypeService.CloneHrType(hrTypeId).ConfigureAwait(true);
+        }
 
         [HttpGet]
         [Route("{hrTypeId}")]
@@ -237,7 +237,7 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet]
-        [Route("{hrTypeId}/areas/{hrAreaId}/hrareafields")]
+        [Route("{hrTypeId}/areas/{hrAreaId}/areafields")]
         public async Task<PageData<HrAreaFieldOutputFullModel>> GetHrAreaFields([FromRoute] int hrTypeId, [FromRoute] int hrAreaId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _hrAreaService.GetHrAreaFields(hrTypeId, hrAreaId, keyword, page, size).ConfigureAwait(true);
