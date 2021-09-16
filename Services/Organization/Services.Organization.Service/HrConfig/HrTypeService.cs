@@ -28,7 +28,7 @@ namespace VErp.Services.Organization.Service.HrConfig
     {
         Task<int> AddHrType(HrTypeModel data);
         Task<bool> UpdateHrType(int hrTypeId, HrTypeModel data);
-        // Task<int> CloneHrType(int hrTypeId);
+        Task<int> CloneHrType(int hrTypeId);
         Task<bool> DeleteHrType(int hrTypeId);
         Task<IList<HrTypeFullModel>> GetAllHrTypes();
         Task<HrTypeFullModel> GetHrType(int hrTypeId);
@@ -258,99 +258,121 @@ namespace VErp.Services.Organization.Service.HrConfig
             return code;
         }
 
-        // public async Task<int> CloneHrType(int hrTypeId)
-        // {
-        //     using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(0));
-        //     var sourceHr = await _organizationDBContext.HrType
-        //         .Include(i => i.HrArea)
-        //         .Include(a => a.HrAreaField)
-        //         .FirstOrDefaultAsync(i => i.HrTypeId == hrTypeId);
-        //     if (sourceHr == null)
-        //     {
-        //         throw new BadRequestException(HrErrorCode.SourceHrTypeNotFound);
-        //     }
+        public async Task<int> CloneHrType(int hrTypeId)
+        {
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(0));
+            var sourceHr = await _organizationDBContext.HrType
+                .Include(i => i.HrArea)
+                .Include(a => a.HrAreaField)
+                .ThenInclude(f => f.HrField)
+                .Where(i => i.HrTypeId == hrTypeId)
+                .AsNoTracking()
+                .FirstOrDefaultAsync();
 
-        //     using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
-        //     try
-        //     {
-        //         var cloneType = new HrType
-        //         {
-        //             HrTypeCode = GetStringClone(sourceHr.HrTypeCode),
-        //             Title = GetStringClone(sourceHr.Title),
-        //             HrTypeGroupId = sourceHr.HrTypeGroupId,
-        //             SortOrder = sourceHr.SortOrder,
-        //             PreLoadAction = sourceHr.PreLoadAction,
-        //             PostLoadAction = sourceHr.PostLoadAction,
-        //             AfterLoadAction = sourceHr.AfterLoadAction,
-        //             BeforeSubmitAction = sourceHr.BeforeSubmitAction,
-        //             BeforeSaveAction = sourceHr.BeforeSaveAction,
-        //             AfterSaveAction = sourceHr.AfterSaveAction,
-        //             AfterUpdateRowsJsAction = sourceHr.AfterUpdateRowsJsAction,
-        //         };
-        //         await _organizationDBContext.HrType.AddAsync(cloneType);
-        //         await _organizationDBContext.SaveChangesAsync();
+            if (sourceHr == null)
+            {
+                throw new BadRequestException(HrErrorCode.SourceHrTypeNotFound);
+            }
 
-        //         foreach (var area in sourceHr.HrArea)
-        //         {
-        //             var cloneArea = new HrArea
-        //             {
-        //                 HrTypeId = cloneType.HrTypeId,
-        //                 HrAreaCode = area.HrAreaCode,
-        //                 Title = area.Title,
-        //                 Description = area.Description,
-        //                 IsMultiRow = area.IsMultiRow,
-        //                 IsAddition = area.IsAddition,
-        //                 Columns = area.Columns,
-        //                 SortOrder = area.SortOrder
-        //             };
-        //             await _organizationDBContext.HrArea.AddAsync(cloneArea);
-        //             await _organizationDBContext.SaveChangesAsync();
+            using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var cloneType = new HrType
+                {
+                    HrTypeCode = GetStringClone(sourceHr.HrTypeCode),
+                    Title = GetStringClone(sourceHr.Title),
+                    HrTypeGroupId = sourceHr.HrTypeGroupId,
+                    SortOrder = sourceHr.SortOrder,
+                    PreLoadAction = sourceHr.PreLoadAction,
+                    PostLoadAction = sourceHr.PostLoadAction,
+                    AfterLoadAction = sourceHr.AfterLoadAction,
+                    BeforeSubmitAction = sourceHr.BeforeSubmitAction,
+                    BeforeSaveAction = sourceHr.BeforeSaveAction,
+                    AfterSaveAction = sourceHr.AfterSaveAction,
+                    AfterUpdateRowsJsAction = sourceHr.AfterUpdateRowsJsAction,
+                };
+                await _organizationDBContext.HrType.AddAsync(cloneType);
+                await _organizationDBContext.SaveChangesAsync();
 
-        //             foreach (var field in sourceHr.HrAreaField.Where(f => f.HrAreaId == area.HrAreaId).ToList())
-        //             {
-        //                 var cloneField = new HrAreaField
-        //                 {
-        //                     HrFieldId = field.HrFieldId,
-        //                     HrTypeId = cloneType.HrTypeId,
-        //                     HrAreaId = cloneArea.HrAreaId,
-        //                     Title = field.Title,
-        //                     Placeholder = field.Placeholder,
-        //                     SortOrder = field.SortOrder,
-        //                     IsAutoIncrement = field.IsAutoIncrement,
-        //                     IsRequire = field.IsRequire,
-        //                     IsUnique = field.IsUnique,
-        //                     IsHidden = field.IsHidden,
-        //                     RegularExpression = field.RegularExpression,
-        //                     DefaultValue = field.DefaultValue,
-        //                     Filters = field.Filters,
-        //                     Width = field.Width,
-        //                     Height = field.Height,
-        //                     TitleStyleJson = field.TitleStyleJson,
-        //                     InputStyleJson = field.InputStyleJson,
-        //                     OnFocus = field.OnFocus,
-        //                     OnKeydown = field.OnKeydown,
-        //                     OnKeypress = field.OnKeypress,
-        //                     OnBlur = field.OnBlur,
-        //                     OnChange = field.OnChange,
-        //                     AutoFocus = field.AutoFocus,
-        //                     Column = field.Column
-        //                 };
-        //                 await _organizationDBContext.HrAreaField.AddAsync(cloneField);
-        //             }
-        //         }
-        //         await _organizationDBContext.SaveChangesAsync();
-        //         trans.Commit();
+                foreach (var area in sourceHr.HrArea)
+                {
+                    var cloneArea = new HrArea
+                    {
+                        HrTypeId = cloneType.HrTypeId,
+                        HrAreaCode = area.HrAreaCode,
+                        Title = area.Title,
+                        Description = area.Description,
+                        IsMultiRow = area.IsMultiRow,
+                        IsAddition = area.IsAddition,
+                        Columns = area.Columns,
+                        SortOrder = area.SortOrder
+                    };
+                    await _organizationDBContext.HrArea.AddAsync(cloneArea);
+                    await _organizationDBContext.SaveChangesAsync();
 
-        //         await _activityLogService.CreateLog(EnumObjectType.HrType, cloneType.HrTypeId, $"Thêm chứng từ hành chính nhân sự {cloneType.Title}", cloneType.JsonSerialize());
-        //         return cloneType.HrTypeId;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         trans.TryRollbackTransaction();
-        //         _logger.LogError(ex, "HrTypeService: CloneHrType");
-        //         throw;
-        //     }
-        // }
+                    await _organizationDBContext.ExecuteStoreProcedure("asp_Hr_Area_Table_Add", new[] {
+                        new SqlParameter("@HrAreaTableName", GetHrAreaTableName(cloneType.HrTypeCode, cloneArea.HrAreaCode)),
+                    });
+
+                    foreach (var field in sourceHr.HrAreaField.Where(f => f.HrAreaId == area.HrAreaId).ToList())
+                    {
+                        var cloneField = field.HrField;
+                        cloneField.HrFieldId = 0;
+                        cloneField.HrAreaId = cloneArea.HrAreaId;
+
+                        await _organizationDBContext.HrArea.AddAsync(cloneArea);
+                        await _organizationDBContext.SaveChangesAsync();
+
+                        if (cloneField.FormTypeId != (int)EnumFormType.ViewOnly)
+                        {
+                            await _organizationDBContext.AddColumn(GetHrAreaTableName(cloneType.HrTypeCode, cloneArea.HrAreaCode), cloneField.FieldName, (EnumDataType)cloneField.DataTypeId, cloneField.DataSize, cloneField.DecimalPlace, cloneField.DefaultValue, true);
+                        }
+
+                        var cloneAreaField = new HrAreaField
+                        {
+                            HrFieldId = cloneField.HrFieldId,
+                            HrTypeId = cloneType.HrTypeId,
+                            HrAreaId = cloneArea.HrAreaId,
+                            Title = field.Title,
+                            Placeholder = field.Placeholder,
+                            SortOrder = field.SortOrder,
+                            IsAutoIncrement = field.IsAutoIncrement,
+                            IsRequire = field.IsRequire,
+                            IsUnique = field.IsUnique,
+                            IsHidden = field.IsHidden,
+                            RegularExpression = field.RegularExpression,
+                            DefaultValue = field.DefaultValue,
+                            Filters = field.Filters,
+                            Width = field.Width,
+                            Height = field.Height,
+                            TitleStyleJson = field.TitleStyleJson,
+                            InputStyleJson = field.InputStyleJson,
+                            OnFocus = field.OnFocus,
+                            OnKeydown = field.OnKeydown,
+                            OnKeypress = field.OnKeypress,
+                            OnBlur = field.OnBlur,
+                            OnChange = field.OnChange,
+                            AutoFocus = field.AutoFocus,
+                            Column = field.Column
+                        };
+                        await _organizationDBContext.HrAreaField.AddAsync(cloneAreaField);
+                        
+
+                    }
+                }
+                await _organizationDBContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.HrType, cloneType.HrTypeId, $"Thêm chứng từ hành chính nhân sự {cloneType.Title}", cloneType.JsonSerialize());
+                return cloneType.HrTypeId;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "HrTypeService: CloneHrType");
+                throw;
+            }
+        }
 
         public async Task<bool> UpdateHrType(int hrTypeId, HrTypeModel data)
         {
