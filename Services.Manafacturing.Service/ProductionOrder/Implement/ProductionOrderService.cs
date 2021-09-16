@@ -394,6 +394,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return productOrder;
         }
+       
+        public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds)
+        {
+            return await (
+                 from o in _manufacturingDBContext.ProductionOrder
+                 join d in _manufacturingDBContext.ProductionOrderDetail on o.ProductionOrderId equals d.ProductionOrderId
+                 where productIds.Contains(d.ProductId) && orderCodes.Contains(d.OrderCode)
+                 select new ProductionOrderDetailByOrder
+                 {
+                     ProductionOrderId = o.ProductionOrderId,
+                     ProductionOrderCode = o.ProductionOrderCode,
+                     Date = o.Date,
+                     Description = o.Description,
+                     ProductionOrderDetailId = d.ProductionOrderDetailId,
+                     ProductId = d.ProductId,
+                     OrderCode = d.OrderCode,
+                     Quantity = d.Quantity,
+                     ReserveQuantity = d.ReserveQuantity,
+                     Note = d.Note
+                 }).ToListAsync();
+        }
 
         public async Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data)
         {
