@@ -91,6 +91,16 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionOrder(productionOrderId);
         }
 
+        
+        [HttpGet]
+        [Route("GetProductionHistoryByOrder")]
+        public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder([FromQuery] IList<int> productIds, [FromQuery] IList<string> orderCodes)
+        {
+            return await _productionOrderService
+                .GetProductionHistoryByOrder(orderCodes, productIds);
+        }
+
+
         [HttpGet]
         [Route("order/{orderId}")]
         public async Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo([FromRoute] int orderId)
