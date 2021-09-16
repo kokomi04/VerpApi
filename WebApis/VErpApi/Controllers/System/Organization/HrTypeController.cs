@@ -72,12 +72,12 @@ namespace VErpApi.Controllers.System
             return await _hrTypeService.GetHrTypeSimpleList().ConfigureAwait(true);
         }
 
-        // [HttpGet]
-        // [Route("fields")]
-        // public async Task<PageData<HrFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
-        // {
-        //     return await _hrAreaService.GetHrFields(keyword, page, size).ConfigureAwait(true);
-        // }
+        [HttpGet]
+        [Route("areas/{hrAreaId}/fields")]
+        public async Task<PageData<HrFieldOutputModel>> GetAllFields([FromRoute] int hrAreaId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _hrAreaService.GetHrFields(hrAreaId, keyword, page, size).ConfigureAwait(true);
+        }
 
 
         [HttpPost]
@@ -171,12 +171,12 @@ namespace VErpApi.Controllers.System
             return await _hrAreaService.GetHrArea(hrTypeId, hrAreaId).ConfigureAwait(true);
         }
 
-        // [HttpGet]
-        // [Route("{hrTypeId}/basicInfo")]
-        // public async Task<HrTypeBasicOutput> GetHrTypeBasicInfo([FromRoute] int hrTypeId)
-        // {
-        //     return await _hrTypeService.GetHrTypeBasicInfo(hrTypeId).ConfigureAwait(true);
-        // }
+        [HttpGet]
+        [Route("{hrTypeId}/basicInfo")]
+        public async Task<HrTypeBasicOutput> GetHrTypeBasicInfo([FromRoute] int hrTypeId)
+        {
+            return await _hrTypeService.GetHrTypeBasicInfo(hrTypeId).ConfigureAwait(true);
+        }
 
         // [HttpGet]
         // [Route("{hrTypeId}/views/{hrTypeViewId}")]

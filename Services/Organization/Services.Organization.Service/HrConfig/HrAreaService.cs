@@ -36,6 +36,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<bool> UpdateHrArea(int hrTypeId, int hrAreaId, HrAreaInputModel data);
         Task<HrFieldInputModel> UpdateHrField(int hrAreaId, int hrFieldId, HrFieldInputModel data);
         Task<bool> UpdateMultiField(int hrTypeId, List<HrAreaFieldInputModel> fields);
+        Task<PageData<HrFieldOutputModel>> GetHrFields(int hrAreaId, string keyword, int page, int size);
     }
 
     public class HrAreaService : IHrAreaService
@@ -50,7 +51,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public HrAreaService(
-            ILogger logger,
+            ILogger<HrAreaService> logger,
             IMapper mapper,
             IActivityLogService activityLogService,
             OrganizationDBContext organizationDBContext,
@@ -263,23 +264,24 @@ namespace VErp.Services.Organization.Service.HrConfig
             return (lst, total);
         }
 
-        // public async Task<PageData<HrFieldOutputModel>> GetHrFields(string keyword, int page, int size)
-        // {
-        //     keyword = (keyword ?? "").Trim();
-        //     var query = _organizationDBContext.HrField
-        //         .AsQueryable();
-        //     if (!string.IsNullOrEmpty(keyword))
-        //     {
-        //         query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
-        //     }
+        public async Task<PageData<HrFieldOutputModel>> GetHrFields(int hrAreaId, string keyword, int page, int size)
+        {
+            keyword = (keyword ?? "").Trim();
+            var query = _organizationDBContext.HrField
+                .Where(x=>x.HrAreaId == hrAreaId)
+                .AsQueryable();
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
+            }
 
-        //     query = query.OrderBy(f => f.SortOrder);
+            query = query.OrderBy(f => f.SortOrder);
 
-        //     var total = await query.CountAsync();
-        //     var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ProjectTo<HrFieldOutputModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var total = await query.CountAsync();
+            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ProjectTo<HrFieldOutputModel>(_mapper.ConfigurationProvider).ToListAsync();
 
-        //     return (lst, total);
-        // }
+            return (lst, total);
+        }
 
         public async Task<HrAreaFieldOutputFullModel> GetHrAreaField(int hrTypeId, int hrAreaId, int inputAreaFieldId)
         {

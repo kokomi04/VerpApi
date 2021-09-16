@@ -38,6 +38,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         Task<HrTypeGlobalSettingModel> GetHrGlobalSetting();
         Task<bool> UpdateHrGlobalSetting(HrTypeGlobalSettingModel data);
+        Task<HrTypeBasicOutput> GetHrTypeBasicInfo(int hrTypeId);
     }
 
     public class HrTypeService : IHrTypeService
@@ -51,7 +52,13 @@ namespace VErp.Services.Organization.Service.HrConfig
         private readonly ActionButtonHelperService _actionButtonHelperService;
         private readonly RoleHelperService _roleHelperService;
 
-        public HrTypeService(IMapper mapper, OrganizationDBContext organizationDBContext, ILogger<HrTypeGroupService> logger, IActivityLogService activityLogService, ActionButtonHelperService actionButtonHelperService, RoleHelperService roleHelperService)
+        public HrTypeService(
+            IMapper mapper,
+            OrganizationDBContext organizationDBContext,
+            ILogger<HrTypeService> logger,
+            IActivityLogService activityLogService,
+            ActionButtonHelperService actionButtonHelperService,
+            RoleHelperService roleHelperService)
         {
             _mapper = mapper;
             _organizationDBContext = organizationDBContext;
@@ -514,6 +521,49 @@ namespace VErp.Services.Organization.Service.HrConfig
         private string GetHrAreaTableName(string hrTypeCode, string hrAreaCode)
         {
             return $"{HR_TABLE_NAME_PREFIX}_{hrTypeCode}_{hrAreaCode}";
+        }
+
+        public async Task<HrTypeBasicOutput> GetHrTypeBasicInfo(int inputTypeId)
+        {
+            var inputTypeInfo = await _organizationDBContext.HrType.AsNoTracking().Where(t => t.HrTypeId == inputTypeId).ProjectTo<HrTypeBasicOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+
+            inputTypeInfo.Areas = await _organizationDBContext.HrArea.AsNoTracking().Where(a => a.HrTypeId == inputTypeId).OrderBy(a => a.SortOrder).ProjectTo<HrAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var fields = await (
+                from af in _organizationDBContext.HrAreaField
+                join f in _organizationDBContext.HrField on af.HrFieldId equals f.HrFieldId
+                where af.HrTypeId == inputTypeId
+                orderby af.SortOrder
+                select new HrAreaFieldBasicOutput
+                {
+                    HrAreaId = af.HrAreaId,
+                    HrAreaFieldId = af.HrAreaFieldId,
+                    FieldName = f.FieldName,
+                    Title = af.Title,
+                    Placeholder = af.Placeholder,
+                    DataTypeId = (EnumDataType)f.DataTypeId,
+                    DataSize = f.DataSize,
+                    FormTypeId = (EnumFormType)f.FormTypeId,
+                    DefaultValue = af.DefaultValue,
+                    RefTableCode = f.RefTableCode,
+                    RefTableField = f.RefTableField,
+                    RefTableTitle = f.RefTableTitle,
+                    IsRequire = af.IsRequire,
+                    DecimalPlace = f.DecimalPlace,
+                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl
+
+                }).ToListAsync();
+
+            // var views = await _organizationDBContext.HrTypeView.AsNoTracking().Where(t => t.HrTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<HrTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
+
+            foreach (var item in inputTypeInfo.Areas)
+            {
+                item.Fields = fields.Where(f => f.HrAreaId == item.HrAreaId).ToList();
+            }
+
+            // inputTypeInfo.Views = views;
+
+            return inputTypeInfo;
         }
     }
 }
