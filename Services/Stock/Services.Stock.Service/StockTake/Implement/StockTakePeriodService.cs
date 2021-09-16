@@ -218,7 +218,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     ProductId = g.Key.ProductId,
                     ProductUnitConversionId = g.Key.ProductUnitConversionId,
                     PrimaryQuantity = g.Sum(d => d.PrimaryQuantity),
-                    ProductUnitConversionQuantity = g.Sum(d => d.ProductUnitConversionQuantity.GetValueOrDefault())
+                    ProductUnitConversionQuantity = g.Sum(d => d.ProductUnitConversionQuantity.GetValueOrDefault()),
+                    Note = string.Join(". ", g.Where(d => !string.IsNullOrEmpty(d.Note)).Select(d => d.Note).ToList())
                 }).ToList();
 
             var productIds = result.StockTakeResult.Select(p => p.ProductId).ToList();

@@ -22,6 +22,7 @@ namespace VErp.Services.Stock.Model.StockTake
         public bool IsProcessed { get; set; }
         public long? FinishDate { get; set; }
         public long? FinishAcDate { get; set; }
+        public string ConclusionContent { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<StockTakePeriod, StockTakePeriotListModel>()
@@ -69,6 +70,8 @@ namespace VErp.Services.Stock.Model.StockTake
         public decimal? StockProductUnitConversionRemainQuantity { get; set; }
         public decimal StockQuantityDifference { get; set; }
         public decimal? StockProductUnitConversionQuantityDifference { get; set; }
+
+        public string Note { get; set; }
 
     }
 
