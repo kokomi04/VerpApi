@@ -64,7 +64,7 @@ namespace Services.Organization.Model.HrConfig
 
     public class HrFieldOutputModel : HrFieldInputModel
     {
-        public int InputFieldId { get; set; }
+        public int HrFieldId { get; set; }
         public new void Mapping(Profile profile)
         {
             MappingBase<HrFieldOutputModel>(profile);
