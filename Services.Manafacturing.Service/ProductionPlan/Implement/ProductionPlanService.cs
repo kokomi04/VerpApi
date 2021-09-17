@@ -33,13 +33,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IProductCateHelperService _productCateHelperService;
         private readonly IProductBomHelperService _productBomHelperService;
+        private readonly ICurrentContextService _currentContext;
         public ProductionPlanService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionPlanService> logger
             , IMapper mapper
             , IProductHelperService productHelperService
             , IProductCateHelperService productCateHelperService
-            , IProductBomHelperService productBomHelperService)
+            , IProductBomHelperService productBomHelperService
+            , ICurrentContextService currentContext)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -48,6 +50,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             _productHelperService = productHelperService;
             _productCateHelperService = productCateHelperService;
             _productBomHelperService = productBomHelperService;
+            _currentContext = currentContext;
         }
 
         public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(long startDate, long endDate)
@@ -223,6 +226,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             productionPlanExport.SetProductHelperService(_productHelperService);
             productionPlanExport.SetProductCateHelperService(_productCateHelperService);
             productionPlanExport.SetProductBomHelperService(_productBomHelperService);
+            productionPlanExport.SetCurrentContextService(_currentContext);
             return await productionPlanExport.Export(startDate, endDate, data, mappingFunctionKeys);
         }
 
