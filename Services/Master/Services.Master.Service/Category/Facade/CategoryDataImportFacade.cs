@@ -81,11 +81,11 @@ namespace VErp.Services.Master.Service.Category
                 {
                     if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại nhiều \"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}\", giá trị mang tính định danh trong file excel.");
-                    
-                    if(!row.ContainsKey(CategoryFieldConstants.ParentId))
+
+                    if (!row.ContainsKey(CategoryFieldConstants.ParentId))
                         row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
 
-                    row.Add(AccountantConstants.F_IDENTITY, oldRow[AccountantConstants.F_IDENTITY].ToString());
+                    row.Add(CategoryFieldConstants.F_Id, oldRow[CategoryFieldConstants.F_Id].ToString());
                     lsUpdateRow.Add(row);
                 }
             }
@@ -94,16 +94,59 @@ namespace VErp.Services.Master.Service.Category
             {
                 using (var logBath = _activityLogService.BeginBatchLog())
                 {
-                    foreach (var uRow in lsUpdateRow)
+                    var parentField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == CategoryFieldConstants.ParentId);
+
+                    string GetParentId(Dictionary<string, string> row)
                     {
-                        var rowId = Int32.Parse(uRow[AccountantConstants.F_IDENTITY]);
-                        
-                        await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
+                        if (parentField != null && row.ContainsKey(CategoryFieldConstants.ParentId) && !string.IsNullOrWhiteSpace(row[CategoryFieldConstants.ParentId]))
+                        {
+                            var refValue = row[CategoryFieldConstants.ParentId].ToString();
+
+                            return _refCategoryDataForParent.FirstOrDefault(x => x[parentField.RefFieldName].ToString().ToLower() == refValue.ToLower())?[CategoryFieldConstants.F_Id]?.ToString();
+                        }
+                        return "";
                     }
 
-                    foreach (var cRow in lsAddRow)
+                    IEnumerable<Dictionary<string, string>> GetElementByTreeView(IList<Dictionary<string, string>> data)
                     {
-                        await _categoryDataService.AddCategoryRow(_categoryId, cRow);
+                        var loopData = new List<Dictionary<string, string>>();
+
+                        foreach (var row in data)
+                        {
+                            if (!row.ContainsKey(CategoryFieldConstants.ParentId))
+                                yield return row;
+                            else if (!string.IsNullOrWhiteSpace(GetParentId(row)))
+                                yield return row;
+                            else
+                                loopData.Add(row);
+                        }
+
+                        if (loopData.Count > 0)
+                            foreach (var l in GetElementByTreeView(loopData)) yield return l;
+                    }
+
+                    foreach (var cRow in GetElementByTreeView(lsAddRow))
+                    {
+                        var parentId = GetParentId(cRow);
+                        if (!string.IsNullOrWhiteSpace(parentId))
+                            cRow[CategoryFieldConstants.ParentId] = GetParentId(cRow);
+
+                        var categoryId = await _categoryDataService.AddCategoryRow(_categoryId, cRow);
+
+                        cRow.Add(CategoryFieldConstants.F_Id, categoryId.ToString());
+
+                        _refCategoryDataForParent.Add(cRow.ToNonCamelCaseDictionary(k => k.Key, v => v.Value));
+                    }
+
+                    foreach (var uRow in lsUpdateRow)
+                    {
+                        var parentId = GetParentId(uRow);
+                        if (!string.IsNullOrWhiteSpace(parentId))
+                            uRow[CategoryFieldConstants.ParentId] = GetParentId(uRow);
+
+                        var rowId = Int32.Parse(uRow[CategoryFieldConstants.F_Id]);
+
+                        await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
                     }
 
                     await trans.CommitAsync();
@@ -162,8 +205,8 @@ namespace VErp.Services.Master.Service.Category
                                 cf?.Title,
                                 cf?.DataTypeId
                             });
-           
-            foreach (var (row, i) in _importData.Rows.Select((value, i) => (value, i)))
+
+            foreach (var (row, i) in _importData.Rows.Where(x => x.Values.Where(v => !string.IsNullOrWhiteSpace(v)).Count() > 0).Select((value, i) => (value, i)))
             {
                 var categoryDataRow = new Dictionary<string, string>();
                 foreach (var mf in mapField)
@@ -176,7 +219,7 @@ namespace VErp.Services.Master.Service.Category
                         break;
                     }
 
-                    if (string.IsNullOrWhiteSpace(value) && _uniqueFields.Any(x=>x.CategoryFieldName == mf.FieldName))
+                    if (string.IsNullOrWhiteSpace(value) && _uniqueFields.Any(x => x.CategoryFieldName == mf.FieldName))
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu không được để trống, dòng {i + mapping.FromRow} cột {mf.Column}, trường \"{mf.Title}\" là trường dữ liệu bắt buộc trong danh mục {_category.Title}");
 
                     if (string.IsNullOrWhiteSpace(value) || mf.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty)
@@ -191,19 +234,25 @@ namespace VErp.Services.Master.Service.Category
                         else if (mf.FieldName == CategoryFieldConstants.ParentId)
                         {
                             var fieldInfo = _categoryFields.FirstOrDefault(x => x.CategoryFieldName == mf.RefFieldName);
+                            var refColumn = mapField.FirstOrDefault(x => x.FieldName == mf.RefFieldName);
+
                             value = TransformValueByDataType(mapping, i, value, fieldInfo, mf.Column);
 
-                            var parents = _refCategoryDataForParent.Where(x => x[mf.RefFieldName].ToString().ToLower() == value.ToLower());
+                            if (!_importData.Rows.Any(x => x != row && x[refColumn.Column]?.ToString().ToLower() == value.ToLower()))
+                            {
+                                var parents = _refCategoryDataForParent.Where(x => x[mf.RefFieldName].ToString().ToLower() == value.ToLower());
 
-                            var hasGreaterThanParent = parents.Count() > 1;
-                            if (hasGreaterThanParent)
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều {_category.Title.ToLower()} cha có \"{fieldInfo.Title}: {value}\" trong danh mục \"{_category.Title}\"");
+                                var hasGreaterThanParent = parents.Count() > 1;
+                                if (hasGreaterThanParent)
+                                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều {_category.Title.ToLower()} cha có \"{fieldInfo.Title}: {value}\" trong danh mục \"{_category.Title}\"");
 
-                            var notFoundParent = parents.Count() == 0;
-                            if (notFoundParent)
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy {_category.Title.ToLower()} cha có \"{fieldInfo.Title}: {value}\" trong danh mục \"{_category.Title}\"");
+                                var notFoundParent = parents.Count() == 0;
+                                if (notFoundParent)
+                                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy {_category.Title.ToLower()} cha có \"{fieldInfo.Title}: {value}\" trong danh mục \"{_category.Title}\"");
 
-                            value = parents.FirstOrDefault()[AccountantConstants.F_IDENTITY].ToString();
+                            }
+
+                            // value = parents.FirstOrDefault()[CategoryFieldConstants.F_Id].ToString();
                         }
                         else
                         {
@@ -227,7 +276,7 @@ namespace VErp.Services.Master.Service.Category
                             if (notFoundProperty)
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy {refField.Title.ToLower()} có \"{refField.Field.Title}: {value}\" trong danh mục \"{refField.Title}\"");
 
-                            value = refProperty.FirstOrDefault()[AccountantConstants.F_IDENTITY].ToString();
+                            value = refProperty.FirstOrDefault()[CategoryFieldConstants.F_Id].ToString();
                         }
                     }
                     else
