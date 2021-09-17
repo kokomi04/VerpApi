@@ -13,4 +13,12 @@ namespace VErp.Commons.Constants
         public static string F_Id = "F_Id";
         
     }
+
+    public static class CurrencyCateConstants
+    {
+        public const string CurrencyCategoryCode = "_Currency";
+
+        public const string CurrencyCode = "CurrencyCode";
+        public const string CurrencyName = "CurrencyName";
+    }
 }

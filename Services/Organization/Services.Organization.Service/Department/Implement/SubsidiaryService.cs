@@ -19,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.EF.EFExtensions;
 
+
 namespace Services.Organization.Service.Department.Implement
 {
     public class SubsidiaryService : ISubsidiaryService

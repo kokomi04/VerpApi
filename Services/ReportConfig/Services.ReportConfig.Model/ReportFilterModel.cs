@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.GlobalObject;
 
 namespace Verp.Services.ReportConfig.Model
 {

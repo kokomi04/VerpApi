@@ -11,6 +11,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.Order;
 using VErp.Services.Manafacturing.Model.Outsource.Track;
 using VErp.Services.Manafacturing.Service.Outsource;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {

@@ -22,6 +22,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
+using VErp.Commons.ObjectExtensions.Extensions;
 using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Commons.Library
@@ -695,6 +696,15 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static void SetPropertyValue(this object obj, string propertyName, object value)
+        {
+            obj.GetType().GetProperty(propertyName).SetValue(obj, value);
+        }
+
+        public static T GetPropertyValue<T>(this object obj, string propertyName)
+        {
+            return (T)obj.GetType().GetProperty(propertyName).GetValue(obj);
+        }
 
 
 
@@ -1146,30 +1156,11 @@ namespace VErp.Commons.Library
             return result;
         }
 
-        public static string ConvertToUnSign2(this string s)
-        {
-            string stFormD = s.Normalize(NormalizationForm.FormD);
-            StringBuilder sb = new StringBuilder();
-            for (int ich = 0; ich < stFormD.Length; ich++)
-            {
-                UnicodeCategory uc = CharUnicodeInfo.GetUnicodeCategory(stFormD[ich]);
-                if (uc != UnicodeCategory.NonSpacingMark)
-                {
-                    sb.Append(stFormD[ich]);
-                }
-            }
-            sb = sb.Replace('Đ', 'D');
-            sb = sb.Replace('đ', 'd');
-            return (sb.ToString().Normalize(NormalizationForm.FormD));
-        }
+
 
         public static string NormalizeAsInternalName(this string s)
         {
-            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
-
-            s = s.ConvertToUnSign2();
-            s = s.ToLower().Trim();
-            return Regex.Replace(s, "[^a-zA-Z0-9\\.\\-]", "");
+            return StringExtensions.NormalizeAsInternalName(s);
         }
 
         public static bool IsVndColumn(this string columnName)

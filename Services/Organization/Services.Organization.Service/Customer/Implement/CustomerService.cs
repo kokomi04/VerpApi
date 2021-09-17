@@ -23,6 +23,8 @@ using VErp.Commons.Library.Model;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using VErp.Services.Organization.Service.Customer.Implement.Facade;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -34,6 +36,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         private readonly IMapper _mapper;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly IUserHelperService _userHelperService;
 
         public CustomerService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
@@ -41,6 +45,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             , IMapper mapper
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
+            , ICategoryHelperService httpCategoryHelperService
+            , IUserHelperService userHelperService
             )
         {
             _organizationContext = organizationContext;
@@ -49,6 +55,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             _mapper = mapper;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _httpCategoryHelperService = httpCategoryHelperService;
+            _userHelperService = userHelperService;
         }
 
         public async Task<int> AddCustomer(int updatedUserId, CustomerModel data)
@@ -273,38 +281,20 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<PageData<CustomerListOutput>> GetList(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
+            var lst = await GetListEntity(keyword, customerIds, customerStatusId, page, size, filters);
+            var lstData = _mapper.Map<List<CustomerListOutput>>(lst.List);
+            return (lstData, lst.Total);
+        }
+
+        private async Task<PageData<CustomerEntity>> GetListEntity(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
+        {
             keyword = (keyword ?? "").Trim();
 
-            var customerQuery = _organizationContext.Customer.AsQueryable();
+            var query = _organizationContext.Customer.AsQueryable();
             if (customerIds != null && customerIds.Count > 0)
             {
-                customerQuery = customerQuery.Where(c => customerIds.Contains(c.CustomerId));
+                query = query.Where(c => customerIds.Contains(c.CustomerId));
             }
-            var query = (
-                 from c in customerQuery
-                 select new CustomerListOutput()
-                 {
-                     CustomerCode = c.CustomerCode,
-                     CustomerId = c.CustomerId,
-                     CustomerName = c.CustomerName,
-                     CustomerTypeId = (EnumCustomerType)c.CustomerTypeId,
-                     Address = c.Address,
-                     TaxIdNo = c.TaxIdNo,
-                     PhoneNumber = c.PhoneNumber,
-                     Website = c.Website,
-                     Email = c.Email,
-                     Identify = c.Identify,
-                     DebtDays = c.DebtDays,
-                     DebtLimitation = c.DebtLimitation,
-                     DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
-                     DebtManagerUserId = c.DebtManagerUserId,
-                     LoanDays = c.LoanDays,
-                     LoanLimitation = c.LoanLimitation,
-                     LoanBeginningTypeId = (EnumBeginningType)c.LoanBeginningTypeId,
-                     LoanManagerUserId = c.LoanManagerUserId,
-                     CustomerStatusId = (EnumCustomerStatus)c.CustomerStatusId
-                 }
-             );
 
             query = query.InternalFilter(filters);
 
@@ -312,7 +302,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 query = from u in query
                         where
-                        u.CustomerStatusId == customerStatusId
+                        u.CustomerStatusId == (int)customerStatusId.Value
                         select u;
             }
 
@@ -334,9 +324,18 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync();
 
             var total = await query.CountAsync();
-
+          
             return (lst, total);
         }
+
+
+        public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
+        {
+            var lst = await GetListEntity(keyword, customerIds, customerStatusId, page, size, filters);
+            var bomExport = new CusomerExportFacade(_organizationContext, _httpCategoryHelperService, _userHelperService, fieldNames);
+            return await bomExport.Export(lst.List);
+        }
+
 
         public async Task<IList<CustomerListOutput>> GetListByIds(IList<int> customerIds)
         {
@@ -480,7 +479,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                     var newBankAccounts = data.BankAccounts
                         .Where(ba => ba.BankAccountId <= 0)
-                        .Select(ba => TransformBankAccEntity(customerId,ba));
+                        .Select(ba => TransformBankAccEntity(customerId, ba));
                     await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
 
                     foreach (var ba in dbBankAccounts)
@@ -547,65 +546,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var reader = new ExcelReader(stream);
+            var importFacade = new CusomerImportFacade(_mapper, _httpCategoryHelperService);
 
-            var lstData = reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, (entity, propertyName, value) =>
-            {
-                if (propertyName == nameof(CustomerModel.CustomerTypeId))
-                {
-                    if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
-                    {
-                        entity.CustomerTypeId = EnumCustomerType.Personal;
-                    }
-                    else
-                    {
-                        entity.CustomerTypeId = EnumCustomerType.Organization;
-                    }
-
-                    return true;
-                }
-
-                if (propertyName == nameof(CustomerModel.DebtBeginningTypeId))
-                {
-                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
-                    {
-                        entity.DebtBeginningTypeId = EnumBeginningType.EndOfMonth;
-                    }
-                    else
-                    {
-                        entity.DebtBeginningTypeId = EnumBeginningType.BillDate;
-                    }
-
-                    return true;
-                }
-
-                if (propertyName == nameof(CustomerModel.LoanBeginningTypeId))
-                {
-                    if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
-                    {
-                        entity.LoanBeginningTypeId = EnumBeginningType.EndOfMonth;
-                    }
-                    else
-                    {
-                        entity.LoanBeginningTypeId = EnumBeginningType.BillDate;
-                    }
-
-                    return true;
-                }
-
-                return false;
-            });
-
-            var customerModels = new List<CustomerModel>();
-
-            foreach (var customerModel in lstData)
-            {
-                var customerInfo = _mapper.Map<CustomerModel>(customerModel);
-
-                customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
-
-                customerModels.Add(customerInfo);
-            }
+            var customerModels = await importFacade.ParseCustomerFromMapping(mapping, stream);
 
             var insertedData = await AddBatchCustomers(customerModels);
 
@@ -616,42 +559,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
 
             return true;
-
-            //using (var trans = await _organizationContext.Database.BeginTransactionAsync())
-            //{
-            //    try
-            //    {
-            //        var insertedData = new Dictionary<int, BaseCustomerImportModel>();
-
-            //        // Insert data
-            //        foreach (var customerModel in lstData)
-            //        {
-            //            var customerInfo = _mapper.Map<CustomerModel>(customerModel);
-
-            //            customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
-
-            //            var customerId = await AddCustomerToDb(customerInfo);
-
-            //            insertedData.Add(customerId, customerInfo);
-            //        }
-
-            //        trans.Commit();
-
-            //        foreach (var item in insertedData)
-            //        {
-            //            await _activityLogService.CreateLog(EnumObjectType.Customer, item.Key, $"Import đối tác {item.Value.CustomerName}", item.Value.JsonSerialize());
-            //        }
-
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        trans.Rollback();
-            //        _logger.LogError(ex, "ImportCustomerFromMapping");
-            //        throw;
-            //    }
-            //}
-
-            //return true;
 
         }
 

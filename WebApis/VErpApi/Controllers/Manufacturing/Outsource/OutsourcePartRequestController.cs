@@ -9,6 +9,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Service.Outsource;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {

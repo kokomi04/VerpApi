@@ -9,6 +9,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.Outsource;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {
