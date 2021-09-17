@@ -23,6 +23,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private IProductHelperService _productHelperService;
         private IProductBomHelperService _productBomHelperService;
         private IProductCateHelperService _productCateHelperService;
+        private ICurrentContextService _currentContext;
         private IList<ProductionOrderListModel> productionPlanInfo = null;
         private IList<InternalProductCateOutput> productCates = null;
         private IDictionary<int, Dictionary<int, decimal>> productCateQuantity = new Dictionary<int, Dictionary<int, decimal>>();
@@ -48,6 +49,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         public ProductionPlanExportFacade SetProductCateHelperService(IProductCateHelperService productCateHelperService)
         {
             _productCateHelperService = productCateHelperService;
+            return this;
+        }
+        public ProductionPlanExportFacade SetCurrentContextService(ICurrentContextService currentContext)
+        {
+            _currentContext = currentContext;
             return this;
         }
         public async Task<(Stream stream, string fileName, string contentType)> Export(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
@@ -210,9 +216,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 sheet.EnsureCell(currentRow, 5).SetCellValue(item.ContainerNumber);
                 sheet.EnsureCell(currentRow, 6).SetCellValue((double)(item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()));
                 sheet.EnsureCell(currentRow, 7).SetCellValue(item.UnitName);
-                sheet.EnsureCell(currentRow, 8).SetCellValue(item.StartDate.UnixToDateTime().Value);
-                sheet.EnsureCell(currentRow, 9).SetCellValue(item.PlanEndDate.UnixToDateTime().Value);
-                sheet.EnsureCell(currentRow, 10).SetCellValue(item.EndDate.UnixToDateTime().Value);
+                sheet.EnsureCell(currentRow, 8).SetCellValue((item.StartDate + _currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
+                sheet.EnsureCell(currentRow, 9).SetCellValue((item.PlanEndDate + +_currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
+                sheet.EnsureCell(currentRow, 10).SetCellValue((item.EndDate + _currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
                 sheet.EnsureCell(currentRow, 11).SetCellValue(item.Note);
 
                 int colIndx = 12;
