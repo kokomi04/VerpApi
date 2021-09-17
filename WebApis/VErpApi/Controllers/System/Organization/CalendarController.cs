@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpDelete]
-        [Route("startDate")]
+        [Route("{startDate}")]
         public async Task<bool> DeleteWeekCalendar([FromRoute] long startDate)
         {
             return await _calendarService.DeleteWeekCalendar(startDate);
