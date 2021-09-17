@@ -49,16 +49,16 @@ namespace VErp.Services.Organization.Service.HrConfig
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
-        private readonly ActionButtonHelperService _actionButtonHelperService;
-        private readonly RoleHelperService _roleHelperService;
+        private readonly IActionButtonHelperService _actionButtonHelperService;
+        private readonly IRoleHelperService _roleHelperService;
 
         public HrTypeService(
             IMapper mapper,
             OrganizationDBContext organizationDBContext,
             ILogger<HrTypeService> logger,
             IActivityLogService activityLogService,
-            ActionButtonHelperService actionButtonHelperService,
-            RoleHelperService roleHelperService)
+            IActionButtonHelperService actionButtonHelperService,
+            IRoleHelperService roleHelperService)
         {
             _mapper = mapper;
             _organizationDBContext = organizationDBContext;
