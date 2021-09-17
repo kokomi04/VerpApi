@@ -21,7 +21,9 @@ using VErp.Services.Master.Model.Category;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Commons.Library.Model;
+
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 
 namespace VErpApi.Controllers.System.Category
 {

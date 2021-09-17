@@ -8,6 +8,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.System.Internal
 {

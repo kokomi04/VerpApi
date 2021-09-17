@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject.Org;
-using VErp.Services.Organization.Model.Department;
 
-namespace VErp.Services.Master.Model.Users
+namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
 
     public class UserInfoOutput : EmployeeBase
@@ -19,12 +18,12 @@ namespace VErp.Services.Master.Model.Users
     }
 
 
-    public class SubsidiaryBasicInfo
-    {
-        public int SubsidiaryId { get; set; }
-        public string SubsidiaryCode { get; set; }
-        public string SubsidiaryName { get; set; }
-    }
+    //public class SubsidiaryBasicInfo
+    //{
+    //    public int SubsidiaryId { get; set; }
+    //    public string SubsidiaryCode { get; set; }
+    //    public string SubsidiaryName { get; set; }
+    //}
 
     public class UserDepartmentInfoModel : UserDepartmentMappingModel
     {      

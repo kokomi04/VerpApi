@@ -7,6 +7,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Product;
 using System.IO;
 using VErp.Commons.Library.Model;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Products
 {

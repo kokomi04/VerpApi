@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Enums.MasterEnum;
 
-namespace VErp.Services.Master.Model.Category
+namespace VErp.Commons.GlobalObject.InternalDataInterface.Category
 {
     public class CategoryFilterModel
     {

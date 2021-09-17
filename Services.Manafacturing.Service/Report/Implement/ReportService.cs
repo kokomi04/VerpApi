@@ -27,6 +27,7 @@ using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 
+
 namespace VErp.Services.Manafacturing.Service.Report.Implement
 {
     public class ReportService : IReportService

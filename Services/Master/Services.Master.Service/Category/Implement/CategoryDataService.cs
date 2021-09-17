@@ -32,6 +32,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Master.Service.Category;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 
 namespace VErp.Services.Accountancy.Service.Category
 {
@@ -709,6 +710,17 @@ namespace VErp.Services.Accountancy.Service.Category
             sql.Remove(sql.Length - 1, 1);
             return sql.ToString();
         }
+
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        {
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
+        }
+
 
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {

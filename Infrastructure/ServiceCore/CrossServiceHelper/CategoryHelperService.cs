@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
@@ -12,7 +14,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     {
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames = null, NonCamelCaseDictionary categoryRow = null);
         Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames);
-
+        Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request);
+        
         Task<IList<CategoryListModel>> GetDynamicCates();
     }
     public class CategoryHelperService : ICategoryHelperService
@@ -53,6 +56,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<CategoryListModel>> GetDynamicCates()
         {
             return await _httpCrossService.Get<List<CategoryListModel>>($"api/internal/InternalCategory/DynamicCates");
+        }
+
+        public async Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request)
+        {
+            return await _httpCrossService.Post<PageData<NonCamelCaseDictionary>>($"api/internal/InternalCategory/{categoryCode}/data/Search", request);
         }
     }
 }

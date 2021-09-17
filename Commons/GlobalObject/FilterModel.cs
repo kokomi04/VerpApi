@@ -11,11 +11,12 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Enums.StandardEnum;
 
-namespace VErp.Infrastructure.EF.EFExtensions
+namespace VErp.Commons.GlobalObject
 {
     [JsonConverter(typeof(ClauseConverter))]
     public abstract class Clause
     {
+
     }
 
     public class SingleClause : Clause
