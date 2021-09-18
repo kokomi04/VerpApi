@@ -1052,39 +1052,26 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var field = _purchaseOrderDBContext.VoucherAreaField.Include(f => f.VoucherField).FirstOrDefault(f => f.VoucherField.FieldName == fieldName);
             if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy trường dữ liệu");
 
-            var oldSqlValue = ((EnumDataType)field.VoucherField.DataTypeId).GetSqlValue(oldValue);
+            object oldSqlValue;
             object newSqlValue;
             if (((EnumFormType)field.VoucherField.FormTypeId).IsSelectForm())
             {
                 var refTableTitle = field.VoucherField.RefTableTitle.Split(',')[0];
-
                 var categoryFields = await _httpCategoryHelperService.GetReferFields(new List<string>() { field.VoucherField.RefTableCode }, new List<string>() { refTableTitle, field.VoucherField.RefTableField });
-
                 var refField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == field.VoucherField.RefTableField);
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
-
                 if (refField == null || refTitleField == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy trường dữ liệu tham chiếu");
-
-
-                var valueParamName = $"@{field.VoucherField.RefTableField}";
-                var selectSQL = $"SELECT TOP 1 {field.VoucherField.RefTableField} FROM v{field.VoucherField.RefTableCode} WHERE {refTableTitle} = {valueParamName}";
-                var selectParams = new List<SqlParameter>()
-                {
-                    new SqlParameter(valueParamName, ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue))
-                };
-
-                var result = await _purchaseOrderDBContext.QueryDataTable(selectSQL.ToString(), selectParams.ToArray());
-                if (result != null && result.Rows.Count > 0)
-                {
-                    newSqlValue = result.Rows[0][0];
-                }
-                else
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mới truyền vào không hợp lệ");
-                }
+                var selectSQL = $"SELECT {field.VoucherField.RefTableField} FROM v{field.VoucherField.RefTableCode} WHERE {refTableTitle} = @ValueParam";
+                var result = await _purchaseOrderDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)) });
+                if (result == null || result.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị cũ truyền vào không hợp lệ");
+                oldSqlValue = result.Rows[0][0];
+                result = await _purchaseOrderDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue)) });
+                if (result == null || result.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mới truyền vào không hợp lệ");
+                newSqlValue = result.Rows[0][0];
             }
             else
             {
+                oldSqlValue = ((EnumDataType)field.VoucherField.DataTypeId).GetSqlValue(oldValue);
                 newSqlValue = ((EnumDataType)field.VoucherField.DataTypeId).GetSqlValue(newValue);
             }
 
@@ -2003,7 +1990,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                             var referData = await _purchaseOrderDBContext.QueryDataTable(referSql, referParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
-                            { 
+                            {
                                 // Check tồn tại
                                 var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                                 var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
