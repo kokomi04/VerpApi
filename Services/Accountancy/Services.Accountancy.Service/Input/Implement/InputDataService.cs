@@ -1094,16 +1094,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
                 if (refField == null || refTitleField == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy trường dữ liệu tham chiếu");
                 var selectSQL = $"SELECT {field.InputField.RefTableField} FROM v{field.InputField.RefTableCode} WHERE {refTableTitle} = @ValueParam";
-                var result = await _accountancyDBContext.QueryDataTable(selectSQL.ToString(), new List<SqlParameter>()
-                {
-                    new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)),
-                });
+                var result = await _accountancyDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)) });
                 if (result == null || result.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị cũ truyền vào không hợp lệ");
                 oldSqlValue = result.Rows[0][0];
-                result = await _accountancyDBContext.QueryDataTable(selectSQL.ToString(), new List<SqlParameter>()
-                {
-                    new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue)),
-                });
+                result = await _accountancyDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue)) });
                 if (result == null || result.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mới truyền vào không hợp lệ");
                 newSqlValue = result.Rows[0][0];
             }
