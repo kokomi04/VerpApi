@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Services.Organization.Model.HrConfig;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -10,7 +12,7 @@ using VErp.Services.Organization.Service.HrConfig;
 namespace VErpApi.Controllers.System
 {
     [Route("api/organization/config/hrType")]
-    public class HrTypeController: VErpBaseController
+    public class HrTypeController : VErpBaseController
     {
         public readonly IHrTypeService _hrTypeService;
         public readonly IHrAreaService _hrAreaService;
@@ -178,42 +180,41 @@ namespace VErpApi.Controllers.System
             return await _hrTypeService.GetHrTypeBasicInfo(hrTypeId).ConfigureAwait(true);
         }
 
-        // [HttpGet]
-        // [Route("{hrTypeId}/views/{hrTypeViewId}")]
-        // public async Task<HrTypeViewModel> GetHrTypeBasicInfo([FromRoute] int hrTypeId, [FromRoute] int hrTypeViewId)
-        // {
-        //     return await _hrConfigService.GetHrTypeViewInfo(hrTypeId, hrTypeViewId).ConfigureAwait(true);
-        // }
+        [HttpGet]
+        [Route("{hrTypeId}/views/{hrTypeViewId}")]
+        public async Task<HrTypeViewModel> GetHrTypeBasicInfo([FromRoute] int hrTypeId, [FromRoute] int hrTypeViewId)
+        {
+            return await _hrTypeService.GetHrTypeViewInfo(hrTypeId, hrTypeViewId).ConfigureAwait(true);
+        }
 
-        // [HttpPost]
-        // [Route("{hrTypeId}/views")]
-        // public async Task<int> HrTypeViewCreate([FromRoute] int hrTypeId, [FromBody] HrTypeViewModel model)
-        // {
-        //     return await _hrConfigService.HrTypeViewCreate(hrTypeId, model).ConfigureAwait(true);
-        // }
+        [HttpPost]
+        [Route("{hrTypeId}/views")]
+        public async Task<int> HrTypeViewCreate([FromRoute] int hrTypeId, [FromBody] HrTypeViewModel model)
+        {
+            return await _hrTypeService.HrTypeViewCreate(hrTypeId, model).ConfigureAwait(true);
+        }
 
-        // [HttpPut]
-        // [Route("{hrTypeId}/views/{hrTypeViewId}")]
-        // public async Task<bool> HrTypeViewUpdate([FromRoute] int hrTypeId, [FromRoute] int hrTypeViewId, [FromBody] HrTypeViewModel model)
-        // {
-        //     if (hrTypeId <= 0)
-        //     {
-        //         throw new BadRequestException(GeneralCode.InvalidParams);
-        //     }
-        //     return await _hrConfigService.HrTypeViewUpdate(hrTypeViewId, model).ConfigureAwait(true);
-        // }
+        [HttpPut]
+        [Route("{hrTypeId}/views/{hrTypeViewId}")]
+        public async Task<bool> HrTypeViewUpdate([FromRoute] int hrTypeId, [FromRoute] int hrTypeViewId, [FromBody] HrTypeViewModel model)
+        {
+            if (hrTypeId <= 0)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _hrTypeService.HrTypeViewUpdate(hrTypeViewId, model).ConfigureAwait(true);
+        }
 
-        // [HttpDelete]
-        // [Route("{hrTypeId}/views/{hrTypeViewId}")]
-        // public async Task<bool> HrTypeViewUpdate([FromRoute] int hrTypeId, [FromRoute] int hrTypeViewId)
-        // {
-        //     if (hrTypeId <= 0)
-        //     {
-        //         throw new BadRequestException(GeneralCode.InvalidParams);
-        //     }
-        //     return await _hrConfigService.HrTypeViewDelete(hrTypeViewId).ConfigureAwait(true);
-        // }
-
+        [HttpDelete]
+        [Route("{hrTypeId}/views/{hrTypeViewId}")]
+        public async Task<bool> HrTypeViewUpdate([FromRoute] int hrTypeId, [FromRoute] int hrTypeViewId)
+        {
+            if (hrTypeId <= 0)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _hrTypeService.HrTypeViewDelete(hrTypeViewId).ConfigureAwait(true);
+        }
 
         [HttpPost]
         [Route("{hrTypeId}/areas")]

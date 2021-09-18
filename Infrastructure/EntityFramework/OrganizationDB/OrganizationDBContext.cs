@@ -35,10 +35,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<HrAction> HrAction { get; set; }
         public virtual DbSet<HrArea> HrArea { get; set; }
         public virtual DbSet<HrAreaField> HrAreaField { get; set; }
+        public virtual DbSet<HrBill> HrBill { get; set; }
         public virtual DbSet<HrField> HrField { get; set; }
         public virtual DbSet<HrType> HrType { get; set; }
         public virtual DbSet<HrTypeGlobalSetting> HrTypeGlobalSetting { get; set; }
         public virtual DbSet<HrTypeGroup> HrTypeGroup { get; set; }
+        public virtual DbSet<HrTypeView> HrTypeView { get; set; }
+        public virtual DbSet<HrTypeViewField> HrTypeViewField { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
@@ -398,6 +401,22 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_HRAreaField_HRType");
             });
 
+            modelBuilder.Entity<HrBill>(entity =>
+            {
+                entity.HasKey(e => e.FId)
+                    .HasName("PK_HrValueBill");
+
+                entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.Property(e => e.BillCode).HasMaxLength(512);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrBill)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrValueBill_HrType");
+            });
+
             modelBuilder.Entity<HrField>(entity =>
             {
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
@@ -446,6 +465,44 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.HrTypeGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<HrTypeView>(entity =>
+            {
+                entity.Property(e => e.HrTypeViewName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrTypeView)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrTypeView_HrType");
+            });
+
+            modelBuilder.Entity<HrTypeViewField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.SelectFilters).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrTypeView)
+                    .WithMany(p => p.HrTypeViewField)
+                    .HasForeignKey(d => d.HrTypeViewId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrTypeViewField_HrTypeView");
             });
 
             modelBuilder.Entity<ObjectProcessObject>(entity =>

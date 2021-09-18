@@ -100,6 +100,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         public async Task<int> AddHrArea(int hrTypeId, HrAreaInputModel data)
         {
+            data.HrTypeId = hrTypeId;
+
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
 
             var hrType = await _organizationDBContext.HrType.FirstOrDefaultAsync(x => x.HrTypeId == hrTypeId);
@@ -508,6 +510,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         public async Task<HrFieldInputModel> AddHrField(int hrAreaId, HrFieldInputModel data)
         {
+            data.HrAreaId = hrAreaId;
+
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
                                 where a.HrAreaId == hrAreaId
@@ -553,6 +557,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         public async Task<HrFieldInputModel> UpdateHrField(int hrAreaId, int hrFieldId, HrFieldInputModel data)
         {
+            data.HrAreaId = hrAreaId;
+            
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
                                 where a.HrAreaId == hrAreaId

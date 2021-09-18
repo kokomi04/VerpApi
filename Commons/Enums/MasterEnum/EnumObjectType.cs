@@ -318,6 +318,10 @@ namespace VErp.Commons.Enums.MasterEnum
          [Description("Trường dữ liệu vùng chứng từ hành chính nhân sự")]
         HrAreaField = 1039,
         [Description("Dòng chứng từ hành chính nhân sự")]
-        HrTypeRow = 1040
+        
+        HrTypeRow = 1040,
+
+        [Description("Bộ lọc chứng từ hành chính nhân sự")]
+        HrTypeView = 1041
     }
 }
