@@ -93,7 +93,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "Giới tính người liên hệ 2", GroupName = "TT liên hệ 2")]
         public EnumGender? ContactGender2 { get; set; }
         [Display(Name = "Chức danh người liên hệ 2", GroupName = "TT liên hệ 2")]
-        public EnumGender? _ContactPosition2 { get; set; }
+        public EnumGender? ContactPosition2 { get; set; }
 
         [Display(Name = "Điện thoại người liên hệ 2", GroupName = "TT liên hệ 2")]
         public string ContactPhone2 { get; set; }
@@ -107,7 +107,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "Giới tính người liên hệ 3", GroupName = "TT liên hệ 3")]
         public EnumGender? ContactGender3 { get; set; }
         [Display(Name = "Chức danh người liên hệ 3", GroupName = "TT liên hệ 3")]
-        public EnumGender? _ContactPosition3 { get; set; }
+        public EnumGender? ContactPosition3 { get; set; }
 
         [Display(Name = "Điện thoại người liên hệ 3", GroupName = "TT liên hệ 3")]
         public string ContactPhone3 { get; set; }
