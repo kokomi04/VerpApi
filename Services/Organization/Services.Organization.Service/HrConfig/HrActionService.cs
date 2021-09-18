@@ -37,13 +37,15 @@ namespace VErp.Services.Organization.Service.HrConfig
             ILogger<HrActionService> logger,
             IActivityLogService activityLogService,
             IMapper mapper,
-            IActionButtonHelperService actionButtonHelperService)
+            IActionButtonHelperService actionButtonHelperService, 
+            OrganizationDBContext organizationDBContext)
             : base(actionButtonHelperService, EnumObjectType.HrType)
         {
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
             _actionButtonHelperService = actionButtonHelperService;
+            _organizationDBContext = organizationDBContext;
         }
 
         protected override async Task<string> GetObjectTitle(int objectId)
