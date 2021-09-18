@@ -376,11 +376,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public async Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId)
         {
             var productOrder = _manufacturingDBContext.ProductionOrder
-                .Where(o => o.ProductionOrderId == productionOrderId)
-                .ProjectTo<ProductionOrderOutputModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefault();
+                .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
+
+            ProductionOrderOutputModel model = null; 
+
             if (productOrder != null)
             {
+
+                model = _mapper.Map<ProductionOrderOutputModel>(productOrder);
+
                 var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderId = @ProductionOrderId";
                 var parammeters = new SqlParameter[]
                 {
@@ -388,11 +392,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 };
                 var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
 
-                productOrder.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
+                model.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
+            } else
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX không tồn tại");
             }
 
-            return productOrder;
+            return model;
         }
        
         public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds)
