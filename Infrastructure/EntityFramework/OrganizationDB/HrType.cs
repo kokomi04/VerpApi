@@ -12,6 +12,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             HrAction = new HashSet<HrAction>();
             HrArea = new HashSet<HrArea>();
             HrAreaField = new HashSet<HrAreaField>();
+            HrBill = new HashSet<HrBill>();
+            HrTypeView = new HashSet<HrTypeView>();
         }
 
         public int HrTypeId { get; set; }
@@ -38,5 +40,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual ICollection<HrAction> HrAction { get; set; }
         public virtual ICollection<HrArea> HrArea { get; set; }
         public virtual ICollection<HrAreaField> HrAreaField { get; set; }
+        public virtual ICollection<HrBill> HrBill { get; set; }
+        public virtual ICollection<HrTypeView> HrTypeView { get; set; }
     }
 }

@@ -11,13 +11,13 @@ namespace Services.Organization.Model.HrConfig
         public string Title { get; set; }
         public string HrTypeCode { get; set; }
         public IList<HrAreaBasicOutput> Areas { get; set; }
-        // public IList<HrTypeViewModelList> Views { get; set; }
+        public IList<HrTypeViewModelList> Views { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<HrType, HrTypeBasicOutput>()
-                .ForMember(d => d.Areas, m => m.Ignore());
-                // .ForMember(d => d.Views, m => m.Ignore());
+                .ForMember(d => d.Areas, m => m.Ignore())
+                .ForMember(d => d.Views, m => m.Ignore());
         }
     }
 

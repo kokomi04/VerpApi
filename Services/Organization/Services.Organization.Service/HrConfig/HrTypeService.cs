@@ -1,3 +1,4 @@
+using Services.Organization.Model.HrConfig;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,7 +9,6 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Services.Organization.Model.HrConfig;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
@@ -39,6 +39,12 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<HrTypeGlobalSettingModel> GetHrGlobalSetting();
         Task<bool> UpdateHrGlobalSetting(HrTypeGlobalSettingModel data);
         Task<HrTypeBasicOutput> GetHrTypeBasicInfo(int hrTypeId);
+
+        Task<int> HrTypeViewCreate(int hrTypeId, HrTypeViewModel model);
+        Task<bool> HrTypeViewDelete(int hrTypeViewId);
+        Task<IList<HrTypeViewModelList>> HrTypeViewList(int hrTypeId);
+        Task<bool> HrTypeViewUpdate(int hrTypeViewId, HrTypeViewModel model);
+        Task<HrTypeViewModel> GetHrTypeViewInfo(int hrTypeId, int hrTypeViewId);
     }
 
     public class HrTypeService : IHrTypeService
@@ -523,16 +529,16 @@ namespace VErp.Services.Organization.Service.HrConfig
             return $"{HR_TABLE_NAME_PREFIX}_{hrTypeCode}_{hrAreaCode}";
         }
 
-        public async Task<HrTypeBasicOutput> GetHrTypeBasicInfo(int inputTypeId)
+        public async Task<HrTypeBasicOutput> GetHrTypeBasicInfo(int hrTypeId)
         {
-            var inputTypeInfo = await _organizationDBContext.HrType.AsNoTracking().Where(t => t.HrTypeId == inputTypeId).ProjectTo<HrTypeBasicOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+            var hrTypeInfo = await _organizationDBContext.HrType.AsNoTracking().Where(t => t.HrTypeId == hrTypeId).ProjectTo<HrTypeBasicOutput>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
 
-            inputTypeInfo.Areas = await _organizationDBContext.HrArea.AsNoTracking().Where(a => a.HrTypeId == inputTypeId).OrderBy(a => a.SortOrder).ProjectTo<HrAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
+            hrTypeInfo.Areas = await _organizationDBContext.HrArea.AsNoTracking().Where(a => a.HrTypeId == hrTypeId).OrderBy(a => a.SortOrder).ProjectTo<HrAreaBasicOutput>(_mapper.ConfigurationProvider).ToListAsync();
 
             var fields = await (
                 from af in _organizationDBContext.HrAreaField
                 join f in _organizationDBContext.HrField on af.HrFieldId equals f.HrFieldId
-                where af.HrTypeId == inputTypeId
+                where af.HrTypeId == hrTypeId
                 orderby af.SortOrder
                 select new HrAreaFieldBasicOutput
                 {
@@ -556,14 +562,146 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             // var views = await _organizationDBContext.HrTypeView.AsNoTracking().Where(t => t.HrTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<HrTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
 
-            foreach (var item in inputTypeInfo.Areas)
+            foreach (var item in hrTypeInfo.Areas)
             {
                 item.Fields = fields.Where(f => f.HrAreaId == item.HrAreaId).ToList();
             }
 
             // inputTypeInfo.Views = views;
 
-            return inputTypeInfo;
+            return hrTypeInfo;
         }
+
+        #region InputTypeView
+        public async Task<IList<HrTypeViewModelList>> HrTypeViewList(int hrTypeId)
+        {
+            return await _organizationDBContext.HrTypeView.Where(v => v.HrTypeId == hrTypeId).ProjectTo<HrTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
+        }
+
+        public async Task<HrTypeViewModel> GetHrTypeViewInfo(int hrTypeId, int hrTypeViewId)
+        {
+            var info = await _organizationDBContext.HrTypeView.AsNoTracking().Where(t => t.HrTypeId == hrTypeId && t.HrTypeViewId == hrTypeViewId).ProjectTo<HrTypeViewModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+
+            if (info == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình trong hệ thống");
+            }
+
+            var fields = await _organizationDBContext.HrTypeViewField.AsNoTracking()
+                .Where(t => t.HrTypeViewId == hrTypeViewId)
+                .ProjectTo<HrTypeViewFieldModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            info.Fields = fields;
+
+            return info;
+        }
+
+        public async Task<int> HrTypeViewCreate(int hrTypeId, HrTypeViewModel model)
+        {
+            using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var hrTypeInfo = await _organizationDBContext.HrType.FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
+                if (hrTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+
+                var info = _mapper.Map<HrTypeView>(model);
+
+                info.HrTypeId = hrTypeId;
+
+                await _organizationDBContext.HrTypeView.AddAsync(info);
+                await _organizationDBContext.SaveChangesAsync();
+
+                await HrTypeViewFieldAddRange(info.HrTypeViewId, model.Fields);
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Tạo bộ lọc {info.HrTypeViewName} cho chứng từ  {hrTypeInfo.Title}", model.JsonSerialize());
+
+                return info.HrTypeViewId;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "HrTypeViewCreate");
+                throw;
+            }
+        }
+
+        public async Task<bool> HrTypeViewUpdate(int hrTypeViewId, HrTypeViewModel model)
+        {
+            using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
+            {
+
+                var info = await _organizationDBContext.HrTypeView.FirstOrDefaultAsync(v => v.HrTypeViewId == hrTypeViewId);
+
+                if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "View không tồn tại");
+
+                var inputTypeInfo = await _organizationDBContext.HrType.FirstOrDefaultAsync(t => t.HrTypeId == info.HrTypeId);
+                if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ hành chính nhân sự ");
+
+
+                _mapper.Map(model, info);
+
+                var oldFields = await _organizationDBContext.HrTypeViewField.Where(f => f.HrTypeViewId == hrTypeViewId).ToListAsync();
+
+                _organizationDBContext.HrTypeViewField.RemoveRange(oldFields);
+
+                await HrTypeViewFieldAddRange(hrTypeViewId, model.Fields);
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Cập nhật bộ lọc {info.HrTypeViewName} cho chứng từ hành chính nhân sự  {inputTypeInfo.Title}", model.JsonSerialize());
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "HrTypeService: HrTypeViewUpdate");
+                throw;
+            }
+        }
+
+        public async Task<bool> HrTypeViewDelete(int hrTypeViewId)
+        {
+            var info = await _organizationDBContext.HrTypeView.FirstOrDefaultAsync(v => v.HrTypeViewId == hrTypeViewId);
+
+            if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound, "View không tồn tại");
+
+            info.IsDeleted = true;
+            info.DeletedDatetimeUtc = DateTime.UtcNow;
+
+
+            var inputTypeInfo = await _organizationDBContext.HrType.FirstOrDefaultAsync(t => t.HrTypeId == info.HrTypeId);
+            if (inputTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ hành chính nhân sự ");
+
+
+            await _organizationDBContext.SaveChangesAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Xóa bộ lọc {info.HrTypeViewName} chứng từ hành chính nhân sự  {inputTypeInfo.Title}", new { hrTypeViewId }.JsonSerialize());
+
+            return true;
+
+        }
+
+        private async Task HrTypeViewFieldAddRange(int inputTypeViewId, IList<HrTypeViewFieldModel> fieldModels)
+        {
+            var fields = fieldModels.Select(f => _mapper.Map<HrTypeViewField>(f)).ToList();
+
+            foreach (var f in fields)
+            {
+                f.HrTypeViewId = inputTypeViewId;
+            }
+
+            await _organizationDBContext.HrTypeViewField.AddRangeAsync(fields);
+
+        }
+        #endregion HrTypeView
     }
 }
