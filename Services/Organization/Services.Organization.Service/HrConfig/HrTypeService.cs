@@ -560,14 +560,14 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 }).ToListAsync();
 
-            // var views = await _organizationDBContext.HrTypeView.AsNoTracking().Where(t => t.HrTypeId == inputTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<HrTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
+            var views = await _organizationDBContext.HrTypeView.AsNoTracking().Where(t => t.HrTypeId == hrTypeId).OrderByDescending(v => v.IsDefault).ProjectTo<HrTypeViewModelList>(_mapper.ConfigurationProvider).ToListAsync();
 
             foreach (var item in hrTypeInfo.Areas)
             {
                 item.Fields = fields.Where(f => f.HrAreaId == item.HrAreaId).ToList();
             }
 
-            // inputTypeInfo.Views = views;
+            hrTypeInfo.Views = views;
 
             return hrTypeInfo;
         }
