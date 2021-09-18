@@ -156,7 +156,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             sheet.EnsureCell(fRow, 2).SetCellValue($"PO của khách");
             sheet.EnsureCell(fRow, 3).SetCellValue($"Mã hàng");
             sheet.EnsureCell(fRow, 4).SetCellValue($"Tên hàng");
-            sheet.EnsureCell(fRow, 5).SetCellValue($"Số cont");
+            sheet.EnsureCell(fRow, 5).SetCellValue($"S.lg Cont.");
             sheet.EnsureCell(fRow, 6).SetCellValue($"Số lượng");
             sheet.EnsureCell(fRow, 7).SetCellValue($"Đơn vị");
             sheet.EnsureCell(fRow, 8).SetCellValue($"Ngày bắt đầu");
@@ -213,7 +213,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 sheet.EnsureCell(currentRow, 2).SetCellValue(item.CustomerPO);
                 sheet.EnsureCell(currentRow, 3).SetCellValue(item.ProductCode);
                 sheet.EnsureCell(currentRow, 4).SetCellValue(item.ProductName);
-                sheet.EnsureCell(currentRow, 5).SetCellValue(item.ContainerNumber);
+                sheet.EnsureCell(currentRow, 5).SetCellValue(item.ContainerQuantity);
                 sheet.EnsureCell(currentRow, 6).SetCellValue((double)(item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()));
                 sheet.EnsureCell(currentRow, 7).SetCellValue(item.UnitName);
                 sheet.EnsureCell(currentRow, 8).SetCellValue((item.StartDate + _currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
