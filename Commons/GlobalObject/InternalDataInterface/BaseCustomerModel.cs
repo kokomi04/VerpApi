@@ -73,102 +73,96 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int? LoanManagerUserId { get; set; }
 
 
-        [Display(Name = "Tên người liên hệ 1", GroupName = "TT liên hệ 1")]
+        [Display(Name = "(1) Họ tên", GroupName = "TT liên hệ 1")]
         public string ContactName1 { get; set; }
 
-        [Display(Name = "Giới tính người liên hệ 1", GroupName = "TT liên hệ 1")]
+        [Display(Name = "(1) Giới tính (Nam, Nữ, Male, Female)", GroupName = "TT liên hệ 1")]
         public EnumGender? ContactGender1 { get; set; }
-        [Display(Name = "Chức danh người liên hệ 1", GroupName = "TT liên hệ 1")]
-        public EnumGender? ContactPosition1 { get; set; }
+        [Display(Name = "(1) Chức danh", GroupName = "TT liên hệ 1")]
+        public string ContactPosition1 { get; set; }
 
-        [Display(Name = "Điện thoại người liên hệ 1", GroupName = "TT liên hệ 1")]
+        [Display(Name = "(1) Điện thoại", GroupName = "TT liên hệ 1")]
         public string ContactPhone1 { get; set; }
-        [Display(Name = "Email người liên hệ 1", GroupName = "TT liên hệ 1")]
+        [Display(Name = "(1) Email người", GroupName = "TT liên hệ 1")]
         public string ContactEmail1 { get; set; }
 
 
-        [Display(Name = "Tên người liên hệ 2", GroupName = "TT liên hệ 2")]
+        [Display(Name = "(2) Họ tên", GroupName = "TT liên hệ 2")]
         public string ContactName2 { get; set; }
 
-        [Display(Name = "Giới tính người liên hệ 2", GroupName = "TT liên hệ 2")]
+        [Display(Name = "(2) Giới tính (Nam, Nữ, Male, Female)", GroupName = "TT liên hệ 2")]
         public EnumGender? ContactGender2 { get; set; }
-        [Display(Name = "Chức danh người liên hệ 2", GroupName = "TT liên hệ 2")]
-        public EnumGender? ContactPosition2 { get; set; }
+        [Display(Name = "(2) Chức danh", GroupName = "TT liên hệ 2")]
+        public string ContactPosition2 { get; set; }
 
-        [Display(Name = "Điện thoại người liên hệ 2", GroupName = "TT liên hệ 2")]
+        [Display(Name = "(2) Điện thoại", GroupName = "TT liên hệ 2")]
         public string ContactPhone2 { get; set; }
-        [Display(Name = "Email người liên hệ 2", GroupName = "TT liên hệ 2")]
+        [Display(Name = "(2) Email người", GroupName = "TT liên hệ 2")]
         public string ContactEmail2 { get; set; }
 
 
-        [Display(Name = "Tên người liên hệ 3", GroupName = "TT liên hệ 3")]
+        [Display(Name = "(3) Họ tên", GroupName = "TT liên hệ 3")]
         public string ContactName3 { get; set; }
 
-        [Display(Name = "Giới tính người liên hệ 3", GroupName = "TT liên hệ 3")]
+        [Display(Name = "(3) Giới tính (Nam, Nữ, Male, Female)", GroupName = "TT liên hệ 3")]
         public EnumGender? ContactGender3 { get; set; }
-        [Display(Name = "Chức danh người liên hệ 3", GroupName = "TT liên hệ 3")]
-        public EnumGender? ContactPosition3 { get; set; }
+        [Display(Name = "(3) Chức danh", GroupName = "TT liên hệ 3")]
+        public string ContactPosition3 { get; set; }
 
-        [Display(Name = "Điện thoại người liên hệ 3", GroupName = "TT liên hệ 3")]
+        [Display(Name = "(3) Điện thoại", GroupName = "TT liên hệ 3")]
         public string ContactPhone3 { get; set; }
-        [Display(Name = "Email người liên hệ 3", GroupName = "TT liên hệ 3")]
+        [Display(Name = "(3) Email người", GroupName = "TT liên hệ 3")]
         public string ContactEmail3 { get; set; }
 
 
-        
-        [Display(Name = "Tên tài khoản ngân hàng 1", GroupName = "TT ngân hàng 1")]
+
+        [Display(Name = "(1) Tên tài khoản", GroupName = "TT ngân hàng 1")]
         public string BankAccAccountName1 { get; set; }
-
-        [Display(Name = "Tên ngân hàng 1", GroupName = "TT ngân hàng 1")]
+        [Display(Name = "(1) Tên ngân hàng", GroupName = "TT ngân hàng 1")]
         public string BankAccBankName1 { get; set; }
-        [Display(Name = "Số tài khoản ngân hàng 1", GroupName = "TT ngân hàng 1")]
+        [Display(Name = "(1) Số tài khoản", GroupName = "TT ngân hàng 1")]
         public string BankAccAccountNo1 { get; set; }
-
-        [Display(Name = "Swiff code tài khoản ngân hàng 1", GroupName = "TT ngân hàng 1")]
+        [Display(Name = "(1) Swiff code", GroupName = "TT ngân hàng 1")]
         public string BankAccSwiffCode1 { get; set; }
-        [Display(Name = "Chi nhánh tài khoản ngân hàng 1", GroupName = "TT ngân hàng 1")]
+        [Display(Name = "(1) Chi nhánh", GroupName = "TT ngân hàng 1")]
         public string BankAccBrach1 { get; set; }
-        [Display(Name = "Địa chỉ tài khoản ngân hàng 1", GroupName = "TT ngân hàng 1")]
+        [Display(Name = "(1) Địa chỉ", GroupName = "TT ngân hàng 1")]
         public string BankAccAddress1 { get; set; }
-        [Display(Name = "Loại tiền tài khoản ngân hàng 1", GroupName = "TT ngân hàng 1")]
+        [Display(Name = "(1) Loại tiền", GroupName = "TT ngân hàng 1")]
         public string BankAccCurrency1 { get; set; }
 
 
 
-        [Display(Name = "Tên tài khoản ngân hàng 2", GroupName = "TT ngân hàng 2")]
+        [Display(Name = "(2) Tên tài khoản", GroupName = "TT ngân hàng 2")]
         public string BankAccAccountName2 { get; set; }
-
-        [Display(Name = "Tên ngân hàng 2", GroupName = "TT ngân hàng 2")]
+        [Display(Name = "(2) Tên ngân hàng", GroupName = "TT ngân hàng 2")]
         public string BankAccBankName2 { get; set; }
-        [Display(Name = "Số tài khoản ngân hàng 2", GroupName = "TT ngân hàng 2")]
+        [Display(Name = "(2) Số tài khoản", GroupName = "TT ngân hàng 2")]
         public string BankAccAccountNo2 { get; set; }
-
-        [Display(Name = "Swiff code tài khoản ngân hàng 2", GroupName = "TT ngân hàng 2")]
+        [Display(Name = "(2) Swiff code", GroupName = "TT ngân hàng 2")]
         public string BankAccSwiffCode2 { get; set; }
-        [Display(Name = "Chi nhánh tài khoản ngân hàng 2", GroupName = "TT ngân hàng 2")]
+        [Display(Name = "(2) Chi nhánh", GroupName = "TT ngân hàng 2")]
         public string BankAccBrach2 { get; set; }
-        [Display(Name = "Địa chỉ tài khoản ngân hàng 2", GroupName = "TT ngân hàng 2")]
+        [Display(Name = "(2) Địa chỉ", GroupName = "TT ngân hàng 2")]
         public string BankAccAddress2 { get; set; }
-        [Display(Name = "Loại tiền tài khoản ngân hàng 2", GroupName = "TT ngân hàng 2")]
+        [Display(Name = "(2) Loại tiền", GroupName = "TT ngân hàng 2")]
         public string BankAccCurrency2 { get; set; }
 
 
 
-        [Display(Name = "Tên tài khoản ngân hàng 3", GroupName = "TT ngân hàng 3")]
+        [Display(Name = "(3) Tên tài khoản", GroupName = "TT ngân hàng 3")]
         public string BankAccAccountName3 { get; set; }
-
-        [Display(Name = "Tên ngân hàng 3", GroupName = "TT ngân hàng 3")]
+        [Display(Name = "(3) Tên ngân hàng", GroupName = "TT ngân hàng 3")]
         public string BankAccBankName3 { get; set; }
-        [Display(Name = "Số tài khoản ngân hàng 3", GroupName = "TT ngân hàng 3")]
+        [Display(Name = "(3) Số tài khoản", GroupName = "TT ngân hàng 3")]
         public string BankAccAccountNo3 { get; set; }
-
-        [Display(Name = "Swiff code tài khoản ngân hàng 3", GroupName = "TT ngân hàng 3")]
+        [Display(Name = "(3) Swiff code", GroupName = "TT ngân hàng 3")]
         public string BankAccSwiffCode3 { get; set; }
-        [Display(Name = "Chi nhánh tài khoản ngân hàng 3", GroupName = "TT ngân hàng 3")]
+        [Display(Name = "(3) Chi nhánh", GroupName = "TT ngân hàng 3")]
         public string BankAccBrach3 { get; set; }
-        [Display(Name = "Địa chỉ tài khoản ngân hàng 3", GroupName = "TT ngân hàng 3")]
+        [Display(Name = "(3) Địa chỉ", GroupName = "TT ngân hàng 3")]
         public string BankAccAddress3 { get; set; }
-        [Display(Name = "Loại tiền tài khoản ngân hàng 3", GroupName = "TT ngân hàng 3")]
+        [Display(Name = "(3) Loại tiền", GroupName = "TT ngân hàng 3")]
         public string BankAccCurrency3 { get; set; }
 
     }

@@ -36,16 +36,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             var reader = new ExcelReader(stream);
 
 
-            var strContactGender = nameof(CustomerModel.ContactGender1);
+            var strContactGender = nameof(BaseCustomerImportModel.ContactGender1);
             strContactGender = strContactGender.Substring(0, strContactGender.Length - 1);
 
 
-            var strBankAccCurrency = nameof(CustomerModel.BankAccCurrency1);
+            var strBankAccCurrency = nameof(BaseCustomerImportModel.BankAccCurrency1);
             strBankAccCurrency = strBankAccCurrency.Substring(0, strBankAccCurrency.Length - 1);
 
             var lstData = reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, (entity, propertyName, value) =>
             {
-                if (propertyName == nameof(CustomerModel.CustomerTypeId))
+                if (propertyName == nameof(BaseCustomerImportModel.CustomerTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
                     {
@@ -59,7 +59,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     return true;
                 }
 
-                if (propertyName == nameof(CustomerModel.DebtBeginningTypeId))
+                if (propertyName == nameof(BaseCustomerImportModel.DebtBeginningTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
                     {
@@ -73,7 +73,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     return true;
                 }
 
-                if (propertyName == nameof(CustomerModel.LoanBeginningTypeId))
+                if (propertyName == nameof(BaseCustomerImportModel.LoanBeginningTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(((int)EnumBeginningType.EndOfMonth).ToString().NormalizeAsInternalName()))
                     {
@@ -127,6 +127,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                 LoadContacts(customerInfo, customerModel);
                 LoadBankAccounts(customerInfo, customerModel);
+
+                if (customerInfo.CustomerTypeId == 0)
+                {
+                    customerInfo.CustomerTypeId = customerInfo.Contacts?.Count > 0 ? EnumCustomerType.Organization : EnumCustomerType.Personal;
+                }
 
                 customerModels.Add(customerInfo);
             }
