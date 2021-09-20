@@ -77,6 +77,13 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost]
+        [Route("over-hour")]
+        public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo([FromBody] int[] departmentIds)
+        {
+            return await _departmentCalendarService.GetDepartmentOverHourInfo(departmentIds);
+        }
+
+        [HttpPost]
         [Route("{departmentId}/over-hour")]
         public async Task<DepartmentOverHourInfoModel> CreateDepartmentOverHourInfo([FromRoute] int departmentId, [FromBody] DepartmentOverHourInfoModel data)
         {

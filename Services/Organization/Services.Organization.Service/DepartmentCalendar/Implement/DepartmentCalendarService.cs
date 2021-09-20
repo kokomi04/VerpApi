@@ -646,6 +646,16 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             return result;
         }
 
+        public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int[] departmentIds)
+        {
+            var result = await _organizationContext.DepartmentOverHourInfo
+                .Where(oh => departmentIds.Contains(oh.DepartmentId))
+                .ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return result;
+        }
+
         public async Task<DepartmentOverHourInfoModel> CreateDepartmentOverHourInfo(int departmentId, DepartmentOverHourInfoModel data)
         {
             try

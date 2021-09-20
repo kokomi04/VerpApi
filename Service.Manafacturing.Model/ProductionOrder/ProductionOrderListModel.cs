@@ -16,6 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public long PlanEndDate { get; set; }
+        public long DeliveryDate { get; set; }
         public long Date { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public string Description { get; set; }
@@ -34,6 +35,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
                 .ForMember(dest => dest.PlanEndDate, opt => opt.MapFrom(source => source.PlanEndDate.GetUnix()))
+                .ForMember(dest => dest.DeliveryDate, opt => opt.MapFrom(source => source.DeliveryDate.GetUnix()))
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))
                 .ForMember(dest => dest.CreatedDatetimeUtc, opt => opt.MapFrom(source => source.CreatedDatetimeUtc.GetUnix()));
         }
@@ -46,6 +48,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public DateTime EndDate { get; set; }
         public DateTime PlanEndDate { get; set; }
         public DateTime Date { get; set; }
+        public DateTime DeliveryDate { get; set; }
+
         public DateTime CreatedDatetimeUtc { get; set; }
         public string Description { get; set; }
         public int ProductionOrderStatus { get; set; }

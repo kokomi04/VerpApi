@@ -248,7 +248,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var model = _mapper.Map<MonthPlanModel>(monthPlan);
             model.WeekPlans = await _manufacturingDBContext.WeekPlan
                 .Where(wp => wp.MonthPlanId == monthPlan.MonthPlanId)
-                .OrderBy(wp => wp.StartDate)
+                .OrderByDescending(wp => wp.StartDate)
                 .ProjectTo<WeekPlanModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
