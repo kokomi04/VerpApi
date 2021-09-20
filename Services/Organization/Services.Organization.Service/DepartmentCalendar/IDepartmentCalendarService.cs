@@ -25,6 +25,8 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar
         Task<DepartmentOverHourInfoModel> UpdateDepartmentOverHourInfo(int departmentId, long departmentOverHourInfoId, DepartmentOverHourInfoModel data);
         Task<bool> DeleteDepartmentOverHourInfo(int departmentId, long departmentOverHourInfoId);
 
+        Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int[] departmentIds);
+
 
     }
 }
