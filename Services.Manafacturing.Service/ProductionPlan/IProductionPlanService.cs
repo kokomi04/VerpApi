@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan
 {
     public interface IProductionPlanService
     {
-        Task<IList<ProductionOrderListModel>> GetProductionOrders(long startDate, long endDate);
+        Task<IList<ProductionOrderListModel>> GetProductionPlans(long startDate, long endDate);
         Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(long startDate, long endDate);
         Task<IDictionary<long, List<ProductionWeekPlanModel>>> UpdateProductionPlan(IDictionary<long, List<ProductionWeekPlanModel>> data);
         Task<bool> DeleteProductionPlan(long productionOrderId);
