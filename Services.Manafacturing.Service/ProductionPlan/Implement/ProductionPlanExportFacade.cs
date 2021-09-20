@@ -59,7 +59,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         public async Task<(Stream stream, string fileName, string contentType)> Export(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
         {
             maxColumnIndex = 11 + data.ProductCateIds.Length;
-            productionPlanInfo = await _productionPlanService.GetProductionOrders(startDate, endDate);
+            productionPlanInfo = await _productionPlanService.GetProductionPlans(startDate, endDate);
             productCates = (await _productCateHelperService.Search(null, string.Empty, -1, -1, string.Empty, true)).List.Where(pc => data.ProductCateIds.Contains(pc.ProductCateId)).ToList();
             var productIds = productionPlanInfo.Select(p => p.ProductId.Value).Distinct().ToList();
 

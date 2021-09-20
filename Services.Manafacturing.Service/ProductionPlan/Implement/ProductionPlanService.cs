@@ -230,7 +230,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return await productionPlanExport.Export(startDate, endDate, data, mappingFunctionKeys);
         }
 
-        public async Task<IList<ProductionOrderListModel>> GetProductionOrders(long startDate, long endDate)
+        public async Task<IList<ProductionOrderListModel>> GetProductionPlans(long startDate, long endDate)
         {
 
             var parammeters = new List<SqlParameter>();
@@ -249,7 +249,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             if (startDate > 0 && endDate > 0)
             {
                 sql.Append(" WHERE ");
-                sql.Append("v.Date >= @FromDate AND v.Date <= @ToDate");
+                sql.Append("v.StartDate <= @ToDate AND v.PlanEndDate >= @FromDate");
                 parammeters.Add(new SqlParameter("@FromDate", startDate.UnixToDateTime()));
                 parammeters.Add(new SqlParameter("@ToDate", endDate.UnixToDateTime()));
             }
