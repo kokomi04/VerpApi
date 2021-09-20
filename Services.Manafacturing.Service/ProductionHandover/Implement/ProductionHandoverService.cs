@@ -239,14 +239,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .Where(ldr => ldr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
                 .Select(ldr => ldr.ProductionStepLinkData).ToList();
 
-            var linkDataIds = inputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).ToList().Concat(outputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).ToList());
+            var linkDataIds = (inputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).Concat(outputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId)).ToList());
 
             var stepMap = _manufacturingDBContext.ProductionStepLinkDataRole
                 .Include(ldr => ldr.ProductionStep)
                 .ThenInclude(ps => ps.OutsourceStepRequest)
                 .Include(ldr => ldr.ProductionStep)
                 .ThenInclude(ps => ps.Step)
-                .Where(ldr => !ldr.ProductionStep.IsFinish && ldr.ProductionStepId != productionStepId && linkDataIds.Contains(ldr.ProductionStepLinkDataId))
+                .Where(ldr => ldr.ProductionStep != null 
+                && ldr.ProductionStep.OutsourceStepRequest != null
+                && ldr.ProductionStep.Step != null
+                && !ldr.ProductionStep.IsFinish 
+                && ldr.ProductionStepId != productionStepId
+                && linkDataIds.Contains(ldr.ProductionStepLinkDataId))
                 .Select(ldr => new { ldr.ProductionStepLinkDataId, ldr.ProductionStep.ProductionStepId, ldr.ProductionStep.Step.StepName, ldr.ProductionStep.OutsourceStepRequest.OutsourceStepRequestId, ldr.ProductionStep.OutsourceStepRequest.OutsourceStepRequestCode })
                 .ToList()
                 .GroupBy(ldr => ldr.ProductionStepLinkDataId)
