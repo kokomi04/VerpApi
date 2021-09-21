@@ -33,6 +33,7 @@ using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.Accountancy;
+using Verp.Resources.Accountancy.InputData;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {

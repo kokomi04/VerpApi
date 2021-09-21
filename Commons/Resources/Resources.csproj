@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Update="Accountancy\AccountancyBillActivityLogMessage.Designer.cs">
+    <Compile Update="Accountancy\InputData\AccountancyBillActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>AccountancyBillActivityLogMessage.resx</DependentUpon>
@@ -355,7 +355,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Accountancy\AccountancyBillActivityLogMessage.resx">
+    <EmbeddedResource Update="Accountancy\InputData\AccountancyBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>AccountancyBillActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
