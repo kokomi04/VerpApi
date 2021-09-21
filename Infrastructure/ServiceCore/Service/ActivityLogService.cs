@@ -24,11 +24,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
-        ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId);        
+        ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId);
 
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "");
+        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null);
 
-        Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null);
+        Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null);
 
         ActivityLogBatchs BeginBatchLog();
 
@@ -61,11 +61,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return logBatchs;
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "")
+        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
         {
             if (ignoreBatch)
             {
-                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData);
+                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData, billTypeId);
             }
 
             ActivityLogBatchs batch = null;
@@ -78,16 +78,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             if (batch == null)
             {
-                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData);
+                return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData, billTypeId);
             }
             else
             {
-                batch.AddLog(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData);
+                batch.AddLog(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData, billTypeId);
                 return true;
             }
         }
 
-        public async Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null)
+        public async Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null)
         {
             var propertyInfo = ((MemberExpression)messageResourceName.Body).Member as PropertyInfo;
             if (propertyInfo == null)
@@ -97,7 +97,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             var type = propertyInfo.DeclaringType.FullName + "." + propertyInfo.Name;
             var messageFormat = (string)propertyInfo.GetValue(null);// typeof(T).stat
-            return await CreateLog(objectTypeId, objectId, string.Format(messageFormat, messageResourceFormatData), jsonData, action, ignoreBatch, type, messageResourceFormatData.JsonSerialize());
+            return await CreateLog(objectTypeId, objectId, string.Format(messageFormat, messageResourceFormatData), jsonData, action, ignoreBatch, type, messageResourceFormatData.JsonSerialize(), billTypeId);
         }
 
         public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId)
@@ -105,7 +105,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return new ObjectActivityLogFacade(objectTypeId, this);
         }
 
-        private async Task<bool> CreateLogRequest(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, string messageResourceName = "", string messageResourceFormatData = "")
+        private async Task<bool> CreateLogRequest(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
         {
             try
             {
@@ -118,6 +118,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     {
                         UserId = _currentContext.UserId,
                         ActionId = action == null ? (int)_currentContext.Action : (int)action.Value,
+                        //BillTypeId = billTypeId,
                         ObjectTypeId = (int)objectTypeId,
                         ObjectId = objectId,
                         MessageTypeId = (int)EnumMessageType.ActivityLog,
@@ -135,6 +136,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 {
                     UserId = _currentContext.UserId,
                     ActionId = _currentContext.Action,
+                    BillTypeId = billTypeId,
                     ObjectTypeId = objectTypeId,
                     ObjectId = objectId,
                     SubsidiaryId = _currentContext.SubsidiaryId,
@@ -169,10 +171,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 _activityLogBatchs.Add(this);
             }
 
-            internal void AddLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, string messageResourceName = "", string messageResourceFormatData = "")
+            internal void AddLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
             {
                 _logs.Add(new ActivityLogEntity()
                 {
+                    BillTypeId = billTypeId,
                     ObjectTypeId = objectTypeId,
                     ObjectId = objectId,
                     Message = message,
@@ -187,7 +190,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 foreach (var log in _logs)
                 {
-                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true, log.MessageResourceName, log.MessageResourceFormatData);
+                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true, log.MessageResourceName, log.MessageResourceFormatData, log.BillTypeId);
                 }
                 return true;
             }
@@ -200,6 +203,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             private class ActivityLogEntity
             {
+                public int? BillTypeId { get; set; }
                 public EnumObjectType ObjectTypeId { get; set; }
                 public long ObjectId { get; set; }
                 public string Message { get; set; }

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Verp.Resources.Master.User;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -19,6 +20,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
@@ -26,6 +28,7 @@ using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
 using VErp.Services.Organization.Model.Department;
+using static Verp.Resources.Master.User.UserValidationMessage;
 
 namespace VErp.Services.Master.Service.Users.Implement
 {
@@ -37,11 +40,12 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IRoleService _roleService;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _userActivityLog;
+
         public UserService(MasterDBContext masterContext
             , UnAuthorizeMasterDBContext unAuthorizeMasterDBContext
             , OrganizationDBContext organizationContext
@@ -61,11 +65,11 @@ namespace VErp.Services.Master.Service.Users.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _roleService = roleService;
-            _activityLogService = activityLogService;
             _currentContextService = currentContextService;
             _asyncRunnerService = asyncRunnerService;
             _serviceScopeFactory = serviceScopeFactory;
             _mapper = mapper;
+            _userActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.UserAndEmployee);
         }
 
 
@@ -74,14 +78,14 @@ namespace VErp.Services.Master.Service.Users.Implement
             var subsidiaryInfo = await _organizationContext.Subsidiary.IgnoreQueryFilters().FirstOrDefaultAsync(s => !s.IsDeleted && s.SubsidiaryId == subsidiaryId);
             if (subsidiaryInfo == null)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy thông tin công ty");
+                throw SubsidiaryNotFound.BadRequest();
             }
 
             var owner = await _organizationContext.Employee.IgnoreQueryFilters().FirstOrDefaultAsync(e => !e.IsDeleted && e.SubsidiaryId == subsidiaryId && e.EmployeeTypeId == (int)EnumEmployeeType.Owner);
 
             if (owner != null)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Công ty đã tạo tài khoản sở hữu!");
+                throw SubsidiaryAlreadyCreatedOwner.BadRequest();
             }
 
             using (var scope = _serviceScopeFactory.CreateScope())
@@ -238,8 +242,11 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Xóa nhân viên {userInfo?.Employee?.EmployeeCode}", userInfo.JsonSerialize());
-
+                    await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Delete)
+                      .MessageResourceFormatDatas(userInfo?.Employee?.EmployeeCode)
+                      .ObjectId(userId)
+                      .JsonData(userInfo.JsonSerialize())
+                      .CreateLog();
 
                 }
                 catch (Exception)
@@ -412,7 +419,11 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                     var newUserInfo = await GetUserFullInfo(userId);
 
-                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, userId, $"Cập nhật nhân viên {newUserInfo?.Employee?.EmployeeCode}", req.JsonSerialize());
+                    await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Update)
+                       .MessageResourceFormatDatas(userInfo?.Employee?.EmployeeCode)
+                       .ObjectId(userId)
+                       .JsonData(req.JsonSerialize())
+                       .CreateLog();
 
                 }
                 catch (Exception)
@@ -662,7 +673,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                             departmentByNames.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
                         }
 
-                        if (departmentId == 0) throw new BadRequestException(GeneralCode.ItemNotFound, $"Bộ phận {value} không tồn tại");
+                        if (departmentId == 0) throw DepartmentNotFound.BadRequestFormat(value);
 
                         if (!userDepartment.ContainsKey(entity))
                         {
@@ -737,8 +748,12 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                 foreach (var info in employees)
                 {
+                    await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Create)
+                      .MessageResourceFormatDatas(info.userInfo.EmployeeCode)
+                      .ObjectId(info.userId)
+                      .JsonData(req.JsonSerialize())
+                      .CreateLog();
 
-                    await _activityLogService.CreateLog(EnumObjectType.UserAndEmployee, info.userId, $"Thêm mới nhân viên {info.userInfo.EmployeeCode}", req.JsonSerialize());
 
                     _logger.LogInformation("CreateUser({0}) successful!", info.userId);
 
@@ -767,7 +782,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             var roleInfo = await _masterContext.Role.FirstOrDefaultAsync(r => r.RoleId == req.RoleId);
             if (roleInfo == null)
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy nhóm quyền trong hệ thống");
+                throw RoleNotFound.BadRequest();
             }
 
 
@@ -778,7 +793,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
                 if (employeeInfo.EmployeeTypeId == (int)EnumEmployeeType.Owner && req.RoleId != userInfo.RoleId)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể thay đổi nhóm quyền sở hữu");
+                    throw CannotChangeOwnerRole.BadRequest();
                 }
             }
 
@@ -940,7 +955,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             employees.ForEach(x => x.PartnerId = string.Concat("NV", x.UserId));
             await _organizationContext.SaveChangesAsync();
-            
+
             var rs = new List<(int userId, UserInfoInput userInfo)>();
             for (int i = 0; i < employees.Count(); i++)
             {
@@ -1032,7 +1047,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
             if (employee.EmployeeTypeId == (int)EnumEmployeeType.Owner)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể xóa nhân viên sở hữu");
+                throw CannotDeleteOwner.BadRequest();
             }
 
             employee.IsDeleted = true;

@@ -28,20 +28,27 @@ namespace VErp.Infrastructure.ApiCore.Middleware
             _httpContextAccessor = httpContextAccessor;
         }
 
+        private static CultureInfo usCulture = CultureInfo.GetCultureInfo("en-US");
         public async Task InvokeAsync(HttpContext context)
         {
 
             var language = GetLanguageHeader();
+            CultureInfo culture;
             if (!string.IsNullOrWhiteSpace(language))
             {
-                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo(language);
-                            }
+                culture = (CultureInfo)new CultureInfo(language, true).Clone();
+            }
             else
             {
-                Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("vi-VN");
+                culture = (CultureInfo)new CultureInfo("vi-VN", true).Clone();
+                // culture = CultureInfo.GetCultureInfo("vi-VN");
             }
 
-            Thread.CurrentThread.CurrentUICulture = Thread.CurrentThread.CurrentCulture;
+
+            culture.DateTimeFormat = usCulture.DateTimeFormat;
+            culture.NumberFormat = usCulture.NumberFormat;
+
+            Thread.CurrentThread.CurrentUICulture = Thread.CurrentThread.CurrentCulture = culture;
 
             await _next.Invoke(context);
         }

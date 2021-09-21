@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.ServiceCore.Model
     {
         public int UserId { get; set; }
         public EnumActionType ActionId { get; set; }
+        public int? BillTypeId { get; set; }
         public EnumObjectType ObjectTypeId { get; set; }
         public EnumMessageType MessageTypeId { get; set; }
         public long ObjectId { get; set; }

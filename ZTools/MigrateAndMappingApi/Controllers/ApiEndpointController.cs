@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MigrateAndMappingApi.Services;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Service.RolePermission;
 using VErp.WebApis.VErpApi;
@@ -18,14 +19,11 @@ namespace MigrateAndMappingApi.Controllers
     public class ApiEndpointController : ControllerBase
     {
         private readonly UnAuthorizeMasterDBContext _masterContext;
-        private readonly IApiEndpointService _apiEndpointService;
 
         public ApiEndpointController(UnAuthorizeMasterDBContext masterContext
-            , IApiEndpointService apiEndpointService
             )
         {
             _masterContext = masterContext;
-            _apiEndpointService = apiEndpointService;
         }
 
         private IList<ApiEndpoint> GetApis()
@@ -38,7 +36,7 @@ namespace MigrateAndMappingApi.Controllers
 
             foreach (var item in lst)
             {
-                item.ApiEndpointId = _apiEndpointService.HashApiEndpointId(item.ServiceId, item.Route, (EnumMethod)item.MethodId);
+                item.ApiEndpointId = Utils.HashApiEndpointId(item.ServiceId, item.Route, (EnumMethod)item.MethodId);
             }
             return lst.OrderBy(e => e.ServiceId).ThenBy(e => $"{e.Route}{e.MethodId}{e.ActionId}".ToLower()).ToList();
         }

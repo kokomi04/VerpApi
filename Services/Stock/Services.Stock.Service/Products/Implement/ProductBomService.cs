@@ -37,7 +37,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
 
         private readonly IUnitService _unitService;
@@ -45,7 +44,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IManufacturingHelperService _manufacturingHelperService;
         private readonly IPropertyService _propertyService;
         private readonly ObjectActivityLogFacade _productActivityLog;
-
+        private readonly ICurrentContextService _currentContextService;
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductBomService> logger
@@ -54,17 +53,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IUnitService unitService
             , IProductService productService
             , IManufacturingHelperService manufacturingHelperService
-            , IPropertyService propertyService)
+            , IPropertyService propertyService
+            , ICurrentContextService currentContextService
+            )
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
             _unitService = unitService;
             _productService = productService;
             _manufacturingHelperService = manufacturingHelperService;
             _propertyService = propertyService;
+            _currentContextService = currentContextService;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
@@ -347,7 +348,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                .SetService(_stockDbContext)
                .SetService(_productService)
                .SetService(_unitService)
-               .SetService(_activityLogService)
+               .SetService(_productActivityLog)
                .SetService(_manufacturingHelperService)
                .SetService(this);
         }

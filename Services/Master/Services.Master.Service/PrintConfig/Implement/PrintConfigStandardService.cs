@@ -8,6 +8,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Print;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -17,9 +18,11 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.PrintConfig;
+using static Verp.Resources.Master.Print.PrintConfigStandardValidationMessage;
 
 namespace VErp.Services.Master.Service.PrintConfig.Implement
 {
@@ -29,7 +32,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         private readonly AppSetting _appSetting;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _printConfigStandardActivityLog;
         private readonly IMapper _mapper;
         private readonly IDocOpenXmlService _docOpenXmlService;
 
@@ -43,13 +46,14 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             , IDocOpenXmlService docOpenXmlService)
         {
             _masterDBContext = accountancyDBContext;
-            _activityLogService = activityLogService;
             _docOpenXmlService = docOpenXmlService;
             _appSetting = appSetting.Value;
             _logger = logger;
             _mapper = mapper;
 
             _uploadTemplate = new UploadTemplatePrintConfigFacade().SetAppSetting(_appSetting);
+
+            _printConfigStandardActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PrintConfigStandard);
         }
 
         public async Task<int> AddPrintConfigStandard(PrintConfigStandardModel model, IFormFile file)
@@ -59,7 +63,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             {
                 if (file != null)
                 {
-                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, file);
+                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfigStandard, EnumFileType.Document, file);
                     model.TemplateFileName = fileInfo.FileName;
                     model.TemplateFilePath = fileInfo.FilePath;
                     model.ContentType = fileInfo.ContentType;
@@ -69,9 +73,14 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 await _masterDBContext.PrintConfigStandard.AddAsync(config);
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigStandardId, $"Thêm cấu hình phiếu in chứng từ gốc {config.PrintConfigName} ", model.JsonSerialize());
 
                 await trans.CommitAsync();
+
+                await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Create)
+                  .MessageResourceFormatDatas(config.PrintConfigName)
+                  .ObjectId(config.PrintConfigStandardId)
+                  .JsonData(model.JsonSerialize())
+                  .CreateLog();
 
                 return config.PrintConfigStandardId;
             }
@@ -98,10 +107,15 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 config.IsDeleted = true;
 
                 await _masterDBContext.SaveChangesAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigStandardId, $"Xóa cấu hình phiếu in chứng từ gốc {config.PrintConfigName}", config.JsonSerialize());
-
+             
                 await trans.CommitAsync();
+
+                await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(config.PrintConfigName)
+                   .ObjectId(config.PrintConfigStandardId)
+                   .JsonData(config.JsonSerialize())
+                   .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -155,7 +169,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 if (file != null)
                 {
-                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, file);
+                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfigStandard, EnumFileType.Document, file);
                     model.TemplateFilePath = fileInfo.FilePath;
                     model.TemplateFileName = fileInfo.FileName;
                     model.ContentType = fileInfo.ContentType;
@@ -165,7 +179,12 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, printConfigId, $"Cập nhật cấu hình phiếu in chứng từ gốc {model.PrintConfigName}", model.JsonSerialize());
+              
+                await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(config.PrintConfigName)
+                   .ObjectId(config.PrintConfigStandardId)
+                   .JsonData(model.JsonSerialize())
+                   .CreateLog();
 
                 await trans.CommitAsync();
                 return true;
@@ -188,7 +207,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
             if (string.IsNullOrWhiteSpace(printConfig.TemplateFilePath))
-                throw new BadRequestException(InputErrorCode.PrintConfigNotFound, "Chưa có file template cấu hình phiếu in");
+                throw TemplateFilePathIsEmpty.BadRequest(InputErrorCode.PrintConfigNotFound);
 
             if (!_uploadTemplate.ExistsFile(printConfig.TemplateFilePath))
                 throw new BadRequestException(FileErrorCode.FileNotFound);

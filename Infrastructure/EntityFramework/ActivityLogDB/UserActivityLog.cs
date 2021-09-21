@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace ActivityLogDB
 {
     public partial class UserActivityLog
     {
         public long UserActivityLogId { get; set; }
         public int UserId { get; set; }
+        public int? BillTypeId { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         public int? ActionId { get; set; }

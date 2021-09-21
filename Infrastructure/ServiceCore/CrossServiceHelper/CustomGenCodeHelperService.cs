@@ -263,15 +263,16 @@ public class GenerateCodeConfigData
     /// <param name="query">DbSet<Entity></param>
     /// <param name="currentCode">currentCode</param>
     /// <param name="checkExisted">expression to check if code/ generated code had been existed</param>
+    /// <param name="checkExistedFormat">Raw sql to check if code/ generated code had been existed</param>
     /// <returns></returns>
-    public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
+    public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class
     {
         TSource existedItem;
 
         if (!string.IsNullOrWhiteSpace(currentCode))
         {
 
-            existedItem = await GetExistedItem(query, currentCode, checkExisted);
+            existedItem = await GetExistedItem(query, currentCode, checkExisted, checkExistedFormat);
             if (existedItem != null) throw new BadRequestException(GeneralCode.ItemCodeExisted);
             return currentCode;
         }
@@ -306,7 +307,7 @@ public class GenerateCodeConfigData
             do
             {
                 code = (await customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, fId, refCode, date))?.CustomCode;
-                existedItem = await GetExistedItem(query, code, checkExisted);
+                existedItem = await GetExistedItem(query, code, checkExisted, checkExistedFormat);
                 if (existedItem != null)
                 {
                     await configOption.Ctx.ConfirmCode();
@@ -336,8 +337,13 @@ public class GenerateCodeConfigData
 
     }
 
-    private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
+    private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat) where TSource : class
     {
+        if (checkExistedFormat != null)
+        {
+            return checkExistedFormat.Invoke(code);
+        }
+
         var entityParameter = Expression.Parameter(typeof(TSource), "p");
 
         //Expression<Func<string>> codeFunction = () => code;
