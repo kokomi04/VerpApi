@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Update="Accountancy\AccountancyBillActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>AccountancyBillActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Enums\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.Designer.cs">
       <DependentUpon>OutsourceErrorCodeDescription.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -217,6 +222,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>PurchasingRequestMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="PurchaseOrder\Voucher\VoucherBillActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>VoucherBillActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Stock\Dictionary\ProductCateActivityMessage.Designer.cs">
       <DependentUpon>ProductCateActivityMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -345,6 +355,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Accountancy\AccountancyBillActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>AccountancyBillActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Enums\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.resx">
       <LastGenOutput>OutsourceErrorCodeDescription.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -512,6 +526,10 @@
     <EmbeddedResource Update="PurchaseOrder\PurchasingRequest\PurchasingRequestMessage.resx">
       <LastGenOutput>PurchasingRequestMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherBillActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>VoucherBillActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Dictionary\ProductCateActivityMessage.resx">
       <LastGenOutput>ProductCateActivityMessage.Designer.cs</LastGenOutput>
