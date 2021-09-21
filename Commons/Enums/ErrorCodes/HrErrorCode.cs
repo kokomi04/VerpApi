@@ -81,5 +81,8 @@ namespace VErp.Commons.Enums.StandardEnum
         HrActionNotFound = 39,
         [Description("Mã chức năng đã tồn tại")]
         HrActionCodeAlreadyExisted = 40,
+        CanNotInsertHrData = 41,
+        [Description("Thông tin giá trị dòng {0} của trường {1} không thỏa mãn điều kiện lọc")]
+        ReferValueNotValidFilter = 42,
     }
 }

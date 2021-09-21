@@ -245,10 +245,12 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.HrType.AddAsync(hrType);
                 await _organizationDBContext.SaveChangesAsync();
 
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Hr, EnumObjectType.HrType, hrType.HrTypeId);
+
                 trans.Commit();
+
                 await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Thêm chứng từ {hrType.Title}", data.JsonSerialize());
 
-                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Hr, EnumObjectType.HrType, hrType.HrTypeId);
                 return hrType.HrTypeId;
             }
             catch (Exception ex)
