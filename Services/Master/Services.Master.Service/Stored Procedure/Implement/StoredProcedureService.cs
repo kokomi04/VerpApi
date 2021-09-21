@@ -18,6 +18,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.StoredProcedure;
+using static Verp.Resources.Master.StoredProcedure.StoredProcedureValidationMessage;
 
 namespace VErp.Services.Master.Service.StoredProcedure.Implement
 {
@@ -116,7 +117,8 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
 
                 if ((await _masterDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
                 {
-                    throw new BadRequestException(StoredProcedureErrorCode.InvalidExists, $"Đã tồn tại {storedProcedureModel.Name}");
+                    throw StoredProcedureErrorCode.InvalidExists.BadRequestFormat(ObjectAlreadyExisted, storedProcedureModel.Name);
+                    
                 }
 
                 await _masterDBContext.Database.ExecuteSqlRawAsync(storedProcedureModel.Definition);

@@ -41,6 +41,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ObjectActivityLogFacade _purchasingRequestActivityLog;
+        private readonly ICurrentContextService _currentContextService;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -52,6 +53,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IProductHelperService productHelperService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , ICurrentContextService currentContextService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -64,6 +66,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _purchasingRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchasingRequest);
+            _currentContextService= currentContextService;
         }
 
 

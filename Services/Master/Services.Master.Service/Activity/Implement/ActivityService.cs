@@ -60,6 +60,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     UserId = input.UserId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     ActionId = (int)input.ActionId,
+                    BillTypeId = input.BillTypeId,
                     ObjectTypeId = (int)input.ObjectTypeId,
                     MessageTypeId = (int)input.MessageTypeId,
                     ObjectId = input.ObjectId,
@@ -91,11 +92,12 @@ namespace VErp.Services.Master.Service.Activity.Implement
             }
         }
 
-        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message, string messageResourceName = null, string messageResourceFormatData = null)
+        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message, string messageResourceName = null, string messageResourceFormatData = null, int? billTypeId = null)
         {
             var activity = new UserActivityLog()
             {
                 UserId = userId,
+                BillTypeId = billTypeId,
                 ObjectTypeId = objectTypeId,
                 ObjectId = objectId,
                 ActionId = actionTypeId,
@@ -113,9 +115,15 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return true;
         }
 
-        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
-            var query = _activityLogContext.UserActivityLog.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
+            var query = _activityLogContext.UserActivityLog.AsQueryable();
+            if (billTypeId.HasValue)
+            {
+                query = query.Where(q => q.BillTypeId == billTypeId.Value);
+            }
+
+            query = query.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
 
             var total = query.Count();
             var ualDataList = pageSize > 0 ? query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList() : query.AsNoTracking().ToList();

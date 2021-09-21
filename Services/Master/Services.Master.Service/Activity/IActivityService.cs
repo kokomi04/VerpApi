@@ -14,8 +14,8 @@ namespace VErp.Services.Master.Service.Activity
         void CreateActivityAsync(ActivityInput input);
         Task<bool> CreateActivityTask(ActivityInput input);
 
-        Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message, string messageResourceName = null, string messageResourceFormatData = null);
+        Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message, string messageResourceName = null, string messageResourceFormatData = null, int? billTypeId = null);
 
-        Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20);
+        Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20);
     }
 }

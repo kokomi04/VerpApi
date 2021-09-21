@@ -19,29 +19,22 @@ using VErp.Commons.Library;
 using System.Linq.Expressions;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Unit;
 
 namespace VErp.Services.Master.Service.Dictionay.Implement
 {
     public class UnitService : IUnitService
     {
         private readonly MasterDBContext _masterContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _unitActivityLog;
 
         public UnitService(MasterDBContext masterContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<UnitService> logger
             , IActivityLogService activityLogService
-            , ICurrentContextService currentContextService
             )
         {
             _masterContext = masterContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _currentContextService = currentContextService;
+            _unitActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Unit);
         }
 
         public async Task<int> AddUnit(UnitInput data)
@@ -71,7 +64,12 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _masterContext.Unit.AddAsync(unit);
             await _masterContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Unit, unit.UnitId, $"Thêm đơn vị tính {data.UnitName}", data.JsonSerialize());
+          
+            await _unitActivityLog.LogBuilder(() => UnitActivityLogMessage.Create)
+               .MessageResourceFormatDatas(unit.UnitName)
+               .ObjectId(unit.UnitId)
+               .JsonData(data.JsonSerialize())
+               .CreateLog();
 
             return unit.UnitId;
         }
@@ -151,7 +149,12 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             unitInfo.DecimalPlace = data.DecimalPlace;
             await _masterContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Unit, unitId, $"Sửa đơn vị tính {data.UnitName}", data.JsonSerialize());
+            await _unitActivityLog.LogBuilder(() => UnitActivityLogMessage.Update)
+            .MessageResourceFormatDatas(unitInfo.UnitName)
+            .ObjectId(unitInfo.UnitId)
+            .JsonData(data.JsonSerialize())
+            .CreateLog();
+
             return true;
         }
 
@@ -164,7 +167,12 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             }
             unitInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Unit, unitId, $"Xóa đơn vị tính {unitInfo.UnitName}", unitInfo.JsonSerialize());
+
+            await _unitActivityLog.LogBuilder(() => UnitActivityLogMessage.Delete)
+            .MessageResourceFormatDatas(unitInfo.UnitName)
+            .ObjectId(unitInfo.UnitId)
+            .JsonData(unitInfo.JsonSerialize())
+            .CreateLog();
 
             return true;
         }

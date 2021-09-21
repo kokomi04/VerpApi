@@ -29,18 +29,21 @@ using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using Microsoft.AspNetCore.DataProtection;
+using static Verp.Resources.Master.Category.CategoryConfigValidationMessage;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Category;
 
 namespace VErp.Services.Master.Service.Category
 {
     public class CategoryConfigService : ICategoryConfigService
     {
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterContext;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IDataProtectionProvider _protectionProvider;
+        private readonly ObjectActivityLogFacade _categoryConfigActivityLog;
 
         public CategoryConfigService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
@@ -52,12 +55,13 @@ namespace VErp.Services.Master.Service.Category
             )
         {
             _logger = logger;
-            _activityLogService = activityLogService;
             _masterContext = accountancyContext;
             _appSetting = appSetting.Value;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
             _protectionProvider = protectionProvider;
+
+            _categoryConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Category);
         }
 
         #region Category
@@ -196,7 +200,13 @@ namespace VErp.Services.Master.Service.Category
                     });
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Create)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
+
                 return category.CategoryId;
             }
             catch (Exception)
@@ -370,7 +380,15 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
                     });
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
+
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
+
+
                 return true;
             }
             catch (Exception)
@@ -426,7 +444,13 @@ namespace VErp.Services.Master.Service.Category
 
                 await _masterContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(category.JsonSerialize())
+                  .CreateLog();
+
                 return true;
             }
             catch (Exception)
@@ -493,7 +517,7 @@ namespace VErp.Services.Master.Service.Category
         {
             if (!((EnumDataType)categoryField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)categoryField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
+                throw CannotConvertSqlDataType.BadRequestFormat(((EnumDataType)categoryField.DataTypeId).GetEnumDescription(), ((EnumDataType)data.DataTypeId).GetEnumDescription());
             }
             categoryField.CategoryFieldName = data.CategoryFieldName;
             categoryField.Title = data.Title;
@@ -561,7 +585,7 @@ namespace VErp.Services.Master.Service.Category
                                            select f).FirstOrDefault();
                 if (sourceCategoryField == null)
                 {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu liên kết {refTable}.{refField}");
+                    throw RefFieldNotFound.BadRequestFormat($"{refTable}.{refField}");
                 }
                 data.DataTypeId = sourceCategoryField.DataTypeId;
                 data.DataSize = sourceCategoryField.DataSize;
@@ -703,7 +727,15 @@ namespace VErp.Services.Master.Service.Category
                     });
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
+
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.UpdateFileds)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(fields.JsonSerialize())
+                  .CreateLog();
+
+
                 return true;
             }
             catch (Exception)
@@ -762,7 +794,13 @@ namespace VErp.Services.Master.Service.Category
                     });
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.DeleteField)
+                  .MessageResourceFormatDatas(categoryField.Title, category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(categoryField.JsonSerialize())
+                  .CreateLog();
+
                 return true;
             }
             catch (Exception)
@@ -780,7 +818,7 @@ namespace VErp.Services.Master.Service.Category
                         where categoryCodes.Contains(c.CategoryCode)
                         select new ReferFieldModel
                         {
-                            IsHidden = f.IsHidden,                            
+                            IsHidden = f.IsHidden,
                             CategoryCode = c.CategoryCode,
                             CategoryTitle = c.Title,
                             CategoryFieldName = f.CategoryFieldName,
@@ -875,7 +913,7 @@ namespace VErp.Services.Master.Service.Category
                 {
                     if (!refCategoryFields.TryGetValue(field.RefTableCode, out var refCategory))
                     {
-                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
+                        throw RefTableNotFound.BadRequestFormat(field.RefTableCode);
                     }
 
 
@@ -1099,7 +1137,7 @@ namespace VErp.Services.Master.Service.Category
         public async Task<bool> CategoryViewUpdate(int categoryId, CategoryViewModel model)
         {
             var CategoryInfo = await _masterContext.Category.FirstOrDefaultAsync(t => t.CategoryId == categoryId);
-            if (CategoryInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy dan mục");
+            if (CategoryInfo == null) throw CategoryNotFound.BadRequest();
 
             var info = await _masterContext.CategoryView.FirstOrDefaultAsync(v => v.CategoryId == categoryId);
 
@@ -1124,7 +1162,11 @@ namespace VErp.Services.Master.Service.Category
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.CategoryView, info.CategoryViewId, $"Cập nhật bộ lọc {info.CategoryViewName} cho báo cáo  {CategoryInfo.Title}", model.JsonSerialize());
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.UpdateFilter)
+                  .MessageResourceFormatDatas(info.CategoryViewName, CategoryInfo.Title)
+                  .ObjectId(categoryId)
+                  .JsonData(model.JsonSerialize())
+                  .CreateLog();
 
                 return true;
             }
@@ -1142,7 +1184,7 @@ namespace VErp.Services.Master.Service.Category
             try
             {
                 var categoryInfo = await _masterContext.Category.FirstOrDefaultAsync(t => t.CategoryId == categoryId);
-                if (categoryInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ");
+                if (categoryInfo == null) throw CategoryNotFound.BadRequest();
 
                 var info = _mapper.Map<CategoryView>(model);
 
@@ -1157,7 +1199,12 @@ namespace VErp.Services.Master.Service.Category
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.CategoryView, info.CategoryViewId, $"Tạo bộ lọc {info.CategoryViewName} cho báo cáo  {categoryInfo.Title}", model.JsonSerialize());
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.CreateFilter)
+                  .MessageResourceFormatDatas(info.CategoryViewName, categoryInfo.Title)
+                  .ObjectId(categoryId)
+                  .JsonData(model.JsonSerialize())
+                  .CreateLog();
 
                 return true;
             }

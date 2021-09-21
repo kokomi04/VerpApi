@@ -23,18 +23,18 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         }
 
 
-        public Task<bool> CreateLog(long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", EnumObjectType? objectTypeId = null)
+        public Task<bool> CreateLog(long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", EnumObjectType? objectTypeId = null, int? billTypeId = null)
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
-            return _activityLogService.CreateLog(objectTypeId.Value, objectId, message, jsonData, action, ignoreBatch, messageResourceName, messageResourceFormatData);
+            return _activityLogService.CreateLog(objectTypeId.Value, objectId, message, jsonData, action, ignoreBatch, messageResourceName, messageResourceFormatData, billTypeId);
         }
 
-        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null)
+        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null,int? billTypeId=null)
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
-            return _activityLogService.CreateLog(objectTypeId.Value, objectId, messageResourceName, jsonData, action, ignoreBatch, messageResourceFormatData);
+            return _activityLogService.CreateLog(objectTypeId.Value, objectId, messageResourceName, jsonData, action, ignoreBatch, messageResourceFormatData, billTypeId);
         }
 
         public ActivityLogBatchs BeginBatchLog()
@@ -57,6 +57,7 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         private EnumActionType? action = null;
         private bool ignoreBatch = false;
         private EnumObjectType? objectTypeId;
+        private int? billTypeId = null;
 
         private readonly ObjectActivityLogFacade facade;
 
@@ -69,6 +70,13 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         public ObjectActivityLogModelBuilder<T> ObjectId(long objectId)
         {
             this.objectId = objectId;
+            return this;
+        }
+
+
+        public ObjectActivityLogModelBuilder<T> BillTypeId(int billTypeId)
+        {
+            this.billTypeId = billTypeId;
             return this;
         }
 
@@ -114,13 +122,9 @@ namespace VErp.Infrastructure.ServiceCore.Facade
 
         public async Task CreateLog()
         {
-            await facade.CreateLog<T>(objectId, messageResourceName, messageResourceFormatData, jsonData, action, ignoreBatch, objectTypeId);
+            await facade.CreateLog<T>(objectId, messageResourceName, messageResourceFormatData, jsonData, action, ignoreBatch, objectTypeId, billTypeId);
         }
 
-        public object JsonData(object p)
-        {
-            throw new NotImplementedException();
-        }
     }
 
 }

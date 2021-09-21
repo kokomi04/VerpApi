@@ -17,6 +17,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Master.Service.RolePermission;
 using VErp.Services.Master.Service.Users;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Config.Menu;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -24,9 +26,9 @@ namespace VErp.Services.Master.Service.Config.Implement
     {
         private readonly MasterDBContext _masterDbContext;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IUserService _userService;
+        private readonly ObjectActivityLogFacade _menuActivityLog;
 
         public MenuService(MasterDBContext masterDbContext
             , ILogger<MenuService> logger
@@ -38,10 +40,9 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             _masterDbContext = masterDbContext;
             _logger = logger;
-            _activityLogService = activityLogService;
             _currentContextService = currentContextService;
             _userService = userService;
-
+            _menuActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Menu);
         }
 
         public async Task<ICollection<MenuOutputModel>> GetMeMenuList()
@@ -82,7 +83,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             var lstMenu = new List<MenuOutputModel>();
             foreach (var item in await _masterDbContext.Menu.OrderBy(m => m.SortOrder).ToListAsync())
-            {               
+            {
                 lstMenu.Add(EntityToModel(item));
             }
             return lstMenu;
@@ -111,9 +112,15 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.IsGroup = model.IsGroup;
             obj.IsAlwaysShowTopMenu = model.IsAlwaysShowTopMenu;
             obj.UpdatedDatetimeUtc = DateTime.UtcNow;
-            await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
 
             await _masterDbContext.SaveChangesAsync();
+
+            await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Update)
+              .MessageResourceFormatDatas(obj.MenuName)
+              .ObjectId(menuId)
+              .JsonData(model.JsonSerialize())
+              .CreateLog();
+
             return true;
 
         }
@@ -131,7 +138,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.UpdatedByUserId = _currentContextService.UserId;
             obj.DeletedDatetimeUtc = DateTime.UtcNow;
             await _masterDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Xoá menu {obj.MenuName} ", obj.JsonSerialize());
+
+            await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Update)
+            .MessageResourceFormatDatas(obj.MenuName)
+            .ObjectId(menuId)
+            .JsonData(obj.JsonSerialize())
+            .CreateLog();
+
             return true;
         }
 
@@ -161,7 +174,12 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext.Menu.Add(entity);
             await _masterDbContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Menu, entity.MenuId, $"Thêm mới menu {entity.MenuName} ", model.JsonSerialize());
+            await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Create)
+            .MessageResourceFormatDatas(entity.MenuName)
+            .ObjectId(entity.MenuId)
+            .JsonData(model.JsonSerialize())
+            .CreateLog();
+
 
             return entity.MenuId;
         }

@@ -47,10 +47,160 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Master\Config\ActionButton\ActionButtonActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ActionButtonActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\BarcodeConfig\BarcodeConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>BarcodeConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Category\CategoryConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CategoryConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Category\CategoryConfigValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CategoryConfigValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Category\CategoryDataActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CategoryDataActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Category\CategoryDataValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CategoryDataValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Category\CategoryGroupActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CategoryGroupActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Category\CategoryGroupValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CategoryGroupValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\ActionType\ActionTypeActivityLogMessage.Designer.cs">
+      <DependentUpon>ActionTypeActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Master\Config\ActionType\ActionTypeValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ActionTypeValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\DataConfig\DataConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DataConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\GenCodeConfig\GenCodeConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GenCodeConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\Menu\MenuActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>MenuActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\ObjectGenCode\ObjectGenCodeActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ObjectGenCodeActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\ObjectGenCode\ObjectGenCodeValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ObjectGenCodeValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\OutsideImportMapping\OutsideImportMappingActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>OutsideImportMappingActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Config\OutsideImportMapping\OutsideImportMappingValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>OutsideImportMappingValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Guide\GuideActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GuideActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Print\ObjectPrintConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ObjectPrintConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Print\PrintConfigCustomActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PrintConfigCustomActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Print\PrintConfigCustomValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PrintConfigCustomValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Print\PrintConfigStandardActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PrintConfigStandardActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Print\PrintConfigStandardValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PrintConfigStandardValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Master\ReuseContent\ReuseContentActivityMessage.Designer.cs">
       <DependentUpon>ReuseContentActivityMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Master\Role\RoleActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>RoleActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\StorageDatabase\StorageDatabaseActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>StorageDatabaseActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\StorageDatabase\StorageDatabaseValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>StorageDatabaseValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\StoredProcedure\StoredProcedureValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>StoredProcedureValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\Unit\UnitActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UnitActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\User\UserActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UserActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Master\User\UserValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>UserValidationMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.Designer.cs">
       <DependentUpon>ProductPriceConfigActivityLogMessage.resx</DependentUpon>
@@ -227,9 +377,129 @@
       <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\ActionButton\ActionButtonActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ActionButtonActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\BarcodeConfig\BarcodeConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>BarcodeConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Category\CategoryConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CategoryConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Category\CategoryConfigValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CategoryConfigValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Category\CategoryDataActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CategoryDataActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Category\CategoryDataValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CategoryDataValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Category\CategoryGroupActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CategoryGroupActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Category\CategoryGroupValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CategoryGroupValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\ActionType\ActionTypeActivityLogMessage.resx">
+      <LastGenOutput>ActionTypeActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\ActionType\ActionTypeValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ActionTypeValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\DataConfig\DataConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>DataConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\GenCodeConfig\GenCodeConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>GenCodeConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\Menu\MenuActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>MenuActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\ObjectGenCode\ObjectGenCodeActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ObjectGenCodeActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\ObjectGenCode\ObjectGenCodeValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ObjectGenCodeValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\OutsideImportMapping\OutsideImportMappingActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>OutsideImportMappingActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\OutsideImportMapping\OutsideImportMappingValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>OutsideImportMappingValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Guide\GuideActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>GuideActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Print\ObjectPrintConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ObjectPrintConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Print\PrintConfigCustomActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PrintConfigCustomActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Print\PrintConfigCustomValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PrintConfigCustomValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Print\PrintConfigStandardActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PrintConfigStandardActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Print\PrintConfigStandardValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PrintConfigStandardValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Master\ReuseContent\ReuseContentActivityMessage.resx">
       <LastGenOutput>ReuseContentActivityMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Role\RoleActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>RoleActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\StorageDatabase\StorageDatabaseActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>StorageDatabaseActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\StorageDatabase\StorageDatabaseValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>StorageDatabaseValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\StoredProcedure\StoredProcedureValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>StoredProcedureValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Unit\UnitActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>UnitActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\User\UserActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>UserActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\User\UserValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>UserValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.resx">
       <LastGenOutput>ProductPriceConfigActivityLogMessage.Designer.cs</LastGenOutput>

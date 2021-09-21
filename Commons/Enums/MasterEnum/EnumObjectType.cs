@@ -118,6 +118,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Loại danh mục")]
         Category = 32,
 
+        [Description("Dữ liệu danh mục")]
+        CategoryData = 32001,
+
         [Description("Trường danh mục")]
         CategoryField = 33,
 
@@ -163,8 +166,14 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Menu")]
         Menu = 46,
 
+        [Description("Hướng dẫn")]
+        Guide = 46001,
+
         [Description("Thiết lập sinh mã đối tượng")]
         ObjectCustomGenCodeMapping = 47,
+
+        [Description("Thiết lập ánh xạ các chứng từ")]
+        OutsideImportMappingFunction = 47001,
 
         [Description("Thông số hệ thống")]
         SystemParameter = 48,
@@ -173,8 +182,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chứng từ bán hàng")]
         VoucherBill = 49,
 
-        [Description("Cấu hình in")]
-        PrintConfig = 50,
+        [Description("Cấu hình phiếu hệ thống")]
+        PrintConfigStandard = 50001,
+        [Description("Cấu hình phiếu in tùy chỉnh")]
+        PrintConfigCustom = 50002,
 
         [Description("CSDL")]
         StorageDabase = 51,
@@ -306,7 +317,7 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Lịch tăng ca của bộ phận")]
         DepartmentOverHour = 604,
-        
+
         [Description("Nhóm chứng từ hành chính nhân sự")]
         HrTypeGroup = 1036,
 
@@ -315,10 +326,10 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Cấu hình chứng từ hành chính nhân sự")]
         HrTypeGlobalSetting = 1038,
-         [Description("Trường dữ liệu vùng chứng từ hành chính nhân sự")]
+        [Description("Trường dữ liệu vùng chứng từ hành chính nhân sự")]
         HrAreaField = 1039,
         [Description("Dòng chứng từ hành chính nhân sự")]
-        
+
         HrTypeRow = 1040,
 
         [Description("Bộ lọc chứng từ hành chính nhân sự")]

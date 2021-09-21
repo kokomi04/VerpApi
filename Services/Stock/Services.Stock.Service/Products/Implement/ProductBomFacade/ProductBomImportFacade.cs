@@ -72,10 +72,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return this;
         }
 
-        public ProductBomImportFacade SetService(IActivityLogService activityLogService)
+        public ProductBomImportFacade SetService(ObjectActivityLogFacade productActivityLog)
         {
             //_activityLogService = activityLogService;
-            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
+            _productActivityLog = productActivityLog;
             return this;
         }
 

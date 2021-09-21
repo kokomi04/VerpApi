@@ -20,6 +20,8 @@ using NPOI.OpenXmlFormats.Dml;
 using VErp.Infrastructure.EF.EFExtensions;
 using Verp.Cache.RedisCache;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Config.GenCodeConfig;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -28,7 +30,8 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _genCodeConfigActivityLog;
+
         private readonly ICurrentContextService _currentContextService;
 
         public GenCodeConfigService(MasterDBContext masterDbContext
@@ -42,8 +45,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _genCodeConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.CustomGenCodeConfig);
         }
 
         public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10)
@@ -276,7 +279,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await UpdateSortOrder();
 
-            await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Cập nhật cấu hình sinh mã tùy chọn cho {obj.CustomGenCodeName} ", model.JsonSerialize());
+            await _genCodeConfigActivityLog.LogBuilder(() => GenCodeConfigActivityLogMessage.Update)
+             .MessageResourceFormatDatas(obj.CustomGenCodeName)
+             .ObjectId(obj.CustomGenCodeId)
+             .JsonData(model.JsonSerialize())
+             .CreateLog();
+
             return true;
 
         }
@@ -365,7 +373,12 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _masterDbContext.SaveChangesAsync();
             await UpdateSortOrder();
 
-            await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, obj.CustomGenCodeId, $"Xoá cấu hình gen code tùy chọn cho {obj.CustomGenCodeName} ", obj.JsonSerialize());
+            await _genCodeConfigActivityLog.LogBuilder(() => GenCodeConfigActivityLogMessage.Delete)
+             .MessageResourceFormatDatas(obj.CustomGenCodeName)
+             .ObjectId(obj.CustomGenCodeId)
+             .JsonData(obj.JsonSerialize())
+             .CreateLog();
+
 
 
             return true;
@@ -433,7 +446,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await UpdateSortOrder();
 
-            await _activityLogService.CreateLog(EnumObjectType.CustomGenCodeConfig, entity.CustomGenCodeId, $"Thêm mới cấu hình gen code tùy chọn cho {entity.CustomGenCodeName} ", model.JsonSerialize());
+            await _genCodeConfigActivityLog.LogBuilder(() => GenCodeConfigActivityLogMessage.Update)
+             .MessageResourceFormatDatas(model.CustomGenCodeName)
+             .ObjectId(entity.CustomGenCodeId)
+             .JsonData(model.JsonSerialize())
+             .CreateLog();
+            
 
             return entity.CustomGenCodeId;
 

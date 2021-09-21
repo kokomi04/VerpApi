@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using static Verp.Resources.Master.Category.CategoryDataValidationMessage;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -17,6 +18,8 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Category;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
+using Verp.Resources.Master.Category;
+using VErp.Infrastructure.ServiceCore.Facade;
 
 namespace VErp.Services.Master.Service.Category
 {
@@ -24,8 +27,7 @@ namespace VErp.Services.Master.Service.Category
     {
         private readonly int _categoryId;
         private readonly MasterDBContext _accountancyContext;
-        private readonly ICategoryDataService _categoryDataService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ICategoryDataService _categoryDataService;        
         private readonly ICurrentContextService _currentContextService;
 
         private CategoryEntity _category;
@@ -38,12 +40,15 @@ namespace VErp.Services.Master.Service.Category
         private CategoryField[] _uniqueFields;
         private List<Dictionary<string, string>> _categoryDataRows;
 
-        public CategoryDataImportFacade(int categoryId, MasterDBContext accountancyContext, ICategoryDataService categoryDataService, IActivityLogService activityLogService, ICurrentContextService currentContextService)
+        private readonly ObjectActivityLogFacade _categoryDataActivityLog;
+
+
+        public CategoryDataImportFacade(int categoryId, MasterDBContext accountancyContext, ICategoryDataService categoryDataService, ObjectActivityLogFacade categoryDataActivityLog, ICurrentContextService currentContextService)
         {
             _categoryId = categoryId;
             _accountancyContext = accountancyContext;
             _categoryDataService = categoryDataService;
-            _activityLogService = activityLogService;
+            _categoryDataActivityLog = categoryDataActivityLog;
             _currentContextService = currentContextService;
         }
 
@@ -68,19 +73,23 @@ namespace VErp.Services.Master.Service.Category
             {
                 var oldRow = existsCategoryData.FirstOrDefault(x => EqualityBetweenTwoCategory(x, row, _uniqueFields));
 
+                var uniqueFieldMessage = $"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}";
+
                 if (oldRow != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại \"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}\", giá trị mang tính định danh trong danh mục {_category.Title}.");
+                    throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage, _category.Title);
+                    
 
                 if (oldRow == null)
                 {
                     if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại nhiều \"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}\", giá trị mang tính định danh trong file excel.");
+                        throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage);
+                        
                     lsAddRow.Add(row);
                 }
                 else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                 {
                     if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại nhiều \"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}\", giá trị mang tính định danh trong file excel.");
+                        throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage);
 
                     if (!row.ContainsKey(CategoryFieldConstants.ParentId))
                         row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
@@ -92,7 +101,7 @@ namespace VErp.Services.Master.Service.Category
 
             using (var trans = await _accountancyContext.Database.BeginTransactionAsync())
             {
-                using (var logBath = _activityLogService.BeginBatchLog())
+                using (var logBath = _categoryDataActivityLog.BeginBatchLog())
                 {
                     var parentField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == CategoryFieldConstants.ParentId);
 
@@ -220,7 +229,7 @@ namespace VErp.Services.Master.Service.Category
                     }
 
                     if (string.IsNullOrWhiteSpace(value) && _uniqueFields.Any(x => x.CategoryFieldName == mf.FieldName))
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu không được để trống, dòng {i + mapping.FromRow} cột {mf.Column}, trường \"{mf.Title}\" là trường dữ liệu bắt buộc trong danh mục {_category.Title}");
+                        throw ImportRequiredFieldInRowEmpty.BadRequestFormat(i + mapping.FromRow, mf.Column, mf.Title, _category.Title);                        
 
                     if (string.IsNullOrWhiteSpace(value) || mf.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty)
                         continue;
@@ -244,11 +253,11 @@ namespace VErp.Services.Master.Service.Category
 
                                 var hasGreaterThanParent = parents.Count() > 1;
                                 if (hasGreaterThanParent)
-                                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều {_category.Title.ToLower()} cha có \"{fieldInfo.Title}: {value}\" trong danh mục \"{_category.Title}\"");
+                                    throw ImportFoundMoreThanOneParent.BadRequestFormat(_category.Title.ToLower(), $"{fieldInfo.Title}: {value}", _category.Title);
 
                                 var notFoundParent = parents.Count() == 0;
                                 if (notFoundParent)
-                                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy {_category.Title.ToLower()} cha có \"{fieldInfo.Title}: {value}\" trong danh mục \"{_category.Title}\"");
+                                    throw ImportFoundNoParent.BadRequestFormat(_category.Title.ToLower(), $"{fieldInfo.Title}: {value}", _category.Title);
 
                             }
 
@@ -270,11 +279,11 @@ namespace VErp.Services.Master.Service.Category
 
                             var hasGreaterThanProperty = refProperty.Count() > 1;
                             if (hasGreaterThanProperty)
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều {refField.Title.ToLower()} có \"{refField.Field.Title}: {value}\" trong danh mục \"{refField.Title}\"");
+                                throw ImportFoundMoreThanOneRef.BadRequestFormat(refField.Title.ToLower(), $"{refField.Field.Title}: {value}", refField.Title);
 
                             var notFoundProperty = _refCategoryDataForProperty.Count() == 0;
                             if (notFoundProperty)
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy {refField.Title.ToLower()} có \"{refField.Field.Title}: {value}\" trong danh mục \"{refField.Title}\"");
+                                throw ImportFoundNoRefValue.BadRequestFormat(refField.Title.ToLower(), $"{refField.Field.Title}: {value}", refField.Title);
 
                             value = refProperty.FirstOrDefault()[CategoryFieldConstants.F_Id].ToString();
                         }
@@ -387,17 +396,19 @@ namespace VErp.Services.Master.Service.Category
 
         private string TransformValueByDataType(ImportExcelMapping mapping, int i, string value, CategoryField fieldInfo, string column)
         {
-            if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains(((EnumDataType?)fieldInfo?.DataTypeId).GetValueOrDefault()))
+            
+            if (((EnumDataType?)fieldInfo?.DataTypeId).GetValueOrDefault().IsTimeType())
             {
-                if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {i + mapping.FromRow} cột {column}, trường \"{fieldInfo.Title}\" sang kiểu ngày tháng");
+                if (!DateTime.TryParse(value, out DateTime date))
+                    throw ImportCannotConvertToDateTime.BadRequestFormat(value, i + mapping.FromRow, column, fieldInfo.Title);
+
                 value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
             }
 
             if ((EnumDataType)fieldInfo?.DataTypeId == EnumDataType.Boolean)
             {
                 if (!value.HasValueInRangeOfAllowValueForBoolean())
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {i + mapping.FromRow} cột {column}, trường \"{fieldInfo.Title}\" chỉ nhận các giá trị sau: {string.Join(", ", Utils.GetRangeOfAllowValueForBoolean())}");
+                    throw ImportOnlyAllowRangeValue.BadRequestFormat(i + mapping.FromRow, column, fieldInfo.Title, string.Join(", ", Utils.GetRangeOfAllowValueForBoolean()));
 
                 value = value.IsRangeOfAllowValueForBooleanTrueValue() ? "true" : "false";
             }
@@ -439,7 +450,7 @@ namespace VErp.Services.Master.Service.Category
             var mappingFields = _categoryFields.Where(x => mapping.MappingFields.Any(y => y.FieldName == x.CategoryFieldName)).ToList();
 
             if (mappingFields.Where(x => x.IsUnique).Count() != _uniqueFields.Length)
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Chưa cấu hình trường bắt buộc: {string.Join(", ", _uniqueFields.Select(x => x.Title))} ");
+                throw ImportRequiredFieldNotMapped.BadRequestFormat(string.Join(", ", _uniqueFields.Select(x => x.Title)));
         }
 
         private async Task ReadExcelData(ImportExcelMapping mapping, Stream stream)

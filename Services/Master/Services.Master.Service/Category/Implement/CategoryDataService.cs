@@ -33,13 +33,15 @@ using VErp.Services.Master.Service.Category;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using static Verp.Resources.Master.Category.CategoryDataValidationMessage;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Category;
 
 namespace VErp.Services.Accountancy.Service.Category
 {
     public class CategoryDataService : ICategoryDataService
     {
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterContext;
@@ -47,6 +49,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private readonly IDataProtectionProvider _protectionProvider;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly ObjectActivityLogFacade _categoryDataActivityLog;
 
         public CategoryDataService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
@@ -60,7 +63,6 @@ namespace VErp.Services.Accountancy.Service.Category
             )
         {
             _logger = logger;
-            _activityLogService = activityLogService;
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _mapper = mapper;
@@ -68,6 +70,8 @@ namespace VErp.Services.Accountancy.Service.Category
             _protectionProvider = protectionProvider;
             _customGenCodeHelperService = customGenCodeHelperService;
             _httpCategoryHelperService = httpCategoryHelperService;
+
+            _categoryDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.CategoryData);
         }
 
 
@@ -96,6 +100,8 @@ namespace VErp.Services.Accountancy.Service.Category
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
+            using var trans = await _masterContext.Database.BeginTransactionAsync();
+
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
@@ -120,7 +126,10 @@ namespace VErp.Services.Accountancy.Service.Category
                 .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
                 .ToList();
 
-            await FillGenerateColumn(null, category.CategoryCode, categoryFields, data);
+            var genCodeContexts = new List<GenerateCodeContext>();
+            var baseValueChains = new Dictionary<string, int>();
+
+            await FillGenerateColumn(genCodeContexts, baseValueChains, categoryId, category.CategoryCode, categoryFields, data);
 
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
@@ -145,7 +154,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (result.Code != 0)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin danh mục không hợp lệ. Mã lỗi {result.Code}" : result.Message);
+                if (string.IsNullOrWhiteSpace(result.Message))
+                    throw ProcessActionResultErrorCode.BadRequestFormat(result.Code);
+
+                throw result.Message.BadRequest();
             }
 
             // Insert data
@@ -209,7 +221,21 @@ namespace VErp.Services.Accountancy.Service.Category
 
             await _customGenCodeHelperService.ConfirmCode(CustomGenCodeBaseValue);
 
-            await _activityLogService.CreateLog(EnumObjectType.Category, id, $"Thêm mới dữ liệu danh mục {id}", data.JsonSerialize());
+            await trans.CommitAsync();
+
+            foreach (var item in genCodeContexts)
+            {
+                await item.ConfirmCode();
+            }
+
+
+            await _categoryDataActivityLog.LogBuilder(() => CategoryDataActivityLogMessage.Create)
+              .MessageResourceFormatDatas(id)
+              .BillTypeId(category.CategoryId)
+              .ObjectId(id)
+              .JsonData(data.JsonSerialize())
+              .CreateLog();
+
             return (int)id;
         }
 
@@ -289,7 +315,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (result.Code != 0)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, string.IsNullOrEmpty(result.Message) ? $"Thông tin danh mục không hợp lệ. Mã lỗi {result.Code}" : result.Message);
+                if (string.IsNullOrWhiteSpace(result.Message))
+                    throw ProcessActionResultErrorCode.BadRequestFormat(result.Code);
+
+                throw result.Message.BadRequest();
             }
 
             // Update data
@@ -346,45 +375,47 @@ namespace VErp.Services.Accountancy.Service.Category
             // After saving action (SQL)
             await ProcessActionAsync(category.AfterSaveAction, data, fieldParam, EnumActionType.Update);
 
-            await _activityLogService.CreateLog(EnumObjectType.Category, fId, $"Cập nhật dữ liệu danh mục {fId}", data.JsonSerialize());
+            await _categoryDataActivityLog.LogBuilder(() => CategoryDataActivityLogMessage.Update)
+             .MessageResourceFormatDatas(fId)
+             .BillTypeId(category.CategoryId)
+             .ObjectId(fId)
+             .JsonData(data.JsonSerialize())
+             .CreateLog();
+
             return numberChange;
         }
 
         private CustomGenCodeBaseValueModel CustomGenCodeBaseValue = null;
 
-        private async Task FillGenerateColumn(long? fId, string code, ICollection<CategoryField> fields, Dictionary<string, string> data)
+        private async Task FillGenerateColumn(List<GenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, Dictionary<string, string> data)
         {
+            var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
+
+            long? ngayCtValue = null;
+            if (long.TryParse(ngayCt, out var v))
+            {
+                ngayCtValue = v;
+            }
+
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
             {
                 if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullObject()))
                 {
                     try
                     {
-                        var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
 
-                        long? ngayCtValue = null;
-                        if (long.TryParse(ngayCt, out var v))
-                        {
-                            ngayCtValue = v;
-                        }
+                        var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
-                        var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId, fId, code, ngayCtValue);
+                        var code = await ctx
+                            .SetConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId)
+                            .SetConfigData(categoryId, ngayCtValue, categoryCode)
+                            .TryValidateAndGenerateCode(null, value, null, (code) =>
+                            {
+                                return new NonCamelCaseDictionary();
+                            });
 
-                        if (currentConfig == null)
-                        {
-                            throw new BadRequestException(GeneralCode.ItemNotFound, "Thiết định cấu hình sinh mã null " + field.Title);
-                        }
-
-                        var generatedCode = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, fId, code, ngayCtValue);
-
-                        if (generatedCode == null)
-                        {
-                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
-                        }
-
-                        CustomGenCodeBaseValue = currentConfig.CurrentLastValue;
-
-                        value = generatedCode.CustomCode;
+                        value = code;
+                        ctxs.Add(ctx);
 
                         if (!data.ContainsKey(field.CategoryFieldName))
                         {
@@ -394,10 +425,6 @@ namespace VErp.Services.Accountancy.Service.Category
                         {
                             data[field.CategoryFieldName] = value;
                         }
-                    }
-                    catch (BadRequestException badRequest)
-                    {
-                        throw new BadRequestException(badRequest.Code, "Cấu hình sinh mã " + field.Title + " => " + badRequest.Message);
                     }
                     catch (Exception)
                     {
@@ -491,7 +518,14 @@ namespace VErp.Services.Accountancy.Service.Category
             dataTable.Rows.Add(dataRow);
             int numberChange = await _masterContext.UpdateCategoryData(dataTable, fId);
 
-            await _activityLogService.CreateLog(EnumObjectType.Category, fId, $"Xóa dòng dữ liệu {fId}", categoryRow.JsonSerialize());
+
+            await _categoryDataActivityLog.LogBuilder(() => CategoryDataActivityLogMessage.Delete)
+             .MessageResourceFormatDatas(fId)
+             .BillTypeId(category.CategoryId)
+             .ObjectId(fId)
+             .JsonData(categoryRow.JsonSerialize())
+             .CreateLog();
+            
             return numberChange;
         }
 
@@ -857,7 +891,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)
         {
-          
+
             var ids = categoryRows.Select(r => (int)r[CategoryFieldConstants.F_Id]).ToList();
             var parentIds = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
             while (parentIds.Count > 0)
@@ -1027,7 +1061,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExcelMapping mapping, Stream stream)
         {
-            var facade = new CategoryDataImportFacade(categoryId, _masterContext, this, _activityLogService, _currentContextService);
+            var facade = new CategoryDataImportFacade(categoryId, _masterContext, this, _categoryDataActivityLog, _currentContextService);
             await facade.ImportData(mapping, stream);
 
             return true;

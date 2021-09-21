@@ -11,6 +11,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.StorageDatabase;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
@@ -22,8 +23,10 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.StorageDatabase;
+using static Verp.Resources.Master.StorageDatabase.StorageDatabaseValidationMessage;
 
 namespace VErp.Services.Master.Service.StorageDatabase.Implement
 {
@@ -33,10 +36,10 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
         private readonly ActivityLogDBContext _activityLogDBContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IPhysicalFileService _physicalFileService;
         private readonly ISubSystemService _manageVErpModuleService;
+        private readonly ObjectActivityLogFacade _storageDatabaseActivityLog;
 
         public StorageDatabaseService(MasterDBContext masterDBContext,
             ActivityLogDBContext activityLogDBContext,
@@ -51,13 +54,13 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             _masterContext = masterDBContext;
             _activityLogDBContext = activityLogDBContext;
             _appSetting = appSetting.Value;
-            _activityLogService = activityLogService;
             _logger = logger;
 
             _currentContextService = currentContextService;
             _physicalFileService = physicalFileService;
             _manageVErpModuleService = manageVErpModuleService;
-           
+
+            _storageDatabaseActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.StorageDabase);
         }
 
         public async Task<bool> BackupStorage(BackupStorageInput backupStorage)
@@ -117,7 +120,12 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backupPoint, $"Backup database into backup point: {backupPoint}", lsBackupStorage.JsonSerialize());
+
+                    await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.CreateBackup)
+                     .MessageResourceFormatDatas(backupStorage.Title)
+                     .ObjectId(backupPoint)
+                     .JsonData(lsBackupStorage.JsonSerialize())
+                     .CreateLog();
                 }
                 catch (Exception ex)
                 {
@@ -159,6 +167,12 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
 
             await _masterContext.SaveChangesAsync();
 
+            await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreDatabase)
+                  .MessageResourceFormatDatas(string.Join(", ", backups.Select(b => b.Title).Distinct().ToArray()))
+                  .ObjectId(backupPoint)
+                  .JsonData(backups.JsonSerialize())
+                  .CreateLog();
+
             return true;
         }
 
@@ -182,6 +196,12 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             backup.UpdatedByUserId = _currentContextService.UserId;
             await _masterContext.SaveChangesAsync();
 
+            await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreDatabaseModule)
+                .MessageResourceFormatDatas((EnumModuleType)moduleTypeId, backup.Title)
+                .ObjectId(backupPoint)
+                .JsonData(backup.JsonSerialize())
+                .CreateLog();
+
             return true;
         }
 
@@ -190,15 +210,19 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             var fileInfo = await _physicalFileService.GetSimpleFileInfo(backup.FileId);
 
             if (fileInfo == null)
-                throw new BadRequestException(FileErrorCode.FileNotFound, $"Không tìm thông tin file backup");
+                throw BackupFileNotFound.BadRequest(FileErrorCode.FileNotFound);
+
             var dbs = _manageVErpModuleService.GetDbByModuleTypeId((EnumModuleType)backup.ModuleTypeId);
             foreach (string db in dbs)
             {
                 string outDirectory = Path.GetDirectoryName(fileInfo.FilePath);
                 string filePath = GetPhysicalFilePath($"{outDirectory}/{db}.bak");
 
-                await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
-               $"Started restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+                await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreStarted)
+                    .MessageResourceFormatDatas(db,(EnumModuleType) backup.ModuleTypeId, backup.Title)
+                    .ObjectId(backup.BackupPoint)
+                    .JsonData(backup.JsonSerialize())
+                    .CreateLog();
 
                 DbContext dbContext = _activityLogDBContext;
 
@@ -210,8 +234,12 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 }
                 catch (Exception)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
-                        $"Fail to restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+                    await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreFail)
+                      .MessageResourceFormatDatas(db, (EnumModuleType)backup.ModuleTypeId, backup.Title)
+                      .ObjectId(backup.BackupPoint)
+                      .JsonData(backup.JsonSerialize())
+                      .CreateLog();
+
                     throw;
                 }
                 finally
@@ -219,8 +247,11 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     await dbContext.Database.ExecuteSqlRawAsync($"Alter Database {db}  SET MULTI_USER");
                 }
 
-                await _activityLogService.CreateLog(EnumObjectType.StorageDabase, backup.BackupPoint,
-                $"Successed restore database {db} of module {backup.ModuleTypeId} from backup point: {backup.BackupPoint}", backup.JsonSerialize());
+                await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreSuccess)
+                    .MessageResourceFormatDatas(db, (EnumModuleType)backup.ModuleTypeId, backup.Title)
+                    .ObjectId(backup.BackupPoint)
+                    .JsonData(backup.JsonSerialize())
+                    .CreateLog();
             }
         }
 

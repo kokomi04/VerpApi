@@ -45,15 +45,15 @@ namespace VErpApi.Controllers.System
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, SubsidiaryId, (int)EnumActionType.View, EnumMessageType.Comment, req.Message);
+            return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, SubsidiaryId, (int)EnumActionType.View, EnumMessageType.Comment, req.Message, billTypeId: req.BillTypeId);
         }
-     
+
         [HttpGet]
         [Route("")]
         [GlobalApi]
-        public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] int? billTypeId, [FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
         {
-            return await _activityService.GetListUserActivityLog(objectId, objectTypeId, page, size);
+            return await _activityService.GetListUserActivityLog(billTypeId, objectId, objectTypeId, page, size);
         }
     }
 }
