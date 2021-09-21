@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -15,28 +14,19 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
-using VErp.Services.Master.Service.Activity;
-using VErp.Services.Master.Model.Activity;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
-using VErp.Services.Master.Service.Config;
 using Verp.Cache.RedisCache;
-using NPOI.SS.Formula.Functions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class PurchasingSuggestService : IPurchasingSuggestService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
-        private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
-        private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IPurchasingRequestService _purchasingRequestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -44,12 +34,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public PurchasingSuggestService(
             PurchaseOrderDBContext purchaseOrderDBContext
-           , IOptions<AppSetting> appSetting
-           , ILogger<PurchasingSuggestService> logger
            , IActivityLogService activityLogService
-           , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
-            , IObjectGenCodeService objectGenCodeService
             , IPurchasingRequestService purchasingRequestService
             , IProductHelperService productHelperService
             , ICustomGenCodeHelperService customGenCodeHelperService
@@ -57,12 +43,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
             _activityLogService = activityLogService;
-            _asyncRunner = asyncRunner;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _purchasingRequestService = purchasingRequestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -79,6 +61,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.AsNoTracking()
                 .Where(d => d.PurchasingSuggestId == purchasingSuggestId)
+                .OrderBy(d => d.SortOrder)
                 .ToListAsync();
 
             var files = await _purchaseOrderDBContext.PurchasingSuggestFile.AsNoTracking().Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
@@ -104,37 +87,41 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
                 CensorDatetimeUtc = info.CensorDatetimeUtc?.GetUnix(),
 
+                TaxInPercent = info.TaxInPercent,
+                TaxInMoney = info.TaxInMoney,
+
+                TotalMoney = info.TotalMoney,
+
                 RejectCount = info.RejectCount,
                 Content = info.Content,
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
-                {
-                    requestDetailInfos.TryGetValue(d.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
+                Details = details.OrderBy(d => d.SortOrder).Select(d =>
+                  {
+                      requestDetailInfos.TryGetValue(d.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
 
-                    return new PurchasingSuggestDetailOutputModel()
-                    {
-                        RequestDetail = requestDetailInfo,
+                      return new PurchasingSuggestDetailOutputModel()
+                      {
+                          RequestDetail = requestDetailInfo,
 
-                        PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
-                        ProductId = d.ProductId,
-                        PrimaryQuantity = d.PrimaryQuantity,
-                        PrimaryUnitPrice = d.PrimaryUnitPrice,
+                          PurchasingSuggestDetailId = d.PurchasingSuggestDetailId,
+                          ProductId = d.ProductId,
+                          PrimaryQuantity = d.PrimaryQuantity,
+                          PrimaryUnitPrice = d.PrimaryUnitPrice,
 
-                        ProductUnitConversionId = d.ProductUnitConversionId,
-                        ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                        ProductUnitConversionPrice = d.ProductUnitConversionPrice,
+                          ProductUnitConversionId = d.ProductUnitConversionId,
+                          ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
+                          ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        OrderCode = d.OrderCode,
-                        ProductionOrderCode = d.ProductionOrderCode,
+                          OrderCode = d.OrderCode,
+                          ProductionOrderCode = d.ProductionOrderCode,
 
-                        CustomerId = d.CustomerId,
+                          CustomerId = d.CustomerId,
 
-                        TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney,
-
-                        Description = d.Description
-                    };
-                }
+                          Description = d.Description,
+                          IntoMoney = d.IntoMoney,
+                          SortOrder = d.SortOrder
+                      };
+                  }
                 ).ToList()
             };
 
@@ -245,9 +232,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             d.PurchasingRequestDetailId,
 
                             d.PrimaryUnitPrice,
-                            d.TaxInPercent,
-                            d.TaxInMoney,
-                            d.Description
+                            s.TaxInPercent,
+                            s.TaxInMoney,
+                            d.Description,
+                            d.IntoMoney,
+                            s.TotalMoney,
+                            d.SortOrder
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -291,7 +281,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
 
             var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(s => s.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var requestDetailIds = pagedData.Select(d => d.PurchasingRequestDetailId).Where(d => d.HasValue).Select(d => d.Value).ToList();
 
@@ -336,7 +326,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     Description = info.Description,
 
-                    RequestDetail = requestDetailInfo
+                    RequestDetail = requestDetailInfo,
+                    TotalMoney = info.TotalMoney,
+                    IntoMoney = info.IntoMoney,
+                    SortOrder = info.SortOrder
                 });
             }
 
@@ -368,14 +361,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CreatedByUserId = _currentContext.UserId,
                         UpdatedByUserId = _currentContext.UserId,
                         CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
+                        UpdatedDatetimeUtc = DateTime.UtcNow,
+                        TaxInMoney = model.TaxInMoney,
+                        TaxInPercent = model.TaxInPercent,
+                        TotalMoney = model.TotalMoney
                     };
 
                     await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
-                    var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d)).ToList();
+                    var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d))
+                        .OrderBy(s => s.SortOrder)
+                        .ToList();
 
+                    var sortOrder = 1;
+                    foreach (var item in purchasingSuggestDetailList)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
                     if (model.FileIds?.Count > 0)
                     {
                         await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(model.FileIds.Select(f => new PurchasingSuggestFile()
@@ -420,6 +423,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     info.UpdatedByUserId = _currentContext.UserId;
                     info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
+                    info.TaxInPercent = model.TaxInPercent;
+                    info.TaxInMoney = model.TaxInMoney;
+
+                    info.TotalMoney = model.TotalMoney;
+
                     var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                     var newDetails = new List<PurchasingSuggestDetail>();
@@ -449,10 +457,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                                 detail.CustomerId = item.CustomerId;
 
-                                detail.TaxInPercent = item.TaxInPercent;
-                                detail.TaxInMoney = item.TaxInMoney;
-
                                 detail.Description = item.Description;
+
+                                detail.IntoMoney = item.IntoMoney;
+
+                                detail.SortOrder = item.SortOrder;
 
                                 break;
                             }
@@ -510,6 +519,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
 
                     await _purchaseOrderDBContext.PurchasingSuggestDetail.AddRangeAsync(newDetails);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    var allDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+                    var sortOrder = 1;
+                    foreach (var d in allDetails)
+                    {
+                        d.SortOrder = sortOrder++;
+                    }
+
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     trans.Commit();
@@ -764,8 +782,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                     OrderCode = d.OrderCode,
                     ProductionOrderCode = d.ProductionOrderCode,
+                    SortOrder = d.SortOrder
+
                 })
-            .ToListAsync();
+                .OrderBy(d => d.SortOrder)
+                .ToListAsync();
         }
 
 
@@ -865,7 +886,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         public async Task<PageData<PoAssignmentOutputListByProduct>> PoAssignmentListByProduct(string keyword, IList<int> productIds, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = (
                 from s in _purchaseOrderDBContext.PurchasingSuggest
                 join a in _purchaseOrderDBContext.PoAssignment on s.PurchasingSuggestId equals a.PurchasingSuggestId
@@ -896,7 +917,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ad.ProductUnitConversionQuantity,
                     ad.ProductUnitConversionPrice,
                     ad.TaxInPercent,
-                    ad.TaxInMoney
+                    ad.TaxInMoney,
+                    ad.SortOrder
                 });
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -954,7 +976,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var total = await query.CountAsync();
 
-            query = query.SortByFieldName(sortBy, asc);
+            query = query.SortByFieldName(sortBy, asc).ThenBy(s => s.SortOrder);
             var pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
 
             var customerIds = pagedData.Select(d => d.CustomerId).ToList();
@@ -1014,7 +1036,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
             }
 
-            var assignments = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().Where(a => a.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+            var assignments = await _purchaseOrderDBContext.PoAssignment.AsNoTracking().Where(a => a.PurchasingSuggestId == purchasingSuggestId).OrderBy(a => a.Date).ToListAsync();
 
             var assignmentDetails = await (
                 from d in _purchaseOrderDBContext.PoAssignmentDetail
@@ -1035,9 +1057,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     d.ProductUnitConversionPrice,
 
                     d.TaxInPercent,
-                    d.TaxInMoney
+                    d.TaxInMoney,
+                    d.SortOrder
                 }
                 ).AsNoTracking()
+                .OrderBy(s => s.SortOrder)
                 .ToListAsync();
 
             var customerIds = assignmentDetails.Select(d => d.CustomerId).ToList();
@@ -1082,7 +1106,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
                             TaxInPercent = d.TaxInPercent,
-                            TaxInMoney = d.TaxInMoney
+                            TaxInMoney = d.TaxInMoney,
+                            SortOrder = d.SortOrder
                         })
                         .ToList()
                 });
@@ -1131,7 +1156,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     d.ProductUnitConversionPrice,
 
                     d.TaxInPercent,
-                    d.TaxInMoney
+                    d.TaxInMoney,
+                    d.SortOrder
                 }
                 ).AsNoTracking()
                 .ToListAsync();
@@ -1175,7 +1201,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
                             TaxInPercent = d.TaxInPercent,
-                            TaxInMoney = d.TaxInMoney
+                            TaxInMoney = d.TaxInMoney,
+                            SortOrder = d.SortOrder
                         })
                         .ToList()
             };
@@ -1217,9 +1244,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.AddAsync(poAssignment);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
-                    var poAssignmentDetails = model.Details.Select(d => PoAssimentDetailObjectToEntity(poAssignment.PoAssignmentId, d));
+                    var poAssignmentDetails = model.Details.Select(d => PoAssimentDetailObjectToEntity(poAssignment.PoAssignmentId, d))
+                        .OrderBy(d => d.SortOrder)
+                        .ToList();
 
-
+                    var sortOrder = 1;
+                    foreach (var item in poAssignmentDetails)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
                     await _purchaseOrderDBContext.PoAssignmentDetail.AddRangeAsync(poAssignmentDetails);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -1283,7 +1316,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 detail.TaxInPercent = item.TaxInPercent;
                                 detail.TaxInMoney = item.TaxInMoney;
-                                detail.UpdatedDatetimeUtc = DateTime.UtcNow;
+
+                                detail.SortOrder = item.SortOrder;
                                 break;
                             }
                         }
@@ -1303,6 +1337,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
 
                     await _purchaseOrderDBContext.PoAssignmentDetail.AddRangeAsync(newDetails);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
+                    var allDetails = await _purchaseOrderDBContext.PoAssignmentDetail.Where(d => d.PoAssignmentId == poAssignmentId).ToListAsync();
+                    var sortOrder = 1;
+                    foreach (var item in allDetails)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     trans.Commit();
@@ -1528,7 +1570,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductId = sd.ProductId,
                     PrimaryQuantity = d.PrimaryQuantity,
                     ProductUnitConversionId = sd.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = d.ProductUnitConversionQuantity
+                    ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                 })
             .ToListAsync();
         }
@@ -1554,10 +1596,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     PurchasingSuggestId = d.PurchasingSuggestId,
                     PurchasingSuggestCode = d.PurchasingSuggestCode
-                })
-                    .Distinct()
-                    .ToList()
-                );
+                }).Distinct().ToList());
         }
 
 
@@ -1583,13 +1622,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 DeletedDatetimeUtc = null,
                 CustomerId = d.CustomerId,
 
-                TaxInPercent = d.TaxInPercent,
-                TaxInMoney = d.TaxInMoney,
-
                 OrderCode = d.OrderCode,
                 ProductionOrderCode = d.ProductionOrderCode,
 
-                Description = d.Description
+                Description = d.Description,
+                IntoMoney = d.IntoMoney,
+                SortOrder = d.SortOrder
             };
         }
 
@@ -1607,6 +1645,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 TaxInPercent = d.TaxInPercent,
                 TaxInMoney = d.TaxInMoney,
+                SortOrder = d.SortOrder,
                 CreatedDatetimeUtc = DateTime.UtcNow,
                 UpdatedDatetimeUtc = DateTime.UtcNow,
                 IsDeleted = false,

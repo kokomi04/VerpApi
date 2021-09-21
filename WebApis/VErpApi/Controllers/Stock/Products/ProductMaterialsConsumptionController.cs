@@ -81,11 +81,11 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}/materialsConsumption/importFromMapping")]
         public async Task<bool> ImportMaterialsConsumptionFromMapping([FromRoute] int productId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (file == null)
+            if (file == null || mapping==null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-
+            mapping.FileName = file.FileName;
             return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMapping(productId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
@@ -93,10 +93,11 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}/materialsConsumption/previewFromMapping")]
         public async Task<IList<MaterialsConsumptionByProduct>> ImportMaterialsConsumptionFromMappingAsPreviewData([FromRoute] int productId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (file == null)
+            if (file == null || mapping == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
+            mapping.FileName = file.FileName;
 
             return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMappingAsPreviewData(productId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
@@ -105,10 +106,11 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("materialsConsumption/previewFromMapping")]
         public async Task<IList<MaterialsConsumptionByProduct>> ImportMaterialsConsumptionFromMappingAsPreviewData([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (file == null)
+            if (file == null || mapping == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
+            mapping.FileName = file.FileName;
 
             return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMappingAsPreviewData(null, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
@@ -117,10 +119,11 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("materialsConsumption/importFromMapping")]
         public async Task<bool> ImportMaterialsConsumptionFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (file == null)
+            if (file == null || mapping == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
+            mapping.FileName = file.FileName;
 
             return await _productMaterialsConsumptionService.ImportMaterialsConsumptionFromMapping(null, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }

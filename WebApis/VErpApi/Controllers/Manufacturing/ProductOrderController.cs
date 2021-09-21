@@ -12,6 +12,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -91,6 +92,16 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionOrder(productionOrderId);
         }
 
+        
+        [HttpGet]
+        [Route("GetProductionHistoryByOrder")]
+        public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder([FromQuery] IList<int> productIds, [FromQuery] IList<string> orderCodes)
+        {
+            return await _productionOrderService
+                .GetProductionHistoryByOrder(orderCodes, productIds);
+        }
+
+
         [HttpGet]
         [Route("order/{orderId}")]
         public async Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo([FromRoute] int orderId)
@@ -154,5 +165,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _validateProductionOrderService.ValidateProductionOrder(productionOrderId);
         }
 
+        [HttpGet]
+        [Route("capacity")]
+        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionOrderService.GetProductionCapacity(startDate, endDate);
+        }
     }
 }

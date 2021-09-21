@@ -20,6 +20,8 @@ using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.Activity;
 using RolePermissionEntity = VErp.Infrastructure.EF.MasterDB.RolePermission;
 using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Role;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
 {
@@ -28,13 +30,14 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _categoryHelperService;
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
+        private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IStockHelperService _stockHelperService;
         private readonly ICachingService _cachingService;
+        private readonly ObjectActivityLogFacade _roleActivityLog;
 
         public RoleService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
@@ -46,18 +49,19 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             , IVoucherTypeHelperService voucherTypeHelperService
             , IStockHelperService stockHelperService
             , ICachingService cachingService
-            )
+            , IOrganizationHelperService organizationHelperService)
         {
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _currentContextService = currentContextService;
             _categoryHelperService = categoryHelperService;
             _inputTypeHelperService = inputTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _stockHelperService = stockHelperService;
             _cachingService = cachingService;
+            _organizationHelperService = organizationHelperService;
+            _roleActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Role);
         }
 
         public async Task<int> AddRole(RoleInput role, EnumRoleType roleTypeId)
@@ -104,6 +108,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             var inputTypes = roleTypeId == EnumRoleType.Administrator ? await _inputTypeHelperService.GetInputTypeSimpleList() : null;
 
             var voucherTypes = roleTypeId == EnumRoleType.Administrator ? await _voucherTypeHelperService.GetVoucherTypeSimpleList() : null;
+            var hrTypes = roleTypeId == EnumRoleType.Administrator ? await _organizationHelperService.GetHrTypeSimpleList() : null;
 
             var stocks = roleTypeId == EnumRoleType.Administrator ? await _stockHelperService.GetAllStock() : null;
 
@@ -175,6 +180,23 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                     lstPermissions.Add(permission);
                                 }
                                 break;
+
+                            case (int)EnumModule.Hr:
+                                foreach (var c in hrTypes)
+                                {
+                                    var permission = new RolePermissionEntity
+                                    {
+                                        CreatedDatetimeUtc = DateTime.UtcNow,
+                                        ModuleId = m.ModuleId,
+                                        RoleId = roleInfo.RoleId,
+                                        Permission = int.MaxValue,
+                                        ObjectTypeId = (int)EnumObjectType.HrType,
+                                        ObjectId = c.HrTypeId,
+                                    };
+                                    lstPermissions.Add(permission);
+                                }
+                                break;
+
                             default:
 
                                 var modulePermission = new RolePermissionEntity
@@ -211,7 +233,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 trans.Commit();
             }
 
-            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Thêm mới nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
+         
+            await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Create)
+               .MessageResourceFormatDatas(roleInfo.RoleName)
+               .ObjectId(roleInfo.RoleId)
+               .JsonData(roleInfo.JsonSerialize())
+               .CreateLog();
 
             return roleInfo.RoleId;
         }
@@ -343,8 +370,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 trans.Commit();
             }
 
-            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Cập nhật nhóm quyền {roleInfo.RoleName}", role.JsonSerialize());
-
+            await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Update)
+            .MessageResourceFormatDatas(roleInfo.RoleName)
+            .ObjectId(roleInfo.RoleId)
+            .JsonData(roleInfo.JsonSerialize())
+            .CreateLog();
+       
             return true;
         }
 
@@ -374,7 +405,11 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 trans.Commit();
             }
 
-            await _activityLogService.CreateLog(EnumObjectType.Role, roleInfo.RoleId, $"Xóa nhóm quyền {roleInfo.RoleName}", roleInfo.JsonSerialize());
+            await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Delete)
+              .MessageResourceFormatDatas(roleInfo.RoleName)
+              .ObjectId(roleInfo.RoleId)
+              .JsonData(roleInfo.JsonSerialize())
+              .CreateLog();
 
             return true;
         }
@@ -428,8 +463,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.RolePermission, roleId, $"Phân quyền cho nhóm {roleInfo.RoleName}", permissions.JsonSerialize());
 
+                await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRolePermission)
+                    .MessageResourceFormatDatas(roleInfo.RoleName)
+                    .ObjectId(roleInfo.RoleId)
+                    .JsonData(permissions.JsonSerialize())
+                    .CreateLog();
 
                 RemoveAuthCache();
 
@@ -504,6 +543,10 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 RoleId = d.RoleId
             }));
             await _masterContext.SaveChangesAsync();
+
+            await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleStockPermission)          
+                .JsonData(req.JsonSerialize())
+                .CreateLog();
 
             RemoveAuthCache();
 
@@ -594,6 +637,10 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 RoleId = d.RoleId
             }));
             await _masterContext.SaveChangesAsync();
+
+            await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleCategoryPermission)
+              .JsonData(req.JsonSerialize())
+              .CreateLog();
 
             RemoveAuthCache();
 

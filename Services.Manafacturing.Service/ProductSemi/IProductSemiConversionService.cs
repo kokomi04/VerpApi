@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi
     {
         Task<long> AddProductSemiConversion(ProductSemiConversionModel model);
         Task<bool> UpdateProductSemiConversion(long productSemiConversionId, ProductSemiConversionModel model);
-        Task<bool> DeleteProductSemiConversion(long productSemiConversionId);
+        Task<bool> DeleteProductSemiConversion(long productSemiId, long productSemiConversionId);
 
         Task<ICollection<ProductSemiConversionModel>> GetAllProductSemiConversionsByProductSemi(long productSemiId);
         Task<ProductSemiConversionModel> GetProductSemiConversion(long productSemiConversionId);

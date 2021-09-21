@@ -11,7 +11,6 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Commons.Library;
 using VErp.Commons.Enums.StandardEnum;
@@ -32,7 +31,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
-        private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IMapper _mapper;
@@ -43,7 +41,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
-           , IObjectGenCodeService objectGenCodeService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
             , IMapper mapper
@@ -55,7 +52,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _mapper = mapper;
@@ -273,7 +269,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
             }
-            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Any(m => string.IsNullOrEmpty(m.ExcessMaterial))))
+            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Any(m => !m.ProductId.HasValue && string.IsNullOrEmpty(m.ExcessMaterial))))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
             }

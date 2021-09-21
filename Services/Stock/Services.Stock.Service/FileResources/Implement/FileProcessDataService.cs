@@ -36,6 +36,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private readonly IFileService _fileService;
         private readonly IInventoryService _inventoryService;
+        private readonly IInventoryBillInputService _inventoryBillInputService;
+        private readonly IInventoryBillOutputService _inventoryBillOututService;
 
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -47,6 +49,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             , ILogger<FileProcessDataService> logger
             , IFileService fileService
             , IInventoryService inventoryService
+            , IInventoryBillInputService inventoryBillInputService
+            , IInventoryBillOutputService inventoryBillOututService
             )
         {
             _masterDBContext = masterDBContext;
@@ -56,6 +60,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _fileService = fileService;
             _inventoryService = inventoryService;
             _organizationDBContext = organizationDBContext;
+            _inventoryBillInputService = inventoryBillInputService;
+            _inventoryBillOututService = inventoryBillOututService;
         }
 
         /// <summary>
@@ -852,7 +858,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 {
                     foreach (var item in inventoryInputList)
                     {
-                        var ret = await _inventoryService.AddInventoryInput(item);
+                        var ret = await _inventoryBillInputService.AddInventoryInput(item);
                         if (ret > 0)
                         {
                             // Duyệt phiếu nhập kho
@@ -1059,7 +1065,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     {
                         foreach (var item in inventoryOutputList)
                         {
-                            var ret = await _inventoryService.AddInventoryOutput(item);
+                            var ret = await _inventoryBillOututService.AddInventoryOutput(item);
                             if (ret > 0)
                             {
                                 // Duyệt phiếu xuất kho

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class ProductPriceConfigVersion
@@ -8,7 +10,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public ProductPriceConfigVersion()
         {
             ProductPriceConfigItem = new HashSet<ProductPriceConfigItem>();
-            ProductPriceInfo = new HashSet<ProductPriceInfo>();
         }
 
         public int ProductPriceConfigVersionId { get; set; }
@@ -26,6 +27,5 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
         public virtual ProductPriceConfig ProductPriceConfig { get; set; }
         public virtual ICollection<ProductPriceConfigItem> ProductPriceConfigItem { get; set; }
-        public virtual ICollection<ProductPriceInfo> ProductPriceInfo { get; set; }
     }
 }

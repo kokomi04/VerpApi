@@ -5,7 +5,9 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
+using VErp.Commons.ObjectExtensions.Extensions;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
@@ -47,7 +49,7 @@ namespace VErp.Commons.Enums.StandardEnum
                 if (enumResourceAttr.Length > 0)
                 {
                     System.Resources.ResourceManager rs = new System.Resources.ResourceManager(enumResourceAttr[0].ResourceType);
-                    var des= rs.GetString(value.ToString());
+                    var des = rs.GetString(value.ToString());
                     if (!string.IsNullOrWhiteSpace(des))
                     {
                         return des;
@@ -63,6 +65,37 @@ namespace VErp.Commons.Enums.StandardEnum
             catch (Exception)
             {
                 return value.ToString();
+            }
+        }
+
+       
+        public static string GetEnumDescription<T>(this int value) where T : Enum
+        {
+         
+            return ((Enum)Enum.ToObject(typeof(T), value)).GetEnumDescription();
+        }
+
+        public static T? GetEnumValue<T>(this string value) where T : struct, Enum
+        {
+            try
+            {
+                var members = GetEnumMembers<T>();
+                value = value?.NormalizeAsInternalName();
+                foreach (var member in members)
+                {
+                    var rangeValueAttr = member.Attributes.FirstOrDefault(a => a.GetType() == typeof(RangeValueAttribute));
+                    if (rangeValueAttr != null)
+                    {
+                        var rangeValues = ((RangeValueAttribute)rangeValueAttr).RangeValue;
+                        if (rangeValues.Any(v => v.Equals(value, StringComparison.OrdinalIgnoreCase))) return member.Enum;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
 
@@ -84,7 +117,7 @@ namespace VErp.Commons.Enums.StandardEnum
         public static IEnumerable<EnumInfo<T>> GetEnumMembers<T>() where T : Enum
         {
             var values = Enum.GetValues(typeof(T)).Cast<T>();
-            foreach(var value in values)
+            foreach (var value in values)
             {
                 yield return new EnumInfo<T>()
                 {

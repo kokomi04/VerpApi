@@ -10,6 +10,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Activity;
@@ -37,27 +38,22 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPost]
         [Route("")]
+        [GlobalApi]
         public async Task<bool> AddNote(AddNoteInput req)
         {
             if (req == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, SubsidiaryId, (int)EnumActionType.View, EnumMessageType.Comment, req.Message);
+            return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, SubsidiaryId, (int)EnumActionType.View, EnumMessageType.Comment, req.Message, billTypeId: req.BillTypeId);
         }
 
-        /// <summary>
-        /// Lấy danh sách ghi chú 
-        /// </summary>
-        /// <param name="objectId"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
+        [GlobalApi]
+        public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] int? billTypeId, [FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
         {
-            return await _activityService.GetListUserActivityLog(objectId, objectTypeId, page, size);
+            return await _activityService.GetListUserActivityLog(billTypeId, objectId, objectTypeId, page, size);
         }
     }
 }

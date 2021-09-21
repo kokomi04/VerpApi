@@ -44,7 +44,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<int> UpdateByBatch<T>(this IQueryable<T> query, Expression<Func<T, T>> updateExpression, CancellationToken cancellationToken = default) where T : class
         {
-            return await query.BatchUpdateAsync(updateExpression, cancellationToken);
+            return await query.BatchUpdateAsync(updateExpression, null, cancellationToken);
         }
 
 

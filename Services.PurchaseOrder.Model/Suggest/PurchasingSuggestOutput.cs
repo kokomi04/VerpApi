@@ -34,6 +34,9 @@ namespace VErp.Services.PurchaseOrder.Model
         public int RejectCount { get; set; }
         public IList<long> FileIds { get; set; }
         public List<PurchasingSuggestDetailOutputModel> Details { set; get; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
+        public decimal? TotalMoney { get; set; }
     }
 
     public class PurchasingSuggestDetailOutputModel : PurchasingSuggestDetailInputModel
@@ -57,6 +60,10 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
         public string Description { get; set; }
+
+        public decimal? TotalMoney { get; set; }
+        public decimal? IntoMoney { get; set; }
+        public int? SortOrder { get; set; }
 
         public PurchasingRequestDetailInfo RequestDetail { get; set; }
 

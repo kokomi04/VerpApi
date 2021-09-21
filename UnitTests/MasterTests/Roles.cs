@@ -43,7 +43,7 @@ namespace MasterTests
             var inMemOrganizationDBContext = SetupInMemoryDbContext<OrganizationDBContext>(f);
 
             var setting = new Mock<IOptions<AppSetting>>();
-            var basePath = Assembly.GetExecutingAssembly().CodeBase;
+            var basePath = Assembly.GetExecutingAssembly().Location;
             basePath = basePath.Substring(0, basePath.LastIndexOf('/'));
 
             setting.Setup(s => s.Value).Returns(AppConfigSetting.Config(basePath: basePath).AppSetting);

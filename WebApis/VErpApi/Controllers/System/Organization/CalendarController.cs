@@ -33,12 +33,25 @@ namespace VErpApi.Controllers.System
             return await _calendarService.GetCurrentCalendar();
         }
 
+        [HttpGet]
+        [Route("all")]
+        public async Task<IList<WeekCalendarModel>> GetCalendar()
+        {
+            return await _calendarService.GetCalendar();
+        }
 
         [HttpPut]
         [Route("")]
         public async Task<WeekCalendarModel> UpdateWeekCalendar([FromBody] WeekCalendarModel data)
         {
             return await _calendarService.UpdateWeekCalendar(data);
+        }
+
+        [HttpDelete]
+        [Route("{startDate}")]
+        public async Task<bool> DeleteWeekCalendar([FromRoute] long startDate)
+        {
+            return await _calendarService.DeleteWeekCalendar(startDate);
         }
 
         [HttpGet]

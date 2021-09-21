@@ -1017,7 +1017,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 data.DataTypeId = EnumDataType.Text;
                 data.DataSize = -1;
             }
-            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
+            if (!DataTypeConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {
                 data.RefTableField = null;
                 if (data.FormTypeId != EnumFormType.Input)

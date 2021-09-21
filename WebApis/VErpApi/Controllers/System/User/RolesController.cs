@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Verp.Cache.Caching;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
@@ -12,6 +14,8 @@ using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.RolePermission;
+using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
+using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
 
 namespace VErpApi.Controllers.System
 {
@@ -21,11 +25,13 @@ namespace VErpApi.Controllers.System
     {
         private readonly IRoleService _roleService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ICachingService _cachingService;
 
-        public RolesController(IRoleService roleService, ICurrentContextService currentContextService)
+        public RolesController(IRoleService roleService, ICurrentContextService currentContextService, ICachingService cachingService)
         {
             _roleService = roleService;
             _currentContextService = currentContextService;
+            _cachingService = cachingService;
         }
 
         /// <summary>
@@ -159,13 +165,22 @@ namespace VErpApi.Controllers.System
 
 
         [HttpGet]
-        [Route("RemoveAuthCache")]
-        [GlobalApi]
-        public bool CleanCache()
+        [Route("AuthCacheRemove")]
+        [AllowAnonymous]
+        public bool AuthCacheRemove()
         {
-            if (!_currentContextService.IsDeveloper) throw new BadRequestException("Clean auth caching require developer permission!");
+         //   if (!_currentContextService.IsDeveloper) throw new BadRequestException("Clean auth caching require developer permission!");
             _roleService.RemoveAuthCache();
             return true;
         }
+
+        [HttpGet]
+        [Route("AuthCacheGetApis")]
+        [GlobalApi]
+        public  HashSet<Guid> AuthCacheGetApis([FromQuery] int moduleId)
+        {
+            return  _cachingService.TryGet<HashSet<Guid>>(ModuleApiEndpointMappingsCacheKey(moduleId));
+        }
+
     }
 }

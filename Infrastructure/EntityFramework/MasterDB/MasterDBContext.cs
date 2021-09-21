@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class MasterDBContext : DbContext
@@ -28,10 +30,12 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CategoryView> CategoryView { get; set; }
         public virtual DbSet<CategoryViewField> CategoryViewField { get; set; }
         public virtual DbSet<Config> Config { get; set; }
+        public virtual DbSet<CurrencyConvert> CurrencyConvert { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
+        public virtual DbSet<I18nLanguage> I18nLanguage { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
@@ -59,6 +63,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<Action>(entity =>
             {
                 entity.Property(e => e.ActionId).ValueGeneratedNever();
@@ -143,7 +149,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Category>(entity =>
             {
-                entity.HasIndex(e => e.CategoryCode)
+                entity.HasIndex(e => e.CategoryCode, "IX_Category_CategoryCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -176,8 +182,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<CategoryField>(entity =>
             {
-                entity.HasIndex(e => e.CategoryId)
-                    .HasName("IDX_CategoryId");
+                entity.HasIndex(e => e.CategoryId, "IDX_CategoryId");
 
                 entity.Property(e => e.CategoryFieldName)
                     .IsRequired()
@@ -290,6 +295,19 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(512);
             });
 
+            modelBuilder.Entity<CurrencyConvert>(entity =>
+            {
+                entity.Property(e => e.FromCurrency)
+                    .IsRequired()
+                    .HasMaxLength(16);
+
+                entity.Property(e => e.Rate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ToCurrency)
+                    .IsRequired()
+                    .HasMaxLength(16);
+            });
+
             modelBuilder.Entity<CustomGenCode>(entity =>
             {
                 entity.Property(e => e.BaseFormat).HasMaxLength(128);
@@ -327,7 +345,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Seperator)
                     .HasMaxLength(1)
                     .IsUnicode(false)
-                    .IsFixedLength();
+                    .IsFixedLength(true);
 
                 entity.Property(e => e.Suffix)
                     .HasMaxLength(32)
@@ -394,6 +412,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(255);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            });
+
+            modelBuilder.Entity<I18nLanguage>(entity =>
+            {
+                entity.Property(e => e.En).HasMaxLength(1024);
+
+                entity.Property(e => e.Key)
+                    .HasMaxLength(1024)
+                    .UseCollation("SQL_Latin1_General_CP1_CS_AS");
+
+                entity.Property(e => e.Vi).HasMaxLength(1024);
             });
 
             modelBuilder.Entity<Menu>(entity =>
@@ -542,8 +571,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<OutsideImportMappingFunction>(entity =>
             {
-                entity.HasIndex(e => e.FunctionName)
-                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                entity.HasIndex(e => e.FunctionName, "IX_AccountancyOutsiteMappingFunction")
                     .IsUnique();
 
                 entity.Property(e => e.Description).HasMaxLength(512);
@@ -667,10 +695,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Unit>(entity =>
             {
-                entity.HasIndex(e => new { e.UnitName, e.SubsidiaryId })
-                    .HasName("IX_Unit_UnitName")
+                entity.HasIndex(e => new { e.UnitName, e.SubsidiaryId }, "IX_Unit_UnitName")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
 
                 entity.Property(e => e.UnitName)
                     .IsRequired()
@@ -681,8 +710,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.UserName })
-                    .HasName("IX_User_UserName")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.UserName }, "IX_User_UserName")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0) AND [UserName]<>'' AND [UserName] IS NOT NULL)");
 

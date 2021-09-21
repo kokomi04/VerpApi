@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Dictionary
 {

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchaseOrder
@@ -46,6 +48,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int PurchaseOrderType { get; set; }
         public long? PropertyCalcId { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? ExchangeRate { get; set; }
+        public long? CurrencyId { get; set; }
+        public decimal? TaxInMoney { get; set; }
 
         public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
         public virtual ICollection<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }

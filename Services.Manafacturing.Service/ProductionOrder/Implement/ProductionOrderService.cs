@@ -36,13 +36,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductHelperService _productHelperService;
-
+        private readonly IOrganizationHelperService _organizationHelperService;
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductHelperService productHelperService)
+            , IProductHelperService productHelperService
+            , IOrganizationHelperService organizationHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -50,6 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _productHelperService = productHelperService;
+            _organizationHelperService = organizationHelperService;
         }
 
         public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
@@ -139,7 +141,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.ProductionOrderStatus ");
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -170,6 +172,196 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return (lst, total, additionResult);
         }
 
+        public async Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate)
+        {
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+
+            var productionCapacities = await (from pod in _manufacturingDBContext.ProductionOrderDetail
+                                              join po in _manufacturingDBContext.ProductionOrder on pod.ProductionOrderId equals po.ProductionOrderId
+                                              where po.StartDate <= toDateTime && po.EndDate >= fromDateTime
+                                              select new
+                                              {
+                                                  ProductionOrderId = po.ProductionOrderId,
+                                                  ProductionOrderCode = po.ProductionOrderCode,
+                                                  ProductionOrderDetailId = pod.ProductionOrderDetailId,
+                                                  ProductId = pod.ProductId,
+                                                  Quantity = pod.Quantity,
+                                                  ReserveQuantity = pod.ReserveQuantity,
+                                                  StartDate = po.StartDate.GetUnix(),
+                                                  EndDate = po.EndDate.GetUnix()
+                                              })
+                                            .ToListAsync();
+
+
+            var productionOrderIds = productionCapacities.Select(p => p.ProductionOrderId).Distinct().ToList();
+
+
+            // Lấy thông tin khối lượng công việc
+            var workloadInfo = await (from ps in _manufacturingDBContext.ProductionStep
+                                      join g in _manufacturingDBContext.ProductionStep
+                                      on new { ps.ProductionStepId, IsDeleted = false, IsGroup = false, IsFinish = false } equals new { ProductionStepId = g.ParentId.Value, IsDeleted = g.IsDeleted, IsGroup = g.IsGroup.Value, IsFinish = g.IsFinish }
+                                      join ldr in _manufacturingDBContext.ProductionStepLinkDataRole
+                                      on new { g.ProductionStepId, Type = (int)EnumProductionStepLinkDataRoleType.Output } equals new { ldr.ProductionStepId, Type = ldr.ProductionStepLinkDataRoleTypeId }
+                                      join ld in _manufacturingDBContext.ProductionStepLinkData on ldr.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                                      where !ps.IsDeleted && !ps.IsFinish && ps.IsGroup.Value && productionOrderIds.Contains(ps.ContainerId) && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder && ps.StepId.HasValue
+                                      select new ProductionWordloadInfo
+                                      {
+                                          ProductionStepId = g.ProductionStepId,
+                                          ProductionOrderId = ps.ContainerId,
+                                          StepId = ps.StepId.Value,
+                                          Quantity = ld.QuantityOrigin - ld.OutsourcePartQuantity.GetValueOrDefault(),
+                                          ObjectId = ld.ObjectId,
+                                          ObjectTypeId = ld.ObjectTypeId,
+                                          WorkloadConvertRate = ld.WorkloadConvertRate
+                                      }).ToListAsync();
+
+            var productionStepIds = workloadInfo.Select(w => w.ProductionStepId).Distinct().ToList();
+
+            // Lấy thông tin phân công
+            var productionAssignments = _manufacturingDBContext.ProductionAssignment
+                .Include(pa => pa.ProductionAssignmentDetail)
+                .Where(pa => productionStepIds.Contains(pa.ProductionStepId))
+                .ToList();
+
+            // Tính khối lượng công việc theo tỷ lệ thời gian
+            foreach (var group in workloadInfo.GroupBy(w => new { w.ProductionStepId, w.ProductionOrderId }))
+            {
+                var productionCapacity = productionCapacities.First(pc => pc.ProductionOrderId == group.Key.ProductionOrderId);
+                var startDate = productionCapacity.StartDate;
+                var endDate = productionCapacity.EndDate;
+                var productionStepAssigments = productionAssignments.Where(pa => pa.ProductionStepId == group.Key.ProductionStepId).ToList();
+                if (productionStepAssigments.Count > 0)
+                {
+                    startDate = productionStepAssigments.Min(pa => pa.StartDate).GetUnix();
+                    endDate = productionStepAssigments.Max(pa => pa.EndDate).GetUnix();
+                }
+
+                var assignmentTime = endDate - startDate;
+                var calcTime = (endDate > toDate ? toDate : endDate) - (startDate < fromDate ? fromDate : startDate);
+                foreach (var item in group)
+                {
+                    item.Quantity = assignmentTime > 0 ? item.Quantity * calcTime / assignmentTime : 0;
+                }
+            }
+
+            // Lấy thông tin đầu ra và số giờ công cần
+            var stepIds = workloadInfo.Select(w => w.StepId).Distinct().ToList();
+            var stepInfo = _manufacturingDBContext.Step
+                .Where(s => stepIds.Contains(s.StepId))
+                .Select(s => new StepInfo
+                {
+                    StepId = s.StepId,
+                    StepName = s.StepName,
+                    Productivity = s.Productivity.GetValueOrDefault()
+                })
+                .ToList();
+            var productivities = stepInfo.ToDictionary(s => s.StepId, s => s.Productivity);
+
+            var productionCapacityDetail = workloadInfo
+                .GroupBy(w => new
+                {
+                    w.ProductionOrderId,
+                    w.StepId,
+                    w.ObjectId,
+                    w.ObjectTypeId
+                })
+                .Select(g => new
+                {
+                    g.Key.ProductionOrderId,
+                    g.Key.StepId,
+                    g.Key.ObjectId,
+                    g.Key.ObjectTypeId,
+                    Quantity = g.Sum(w => w.Quantity),
+                    WorkloadQuantity = g.Sum(w => w.Quantity * w.WorkloadConvertRate)
+                })
+                .GroupBy(w => w.ProductionOrderId)
+                .ToDictionary(g => g.Key, g => g.GroupBy(w => w.StepId)
+                .ToDictionary(g => g.Key, g => g.Select(w => new ProductionCapacityDetailModel
+                {
+                    ObjectId = w.ObjectId,
+                    ObjectTypeId = w.ObjectTypeId,
+                    Quantity = w.Quantity,
+                    WorkloadQuantity = w.WorkloadQuantity,
+                    WorkHour = productivities[g.Key] > 0 ? w.WorkloadQuantity / productivities[g.Key] : 0
+                }).ToList()));
+
+            // Tính giờ công có
+            var stepDetails = _manufacturingDBContext.StepDetail
+                .Where(sd => stepIds.Contains(sd.StepId))
+                .Select(sd => new
+                {
+                    sd.StepId,
+                    sd.DepartmentId,
+                    sd.NumberOfPerson
+                })
+                .ToList();
+
+            var departmentIds = stepDetails.Select(a => a.DepartmentId).Distinct().ToList();
+
+            // Lấy thông tin phong ban
+            var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
+
+            var departmentHour = new Dictionary<int, decimal>();
+
+            foreach (var departmentId in departmentIds)
+            {
+                var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId).Select(sd => sd.StepId).Distinct().ToList();
+                var calendar = departmentCalendar.FirstOrDefault(d => d.DepartmentId == departmentId);
+                decimal totalHour = 0;
+                for (var workDateUnix = fromDate; workDateUnix < toDate; workDateUnix += 24 * 60 * 60)
+                {
+                    // Tính số giờ làm việc theo ngày của tổ
+                    var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
+                    var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= workDateUnix && oh.EndDate >= workDateUnix);
+
+                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay ?? 0) + (overHour?.OverHour ?? 0));
+                }
+
+                var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
+                foreach (var departmentStepId in departmentStepIds)
+                {
+                    if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
+                    var stepWorkHour = productionCapacityDetail.Sum(pc => pc.Value.ContainsKey(departmentStepId) ? pc.Value[departmentStepId].Sum(w => w.WorkHour) : 0);
+                    departmentHour[departmentStepId] += totalWorkHour > 0 ? totalHour * stepWorkHour / totalWorkHour : 0;
+                }
+            }
+
+
+            var result = new ProductionCapacityModel
+            {
+                StepInfo = stepInfo,
+                DepartmentHour = departmentHour
+            };
+
+
+            foreach (var productionCapacity in productionCapacities.GroupBy(pc => new { pc.ProductionOrderId, pc.ProductionOrderCode }))
+            {
+                var productionOrderDetail = productionCapacity
+                    .Select(pc => new ProductionOrderDetailCapacityModel
+                    {
+                        ProductId = pc.ProductId,
+                        ProductionOrderDetailId = pc.ProductionOrderDetailId,
+                        Quantity = pc.Quantity,
+                        ReserveQuantity = pc.ReserveQuantity
+                    })
+                    .ToList();
+                result.ProductionOrder.Add(new ProductionOrderCapacityModel
+                {
+                    ProductionOrderId = productionCapacity.Key.ProductionOrderId,
+                    ProductionOrderCode = productionCapacity.Key.ProductionOrderCode,
+                    ProductionCapacityDetail = productionCapacityDetail.ContainsKey(productionCapacity.Key.ProductionOrderId)
+                    ? productionCapacityDetail[productionCapacity.Key.ProductionOrderId]
+                    : new Dictionary<int, List<ProductionCapacityDetailModel>>(),
+                    ProductionOrderDetail = productionOrderDetail
+                });
+            }
+
+
+            return result;
+        }
+
+
         public async Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId)
         {
             var parammeters = new SqlParameter[]
@@ -184,11 +376,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public async Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId)
         {
             var productOrder = _manufacturingDBContext.ProductionOrder
-                .Where(o => o.ProductionOrderId == productionOrderId)
-                .ProjectTo<ProductionOrderOutputModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefault();
+                .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
+
+            ProductionOrderOutputModel model = null; 
+
             if (productOrder != null)
             {
+
+                model = _mapper.Map<ProductionOrderOutputModel>(productOrder);
+
                 var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderId = @ProductionOrderId";
                 var parammeters = new SqlParameter[]
                 {
@@ -196,11 +392,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 };
                 var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
 
-                productOrder.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
+                model.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
+            } else
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX không tồn tại");
             }
 
-            return productOrder;
+            return model;
+        }
+       
+        public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds)
+        {
+            return await (
+                 from o in _manufacturingDBContext.ProductionOrder
+                 join d in _manufacturingDBContext.ProductionOrderDetail on o.ProductionOrderId equals d.ProductionOrderId
+                 where productIds.Contains(d.ProductId) && orderCodes.Contains(d.OrderCode)
+                 select new ProductionOrderDetailByOrder
+                 {
+                     ProductionOrderId = o.ProductionOrderId,
+                     ProductionOrderCode = o.ProductionOrderCode,
+                     Date = o.Date,
+                     Description = o.Description,
+                     ProductionOrderDetailId = d.ProductionOrderDetailId,
+                     ProductId = d.ProductId,
+                     OrderCode = d.OrderCode,
+                     Quantity = d.Quantity,
+                     ReserveQuantity = d.ReserveQuantity,
+                     Note = d.Note
+                 }).ToListAsync();
         }
 
         public async Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data)
@@ -211,6 +431,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                if (data.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
+                if (data.StartDate > data.PlanEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
+                if (data.PlanEndDate > data.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
                 if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
@@ -318,15 +541,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     if (item.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                     if (item.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                    if (item.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
                     if (item.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
-
+                    if (item.StartDate > item.PlanEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
+                    if (item.PlanEndDate > item.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                     if (item.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
                         .Where(x => x.Count() > 1)
                         .Count() > 0)
                         throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
 
-                    
-                  
+
+
                     //string currentCode = currentConfig.CurrentLastValue.LastCode;
                     do
                     {
@@ -374,6 +599,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+                if (data.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
+                if (data.StartDate > data.PlanEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
+                if (data.PlanEndDate > data.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
                 if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
                     .Where(x => x.Count() > 1)
@@ -694,5 +922,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
+    }
+
+    class ProductionWordloadInfo
+    {
+        public long ProductionStepId { get; set; }
+        public long ProductionOrderId { get; set; }
+        public int StepId { get; set; }
+        public decimal Quantity { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
+        public decimal WorkloadConvertRate { get; set; }
     }
 }

@@ -29,12 +29,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
-
+        private readonly ICurrentContextService _currentContext;
         public CalendarService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<CalendarService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
+            , ICurrentContextService currentContext
             )
         {
             _organizationContext = organizationContext;
@@ -42,6 +43,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
+            _currentContext = currentContext;
         }
 
 
@@ -85,6 +87,61 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             return result;
         }
 
+        public async Task<IList<WeekCalendarModel>> GetCalendar()
+        {
+
+            var workingHourInfos = await _organizationContext.WorkingHourInfo
+                .ToListAsync();
+
+            var allWorkingWeeks = await _organizationContext.WorkingWeekInfo
+                .ToListAsync();
+
+            var timePoints = workingHourInfos.Select(wh => wh.StartDate).Union(allWorkingWeeks.Select(ww => ww.StartDate)).Distinct().OrderBy(tp => tp).ToList();
+
+            var result = new List<WeekCalendarModel>();
+            foreach (var timePoint in timePoints)
+            {
+                var workingHourInfo = workingHourInfos
+                    .Where(wh => wh.StartDate <= timePoint)
+                    .OrderByDescending(wh => wh.StartDate)
+                    .FirstOrDefault();
+
+                var workingWeeks = allWorkingWeeks
+                    .Where(ww => ww.StartDate <= timePoint)
+                    .GroupBy(ww => ww.DayOfWeek)
+                    .Select(g => new
+                    {
+                        DayOfWeek = g.Key,
+                        StartDate = g.Max(ww => ww.StartDate)
+                    })
+                    .Join(allWorkingWeeks, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
+                    .AsQueryable()
+                    .ProjectTo<WorkingWeekInfoModel>(_mapper.ConfigurationProvider)
+                    .ToList();
+
+                foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                {
+                    if (!workingWeeks.Any(d => d.DayOfWeek == day))
+                    {
+                        workingWeeks.Add(new WorkingWeekInfoModel
+                        {
+                            DayOfWeek = day,
+                            IsDayOff = false
+                        });
+                    }
+                }
+
+                result.Add(new WeekCalendarModel
+                {
+                    StartDate = timePoint.GetUnix(),
+                    WorkingHourPerDay = workingHourInfo?.WorkingHourPerDay ?? OrganizationConstants.WORKING_HOUR_PER_DAY,
+                    WorkingWeek = workingWeeks
+                });
+            }
+
+            return result;
+        }
+
         public async Task<IList<DayOffCalendarModel>> GetDayOffCalendar(long startDate, long endDate)
         {
             var start = startDate.UnixToDateTime().Value;
@@ -105,16 +162,31 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
                .ToListAsync();
 
+            foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+            {
+                if (!workingWeeks.Any(d => d.DayOfWeek == (int)day))
+                {
+                    workingWeeks.Add(new WorkingWeekInfo
+                    {
+                        DayOfWeek = (int)day,
+                        IsDayOff = false,
+                        StartDate = start
+                    });
+                }
+            }
+
             // Lấy thông tin thay đổi trong khoảng thời gian
             var changeWorkingWeeks = await _organizationContext.WorkingWeekInfo
                 .Where(ww => ww.StartDate > start && ww.StartDate <= end)
                 .ToListAsync();
             var lstDayOff = new List<DayOffCalendarModel>();
+
             for (var day = start; day <= end; day = day.AddDays(1))
             {
+                var clientDay = day.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault());
                 if (dayOffCalendar.Any(dof => dof.Day == day)) continue;
-                var workingWeek = changeWorkingWeeks.Where(w => w.DayOfWeek == (int)day.DayOfWeek && w.StartDate <= day).OrderByDescending(w => w.StartDate).FirstOrDefault();
-                if (workingWeek == null) workingWeek = workingWeeks.Where(w => w.DayOfWeek == (int)day.DayOfWeek).FirstOrDefault();
+                var workingWeek = changeWorkingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek && w.StartDate <= day).OrderByDescending(w => w.StartDate).FirstOrDefault();
+                if (workingWeek == null) workingWeek = workingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek).FirstOrDefault();
                 if (workingWeek?.IsDayOff ?? false)
                 {
                     lstDayOff.Add(new DayOffCalendarModel
@@ -168,6 +240,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 .FirstOrDefaultAsync(dof => dof.Day == day.UnixToDateTime());
                 if (dayOff == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Ngày nghỉ không tồn tại");
                 _organizationContext.DayOffCalendar.Remove(dayOff);
+                _organizationContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.DayOffCalendar, day, $"Xóa ngày nghỉ {day.UnixToDateTime()}", dayOff.JsonSerialize());
                 return true;
             }
@@ -178,15 +251,53 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             }
         }
 
+        public async Task<bool> DeleteWeekCalendar(long startDate)
+        {
+            using var trans = await _organizationContext.Database.BeginTransactionAsync();
+            try
+            {
+                DateTime time = startDate.UnixToDateTime().Value;
+                var workingHourInfo = await _organizationContext.WorkingHourInfo.FirstOrDefaultAsync(wh => wh.StartDate == time);
+
+                if (workingHourInfo != null)
+                {
+                    _organizationContext.WorkingHourInfo.Remove(workingHourInfo);
+                }
+
+                var workingWeeks = await _organizationContext.WorkingWeekInfo
+                  .Where(ww => ww.StartDate == time)
+                  .ToListAsync();
+
+                if(workingWeeks.Count > 0)
+                {
+                    _organizationContext.WorkingWeekInfo.RemoveRange(workingWeeks);
+                }
+
+                await _organizationContext.SaveChangesAsync();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Xóa thay đổi lịch làm việc ngày {time.ToString()}", string.Empty);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "DeleteCalendar");
+                throw;
+            }
+        }
+
+
         public async Task<WeekCalendarModel> UpdateWeekCalendar(WeekCalendarModel data)
         {
             using var trans = await _organizationContext.Database.BeginTransactionAsync();
             try
             {
-                DateTime now = DateTime.UtcNow.Date;
+                DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
                 // Update workingHour per day
                 var currentWorkingHourInfo = await _organizationContext.WorkingHourInfo
-                  .Where(wh => wh.StartDate <= now)
+                  .Where(wh => wh.StartDate <= time)
                   .OrderByDescending(wh => wh.StartDate)
                   .FirstOrDefaultAsync();
 
@@ -194,18 +305,18 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 {
                     currentWorkingHourInfo = new WorkingHourInfo
                     {
-                        StartDate = now,
+                        StartDate = DateTime.MinValue,
                         WorkingHourPerDay = data.WorkingHourPerDay
                     };
                     _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
                 }
                 else if (currentWorkingHourInfo.WorkingHourPerDay != data.WorkingHourPerDay)
                 {
-                    if (currentWorkingHourInfo.StartDate < now)
+                    if (currentWorkingHourInfo.StartDate < time)
                     {
                         currentWorkingHourInfo = new WorkingHourInfo
                         {
-                            StartDate = now,
+                            StartDate = time,
                             WorkingHourPerDay = data.WorkingHourPerDay
                         };
                         _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
@@ -219,7 +330,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 // Update working week
 
                 var workingWeeks = await _organizationContext.WorkingWeekInfo
-                    .Where(ww => ww.StartDate <= now)
+                    .Where(ww => ww.StartDate <= time)
                     .GroupBy(ww => ww.DayOfWeek)
                     .Select(g => new
                     {
@@ -238,23 +349,23 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     {
                         currentWorkingWeek = new WorkingWeekInfo
                         {
-                            StartDate = now,
+                            StartDate = DateTime.MinValue,
                             DayOfWeek = (int)day,
-                            IsDayOff = currentWorkingWeek.IsDayOff
+                            IsDayOff = newWorkingWeek.IsDayOff
                         };
-                        _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
+                        _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
                     }
                     else if (currentWorkingWeek.IsDayOff != newWorkingWeek.IsDayOff)
                     {
-                        if (currentWorkingWeek.StartDate < now)
+                        if (currentWorkingWeek.StartDate < time)
                         {
                             currentWorkingWeek = new WorkingWeekInfo
                             {
-                                StartDate = now,
+                                StartDate = time,
                                 DayOfWeek = (int)day,
-                                IsDayOff = currentWorkingWeek.IsDayOff
+                                IsDayOff = newWorkingWeek.IsDayOff
                             };
-                            _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
+                            _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
                         }
                         else
                         {
@@ -267,7 +378,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 _organizationContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, now.GetUnix(), $"Cập nhật lịch làm việc ngày {now.ToString()}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Cập nhật lịch làm việc ngày {time.ToString()}", data.JsonSerialize());
 
                 return await GetCurrentCalendar();
             }

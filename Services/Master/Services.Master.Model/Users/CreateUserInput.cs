@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.Org;
 
 namespace VErp.Services.Master.Model.Users

@@ -11,14 +11,14 @@
   },
   "ServiceUrls": {
     "ApiService": {
-      "Endpoint": "http://103.21.149.106:8001"
+      "Endpoint": "http://localhost:8001"
     },
     "FileService": {
-      "Endpoint": "http://103.21.149.106:8001"
+      "Endpoint": "http://localhost:8001"
     }
   },
   "GrpcInternal": {
-    "Address": "http://103.21.149.106:8001"
+    "Address": "http://localhost:8001"
   },
   "BackupStorage": {
     "FileBackupFolder": "C:/usr/resources/"

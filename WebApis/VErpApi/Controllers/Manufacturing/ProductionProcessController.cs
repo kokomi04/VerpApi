@@ -163,6 +163,8 @@ namespace VErpApi.Controllers.Manufacturing
         /// <summary>
         /// Gom nhóm các công đoạn có mối qua hệ với nhau
         /// </summary>
+        /// <param name="containerTypeId"></param>
+        /// <param name="containerId"></param>
         /// <param name="productionOrderId">Mã lệnh sản xuất</param>
         /// <returns></returns>
         [HttpPost]
@@ -201,6 +203,8 @@ namespace VErpApi.Controllers.Manufacturing
         /// <summary>
         /// Trả về các nhóm đầu vào, đầu ra gia công
         /// </summary>
+        /// <param name="containerTypeId"></param>
+        /// <param name="containerId"></param>
         /// <param name="productionOrderId">Mã lệnh sản xuất</param>
         /// <returns></returns>
         [HttpPost]

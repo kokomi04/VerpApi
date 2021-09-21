@@ -541,6 +541,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 {
                     var data = (from d in _manufacturingDBContext.OutsourceStepRequestData
                                 join ld in _manufacturingDBContext.ProductionStepLinkData on d.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                                where d.OutsourceStepRequestId == rq.OutsourceStepRequestId && d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
                                 select new
                                 {
                                     d.ProductionStepLinkDataId,
@@ -548,16 +549,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                     d.Quantity
                                 }).ToList();
 
-                    var arrPurchaseOrderId = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => x.OutsourceRequestId == rq.OutsourceStepRequestId)
+                    var arrPurchaseOrderId = await _manufacturingDBContext.RefOutsourceStepOrder.Where(x => x.OutsourceRequestId == rq.OutsourceStepRequestId)
                             .Select(x => x.PurchaseOrderId)
                             .Distinct()
                             .ToListAsync();
 
-                    var totalStatus = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
-                        .Where(x => arrPurchaseOrderId.Contains(x.OutsourceOrderId) && !x.ObjectId.HasValue)
+                    var totalStatus = (await _manufacturingDBContext.RefOutsourceStepTrack.AsNoTracking()
+                        .Where(x => arrPurchaseOrderId.Contains(x.PurchaseOrderId) && !x.ProductId.HasValue)
                         .ToListAsync())
-                        .GroupBy(x => x.OutsourceOrderId)
-                        .Select(g => g.OrderByDescending(x => x.OutsourceTrackId).Take(1).FirstOrDefault()?.OutsourceTrackStatusId)
+                        .GroupBy(x => x.PurchaseOrderId)
+                        .Select(g => g.OrderByDescending(x => x.PurchaseOrderTrackedId).Take(1).FirstOrDefault()?.Status)
                         .Sum();
 
                     if (totalStatus.GetValueOrDefault() == 0)

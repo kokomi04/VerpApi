@@ -31,6 +31,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("department/{departmentId}")]
         public async Task<long> AddProductionMaterialsRequirement([FromRoute] int departmentId, [FromBody] ProductionMaterialsRequirementModel model)
         {
+            if (model == null) throw GeneralCode.InvalidParams.BadRequest();
             if (model.MaterialsRequirementDetails.Any(d => d.DepartmentId != departmentId)) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép tạo yêu cầu cho đúng tổ được phân công");
             return await _requirementService.AddProductionMaterialsRequirement(model, EnumProductionMaterialsRequirementStatus.Waiting);
         }
@@ -46,6 +47,8 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productionMaterialsRequirementId}/department/{departmentId}")]
         public async Task<bool> UpdateProductionMaterialsRequirement([FromRoute] int departmentId, [FromRoute] long productionMaterialsRequirementId, [FromBody] ProductionMaterialsRequirementModel model)
         {
+            if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
+
             if (model != null && model.MaterialsRequirementDetails.Count == 0)
                 return await _requirementService.DeleteProductionMaterialsRequirement(productionMaterialsRequirementId);
             if (model.MaterialsRequirementDetails.Any(d => d.DepartmentId != departmentId)) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép sửa yêu cầu cho đúng tổ được phân công");

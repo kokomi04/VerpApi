@@ -30,6 +30,9 @@ using Newtonsoft.Json;
 using System.IO;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.DynamicBill;
+using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Accountancy;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -39,7 +42,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        //private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -47,6 +50,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly IInputConfigService _inputConfigService;
+        private readonly ObjectActivityLogFacade _inputDataActivityLog;
 
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -62,13 +66,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             _accountancyDBContext = accountancyDBContext;
             _logger = logger;
-            _activityLogService = activityLogService;
+            //_activityLogService = activityLogService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
             _inputConfigService = inputConfigService;
+            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -411,7 +416,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
+
+                await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Create)
+                .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
+                .BillTypeId(inputTypeId)
+                .ObjectId(billInfo.FId)
+                .JsonData(data.JsonSerialize())
+                .CreateLog();
+
+
                 return billInfo.FId;
             }
             catch (Exception ex)
@@ -1060,7 +1073,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Cập nhật chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
+                await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
+                  .BillTypeId(inputTypeId)
+                  .ObjectId(billInfo.FId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -1093,18 +1112,28 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
                 if (refField == null || refTitleField == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy trường dữ liệu tham chiếu");
                 var selectSQL = $"SELECT {field.InputField.RefTableField} FROM v{field.InputField.RefTableCode} WHERE {refTableTitle} = @ValueParam";
-                var result = await _accountancyDBContext.QueryDataTable(selectSQL.ToString(), new List<SqlParameter>()
+
+                if (oldValue != null)
                 {
-                    new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)),
-                });
-                if (result == null || result.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị cũ truyền vào không hợp lệ");
-                oldSqlValue = result.Rows[0][0];
-                result = await _accountancyDBContext.QueryDataTable(selectSQL.ToString(), new List<SqlParameter>()
+                    var oldResult = await _accountancyDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)) });
+                    if (oldResult == null || oldResult.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị cũ truyền vào không hợp lệ");
+                    oldSqlValue = ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldResult.Rows[0][0]);
+                }
+                else
                 {
-                    new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue)),
-                });
-                if (result == null || result.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mới truyền vào không hợp lệ");
-                newSqlValue = result.Rows[0][0];
+                    oldSqlValue = DBNull.Value;
+                }
+
+                if (newValue != null)
+                {
+                    var newResult = await _accountancyDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue)) });
+                    if (newResult == null || newResult.Rows.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Giá trị mới truyền vào không hợp lệ");
+                    newSqlValue = ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newResult.Rows[0][0]);
+                }
+                else
+                {
+                    newSqlValue = DBNull.Value;
+                }
             }
             else
             {
@@ -1212,14 +1241,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Created bill version
                 await _accountancyDBContext.InsertDataTable(dataTable, true);
 
-                using (var batch = _activityLogService.BeginBatchLog())
+                using (var batch = _inputDataActivityLog.BeginBatchLog())
                 {
                     foreach (var bill in bills)
                     {
                         // Delete bill version
                         await DeleteBillVersion(inputTypeId, bill.FId, bill.LatestBillVersion);
 
-                        await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, bill.FId, $"Cập nhật nhiều dòng {field?.Title} {newValue} {inputTypeInfo.Title}", new { inputTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize());
+
+                        await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.UpdateMulti)
+                            .MessageResourceFormatDatas(inputTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
+                            .BillTypeId(inputTypeId)
+                            .ObjectId(bill.FId)
+                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize().JsonSerialize())
+                            .CreateLog();
 
                         // Update last bill version
                         bill.LatestBillVersion++;
@@ -1346,7 +1381,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Xóa chứng từ {inputTypeInfo.Title}", new { inputTypeId, inputBill_F_Id }.JsonSerialize());
+
+                await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Delete)
+                           .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
+                           .BillTypeId(inputTypeId)
+                           .ObjectId(billInfo.FId)
+                           .JsonData(data.JsonSerialize().JsonSerialize())
+                           .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -1752,17 +1794,24 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, true);
         }
 
-        private async Task<List<ValidateField>> GetInputFields(int inputTypeId)
+        private async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null)
         {
+            var area = _accountancyDBContext.InputArea.AsQueryable();
+            if (areaId > 0)
+            {
+                area = area.Where(a => a.InputAreaId == areaId);
+            }
             return await (from af in _accountancyDBContext.InputAreaField
                           join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                          join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+                          join a in area on af.InputAreaId equals a.InputAreaId
                           where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
+                          orderby a.SortOrder, af.SortOrder
                           select new ValidateField
                           {
                               InputAreaFieldId = af.InputAreaFieldId,
                               Title = af.Title,
                               IsAutoIncrement = af.IsAutoIncrement,
+                              IsHidden = af.IsHidden,
                               IsRequire = af.IsRequire,
                               IsUnique = af.IsUnique,
                               Filters = af.Filters,
@@ -1778,7 +1827,86 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                           }).ToListAsync();
         }
 
-        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream)
+
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId)
+        {
+            var inputTypeInfo = await _accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+
+
+            // Lấy thông tin field
+            var fields = await GetInputFields(inputTypeId, areaId);
+
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = inputTypeInfo.InputTypeId,
+                CategoryCode = inputTypeInfo.InputTypeCode,
+                CategoryTitle = inputTypeInfo.Title,
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            fields = fields
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY)
+                .ToList();
+
+            var referTableNames = fields.Select(f => f.RefTableCode).ToList();
+
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, null);
+            var refCategoryFields = referFields.GroupBy(f => f.CategoryCode).ToDictionary(f => f.Key, f => f.ToList());
+
+            foreach (var field in fields)
+            {
+                var fileData = new CategoryFieldNameModel()
+                {
+                    //CategoryFieldId = field.InputAreaFieldId,
+                    FieldName = field.FieldName,
+                    FieldTitle = GetTitleCategoryField(field),
+                    RefCategory = null,
+                    IsRequired = field.IsRequire
+                };
+
+                if (!string.IsNullOrWhiteSpace(field.RefTableCode))
+                {
+                    if (!refCategoryFields.TryGetValue(field.RefTableCode, out var refCategory))
+                    {
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
+                    }
+
+
+                    fileData.RefCategory = new CategoryNameModel()
+                    {
+                        //CategoryId = 0,
+                        CategoryCode = refCategory.FirstOrDefault()?.CategoryCode,
+                        CategoryTitle = refCategory.FirstOrDefault()?.CategoryTitle,
+                        IsTreeView = false,
+
+                        Fields = GetRefFields(refCategory)
+                        .Select(f => new CategoryFieldNameModel()
+                        {
+                            //CategoryFieldId = f.id,
+                            FieldName = f.CategoryFieldName,
+                            FieldTitle = GetTitleCategoryField(f),
+                            RefCategory = null,
+                            IsRequired = false
+                        }).ToList()
+                    };
+                }
+
+                result.Fields.Add(fileData);
+            }
+
+            result.Fields.Add(new CategoryFieldNameModel
+            {
+                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
+                FieldTitle = "Cột kiểm tra",
+            });
+
+            return result;
+        }
+
+
+
+        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream)
         {
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
@@ -1789,23 +1917,32 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
-            if (mapping.MappingFields.Where(mf => mf.IsRequire).Any(mf => !fields.Exists(f => f.FieldName == mf.FieldName))) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu không tìm thấy");
+            var requiredField = fields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
-            var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefTableField)).ToList();
+            if (requiredField != null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {requiredField.Title} yêu cầu bắt buộc");
+
+            var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
 
-            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefTableField).ToList());
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
 
-            var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == mapping.Key);
+            var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == AccountantConstants.BILL_CODE);
             if (columnKey == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Định danh mã chứng từ không đúng, vui lòng chọn lại");
             }
+
+            var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
+
             var groups = data.Rows.Select((r, i) => new
             {
                 Data = r,
                 Index = i + mapping.FromRow
-            }).Where(r => r.Data[columnKey.Column] != null && !string.IsNullOrEmpty(r.Data[columnKey.Column].ToString())).GroupBy(r => r.Data[columnKey.Column]);
+            })
+                .Where(r => !ignoreIfEmptyColumns.Any(c => !r.Data.ContainsKey(c) || string.IsNullOrWhiteSpace(r.Data[c])))//not any empty ignore column
+                .Where(r => !string.IsNullOrWhiteSpace(r.Data[columnKey.Column]))
+                .GroupBy(r => r.Data[columnKey.Column]);
+
             List<BillInfoModel> bills = new List<BillInfoModel>();
 
             // Validate unique single field
@@ -1861,7 +1998,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
 
                         // Validate mapping required
-                        if (field == null && mappingField.IsRequire) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
+                        if (field == null && mappingField.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
                         if (field == null) continue;
                         if (!field.IsMultiRow && rowIndx > 0) continue;
 
@@ -1869,7 +2006,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (row.Data.ContainsKey(mappingField.Column))
                             value = row.Data[mappingField.Column]?.ToString();
                         // Validate require
-                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
+                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
@@ -1898,13 +2035,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         else
                         {
                             int suffix = 0;
-                            var paramName = $"@{mappingField.RefTableField}_{suffix}";
-                            var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefTableField);
+                            var paramName = $"@{mappingField.RefFieldName}_{suffix}";
+                            var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
                             if (referField == null)
                             {
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu tham chiếu tới trường {mappingField.FieldName} không tồn tại");
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Trường dữ liệu liên quan (tham chiếu) tới \"{field.Title}\" ({mappingField.FieldName}) không tồn tại");
                             }
-                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                             var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                             suffix++;
                             if (!string.IsNullOrEmpty(field.Filters))
@@ -1945,7 +2082,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             if (referData == null || referData.Rows.Count == 0)
                             {
                                 // Check tồn tại
-                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefTableField} = {paramName}";
+                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                                 var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                                 referData = await _accountancyDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
                                 if (referData == null || referData.Rows.Count == 0)
@@ -2080,7 +2217,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var selectFormFields = (from iaf in _accountancyDBContext.InputAreaField
                                     join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
-                                    where iaf.InputTypeId == inputTypeId && AccountantConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
+                                    where iaf.InputTypeId == inputTypeId && DataTypeConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
                                     select new
                                     {
                                         itf.RefTableTitle,
@@ -2233,6 +2370,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return EnumDataType.Date.GetSqlValue(oldDateValue);
         }
 
+
         private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
         {
             var billDate = ExtractBillDate(info);
@@ -2262,6 +2400,34 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private string GlobalFilter()
         {
             return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
+        }
+
+        private IList<ReferFieldModel> GetRefFields(IList<ReferFieldModel> fields)
+        {
+            return fields.Where(x => !x.IsHidden && x.DataTypeId != (int)EnumDataType.Boolean && !((EnumDataType)x.DataTypeId).IsTimeType())
+                 .ToList();
+        }
+
+        private string GetTitleCategoryField(ValidateField field)
+        {
+            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
+            if (rangeValue.Length > 0)
+            {
+                return $"{field.Title} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
+            }
+
+            return field.Title;
+        }
+
+        private string GetTitleCategoryField(ReferFieldModel field)
+        {
+            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
+            if (rangeValue.Length > 0)
+            {
+                return $"{field.CategoryFieldTitle} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
+            }
+
+            return field.CategoryFieldTitle;
         }
 
         protected class DataEqualityComparer : IEqualityComparer<object>
@@ -2301,6 +2467,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public int InputAreaFieldId { get; set; }
             public string Title { get; set; }
             public bool IsAutoIncrement { get; set; }
+            public bool IsHidden { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
             public string Filters { get; set; }

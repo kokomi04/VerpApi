@@ -27,6 +27,8 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Product.Bom;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -35,14 +37,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly StockDBContext _stockDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
 
         private readonly IUnitService _unitService;
         private readonly IProductService _productService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
         private readonly IPropertyService _propertyService;
-
+        private readonly ObjectActivityLogFacade _productActivityLog;
+        private readonly ICurrentContextService _currentContextService;
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductBomService> logger
@@ -51,21 +53,26 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IUnitService unitService
             , IProductService productService
             , IManufacturingHelperService manufacturingHelperService
-            , IPropertyService propertyService)
+            , IPropertyService propertyService
+            , ICurrentContextService currentContextService
+            )
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
             _unitService = unitService;
             _productService = productService;
             _manufacturingHelperService = manufacturingHelperService;
             _propertyService = propertyService;
+            _currentContextService = currentContextService;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
         public async Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds)
         {
+            if (productIds.Count == 0) return new List<ProductElementModel>();
+
             if (!_stockDbContext.Product.Any(p => productIds.Contains(p.ProductId))) throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             var parammeters = new SqlParameter[]
@@ -122,7 +129,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await UpdateProductBomDb(productId, bomInfo);
                 await trans.CommitAsync();
             }
-            await _activityLogService.CreateLog(EnumObjectType.ProductBom, productId, $"Cập nhật chi tiết bom cho mặt hàng {product.ProductCode}, tên hàng {product.ProductName}", bomInfo.JsonSerialize());
+
+            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateBom)
+             .MessageResourceFormatDatas(product.ProductCode)
+             .ObjectId(productId)
+             .JsonData(bomInfo.JsonSerialize())
+             .CreateLog();
+
             return true;
         }
 
@@ -140,7 +153,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // Validate data
             // Validate child product id
             var childIds = bomInfo.Bom.Select(b => b.ChildProductId).Distinct().ToList();
-            if (_stockDbContext.Product.Count(p => childIds.Contains(p.ProductId)) != childIds.Count) throw new BadRequestException(ProductErrorCode.ProductNotFound, "Vật tư không tồn tại");
+            if (_stockDbContext.Product.Count(p => childIds.Contains(p.ProductId)) != childIds.Count) throw ProductErrorCode.ProductNotFound.BadRequest();
 
             if (bomInfo.Bom.Any(b => b.ProductId == b.ChildProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Không được chọn vật tư là chính sản phẩm");
 
@@ -292,7 +305,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "ProductBom",
                 CategoryTitle = "Bill of Material",
                 IsTreeView = false,
@@ -335,7 +348,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                .SetService(_stockDbContext)
                .SetService(_productService)
                .SetService(_unitService)
-               .SetService(_activityLogService)
+               .SetService(_productActivityLog)
                .SetService(_manufacturingHelperService)
                .SetService(this);
         }

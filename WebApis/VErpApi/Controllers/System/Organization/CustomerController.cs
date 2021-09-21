@@ -51,6 +51,7 @@ namespace VErpApi.Controllers.System
         /// Lấy danh sách đối tác
         /// </summary>
         /// <param name="keyword"></param>
+        /// <param name="customerIds"></param>
         /// <param name="customerStatusId"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
@@ -62,6 +63,22 @@ namespace VErpApi.Controllers.System
         {
             return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size);
         }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("ExportList")]
+        public async Task<IActionResult> ExportList([FromBody] CustomerListExportModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _customerService.ExportList(req.FieldNames, req.Keyword, req.CustomerIds, req.CustomerStatusId, req.Page, req.Size);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+
 
         /// <summary>
         /// Lấy danh sách khách hàng theo Ids

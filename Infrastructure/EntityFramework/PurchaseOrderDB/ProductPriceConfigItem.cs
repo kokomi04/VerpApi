@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class ProductPriceConfigItem
     {
-        public ProductPriceConfigItem()
-        {
-            ProductPriceInfoItem = new HashSet<ProductPriceInfoItem>();
-        }
-
         public int ProductPriceConfigItemId { get; set; }
         public int ProductPriceConfigVersionId { get; set; }
         public string ItemKey { get; set; }
@@ -30,6 +27,5 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ProductPriceConfigVersion ProductPriceConfigVersion { get; set; }
-        public virtual ICollection<ProductPriceInfoItem> ProductPriceInfoItem { get; set; }
     }
 }

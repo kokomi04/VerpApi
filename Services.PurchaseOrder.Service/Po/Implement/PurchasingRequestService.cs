@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -15,23 +14,18 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
-using VErp.Services.Master.Service.Activity;
-using VErp.Services.Master.Model.Activity;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using AutoMapper.QueryableExtensions;
 using AutoMapper;
 using System.IO;
 using VErp.Services.PurchaseOrder.Model.Request;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using Org.BouncyCastle.Ocsp;
 using Verp.Cache.RedisCache;
-using VErp.Services.PurchaseOrder.Service.Resources;
 using VErp.Infrastructure.ServiceCore.Facade;
-using System.Linq.Expressions;
-using VErp.Commons.ObjectExtensions.Extensions;
+using Verp.Resources.PurchaseOrder.PurchasingRequest;
+using VErp.Commons.Library.Model;
+using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -47,6 +41,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ObjectActivityLogFacade _purchasingRequestActivityLog;
+        private readonly ICurrentContextService _currentContextService;
 
         public PurchasingRequestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -58,6 +53,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IProductHelperService productHelperService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
+            , ICurrentContextService currentContextService
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -70,6 +66,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _purchasingRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchasingRequest);
+            _currentContextService= currentContextService;
         }
 
 
@@ -88,7 +85,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var data = _mapper.Map<PurchasingRequestOutput>(info);
 
-            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
+                .OrderBy(d => d.SortOrder)
+                .ToList();
 
             return data;
         }
@@ -108,7 +107,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var data = _mapper.Map<PurchasingRequestOutput>(info);
 
-            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
+                    .OrderBy(d => d.SortOrder)
+                    .ToList();
 
             return data;
         }
@@ -207,7 +208,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             d.PrimaryQuantity,
                             d.ProductUnitConversionId,
                             d.ProductUnitConversionQuantity,
-                            d.Description
+                            d.Description,
+                            d.SortOrder
                         };
 
             if (productIds != null && productIds.Count > 0)
@@ -254,7 +256,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
             var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(s => s.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
             var result = new List<PurchasingRequestOutputListByProduct>();
             foreach (var info in pagedData)
             {
@@ -285,7 +287,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductUnitConversionQuantity = info.ProductUnitConversionQuantity,
 
                     Description = info.Description,
-                    PurchasingRequestTypeId = (EnumPurchasingRequestType)info.PurchasingRequestTypeId
+                    PurchasingRequestTypeId = (EnumPurchasingRequestType)info.PurchasingRequestTypeId,
+                    SortOrder = info.SortOrder
+
                 });
             }
 
@@ -380,10 +384,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.AddAsync(purchasingRequest);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
+                var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d))
+                    .OrderBy(d => d.SortOrder)
+                    .ToList();
 
+                var sortOrder = 1;
                 foreach (var item in purchasingRequestDetailList)
                 {
+                    item.SortOrder = sortOrder++;
                     item.PurchasingRequestId = purchasingRequest.PurchasingRequestId;
 
                     item.CreatedDatetimeUtc = DateTime.UtcNow;
@@ -483,9 +491,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
 
 
-                    var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d)).ToList();
+                    var purchasingRequestDetailList = model.Details.Select(d => _mapper.Map<PurchasingRequestDetail>(d))
+                        .OrderBy(d => d.SortOrder)
+                        .ToList();
+                    var sortOrder = 1;
                     foreach (var item in purchasingRequestDetailList)
                     {
+                        item.SortOrder = sortOrder++;
+
                         item.PurchasingRequestId = purchasingRequestId;
 
                         item.CreatedDatetimeUtc = DateTime.UtcNow;
@@ -576,228 +589,29 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream)
+
+        public CategoryNameModel GetFieldDataForMapping()
         {
-            var rowDatas = SingleInvoiceParseExcel(mapping, stream).ToList();
-
-            var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
-            var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
-
-            var productInfos = await _productHelperService.GetListByCodeAndInternalNames(productCodes, productInternalNames);
-
-            var productInfoByCode = productInfos.GroupBy(p => p.ProductCode)
-                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
-
-            var productInfoByInternalName = productInfos.GroupBy(p => p.ProductName.NormalizeAsInternalName())
-                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
-
-            foreach (var item in rowDatas)
+            var result = new CategoryNameModel()
             {
-                IList<ProductModel> productInfo = null;
-                if (!string.IsNullOrWhiteSpace(item.ProductCode) && productInfoByCode.ContainsKey(item.ProductCode?.ToLower()))
-                {
-                    productInfo = productInfoByCode[item.ProductCode?.ToLower()];
-                }
-                else
-                {
-                    if (!string.IsNullOrWhiteSpace(item.ProductInternalName) && productInfoByInternalName.ContainsKey(item.ProductInternalName))
-                    {
-                        productInfo = productInfoByInternalName[item.ProductInternalName];
-                    }
-                }
-
-                var itemMessage = $"{item.ProductCode} {item.ProductName}";
-                if (productInfo == null || productInfo.Count == 0)
-                {
-                    throw PurchasingRequestMessage.NoProductFound.BadRequestFormat(itemMessage);
-                }
-
-                if (productInfo.Count > 1)
-                {
-                    productInfo = productInfo.Where(p => p.ProductName == item.ProductName).ToList();
-
-                    if (productInfo.Count != 1)
-                    {
-                        throw PurchasingRequestMessage.FoundNumberProduct.BadFormat()
-                            .Add(productInfo.Count)
-                            .Add(itemMessage)
-                            .Build();
-                    }
-                }
-
-                var productUnitConversionId = 0;
-                if (!string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
-                {
-                    var pus = productInfo[0].StockInfo.UnitConversions
-                            .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
-                            .ToList();
-
-                    if (pus.Count != 1)
-                    {
-                        pus = productInfo[0].StockInfo.UnitConversions
-                           .Where(u => u.ProductUnitConversionName.Contains(item.ProductUnitConversionName) || item.ProductUnitConversionName.Contains(u.ProductUnitConversionName))
-                           .ToList();
-
-                        if (pus.Count > 1)
-                        {
-                            pus = productInfo[0].StockInfo.UnitConversions
-                             .Where(u => u.ProductUnitConversionName.Equals(item.ProductUnitConversionName, StringComparison.OrdinalIgnoreCase))
-                             .ToList();
-                        }
-                    }
-
-                    if (pus.Count == 0)
-                    {
-                        throw PurchasingRequestMessage.NoPuOfProductFound.BadFormat()
-                            .Add(item.ProductUnitConversionName)
-                            .Add($"{item.ProductCode} {item.ProductName}")
-                            .Build();
-                    }
-                    if (pus.Count > 1)
-                    {
-                        throw PurchasingRequestMessage.FoundNumberPuOfProduct.BadFormat()
-                            .Add(pus.Count)
-                            .Add(item.ProductUnitConversionName)
-                            .Add($"{item.ProductCode} {item.ProductName}")
-                            .Build();
-                    }
-
-                    productUnitConversionId = pus[0].ProductUnitConversionId;
-
-                }
-                else
-                {
-                    var puDefault = productInfo[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
-                    if (puDefault == null)
-                    {
-                        throw PurchasingRequestMessage.PuDefaultError
-                            .BadRequestFormat($"{item.ProductCode} {item.ProductName}");
-
-                    }
-                    productUnitConversionId = puDefault.ProductUnitConversionId;
-                }
-
-                yield return new PurchasingRequestInputDetail()
-                {
-                    OrderCode = item.OrderCode,
-                    ProductionOrderCode = item.ProductionOrderCode,
-                    Description = item.Description,
-                    ProductId = productInfo[0].ProductId.Value,
-                    PrimaryQuantity = item.PrimaryQuantity,
-                    ProductUnitConversionId = productUnitConversionId,
-                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
-                };
-
-            }
+                //CategoryId = 1,
+                CategoryCode = "PurchasingRequest",
+                CategoryTitle = "PurchasingRequest",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = Utils.GetFieldNameModels<PurchasingRequestDetailRowValue>();
+            result.Fields = fields;
+            return result;
         }
 
-        private IEnumerable<PurchasingRequestDetailRowValue> SingleInvoiceParseExcel(SingleInvoicePurchasingRequestExcelMappingModel mapping, Stream stream)
+        public IAsyncEnumerable<PurchasingRequestInputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream)
         {
-            var reader = new ExcelReader(stream);
-
-            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-
-
-            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
-            {
-                var row = data.Rows[rowIndx];
-                if (row.Count == 0) continue;
-
-                var rowData = new PurchasingRequestDetailRowValue();
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductCodeColumn))
-                {
-                    rowData.ProductCode = row[mapping.ColumnMapping.ProductCodeColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductNameColumn))
-                {
-                    rowData.ProductName = row[mapping.ColumnMapping.ProductNameColumn]?.ToString();
-                    rowData.ProductInternalName = rowData.ProductName.NormalizeAsInternalName();
-                }
-
-                if (string.IsNullOrWhiteSpace(rowData.ProductCode) && string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityColumn)
-                    && row[mapping.ColumnMapping.PrimaryQuantityColumn] != null
-                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryQuantityColumn].ToString())
-                    )
-                {
-                    try
-                    {
-                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw PurchasingRequestMessage.ErrorCalcQuantity
-                            .BadRequestFormat($"{rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-
-                }
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductUnitConversionName))
-                {
-                    rowData.ProductUnitConversionName = mapping.StaticValue.ProductUnitConversionName;
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionNameColumn))
-                {
-                    rowData.ProductUnitConversionName = row[mapping.ColumnMapping.ProductUnitConversionNameColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(rowData.ProductUnitConversionName)
-                    && !string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionQuantityColumn)
-                    && row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn] != null
-                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn].ToString())
-                    )
-                {
-                    try
-                    {
-                        rowData.ProductUnitConversionQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-
-                        throw PurchasingRequestMessage.ErrorCalcQuantity
-                            .BadRequestFormat($"{rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-                }
-
-                if (rowData.PrimaryQuantity <= 0 && rowData.ProductUnitConversionQuantity <= 0)
-                {
-                    throw PurchasingRequestMessage.InvalidQuantity
-                        .BadRequestFormat($"{rowData.ProductCode} {rowData.ProductName}");
-                }
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.OrderCode))
-                {
-                    rowData.OrderCode = mapping.StaticValue.OrderCode;
-                }
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.OrderCodeColumn))
-                {
-                    rowData.OrderCode = row[mapping.ColumnMapping.OrderCodeColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductionOrderCode))
-                {
-                    rowData.ProductionOrderCode = mapping.StaticValue.ProductionOrderCode;
-                }
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductionOrderCodeColumn))
-                {
-                    rowData.ProductionOrderCode = row[mapping.ColumnMapping.ProductionOrderCodeColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.DescriptionColumn))
-                {
-                    rowData.Description = row[mapping.ColumnMapping.DescriptionColumn]?.ToString();
-                }
-
-                yield return rowData;
-            }
+            return new PurchasingRequestParseExcelFacade(_productHelperService)
+                 .ParseInvoiceDetails(mapping, extra, stream);
         }
+
+
 
         public async Task<bool> SendToCensor(long purchasingRequestId)
         {
@@ -929,7 +743,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                  .ObjectId(purchasingRequestId)
                  .JsonData(info.JsonSerialize())
                  .CreateLog();
-              
+
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật tiến trình PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
 
                 return true;
@@ -966,7 +780,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var data = _mapper.Map<PurchasingRequestOutput>(info);
 
-            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d)).ToList();
+            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
+                    .OrderBy(d => d.SortOrder)
+                    .ToList();
 
             return data;
         }

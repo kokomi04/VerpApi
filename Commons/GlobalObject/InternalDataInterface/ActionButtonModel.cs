@@ -36,7 +36,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string SqlAction { get; set; }
     }
 
-    public class BillInfoModel
+    public class BillInfoModel 
     {
         public NonCamelCaseDictionary Info { get; set; }
         public IList<NonCamelCaseDictionary> Rows { get; set; }

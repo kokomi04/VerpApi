@@ -50,7 +50,7 @@ namespace VErp.Services.Stock.Model.Stock
         /// Tên kho
         /// </summary>
         public string StockName { get; set; }
-
+        public string StockCode { get; set; }
         // <summary>
         /// Mô tả
         /// </summary>

@@ -21,8 +21,8 @@ namespace VErp.Commons.Library
 {
     public class ExcelReader
     {
-        private IWorkbook hssfwb;
-        private DataFormatter dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);
+        private IWorkbook _hssfwb;
+        private DataFormatter _dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);
 
         public ExcelReader(string filePath) : this(new FileStream(filePath, FileMode.Open, FileAccess.Read))
         {
@@ -32,7 +32,7 @@ namespace VErp.Commons.Library
         public ExcelReader(Stream file)
         {
             //hssfwb = WorkbookFactory.Create(file);// new XSSFWorkbook(file);
-            hssfwb = new XSSFWorkbook(file);
+            _hssfwb = new XSSFWorkbook(file);
             file.Close();
         }
 
@@ -78,7 +78,7 @@ namespace VErp.Commons.Library
         public string[][] ReadFile(int collumnLength, int sheetAt = 0, int startRow = 0, int startCollumn = 0)
         {
             List<string[]> data = new List<string[]>();
-            ISheet sheet = hssfwb.GetSheetAt(sheetAt);
+            ISheet sheet = _hssfwb.GetSheetAt(sheetAt);
             int rowIdx = startRow;
             IRow row;
             while ((row = sheet.GetRow(rowIdx)) != null)
@@ -106,6 +106,7 @@ namespace VErp.Commons.Library
             return data.ToArray();
         }
 
+     
 
         public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
         {
@@ -114,7 +115,7 @@ namespace VErp.Commons.Library
             //hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateAll();
             try
             {
-                BaseFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
+                BaseFormulaEvaluator.EvaluateAllFormulaCells(_hssfwb);
             }
             catch (Exception)
             {
@@ -135,10 +136,10 @@ namespace VErp.Commons.Library
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
 
 
-            for (int i = 0; i < hssfwb.NumberOfSheets; i++)
+            for (int i = 0; i < _hssfwb.NumberOfSheets; i++)
             {
 
-                var sheet = hssfwb.GetSheetAt(i);
+                var sheet = _hssfwb.GetSheetAt(i);
 
                 var sName = (sheet.SheetName ?? "").Trim();
                 sheetName = (sheetName ?? "").Trim();
@@ -261,7 +262,7 @@ namespace VErp.Commons.Library
                             {
                                 rowData.Add(columnName, GetCellString(cell)?.Trim()?.Trim('\''));
                             }
-                            catch(Exception e)
+                            catch(Exception)
                             {
                                 rowData.Add(columnName, cell.StringCellValue.ToString()?.Trim()?.Trim('\''));
 
@@ -335,7 +336,7 @@ namespace VErp.Commons.Library
                     if (row.ContainsKey(mappingField.Column))
                         value = row[mappingField.Column]?.ToString();
 
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsIgnoredIfEmpty)
                     {
                         isIgnoreRow = true;
                         continue;
@@ -390,7 +391,7 @@ namespace VErp.Commons.Library
                 //bool isIgnoreRow = false;
 
 
-                var checkFieldsMapping = mapping.MappingFields.Where(f => f.IsRequire || f.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
+                var checkFieldsMapping = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty || f.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
 
                 if (checkFieldsMapping.Any(f => string.IsNullOrWhiteSpace(row[f.Column])))
                 {
@@ -530,7 +531,7 @@ namespace VErp.Commons.Library
                     }
             }
 
-            return dataFormatter.FormatCellValue(cell);
+            return _dataFormatter.FormatCellValue(cell);
             // return cell.StringCellValue?.Trim();
 
         }

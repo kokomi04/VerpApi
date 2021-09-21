@@ -17,13 +17,12 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
-   
+
     public abstract class PurchaseOrderOutsourceAbstract
     {
         protected PurchaseOrderDBContext _purchaseOrderDBContext;
@@ -31,7 +30,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         protected ILogger _logger;
         protected IActivityLogService _activityLogService;
         protected ICurrentContextService _currentContext;
-        protected IObjectGenCodeService _objectGenCodeService;
         protected ICustomGenCodeHelperService _customGenCodeHelperService;
         protected IManufacturingHelperService _manufacturingHelperService;
         protected IMapper _mapper;
@@ -42,7 +40,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             ILogger logger,
             IActivityLogService activityLogService,
             ICurrentContextService currentContext,
-            IObjectGenCodeService objectGenCodeService,
             ICustomGenCodeHelperService customGenCodeHelperService,
             IManufacturingHelperService manufacturingHelperService,
             IMapper mapper)
@@ -52,7 +49,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _manufacturingHelperService = manufacturingHelperService;
             _mapper = mapper;
@@ -96,7 +92,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         CensorDatetimeUtc = null,
                         PurchaseOrderType = (int)purchaseOrderType,
                         PropertyCalcId = model.PropertyCalcId,
-                        PoDescription = model.PoDescription
+                        PoDescription = model.PoDescription,
+                        TaxInPercent = model.TaxInPercent,
+                        TaxInMoney = model.TaxInMoney,
+                        CurrencyId = model.CurrencyId,
+                        ExchangeRate = model.ExchangeRate
                     };
 
                     if (po.DeliveryDestination?.Length > 1024)
@@ -124,8 +124,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                            TaxInPercent = d.TaxInPercent,
-                            TaxInMoney = d.TaxInMoney,
                             OrderCode = d.OrderCode,
                             ProductionOrderCode = d.ProductionOrderCode,
                             Description = d.Description,
@@ -133,10 +131,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             OutsourceRequestId = d.OutsourceRequestId,
                             ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                             IntoMoney = d.IntoMoney,
-                            IntoAfterTaxMoney = d.IntoAfterTaxMoney,
+
+                            ExchangedMoney = d.ExchangedMoney,
+                            SortOrder = d.SortOrder
                         };
                     }).ToList();
 
+                    var sortOrder = 1;
+                    foreach (var item in poDetails)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
 
                     await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
 
@@ -158,7 +163,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         foreach (var excess in model.Excess)
                             excess.PurchaseOrderId = po.PurchaseOrderId;
 
-                        await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(_mapper.Map<IList<PurchaseOrderExcess>>(model.Excess));
+                        var lst = _mapper.Map<IList<PurchaseOrderExcess>>(model.Excess).OrderBy(s => s.SortOrder).ToList();
+                        sortOrder = 1;
+                        foreach (var item in lst)
+                        {
+                            item.SortOrder = sortOrder++;
+                        }
+                        await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(lst);
                     }
 
                     if (model.Materials?.Count > 0)
@@ -166,7 +177,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         foreach (var material in model.Materials)
                             material.PurchaseOrderId = po.PurchaseOrderId;
 
-                        await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(_mapper.Map<IList<PurchaseOrderMaterials>>(model.Materials));
+                        var lst = _mapper.Map<IList<PurchaseOrderMaterials>>(model.Materials).OrderBy(s => s.SortOrder).ToList();
+                        sortOrder = 1;
+                        foreach (var item in lst)
+                        {
+                            item.SortOrder = sortOrder++;
+                        }
+                        await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync();
                     }
 
 
@@ -184,10 +201,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     return po.PurchaseOrderId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
-                    throw ex;
+                    throw;
                 }
             }
 
@@ -231,6 +248,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     info.CensorByUserId = null;
                     info.CensorDatetimeUtc = null;
                     info.PoDescription = model.PoDescription;
+                    info.TaxInPercent = model.TaxInPercent;
+                    info.TaxInMoney = model.TaxInMoney;
+
+                    info.CurrencyId = model.CurrencyId;
+                    info.ExchangeRate = model.ExchangeRate;
 
                     if (info.DeliveryDestination?.Length > 1024)
                     {
@@ -261,14 +283,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                                 detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
-                                detail.TaxInPercent = item.TaxInPercent;
-                                detail.TaxInMoney = item.TaxInMoney;
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
                                 detail.Description = item.Description;
                                 detail.IntoMoney = item.IntoMoney;
-                                detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
 
+                                detail.ExchangedMoney = item.ExchangedMoney;
+
+                                detail.SortOrder = item.SortOrder;
                                 break;
                             }
                         }
@@ -286,8 +308,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductUnitConversionId = item.ProductUnitConversionId,
                                 ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                 ProductUnitConversionPrice = item.ProductUnitConversionPrice,
-                                TaxInPercent = item.TaxInPercent,
-                                TaxInMoney = item.TaxInMoney,
                                 OrderCode = item.OrderCode,
                                 ProductionOrderCode = item.ProductionOrderCode,
                                 Description = item.Description,
@@ -295,7 +315,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 OutsourceRequestId = item.OutsourceRequestId,
                                 ProductionStepLinkDataId = item.ProductionStepLinkDataId,
                                 IntoMoney = item.IntoMoney,
-                                IntoAfterTaxMoney = item.IntoAfterTaxMoney,
+
+                                ExchangedMoney = item.ExchangedMoney,
+                                SortOrder = item.SortOrder
                             });
                         }
                     }
@@ -375,8 +397,32 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.PurchaseOrderExcess.AddRangeAsync(newExcesses);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
+                    var allDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                    var allExcesses = await _purchaseOrderDBContext.PurchaseOrderExcess.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                    var allMaterials = await _purchaseOrderDBContext.PurchaseOrderMaterials.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+
+                    var sortOrder = 1;
+                    foreach (var item in allDetails)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
+
+                    sortOrder = 1;
+                    foreach (var item in allExcesses)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
+
+                    sortOrder = 1;
+                    foreach (var item in allMaterials)
+                    {
+                        item.SortOrder = sortOrder++;
+                    }
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
                     trans.Commit();
-                    
+
                     await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật PO {info.PurchaseOrderCode}", info.JsonSerialize());
@@ -384,10 +430,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return true;
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -426,14 +472,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+                    var outsourceRequestId = oldDetails
+                    .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                    .Distinct()
+                    .Where(x => x > 0)
+                    .ToArray();
+
+                    if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart)
+                        return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
+
+                    if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep)
+                        return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
                     await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
                     return true;
 
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
                     throw;
@@ -488,8 +544,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 PropertyCalcId = info.PropertyCalcId,
 
+                TaxInPercent = info.TaxInPercent,
+                TaxInMoney = info.TaxInMoney,
+
+                CurrencyId = info.CurrencyId,
+                ExchangeRate = info.ExchangeRate,
+
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
+                Details = details.OrderBy(d => d.SortOrder)
+                .Select(d =>
                 {
                     return new PurchaseOrderOutputDetail()
                     {
@@ -504,30 +567,32 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,
 
                         OutsourceRequestId = d.OutsourceRequestId,
                         ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                        IntoAfterTaxMoney = d.IntoAfterTaxMoney,
-                        IntoMoney = d.IntoMoney
+                        IntoMoney = d.IntoMoney,
+
+                        ExchangedMoney = d.ExchangedMoney,
+                        SortOrder = d.SortOrder
                     };
                 }).ToList(),
-                Excess = excess,
-                Materials = materials
+                Excess = excess.OrderBy(e => e.SortOrder).ToList(),
+                Materials = materials.OrderBy(m => m.SortOrder).ToList()
             };
         }
 
-        protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId){
+        protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId)
+        {
             var info = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
             if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
             var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
                 .Select(x => x.OutsourceRequestId.GetValueOrDefault())
                 .Distinct()
+                .Where(x => x > 0)
                 .ToArray();
             return outsourceRequestId;
         }
@@ -536,10 +601,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
 
-            if (purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
+            if (outsourceRequestId.Length > 0 && purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
                 return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
 
-            if (purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
+            if (outsourceRequestId.Length > 0 && purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
                 return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
             return true;
@@ -563,9 +628,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         protected virtual async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
         {
-            return GeneralCode.InternalError;
+            return await Task.FromResult(GeneralCode.InternalError);
         }
-        
+
         private async Task<bool> CreatePurchaseOrderTracked(long purchaseOrderId)
         {
             var track = new purchaseOrderTrackedModel

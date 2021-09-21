@@ -10,6 +10,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionProcessMold;
 using VErp.Services.Manafacturing.Service.ProductionProcessMold;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing
 {

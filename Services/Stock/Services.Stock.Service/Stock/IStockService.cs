@@ -7,6 +7,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Stock;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Stock
 

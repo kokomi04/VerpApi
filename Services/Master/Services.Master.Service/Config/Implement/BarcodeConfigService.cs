@@ -17,6 +17,8 @@ using System.Linq;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Config.BarcodeConfig;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -26,7 +28,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _barcodeConfigActivityLog;
 
         public BarcodeConfigService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
@@ -37,7 +39,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
+            _barcodeConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.BarcodeConfig);
         }
         public async Task<int> AddBarcodeConfig(BarcodeConfigModel data)
         {
@@ -71,7 +73,13 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _masterContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Thêm mới cấu hình barcode {model.Name}", data.JsonSerialize());
+
+            await _barcodeConfigActivityLog.LogBuilder(() => BarcodeConfigActivityLogMessage.Create)
+              .MessageResourceFormatDatas(model.Name)
+              .ObjectId(model.BarcodeConfigId)
+              .JsonData(model.JsonSerialize())
+              .CreateLog();
+
 
             return model.BarcodeConfigId;
         }
@@ -89,7 +97,12 @@ namespace VErp.Services.Master.Service.Config.Implement
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Xóa cấu hình barcode {model.Name}", model.JsonSerialize());
+            await _barcodeConfigActivityLog.LogBuilder(() => BarcodeConfigActivityLogMessage.Delete)
+              .MessageResourceFormatDatas(model.Name)
+              .ObjectId(model.BarcodeConfigId)
+              .JsonData(model.JsonSerialize())
+              .CreateLog();
+
             return true;
         }
 
@@ -229,7 +242,12 @@ namespace VErp.Services.Master.Service.Config.Implement
             model.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _masterContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.BarcodeConfig, model.BarcodeConfigId, $"Cập nhật cấu hình barcode {data.Name}", model.JsonSerialize());
+            await _barcodeConfigActivityLog.LogBuilder(() => BarcodeConfigActivityLogMessage.Update)
+            .MessageResourceFormatDatas(model.Name)
+            .ObjectId(model.BarcodeConfigId)
+            .JsonData(model.JsonSerialize())
+            .CreateLog();
+
 
             return true;
         }

@@ -18,30 +18,30 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Config.ActionButton;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
     public class ActionButtonService : IActionButtonService
     {
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterDBContext;
-        private readonly IRoleHelperService _roleHelperService;
+        private readonly ObjectActivityLogFacade _actionButtonActivityLog;
+
 
         public ActionButtonService(MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<ActionButtonService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            , IRoleHelperService roleHelperService
             )
         {
             _masterDBContext = masterDBContext;
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
-            _roleHelperService = roleHelperService;
+            _actionButtonActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ActionButton);
         }
 
         public async Task<IList<ActionButtonModel>> GetActionButtonConfigs(EnumObjectType objectTypeId, int? objectId)
@@ -73,7 +73,11 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _masterDBContext.ActionButton.AddAsync(action);
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ActionButton, action.ActionButtonId, $"Thêm nút chức năng {data.Title} {data.ObjectTitle}", data.JsonSerialize());
+                await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+                  .MessageResourceFormatDatas($"{data.Title} {data.ObjectTitle}")
+                  .ObjectId(action.ActionButtonId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
 
                 return _mapper.Map<ActionButtonModel>(action);
             }
@@ -95,19 +99,19 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             _mapper.Map(data, info);
-            try
-            {
 
-                await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ActionButton, actionButtonId, $"Cập nhật nút chức năng {data.Title} {data.ObjectTitle}", data.JsonSerialize());
-                return _mapper.Map<ActionButtonModel>(info);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Update");
-                throw;
-            }
+            await _masterDBContext.SaveChangesAsync();
+
+            await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+            .MessageResourceFormatDatas($"{data.Title} {data.ObjectTitle}")
+            .ObjectId(info.ActionButtonId)
+            .JsonData(data.JsonSerialize())
+            .CreateLog();
+
+
+            return _mapper.Map<ActionButtonModel>(info);
+
         }
 
 
@@ -127,12 +131,17 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             try
             {
-                using (var batch = _activityLogService.BeginBatchLog())
+                using (var batch = _actionButtonActivityLog.BeginBatchLog())
                 {
                     foreach (var info in lst)
                     {
                         info.IsDeleted = true;
-                        await _activityLogService.CreateLog(EnumObjectType.ActionButton, info.ActionButtonId, $"Xóa nút chức năng {info.Title} bởi {data.ObjectTitle}", data.JsonSerialize());
+
+                        await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                         .MessageResourceFormatDatas($"{info.Title} {data.ObjectTitle}")
+                         .ObjectId(info.ActionButtonId)
+                         .JsonData(data.JsonSerialize())
+                         .CreateLog();
                     }
 
                     await _masterDBContext.SaveChangesAsync();
@@ -158,7 +167,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 info.IsDeleted = true;
                 await _masterDBContext.SaveChangesAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ActionButton, actionButtonId, $"Xóa nút chức năng {info.Title} {data.ObjectTitle}", data.JsonSerialize());
+
+                await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                       .MessageResourceFormatDatas($"{info.Title} {data.ObjectTitle}")
+                       .ObjectId(info.ActionButtonId)
+                       .JsonData(data.JsonSerialize())
+                       .CreateLog();
+
                 return true;
             }
             catch (Exception ex)

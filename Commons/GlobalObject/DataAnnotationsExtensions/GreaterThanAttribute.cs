@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Text;
-using VErp.Commons.GlobalObject.DataAnnotationsExtensions.Resources;
+using Verp.Resources.GlobalObject;
 
 namespace VErp.Commons.GlobalObject.DataAnnotationsExtensions
 {
@@ -31,7 +31,7 @@ namespace VErp.Commons.GlobalObject.DataAnnotationsExtensions
                 ErrorMessage = ValidatorResources.GreaterThanAttribute_Invalid;
             }
 
-            return String.Format(CultureInfo.CurrentCulture, ErrorMessageString, name, _min);
+            return string.Format(CultureInfo.CurrentCulture, ErrorMessageString, name, _min);
         }
 
         public override bool IsValid(object value)

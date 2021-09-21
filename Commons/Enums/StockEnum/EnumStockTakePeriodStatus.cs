@@ -18,8 +18,10 @@ namespace VErp.Commons.Enums.Stock
         Waiting = 1,
         [Description("Đang thực hiện")]
         Processing = 2,
-        [Description("Hoàn thành")]
+        [Description("Hoàn thành kiểm kê")]
         Finish = 3,
+        [Description("Hoàn thành xử lý")]
+        FinishAC = 4,
     }
 
     public enum EnumStockTakeAcceptanceCertificateStatus : int

@@ -3,12 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Services.PurchaseOrder.Model.Resources;
-
 namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchasingRequestInput : IMapFrom<PurchasingRequest>
@@ -50,6 +49,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Description { get; set; }
 
         public int OriginalProductId { get; set; }
+
+        public int? SortOrder { get; set; }
 
         public IMappingExpression<T, PurchasingRequestDetail> MappingBase<T>(Profile profile) where T : PurchasingRequestInputDetail
             => profile.CreateMap<PurchasingRequestDetail, T>()

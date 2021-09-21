@@ -19,6 +19,10 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using static Verp.Resources.Master.Config.ObjectGenCode.ObjectGenCodeValidationMessage;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Category;
+using Verp.Resources.Master.Config.ObjectGenCode;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -27,7 +31,6 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterDbContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IGenCodeConfigService _genCodeConfigService;
         private readonly ICurrentContextService _currentContextService;
 
@@ -35,6 +38,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly IStockHelperService _stockHelperService;
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
+        private readonly ObjectActivityLogFacade _objectGenCodeActivityLog;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
@@ -51,13 +55,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _genCodeConfigService = genCodeConfigService;
             _currentContextService = currentContextService;
             _productHelperService = productHelperService;
             _stockHelperService = stockHelperService;
             _inputTypeHelperService = inputTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
+            _objectGenCodeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectCustomGenCodeMapping);
         }
 
 
@@ -79,7 +83,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             if (obj == null)
             {
-                throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotExisted, $"Chưa thiết định cấu hình sinh mã cho {targetObjectTypeId.GetEnumDescription()} {(configObjectId > 0 ? (long?)configObjectId : null)}");
+                throw CustomConfigNotExisted.BadRequestFormat(targetObjectTypeId.GetEnumDescription(), configObjectId > 0 ? (long?)configObjectId : null);
+                
             }
 
             return await _genCodeConfigService.GetInfo(obj.CustomGenCodeId, fId, code, date);
@@ -137,8 +142,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
             await _masterDbContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, obj.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn {config.CustomGenCodeName}", model.JsonSerialize());
 
+            await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.MapObjectGenCode)
+             .MessageResourceFormatDatas(config.CustomGenCodeName)
+             .ObjectId(obj.ObjectCustomGenCodeMappingId)
+             .JsonData(model.JsonSerialize())
+             .CreateLog();
+
+         
             return true;
 
         }
@@ -188,7 +199,13 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             foreach (var item in dic)
             {
-                await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, item.Key.ObjectCustomGenCodeMappingId, $"Gán sinh tùy chọn (multi) {item.Value.CustomGenCodeName}", item.Key.JsonSerialize());
+
+                await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.MapObjectGenCodeMulti)
+                 .MessageResourceFormatDatas(item.Value.CustomGenCodeName)
+                 .ObjectId(item.Key.ObjectCustomGenCodeMappingId)
+                 .JsonData(item.Key.JsonSerialize())
+                 .CreateLog();
+
             }
 
             return true;
@@ -208,7 +225,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var objectName = ((EnumObjectType)info.ObjectTypeId).GetEnumDescription();
 
-            await _activityLogService.CreateLog(EnumObjectType.ObjectCustomGenCodeMapping, objectCustomGenCodeMappingId, $"Loại bỏ cấu hình sinh mã khỏi đối tượng {objectName} {(info.ConfigObjectId > 0 ? (long?)info.ConfigObjectId : null)}", info.JsonSerialize());
+            await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.DeleteMapObjectGenCode)
+              .MessageResourceFormatDatas(objectName, info.ConfigObjectId > 0 ? (long?)info.ConfigObjectId : null)
+              .ObjectId(objectCustomGenCodeMappingId)
+              .JsonData(info.JsonSerialize())
+              .CreateLog();
+
             return true;
 
         }
@@ -219,7 +241,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim().ToLower();
-            
+
             _objectCustomGenCodeMappings = await _masterDbContext.ObjectCustomGenCodeMapping.ToListAsync();
             _customGenCodes = await _masterDbContext.CustomGenCode.ToListAsync();
 
@@ -266,13 +288,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             result.Add(
                      GetObjectGenCodeMappingTypeModel(
                      moduleTypeId: EnumModuleType.Stock,
-                     targeObjectTypeId: EnumObjectType.RequestInventoryInput,                    
+                     targeObjectTypeId: EnumObjectType.RequestInventoryInput,
                      fieldName: "Mã yêu cầu nhập kho")
                  );
             result.Add(
                    GetObjectGenCodeMappingTypeModel(
                    moduleTypeId: EnumModuleType.Stock,
-                   targeObjectTypeId: EnumObjectType.RequestInventoryOutput,                
+                   targeObjectTypeId: EnumObjectType.RequestInventoryOutput,
                    fieldName: "Mã yêu cầu xuất kho")
                );
 
@@ -347,6 +369,24 @@ namespace VErp.Services.Master.Service.Config.Implement
                     fieldName: "Mã chi tiết mặt hàng")
                 );
 
+            result.Add(
+                  GetObjectGenCodeMappingTypeModel(
+                  moduleTypeId: EnumModuleType.Stock,
+                  targeObjectTypeId: EnumObjectType.StockTakePeriod,
+                  fieldName: "Mã kỳ kiểm kê")
+              );
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Stock,
+                targeObjectTypeId: EnumObjectType.StockTake,
+                fieldName: "Mã phiếu kiểm kê")
+            );
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Stock,
+                targeObjectTypeId: EnumObjectType.StockTakeAcceptanceCertificate,
+                fieldName: "Mã phiếu xử lý")
+            );
             return result;
         }
 

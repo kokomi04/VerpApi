@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Commons.GlobalObject;
 
 namespace Services.Organization.Service.Department
 {

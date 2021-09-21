@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -27,6 +29,14 @@ namespace VErpApi.Controllers.System.Internal
         public async Task<PageData<UserInfoOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _userService.GetList(keyword, page, size, filters).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByIds")]
+        public async Task<IList<UserInfoOutput>> GetByIds([FromBody] IList<int> userIds)
+        {
+            return await _userService.GetListByUserIds(userIds).ConfigureAwait(true);
         }
 
         [HttpGet]

@@ -11,7 +11,6 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Commons.Library;
 using VErp.Commons.Enums.StandardEnum;
@@ -31,7 +30,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
-        private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IMapper _mapper;
@@ -42,7 +40,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
-           , IObjectGenCodeService objectGenCodeService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
             , IMapper mapper
@@ -54,7 +51,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _mapper = mapper;

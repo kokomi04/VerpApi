@@ -19,6 +19,7 @@ using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
 using VErp.Services.Stock.Service.Stock;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Stock.Internal
 {
@@ -48,6 +49,13 @@ namespace VErpApi.Controllers.Stock.Internal
             return await _productService.ProductInfo(productId);
         }
 
+        [HttpPost]
+        [Route("GetByIds")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
+        {
+            return (await _productService.GetListByIds(productIds)).ToList();
+        }
 
         [HttpPost]
         [Route("validateProductUnitConversion")]

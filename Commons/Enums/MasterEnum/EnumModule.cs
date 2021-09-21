@@ -14,8 +14,9 @@ namespace VErp.Commons.Enums.MasterEnum
         CategoryData = 702,
 
         Input = 802,
-        
 
         SalesBill = 902,
+
+        Hr = 705,
     }
 }

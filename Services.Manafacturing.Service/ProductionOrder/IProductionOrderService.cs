@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder
 {
@@ -15,6 +16,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null);
         Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId);
         Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId);
+        Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds);
         Task<ProductionOrderInputModel> UpdateProductionOrder(long productionOrderId, ProductionOrderInputModel data);
         Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data);
         Task<int> CreateMultipleProductionOrder(ProductionOrderInputModel[] data);
@@ -25,5 +27,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data);
         Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status);
         Task<bool> EditNote(long productionOrderDetailId, string note);
+
+
+        Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate);
     }
 }

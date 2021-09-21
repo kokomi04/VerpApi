@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.ReuseContent;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -17,7 +18,6 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
-using VErp.Services.Master.Service.Resources.ReuseContent;
 
 namespace VErp.Services.Master.Service.Dictionay.Implement
 {
@@ -26,7 +26,6 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
         private readonly MasterDBContext _masterContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _reuseContentActivityLog;
@@ -42,7 +41,6 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _currentContextService = currentContextService;
             _mapper = mapper;
             _reuseContentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReuseContent);

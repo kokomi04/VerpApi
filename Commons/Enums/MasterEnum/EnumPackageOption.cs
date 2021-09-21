@@ -22,5 +22,9 @@ namespace VErp.Commons.Enums.MasterEnum
         /// </summary>
         [Description("Thêm vào kiện đang có")]
         Append = 2,
+
+
+        [Description("Tạo kiện mới chung")]
+        CreateMerge = 3,
     }
 }

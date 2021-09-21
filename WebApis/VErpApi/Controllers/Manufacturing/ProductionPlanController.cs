@@ -43,5 +43,15 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionPlanService.DeleteProductionPlan(productionOrderId);
         }
+
+        [HttpPost]
+        [Route("export")]
+        public async Task<FileStreamResult> ProductionPlanExport([FromQuery] long startDate, [FromQuery] long endDate, [FromBody] ProductionPlanExportModel data)
+        {
+            var (stream, fileName, contentType) = await _productionPlanService.ProductionPlanExport(startDate, endDate, data);
+
+            return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
+
+        }
     }
 }

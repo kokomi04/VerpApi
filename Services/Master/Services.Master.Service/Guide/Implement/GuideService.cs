@@ -7,10 +7,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Guide;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Guide;
 using GuideEntity = VErp.Infrastructure.EF.MasterDB.Guide;
 
@@ -19,14 +24,15 @@ namespace VErp.Services.Master.Service.Guide.Implement
     public class GuideService : IGuideService
     {
         private readonly MasterDBContext _masterDBContext;
-        private readonly ILogger<GuideService> _logger;
+        private readonly ObjectActivityLogFacade _guideActivityLog;
+
         private readonly IMapper _mapper;
 
-        public GuideService(MasterDBContext masterDBContext, ILogger<GuideService> logger, IMapper mapper)
+        public GuideService(MasterDBContext masterDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
-            _masterDBContext = masterDBContext;
-            _logger = logger;
+            _masterDBContext = masterDBContext;           
             _mapper = mapper;
+            _guideActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Guide);
         }
 
         public async Task<int> Create(GuideModel model)
@@ -35,6 +41,12 @@ namespace VErp.Services.Master.Service.Guide.Implement
 
             _masterDBContext.Guide.Add(entity);
             await _masterDBContext.SaveChangesAsync();
+
+            await _guideActivityLog.LogBuilder(() => GuideActivityLogMessage.Create)
+             .MessageResourceFormatDatas(model.Title)
+             .ObjectId(entity.GuideId)
+             .JsonData(model.JsonSerialize())
+             .CreateLog();
 
             return entity.GuideId;
         }
@@ -48,6 +60,11 @@ namespace VErp.Services.Master.Service.Guide.Implement
             g.IsDeleted = true;
             await _masterDBContext.SaveChangesAsync();
 
+            await _guideActivityLog.LogBuilder(() => GuideActivityLogMessage.Delete)
+            .MessageResourceFormatDatas(g.Title)
+            .ObjectId(g.GuideId)
+            .JsonData(g.JsonSerialize())
+            .CreateLog();
             return true;
         }
 
@@ -105,6 +122,12 @@ namespace VErp.Services.Master.Service.Guide.Implement
             _mapper.Map(model, g);
 
             await _masterDBContext.SaveChangesAsync();
+
+            await _guideActivityLog.LogBuilder(() => GuideActivityLogMessage.Update)
+            .MessageResourceFormatDatas(model.Title)
+            .ObjectId(guideId)
+            .JsonData(model.JsonSerialize())
+            .CreateLog();
 
             return true;
         }

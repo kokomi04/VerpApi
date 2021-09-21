@@ -96,7 +96,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-
+        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

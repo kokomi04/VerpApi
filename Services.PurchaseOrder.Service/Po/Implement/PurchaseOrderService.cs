@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.ErrorCodes.PO;
@@ -13,16 +12,17 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
+using VErp.Services.PurchaseOrder.Model.Request;
+using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
@@ -35,10 +35,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
-        private readonly IObjectGenCodeService _objectGenCodeService;
         private readonly IPurchasingSuggestService _purchasingSuggestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -47,11 +47,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
            , ICurrentContextService currentContext
-           , IObjectGenCodeService objectGenCodeService
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
-           )
+           , IManufacturingHelperService manufacturingHelperService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _appSetting = appSetting.Value;
@@ -59,10 +58,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _activityLogService = activityLogService;
             _asyncRunner = asyncRunner;
             _currentContext = currentContext;
-            _objectGenCodeService = objectGenCodeService;
             _purchasingSuggestService = purchasingSuggestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _manufacturingHelperService = manufacturingHelperService;
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
@@ -300,12 +299,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             pod.ProductUnitConversionQuantity,
                             pod.ProductUnitConversionPrice,
 
-                            pod.TaxInPercent,
-                            pod.TaxInMoney,
+                            po.TaxInPercent,
+                            po.TaxInMoney,
                             pod.Description,
 
                             pod.OrderCode,
                             pod.ProductionOrderCode,
+
+                            pod.SortOrder,
 
 
                             c.CustomerCode,
@@ -326,7 +327,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             CensorFullName = censor.FullName,
                             po.PurchaseOrderType,
                             pod.IntoMoney,
-                            pod.IntoAfterTaxMoney,
+
+                            po.CurrencyId,
+                            pod.ExchangedMoney,
+                            po.ExchangeRate
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -392,7 +396,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
 
             var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
             var additionResult = await (from q in query
                                         group q by 1 into g
                                         select new
@@ -481,7 +485,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorFullName = info.CensorFullName,
                     PurchaseOrderType = info.PurchaseOrderType,
                     IntoMoney = info.IntoMoney,
-                    IntoAfterTaxMoney = info.IntoAfterTaxMoney,
+
+                    CurrencyId = info.CurrencyId,
+                    ExchangedMoney = info.ExchangedMoney,
+                    ExchangeRate = info.ExchangeRate,
+                    SortOrder = info.SortOrder
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
@@ -542,8 +550,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 PurchaseOrderType = info.PurchaseOrderType,
 
+                TaxInPercent = info.TaxInPercent,
+                CurrencyId = info.CurrencyId,
+                ExchangeRate = info.ExchangeRate,
+
                 FileIds = files.Select(f => f.FileId).ToList(),
-                Details = details.Select(d =>
+                Details = details.OrderBy(d => d.SortOrder)
+                .Select(d =>
                 {
                     assignmentDetails.TryGetValue(d.PoAssignmentDetailId ?? 0, out var assignmentDetailInfo);
 
@@ -562,8 +575,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,
@@ -571,7 +582,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         PoAssignmentDetail = assignmentDetailInfo,
                         PurchasingSuggestDetail = purchasingSuggestDetailInfo,
                         IntoMoney = d.IntoMoney,
-                        IntoAfterTaxMoney = d.IntoAfterTaxMoney
+
+                        ExchangedMoney = d.ExchangedMoney,
+                        SortOrder = d.SortOrder
                     };
                 }).ToList()
             };
@@ -622,7 +635,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CensorDatetimeUtc = null,
                     IsDeleted = false,
                     DeletedDatetimeUtc = null,
-                    PurchaseOrderType = (int)EnumPurchasingOrderType.Default
+                    PurchaseOrderType = (int)EnumPurchasingOrderType.Default,
+                    TaxInPercent = model.TaxInPercent,
+                    TaxInMoney = model.TaxInMoney,
+
+                    CurrencyId = model.CurrencyId,
+                    ExchangeRate = model.ExchangeRate
                 };
 
                 if (po.DeliveryDestination?.Length > 1024)
@@ -657,8 +675,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
-                        TaxInPercent = d.TaxInPercent,
-                        TaxInMoney = d.TaxInMoney,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,
@@ -667,10 +683,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         IsDeleted = false,
                         DeletedDatetimeUtc = null,
                         IntoMoney = d.IntoMoney,
-                        IntoAfterTaxMoney = d.IntoAfterTaxMoney,
+
+                        ExchangedMoney = d.ExchangedMoney,
+                        SortOrder = d.SortOrder
                     };
                 }).ToList();
 
+                var sortOrder = 1;
+                foreach (var item in poDetails)
+                {
+                    item.SortOrder = sortOrder++;
+                }
 
                 await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
 
@@ -763,6 +786,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.CensorDatetimeUtc = null;
                 info.IsDeleted = false;
                 info.DeletedDatetimeUtc = null;
+                info.TaxInPercent = model.TaxInPercent;
+                info.TaxInMoney = model.TaxInMoney;
+
+                info.CurrencyId = model.CurrencyId;
+                info.ExchangeRate = model.ExchangeRate;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
@@ -802,14 +830,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                             detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
-                            detail.TaxInPercent = item.TaxInPercent;
-                            detail.TaxInMoney = item.TaxInMoney;
                             detail.OrderCode = item.OrderCode;
                             detail.ProductionOrderCode = item.ProductionOrderCode;
                             detail.Description = item.Description;
                             detail.UpdatedDatetimeUtc = DateTime.UtcNow;
                             detail.IntoMoney = item.IntoMoney;
-                            detail.IntoAfterTaxMoney = item.IntoAfterTaxMoney;
+                            detail.ExchangedMoney = item.ExchangedMoney;
+                            detail.SortOrder = item.SortOrder;
                             break;
                         }
                     }
@@ -832,8 +859,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionId = item.ProductUnitConversionId,
                             ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = item.ProductUnitConversionPrice,
-                            TaxInPercent = item.TaxInPercent,
-                            TaxInMoney = item.TaxInMoney,
                             OrderCode = item.OrderCode,
                             ProductionOrderCode = item.ProductionOrderCode,
                             Description = item.Description,
@@ -842,7 +867,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             IsDeleted = false,
                             DeletedDatetimeUtc = null,
                             IntoMoney = item.IntoMoney,
-                            IntoAfterTaxMoney = item.IntoAfterTaxMoney,
+                            ExchangedMoney = item.ExchangedMoney,
+                            SortOrder = item.SortOrder
                         });
                     }
                 }
@@ -876,6 +902,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         DeletedDatetimeUtc = null,
                         IsDeleted = false
                     }));
+                }
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                var allDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+                var sortOrder = 1;
+                foreach (var item in allDetails)
+                {
+                    item.SortOrder = sortOrder++;
                 }
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -919,309 +954,27 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-
-        public async IAsyncEnumerable<PurchaseOrderExcelParseDetail> ParseInvoiceDetails(SingleInvoicePoExcelMappingModel mapping, Stream stream)
+        public CategoryNameModel GetFieldDataForMapping()
         {
-            var rowDatas = SingleInvoiceParseExcel(mapping, stream).ToList();
-
-            var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
-            var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
-
-            var productInfos = await _productHelperService.GetListByCodeAndInternalNames(productCodes, productInternalNames);
-
-            var productInfoByCode = productInfos.GroupBy(p => p.ProductCode)
-                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
-
-            var productInfoByInternalName = productInfos.GroupBy(p => p.ProductName.NormalizeAsInternalName())
-                .ToDictionary(p => p.Key.Trim().ToLower(), p => p.ToList());
-
-            foreach (var item in rowDatas)
+            var result = new CategoryNameModel()
             {
-                IList<ProductModel> productInfo = null;
-                if (!string.IsNullOrWhiteSpace(item.ProductCode) && productInfoByCode.ContainsKey(item.ProductCode?.ToLower()))
-                {
-                    productInfo = productInfoByCode[item.ProductCode?.ToLower()];
-                }
-                else
-                {
-                    if (!string.IsNullOrWhiteSpace(item.ProductInternalName) && productInfoByInternalName.ContainsKey(item.ProductInternalName))
-                    {
-                        productInfo = productInfoByInternalName[item.ProductInternalName];
-                    }
-                }
-
-                if (productInfo == null || productInfo.Count == 0)
-                {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName}");
-                }
-
-                if (productInfo.Count > 1)
-                {
-                    productInfo = productInfo.Where(p => p.ProductName == item.ProductName).ToList();
-
-                    if (productInfo.Count != 1)
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {productInfo.Count} mặt hàng {item.ProductCode} {item.ProductName}");
-                }
-
-                var productUnitConversionId = 0;
-                if (!string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
-                {
-                    var pus = productInfo[0].StockInfo.UnitConversions
-                            .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
-                            .ToList();
-
-                    if (pus.Count != 1)
-                    {
-                        pus = productInfo[0].StockInfo.UnitConversions
-                           .Where(u => u.ProductUnitConversionName.Contains(item.ProductUnitConversionName) || item.ProductUnitConversionName.Contains(u.ProductUnitConversionName))
-                           .ToList();
-
-                        if (pus.Count > 1)
-                        {
-                            pus = productInfo[0].StockInfo.UnitConversions
-                             .Where(u => u.ProductUnitConversionName.Equals(item.ProductUnitConversionName, StringComparison.OrdinalIgnoreCase))
-                             .ToList();
-                        }
-                    }
-
-                    if (pus.Count == 0)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
-                    }
-                    if (pus.Count > 1)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {pus.Count} đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
-                    }
-
-                    productUnitConversionId = pus[0].ProductUnitConversionId;
-
-                }
-                else
-                {
-                    var puDefault = productInfo[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
-                    if (puDefault == null)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu đơn vị tính default lỗi, mặt hàng {item.ProductCode} {item.ProductName}");
-
-                    }
-                    productUnitConversionId = puDefault.ProductUnitConversionId;
-                }
-
-                yield return new PurchaseOrderExcelParseDetail()
-                {
-                    OrderCode = item.OrderCode,
-                    ProductionOrderCode = item.ProductionOrderCode,
-                    Description = item.Description,
-                    ProductId = productInfo[0].ProductId.Value,
-                    ProviderProductName = item.ProductProviderName,
-
-
-                    PrimaryQuantity = item.PrimaryQuantity ?? 0,
-                    PrimaryUnitPrice = item.PrimaryPrice ?? 0,
-
-                    ProductUnitConversionId = productUnitConversionId,
-                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity ?? 0,
-                    ProductUnitConversionPrice = item.ProductUnitConversionPrice ?? 0,
-
-                    Money = item.Money ?? 0,
-
-                    TaxInPercent = item.TaxInPercent,
-                    TaxInMoney = item.TaxInMoney
-                };
-
-            }
+                //CategoryId = 1,
+                CategoryCode = "PurchaseOrder",
+                CategoryTitle = "PurchaseOrder",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = Utils.GetFieldNameModels<PoDetailRowValue>();
+            result.Fields = fields;
+            return result;
         }
 
-        private IEnumerable<PoDetailRowValue> SingleInvoiceParseExcel(SingleInvoicePoExcelMappingModel mapping, Stream stream)
+        public IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream)
         {
-            var reader = new ExcelReader(stream);
-
-            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-
-
-            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
-            {
-                var row = data.Rows[rowIndx];
-                if (row.Count == 0) continue;
-
-                var rowData = new PoDetailRowValue();
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductCodeColumn))
-                {
-                    rowData.ProductCode = row[mapping.ColumnMapping.ProductCodeColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductNameColumn))
-                {
-                    rowData.ProductName = row[mapping.ColumnMapping.ProductNameColumn]?.ToString();
-                    rowData.ProductInternalName = rowData.ProductName.NormalizeAsInternalName();
-                }
-
-                if (string.IsNullOrWhiteSpace(rowData.ProductCode) && string.IsNullOrWhiteSpace(rowData.ProductName)) continue;
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductProviderNameColumn))
-                {
-                    rowData.ProductProviderName = row[mapping.ColumnMapping.ProductProviderNameColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryQuantityColumn)
-                                   && row[mapping.ColumnMapping.PrimaryQuantityColumn] != null
-                                   && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryQuantityColumn].ToString())
-                                   )
-                {
-                    try
-                    {
-                        rowData.PrimaryQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryQuantityColumn]);
-
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.PrimaryPriceColumn)
-                                   && row[mapping.ColumnMapping.PrimaryPriceColumn] != null
-                                   && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.PrimaryPriceColumn].ToString())
-                )
-                {
-                    try
-                    {
-                        rowData.PrimaryPrice = Convert.ToDecimal(row[mapping.ColumnMapping.PrimaryPriceColumn]);
-
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đơn giá ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-                }
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.MoneyColumn)
-                    && row[mapping.ColumnMapping.MoneyColumn] != null
-                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.MoneyColumn].ToString())
-                    )
-                {
-                    try
-                    {
-                        rowData.Money = Convert.ToDecimal(row[mapping.ColumnMapping.MoneyColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số tiền ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-
-                }
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductUnitConversionName))
-                {
-                    rowData.ProductUnitConversionName = mapping.StaticValue.ProductUnitConversionName;
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionNameColumn))
-                {
-                    rowData.ProductUnitConversionName = row[mapping.ColumnMapping.ProductUnitConversionNameColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(rowData.ProductUnitConversionName)
-                    && !string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionQuantityColumn)
-                    && row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn] != null
-                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn].ToString())
-                    )
-                {
-                    try
-                    {
-                        rowData.ProductUnitConversionQuantity = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionQuantityColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(rowData.ProductUnitConversionName)
-                    && !string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductUnitConversionPriceColumn)
-                    && row[mapping.ColumnMapping.ProductUnitConversionPriceColumn] != null
-                    && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.ProductUnitConversionPriceColumn].ToString())
-                    )
-                {
-                    try
-                    {
-                        rowData.ProductUnitConversionPrice = Convert.ToDecimal(row[mapping.ColumnMapping.ProductUnitConversionPriceColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đơn giá ĐVCĐ ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-                }
-
-                //if (rowData.ProductUnitConversionQuantity == 0)
-                //{
-                //    rowData.ProductUnitConversionName = null;
-                //}
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.TaxInPercentColumn)
-                  && row[mapping.ColumnMapping.TaxInPercentColumn] != null
-                  && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.TaxInPercentColumn].ToString())
-                  )
-                {
-                    try
-                    {
-                        rowData.TaxInPercent = Convert.ToDecimal(row[mapping.ColumnMapping.TaxInPercentColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Thuế % ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-
-                }
-
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.TaxInMoneyColumn)
-                  && row[mapping.ColumnMapping.TaxInMoneyColumn] != null
-                  && !string.IsNullOrWhiteSpace(row[mapping.ColumnMapping.TaxInMoneyColumn].ToString())
-                  )
-                {
-                    try
-                    {
-                        rowData.TaxInMoney = Convert.ToDecimal(row[mapping.ColumnMapping.TaxInMoneyColumn]);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tiền thuế ở mặt hàng {rowData.ProductCode} {rowData.ProductName} {ex.Message}");
-                    }
-
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.OrderCode))
-                {
-                    rowData.OrderCode = mapping.StaticValue.OrderCode;
-                }
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.OrderCodeColumn))
-                {
-                    rowData.OrderCode = row[mapping.ColumnMapping.OrderCodeColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.StaticValue.ProductionOrderCode))
-                {
-                    rowData.ProductionOrderCode = mapping.StaticValue.ProductionOrderCode;
-                }
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.ProductionOrderCodeColumn))
-                {
-                    rowData.ProductionOrderCode = row[mapping.ColumnMapping.ProductionOrderCodeColumn]?.ToString();
-                }
-
-                if (!string.IsNullOrWhiteSpace(mapping.ColumnMapping.DescriptionColumn))
-                {
-                    rowData.Description = row[mapping.ColumnMapping.DescriptionColumn]?.ToString();
-                }
-
-                yield return rowData;
-            }
+            return new PurchaseOrderParseExcelFacade(_productHelperService)
+                 .ParseInvoiceDetails(mapping, extra, stream);
         }
+
 
 
         public async Task<bool> Checked(long purchaseOrderId)
@@ -1251,6 +1004,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Đã kiểm tra PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
@@ -1285,6 +1040,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Kiểm tra từ chối  PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
@@ -1324,6 +1081,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
@@ -1365,6 +1124,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+
                 await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Từ chối PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
                 return true;
@@ -1393,6 +1154,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                 await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Gửi duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
@@ -1427,6 +1190,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 join sd in _purchaseOrderDBContext.PurchaseOrderDetail on s.PurchaseOrderId equals sd.PurchaseOrderId
                 join r in _purchaseOrderDBContext.PurchasingSuggestDetail on sd.PurchasingSuggestDetailId equals r.PurchasingSuggestDetailId
                 where purchasingSuggestIds.Contains(r.PurchasingSuggestId)
+                orderby sd.SortOrder
                 select new
                 {
                     r.PurchasingSuggestId,
@@ -1455,6 +1219,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 join sd in _purchaseOrderDBContext.PurchaseOrderDetail on s.PurchaseOrderId equals sd.PurchaseOrderId
                 join r in _purchaseOrderDBContext.PoAssignmentDetail on sd.PoAssignmentDetailId equals r.PoAssignmentDetailId
                 where poAssignmentIds.Contains(r.PoAssignmentId)
+                orderby sd.SortOrder
                 select new
                 {
                     r.PoAssignmentId,
@@ -1698,6 +1463,28 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             public long PurchasingSuggestDetailId { get; set; }
             public int ProductId { get; set; }
             public int CustomerId { get; set; }
+        }
+
+
+        protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId)
+        {
+            var outsourceRequestId = _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId)
+                .Select(x => x.OutsourceRequestId.GetValueOrDefault())
+                .Distinct()
+                .ToArray();
+            return await Task.FromResult(outsourceRequestId);
+        }
+        private async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId, EnumPurchasingOrderType purchaseOrderType)
+        {
+            var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourcePart)
+                return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
+
+            if (purchaseOrderType == EnumPurchasingOrderType.OutsourceStep)
+                return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
+
+            return true;
         }
     }
 }

@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class OrganizationDBContext : DbContext
@@ -23,9 +25,23 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<DayOffCalendar> DayOffCalendar { get; set; }
         public virtual DbSet<Department> Department { get; set; }
         public virtual DbSet<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }
+        public virtual DbSet<DepartmentDayOffCalendar> DepartmentDayOffCalendar { get; set; }
+        public virtual DbSet<DepartmentOverHourInfo> DepartmentOverHourInfo { get; set; }
+        public virtual DbSet<DepartmentWorkingHourInfo> DepartmentWorkingHourInfo { get; set; }
+        public virtual DbSet<DepartmentWorkingWeekInfo> DepartmentWorkingWeekInfo { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
+        public virtual DbSet<HrAction> HrAction { get; set; }
+        public virtual DbSet<HrArea> HrArea { get; set; }
+        public virtual DbSet<HrAreaField> HrAreaField { get; set; }
+        public virtual DbSet<HrBill> HrBill { get; set; }
+        public virtual DbSet<HrField> HrField { get; set; }
+        public virtual DbSet<HrType> HrType { get; set; }
+        public virtual DbSet<HrTypeGlobalSetting> HrTypeGlobalSetting { get; set; }
+        public virtual DbSet<HrTypeGroup> HrTypeGroup { get; set; }
+        public virtual DbSet<HrTypeView> HrTypeView { get; set; }
+        public virtual DbSet<HrTypeViewField> HrTypeViewField { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
@@ -41,6 +57,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<BusinessInfo>(entity =>
             {
                 entity.Property(e => e.Address)
@@ -76,8 +94,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<Customer>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.CustomerCode })
-                    .HasName("IX_Customer_CustomerCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.CustomerCode }, "IX_Customer_CustomerCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -189,8 +206,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<Department>(entity =>
             {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.DepartmentCode })
-                    .HasName("IX_Department_DepartmentCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.DepartmentCode }, "IX_Department_DepartmentCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -214,8 +230,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<DepartmentCapacityBalance>(entity =>
             {
-                entity.HasIndex(e => new { e.DepartmentId, e.StartDate, e.EndDate })
-                    .HasName("UCI_DepartmentCapacityBalance")
+                entity.HasIndex(e => new { e.DepartmentId, e.StartDate, e.EndDate }, "UCI_DepartmentCapacityBalance")
                     .IsUnique();
 
                 entity.Property(e => e.WorkingHours).HasColumnType("decimal(18, 5)");
@@ -227,12 +242,33 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_DepartmentCapacityBalance_Department");
             });
 
+            modelBuilder.Entity<DepartmentDayOffCalendar>(entity =>
+            {
+                entity.HasKey(e => new { e.DepartmentId, e.SubsidiaryId, e.Day });
+
+                entity.Property(e => e.Content).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<DepartmentOverHourInfo>(entity =>
+            {
+                entity.Property(e => e.Content).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<DepartmentWorkingHourInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.DepartmentId, e.StartDate, e.SubsidiaryId });
+            });
+
+            modelBuilder.Entity<DepartmentWorkingWeekInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.DepartmentId, e.DayOfWeek, e.SubsidiaryId, e.StartDate });
+            });
+
             modelBuilder.Entity<Employee>(entity =>
             {
                 entity.HasKey(e => e.UserId);
 
-                entity.HasIndex(e => new { e.SubsidiaryId, e.EmployeeCode })
-                    .HasName("IX_Employee_EmployeeCode")
+                entity.HasIndex(e => new { e.SubsidiaryId, e.EmployeeCode }, "IX_Employee_EmployeeCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -286,6 +322,187 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_EmployeeSubsidiary_Employee");
+            });
+
+            modelBuilder.Entity<HrAction>(entity =>
+            {
+                entity.Property(e => e.HractionCode)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .HasColumnName("HRActionCode");
+
+                entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrAction)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAction_HRType");
+            });
+
+            modelBuilder.Entity<HrArea>(entity =>
+            {
+                entity.Property(e => e.Columns).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.HrAreaCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrArea)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRArea_HRType");
+            });
+
+            modelBuilder.Entity<HrAreaField>(entity =>
+            {
+                entity.HasIndex(e => new { e.HrTypeId, e.HrFieldId }, "IX_InputAreaField")
+                    .IsUnique();
+
+                entity.Property(e => e.Column).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.InputStyleJson).HasMaxLength(512);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
+
+                entity.HasOne(d => d.HrArea)
+                    .WithMany(p => p.HrAreaField)
+                    .HasForeignKey(d => d.HrAreaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAreaField_HRArea");
+
+                entity.HasOne(d => d.HrField)
+                    .WithMany(p => p.HrAreaField)
+                    .HasForeignKey(d => d.HrFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAreaField_HRField");
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrAreaField)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HRAreaField_HRType");
+            });
+
+            modelBuilder.Entity<HrBill>(entity =>
+            {
+                entity.HasKey(e => e.FId)
+                    .HasName("PK_HrValueBill");
+
+                entity.Property(e => e.FId).HasColumnName("F_Id");
+
+                entity.Property(e => e.BillCode).HasMaxLength(512);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrBill)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrValueBill_HrType");
+            });
+
+            modelBuilder.Entity<HrField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(64);
+
+                entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrArea)
+                    .WithMany(p => p.HrField)
+                    .HasForeignKey(d => d.HrAreaId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrField_HrArea");
+            });
+
+            modelBuilder.Entity<HrType>(entity =>
+            {
+                entity.Property(e => e.HrTypeCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrTypeGroup)
+                    .WithMany(p => p.HrType)
+                    .HasForeignKey(d => d.HrTypeGroupId)
+                    .HasConstraintName("FK_HRType_HRTypeGroup");
+            });
+
+            modelBuilder.Entity<HrTypeGroup>(entity =>
+            {
+                entity.Property(e => e.HrTypeGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<HrTypeView>(entity =>
+            {
+                entity.Property(e => e.HrTypeViewName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.HrType)
+                    .WithMany(p => p.HrTypeView)
+                    .HasForeignKey(d => d.HrTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrTypeView_HrType");
+            });
+
+            modelBuilder.Entity<HrTypeViewField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.SelectFilters).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.HrTypeView)
+                    .WithMany(p => p.HrTypeViewField)
+                    .HasForeignKey(d => d.HrTypeViewId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_HrTypeViewField_HrTypeView");
             });
 
             modelBuilder.Entity<ObjectProcessObject>(entity =>

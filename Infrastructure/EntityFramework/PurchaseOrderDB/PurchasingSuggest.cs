@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchasingSuggest
@@ -29,6 +31,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public decimal? TaxInMoney { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TotalMoney { get; set; }
 
         public virtual ICollection<PoAssignment> PoAssignment { get; set; }
         public virtual ICollection<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }
