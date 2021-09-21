@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.AccountantEnum;
-using VErp.Infrastructure.EF.EFExtensions;
+﻿using System.Collections.Generic;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
