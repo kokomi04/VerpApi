@@ -29,6 +29,8 @@ using System.IO;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.PurchaseOrder.Voucher;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -38,7 +40,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private const string VOUCHERVALUEROW_VIEW = PurchaseOrderConstants.VOUCHERVALUEROW_VIEW;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -46,6 +47,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly IVoucherConfigService _voucherConfigService;
+
+        private readonly ObjectActivityLogFacade _voucherDataActivityLog;
 
         public VoucherDataService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
@@ -61,13 +64,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
             _voucherConfigService = voucherConfigService;
+            _voucherDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherBill);
         }
 
         public async Task<PageDataTable> GetVoucherBills(int voucherTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -384,7 +387,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, billInfo.FId, $"Thêm chứng từ {voucherTypeInfo.Title}", data.JsonSerialize());
+                await _voucherDataActivityLog.LogBuilder(() => VoucherBillActivityLogMessage.Create)
+                 .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
+                 .BillTypeId(voucherTypeId)
+                 .ObjectId(billInfo.FId)
+                 .JsonData(data.JsonSerialize())
+                 .CreateLog();
+                
                 return billInfo.FId;
             }
             catch (Exception ex)
@@ -1030,7 +1039,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, billInfo.FId, $"Cập nhật chứng từ BH {voucherTypeInfo.Title}", data.JsonSerialize());
+                await _voucherDataActivityLog.LogBuilder(() => VoucherBillActivityLogMessage.Update)
+                .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
+                .BillTypeId(voucherTypeId)
+                .ObjectId(billInfo.FId)
+                .JsonData(data.JsonSerialize())
+                .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -1190,13 +1205,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 // Created bill version
                 await _purchaseOrderDBContext.InsertDataTable(dataTable, true);
-                using (var batch = _activityLogService.BeginBatchLog())
+                using (var batch = _voucherDataActivityLog.BeginBatchLog())
                 {
                     foreach (var bill in bills)
                     {
                         // Delete bill version
                         await DeleteVoucherBillVersion(voucherTypeId, bill.FId, bill.LatestBillVersion);
-                        await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, bill.FId, $"Cập nhật nhiều dòng {field?.Title} {newValue} {voucherTypeInfo.Title}", new { voucherTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize());
+                       
+                        await _voucherDataActivityLog.LogBuilder(() => VoucherBillActivityLogMessage.UpdateMulti)
+                         .MessageResourceFormatDatas(voucherTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
+                         .BillTypeId(voucherTypeId)
+                         .ObjectId(bill.FId)
+                         .JsonData(new { voucherTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize().JsonSerialize())
+                         .CreateLog();
 
                         // Update last bill version
                         bill.LatestBillVersion++;
@@ -1322,7 +1343,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 //await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeRow, billInfo.FId, $"Xóa chứng từ {voucherTypeInfo.Title}", new { voucherTypeId, voucherBill_F_Id }.JsonSerialize());
+              
+                await _voucherDataActivityLog.LogBuilder(() => VoucherBillActivityLogMessage.Delete)
+                        .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
+                        .BillTypeId(voucherTypeId)
+                        .ObjectId(billInfo.FId)
+                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .CreateLog();
 
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.VoucherBill, billInfo.FId);
 

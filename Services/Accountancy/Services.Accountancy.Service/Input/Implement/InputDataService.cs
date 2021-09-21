@@ -31,6 +31,8 @@ using System.IO;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Accountancy;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -40,7 +42,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        //private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -48,6 +50,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly IInputConfigService _inputConfigService;
+        private readonly ObjectActivityLogFacade _inputDataActivityLog;
 
         public InputDataService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -63,13 +66,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             _accountancyDBContext = accountancyDBContext;
             _logger = logger;
-            _activityLogService = activityLogService;
+            //_activityLogService = activityLogService;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
             _inputConfigService = inputConfigService;
+            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -412,7 +416,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Thêm chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
+
+                await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Create)
+                .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
+                .BillTypeId(inputTypeId)
+                .ObjectId(billInfo.FId)
+                .JsonData(data.JsonSerialize())
+                .CreateLog();
+
+
                 return billInfo.FId;
             }
             catch (Exception ex)
@@ -1061,7 +1073,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Cập nhật chứng từ {inputTypeInfo.Title}", data.JsonSerialize());
+                await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
+                  .BillTypeId(inputTypeId)
+                  .ObjectId(billInfo.FId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -1094,7 +1112,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var refTitleField = categoryFields.FirstOrDefault(f => f.CategoryFieldName == refTableTitle);
                 if (refField == null || refTitleField == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tìm thấy trường dữ liệu tham chiếu");
                 var selectSQL = $"SELECT {field.InputField.RefTableField} FROM v{field.InputField.RefTableCode} WHERE {refTableTitle} = @ValueParam";
-                
+
                 if (oldValue != null)
                 {
                     var oldResult = await _accountancyDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)) });
@@ -1223,14 +1241,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Created bill version
                 await _accountancyDBContext.InsertDataTable(dataTable, true);
 
-                using (var batch = _activityLogService.BeginBatchLog())
+                using (var batch = _inputDataActivityLog.BeginBatchLog())
                 {
                     foreach (var bill in bills)
                     {
                         // Delete bill version
                         await DeleteBillVersion(inputTypeId, bill.FId, bill.LatestBillVersion);
 
-                        await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, bill.FId, $"Cập nhật nhiều dòng {field?.Title} {newValue} {inputTypeInfo.Title}", new { inputTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize());
+
+                        await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.UpdateMulti)
+                            .MessageResourceFormatDatas(inputTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
+                            .BillTypeId(inputTypeId)
+                            .ObjectId(bill.FId)
+                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize().JsonSerialize())
+                            .CreateLog();
 
                         // Update last bill version
                         bill.LatestBillVersion++;
@@ -1357,7 +1381,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeRow, billInfo.FId, $"Xóa chứng từ {inputTypeInfo.Title}", new { inputTypeId, inputBill_F_Id }.JsonSerialize());
+
+                await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Delete)
+                           .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
+                           .BillTypeId(inputTypeId)
+                           .ObjectId(billInfo.FId)
+                           .JsonData(data.JsonSerialize().JsonSerialize())
+                           .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -2338,6 +2369,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             info?.TryGetValue(AccountantConstants.BILL_DATE, out oldDateValue);
             return EnumDataType.Date.GetSqlValue(oldDateValue);
         }
+
 
         private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
         {
