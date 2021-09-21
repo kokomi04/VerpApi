@@ -45,6 +45,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string ProductionOrderCode { get; set; }
         public string OrderCode { get; set; }
         public long ProductionStepId { get; set; }
+        public long GroupId { get; set; }
         public string GroupTitle { get; set; }
         public string StepName { get; set; }
         public string ProductTitle { get; set; }

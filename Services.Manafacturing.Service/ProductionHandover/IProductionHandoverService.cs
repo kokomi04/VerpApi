@@ -21,7 +21,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<ProductionHandoverModel> CreateStatictic(long productionOrderId, ProductionHandoverInputModel data);
         Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status);
         Task<bool> DeleteProductionHandover(long productionHandoverId);
-        Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId, IList<ProductionInventoryRequirementEntity> inventories = null);
+        Task<Dictionary<long, DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId, IList<ProductionInventoryRequirementEntity> inventories = null);
 
         Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId,IList<ProductionInventoryRequirementEntity> inventories = null);
 
