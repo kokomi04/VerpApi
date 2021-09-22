@@ -92,15 +92,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      t.HrTypeId
                                  }).ToListAsync();
 
+            var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId)).ToList();
 
-            var fields = (await (
-                from af in _organizationDBContext.HrAreaField
-                join a in _organizationDBContext.HrArea on af.HrAreaId equals a.HrAreaId
-                join f in _organizationDBContext.HrField on af.HrFieldId equals f.HrFieldId
-                where af.HrTypeId == hrTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly && a.IsMultiRow == false
-                select new { a.HrAreaId, af.HrAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition }
-           ).ToListAsync())
-           .ToDictionary(f => f.FieldName, f => f);
+            var kvFields = fields.ToDictionary(f => f.FieldName, f => f);
 
             var viewFields = await (
                  from f in _organizationDBContext.HrTypeViewField
@@ -156,7 +150,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 columnsFilters.FilterClauseProcess("_viewHrTable", "r", ref whereCondition, ref sqlParams, ref suffix);
             }
 
-            var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
+            var mainColumns = kvFields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
             {
                 var refColumns = new List<string>()
                 {
@@ -179,7 +173,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
 
             var mainQuery = new StringBuilder("SELECT b.[F_Id] AS HrBill_F_Id, ");
-            mainQuery.Append(string.Join(", ", fields.Select(x => $"[{x.Key}]")));
+            mainQuery.Append(string.Join(", ", kvFields.Select(x => $"[{x.Key}]")));
             mainQuery.Append(" FROM [HrBill] b ");
             mainQuery.Append(string.Join(" ", hrAreas.Select((x, i) => $" LEFT JOIN [{GetHrAreaTableName(x.HrTypeCode, x.HrAreaCode)}] t{i + 1} ON b.[F_Id] = t{i + 1}.[HrBill_F_Id] ")));
             mainQuery.Append(" WHERE b.[HrTypeId] = @HrTypeId");
@@ -224,6 +218,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             return (data, total);
         }
+
+        // private StringBuilder GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields)
+        // {
+
+        // }
 
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id)
         {
@@ -313,16 +312,16 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var hrAreaData = data[hrArea.HrAreaCode];
                     var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
 
-                    var sqlOldData = @$"SELECT [{HR_TABLE_F_IDENTITY}]
+                    var sqlOldData = @$"SELECT [{HR_TABLE_F_IDENTITY}], [HrBill_F_Id]
                                     FROM [{tableName}] WHERE [HrBill_F_Id] = @HrBill_F_Id AND [IsDeleted] = @IsDeleted";
                     var oldHrAreaData = (await _organizationDBContext.QueryDataTable(sqlOldData, new SqlParameter[] {
                         new SqlParameter("@HrBill_F_Id", hrBill_F_Id),
                         new SqlParameter("@IsDeleted", false)
-                        })).ConvertData<int>();
+                        })).ConvertData<HrAreaTableBaseInfo>();
 
-                    foreach (int fId in oldHrAreaData)
+                    foreach (var old in oldHrAreaData)
                     {
-                        var oldData = hrAreaData.FirstOrDefault(x => x.ContainsKey(HR_TABLE_F_IDENTITY) && x[HR_TABLE_F_IDENTITY].ToString() == fId.ToString());
+                        var oldData = hrAreaData.FirstOrDefault(x => x.ContainsKey(HR_TABLE_F_IDENTITY) && x[HR_TABLE_F_IDENTITY].ToString() == old.F_Id.ToString());
                         if (null != oldData)
                         {
                             var columns = new List<string>();
@@ -335,15 +334,15 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                                 var paramName = $"@{field.FieldName}";
 
-                                updateSql.Append($"[{field}] = {paramName}, ");
+                                updateSql.Append($"[{field.FieldName}] = {paramName}, ");
 
-                                sqlParams.Add(new SqlParameter(paramName, oldData[field.FieldName]));
+                                sqlParams.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(oldData[field.FieldName])));
                             }
                             updateSql.Append($"[UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc WHERE [{HR_TABLE_F_IDENTITY}] = @{HR_TABLE_F_IDENTITY}");
 
                             sqlParams.Add(new SqlParameter("@UpdatedDatetimeUtc", DateTime.UtcNow));
                             sqlParams.Add(new SqlParameter("@UpdatedByUserId", _currentContextService.UserId));
-                            sqlParams.Add(new SqlParameter($"@{HR_TABLE_F_IDENTITY}", fId));
+                            sqlParams.Add(new SqlParameter($"@{HR_TABLE_F_IDENTITY}", old.F_Id));
 
                             var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(updateSql.ToString(), sqlParams);
                         }
@@ -353,7 +352,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                                 SET [UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc, [DeletedDatetimeUtc] = @DeletedDatetimeUtc, [IsDeleted] = @IsDeleted 
                                                 WHERE [{HR_TABLE_F_IDENTITY}] = @{HR_TABLE_F_IDENTITY}";
                             var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(deleteSql, new[] {
-                                        new SqlParameter($"@{HR_TABLE_F_IDENTITY}", fId),
+                                        new SqlParameter($"@{HR_TABLE_F_IDENTITY}", old.F_Id),
                                         new SqlParameter($"@DeletedDatetimeUtc", DateTime.UtcNow),
                                         new SqlParameter($"@UpdatedDatetimeUtc", DateTime.UtcNow),
                                         new SqlParameter($"@UpdatedByUserId", _currentContextService.UserId),
@@ -386,7 +385,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     await FillGenerateColumn(hrBill_F_Id, generateTypeLastValues, infoFields, hrAreaData);
 
 
-                    foreach (var row in hrAreaData)
+                    foreach (var row in hrAreaData.Where(x => !x.ContainsKey(HR_TABLE_F_IDENTITY) || string.IsNullOrWhiteSpace(x[HR_TABLE_F_IDENTITY].ToString())))
                     {
                         var columns = new List<string>();
                         var sqlParams = new List<SqlParameter>();
@@ -396,12 +395,13 @@ namespace VErp.Services.Organization.Service.HrConfig
                             if (!row.ContainsKey(f.FieldName)) continue;
 
                             columns.Add(f.FieldName);
-                            sqlParams.Add(new SqlParameter("@" + f.FieldName, row[f.FieldName]));
+                            sqlParams.Add(new SqlParameter("@" + f.FieldName, ((EnumDataType)f.DataTypeId).GetSqlValue(row[f.FieldName])));
                         }
 
                         columns.AddRange(GetColumnGlobal());
                         sqlParams.AddRange(GetSqlParamsGlobal());
 
+                        columns.Add("HrBill_F_Id");
                         sqlParams.Add(new SqlParameter("@HrBill_F_Id", hrBill_F_Id));
 
                         var idParam = new SqlParameter("@F_Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
@@ -492,15 +492,17 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                         foreach (var f in hrAreaFields)
                         {
+                            
                             if (!row.ContainsKey(f.FieldName) || f.IsAutoIncrement || f.FormTypeId == (int)EnumFormType.ViewOnly) continue;
 
                             columns.Add(f.FieldName);
-                            sqlParams.Add(new SqlParameter("@" + f.FieldName, row[f.FieldName]));
+                            sqlParams.Add(new SqlParameter("@" + f.FieldName,((EnumDataType)f.DataTypeId).GetSqlValue(row[f.FieldName]) ));
                         }
 
                         columns.AddRange(GetColumnGlobal());
                         sqlParams.AddRange(GetSqlParamsGlobal());
 
+                        columns.Add("HrBill_F_Id");
                         sqlParams.Add(new SqlParameter("@HrBill_F_Id", billInfo.FId));
 
 
@@ -1049,7 +1051,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                               RegularExpression = af.RegularExpression,
                               IsMultiRow = a.IsMultiRow,
                               RequireFilters = af.RequireFilters,
-                              HrAreaCode = a.HrAreaCode
+                              HrAreaCode = a.HrAreaCode,
+                              HrAreaId = a.HrAreaId
                           }).ToListAsync();
         }
 
@@ -1127,6 +1130,13 @@ namespace VErp.Services.Organization.Service.HrConfig
             public bool IsMultiRow { get; set; }
             public string RequireFilters { get; set; }
             public string HrAreaCode { get; internal set; }
+            public int HrAreaId { get; internal set; }
+        }
+
+        protected class HrAreaTableBaseInfo
+        {
+            public long F_Id { get; set; }
+            public long HrBill_F_Id { get; set; }
         }
     }
 
