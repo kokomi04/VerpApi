@@ -229,6 +229,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
 
+            if (!_organizationDBContext.HrBill.Any(x => x.FId == hrBill_F_Id))
+                throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
+
             var results = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
             for (int i = 0; i < hrAreas.Count; i++)
             {
@@ -279,6 +282,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 billInfo.IsDeleted = true;
 
+                await _organizationDBContext.SaveChangesAsync();
+
                 await @trans.CommitAsync();
                 return true;
             }
@@ -294,6 +299,9 @@ namespace VErp.Services.Organization.Service.HrConfig
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
+
+            if (!_organizationDBContext.HrBill.Any(x => x.FId == hrBill_F_Id))
+                throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
 
