@@ -319,6 +319,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 })
                 .ToList();
 
+            // Lấy thông tin xuất nhập kho
+            if (inventories == null)
+            {
+                var parammeters = new SqlParameter[]
+               {
+                        new SqlParameter("@ProductionOrderId", productionOrderId)
+               };
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+
+                inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>();
+            }
+
+            var inventoryRequirements = inventories
+                .AsQueryable()
+                .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+                .ToList();
 
             foreach (var inOutGroup in groups)
             {
@@ -363,22 +379,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
                     .ToList();
 
-                // Lấy thông tin xuất nhập kho
-                if (inventories == null)
-                {
-                    var parammeters = new SqlParameter[]
-                   {
-                new SqlParameter("@ProductionOrderId", productionOrderId)
-                   };
-                    var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
-
-                    inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>();
-                }
-
-                var inventoryRequirements = inventories
-                    .AsQueryable()
-                    .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
-                    .ToList();
 
                 // Lấy thông tin yêu cầu thêm
                 var materialRequirements = _manufacturingDBContext.ProductionMaterialsRequirementDetail
