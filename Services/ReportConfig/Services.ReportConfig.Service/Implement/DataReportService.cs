@@ -923,7 +923,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             catch (Exception ex)
             {
-                throw new BadRequestException(ReportErrorCode.CanNotGenerateReportAsDoc, ex.Message);
+                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
             }
         }
 

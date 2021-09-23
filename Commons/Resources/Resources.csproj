@@ -7,20 +7,115 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Update="Accountancy\AccountancyBillActivityLogMessage.Designer.cs">
+    <Compile Update="Accountancy\InputData\AccountancyBillActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>AccountancyBillActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Accountancy\InputData\InputDataValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InputDataValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Accountancy\InputErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InputErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Hr\HrErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HrErrorCodeDescription.resx</DependentUpon>
     </Compile>
     <Compile Update="Enums\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.Designer.cs">
       <DependentUpon>OutsourceErrorCodeDescription.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Enums\ErrorCodes\Manufacturing\ProductionMaterialsRequirementErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionMaterialsRequirementErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Manufacturing\ProductionProcessErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionProcessErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Manufacturing\ProductOrderErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductOrderErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Organization\CustomerErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CustomerErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Organization\DepartmentErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DepartmentErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Organization\RoleErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>RoleErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Organization\SubsidiaryErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SubsidiaryErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\PO\PurchaseOrderErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchaseOrderErrorCodeDescription.resx</DependentUpon>
+    </Compile>
     <Compile Update="Enums\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.Designer.cs">
       <DependentUpon>PurchasingRequestErrorCodeDescription.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\PO\PurchasingSuggestErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchasingSuggestErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Product\ProductCateErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductCateErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Product\ProductErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Product\ProductSemiErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductSemiErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Product\ProductTypeErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductTypeErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Product\ProductUnitConversionErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductUnitConversionErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Report\ReportErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ReportErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\ErrorCodes\Voucher\VoucherErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>VoucherErrorCodeDescription.resx</DependentUpon>
     </Compile>
     <Compile Update="Enums\PO\EnumPoProcessStatusDescription.Designer.cs">
       <DependentUpon>EnumPoProcessStatusDescription.resx</DependentUpon>
@@ -36,6 +131,36 @@
       <DependentUpon>InventoryErrorCodeDescription.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Enums\Stock\PackageErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PackageErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\System\CategoryErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CategoryErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\System\CustomGenCodeErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CustomGenCodeErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\System\GeneralCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GeneralCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\System\I18nLanguageErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>I18nLanguageErrorCodeDescription.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Enums\System\MediaLibraryErrorCodeDescription.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>MediaLibraryErrorCodeDescription.resx</DependentUpon>
     </Compile>
     <Compile Update="GlobalObject\ValidatorResources.Designer.cs">
       <DependentUpon>ValidatorResources.resx</DependentUpon>
@@ -227,6 +352,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>VoucherBillActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="PurchaseOrder\Voucher\VoucherDataValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>VoucherDataValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Stock\Dictionary\ProductCateActivityMessage.Designer.cs">
       <DependentUpon>ProductCateActivityMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -355,17 +485,93 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Accountancy\AccountancyBillActivityLogMessage.resx">
+    <EmbeddedResource Update="Accountancy\InputData\AccountancyBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>AccountancyBillActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Accountancy\InputData\InputDataValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>InputDataValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Accountancy\InputErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>InputErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Hr\HrErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>HrErrorCodeDescription.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Enums\ErrorCodes\Manufacturing\OutsourceErrorCodeDescription.resx">
       <LastGenOutput>OutsourceErrorCodeDescription.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Manufacturing\ProductionMaterialsRequirementErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionMaterialsRequirementErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Manufacturing\ProductionProcessErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionProcessErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Manufacturing\ProductOrderErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductOrderErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Organization\CustomerErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CustomerErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Organization\DepartmentErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>DepartmentErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Organization\RoleErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>RoleErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Organization\SubsidiaryErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SubsidiaryErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\PO\PurchaseOrderErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PurchaseOrderErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Enums\ErrorCodes\PO\PurchasingRequestErrorCodeDescription.resx">
       <LastGenOutput>PurchasingRequestErrorCodeDescription.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\PO\PurchasingSuggestErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PurchasingSuggestErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Product\ProductCateErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductCateErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Product\ProductErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Product\ProductSemiErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductSemiErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Product\ProductTypeErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductTypeErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Product\ProductUnitConversionErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductUnitConversionErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Report\ReportErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ReportErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\ErrorCodes\Voucher\VoucherErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>VoucherErrorCodeDescription.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Enums\PO\EnumPoProcessStatusDescription.resx">
       <LastGenOutput>EnumPoProcessStatusDescription.Designer.cs</LastGenOutput>
@@ -378,6 +584,30 @@
     <EmbeddedResource Update="Enums\Stock\InventoryErrorCodeDescription.resx">
       <LastGenOutput>InventoryErrorCodeDescription.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\Stock\PackageErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PackageErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\System\CategoryErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CategoryErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\System\CustomGenCodeErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CustomGenCodeErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\System\GeneralCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>GeneralCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\System\I18nLanguageErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>I18nLanguageErrorCodeDescription.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Enums\System\MediaLibraryErrorCodeDescription.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>MediaLibraryErrorCodeDescription.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="GlobalObject\ValidatorResources.resx">
       <LastGenOutput>ValidatorResources.Designer.cs</LastGenOutput>
@@ -530,6 +760,10 @@
     <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>VoucherBillActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherDataValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>VoucherDataValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Dictionary\ProductCateActivityMessage.resx">
       <LastGenOutput>ProductCateActivityMessage.Designer.cs</LastGenOutput>

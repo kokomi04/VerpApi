@@ -51,7 +51,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             if (groupStep == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
             if (groupStep.Step.Count > 0)
-                throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa nhóm!. Đang tồn tại công đoạn trong nhóm");
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa nhóm!. Đang tồn tại công đoạn trong nhóm");
 
             groupStep.IsDeleted = true;
             await _manufacturingDBContext.SaveChangesAsync();

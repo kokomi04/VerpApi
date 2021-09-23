@@ -2,18 +2,18 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
+using Verp.Resources.Enums.ErrorCodes.Organization;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.ErrorCodes.Organization
 {
     [ErrorCodePrefix("Subsidiary")]
+    [LocalizedDescription(ResourceType = typeof(SubsidiaryErrorCodeDescription))]
     public enum SubsidiaryErrorCode
     {
-        [Description("Công ty con/chi nhánh không tồn tại")]
         SubsidiaryNotfound = 1,
-        [Description("Mã đã tồn tại")]
         SubsidiaryCodeExisted = 2,
-        [Description("Tên đã tồn tại")]
         SubsidiaryNameExisted = 3,
     }
 }

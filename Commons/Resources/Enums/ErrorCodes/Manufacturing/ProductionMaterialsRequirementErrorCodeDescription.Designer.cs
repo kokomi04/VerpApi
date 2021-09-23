@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Accountancy {
+namespace Verp.Resources.Enums.ErrorCodes.Manufacturing {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Accountancy {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class AccountancyBillActivityLogMessage {
+    public class ProductionMaterialsRequirementErrorCodeDescription {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal AccountancyBillActivityLogMessage() {
+        internal ProductionMaterialsRequirementErrorCodeDescription() {
         }
         
         /// <summary>
@@ -39,7 +39,8 @@ namespace Verp.Resources.Accountancy {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Accountancy.AccountancyBillActivityLogMessage", typeof(AccountancyBillActivityLogMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Enums.ErrorCodes.Manufacturing.ProductionMaterialsRequirementError" +
+                            "CodeDescription", typeof(ProductionMaterialsRequirementErrorCodeDescription).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,38 +62,29 @@ namespace Verp.Resources.Accountancy {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm chứng từ {0}, số {1}.
+        ///   Looks up a localized string similar to Không tìm thấy chi tiết các mặt hàng.
         /// </summary>
-        public static string Create {
+        public static string NotFoundDetailMaterials {
             get {
-                return ResourceManager.GetString("Create", resourceCulture);
+                return ResourceManager.GetString("NotFoundDetailMaterials", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa chứng từ {0}, số {1}.
+        ///   Looks up a localized string similar to Không tìm thấy yêu cầu vật tư thêm.
         /// </summary>
-        public static string Delete {
+        public static string NotFoundRequirement {
             get {
-                return ResourceManager.GetString("Delete", resourceCulture);
+                return ResourceManager.GetString("NotFoundRequirement", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật chứng từ {0}, số {1}.
+        ///   Looks up a localized string similar to Mã yêu cầu vật tư thêm đã tồn tại.
         /// </summary>
-        public static string Update {
+        public static string OutsoureOrderCodeAlreadyExisted {
             get {
-                return ResourceManager.GetString("Update", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cập nhật nhiều dòng {0}, trường {1}, chứng từ {2}.
-        /// </summary>
-        public static string UpdateMulti {
-            get {
-                return ResourceManager.GetString("UpdateMulti", resourceCulture);
+                return ResourceManager.GetString("OutsoureOrderCodeAlreadyExisted", resourceCulture);
             }
         }
     }

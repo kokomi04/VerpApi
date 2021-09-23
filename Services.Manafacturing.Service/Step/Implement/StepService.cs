@@ -81,7 +81,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 if (step == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound);
                 if (step.ProductionStep.Count > 0)
-                    throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
 
                 step.IsDeleted = true;
                 stepDetail.ForEach(x => { x.IsDeleted = true; });

@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
+using Verp.Resources.Enums.ErrorCodes.Report;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
     [ErrorCodePrefix("RTE")]
+
+    [LocalizedDescription(ResourceType = typeof(ReportErrorCodeDescription))]
     public enum ReportErrorCode
     {
-        [Description("Không tìm thấy báo cáo trong hệ thống")]
         ReportNotFound = 1,
-        [Description("Tên báo cáo đã tồn tại")]
-        ReportNameAlreadyExisted = 2,
-        CanNotGenerateReportAsDoc = 3
+        ReportNameAlreadyExisted = 2
     }
 }
