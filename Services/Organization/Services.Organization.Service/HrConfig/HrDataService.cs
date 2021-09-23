@@ -88,7 +88,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      t.HrTypeCode,
                                      a.HrAreaCode,
                                      a.HrAreaId,
-                                     t.HrTypeId
+                                     t.HrTypeId, 
+                                     a.IsMultiRow
                                  }).ToListAsync();
 
             var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId)).ToList();
@@ -98,10 +99,10 @@ namespace VErp.Services.Organization.Service.HrConfig
              * trong thiết lập chứng từ hành chính nhân sự
             */
             var mainJoin = " FROM HrBill bill";
-            var mainColumn = "SELECT bill.F_Id AS HrBill_F_Id";
+            var mainColumn = "SELECT bill.F_Id AS F_Id";
             foreach (var hrArea in hrAreas)
             {
-                var (alias, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId));
+                var (alias, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.IsMultiRow);
                 mainJoin += @$" LEFT JOIN ({alias}) AS v{hrArea.HrAreaCode}
                                     ON bill.[F_Id] = [v{hrArea.HrAreaCode}].[HrBill_F_Id]
                                 
@@ -167,7 +168,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             if (string.IsNullOrWhiteSpace(orderByFieldName) || !mainColumn.Contains(orderByFieldName))
             {
-                orderByFieldName = mainColumn.Contains("ngay_ct") ? "ngay_ct" : "HrBill_F_Id";
+                orderByFieldName = mainColumn.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
 
@@ -186,7 +187,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     ) AS _viewHrTable
                     WHERE 1 = 1 AND {whereCondition}
                 )
-                SELECT COUNT(DISTINCT r.HrBill_F_Id) as Total FROM tmp r 
+                SELECT COUNT(DISTINCT r.F_Id) as Total FROM tmp r 
                 ";
 
             var table = await _organizationDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
@@ -228,10 +229,11 @@ namespace VErp.Services.Organization.Service.HrConfig
             return (data, total);
         }
 
-        private (string, IList<string>) GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields)
+        private (string, IList<string>) GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields, bool isMultiRow = false)
         {
             var tableName = GetHrAreaTableName(hrTypeCode, hrAreaCode);
             var @selectColumn = @$"
+                row.F_Id,
                 row.HrBill_F_Id,
                 bill.HrTypeId
             ";
@@ -260,7 +262,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            return ($"SELECT {@selectColumn} {@join} WHERE [row].IsDeleted = 0 AND [row].SubsidiaryId = { _currentContextService.SubsidiaryId}", columns);
+            return ($"SELECT {(isMultiRow ? "" : "TOP 1")} {@selectColumn} {@join} WHERE [row].IsDeleted = 0 AND [row].SubsidiaryId = { _currentContextService.SubsidiaryId}", columns);
         }
 
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id)
@@ -281,7 +283,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             {
                 var hrArea = hrAreas[i];
 
-                var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x=>x.HrAreaId == hrArea.HrAreaId));
+                var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x=>x.HrAreaId == hrArea.HrAreaId), hrArea.IsMultiRow);
                 var query = $"{alias} AND [row].[HrBill_F_Id] = @HrBill_F_Id";
 
                 var data = (await _organizationDBContext.QueryDataTable(query, new[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) })).ConvertData();
