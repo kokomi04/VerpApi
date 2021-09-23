@@ -16,7 +16,6 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -89,11 +88,31 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      t.HrTypeCode,
                                      a.HrAreaCode,
                                      a.HrAreaId,
-                                     t.HrTypeId
+                                     t.HrTypeId, 
+                                     a.IsMultiRow
                                  }).ToListAsync();
 
             var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId)).ToList();
 
+            /* 
+             * Xử lý câu truy vấn lấy dữ liệu từ các vùng dữ liệu 
+             * trong thiết lập chứng từ hành chính nhân sự
+            */
+            var mainJoin = " FROM HrBill bill";
+            var mainColumn = "SELECT bill.F_Id AS F_Id";
+            foreach (var hrArea in hrAreas)
+            {
+                var (alias, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.IsMultiRow);
+                mainJoin += @$" LEFT JOIN ({alias}) AS v{hrArea.HrAreaCode}
+                                    ON bill.[F_Id] = [v{hrArea.HrAreaCode}].[HrBill_F_Id]
+                                
+                                ";
+                mainColumn += ", " + string.Join(", ", columns.Select(c => $"[v{hrArea.HrAreaCode}].[{c}]"));
+            }
+
+            /* 
+             * Xử lý các bộ lọc
+            */
             var kvFields = fields.ToDictionary(f => f.FieldName, f => f);
 
             var viewFields = await (
@@ -102,10 +121,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                  select f
              ).ToListAsync();
 
-            var whereCondition = new StringBuilder();
-
-            whereCondition.Append($" {GlobalFilter()}");
-
+            var whereCondition = new StringBuilder("1 = 1");
             var sqlParams = new List<SqlParameter>();
             int suffix = 0;
             if (filters != null)
@@ -150,42 +166,29 @@ namespace VErp.Services.Organization.Service.HrConfig
                 columnsFilters.FilterClauseProcess("_viewHrTable", "r", ref whereCondition, ref sqlParams, ref suffix);
             }
 
-            var mainColumns = kvFields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
+            if (string.IsNullOrWhiteSpace(orderByFieldName) || !mainColumn.Contains(orderByFieldName))
             {
-                var refColumns = new List<string>()
-                {
-                    f.FieldName
-                };
-
-                if (((EnumFormType)f.FormTypeId).IsJoinForm()
-                && !string.IsNullOrWhiteSpace(f.RefTableTitle)
-                && !string.IsNullOrWhiteSpace(f.RefTableTitle))
-                {
-                    refColumns.AddRange(f.RefTableTitle.Split(',').Select(c => f.FieldName + "_" + c.Trim()));
-                }
-                return refColumns;
-            }).ToList();
-
-            if (!mainColumns.Contains(orderByFieldName))
-            {
-                orderByFieldName = mainColumns.Contains("ngay_ct") ? "ngay_ct" : "HrBill_F_Id";
+                orderByFieldName = mainColumn.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
 
-            var mainQuery = new StringBuilder("SELECT b.[F_Id] AS HrBill_F_Id, ");
-            mainQuery.Append(string.Join(", ", kvFields.Select(x => $"[{x.Key}]")));
-            mainQuery.Append(" FROM [HrBill] b ");
-            mainQuery.Append(string.Join(" ", hrAreas.Select((x, i) => $" LEFT JOIN [{GetHrAreaTableName(x.HrTypeCode, x.HrAreaCode)}] t{i + 1} ON b.[F_Id] = t{i + 1}.[HrBill_F_Id] ")));
-            mainQuery.Append(" WHERE b.[HrTypeId] = @HrTypeId");
-
-            var totalSql = @$"
-            ; WITH _viewHrTable AS(
-                {mainQuery} AND {whereCondition}
-            )
-            SELECT COUNT(DISTINCT r.HrBill_F_Id) as Total FROM _viewHrTable r 
-            ";
-
             sqlParams.Add(new SqlParameter("@HrTypeId", hrTypeId));
+            
+            /* 
+                * Tính toán tổng số dòng dữ liệu trả về cho clients
+             */
+            var totalSql = @$"
+                ; WITH tmp AS(
+                    SELECT *
+                    FROM (
+                        {mainColumn}
+                        {mainJoin} 
+                        WHERE bill.HrTypeId = @HrTypeId AND {GlobalFilter()}
+                    ) AS _viewHrTable
+                    WHERE 1 = 1 AND {whereCondition}
+                )
+                SELECT COUNT(DISTINCT r.F_Id) as Total FROM tmp r 
+                ";
 
             var table = await _organizationDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
 
@@ -195,15 +198,22 @@ namespace VErp.Services.Organization.Service.HrConfig
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
             }
 
-            var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
-
+            /* 
+                * Lấy dữ liệu trả về cho client
+             */
             var dataSql = @$"
-                 ;WITH _viewHrTable AS (
-                    {mainQuery} AND {whereCondition}
+                 ;WITH tmp AS (
+                    SELECT *
+                    FROM (
+                        {mainColumn}
+                        {mainJoin} 
+                        WHERE bill.HrTypeId = @HrTypeId AND {GlobalFilter()}
+                    ) AS _viewHrTable
+                    WHERE 1 = 1 AND {whereCondition}
                 )
                 SELECT 
                     r.*
-                FROM _viewHrTable r
+                FROM tmp r
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
                 ";
 
@@ -219,25 +229,62 @@ namespace VErp.Services.Organization.Service.HrConfig
             return (data, total);
         }
 
-        // private StringBuilder GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields)
-        // {
+        private (string, IList<string>) GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields, bool isMultiRow = false)
+        {
+            var tableName = GetHrAreaTableName(hrTypeCode, hrAreaCode);
+            var @selectColumn = @$"
+                row.F_Id,
+                row.HrBill_F_Id,
+                bill.HrTypeId
+            ";
+            var @join = @$"
+                FROM {tableName} AS row WITH(NOLOCK)
+                JOIN HrBill AS bill WITH(NOLOCK) ON row.HrBill_F_Id = bill.F_Id
+            ";
 
-        // }
+            var @columns = new List<string>();
+
+            foreach (var field in fields)
+            {
+                @selectColumn += $", [row].[{field.FieldName}]";
+                @columns.Add(field.FieldName);
+
+                if (!string.IsNullOrWhiteSpace(field.RefTableCode)
+                    && ((EnumFormType)field.FormTypeId).IsJoinForm()
+                    && !string.IsNullOrWhiteSpace(field.RefTableTitle))
+                {
+                    var refFields = field.RefTableTitle.Split(",").Select(refTitle => $", [v{field.FieldName}].[{refTitle}] AS [{field.FieldName}_{refTitle}]");
+
+                    @selectColumn += string.Join("", refFields);
+                    @columns.AddRange(field.RefTableTitle.Split(",").Select(refTitle => $"{field.FieldName}_{refTitle}"));
+
+                    @join += $" LEFT JOIN [v{field.RefTableCode}] as [v{field.FieldName}] WITH(NOLOCK) ON [row].[{field.FieldName}] = [v{field.FieldName}].[{field.RefTableField}]";
+                }
+            }
+
+            return ($"SELECT {(isMultiRow ? "" : "TOP 1")} {@selectColumn} {@join} WHERE [row].IsDeleted = 0 AND [row].SubsidiaryId = { _currentContextService.SubsidiaryId}", columns);
+        }
 
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id)
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
+
+            if (!_organizationDBContext.HrBill.Any(x => x.FId == hrBill_F_Id))
+                throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
+
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
+
+            var fields = await GetHrFields(hrTypeId);
+
+            
 
             var results = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
             for (int i = 0; i < hrAreas.Count; i++)
             {
                 var hrArea = hrAreas[i];
 
-                var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
-                var columns = (await GetHrFields(hrTypeId, hrArea.HrAreaId)).Where(x => !x.IsAutoIncrement && x.FormTypeId != (int)EnumFormType.ViewOnly).Select(x => $"[{x.FieldName}]");
-
-                var query = $"SELECT {string.Join(", ", columns)} FROM  [{tableName}] WHERE [HrBill_F_Id] = @HrBill_F_Id";
+                var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x=>x.HrAreaId == hrArea.HrAreaId), hrArea.IsMultiRow);
+                var query = $"{alias} AND [row].[HrBill_F_Id] = @HrBill_F_Id";
 
                 var data = (await _organizationDBContext.QueryDataTable(query, new[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) })).ConvertData();
 
@@ -279,6 +326,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 billInfo.IsDeleted = true;
 
+                await _organizationDBContext.SaveChangesAsync();
+
                 await @trans.CommitAsync();
                 return true;
             }
@@ -293,6 +342,10 @@ namespace VErp.Services.Organization.Service.HrConfig
         public async Task<bool> UpdateHr(int hrTypeId, long hrBill_F_Id, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data)
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
+
+            if (!_organizationDBContext.HrBill.Any(x => x.FId == hrBill_F_Id))
+                throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
+
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
@@ -305,11 +358,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                 {
                     var hrArea = hrAreas[i];
 
-                    if (!data.ContainsKey(hrArea.HrAreaCode)) continue;
+                    if (!data.ContainsKey(hrArea.HrAreaCode) || data[hrArea.HrAreaCode].Count == 0) continue;
 
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
 
-                    var hrAreaData = data[hrArea.HrAreaCode];
+                    var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
                     var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
 
                     var sqlOldData = @$"SELECT [{HR_TABLE_F_IDENTITY}], [HrBill_F_Id]
@@ -436,7 +489,6 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
 
-
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
 
             var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
@@ -459,10 +511,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                 {
                     var hrArea = hrAreas[i];
 
-                    if (!data.ContainsKey(hrArea.HrAreaCode)) continue;
+                    if (!data.ContainsKey(hrArea.HrAreaCode) || data[hrArea.HrAreaCode].Count == 0) continue;
+                    
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
 
-                    var hrAreaData = data[hrArea.HrAreaCode];
+                    var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
                     var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
 
                     var checkData = hrAreaData.Select(data => new ValidateRowModel(data, null)).ToList();
@@ -492,11 +545,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                         foreach (var f in hrAreaFields)
                         {
-                            
+
                             if (!row.ContainsKey(f.FieldName) || f.IsAutoIncrement || f.FormTypeId == (int)EnumFormType.ViewOnly) continue;
 
                             columns.Add(f.FieldName);
-                            sqlParams.Add(new SqlParameter("@" + f.FieldName,((EnumDataType)f.DataTypeId).GetSqlValue(row[f.FieldName]) ));
+                            sqlParams.Add(new SqlParameter("@" + f.FieldName, ((EnumDataType)f.DataTypeId).GetSqlValue(row[f.FieldName])));
                         }
 
                         columns.AddRange(GetColumnGlobal());
@@ -1082,7 +1135,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         private string GlobalFilter()
         {
-            return $"b.SubsidiaryId = { _currentContextService.SubsidiaryId}";
+            return $"bill.SubsidiaryId = { _currentContextService.SubsidiaryId} AND bill.IsDeleted = 0";
         }
 
         private string GetHrAreaTableName(string hrTypeCode, string hrAreaCode)
