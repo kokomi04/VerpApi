@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
+using Verp.Resources.Enums.ErrorCodes.Manufacturing;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
     [ErrorCodePrefix("PROD")]
+    [LocalizedDescription(ResourceType = typeof(ProductOrderErrorCodeDescription))]
     public enum ProductOrderErrorCode
     {
-        [Description("Lệnh sản xuất không tồn tại")]
         ProductOrderNotfound = 1,
-        [Description("Mã lệnh sản xuất đã tồn tại")]
         ProductOrderCodeAlreadyExisted = 2,
         NotFoundMaterials = 3
     }

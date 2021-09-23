@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 using VErp.Commons.Enums.StandardEnum;
+using Verp.Resources.Enums.System;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.ErrorCodes
 {
     [ErrorCodePrefix("MLB")]
+    [LocalizedDescription(ResourceType = typeof(MediaLibraryErrorCodeDescription))]
+
     public enum MediaLibraryErrorCode
     {
-        [Description("Thư mục con đã tồn tại")]
         SubdirectoryExists = 1,
-        [Description("Không tìm thấy thư mục")]
         NotFoundDirectory = 2,
-        [Description("Trong thu mục còn chứa các file và thư mục con")]
         DirectoryNotEmpty = 3,
-        GeneralError = 4
     }
 }

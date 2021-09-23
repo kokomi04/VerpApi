@@ -2,14 +2,16 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
+using Verp.Resources.Enums.ErrorCodes.Product;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.ErrorCodes
 {
+    [LocalizedDescription(ResourceType = typeof(ProductSemiErrorCodeDescription))]
+
     public enum ProductSemiErrorCode
     {
-        [Description("Không tìm thấy bán thành phẩm")]
         NotFoundProductSemi = 1,
-        [Description("Không tìm thấy bán thành phẩm chuyển đổi")]
         NotFoundProductSemiConversion = 2
     }
 }
