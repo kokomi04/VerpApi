@@ -61,6 +61,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Không thể thêm dữ liệu nhân sự.
+        /// </summary>
+        public static string CanNotInsertHrData {
+            get {
+                return ResourceManager.GetString("CanNotInsertHrData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Kiểu dữ liệu không tồn tại.
         /// </summary>
         public static string DataTypeNotFound {
@@ -327,6 +336,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         public static string ReferValueNotFound {
             get {
                 return ResourceManager.GetString("ReferValueNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Thông tin giá trị dòng {0} của trường {1} không thỏa mãn điều kiện lọc.
+        /// </summary>
+        public static string ReferValueNotValidFilter {
+            get {
+                return ResourceManager.GetString("ReferValueNotValidFilter", resourceCulture);
             }
         }
         

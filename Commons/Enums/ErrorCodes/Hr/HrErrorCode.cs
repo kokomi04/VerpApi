@@ -84,5 +84,9 @@ namespace VErp.Commons.Enums.StandardEnum
         HrActionNotFound = 39,
         
         HrActionCodeAlreadyExisted = 40,
+
+        CanNotInsertHrData = 41,
+        
+        ReferValueNotValidFilter = 42,
     }
 }

@@ -26,15 +26,15 @@ namespace VErp.Services.Master.Service.Category
     public class CategoryDataImportFacade
     {
         private readonly int _categoryId;
-        private readonly MasterDBContext _accountancyContext;
-        private readonly ICategoryDataService _categoryDataService;        
+        private readonly MasterDBContext _masterContext;
+        private readonly ICategoryDataService _categoryDataService;
         private readonly ICurrentContextService _currentContextService;
 
         private CategoryEntity _category;
         private ExcelSheetDataModel _importData;
         private List<CategoryField> _categoryFields;
 
-        private List<NonCamelCaseDictionary> _refCategoryDataForParent;
+        private List<NonCamelCaseDictionary> _refCategoryDataForParent = new List<NonCamelCaseDictionary>();
         private Dictionary<string, List<NonCamelCaseDictionary>> _refCategoryDataForProperty;
         private Dictionary<string, IEnumerable<RefCategoryProperty>> _refCategoryFields;
         private CategoryField[] _uniqueFields;
@@ -46,7 +46,7 @@ namespace VErp.Services.Master.Service.Category
         public CategoryDataImportFacade(int categoryId, MasterDBContext accountancyContext, ICategoryDataService categoryDataService, ObjectActivityLogFacade categoryDataActivityLog, ICurrentContextService currentContextService)
         {
             _categoryId = categoryId;
-            _accountancyContext = accountancyContext;
+            _masterContext = accountancyContext;
             _categoryDataService = categoryDataService;
             _categoryDataActivityLog = categoryDataActivityLog;
             _currentContextService = currentContextService;
@@ -54,7 +54,7 @@ namespace VErp.Services.Master.Service.Category
 
         public async Task<bool> ImportData(ImportExcelMapping mapping, Stream stream)
         {
-            _category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == _categoryId);
+            _category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == _categoryId);
 
             await ValidateCategory();
             await GetCategoryFieldInfo(mapping);
@@ -77,13 +77,13 @@ namespace VErp.Services.Master.Service.Category
 
                 if (oldRow != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                     throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage, _category.Title);
-                    
+
 
                 if (oldRow == null)
                 {
                     if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
                         throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage);
-                        
+
                     lsAddRow.Add(row);
                 }
                 else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
@@ -99,7 +99,7 @@ namespace VErp.Services.Master.Service.Category
                 }
             }
 
-            using (var trans = await _accountancyContext.Database.BeginTransactionAsync())
+            using (var trans = await _masterContext.Database.BeginTransactionAsync())
             {
                 using (var logBath = _categoryDataActivityLog.BeginBatchLog())
                 {
@@ -140,7 +140,7 @@ namespace VErp.Services.Master.Service.Category
                         if (!string.IsNullOrWhiteSpace(parentId))
                             cRow[CategoryFieldConstants.ParentId] = GetParentId(cRow);
 
-                        var categoryId = await _categoryDataService.AddCategoryRow(_categoryId, cRow);
+                        var categoryId = await _categoryDataService.AddCategoryRowToDb(_categoryId, cRow);
 
                         cRow.Add(CategoryFieldConstants.F_Id, categoryId.ToString());
 
@@ -153,7 +153,7 @@ namespace VErp.Services.Master.Service.Category
                         if (!string.IsNullOrWhiteSpace(parentId))
                             uRow[CategoryFieldConstants.ParentId] = GetParentId(uRow);
 
-                        var rowId = Int32.Parse(uRow[CategoryFieldConstants.F_Id]);
+                        var rowId = int.Parse(uRow[CategoryFieldConstants.F_Id]);
 
                         await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
                     }
@@ -229,7 +229,7 @@ namespace VErp.Services.Master.Service.Category
                     }
 
                     if (string.IsNullOrWhiteSpace(value) && _uniqueFields.Any(x => x.CategoryFieldName == mf.FieldName))
-                        throw ImportRequiredFieldInRowEmpty.BadRequestFormat(i + mapping.FromRow, mf.Column, mf.Title, _category.Title);                        
+                        throw ImportRequiredFieldInRowEmpty.BadRequestFormat(i + mapping.FromRow, mf.Column, mf.Title, _category.Title);
 
                     if (string.IsNullOrWhiteSpace(value) || mf.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty)
                         continue;
@@ -333,7 +333,6 @@ namespace VErp.Services.Master.Service.Category
 
                 (await GetRefCategoryDataByMultiField(new[] { query })).TryGetValue(_category.CategoryCode, out _refCategoryDataForParent);
 
-
             }
         }
 
@@ -396,7 +395,7 @@ namespace VErp.Services.Master.Service.Category
 
         private string TransformValueByDataType(ImportExcelMapping mapping, int i, string value, CategoryField fieldInfo, string column)
         {
-            
+
             if (((EnumDataType?)fieldInfo?.DataTypeId).GetValueOrDefault().IsTimeType())
             {
                 if (!DateTime.TryParse(value, out DateTime date))
@@ -418,7 +417,7 @@ namespace VErp.Services.Master.Service.Category
 
         private async Task GetCategoryFieldInfo(ImportExcelMapping mapping)
         {
-            _categoryFields = _accountancyContext.CategoryField
+            _categoryFields = _masterContext.CategoryField
                             .AsNoTracking()
                             .Where(f => _categoryId == f.CategoryId)
                             .ToList();
@@ -427,8 +426,8 @@ namespace VErp.Services.Master.Service.Category
 
             var refCategoryCodes = _categoryFields.Select(f => f.RefTableCode).ToList();
 
-            _refCategoryFields = (await (from f in _accountancyContext.CategoryField
-                                         join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+            _refCategoryFields = (await (from f in _masterContext.CategoryField
+                                         join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                                          where refCategoryCodes.Contains(c.CategoryCode)
                                          select new RefCategoryProperty
                                          {
@@ -465,8 +464,8 @@ namespace VErp.Services.Master.Service.Category
         {
             var categoryCodes = categoryQueryRequests.Select(c => c.CategoryCode).ToList();
             var refCategoryFields = (await (
-                from f in _accountancyContext.CategoryField
-                join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                from f in _masterContext.CategoryField
+                join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                 where categoryCodes.Contains(c.CategoryCode)
                 select new
                 {
@@ -551,7 +550,7 @@ namespace VErp.Services.Master.Service.Category
                     }
                 }
 
-                var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+                var data = await _masterContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
 
                 categoriesData.Add(categoryQuery.CategoryCode, data.ConvertData());
             }

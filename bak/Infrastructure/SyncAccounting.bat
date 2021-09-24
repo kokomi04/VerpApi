@@ -1,1 +1,0 @@
-Tools\\SynTool.exe Development $.DatabaseConnections.AccountingDatabase AccountingDB

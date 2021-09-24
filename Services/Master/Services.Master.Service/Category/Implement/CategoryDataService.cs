@@ -96,12 +96,17 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
         }
-
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             using var trans = await _masterContext.Database.BeginTransactionAsync();
+            var r = await AddCategoryRowToDb(categoryId, data);
+            await trans.CommitAsync();
+            return r;
+        }
 
+        public async Task<int> AddCategoryRowToDb(int categoryId, Dictionary<string, string> data)
+        {           
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
@@ -221,8 +226,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             await _customGenCodeHelperService.ConfirmCode(CustomGenCodeBaseValue);
 
-            await trans.CommitAsync();
-
+          
             foreach (var item in genCodeContexts)
             {
                 await item.ConfirmCode();
@@ -525,7 +529,7 @@ namespace VErp.Services.Accountancy.Service.Category
              .ObjectId(fId)
              .JsonData(categoryRow.JsonSerialize())
              .CreateLog();
-            
+
             return numberChange;
         }
 

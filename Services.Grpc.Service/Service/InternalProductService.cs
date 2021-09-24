@@ -8,11 +8,12 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Grpc.Protos;
+using VErp.Grpc.Protos.ValueTypes;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Grpc.Service
 {
-    public class InternalProductService: VErp.Grpc.Protos.Product.ProductBase
+    public class InternalProductService : VErp.Grpc.Protos.Product.ProductBase
     {
         private readonly StockDBContext _stockContext;
         private readonly ILogger _logger;
@@ -28,13 +29,13 @@ namespace VErp.Services.Grpc.Service
 
         public override async Task GetListProducts(IAsyncStreamReader<GetListProductRequest> requestStream, IServerStreamWriter<ProductModel> responseStream, ServerCallContext context)
         {
-            while( await requestStream.MoveNext())
+            while (await requestStream.MoveNext())
             {
                 var current = requestStream.Current;
 
                 var product = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId.Equals(current.ProductId));
-                
-                if (product == null) 
+
+                if (product == null)
                     await responseStream.WriteAsync(new ProductModel());
                 else
                 {
@@ -57,7 +58,7 @@ namespace VErp.Services.Grpc.Service
                         BarcodeStandardId = (int)product.BarcodeStandardId,
                         Barcode = product.Barcode,
                         UnitId = product.UnitId,
-                        EstimatePrice = product.EstimatePrice,
+                        EstimatePrice = product.EstimatePrice?.ToDecimalValue(),
 
                         Extra = productExtra != null ? new ProductModelExtra()
                         {
@@ -92,7 +93,7 @@ namespace VErp.Services.Grpc.Service
 
                     await responseStream.WriteAsync(productData);
                 }
-                
+
             }
         }
 
@@ -108,7 +109,7 @@ namespace VErp.Services.Grpc.Service
 
             foreach (var item in request.ProductUnitConvertsionProduct)
             {
-                if (!productUnitConversions.ContainsKey(item.Key) || productUnitConversions[item.Key] != item.Value) 
+                if (!productUnitConversions.ContainsKey(item.Key) || productUnitConversions[item.Key] != item.Value)
                     return await Task.FromResult(new ValidateProductResponses { Result = false });
             }
 
@@ -150,7 +151,7 @@ namespace VErp.Services.Grpc.Service
                     BarcodeStandardId = (int)product.BarcodeStandardId,
                     Barcode = product.Barcode,
                     UnitId = product.UnitId,
-                    EstimatePrice = product.EstimatePrice,
+                    EstimatePrice = product.EstimatePrice?.ToDecimalValue(),
 
                     Extra = productExtra != null ? new ProductModelExtra()
                     {
