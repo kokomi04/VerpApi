@@ -117,13 +117,25 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotFoundDetailMaterials" xml:space="preserve">
-    <value>Danh sách các mặt hàng không được để trống</value>
+  <data name="AssignmentDetailAlreadyCreatedPo" xml:space="preserve">
+    <value>The purchase order bill that was linked to this product already exists</value>
   </data>
-  <data name="NotFoundRequirement" xml:space="preserve">
-    <value>Không tìm thấy yêu cầu vật tư thêm</value>
+  <data name="ExcessNotFound" xml:space="preserve">
+    <value>The excess materials was not found</value>
   </data>
-  <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã yêu cầu vật tư thêm đã tồn tại</value>
+  <data name="NotExistsOutsourceRequestId" xml:space="preserve">
+    <value>The product was not linked to outsourcing order</value>
+  </data>
+  <data name="OnlyCreatePOFromOneCustomer" xml:space="preserve">
+    <value>Only create purchase order from one customer</value>
+  </data>
+  <data name="PoCodeAlreadyExisted" xml:space="preserve">
+    <value>The purchase order code already exits</value>
+  </data>
+  <data name="PoNotFound" xml:space="preserve">
+    <value>The purchase order was not found</value>
+  </data>
+  <data name="PrimaryQuanityGreaterThanQuantityRequirment" xml:space="preserve">
+    <value>The quantity of product to be outsourcing is greater than the request</value>
   </data>
 </root>

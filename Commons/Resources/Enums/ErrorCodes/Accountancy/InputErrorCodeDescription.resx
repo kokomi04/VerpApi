@@ -117,15 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="DataTypeNotFound" xml:space="preserve">
-    <value>Kiểu dữ liệu không tồn tại</value>
-  </data>
-  <data name="FormatFileInvalid" xml:space="preserve">
-    <value>File không hợp lệ</value>
-  </data>
-  <data name="FormTypeNotFound" xml:space="preserve">
-    <value>Kiểu nhập liệu không tồn tại</value>
-  </data>
   <data name="InputActionCodeAlreadyExisted" xml:space="preserve">
     <value>Mã chức năng đã tồn tại</value>
   </data>
@@ -141,9 +132,6 @@
   <data name="InputAreaFieldNotFound" xml:space="preserve">
     <value>Trường dữ liệu không tồn tại</value>
   </data>
-  <data name="InputAreaFieldOverLoad" xml:space="preserve">
-    <value>Không còn trường dữ liệu trống</value>
-  </data>
   <data name="InputAreaNotFound" xml:space="preserve">
     <value>Không tìm thấy vùng dữ liệu</value>
   </data>
@@ -156,23 +144,11 @@
   <data name="InputFieldAlreadyExisted" xml:space="preserve">
     <value>Trường dữ liệu dùng chung đã tồn tại</value>
   </data>
-  <data name="InputFieldIsUsed" xml:space="preserve">
+  <data name="InputFieldIsUse" xml:space="preserve">
     <value>Trường dữ liệu dùng chung đang được sử dụng</value>
   </data>
   <data name="InputFieldNotFound" xml:space="preserve">
     <value>Trường dữ liệu dùng chung không tồn tại</value>
-  </data>
-  <data name="InputIsNotModule" xml:space="preserve">
-    <value>Không phải là chứng từ</value>
-  </data>
-  <data name="InputReadOnly" xml:space="preserve">
-    <value>Chứng từ không được phép thay đổi</value>
-  </data>
-  <data name="InputRowAlreadyExisted" xml:space="preserve">
-    <value>Đang có dòng dữ liệu sử dụng giá trị này</value>
-  </data>
-  <data name="InputRowNotFound" xml:space="preserve">
-    <value>Dòng thông tin không tồn tại</value>
   </data>
   <data name="InputTitleAlreadyExisted" xml:space="preserve">
     <value>Tên chứng từ đã tồn tại</value>
@@ -186,12 +162,6 @@
   <data name="InputValueInValid" xml:space="preserve">
     <value>Giá trị {0} dòng {1} trường dữ liệu {2} không hợp lệ</value>
   </data>
-  <data name="InputValueNotFound" xml:space="preserve">
-    <value>Giá trị không tồn tại</value>
-  </data>
-  <data name="IsInputArea" xml:space="preserve">
-    <value>Vùng dữ liệu đang trực thuộc chứng từ</value>
-  </data>
   <data name="MapGenCodeConfigFail" xml:space="preserve">
     <value>Cấu hình mã tự sinh thất bại</value>
   </data>
@@ -200,9 +170,6 @@
   </data>
   <data name="MultiRowAreaEmpty" xml:space="preserve">
     <value>Thông tin dữ liệu dạng bảng không được để trống</value>
-  </data>
-  <data name="PrintConfigNameAlreadyExisted" xml:space="preserve">
-    <value>Tên cấu hình phiếu in đã tồn tại</value>
   </data>
   <data name="PrintConfigNotFound" xml:space="preserve">
     <value>Không tìm thấy cấu hình phiếu in</value>

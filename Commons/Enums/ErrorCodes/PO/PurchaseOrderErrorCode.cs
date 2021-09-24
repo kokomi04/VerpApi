@@ -21,7 +21,6 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
 
         OnlyCreatePOFromOneCustomer = 4,
 
-        CreatePOFromOneOfPurchasingSuggestOrPoAssignmentOnly= 5,
 
         NotExistsOutsourceRequestId = 6,
 

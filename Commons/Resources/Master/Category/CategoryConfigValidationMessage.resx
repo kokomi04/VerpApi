@@ -129,7 +129,4 @@
   <data name="RefTableNotFound" xml:space="preserve">
     <value>Danh mục liên kết {0} không tìm thấy</value>
   </data>
-  <data name="String1" xml:space="preserve">
-    <value />
-  </data>
 </root>

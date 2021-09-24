@@ -117,13 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotFoundDetailMaterials" xml:space="preserve">
-    <value>Danh sách các mặt hàng không được để trống</value>
+  <data name="CustomerCodeAlreadyExisted" xml:space="preserve">
+    <value>The customer code already exists</value>
   </data>
-  <data name="NotFoundRequirement" xml:space="preserve">
-    <value>Không tìm thấy yêu cầu vật tư thêm</value>
+  <data name="CustomerNameAlreadyExisted" xml:space="preserve">
+    <value>The customer name already exists</value>
   </data>
-  <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã yêu cầu vật tư thêm đã tồn tại</value>
+  <data name="CustomerNotFound" xml:space="preserve">
+    <value>The customer was not found</value>
   </data>
 </root>

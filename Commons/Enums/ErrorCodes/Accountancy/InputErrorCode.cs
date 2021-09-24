@@ -31,15 +31,9 @@ namespace VErp.Commons.Enums.StandardEnum
         
         SourceCategoryFieldNotFound = 9,
         
-        InputAreaFieldOverLoad = 10,
         
         InputAreaFieldNotFound = 11,
         
-        DataTypeNotFound = 12,
-        
-        FormTypeNotFound = 13,
-        
-        InputReadOnly = 14,
         
         RequiredFieldIsEmpty = 15,
         
@@ -49,25 +43,17 @@ namespace VErp.Commons.Enums.StandardEnum
         
         ReferValueNotValidFilter = 117,
         
-        InputRowNotFound = 18,
         
-        IsInputArea = 19,
-        
-        InputValueNotFound = 23,
         
         InputValueInValid = 25,
+             
         
-        InputRowAlreadyExisted = 26,
-        
-        InputIsNotModule = 27,
-        
-        FormatFileInvalid = 28,
         
         InputFieldNotFound = 29,
         
         InputFieldAlreadyExisted = 30,
         
-        InputFieldIsUsed = 31,
+        InputFieldIsUse = 31,//in use vs in used
         
         MapGenCodeConfigFail = 32,
         
@@ -80,7 +66,6 @@ namespace VErp.Commons.Enums.StandardEnum
         
         PrintConfigNotFound = 36,
         
-        PrintConfigNameAlreadyExisted = 37,
 
         
         InputActionNotFound = 39,
