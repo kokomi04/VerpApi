@@ -117,13 +117,79 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotFoundDetailMaterials" xml:space="preserve">
-    <value>Danh sách các mặt hàng không được để trống</value>
+  <data name="InputActionCodeAlreadyExisted" xml:space="preserve">
+    <value>The action code already exists</value>
   </data>
-  <data name="NotFoundRequirement" xml:space="preserve">
-    <value>Không tìm thấy yêu cầu vật tư thêm</value>
+  <data name="InputActionNotFound" xml:space="preserve">
+    <value>The action was not found</value>
   </data>
-  <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã yêu cầu vật tư thêm đã tồn tại</value>
+  <data name="InputAreaCodeAlreadyExisted" xml:space="preserve">
+    <value>The area code already exists</value>
+  </data>
+  <data name="InputAreaFieldAlreadyExisted" xml:space="preserve">
+    <value>The area field already exists</value>
+  </data>
+  <data name="InputAreaFieldNotFound" xml:space="preserve">
+    <value>The are field was not found</value>
+  </data>
+  <data name="InputAreaNotFound" xml:space="preserve">
+    <value>The area was not found</value>
+  </data>
+  <data name="InputAreaTitleAlreadyExisted" xml:space="preserve">
+    <value>The area title already exists</value>
+  </data>
+  <data name="InputCodeAlreadyExisted" xml:space="preserve">
+    <value>The bill code already exists</value>
+  </data>
+  <data name="InputFieldAlreadyExisted" xml:space="preserve">
+    <value>The bill field already exists</value>
+  </data>
+  <data name="InputFieldIsUse" xml:space="preserve">
+    <value>The fields are in use</value>
+  </data>
+  <data name="InputFieldNotFound" xml:space="preserve">
+    <value>The field was not found</value>
+  </data>
+  <data name="InputTitleAlreadyExisted" xml:space="preserve">
+    <value>The bill type title already exists</value>
+  </data>
+  <data name="InputTypeNotFound" xml:space="preserve">
+    <value>The bill type was not found</value>
+  </data>
+  <data name="InputValueBillNotFound" xml:space="preserve">
+    <value>The bill was not found</value>
+  </data>
+  <data name="InputValueInValid" xml:space="preserve">
+    <value>The value {0} of row {1} as field {2} is invalid</value>
+  </data>
+  <data name="MapGenCodeConfigFail" xml:space="preserve">
+    <value>The configuration of code generating error</value>
+  </data>
+  <data name="MultiRowAreaAlreadyExisted" xml:space="preserve">
+    <value>The table area already exists</value>
+  </data>
+  <data name="MultiRowAreaEmpty" xml:space="preserve">
+    <value>The table area is not found</value>
+  </data>
+  <data name="PrintConfigNotFound" xml:space="preserve">
+    <value>The print configuration was not found</value>
+  </data>
+  <data name="ReferValueNotFound" xml:space="preserve">
+    <value>The reference value of row {0} as field {1} was not found</value>
+  </data>
+  <data name="ReferValueNotValidFilter" xml:space="preserve">
+    <value>The reference value of row {0} as field {1} is not pass by filter conditional</value>
+  </data>
+  <data name="RequiredFieldIsEmpty" xml:space="preserve">
+    <value>The row {0} has empty required field {1}</value>
+  </data>
+  <data name="SourceCategoryFieldNotFound" xml:space="preserve">
+    <value>The field of source was not found</value>
+  </data>
+  <data name="SourceInputTypeNotFound" xml:space="preserve">
+    <value>The source bill type was not found</value>
+  </data>
+  <data name="UniqueValueAlreadyExisted" xml:space="preserve">
+    <value>The unique field {0} value already exists</value>
   </data>
 </root>

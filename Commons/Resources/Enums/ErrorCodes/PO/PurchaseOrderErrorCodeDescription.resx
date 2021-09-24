@@ -120,9 +120,6 @@
   <data name="AssignmentDetailAlreadyCreatedPo" xml:space="preserve">
     <value>Bạn đã tạo PO cho mặt hàng này rồi</value>
   </data>
-  <data name="CreatePOFromOneOfPurchasingSuggestOrPoAssignmentOnly" xml:space="preserve">
-    <value>Bạn chỉ có thể tạo PO từ phân công mua hàng hoặc từ đề nghị mua hàng, không thể cả 2</value>
-  </data>
   <data name="ExcessNotFound" xml:space="preserve">
     <value>Không tìm thấy vật tư du thừa</value>
   </data>

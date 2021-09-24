@@ -117,13 +117,46 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotFoundDetailMaterials" xml:space="preserve">
-    <value>Danh sách các mặt hàng không được để trống</value>
+  <data name="CanNotRejectSuggestInUse" xml:space="preserve">
+    <value>The purchase offer being assigned cannot be rejected!</value>
   </data>
-  <data name="NotFoundRequirement" xml:space="preserve">
-    <value>Không tìm thấy yêu cầu vật tư thêm</value>
+  <data name="PoAssignmentCodeAlreadyExisted" xml:space="preserve">
+    <value>Assignment code already exists</value>
   </data>
-  <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã yêu cầu vật tư thêm đã tồn tại</value>
+  <data name="PoAssignmentConfirmInvalidCurrentUser" xml:space="preserve">
+    <value>You just confirmed your assignment!</value>
+  </data>
+  <data name="PoAssignmentDetailNotEmpty" xml:space="preserve">
+    <value>Please delete the purchase assignment with deleted items!</value>
+  </data>
+  <data name="PoAssignmentNotEmpty" xml:space="preserve">
+    <value>Please delete the purchase assignment of this offer before deleting!</value>
+  </data>
+  <data name="PoAssignmentNotfound" xml:space="preserve">
+    <value>No purchase assignment found</value>
+  </data>
+  <data name="PoAssignmentOverload" xml:space="preserve">
+    <value>Assignment exceeds the recommended purchase quantity</value>
+  </data>
+  <data name="PurchaseOrderDetailNotEmpty" xml:space="preserve">
+    <value>Please delete the PO related to the item purchased assigned to be deleted!</value>
+  </data>
+  <data name="PurchasingSuggestIsNotApprovedYet" xml:space="preserve">
+    <value>Offer has not been approved!</value>
+  </data>
+  <data name="SuggestAlreadyApproved" xml:space="preserve">
+    <value>The approved offer cannot be deleted</value>
+  </data>
+  <data name="SuggestCodeAlreadyExisted" xml:space="preserve">
+    <value>The purchase offer already exists</value>
+  </data>
+  <data name="SuggestCodeEmpty" xml:space="preserve">
+    <value>The purchase offer code not available</value>
+  </data>
+  <data name="SuggestDetailNotfound" xml:space="preserve">
+    <value>No product found in offer</value>
+  </data>
+  <data name="SuggestNotFound" xml:space="preserve">
+    <value>The purchase offer was not found</value>
   </data>
 </root>

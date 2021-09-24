@@ -142,6 +142,6 @@
     <value>Xuất hiện chi tiết trùng nhau mã code</value>
   </data>
   <data name="ValidateProductionStepLinkDataRole" xml:space="preserve">
-    <value>Lỗi role trong quy trình sản xuất</value>
+    <value>Lỗi vai trò vào ra của mặt hàng trong quy trình sản xuất</value>
   </data>
 </root>

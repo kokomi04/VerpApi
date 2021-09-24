@@ -129,9 +129,6 @@
   <data name="DeleteField" xml:space="preserve">
     <value>Xóa trường dữ liệu {0}, danh mục {1}</value>
   </data>
-  <data name="String1" xml:space="preserve">
-    <value />
-  </data>
   <data name="Update" xml:space="preserve">
     <value>Cập nhật danh mục {0}</value>
   </data>

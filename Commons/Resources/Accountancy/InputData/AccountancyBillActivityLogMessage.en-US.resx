@@ -117,13 +117,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotFoundDetailMaterials" xml:space="preserve">
-    <value>Danh sách các mặt hàng không được để trống</value>
+  <data name="Create" xml:space="preserve">
+    <value>Created bill {0}, No. {1}</value>
   </data>
-  <data name="NotFoundRequirement" xml:space="preserve">
-    <value>Không tìm thấy yêu cầu vật tư thêm</value>
+  <data name="Delete" xml:space="preserve">
+    <value>Deleted bill {0}, No. {1}</value>
   </data>
-  <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã yêu cầu vật tư thêm đã tồn tại</value>
+  <data name="Update" xml:space="preserve">
+    <value>Updated bill {0}, No. {1}</value>
+  </data>
+  <data name="UpdateMulti" xml:space="preserve">
+    <value>Update multiple bills {0}, by field {1}, No. {2}</value>
   </data>
 </root>

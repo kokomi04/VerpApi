@@ -117,13 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotFoundDetailMaterials" xml:space="preserve">
-    <value>Danh sách các mặt hàng không được để trống</value>
+  <data name="EmptyRoleName" xml:space="preserve">
+    <value>The role name can not be empty</value>
   </data>
-  <data name="NotFoundRequirement" xml:space="preserve">
-    <value>Không tìm thấy yêu cầu vật tư thêm</value>
+  <data name="ExistedChildrenRoles" xml:space="preserve">
+    <value>There are some children roles</value>
   </data>
-  <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã yêu cầu vật tư thêm đã tồn tại</value>
+  <data name="LoopbackParentRole" xml:space="preserve">
+    <value>The parent role can not be itself</value>
+  </data>
+  <data name="ParentRoleNotFound" xml:space="preserve">
+    <value>The parent role was not found</value>
+  </data>
+  <data name="RoleIsReadonly" xml:space="preserve">
+    <value>The role can not modify</value>
+  </data>
+  <data name="RoleNotFound" xml:space="preserve">
+    <value>The role was not found</value>
   </data>
 </root>

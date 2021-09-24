@@ -117,13 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="NotFoundDetailMaterials" xml:space="preserve">
-    <value>Danh sách các mặt hàng không được để trống</value>
+  <data name="ExistsProductionProcess" xml:space="preserve">
+    <value>The production process already exists</value>
   </data>
-  <data name="NotFoundRequirement" xml:space="preserve">
-    <value>Không tìm thấy yêu cầu vật tư thêm</value>
+  <data name="InvalidDeleteProductionStep" xml:space="preserve">
+    <value>Can not delete production step</value>
   </data>
-  <data name="OutsoureOrderCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã yêu cầu vật tư thêm đã tồn tại</value>
+  <data name="ListProductionStepNotInContainerId" xml:space="preserve">
+    <value>The production steps are not in the same production process</value>
+  </data>
+  <data name="NotFoundInOutStep" xml:space="preserve">
+    <value>Inputs and outputs of  production step are empty</value>
+  </data>
+  <data name="NotFoundProductionProcess" xml:space="preserve">
+    <value>Production process was not found</value>
+  </data>
+  <data name="NotFoundProductionStep" xml:space="preserve">
+    <value>Production step was not found</value>
+  </data>
+  <data name="ValidateProductionStep" xml:space="preserve">
+    <value>Production process is invalid</value>
+  </data>
+  <data name="ValidateProductionStepLinkData" xml:space="preserve">
+    <value>There are duplicated inputs or outputs</value>
+  </data>
+  <data name="ValidateProductionStepLinkDataRole" xml:space="preserve">
+    <value>There are some role of materials errors in production process</value>
   </data>
 </root>
