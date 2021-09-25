@@ -21,8 +21,10 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using Verp.Resources.Organization;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
@@ -50,6 +52,8 @@ namespace VErp.Services.Organization.Service.HrConfig
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly IHrTypeService _hrTypeService;
 
+        private readonly ObjectActivityLogFacade _hrDataActivityLog;
+
         public HrDataService(
             ILogger<HrDataService> logger,
             IActivityLogService activityLogService,
@@ -70,6 +74,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
             _hrTypeService = hrTypeService;
+            _hrDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrBill);
         }
 
         #region public
@@ -286,6 +291,14 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.SaveChangesAsync();
 
                 await @trans.CommitAsync();
+
+                await _hrDataActivityLog.LogBuilder(() => HrBillActivityLogMessage.Update)
+                        .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
+                        .BillTypeId(hrTypeId)
+                        .ObjectId(hrBill_F_Id)
+                        .JsonData(billInfo.JsonSerialize().JsonSerialize())
+                        .CreateLog();
+
                 return true;
             }
             catch (System.Exception)
@@ -378,6 +391,13 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await @trans.CommitAsync();
 
+                await _hrDataActivityLog.LogBuilder(() => HrBillActivityLogMessage.Update)
+                        .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
+                        .BillTypeId(hrTypeId)
+                        .ObjectId(hrBill_F_Id)
+                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .CreateLog();
+
                 return true;
 
             }
@@ -428,6 +448,13 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
 
                 await @trans.CommitAsync();
+
+                await _hrDataActivityLog.LogBuilder(() => HrBillActivityLogMessage.Create)
+                        .MessageResourceFormatDatas(hrTypeInfo.Title, billInfo.FId)
+                        .BillTypeId(hrTypeId)
+                        .ObjectId(billInfo.FId)
+                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .CreateLog();
 
                 return 1;
 
