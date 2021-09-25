@@ -96,8 +96,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
 
             var type = propertyInfo.DeclaringType.FullName + "." + propertyInfo.Name;
+
             var messageFormat = (string)propertyInfo.GetValue(null);// typeof(T).stat
-            return await CreateLog(objectTypeId, objectId, string.Format(messageFormat, messageResourceFormatData), jsonData, action, ignoreBatch, type, messageResourceFormatData.JsonSerialize(), billTypeId);
+            if (messageResourceFormatData == null)
+                messageResourceFormatData = new object[0];
+
+            var message = messageResourceFormatData.Length > 0 ? string.Format(messageFormat, messageResourceFormatData) : messageFormat;
+
+            return await CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, messageResourceFormatData.JsonSerialize(), billTypeId);
         }
 
         public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId)
