@@ -37,13 +37,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductHelperService _productHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IDraftDataHelperService _draftDataHelperService;
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
-            , IOrganizationHelperService organizationHelperService)
+            , IOrganizationHelperService organizationHelperService
+            , IDraftDataHelperService draftDataHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -52,6 +54,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _productHelperService = productHelperService;
             _organizationHelperService = organizationHelperService;
+            _draftDataHelperService = draftDataHelperService;
         }
 
         public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
@@ -522,7 +525,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return productionOrder;
         }
 
-        public async Task<int> CreateMultipleProductionOrder(ProductionOrderInputModel[] data)
+        public async Task<int> CreateMultipleProductionOrder(int monthPlanId, ProductionOrderInputModel[] data)
         {
             if (data.Length == 0) return 0;
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
@@ -572,8 +575,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     productionOrderId = productionOrder.ProductionOrderId;
                 }
 
-                trans.Commit();
+                // Xóa dữ liệu nháp
+                await _draftDataHelperService.DeleteDraftData((int)EnumObjectType.DraftData, monthPlanId);
 
+                trans.Commit();
                 currentConfig.CurrentLastValue.LastValue = currentValue;
                 currentConfig.CurrentLastValue.LastCode = currentCode;
 

@@ -336,6 +336,12 @@ namespace VErp.Commons.Enums.MasterEnum
         HrTypeView = 1041,
 
         [Description("Chứng từ hành chính nhân sự")]
-        HrBill = 1042
+        HrBill = 1042,
+
+        [Description("Dữ liệu nháp")]
+        DraftData = 1043,
+
+        [Description("Thông tin thêm kế hoạch")]
+        ProductionPlanExtraInfo = 1044
     }
 }

@@ -61,51 +61,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không thể thêm dữ liệu nhân sự.
-        /// </summary>
-        public static string CanNotInsertHrData {
-            get {
-                return ResourceManager.GetString("CanNotInsertHrData", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Kiểu dữ liệu không tồn tại.
-        /// </summary>
-        public static string DataTypeNotFound {
-            get {
-                return ResourceManager.GetString("DataTypeNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to File không hợp lệ.
-        /// </summary>
-        public static string FormatFileInvalid {
-            get {
-                return ResourceManager.GetString("FormatFileInvalid", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Kiểu nhập liệu không tồn tại.
-        /// </summary>
-        public static string FormTypeNotFound {
-            get {
-                return ResourceManager.GetString("FormTypeNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Mã chức năng đã tồn tại.
-        /// </summary>
-        public static string HrActionCodeAlreadyExisted {
-            get {
-                return ResourceManager.GetString("HrActionCodeAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy chức năng.
         /// </summary>
         public static string HrActionNotFound {
@@ -124,7 +79,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu đã tồn tại.
+        ///   Looks up a localized string similar to Trường dữ liệu của vùng đã tồn tại.
         /// </summary>
         public static string HrAreaFieldAlreadyExisted {
             get {
@@ -138,15 +93,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         public static string HrAreaFieldNotFound {
             get {
                 return ResourceManager.GetString("HrAreaFieldNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Không còn trường dữ liệu trống.
-        /// </summary>
-        public static string HrAreaFieldOverLoad {
-            get {
-                return ResourceManager.GetString("HrAreaFieldOverLoad", resourceCulture);
             }
         }
         
@@ -178,7 +124,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu dùng chung đã tồn tại.
+        ///   Looks up a localized string similar to Trường dữ liệu đã tồn tại.
         /// </summary>
         public static string HrFieldAlreadyExisted {
             get {
@@ -187,7 +133,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu dùng chung đang được sử dụng.
+        ///   Looks up a localized string similar to Trường dữ liệu đang được sử dụng.
         /// </summary>
         public static string HrFieldIsUsed {
             get {
@@ -196,47 +142,11 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu dùng chung không tồn tại.
+        ///   Looks up a localized string similar to Trường dữ liệu không tồn tại.
         /// </summary>
         public static string HrFieldNotFound {
             get {
                 return ResourceManager.GetString("HrFieldNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Không phải là chứng từ hành chính nhân sự.
-        /// </summary>
-        public static string HrIsNotModule {
-            get {
-                return ResourceManager.GetString("HrIsNotModule", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Chứng từ không được phép thay đổi.
-        /// </summary>
-        public static string HrReadOnly {
-            get {
-                return ResourceManager.GetString("HrReadOnly", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Đang có dòng dữ liệu sử dụng giá trị này.
-        /// </summary>
-        public static string HrRowAlreadyExisted {
-            get {
-                return ResourceManager.GetString("HrRowAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Dòng thông tin không tồn tại.
-        /// </summary>
-        public static string HrRowNotFound {
-            get {
-                return ResourceManager.GetString("HrRowNotFound", resourceCulture);
             }
         }
         
@@ -277,56 +187,11 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Giá trị không tồn tại.
-        /// </summary>
-        public static string HrValueNotFound {
-            get {
-                return ResourceManager.GetString("HrValueNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Vùng dữ liệu đang trực thuộc chứng từ hành chính nhân sự.
-        /// </summary>
-        public static string IsHrArea {
-            get {
-                return ResourceManager.GetString("IsHrArea", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Cấu hình mã tự sinh thất bại.
         /// </summary>
         public static string MapGenCodeConfigFail {
             get {
                 return ResourceManager.GetString("MapGenCodeConfigFail", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Thông tin dữ liệu dạng bảng không được để trống.
-        /// </summary>
-        public static string MultiRowAreaEmpty {
-            get {
-                return ResourceManager.GetString("MultiRowAreaEmpty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Tên cấu hình phiếu in đã tồn tại.
-        /// </summary>
-        public static string PrintConfigNameAlreadyExisted {
-            get {
-                return ResourceManager.GetString("PrintConfigNameAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy cấu hình phiếu in.
-        /// </summary>
-        public static string PrintConfigNotFound {
-            get {
-                return ResourceManager.GetString("PrintConfigNotFound", resourceCulture);
             }
         }
         

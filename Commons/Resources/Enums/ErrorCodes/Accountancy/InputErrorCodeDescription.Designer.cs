@@ -61,33 +61,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Kiểu dữ liệu không tồn tại.
-        /// </summary>
-        public static string DataTypeNotFound {
-            get {
-                return ResourceManager.GetString("DataTypeNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to File không hợp lệ.
-        /// </summary>
-        public static string FormatFileInvalid {
-            get {
-                return ResourceManager.GetString("FormatFileInvalid", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Kiểu nhập liệu không tồn tại.
-        /// </summary>
-        public static string FormTypeNotFound {
-            get {
-                return ResourceManager.GetString("FormTypeNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Mã chức năng đã tồn tại.
         /// </summary>
         public static string InputActionCodeAlreadyExisted {
@@ -133,15 +106,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không còn trường dữ liệu trống.
-        /// </summary>
-        public static string InputAreaFieldOverLoad {
-            get {
-                return ResourceManager.GetString("InputAreaFieldOverLoad", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy vùng dữ liệu.
         /// </summary>
         public static string InputAreaNotFound {
@@ -180,9 +144,9 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         /// <summary>
         ///   Looks up a localized string similar to Trường dữ liệu dùng chung đang được sử dụng.
         /// </summary>
-        public static string InputFieldIsUsed {
+        public static string InputFieldIsUse {
             get {
-                return ResourceManager.GetString("InputFieldIsUsed", resourceCulture);
+                return ResourceManager.GetString("InputFieldIsUse", resourceCulture);
             }
         }
         
@@ -192,42 +156,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         public static string InputFieldNotFound {
             get {
                 return ResourceManager.GetString("InputFieldNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Không phải là chứng từ.
-        /// </summary>
-        public static string InputIsNotModule {
-            get {
-                return ResourceManager.GetString("InputIsNotModule", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Chứng từ không được phép thay đổi.
-        /// </summary>
-        public static string InputReadOnly {
-            get {
-                return ResourceManager.GetString("InputReadOnly", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Đang có dòng dữ liệu sử dụng giá trị này.
-        /// </summary>
-        public static string InputRowAlreadyExisted {
-            get {
-                return ResourceManager.GetString("InputRowAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Dòng thông tin không tồn tại.
-        /// </summary>
-        public static string InputRowNotFound {
-            get {
-                return ResourceManager.GetString("InputRowNotFound", resourceCulture);
             }
         }
         
@@ -268,24 +196,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Giá trị không tồn tại.
-        /// </summary>
-        public static string InputValueNotFound {
-            get {
-                return ResourceManager.GetString("InputValueNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Vùng dữ liệu đang trực thuộc chứng từ.
-        /// </summary>
-        public static string IsInputArea {
-            get {
-                return ResourceManager.GetString("IsInputArea", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Cấu hình mã tự sinh thất bại.
         /// </summary>
         public static string MapGenCodeConfigFail {
@@ -309,15 +219,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         public static string MultiRowAreaEmpty {
             get {
                 return ResourceManager.GetString("MultiRowAreaEmpty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Tên cấu hình phiếu in đã tồn tại.
-        /// </summary>
-        public static string PrintConfigNameAlreadyExisted {
-            get {
-                return ResourceManager.GetString("PrintConfigNameAlreadyExisted", resourceCulture);
             }
         }
         
