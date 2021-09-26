@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
         }
 
+        public virtual DbSet<DraftData> DraftData { get; set; }
         public virtual DbSet<MonthPlan> MonthPlan { get; set; }
         public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
         public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
@@ -42,6 +43,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
         public virtual DbSet<ProductionOrderStatus> ProductionOrderStatus { get; set; }
+        public virtual DbSet<ProductionPlanExtraInfo> ProductionPlanExtraInfo { get; set; }
         public virtual DbSet<ProductionProcessMold> ProductionProcessMold { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
         public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
@@ -74,6 +76,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
+            modelBuilder.Entity<DraftData>(entity =>
+            {
+                entity.HasKey(e => new { e.ObjectTypeId, e.SubsidiaryId, e.ObjectId });
+            });
 
             modelBuilder.Entity<MonthPlan>(entity =>
             {
@@ -520,6 +527,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Description).HasMaxLength(128);
 
                 entity.Property(e => e.ProductionOrderStatusName).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ProductionPlanExtraInfo>(entity =>
+            {
+                entity.HasKey(e => new { e.MonthPlanId, e.SubsidiaryId, e.ProductionOrderDetailId });
             });
 
             modelBuilder.Entity<ProductionProcessMold>(entity =>

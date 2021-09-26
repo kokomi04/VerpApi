@@ -62,7 +62,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Manufacturing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy chi tiết các mặt hàng.
+        ///   Looks up a localized string similar to Danh sách các mặt hàng không được để trống.
         /// </summary>
         public static string NotFoundDetailMaterials {
             get {

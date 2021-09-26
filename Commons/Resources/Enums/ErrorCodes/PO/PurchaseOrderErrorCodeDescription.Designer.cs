@@ -70,15 +70,6 @@ namespace Verp.Resources.Enums.ErrorCodes.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Bạn chỉ có thể tạo PO từ phân công mua hàng hoặc từ đề nghị mua hàng, không thể cả 2.
-        /// </summary>
-        public static string CreatePOFromOneOfPurchasingSuggestOrPoAssignmentOnly {
-            get {
-                return ResourceManager.GetString("CreatePOFromOneOfPurchasingSuggestOrPoAssignmentOnly", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy vật tư du thừa.
         /// </summary>
         public static string ExcessNotFound {

@@ -134,7 +134,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Manufacturing {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lỗi role trong quy trình sản xuất.
+        ///   Looks up a localized string similar to Lỗi vai trò vào ra của mặt hàng trong quy trình sản xuất.
         /// </summary>
         public static string ValidateProductionStepLinkDataRole {
             get {
