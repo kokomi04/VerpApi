@@ -17,6 +17,7 @@ namespace VErp.Services.Stock.Model.Product
         public int? OutputStepId { get; set; }
         public int? SortOrder { get; set; }
         public string Description { get; set; }
+        public bool? IgnoreStep { get; set; }
     }
     public class ProductBomUpdateInfo
     {

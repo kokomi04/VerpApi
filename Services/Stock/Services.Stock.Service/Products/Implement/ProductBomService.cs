@@ -215,6 +215,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 updateBom.OldValue.OutputStepId = updateBom.NewValue.OutputStepId;
                 updateBom.OldValue.SortOrder = updateBom.NewValue.SortOrder;
                 updateBom.OldValue.Description = updateBom.NewValue.Description;
+                updateBom.OldValue.IgnoreStep = updateBom.NewValue.IgnoreStep;
             }
 
             await _stockDbContext.SaveChangesAsync();
