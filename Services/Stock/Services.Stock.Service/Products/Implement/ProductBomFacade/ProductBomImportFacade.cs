@@ -273,7 +273,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         Wastage = b.Wastage ?? 1,
                         InputStepId = inputStepId,
                         OutputStepId = b.IsMaterial ? null : outputStepId,
-                        Description = b.Description
+                        Description = b.Description,
+                        IgnoreStep = b.IgnoreStep
                     };
                 }).ToList();
 

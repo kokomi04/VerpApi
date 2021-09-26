@@ -122,6 +122,8 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Đánh dấu là nguyên liệu đầu vào (Có, Không)")]
         public bool IsMaterial { get; set; }
+        [Display(Name = "Đánh dấu loại chi tiết khỏi QTSX (Có, Không)")]
+        public bool IgnoreStep { get; set; }
 
         //[Display(Name = "Thuộc công đoạn đầu vào nào?")]
         //public int? InputStepId { get; set; }
