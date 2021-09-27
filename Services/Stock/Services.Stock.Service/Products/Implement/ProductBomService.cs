@@ -299,6 +299,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 || oldValue.OutputStepId != newValue.OutputStepId
                 || oldValue.Wastage != newValue.Wastage
                 || oldValue.SortOrder != newValue.SortOrder
+                || oldValue.IgnoreStep != newValue.IgnoreStep
                 || oldValue.Description != newValue.Description;
         }
 
