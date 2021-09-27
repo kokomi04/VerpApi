@@ -33,6 +33,7 @@ namespace VErp.Services.Stock.Model.Product
         public int DecimalPlace { get; set; }
         public int? InputStepId { get; set; }
         public int? OutputStepId { get; set; }
+        public Boolean? IgnoreStep { get; set; }
      
     }
 
