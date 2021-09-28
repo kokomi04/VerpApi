@@ -25,7 +25,6 @@ namespace VErp.Commons.Enums.StandardEnum
         
         SubCategoryHasParent = 6,
         
-        ParentCategoryAlreadyExisted = 7,
         
         CategoryFieldNameAlreadyExisted = 8,
         
@@ -49,39 +48,30 @@ namespace VErp.Commons.Enums.StandardEnum
         
         CategoryRowNotFound = 18,
         
-        IsSubCategory = 19,
         
         SubCategoryCodeAlreadyExisted = 20,
         
         SubCategoryTitleAlreadyExisted = 21,
         
-        ReferenceFromItSelf = 22,
         
         CategoryValueNotFound = 23,
         
-        CategoryFieldNotDefaultValue = 24,
         
         CategoryValueInValid = 25,
         
-        CategoryRowAlreadyExisted = 26,
         
-        CategoryIsNotModule = 27,
         
-        FormatFileInvalid = 28,
-        
-        FormTypeNotSwitch = 29,
         
         ParentCategoryRowNotExisted = 30,
         
         CategoryIsOutSideData =31,
         
-        CategoryIsOutSideDataError = 32,
         
         ParentCategoryFromItSelf = 33,
         
         CategoryFieldReadOnly = 44,
         
-        RelationshipAlreadyExisted = 45,
+        HadSomeDataRelatedToThisValue = 45,
         
         InvalidSubsidiary = 46,
         

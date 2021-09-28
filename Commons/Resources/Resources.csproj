@@ -332,6 +332,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>UserValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\HrBillActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HrBillActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.Designer.cs">
       <DependentUpon>ProductPriceConfigActivityLogMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -744,6 +749,10 @@
     <EmbeddedResource Update="Master\User\UserValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>UserValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\HrBillActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>HrBillActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.resx">
       <LastGenOutput>ProductPriceConfigActivityLogMessage.Designer.cs</LastGenOutput>

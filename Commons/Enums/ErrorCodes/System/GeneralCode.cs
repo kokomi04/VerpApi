@@ -39,7 +39,7 @@ namespace VErp.Commons.Enums.StandardEnum
 
 
         
-        LockedOut = 9,
+        UserInActived = 9,
 
 
 

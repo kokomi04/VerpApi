@@ -13,7 +13,6 @@ namespace VErp.Commons.Enums.StandardEnum
 
     public enum CustomGenCodeErrorCode
     {
-        CustomConfigNotFound = 1,
-        CustomConfigNotExisted = 2,
+        CustomConfigNotFound = 1
     }
 }

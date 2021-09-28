@@ -130,12 +130,12 @@
     <value>Tham số không hợp lệ</value>
   </data>
   <data name="ItemCodeExisted" xml:space="preserve">
-    <value>Mã item đã tồn tại, vui lòng chọn mã khác!</value>
+    <value>Mã đã tồn tại, vui lòng chọn mã khác!</value>
   </data>
   <data name="ItemNotFound" xml:space="preserve">
-    <value>Item không tồn tại</value>
+    <value>Bản ghi không tồn tại</value>
   </data>
-  <data name="LockedOut" xml:space="preserve">
+  <data name="UserInActived" xml:space="preserve">
     <value>Tài khoản không có quyền truy cập vào hệ thống</value>
   </data>
   <data name="NotYetSupported" xml:space="preserve">

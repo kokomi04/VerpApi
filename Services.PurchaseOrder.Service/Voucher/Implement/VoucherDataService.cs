@@ -930,8 +930,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
                 || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
             {
-                throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title });
+                throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { value?.JsonSerialize(), rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title });
             }
+
+
         }
 
         private void AppendSelectFields(ref StringBuilder sql, List<ValidateVoucherField> fields)
@@ -2000,7 +2002,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                     || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
                                     || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
                                 {
-                                    throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { row.Index, field.Title + ": " + value });
+                                    throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
                                 }
                             }
                         }

@@ -464,7 +464,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
                 {
-                    throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                    throw new BadRequestException(CategoryErrorCode.HadSomeDataRelatedToThisValue);
                 }
             }
 
@@ -499,13 +499,13 @@ namespace VErp.Services.Accountancy.Service.Category
                     isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
-                        throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                        throw new BadRequestException(CategoryErrorCode.HadSomeDataRelatedToThisValue);
                     }
                 }
 
                 // TODO
                 isExisted = await _httpCategoryHelperService.CheckReferFromCategory(category.CategoryCode, fieldNames, categoryRow);
-                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.HadSomeDataRelatedToThisValue);
 
             }
             // Delete data
