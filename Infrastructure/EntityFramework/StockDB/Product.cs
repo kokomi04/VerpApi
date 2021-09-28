@@ -15,6 +15,8 @@ namespace VErp.Infrastructure.EF.StockDB
             ProductBomChildProduct = new HashSet<ProductBom>();
             ProductBomProduct = new HashSet<ProductBom>();
             ProductCustomer = new HashSet<ProductCustomer>();
+            ProductIgnoreStepProduct = new HashSet<ProductIgnoreStep>();
+            ProductIgnoreStepRootProduct = new HashSet<ProductIgnoreStep>();
             ProductMaterialProduct = new HashSet<ProductMaterial>();
             ProductMaterialRootProduct = new HashSet<ProductMaterial>();
             ProductMaterialsConsumptionMaterialsConsumption = new HashSet<ProductMaterialsConsumption>();
@@ -73,6 +75,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual ICollection<ProductBom> ProductBomChildProduct { get; set; }
         public virtual ICollection<ProductBom> ProductBomProduct { get; set; }
         public virtual ICollection<ProductCustomer> ProductCustomer { get; set; }
+        public virtual ICollection<ProductIgnoreStep> ProductIgnoreStepProduct { get; set; }
+        public virtual ICollection<ProductIgnoreStep> ProductIgnoreStepRootProduct { get; set; }
         public virtual ICollection<ProductMaterial> ProductMaterialProduct { get; set; }
         public virtual ICollection<ProductMaterial> ProductMaterialRootProduct { get; set; }
         public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionMaterialsConsumption { get; set; }

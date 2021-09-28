@@ -37,6 +37,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductCate> ProductCate { get; set; }
         public virtual DbSet<ProductCustomer> ProductCustomer { get; set; }
         public virtual DbSet<ProductExtraInfo> ProductExtraInfo { get; set; }
+        public virtual DbSet<ProductIgnoreStep> ProductIgnoreStep { get; set; }
         public virtual DbSet<ProductMaterial> ProductMaterial { get; set; }
         public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
         public virtual DbSet<ProductMaterialsConsumptionGroup> ProductMaterialsConsumptionGroup { get; set; }
@@ -631,6 +632,23 @@ namespace VErp.Infrastructure.EF.StockDB
                     .WithOne(p => p.ProductExtraInfo)
                     .HasForeignKey<ProductExtraInfo>(d => d.ProductId)
                     .HasConstraintName("FK_ProductExtraInfo_Product");
+            });
+
+            modelBuilder.Entity<ProductIgnoreStep>(entity =>
+            {
+                entity.Property(e => e.PathProductIds).IsRequired();
+
+                entity.HasOne(d => d.Product)
+                    .WithMany(p => p.ProductIgnoreStepProduct)
+                    .HasForeignKey(d => d.ProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductIgnoreStep_MaterialProduct");
+
+                entity.HasOne(d => d.RootProduct)
+                    .WithMany(p => p.ProductIgnoreStepRootProduct)
+                    .HasForeignKey(d => d.RootProductId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductIgnoreStep_RootProduct");
             });
 
             modelBuilder.Entity<ProductMaterial>(entity =>
