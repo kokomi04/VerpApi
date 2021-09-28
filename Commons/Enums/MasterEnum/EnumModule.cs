@@ -17,6 +17,6 @@ namespace VErp.Commons.Enums.MasterEnum
 
         SalesBill = 902,
 
-        Hr = 705,
+        Hr = 111001,
     }
 }
