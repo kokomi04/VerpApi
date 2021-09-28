@@ -118,9 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="NotFoundProductSemi" xml:space="preserve">
-    <value>Không tìm thấy bán thành phẩm chuyển đổi</value>
+    <value>Không tìm thấy bán thành phẩm</value>
   </data>
   <data name="NotFoundProductSemiConversion" xml:space="preserve">
-    <value>Không tìm thấy bán thành phẩm</value>
+    <value>Không tìm thấy bán thành phẩm chuyển đổi</value>
   </data>
 </root>

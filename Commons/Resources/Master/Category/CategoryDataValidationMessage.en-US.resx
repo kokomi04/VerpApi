@@ -117,10 +117,37 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="ImportCannotConvertToDateTime" xml:space="preserve">
+    <value>Can not convert the value {0}, row {1}, column {2}, field "{3}" to date type</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="ImportDuplicatedRow" xml:space="preserve">
+    <value>There are multiple "{0}", which require unique in excel</value>
+  </data>
+  <data name="ImportExistedRowInDatabase" xml:space="preserve">
+    <value>Duplicate "{0}", which require unique in {1}</value>
+  </data>
+  <data name="ImportFoundMoreThanOneParent" xml:space="preserve">
+    <value>Found more than one {0} parent has "{1}" in category "{2}"</value>
+  </data>
+  <data name="ImportFoundMoreThanOneRef" xml:space="preserve">
+    <value>Found more than one {0} has "{1}" in category "{2}"</value>
+  </data>
+  <data name="ImportFoundNoParent" xml:space="preserve">
+    <value>Found no {0} parent has "{1}" in category "{2}"</value>
+  </data>
+  <data name="ImportFoundNoRefValue" xml:space="preserve">
+    <value>Found no {0} has "{1}" in category "{2}"</value>
+  </data>
+  <data name="ImportOnlyAllowRangeValue" xml:space="preserve">
+    <value>The cell with row {0} and  column {1} as field "{2}" only accept these values: {3}</value>
+  </data>
+  <data name="ImportRequiredFieldInRowEmpty" xml:space="preserve">
+    <value>The value is empty, row {0}, column {1} as field "{2}"  is required field in the category {3}</value>
+  </data>
+  <data name="ImportRequiredFieldNotMapped" xml:space="preserve">
+    <value>The required fields are not mapping: {0}</value>
+  </data>
+  <data name="ProcessActionResultErrorCode" xml:space="preserve">
+    <value>The action validation invalid. Error code {0}</value>
   </data>
 </root>

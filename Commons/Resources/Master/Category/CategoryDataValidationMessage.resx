@@ -124,7 +124,7 @@
     <value>Tồn tại nhiều "{0}", giá trị mang tính định danh trong file excel</value>
   </data>
   <data name="ImportRequiredFieldInRowEmpty" xml:space="preserve">
-    <value>Dữ liệu không được để trống, dòng {0} cột {1}, trường "{2}" là trường dữ liệu bắt buộc trong danh mục {2}</value>
+    <value>Dữ liệu không được để trống, dòng {0} cột {1}, trường "{2}" là trường dữ liệu bắt buộc trong danh mục {3}</value>
   </data>
   <data name="ImportCannotConvertToDateTime" xml:space="preserve">
     <value>Không thể chuyển giá trị {0}, dòng {1} cột {2}, trường "{3}" sang kiểu ngày tháng</value>

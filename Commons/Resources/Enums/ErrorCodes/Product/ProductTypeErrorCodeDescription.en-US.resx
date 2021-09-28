@@ -117,10 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="CanNotDeletedParentProductType" xml:space="preserve">
+    <value>You must be moved children product code type to an other product code type</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="EmptyProductTypeName" xml:space="preserve">
+    <value>Product code type name can not be empty</value>
+  </data>
+  <data name="ParentProductTypeNotfound" xml:space="preserve">
+    <value>Parent product code type was not found</value>
+  </data>
+  <data name="ProductTypeInUsed" xml:space="preserve">
+    <value>Can not delete product code type in used</value>
+  </data>
+  <data name="ProductTypeNameAlreadyExisted" xml:space="preserve">
+    <value>Product code type name already exists</value>
+  </data>
+  <data name="ProductTypeNotfound" xml:space="preserve">
+    <value>Product code type does not exist</value>
   </data>
 </root>

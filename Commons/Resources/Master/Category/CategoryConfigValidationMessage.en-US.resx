@@ -117,10 +117,16 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="CannotConvertSqlDataType" xml:space="preserve">
+    <value>Can not convert data type from {0} to {1}</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="CategoryNotFound" xml:space="preserve">
+    <value>The category was not found</value>
+  </data>
+  <data name="RefFieldNotFound" xml:space="preserve">
+    <value>Reference field {0} was not found</value>
+  </data>
+  <data name="RefTableNotFound" xml:space="preserve">
+    <value>The reference category {0} was not found</value>
   </data>
 </root>

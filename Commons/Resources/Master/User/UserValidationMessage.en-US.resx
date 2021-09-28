@@ -117,10 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="DepartmentNotFound" xml:space="preserve">
+    <value>The department {0} does not exist</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="SubsidiaryAlreadyCreatedOwner" xml:space="preserve">
+    <value>The subsidiary has already owner</value>
+  </data>
+  <data name="CannotChangeOwnerRole" xml:space="preserve">
+    <value>Can not update the owner role</value>
+  </data>
+  <data name="CannotDeleteOwner" xml:space="preserve">
+    <value>Can not delete the owner employee</value>
+  </data>
+  <data name="RoleNotFound" xml:space="preserve">
+    <value>The role was not found</value>
+  </data>
+  <data name="SubsidiaryNotFound" xml:space="preserve">
+    <value>The subsidiary was not found</value>
   </data>
 </root>

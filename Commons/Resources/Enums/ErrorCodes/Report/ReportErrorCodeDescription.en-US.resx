@@ -117,10 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="ReportNameAlreadyExisted" xml:space="preserve">
+    <value>The report name already exists</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="ReportNotFound" xml:space="preserve">
+    <value>The report was not found</value>
   </data>
 </root>

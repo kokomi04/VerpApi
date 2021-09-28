@@ -117,10 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="CreateBackup" xml:space="preserve">
+    <value>Backup database to backup point: {0}</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="RestoreFail" xml:space="preserve">
+    <value>Fail to restore database {0} of module {1} from backup point: {2}</value>
+  </data>
+  <data name="RestoreDatabase" xml:space="preserve">
+    <value>Restore database to backup point: {0}</value>
+  </data>
+  <data name="RestoreDatabaseModule" xml:space="preserve">
+    <value>Restore module {0} database to backup point: {1}</value>
+  </data>
+  <data name="RestoreStarted" xml:space="preserve">
+    <value>Started restore database {0} of module {1} from backup point: {2}</value>
+  </data>
+  <data name="RestoreSuccess" xml:space="preserve">
+    <value>Successes restore database {0} of module {1} from backup point: {2}</value>
   </data>
 </root>

@@ -117,32 +117,11 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="DataTypeNotFound" xml:space="preserve">
-    <value>Kiểu dữ liệu không tồn tại</value>
-  </data>
-  <data name="FormatFileInvalid" xml:space="preserve">
-    <value>File không hợp lệ</value>
-  </data>
-  <data name="FormTypeNotFound" xml:space="preserve">
-    <value>Kiểu nhập liệu không tồn tại</value>
-  </data>
-  <data name="IsVoucherArea" xml:space="preserve">
-    <value>Vùng dữ liệu đang trực thuộc chứng từ</value>
-  </data>
   <data name="MapGenCodeConfigFail" xml:space="preserve">
     <value>Cấu hình mã tự sinh thất bại</value>
   </data>
   <data name="MultiRowAreaAlreadyExisted" xml:space="preserve">
     <value>Vùng dữ liệu dạng bảng đã tồn tại</value>
-  </data>
-  <data name="MultiRowAreaEmpty" xml:space="preserve">
-    <value>Thông tin dữ liệu dạng bảng không được để trống</value>
-  </data>
-  <data name="PrintConfigNameAlreadyExisted" xml:space="preserve">
-    <value>Tên cấu hình phiếu in đã tồn tại</value>
-  </data>
-  <data name="PrintConfigNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình phiếu in</value>
   </data>
   <data name="ReferValueNotFound" xml:space="preserve">
     <value>Thông tin giá trị dòng {0} của trường {1} không tồn tại</value>
@@ -162,9 +141,6 @@
   <data name="UniqueValueAlreadyExisted" xml:space="preserve">
     <value>Trường thông tin {0} có giá trị đã tồn tại</value>
   </data>
-  <data name="VoucherActionCodeAlreadyExisted" xml:space="preserve">
-    <value>Mã chức năng đã tồn tại</value>
-  </data>
   <data name="VoucherActionNotFound" xml:space="preserve">
     <value>Không tìm thấy chức năng</value>
   </data>
@@ -176,9 +152,6 @@
   </data>
   <data name="VoucherAreaFieldNotFound" xml:space="preserve">
     <value>Trường dữ liệu không tồn tại</value>
-  </data>
-  <data name="VoucherAreaFieldOverLoad" xml:space="preserve">
-    <value>Không còn trường dữ liệu trống</value>
   </data>
   <data name="VoucherAreaNotFound" xml:space="preserve">
     <value>Không tìm thấy vùng dữ liệu</value>
@@ -198,18 +171,6 @@
   <data name="VoucherFieldNotFound" xml:space="preserve">
     <value>Trường dữ liệu dùng chung không tồn tại</value>
   </data>
-  <data name="VoucherIsNotModule" xml:space="preserve">
-    <value>Không phải là chứng từ</value>
-  </data>
-  <data name="VoucherReadOnly" xml:space="preserve">
-    <value>Chứng từ không được phép thay đổi</value>
-  </data>
-  <data name="VoucherRowAlreadyExisted" xml:space="preserve">
-    <value>Đang có dòng dữ liệu sử dụng giá trị này</value>
-  </data>
-  <data name="VoucherRowNotFound" xml:space="preserve">
-    <value>Dòng thông tin không tồn tại</value>
-  </data>
   <data name="VoucherTitleAlreadyExisted" xml:space="preserve">
     <value>Tên chứng từ đã tồn tại</value>
   </data>
@@ -220,9 +181,6 @@
     <value>Chứng từ không tồn tại</value>
   </data>
   <data name="VoucherValueInValid" xml:space="preserve">
-    <value>Giá trị dòng {0} trường dữ liệu {1} không hợp lệ</value>
-  </data>
-  <data name="VoucherValueNotFound" xml:space="preserve">
-    <value>Giá trị không tồn tại</value>
+    <value>Giá trị {0} dòng {1} trường dữ liệu {2} không hợp lệ</value>
   </data>
 </root>

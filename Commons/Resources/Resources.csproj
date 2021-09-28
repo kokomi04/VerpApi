@@ -751,7 +751,7 @@
       <LastGenOutput>UserValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\HrBillActivityLogMessage.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>HrBillActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.resx">

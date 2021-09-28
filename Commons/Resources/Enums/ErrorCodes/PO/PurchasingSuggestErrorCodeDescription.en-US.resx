@@ -139,7 +139,7 @@
     <value>Assignment exceeds the recommended purchase quantity</value>
   </data>
   <data name="PurchaseOrderDetailNotEmpty" xml:space="preserve">
-    <value>Please delete the PO related to the item purchased assigned to be deleted!</value>
+    <value>Please delete the purchase order related to the item purchased assigned to be deleted!</value>
   </data>
   <data name="PurchasingSuggestIsNotApprovedYet" xml:space="preserve">
     <value>Offer has not been approved!</value>

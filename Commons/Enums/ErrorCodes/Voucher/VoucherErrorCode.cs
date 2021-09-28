@@ -31,15 +31,11 @@ namespace VErp.Commons.Enums.StandardEnum
         
         SourceCategoryFieldNotFound = 9,
         
-        VoucherAreaFieldOverLoad = 10,
         
         VoucherAreaFieldNotFound = 11,
         
-        DataTypeNotFound = 12,
         
-        FormTypeNotFound = 13,
         
-        VoucherReadOnly = 14,
         
         RequiredFieldIsEmpty = 15,
         
@@ -49,19 +45,10 @@ namespace VErp.Commons.Enums.StandardEnum
         
         ReferValueNotValidFilter = 117,
         
-        VoucherRowNotFound = 18,
-        
-        IsVoucherArea = 19,
-        
-        VoucherValueNotFound = 23,
         
         VoucherValueInValid = 25,
         
-        VoucherRowAlreadyExisted = 26,
         
-        VoucherIsNotModule = 27,
-        
-        FormatFileInvalid = 28,
         
         VoucherFieldNotFound = 29,
         
@@ -74,16 +61,9 @@ namespace VErp.Commons.Enums.StandardEnum
         SourceVoucherTypeNotFound = 33,
         
         MultiRowAreaAlreadyExisted = 34,
-        
-        MultiRowAreaEmpty = 35,
-
-        
-        PrintConfigNotFound = 36,
-        
-        PrintConfigNameAlreadyExisted = 37,
+                
         
         VoucherActionNotFound = 39,
         
-        VoucherActionCodeAlreadyExisted = 40
     }
 }

@@ -117,10 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="Create" xml:space="preserve">
+    <value>Created bill mapping type {0}</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="CreateMappingObject" xml:space="preserve">
+    <value>Created bill mapping {0} bill {1}</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Deleted bill mapping type {0}</value>
+  </data>
+  <data name="DeleteMappingObject" xml:space="preserve">
+    <value>Deleted bill mapping {0}</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Updated bill mapping type {0}</value>
   </data>
 </root>

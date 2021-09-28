@@ -117,10 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="CanNotDeletedParentProductCate" xml:space="preserve">
+    <value>You must be moved children product category to an other product category</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="EmptyProductCateName" xml:space="preserve">
+    <value>Product category name can not be empty</value>
+  </data>
+  <data name="ParentProductCateNotfound" xml:space="preserve">
+    <value>Parent product category does not exits</value>
+  </data>
+  <data name="ProductCateInUsed" xml:space="preserve">
+    <value>Can not delete product category in used</value>
+  </data>
+  <data name="ProductCateNameAlreadyExisted" xml:space="preserve">
+    <value>Product category name already exists</value>
+  </data>
+  <data name="ProductCateNotfound" xml:space="preserve">
+    <value>Product category does not exist</value>
   </data>
 </root>

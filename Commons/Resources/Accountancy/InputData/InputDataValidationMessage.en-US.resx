@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BillCodeError" xml:space="preserve">
-    <value>Bill No error</value>
+    <value>Bill code error</value>
   </data>
   <data name="BillDateMustBeGreaterThanClosingDate" xml:space="preserve">
     <value>The bill date must be greater than the closing date</value>
@@ -142,7 +142,7 @@
     <value>The field "{0}" is required</value>
   </data>
   <data name="GenerateCodeConfigForFieldNotFound" xml:space="preserve">
-    <value>Need to configure to generate code for the field "{0}"</value>
+    <value>Need to configure code generator  for the field "{0}"</value>
   </data>
   <data name="GenerateCodeFieldBadRequest" xml:space="preserve">
     <value>Generate code {0}: {1}</value>

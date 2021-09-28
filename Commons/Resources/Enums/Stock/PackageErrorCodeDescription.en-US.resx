@@ -117,10 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="CanNotJoinDefaultPackage" xml:space="preserve">
+    <value>Can not join default packages</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="HasSomeQualtityWaitingForApproved" xml:space="preserve">
+    <value>The package has some quantity of product is not in approved status</value>
+  </data>
+  <data name="PackageAlreadyExisted" xml:space="preserve">
+    <value>The package already exists</value>
+  </data>
+  <data name="PackageCodeEmpty" xml:space="preserve">
+    <value>The package code is empty</value>
+  </data>
+  <data name="PackageNotAllowUpdate" xml:space="preserve">
+    <value>The package does not allow to update</value>
+  </data>
+  <data name="PackageNotFound" xml:space="preserve">
+    <value>The package was not found</value>
+  </data>
+  <data name="PackagesToJoinMustBeSameProductAndUnit" xml:space="preserve">
+    <value>Packages to join must be same product, stock and unit (product unit conversion)</value>
+  </data>
+  <data name="QualtityOfProductInPackageNotEnough" xml:space="preserve">
+    <value>The balance of package is not enough quantity</value>
   </data>
 </root>

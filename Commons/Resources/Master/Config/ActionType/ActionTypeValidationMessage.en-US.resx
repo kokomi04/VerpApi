@@ -117,10 +117,19 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="ActionTypeIdOverflow" xml:space="preserve">
+    <value>Can not add more action</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="ActionTypeNameAlreadyExisted" xml:space="preserve">
+    <value>The action type name  was not exist</value>
+  </data>
+  <data name="ActionTypeNotFound" xml:space="preserve">
+    <value>The action type was not exist</value>
+  </data>
+  <data name="CannotDeleteDefaultActionType" xml:space="preserve">
+    <value>Can not delete default action type</value>
+  </data>
+  <data name="CannotUpdateDefaultActionType" xml:space="preserve">
+    <value>Can not update default action type</value>
   </data>
 </root>

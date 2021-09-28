@@ -117,10 +117,37 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="InvalidUnitConversionExpression" xml:space="preserve">
+    <value>The unit conversion expression is invalid</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="ProductCateInvalid" xml:space="preserve">
+    <value>The product category is invalid</value>
+  </data>
+  <data name="ProductCodeAlreadyExisted" xml:space="preserve">
+    <value>The product code already exits</value>
+  </data>
+  <data name="ProductCodeEmpty" xml:space="preserve">
+    <value>The product code must be not empty</value>
+  </data>
+  <data name="ProductInUsed" xml:space="preserve">
+    <value>The product is in use</value>
+  </data>
+  <data name="ProductNameAlreadyExisted" xml:space="preserve">
+    <value>The product name already exists</value>
+  </data>
+  <data name="ProductNameEmpty" xml:space="preserve">
+    <value>The product name must be not empty</value>
+  </data>
+  <data name="ProductNotFound" xml:space="preserve">
+    <value>Product was not found</value>
+  </data>
+  <data name="ProductTypeInvalid" xml:space="preserve">
+    <value>Product code type is invalid</value>
+  </data>
+  <data name="QuantityOfMaterialsConsumptionIsZero" xml:space="preserve">
+    <value>The quantity of consumption material is zero</value>
+  </data>
+  <data name="SomeProductUnitConversionInUsed" xml:space="preserve">
+    <value>The product unit conversion is in use</value>
   </data>
 </root>

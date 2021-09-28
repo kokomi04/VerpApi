@@ -117,10 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="Create" xml:space="preserve">
+    <value>Created action type {0}</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="Delete" xml:space="preserve">
+    <value>Deleted action type {0}</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Updated action type {0}</value>
   </data>
 </root>

@@ -72,8 +72,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
             {
                 var json = new ServiceResult
                 {
-                    Code = GeneralCode.LockedOut,
-                    Message = GeneralCode.LockedOut.GetEnumDescription()
+                    Code = GeneralCode.UserInActived,
+                    Message = GeneralCode.UserInActived.GetEnumDescription()
                 };
 
                 context.Result = new JsonResult(json);

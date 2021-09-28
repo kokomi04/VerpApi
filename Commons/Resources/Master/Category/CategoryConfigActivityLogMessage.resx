@@ -118,24 +118,24 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Create" xml:space="preserve">
-    <value>Thêm danh mục {0}</value>
+    <value>Thêm danh mục "{0}"</value>
   </data>
   <data name="CreateFilter" xml:space="preserve">
-    <value>Thêm mới bộ lọc {0} danh mục {1}</value>
+    <value>Thêm mới bộ lọc "{0}" danh mục "{1}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Xóa danh mục {0}</value>
+    <value>Xóa danh mục "{0}"</value>
   </data>
   <data name="DeleteField" xml:space="preserve">
-    <value>Xóa trường dữ liệu {0}, danh mục {1}</value>
+    <value>Xóa trường dữ liệu "{0}", danh mục "{1}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật danh mục {0}</value>
+    <value>Cập nhật danh mục "{0}"</value>
   </data>
   <data name="UpdateFileds" xml:space="preserve">
-    <value>Cập nhật trường dữ liệu danh mục {0}</value>
+    <value>Cập nhật trường dữ liệu danh mục "{0}"</value>
   </data>
   <data name="UpdateFilter" xml:space="preserve">
-    <value>Cập nhật bộ lọc {0} danh mục {1}</value>
+    <value>Cập nhật bộ lọc "{0}" danh mục "{1}"</value>
   </data>
 </root>

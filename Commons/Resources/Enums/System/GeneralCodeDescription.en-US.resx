@@ -117,10 +117,34 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="MappingFunctionKeyAlreadyExisted" xml:space="preserve">
-    <value>Định danh chức năng đã tồn tại</value>
+  <data name="DistributedLockExeption" xml:space="preserve">
+    <value>There is resource disputes by another process, try again later</value>
   </data>
-  <data name="MappingFunctionNotFound" xml:space="preserve">
-    <value>Không tìm thấy cấu hình của chức năng trong hệ thống</value>
+  <data name="Forbidden" xml:space="preserve">
+    <value>You don't have permission to access this function</value>
+  </data>
+  <data name="InternalError" xml:space="preserve">
+    <value>System error</value>
+  </data>
+  <data name="InvalidParams" xml:space="preserve">
+    <value>Invalid parameters</value>
+  </data>
+  <data name="ItemCodeExisted" xml:space="preserve">
+    <value>The item code already exists!</value>
+  </data>
+  <data name="ItemNotFound" xml:space="preserve">
+    <value>The record was not found</value>
+  </data>
+  <data name="NotYetSupported" xml:space="preserve">
+    <value>The function does not support yet</value>
+  </data>
+  <data name="Success" xml:space="preserve">
+    <value>Successfull</value>
+  </data>
+  <data name="UserInActived" xml:space="preserve">
+    <value>Your account has been locked</value>
+  </data>
+  <data name="X_ModuleMissing" xml:space="preserve">
+    <value>X-Module header was not found</value>
   </data>
 </root>
