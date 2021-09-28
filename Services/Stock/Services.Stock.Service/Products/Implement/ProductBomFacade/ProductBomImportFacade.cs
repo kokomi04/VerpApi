@@ -274,7 +274,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         InputStepId = inputStepId,
                         OutputStepId = b.IsMaterial ? null : outputStepId,
                         Description = b.Description,
-                        IgnoreStep = b.IgnoreStep
                     };
                 }).ToList();
 
@@ -286,7 +285,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 {
                     BomInfo = new ProductBomUpdateInfo(productBoms),
                     MaterialsInfo = new ProductBomMaterialUpdateInfo(new List<ProductMaterialModel>(), false),
-                    PropertiesInfo = new ProductBomPropertyUpdateInfo(new List<ProductPropertyModel>(), false)
+                    PropertiesInfo = new ProductBomPropertyUpdateInfo(new List<ProductPropertyModel>(), false),
+                    IgnoreStepInfo = new ProductBomIgnoreStepUpdateInfo(new List<ProductIgnoreStepModel>(), false)
                 };
 
                 FindMaterial(rootProductInfo, bom.Key, new List<int>(), new List<string>(), updateModel);

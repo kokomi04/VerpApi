@@ -65,7 +65,8 @@ namespace VErpApi.Controllers.Stock.Products
             {
                 BomInfo = new ProductBomUpdateInfo(model.ProductBoms),
                 MaterialsInfo = new ProductBomMaterialUpdateInfo(model.ProductMaterials, model.IsCleanOldMaterial),
-                PropertiesInfo = new ProductBomPropertyUpdateInfo(model.ProductProperties, model.IsCleanOldProperties)
+                PropertiesInfo = new ProductBomPropertyUpdateInfo(model.ProductProperties, model.IsCleanOldProperties),
+                IgnoreStepInfo = new ProductBomIgnoreStepUpdateInfo(model.ProductIgnoreSteps, model.IsCleanOldIgnoreStep)
             };
             return await _productBomService.Update(productId, updateModel);
         }
