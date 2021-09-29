@@ -402,7 +402,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
 
             var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
+            query = query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder);
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            var pagedData = await query.ToListAsync();
             var additionResult = await (from q in query
                                         group q by 1 into g
                                         select new
