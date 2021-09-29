@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
+namespace Verp.Resources.PurchaseOrder.Calc.MaterialCalc {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class PurchasingRequestActivityLogMessage {
+    public class PropertyCalcActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal PurchasingRequestActivityLogMessage() {
+        internal PropertyCalcActivityLogMessage() {
         }
         
         /// <summary>
@@ -39,8 +39,7 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.PurchaseOrder.PurchasingRequest.PurchasingRequestActivityLogMessag" +
-                            "e", typeof(PurchasingRequestActivityLogMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.PurchaseOrder.Calc.MaterialCalc.PropertyCalcActivityLogMessage", typeof(PropertyCalcActivityLogMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -62,65 +61,29 @@ namespace Verp.Resources.PurchaseOrder.PurchasingRequest {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Duyệt yêu cầu vật tư hàng hóa&quot;{0}&quot;.
+        ///   Looks up a localized string similar to Thêm mới tính nhu cầu vật tư {0}, mã &quot;{1}&quot;.
         /// </summary>
-        public static string PurchasingRequestApproved {
+        public static string Create {
             get {
-                return ResourceManager.GetString("PurchasingRequestApproved", resourceCulture);
+                return ResourceManager.GetString("Create", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới phiếu yêu cầu  vật tư hàng hóa &quot;{0}&quot;.
+        ///   Looks up a localized string similar to Xóa tính nhu cầu vật tư {0}, mã &quot;{1}&quot;.
         /// </summary>
-        public static string PurchasingRequestCreate {
+        public static string Delete {
             get {
-                return ResourceManager.GetString("PurchasingRequestCreate", resourceCulture);
+                return ResourceManager.GetString("Delete", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa phiếu yêu cầu  vật tư hàng hóa &quot;{0}&quot;.
+        ///   Looks up a localized string similar to Cập nhật tính nhu cầu vật tư {0}, mã &quot;{1}&quot;.
         /// </summary>
-        public static string PurchasingRequestDelete {
+        public static string Update {
             get {
-                return ResourceManager.GetString("PurchasingRequestDelete", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Từ chối yêu cầu  vật tư hàng hóa &quot;{0}&quot;.
-        /// </summary>
-        public static string PurchasingRequestRejected {
-            get {
-                return ResourceManager.GetString("PurchasingRequestRejected", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Gửi duyệt yêu cầu  vật tư hàng hóa &quot;{0}&quot;.
-        /// </summary>
-        public static string PurchasingRequestSentToCensor {
-            get {
-                return ResourceManager.GetString("PurchasingRequestSentToCensor", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cập nhật phiếu yêu cầu  vật tư hàng hóa&quot;{0}&quot;.
-        /// </summary>
-        public static string PurchasingRequestUpdate {
-            get {
-                return ResourceManager.GetString("PurchasingRequestUpdate", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cập nhật tiến độ yêu cầu  vật tư hàng hóa&quot;{0}&quot;: {1}.
-        /// </summary>
-        public static string PurchasingRequestUpdatedProgress {
-            get {
-                return ResourceManager.GetString("PurchasingRequestUpdatedProgress", resourceCulture);
+                return ResourceManager.GetString("Update", resourceCulture);
             }
         }
     }
