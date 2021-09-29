@@ -227,13 +227,11 @@ namespace VErp.Services.Organization.Service.HrConfig
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id)
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
-            ValidateExistenceHrBill(hrBill_F_Id);
+            // ValidateExistenceHrBill(hrBill_F_Id);
 
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
 
             var fields = await GetHrFields(hrTypeId);
-
-
 
             var results = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
             for (int i = 0; i < hrAreas.Count; i++)
