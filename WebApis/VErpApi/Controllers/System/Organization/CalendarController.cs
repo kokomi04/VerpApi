@@ -40,11 +40,18 @@ namespace VErpApi.Controllers.System
             return await _calendarService.GetCalendar();
         }
 
-        [HttpPut]
+        [HttpPost]
         [Route("")]
-        public async Task<WeekCalendarModel> UpdateWeekCalendar([FromBody] WeekCalendarModel data)
+        public async Task<WeekCalendarModel> CreateWeekCalendar([FromBody] WeekCalendarModel data)
         {
-            return await _calendarService.UpdateWeekCalendar(data);
+            return await _calendarService.CreateWeekCalendar(data);
+        }
+
+        [HttpPut]
+        [Route("{oldDate}")]
+        public async Task<WeekCalendarModel> UpdateWeekCalendar([FromRoute] long oldDate, [FromBody] WeekCalendarModel data)
+        {
+            return await _calendarService.UpdateWeekCalendar(oldDate, data);
         }
 
         [HttpDelete]

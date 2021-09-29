@@ -11,8 +11,8 @@ namespace VErp.Services.Organization.Service.Calendar
     {
         Task<WeekCalendarModel> GetCurrentCalendar();
         Task<IList<WeekCalendarModel>> GetCalendar();
-        Task<WeekCalendarModel> UpdateWeekCalendar(WeekCalendarModel data);
-
+        Task<WeekCalendarModel> CreateWeekCalendar(WeekCalendarModel data);
+        Task<WeekCalendarModel> UpdateWeekCalendar(long olđate, WeekCalendarModel data);
         Task<bool> DeleteWeekCalendar(long startDate);
 
         Task<IList<DayOffCalendarModel>> GetDayOffCalendar(long startDate, long endDate);
