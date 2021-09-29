@@ -117,25 +117,46 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="PurchasingRequestApproved" xml:space="preserve">
-    <value>Duyệt yêu cầu vật tư hàng hóa"{0}"</value>
+  <data name="CensorApprove" xml:space="preserve">
+    <value>Đã duyệt PO "{0}"</value>
   </data>
-  <data name="PurchasingRequestCreate" xml:space="preserve">
-    <value>Thêm mới phiếu yêu cầu  vật tư hàng hóa "{0}"</value>
+  <data name="CensorReject" xml:space="preserve">
+    <value>Từ chối duyệt PO "{0}"</value>
   </data>
-  <data name="PurchasingRequestDelete" xml:space="preserve">
-    <value>Xóa phiếu yêu cầu  vật tư hàng hóa "{0}"</value>
+  <data name="CheckApprove" xml:space="preserve">
+    <value>Đã kiểm tra PO "{0}"</value>
   </data>
-  <data name="PurchasingRequestRejected" xml:space="preserve">
-    <value>Từ chối yêu cầu  vật tư hàng hóa "{0}"</value>
+  <data name="CheckReject" xml:space="preserve">
+    <value>Kiểm tra từ chối PO "{0}"</value>
   </data>
-  <data name="PurchasingRequestSentToCensor" xml:space="preserve">
-    <value>Gửi duyệt yêu cầu  vật tư hàng hóa "{0}"</value>
+  <data name="Create" xml:space="preserve">
+    <value>Tạp PO "{0}"</value>
   </data>
-  <data name="PurchasingRequestUpdate" xml:space="preserve">
-    <value>Cập nhật phiếu yêu cầu  vật tư hàng hóa"{0}"</value>
+  <data name="CreatePoTrack" xml:space="preserve">
+    <value>Thêm tiến độ PO "{0}": {1}</value>
   </data>
-  <data name="PurchasingRequestUpdatedProgress" xml:space="preserve">
-    <value>Cập nhật tiến độ yêu cầu  vật tư hàng hóa"{0}": {1}</value>
+  <data name="Delete" xml:space="preserve">
+    <value>Xóa PO "{0}"</value>
+  </data>
+  <data name="DeletePoTrack" xml:space="preserve">
+    <value>Xóa tiến độ PO "{0}": {1}</value>
+  </data>
+  <data name="SendToCensor" xml:space="preserve">
+    <value>Gửi duyệt PO "{0}"</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Cập nhật PO "{0}"</value>
+  </data>
+  <data name="UpdatePoProcessStatus" xml:space="preserve">
+    <value>Cập nhật trạng thái {0} PO "{1}"</value>
+  </data>
+  <data name="UpdatePoTrack" xml:space="preserve">
+    <value>Cập nhật tiến độ PO "{0}": {1}</value>
+  </data>
+  <data name="UpdatePoTrackMulti" xml:space="preserve">
+    <value>Cập nhật tiến độ PO "{0}": {1}</value>
+  </data>
+  <data name="UpdatePurchaseOrderExcess" xml:space="preserve">
+    <value>Cập nhật vật tư dư thừa {0}, PO "{1}"</value>
   </data>
 </root>

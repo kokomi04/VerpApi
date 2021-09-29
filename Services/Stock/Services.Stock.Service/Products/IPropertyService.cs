@@ -12,6 +12,7 @@ namespace VErp.Services.Stock.Service.Products
     {
         Task<IList<PropertyModel>> GetProperties();
         Task<PropertyModel> GetProperty(int propertyId);
+        Task<IList<PropertyModel>> GetByIds(IList<int> propertyIds);
         Task<int> CreateProperty(PropertyModel req);
         Task<int> UpdateProperty(int propertyId, PropertyModel req);
         Task<bool> DeleteProperty(int propertyId);

@@ -20,41 +20,33 @@ using System.Linq;
 using VErp.Infrastructure.ServiceCore.Model;
 using AutoMapper.QueryableExtensions;
 using Verp.Cache.RedisCache;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class PropertyCalcService : IPropertyCalcService
     {
-        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IAsyncRunnerService _asyncRunner;
-        private readonly ICurrentContextService _currentContext;
-        private readonly IProductHelperService _productHelperService;
+        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;       
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IPropertyHelperService _propertyHelperService;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _propertyCalcActivityLog;
+
+
         public PropertyCalcService(
             PurchaseOrderDBContext purchaseOrderDBContext
-           , IOptions<AppSetting> appSetting
-           , ILogger<PropertyCalcService> logger
            , IActivityLogService activityLogService
-           , IAsyncRunnerService asyncRunner
-           , ICurrentContextService currentContext
-           , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
+            , IPropertyHelperService propertyHelperService
             , IMapper mapper
            )
         {
-            _purchaseOrderDBContext = purchaseOrderDBContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _asyncRunner = asyncRunner;
-            _currentContext = currentContext;
-            _productHelperService = productHelperService;
+            _purchaseOrderDBContext = purchaseOrderDBContext;          
             _customGenCodeHelperService = customGenCodeHelperService;
+            _propertyHelperService = propertyHelperService;
             _mapper = mapper;
+            _propertyCalcActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PropertyCalc);
         }
 
         public async Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
@@ -154,15 +146,23 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<long> Create(PropertyCalcModel req)
         {
+            var properties = await _propertyHelperService.GetByIds(req.Properties?.Select(p => p.PropertyId)?.ToList());
+            var propertiesName = string.Join(", ", properties);
+
             var ctx = await GenerateCode(null, req);
             await Validate(null, req);
 
             var entity = _mapper.Map<PropertyCalc>(req);
             await _purchaseOrderDBContext.PropertyCalc.AddAsync(entity);
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Thêm mới tính nhu cầu VT có thuộc tính đặc biệt {req.PropertyCalcCode}", req.JsonSerialize());
-
+           
             await ctx.ConfirmCode();
+
+            await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Create)
+               .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
+               .ObjectId(entity.PropertyCalcId)
+               .JsonData(req.JsonSerialize())
+               .CreateLog();
 
             return entity.PropertyCalcId;
         }
@@ -197,6 +197,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<bool> Update(long propertyCalcId, PropertyCalcModel req)
         {
+            var properties = await _propertyHelperService.GetByIds(req.Properties?.Select(p => p.PropertyId)?.ToList());
+            var propertiesName = string.Join(", ", properties);
+
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
@@ -214,8 +217,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper.Map(req, entity);
 
             await _purchaseOrderDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Cập nhật tính nhu cầu VT có thuộc tính đặc biệt {req.PropertyCalcCode}", req.JsonSerialize());
+          
+            await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Update)
+             .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
+             .ObjectId(entity.PropertyCalcId)
+             .JsonData(req.JsonSerialize())
+             .CreateLog();
 
             return true;
         }
@@ -226,10 +233,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (entity == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
 
+            var properties = await _propertyHelperService.GetByIds(entity.PropertyCalcProperty?.Select(p => p.PropertyId)?.ToList());
+            var propertiesName = string.Join(", ", properties);
+
             entity.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Xóa tính nhu cầu VT có thuộc tính đặc biệt {entity.PropertyCalcCode}", new { propertyCalcId }.JsonSerialize());
-
+          
+            await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Delete)
+           .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
+           .ObjectId(entity.PropertyCalcId)
+           .JsonData(entity.JsonSerialize())
+           .CreateLog();
             return true;
         }
 
