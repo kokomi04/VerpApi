@@ -83,8 +83,17 @@ namespace VErpApi.Controllers.PurchaseOrder
         public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> purchaseOrderTypes, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchaseOrderService
-                .GetListByProduct(keyword, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetListByProduct(keyword, null, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(true);
+        }
+
+        [HttpPost("GetRowsByCodes")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        public async Task<IList<PurchaseOrderOutputListByProduct>> GetRowsByCodes([FromBody] IList<string> poCodes)
+        {
+            var data = await _purchaseOrderService.GetListByProduct(string.Empty, poCodes, null, null, null, null, null, null, null, null, string.Empty, false, 1, 0);
+            return data.List;
         }
 
         /// <summary>

@@ -2481,6 +2481,18 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return data.ConvertData<VoucherOrderDetailSimpleModel>();
         }
 
+        public async Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes(IList<string> orderCodes)
+        {
+            // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderRowsGetByCodes",
+                new[]
+                {
+                   orderCodes.ToSqlParameter("@OrderCodes")
+                });
+
+            return data.ConvertData();
+        }
+
         public async Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds)
         {
             // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };

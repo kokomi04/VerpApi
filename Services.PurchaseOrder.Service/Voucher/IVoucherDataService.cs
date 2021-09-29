@@ -45,6 +45,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IList<string> orderCodes);
 
+        Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes(IList<string> orderCodes);
+
         Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds);
     }
 }
