@@ -569,8 +569,6 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
 
-                entity.Property(e => e.IgnoreStep).HasDefaultValueSql("((0))");
-
                 entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
