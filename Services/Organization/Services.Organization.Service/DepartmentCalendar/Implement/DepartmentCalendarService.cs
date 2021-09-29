@@ -720,7 +720,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 if (departmentIds.Count != departments.Count) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
 
-                if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate <= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
+                if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate >= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
 
                 var currentOverHours = _organizationContext.DepartmentOverHourInfo.Where(oh => departmentIds.Contains(oh.DepartmentId)).ToList();
