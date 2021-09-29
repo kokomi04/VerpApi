@@ -232,11 +232,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return (result, total, additionResult);
         }
 
-        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<string> poCodes, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = from po in _purchaseOrderDBContext.PurchaseOrder
+            var poQuery = _purchaseOrderDBContext.PurchaseOrder.AsQueryable();
+            if (poCodes?.Count > 0)
+            {
+                poQuery = poQuery.Where(po => poCodes.Contains(po.PurchaseOrderCode));
+
+            }
+            var query = from po in poQuery
                         join pod in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals pod.PurchaseOrderId
                         join p in _purchaseOrderDBContext.RefProduct on pod.ProductId equals p.ProductId into ps
                         from p in ps.DefaultIfEmpty()

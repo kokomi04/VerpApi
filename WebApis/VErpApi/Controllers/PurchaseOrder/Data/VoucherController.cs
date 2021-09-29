@@ -149,5 +149,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             return await _voucherDataService.OrderByCodes(orderCodes);
         }
+
+        [HttpPost("OrderRowsByCodes")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        public async Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes([FromBody] IList<string> orderCodes)
+        {
+            return await _voucherDataService.OrderRowsByCodes(orderCodes);
+        }
     }
 }
