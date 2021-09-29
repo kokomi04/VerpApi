@@ -171,6 +171,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             var styleText = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: false);
 
             var materialConsumptionSlice = GetMaterialConsumptionSlices(materialsConsumps).Where(x => x.Quantity > 0)
+                .GroupBy(x=> x.MaterialsConsumptionId)
+                .SelectMany(x=>x.Take(1))
                 .OrderBy(x => x.ProductMaterialsConsumptionGroupId);
 
             var index = 1;

@@ -82,14 +82,14 @@ namespace VErp.Services.Master.Service.Category
                 if (oldRow == null)
                 {
                     if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
-                        throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage, _category.Title);
-
+                        continue;
+                    
                     lsAddRow.Add(row);
                 }
                 else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                 {
                     if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
-                        throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage, _category.Title);
+                        continue;
 
                     if (!row.ContainsKey(CategoryFieldConstants.ParentId))
                         row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
