@@ -309,6 +309,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             foreach (var departmentId in departmentIds)
             {
+                // Danh sách công đoạn tổ đảm nhiệm
                 var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId).Select(sd => sd.StepId).Distinct().ToList();
                 var calendar = departmentCalendar.FirstOrDefault(d => d.DepartmentId == departmentId);
                 decimal totalHour = 0;
@@ -322,6 +323,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
+                // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
                 foreach (var departmentStepId in departmentStepIds)
                 {
                     if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
@@ -363,7 +365,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return result;
         }
-
 
         public async Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId)
         {
