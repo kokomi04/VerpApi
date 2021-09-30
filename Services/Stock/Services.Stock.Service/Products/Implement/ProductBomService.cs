@@ -144,6 +144,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await UpdateBoms(productId, bomInfo.BomInfo);
             await UpdateBomMaterials(productId, bomInfo.MaterialsInfo);
             await UpdateBomProperties(productId, bomInfo.PropertiesInfo);
+            await UpdateBomIgnoreStep(productId, bomInfo.IgnoreStepInfo);
             return true;
         }
 
@@ -246,6 +247,35 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 _stockDbContext.ProductMaterial.RemoveRange(deleteMaterials);
             }
             _stockDbContext.ProductMaterial.AddRange(createMaterials);
+
+            await _stockDbContext.SaveChangesAsync();
+        }
+
+        private async Task UpdateBomIgnoreStep(int rootProductId, ProductBomIgnoreStepUpdateInfo ignoreStepInfo)
+        {
+            if (ignoreStepInfo.BomIgnoreSteps.Any(m => m.RootProductId != rootProductId)) throw new BadRequestException(GeneralCode.InvalidParams, "Nguyên vật liệu không thuộc sản phẩm");
+
+
+            // Cập nhật ignore step
+            var oldIgnoreSteps = _stockDbContext.ProductIgnoreStep.Where(m => m.RootProductId == rootProductId).ToList();
+            var createIgnoreSteps = ignoreStepInfo.BomIgnoreSteps
+                .Where(nm => !oldIgnoreSteps.Any(om => om.ProductId == nm.ProductId && om.PathProductIds == string.Join(",", nm.PathProductIds)))
+                .Select(nm => new ProductIgnoreStep
+                {
+                    ProductId = nm.ProductId,
+                    ProductIgnoreStepId = nm.ProductIgnoreStepId,
+                    RootProductId = nm.RootProductId,
+                    PathProductIds = string.Join(",", nm.PathProductIds)
+                })
+                .ToList();
+            if (ignoreStepInfo.CleanOldData)
+            {
+                var deleteIgnoreSteps = oldIgnoreSteps
+                    .Where(om => !ignoreStepInfo.BomIgnoreSteps.Any(nm => nm.ProductId == om.ProductId && string.Join(",", nm.PathProductIds) == om.PathProductIds))
+                    .ToList();
+                _stockDbContext.ProductIgnoreStep.RemoveRange(deleteIgnoreSteps);
+            }
+            _stockDbContext.ProductIgnoreStep.AddRange(createIgnoreSteps);
 
             await _stockDbContext.SaveChangesAsync();
         }

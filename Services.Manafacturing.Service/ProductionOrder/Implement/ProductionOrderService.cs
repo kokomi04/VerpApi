@@ -37,13 +37,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductHelperService _productHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IDraftDataHelperService _draftDataHelperService;
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionOrderService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
-            , IOrganizationHelperService organizationHelperService)
+            , IOrganizationHelperService organizationHelperService
+            , IDraftDataHelperService draftDataHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -52,6 +54,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _productHelperService = productHelperService;
             _organizationHelperService = organizationHelperService;
+            _draftDataHelperService = draftDataHelperService;
         }
 
         public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
@@ -306,6 +309,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             foreach (var departmentId in departmentIds)
             {
+                // Danh sách công đoạn tổ đảm nhiệm
                 var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId).Select(sd => sd.StepId).Distinct().ToList();
                 var calendar = departmentCalendar.FirstOrDefault(d => d.DepartmentId == departmentId);
                 decimal totalHour = 0;
@@ -319,6 +323,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
 
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
+                // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
                 foreach (var departmentStepId in departmentStepIds)
                 {
                     if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
@@ -360,7 +365,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             return result;
         }
-
 
         public async Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId)
         {
@@ -522,7 +526,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return productionOrder;
         }
 
-        public async Task<int> CreateMultipleProductionOrder(ProductionOrderInputModel[] data)
+        public async Task<int> CreateMultipleProductionOrder(int monthPlanId, ProductionOrderInputModel[] data)
         {
             if (data.Length == 0) return 0;
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
@@ -572,8 +576,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     productionOrderId = productionOrder.ProductionOrderId;
                 }
 
-                trans.Commit();
+                // Xóa dữ liệu nháp
+                await _draftDataHelperService.DeleteDraftData((int)EnumObjectType.DraftData, monthPlanId);
 
+                trans.Commit();
                 currentConfig.CurrentLastValue.LastValue = currentValue;
                 currentConfig.CurrentLastValue.LastCode = currentCode;
 

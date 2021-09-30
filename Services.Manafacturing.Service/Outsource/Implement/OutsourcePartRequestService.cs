@@ -368,7 +368,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         .Where(x => arrPurchaseOrderId.Contains(x.PurchaseOrderId) && x.ProductId.HasValue == false)
                         .ToListAsync())
                         .GroupBy(x => x.PurchaseOrderId)
-                        .Select(g => g.OrderByDescending(x => x.PurchaseOrderTrackedId).Take(1).FirstOrDefault()?.Status)
+                        .Select(g => g.OrderByDescending(x => x.Status).Take(1).FirstOrDefault()?.Status)
                         .Sum();
 
                     if (totalStatus.GetValueOrDefault() == 0)

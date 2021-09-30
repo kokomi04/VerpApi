@@ -1264,7 +1264,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             bool isUsed = _accountancyDBContext.InputAreaField.Any(af => af.InputFieldId == inputFieldId);
             if (isUsed)
             {
-                throw new BadRequestException(InputErrorCode.InputFieldIsUsed);
+                throw new BadRequestException(InputErrorCode.InputFieldIsUse);
             }
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try

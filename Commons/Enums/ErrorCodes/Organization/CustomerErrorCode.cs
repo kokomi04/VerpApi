@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
+using Verp.Resources.Enums.ErrorCodes.Organization;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
     [ErrorCodePrefix("CUS")]
+    [LocalizedDescription(ResourceType = typeof(CustomerErrorCodeDescription))]
     public enum CustomerErrorCode
-    {
-        [Description("Không tìm thấy đối tác")]
+    {      
         CustomerNotFound = 1,
-        [Description("Mã đối tác đã tồn tại")]
         CustomerCodeAlreadyExisted = 2,
-        [Description("Tên đối tác đã tồn tại")]
         CustomerNameAlreadyExisted = 3,
     }
 }

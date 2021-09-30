@@ -19,7 +19,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds);
         Task<ProductionOrderInputModel> UpdateProductionOrder(long productionOrderId, ProductionOrderInputModel data);
         Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data);
-        Task<int> CreateMultipleProductionOrder(ProductionOrderInputModel[] data);
+        Task<int> CreateMultipleProductionOrder(int monthPlanId, ProductionOrderInputModel[] data);
         Task<bool> DeleteProductionOrder(long productionOrderId);
         Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
         Task<IList<ProductOrderModel>> GetProductionOrders();

@@ -224,7 +224,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 if (isMatch) return bankAcc;
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
                 throw;

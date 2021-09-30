@@ -710,6 +710,54 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             }
         }
 
+        public async Task<IList<DepartmentOverHourInfoModel>> UpdateDepartmentOverHourInfoMultiple(IList<DepartmentOverHourInfoModel> data)
+        {
+            try
+            {
+                var departmentIds = data.Select(oh => oh.DepartmentId).Distinct().ToList();
+
+                var departments = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).ToList();
+
+                if (departmentIds.Count != departments.Count) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+
+                if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate >= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+
+                var currentOverHours = _organizationContext.DepartmentOverHourInfo.Where(oh => departmentIds.Contains(oh.DepartmentId)).ToList();
+                foreach (var model in data)
+                {
+                    var currentOverHour = currentOverHours.FirstOrDefault(oh => oh.DepartmentOverHourInfoId == model.DepartmentOverHourInfoId);
+                    if (currentOverHour == null)
+                    {
+                        currentOverHour = _mapper.Map<DepartmentOverHourInfo>(model);
+                        _organizationContext.DepartmentOverHourInfo.Add(currentOverHour);
+                    }
+                    else
+                    {
+                        currentOverHours.Remove(currentOverHour);
+                        _mapper.Map(model, currentOverHour);
+                    }
+                }
+
+                _organizationContext.DepartmentOverHourInfo.RemoveRange(currentOverHours);
+                _organizationContext.SaveChanges();
+
+                await _activityLogService.CreateLog(EnumObjectType.DepartmentOverHour, 0, $"Cập nhật lịch tăng ca nhiều bộ phận", data.JsonSerialize());
+
+                var result = await _organizationContext.DepartmentOverHourInfo
+                      .Where(oh => departmentIds.Contains(oh.DepartmentId))
+                      .ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
+                      .ToListAsync();
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateMultipleDepartmentOverHour");
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteDepartmentOverHourInfo(int departmentId, long departmentOverHourInfoId)
         {
             try

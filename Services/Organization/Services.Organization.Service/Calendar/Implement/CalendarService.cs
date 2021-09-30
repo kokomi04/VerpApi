@@ -98,7 +98,26 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
             var timePoints = workingHourInfos.Select(wh => wh.StartDate).Union(allWorkingWeeks.Select(ww => ww.StartDate)).Distinct().OrderBy(tp => tp).ToList();
 
-            var result = new List<WeekCalendarModel>();
+            // Thêm thông tin mặc định
+            var defaultWorkingWeeks = new List<WorkingWeekInfoModel>();
+            foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+            {
+                defaultWorkingWeeks.Add(new WorkingWeekInfoModel
+                {
+                    DayOfWeek = day,
+                    IsDayOff = false
+                });
+            }
+            var result = new List<WeekCalendarModel>()
+            {
+                new WeekCalendarModel
+                {
+                    StartDate = DateTime.MinValue.GetUnix(),
+                    WorkingHourPerDay = OrganizationConstants.WORKING_HOUR_PER_DAY,
+                    WorkingWeek = defaultWorkingWeeks
+                }
+            };
+
             foreach (var timePoint in timePoints)
             {
                 var workingHourInfo = workingHourInfos
@@ -289,96 +308,129 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         }
 
 
-        public async Task<WeekCalendarModel> UpdateWeekCalendar(WeekCalendarModel data)
+        public async Task<WeekCalendarModel> CreateWeekCalendar(WeekCalendarModel data)
         {
             using var trans = await _organizationContext.Database.BeginTransactionAsync();
             try
             {
                 DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
-                // Update workingHour per day
+               
+               
                 var currentWorkingHourInfo = await _organizationContext.WorkingHourInfo
-                  .Where(wh => wh.StartDate <= time)
-                  .OrderByDescending(wh => wh.StartDate)
+                  .Where(wh => wh.StartDate == time)
                   .FirstOrDefaultAsync();
 
-                if (currentWorkingHourInfo == null)
-                {
-                    currentWorkingHourInfo = new WorkingHourInfo
-                    {
-                        StartDate = DateTime.MinValue,
-                        WorkingHourPerDay = data.WorkingHourPerDay
-                    };
-                    _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
-                }
-                else if (currentWorkingHourInfo.WorkingHourPerDay != data.WorkingHourPerDay)
-                {
-                    if (currentWorkingHourInfo.StartDate < time)
-                    {
-                        currentWorkingHourInfo = new WorkingHourInfo
-                        {
-                            StartDate = time,
-                            WorkingHourPerDay = data.WorkingHourPerDay
-                        };
-                        _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
-                    }
-                    else
-                    {
-                        currentWorkingHourInfo.WorkingHourPerDay = data.WorkingHourPerDay;
-                    }
-                }
+                var currentWorkingWeeks = await _organizationContext.WorkingWeekInfo
+                   .Where(ww => ww.StartDate == time)
+                   .ToListAsync();
 
-                // Update working week
-
-                var workingWeeks = await _organizationContext.WorkingWeekInfo
-                    .Where(ww => ww.StartDate <= time)
-                    .GroupBy(ww => ww.DayOfWeek)
-                    .Select(g => new
-                    {
-                        DayOfWeek = g.Key,
-                        StartDate = g.Max(ww => ww.StartDate)
-                    })
-                    .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
-                    .ToListAsync();
+                if (currentWorkingHourInfo != null || currentWorkingWeeks.Count > 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                }
 
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
                 {
                     var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
-                    if (newWorkingWeek == null) continue;
-                    var currentWorkingWeek = workingWeeks.FirstOrDefault(ww => ww.DayOfWeek == (int)day);
-                    if (currentWorkingWeek == null)
-                    {
-                        currentWorkingWeek = new WorkingWeekInfo
-                        {
-                            StartDate = DateTime.MinValue,
-                            DayOfWeek = (int)day,
-                            IsDayOff = newWorkingWeek.IsDayOff
-                        };
-                        _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
-                    }
-                    else if (currentWorkingWeek.IsDayOff != newWorkingWeek.IsDayOff)
-                    {
-                        if (currentWorkingWeek.StartDate < time)
-                        {
-                            currentWorkingWeek = new WorkingWeekInfo
-                            {
-                                StartDate = time,
-                                DayOfWeek = (int)day,
-                                IsDayOff = newWorkingWeek.IsDayOff
-                            };
-                            _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
-                        }
-                        else
-                        {
-                            currentWorkingWeek.IsDayOff = newWorkingWeek.IsDayOff;
-                        }
-                    }
+                    if (newWorkingWeek == null) throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin làm việc trong tuần chưa đủ");
+                }
 
+                // Update workingHour per day
+                currentWorkingHourInfo = new WorkingHourInfo
+                {
+                    StartDate = time,
+                    WorkingHourPerDay = data.WorkingHourPerDay
+                };
+                _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
+
+
+                // Update working week
+                foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                {
+                    var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
+                    var currentWorkingWeek = new WorkingWeekInfo
+                    {
+                        StartDate = time,
+                        DayOfWeek = (int)day,
+                        IsDayOff = newWorkingWeek.IsDayOff
+                    };
+                    _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
+                }
+               
+                _organizationContext.SaveChanges();
+                trans.Commit();
+
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Thêm mới thay đổi lịch làm việc ngày {time.ToString()}", data.JsonSerialize());
+
+                return await GetCurrentCalendar();
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "CreateCalendar");
+                throw;
+            }
+        }
+
+        public async Task<WeekCalendarModel> UpdateWeekCalendar(long oldDate, WeekCalendarModel data)
+        {
+            using var trans = await _organizationContext.Database.BeginTransactionAsync();
+            try
+            {
+                if(!data.StartDate.HasValue) throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày hiệu lực");
+                DateTime oldTime = oldDate.UnixToDateTime().Value;
+                DateTime time = data.StartDate.UnixToDateTime().Value;
+
+                var newWorkingHourInfo = await _organizationContext.WorkingHourInfo
+                 .Where(wh => wh.StartDate == time)
+                 .FirstOrDefaultAsync();
+
+                var newWorkingWeeks = await _organizationContext.WorkingWeekInfo
+                   .Where(ww => ww.StartDate == time)
+                   .ToListAsync();
+
+                if (newWorkingHourInfo != null || newWorkingWeeks.Count > 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} đã tồn tại");
+                }
+
+
+                var currentWorkingHourInfo = await _organizationContext.WorkingHourInfo
+                  .Where(wh => wh.StartDate == oldTime)
+                  .FirstOrDefaultAsync();
+
+                var currentWorkingWeeks = await _organizationContext.WorkingWeekInfo
+                   .Where(ww => ww.StartDate == oldTime)
+                   .ToListAsync();
+
+                if (currentWorkingHourInfo == null || currentWorkingWeeks.Count == 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tồn tại thay đổi lịch làm việc vào ngày {oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                }
+
+                foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                {
+                    var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
+                    if (newWorkingWeek == null) throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin làm việc trong tuần chưa đủ");
+                }
+
+                // Update workingHour per day
+                currentWorkingHourInfo.WorkingHourPerDay = data.WorkingHourPerDay;
+                currentWorkingHourInfo.StartDate = time;
+
+                // Update working week
+                foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                {
+                    var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
+                    var currentWorkingWeek = currentWorkingWeeks.FirstOrDefault(ww => ww.DayOfWeek == (int)day);
+                    currentWorkingWeek.IsDayOff = newWorkingWeek.IsDayOff;
+                    currentWorkingWeek.StartDate = time;
                 }
 
                 _organizationContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Cập nhật lịch làm việc ngày {time.ToString()}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Cập nhật thay đổi lịch làm việc ngày {oldTime.ToString()}", data.JsonSerialize());
 
                 return await GetCurrentCalendar();
             }

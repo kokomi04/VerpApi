@@ -1,13 +1,15 @@
 using System.ComponentModel;
+using Verp.Resources.Enums.System;
+using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum
 {
     [ErrorCodePrefix("I18N")]
+    [LocalizedDescription(ResourceType = typeof(I18nLanguageErrorCodeDescription))]
+
     public enum I18nLanguageErrorCode
     {
-        [Description("Không tìm thấy bản ghi i18n")]
         ItemNotFound,
-        [Description("Đã tồn tại mã i18n trong hệ thống")]
         AlreadyExistsKeyCode
     }
 }

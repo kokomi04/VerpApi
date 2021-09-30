@@ -104,6 +104,13 @@ namespace VErpApi.Controllers.System
             return await _departmentCalendarService.DeleteDepartmentOverHourInfo(departmentId, departmentOverHourInfoId);
         }
 
+        [HttpPut]
+        [Route("over-hour/multiple")]
+        public async Task<IList<DepartmentOverHourInfoModel>> UpdateDepartmentOverHourInfoMultiple([FromBody] IList<DepartmentOverHourInfoModel> data)
+        {
+            return await _departmentCalendarService.UpdateDepartmentOverHourInfoMultiple(data);
+        }
+
 
     }
 }

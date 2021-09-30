@@ -248,7 +248,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             }
             catch (Exception ex)
             {
-                throw new BadRequestException(InputErrorCode.DoNotGeneratePrintTemplate, ex.Message);
+                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
             }
         }
 

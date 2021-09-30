@@ -178,11 +178,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
             currentRow = fRow + 1;
 
-            await WriteTableDetailData();
+            WriteTableDetailData();
         }
 
 
-        private async Task WriteTableDetailData()
+        private void  WriteTableDetailData()
         {
 
             // var centerCell = sheet.GetCellStyle(hAlign: HorizontalAlignment.Center, isBorder: true);
