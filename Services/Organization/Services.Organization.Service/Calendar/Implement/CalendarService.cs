@@ -338,7 +338,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 // Update workingHour per day
                 currentWorkingHourInfo = new WorkingHourInfo
                 {
-                    StartDate = DateTime.MinValue,
+                    StartDate = time,
                     WorkingHourPerDay = data.WorkingHourPerDay
                 };
                 _organizationContext.WorkingHourInfo.Add(currentWorkingHourInfo);
@@ -350,7 +350,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
                     var currentWorkingWeek = new WorkingWeekInfo
                     {
-                        StartDate = DateTime.MinValue,
+                        StartDate = time,
                         DayOfWeek = (int)day,
                         IsDayOff = newWorkingWeek.IsDayOff
                     };
