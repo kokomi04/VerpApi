@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.PurchaseOrder.Calc.MaterialCalc {
+namespace Verp.Resources.PurchaseOrder.Suggest {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.PurchaseOrder.Calc.MaterialCalc {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class PropertyCalcActivityLogMessage {
+    public class PurchasingSuggestValidationMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal PropertyCalcActivityLogMessage() {
+        internal PurchasingSuggestValidationMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.PurchaseOrder.Calc.MaterialCalc {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.PurchaseOrder.Calc.MaterialCalc.PropertyCalcActivityLogMessage", typeof(PropertyCalcActivityLogMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.PurchaseOrder.Suggest.PurchasingSuggestValidationMessage", typeof(PurchasingSuggestValidationMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,29 +61,20 @@ namespace Verp.Resources.PurchaseOrder.Calc.MaterialCalc {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới tính nhu cầu vật tư {0}, mã &quot;{1}&quot;.
+        ///   Looks up a localized string similar to Không thể xóa do đề nghị được tạo thành PO {0}.
         /// </summary>
-        public static string Create {
+        public static string ExistsPoUseSuggest {
             get {
-                return ResourceManager.GetString("Create", resourceCulture);
+                return ResourceManager.GetString("ExistsPoUseSuggest", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa tính nhu cầu vật tư {0}, mã &quot;{1}&quot;.
+        ///   Looks up a localized string similar to Đơn vị chuyển đổi không thuộc về mặt hàng.
         /// </summary>
-        public static string Delete {
+        public static string PuNotBelongtoProduct {
             get {
-                return ResourceManager.GetString("Delete", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cập nhật tính nhu cầu vật tư {0}, mã &quot;{1}&quot;.
-        /// </summary>
-        public static string Update {
-            get {
-                return ResourceManager.GetString("Update", resourceCulture);
+                return ResourceManager.GetString("PuNotBelongtoProduct", resourceCulture);
             }
         }
     }
