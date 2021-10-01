@@ -71,11 +71,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     var ld = linkData.FirstOrDefault(x => x.ObjectId == detail.ProductId);
                     if (ld == null)
                     {
-                        lsWarning.Add($"Sản phẩm \"{detail.ProductTitle}\" chưa được thiết lập trong QTSX");
+                        lsWarning.Add($"Sản phẩm \"{detail.ProductCode}/ {detail.ProductName}\" chưa được thiết lập trong QTSX");
                     }
                     else if (totalQuantity != ld.QuantityOrigin)
                     {
-                        lsWarning.Add($"Số lượng của sản phẩm \"{detail.ProductTitle}\" không khớp với QTSX ({totalQuantity}/{ld.QuantityOrigin})");
+                        lsWarning.Add($"Số lượng của sản phẩm \"{detail.ProductCode}/ {detail.ProductName}\" không khớp với QTSX ({totalQuantity}/{ld.QuantityOrigin})");
                     }
                 }
 

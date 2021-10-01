@@ -38,12 +38,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long? ProductionOrderDetailId { get; set; }
         public long OrderId { get; set; }
         public decimal? OrderQuantity { get; set; }
-        public decimal? OrderedQuantity { get; set; }
+        // public decimal? OrderedQuantity { get; set; }
         public string PartnerId { get; set; }
         public string PartnerCode { get; set; }
         public string PartnerName { get; set; }
-        public string PartnerTitle { get; set; }
-        public string ProductTitle { get; set; }
+        // public string PartnerTitle { get; set; }
+        // public string ProductTitle { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public long VoucherTypeId { get; set; }
