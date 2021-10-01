@@ -10,5 +10,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime StartDate { get; set; }
         public int SubsidiaryId { get; set; }
         public double WorkingHourPerDay { get; set; }
+        public int CalendarId { get; set; }
     }
 }
