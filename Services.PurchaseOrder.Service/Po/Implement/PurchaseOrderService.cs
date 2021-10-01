@@ -26,6 +26,7 @@ using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
+using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -643,7 +644,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (po.DeliveryDestination?.Length > 1024)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    throw DeleveryDestinationTooLong.BadRequest();
                 }
 
                 await _purchaseOrderDBContext.AddAsync(po);
@@ -796,7 +797,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    throw DeleveryDestinationTooLong.BadRequest();
                 }
 
 
@@ -997,13 +998,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được kiểm tra");
+                    throw PoAlreadyChecked.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = true;
@@ -1037,13 +1038,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == false)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã kiểm tra từ chối");
+                    throw PoHasBeenFailAtCheck.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = false;
@@ -1077,18 +1078,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được duyệt");
+                    throw PoAlreadyApproved.BadRequest();
                 }
 
                 if (info.IsChecked != true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                    throw PoNotPassCheckYet.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsApproved = true;
@@ -1122,18 +1123,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == false)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã từ chối");
+                    throw PoAlreadyRejected.BadRequest();
                 }
 
                 if (info.IsChecked != true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                    throw PoNotPassCheckYet.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
                    && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
 
