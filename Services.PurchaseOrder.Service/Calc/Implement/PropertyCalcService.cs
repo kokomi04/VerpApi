@@ -27,7 +27,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class PropertyCalcService : IPropertyCalcService
     {
-        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;       
+        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IPropertyHelperService _propertyHelperService;
         private readonly IMapper _mapper;
@@ -42,7 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IMapper mapper
            )
         {
-            _purchaseOrderDBContext = purchaseOrderDBContext;          
+            _purchaseOrderDBContext = purchaseOrderDBContext;
             _customGenCodeHelperService = customGenCodeHelperService;
             _propertyHelperService = propertyHelperService;
             _mapper = mapper;
@@ -52,7 +52,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         public async Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from c in _purchaseOrderDBContext.PropertyCalc
                         join d in _purchaseOrderDBContext.PropertyCalcProduct on c.PropertyCalcId equals d.PropertyCalcId
                         join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId
@@ -155,7 +155,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var entity = _mapper.Map<PropertyCalc>(req);
             await _purchaseOrderDBContext.PropertyCalc.AddAsync(entity);
             await _purchaseOrderDBContext.SaveChangesAsync();
-           
+
             await ctx.ConfirmCode();
 
             await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Create)
@@ -217,7 +217,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper.Map(req, entity);
 
             await _purchaseOrderDBContext.SaveChangesAsync();
-          
+
             await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Update)
              .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
              .ObjectId(entity.PropertyCalcId)
@@ -238,7 +238,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             entity.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-          
+
             await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Delete)
            .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
            .ObjectId(entity.PropertyCalcId)
@@ -287,7 +287,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
             }
-            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1)))
+            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Where(m => !m.ProductId.HasValue).GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1))
+                || model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Where(m => m.ProductId.HasValue).GroupBy(m => m.ProductId.Value).Any(g => g.Count() > 1)))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có vật tư dư thừa bị trùng lặp");
             }
