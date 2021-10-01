@@ -21,6 +21,7 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
+using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -103,7 +104,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (po.DeliveryDestination?.Length > 1024)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                        throw DeleveryDestinationTooLong.BadRequest();
                     }
 
                     await _purchaseOrderDBContext.AddAsync(po);
@@ -263,7 +264,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (info.DeliveryDestination?.Length > 1024)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                        throw DeleveryDestinationTooLong.BadRequest();                        
                     }
 
 

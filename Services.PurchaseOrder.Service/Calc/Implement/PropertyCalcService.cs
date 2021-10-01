@@ -22,6 +22,8 @@ using AutoMapper.QueryableExtensions;
 using Verp.Cache.RedisCache;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
+using Verp.Resources.PurchaseOrder.Calc.PropertyCalc;
+using static Verp.Resources.PurchaseOrder.Calc.PropertyCalc.PropertyCalcValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -171,7 +173,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw PropertyCalcNotFound.BadRequest();
 
             var requestInfo = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PropertyCalcId == propertyCalcId);
 
@@ -202,7 +204,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw PropertyCalcNotFound.BadRequest();
 
             await Validate(propertyCalcId, req);
             _purchaseOrderDBContext.PropertyCalcProperty.RemoveRange(entity.PropertyCalcProperty);
@@ -231,7 +233,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw PropertyCalcNotFound.BadRequest();
 
             var properties = await _propertyHelperService.GetByIds(entity.PropertyCalcProperty?.Select(p => p.PropertyId)?.ToList());
             var propertiesName = string.Join(", ", properties);
@@ -269,27 +271,27 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             if (propertyCalcId > 0 && string.IsNullOrWhiteSpace(model.PropertyCalcCode))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập mã số");
+                throw PropertyCalcCodeEmpty.BadRequest();
             }
             model.PropertyCalcCode = (model.PropertyCalcCode ?? "").Trim();
             if (!string.IsNullOrWhiteSpace(model.PropertyCalcCode))
             {
                 if (await _purchaseOrderDBContext.PropertyCalc.AnyAsync(s => s.PropertyCalcId != propertyCalcId && s.PropertyCalcCode == model.PropertyCalcCode))
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã số đã tồn tại");
+                    throw PropertyCodeAlreadyExist.BadRequest();
                 }
             }
             if (model.CuttingWorkSheet.Any(s => s.CuttingWorkSheetDest.GroupBy(d => d.ProductId).Any(g => g.Count() > 1)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
+                throw DuplicatedOutputCutting.BadRequest();
             }
             if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Any(m => !m.ProductId.HasValue && string.IsNullOrEmpty(m.ExcessMaterial))))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
+                throw ExcessMaterialCuttingNameMustBeNotEmpty.BadRequest();
             }
             if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có vật tư dư thừa bị trùng lặp");
+                throw DuplicatedExcessMaterialCuttingNameMustBeNotEmpty.BadRequest();
             }
         }
 

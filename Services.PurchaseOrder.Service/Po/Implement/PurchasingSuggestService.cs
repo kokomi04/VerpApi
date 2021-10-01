@@ -19,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.PurchaseOrder.Suggest;
 using Verp.Resources.PurchaseOrder.Assignment;
+using static Verp.Resources.PurchaseOrder.Suggest.PurchasingSuggestValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -1852,7 +1853,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                    .ToListAsync();
             if (pos.Count > 0)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể xóa do đề nghị được tạo thành PO {string.Join(", ", pos)}");
+                throw ExistsPoUseSuggest.BadRequestFormat(string.Join(", ", pos));
             }
         }
 
@@ -1863,12 +1864,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                .GroupBy(d => d.ProductUnitConversionId);
             if (productUnitConversionProductGroup.Any(g => g.Select(p => p.ProductId).Distinct().Count() > 1))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
+                throw PuNotBelongtoProduct.BadRequest();
             }
 
             if (!await _productHelperService.ValidateProductUnitConversions(productUnitConversionProductGroup.ToDictionary(g => g.Key, g => g.First().ProductId)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Đơn vị chuyển đổi không thuộc về mặt hàng!");
+                throw PuNotBelongtoProduct.BadRequest();
             }
         }
 
