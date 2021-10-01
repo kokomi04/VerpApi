@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.PurchaseOrder.Po;
 using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
@@ -16,6 +17,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
@@ -28,7 +30,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         protected PurchaseOrderDBContext _purchaseOrderDBContext;
         protected AppSetting _appSetting;
         protected ILogger _logger;
-        protected IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _poActivityLog;
         protected ICurrentContextService _currentContext;
         protected ICustomGenCodeHelperService _customGenCodeHelperService;
         protected IManufacturingHelperService _manufacturingHelperService;
@@ -47,7 +49,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
+            _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
             _currentContext = currentContext;
             _customGenCodeHelperService = customGenCodeHelperService;
             _manufacturingHelperService = manufacturingHelperService;
@@ -195,9 +197,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await UpdateStatusForOutsourceRequestInPurcharOrder(po.PurchaseOrderId, purchaseOrderType);
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, po.PurchaseOrderId, $"Tạo PO {po.PurchaseOrderCode}", model.JsonSerialize());
-
+                   
                     await ctx.ConfirmCode();
+
+                    await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
+                    .MessageResourceFormatDatas(po.PurchaseOrderCode)
+                    .ObjectId(po.PurchaseOrderId)
+                    .JsonData((new { purchaseOrderType, model }).JsonSerialize())
+                    .CreateLog();
 
                     return po.PurchaseOrderId;
                 }
@@ -425,7 +432,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật PO {info.PurchaseOrderCode}", info.JsonSerialize());
+                   
+                    await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
+                      .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                      .ObjectId(info.PurchaseOrderId)
+                      .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model }).JsonSerialize())
+                      .CreateLog();
 
                     return true;
 
@@ -484,7 +496,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep)
                         return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
+                  
+                    await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Delete)
+                        .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                        .ObjectId(info.PurchaseOrderId)
+                        .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model= info }).JsonSerialize())
+                        .CreateLog();
 
                     return true;
 

@@ -3,13 +3,10 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using Microsoft.Extensions.Options;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
@@ -19,18 +16,22 @@ using VErp.Commons.GlobalObject;
 using VErp.Services.PurchaseOrder.Model;
 using Verp.Cache.RedisCache;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.PurchaseOrder.Suggest;
+using Verp.Resources.PurchaseOrder.Assignment;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class PurchasingSuggestService : IPurchasingSuggestService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContext;
         private readonly IPurchasingRequestService _purchasingRequestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _purchasingSuggestActivityLog;
+        private readonly ObjectActivityLogFacade _assignmentActivityLog;
 
         public PurchasingSuggestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -43,12 +44,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _activityLogService = activityLogService;
             _currentContext = currentContext;
             _purchasingRequestService = purchasingRequestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
+            _purchasingSuggestActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchasingSuggest);
+            _assignmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PoAssignment);
         }
 
 
@@ -393,9 +395,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggest.PurchasingSuggestId, $"Thêm mới phiếu đề nghị mua hàng {purchasingSuggest.PurchasingSuggestCode}", model.JsonSerialize());
-
+                  
                     await ctx.ConfirmCode();// ConfirmPurchasingSuggestCode(customGenCodeId);
+
+                    await _purchasingSuggestActivityLog
+                       .LogBuilder(() => PurchasingSuggestActivityLogMessage.Create)
+                       .MessageResourceFormatDatas(purchasingSuggest.PurchasingSuggestCode)
+                       .ObjectId(purchasingSuggest.PurchasingSuggestId)
+                       .JsonData(model.JsonSerialize())
+                       .CreateLog();
 
                     return purchasingSuggest.PurchasingSuggestId;
                 }
@@ -532,9 +540,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", model.JsonSerialize());
-
+                  
                     await ctx.ConfirmCode();// ConfirmPurchasingSuggestCode(customGenCodeId);
+
+                    await _purchasingSuggestActivityLog
+                     .LogBuilder(() => PurchasingSuggestActivityLogMessage.Update)
+                     .MessageResourceFormatDatas(info.PurchasingSuggestCode )
+                     .ObjectId(info.PurchasingSuggestId)
+                     .JsonData(model.JsonSerialize())
+                     .CreateLog();
                     return true;
                 }
             }
@@ -622,8 +636,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Xóa phiếu đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
-
+                 
+                    await _purchasingSuggestActivityLog
+                     .LogBuilder(() => PurchasingSuggestActivityLogMessage.Delete)
+                     .MessageResourceFormatDatas(info.PurchasingSuggestCode)
+                     .ObjectId(info.PurchasingSuggestId)
+                     .JsonData(info.JsonSerialize())
+                     .CreateLog();
                     return true;
                 }
             }
@@ -650,8 +669,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Gửi duyệt đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
-
+               
+                await _purchasingSuggestActivityLog
+                     .LogBuilder(() => PurchasingSuggestActivityLogMessage.SentToCensor)
+                     .MessageResourceFormatDatas(info.PurchasingSuggestCode)
+                     .ObjectId(info.PurchasingSuggestId)
+                     .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                     .CreateLog();
                 return true;
             }
         }
@@ -679,8 +703,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Duyệt đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
-
+                await _purchasingSuggestActivityLog
+                 .LogBuilder(() => PurchasingSuggestActivityLogMessage.Approved)
+                 .MessageResourceFormatDatas(info.PurchasingSuggestCode)
+                 .ObjectId(info.PurchasingSuggestId)
+                 .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                 .CreateLog();
                 return true;
             }
         }
@@ -721,8 +749,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Từ chối đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
-
+                await _purchasingSuggestActivityLog
+                .LogBuilder(() => PurchasingSuggestActivityLogMessage.Rejected)
+                .MessageResourceFormatDatas(info.PurchasingSuggestCode)
+                .ObjectId(info.PurchasingSuggestId)
+                .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                .CreateLog();
                 return true;
             }
         }
@@ -739,8 +771,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchasingSuggestId, $"Cập nhật tiến trình PO đề nghị mua hàng {info.PurchasingSuggestCode}", info.JsonSerialize());
+                
+                await _purchasingSuggestActivityLog
+                  .LogBuilder(() => PurchasingSuggestActivityLogMessage.UpdateProgress)
+                  .MessageResourceFormatDatas(info.PurchasingSuggestCode, poProcessStatusId.GetEnumDescription())
+                  .ObjectId(info.PurchasingSuggestId)
+                  .JsonData((new { purchasingSuggestId, poProcessStatusId }).JsonSerialize())
+                  .CreateLog();
 
                 return true;
             }
@@ -1258,7 +1295,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignment.PoAssignmentId, $"Thêm phân công mua hàng {poAssignment.PoAssignmentCode}", model.JsonSerialize());
+                  
+                    await _assignmentActivityLog
+                    .LogBuilder(() => PoAssignmentActivityLogMessage.Create)
+                    .MessageResourceFormatDatas(poAssignment.PoAssignmentCode)
+                    .ObjectId(poAssignment.PoAssignmentId)
+                    .JsonData(model.JsonSerialize())
+                    .CreateLog();
 
                     return poAssignment.PoAssignmentId;
                 }
@@ -1349,8 +1392,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Cập nhật phân công mua hàng {assignmentInfo.PoAssignmentCode}", model.JsonSerialize());
-
+                  
+                    await _assignmentActivityLog
+                    .LogBuilder(() => PoAssignmentActivityLogMessage.Update)
+                    .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
+                    .ObjectId(assignmentInfo.PoAssignmentId)
+                    .JsonData(model.JsonSerialize())
+                    .CreateLog();
                     return true;
                 }
             }
@@ -1389,10 +1437,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Phát lệnh phân công mua hàng {assignmentInfo.PoAssignmentCode}", poAssignmentId.JsonSerialize());
-
+             
                 await ctx.ConfirmCode();// ConfirmPoAssignmentCode(customGenCodeId);
 
+
+                await _assignmentActivityLog
+                .LogBuilder(() => PoAssignmentActivityLogMessage.SendToUser)
+                .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
+                .ObjectId(assignmentInfo.PoAssignmentId)
+                .JsonData((new { poAssignmentId }).JsonSerialize())
+                .CreateLog();
                 return true;
             }
         }
@@ -1480,7 +1534,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Xác nhận phân công mua hàng {assignmentInfo.PoAssignmentCode}", poAssignmentId.JsonSerialize());
+               
+                await _assignmentActivityLog
+                  .LogBuilder(() => PoAssignmentActivityLogMessage.UserConfirm)
+                  .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
+                  .ObjectId(assignmentInfo.PoAssignmentId)
+                  .JsonData((new { poAssignmentId }).JsonSerialize())
+                  .CreateLog();
 
                 return true;
             }
@@ -1528,9 +1588,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     trans.Commit();
-
-                    await _activityLogService.CreateLog(EnumObjectType.PoAssignment, poAssignmentId, $"Xóa phân công mua hàng {assignmentInfo.PoAssignmentCode}", assignmentInfo.JsonSerialize());
-
+                    
+                    await _assignmentActivityLog
+                    .LogBuilder(() => PoAssignmentActivityLogMessage.Delete)
+                    .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
+                    .ObjectId(assignmentInfo.PoAssignmentId)
+                    .JsonData(assignmentInfo.JsonSerialize())
+                    .CreateLog();
                     return true;
                 }
             }

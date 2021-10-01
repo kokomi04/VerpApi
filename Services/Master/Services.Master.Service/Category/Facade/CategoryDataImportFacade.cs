@@ -82,7 +82,10 @@ namespace VErp.Services.Master.Service.Category
                 if (oldRow == null)
                 {
                     if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
-                        continue;
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                            throw ImportDuplicatedRow.BadRequestFormat(uniqueFieldMessage);
+                        else
+                            continue;
                     
                     lsAddRow.Add(row);
                 }

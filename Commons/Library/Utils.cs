@@ -375,7 +375,7 @@ namespace VErp.Commons.Library
             }
 
 
-            return (false, input.PrimaryQuantity, input.PuQuantity);
+            return (false, input.PrimaryQuantity, calcPuQuantity);
 
         }
 

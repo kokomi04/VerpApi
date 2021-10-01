@@ -128,6 +128,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return _mapper.Map<PropertyModel>(property);
         }
 
+        public async Task<IList<PropertyModel>> GetByIds(IList<int> propertyIds)
+        {
+            if (propertyIds == null || propertyIds.Count == 0)
+                return new List<PropertyModel>();
+            var properties = await _stockDbContext.Property.Where(p => propertyIds.Contains( p.PropertyId)).ToListAsync();
+            
+            return _mapper.Map<List<PropertyModel>>(properties);
+        }
+
         public async Task<int> UpdateProperty(int propertyId, PropertyModel req)
         {
             var trans = await _stockDbContext.Database.BeginTransactionAsync();
