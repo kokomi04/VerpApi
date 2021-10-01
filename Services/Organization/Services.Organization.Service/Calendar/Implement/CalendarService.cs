@@ -127,7 +127,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
             }
-            
+
             // TODO
 
             return true;
@@ -319,7 +319,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             try
             {
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if(calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
                 var dayOff = await _organizationContext.DayOffCalendar
                 .FirstOrDefaultAsync(dof => dof.Day == data.Day.UnixToDateTime() && dof.CalendarId == calendarId);
                 if (dayOff == null)
@@ -488,17 +488,20 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 DateTime oldTime = oldDate.UnixToDateTime().Value;
                 DateTime time = data.StartDate.UnixToDateTime().Value;
 
-                var newWorkingHourInfo = await _organizationContext.WorkingHourInfo
-                 .Where(wh => wh.CalendarId == calendarId && wh.StartDate == time)
-                 .FirstOrDefaultAsync();
-
-                var newWorkingWeeks = await _organizationContext.WorkingWeekInfo
-                   .Where(ww => ww.CalendarId == calendarId && ww.StartDate == time)
-                   .ToListAsync();
-
-                if (newWorkingHourInfo != null || newWorkingWeeks.Count > 0)
+                if (time != oldTime)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} đã tồn tại");
+                    var newWorkingHourInfo = await _organizationContext.WorkingHourInfo
+                        .Where(wh => wh.CalendarId == calendarId && wh.StartDate == time)
+                        .FirstOrDefaultAsync();
+
+                    var newWorkingWeeks = await _organizationContext.WorkingWeekInfo
+                       .Where(ww => ww.CalendarId == calendarId && ww.StartDate == time)
+                       .ToListAsync();
+
+                    if (newWorkingHourInfo != null || newWorkingWeeks.Count > 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} đã tồn tại");
+                    }
                 }
 
                 var currentWorkingHourInfo = await _organizationContext.WorkingHourInfo
