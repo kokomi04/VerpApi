@@ -18,12 +18,14 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         }
 
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
+        public virtual DbSet<Calendar> Calendar { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
         public virtual DbSet<DayOffCalendar> DayOffCalendar { get; set; }
         public virtual DbSet<Department> Department { get; set; }
+        public virtual DbSet<DepartmentCalendar> DepartmentCalendar { get; set; }
         public virtual DbSet<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }
         public virtual DbSet<DepartmentDayOffCalendar> DepartmentDayOffCalendar { get; set; }
         public virtual DbSet<DepartmentOverHourInfo> DepartmentOverHourInfo { get; set; }
@@ -90,6 +92,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<Calendar>(entity =>
+            {
+                entity.Property(e => e.CalendarCode)
+                    .IsRequired()
+                    .HasMaxLength(25);
+
+                entity.Property(e => e.CalendarName).HasMaxLength(64);
             });
 
             modelBuilder.Entity<Customer>(entity =>
@@ -199,7 +210,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<DayOffCalendar>(entity =>
             {
-                entity.HasKey(e => new { e.SubsidiaryId, e.Day });
+                entity.HasKey(e => new { e.SubsidiaryId, e.Day, e.CalendarId });
 
                 entity.Property(e => e.Content).HasMaxLength(255);
             });
@@ -226,6 +237,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .WithMany(p => p.InverseParent)
                     .HasForeignKey(d => d.ParentId)
                     .HasConstraintName("FK_Department_SelfKey");
+            });
+
+            modelBuilder.Entity<DepartmentCalendar>(entity =>
+            {
+                entity.HasKey(e => new { e.CalendarId, e.DepartmentId });
+
+                entity.Property(e => e.CalendarId).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<DepartmentCapacityBalance>(entity =>
@@ -595,13 +613,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<WorkingHourInfo>(entity =>
             {
-                entity.HasKey(e => new { e.StartDate, e.SubsidiaryId })
+                entity.HasKey(e => new { e.StartDate, e.SubsidiaryId, e.CalendarId })
                     .HasName("PK_WorkingHourHistory");
             });
 
             modelBuilder.Entity<WorkingWeekInfo>(entity =>
             {
-                entity.HasKey(e => new { e.DayOfWeek, e.SubsidiaryId, e.StartDate })
+                entity.HasKey(e => new { e.DayOfWeek, e.SubsidiaryId, e.StartDate, e.CalendarId })
                     .HasName("PK_WorkingWeek");
             });
 
