@@ -417,16 +417,8 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
                 DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
 
-
-                var currentWorkingHourInfo = await _organizationContext.WorkingHourInfo
-                  .Where(wh => wh.StartDate == time)
-                  .FirstOrDefaultAsync();
-
-                var currentWorkingWeeks = await _organizationContext.WorkingWeekInfo
-                   .Where(ww => ww.StartDate == time)
-                   .ToListAsync();
-
-                if (currentWorkingHourInfo != null || currentWorkingWeeks.Count > 0)
+                if (_organizationContext.WorkingHourInfo.Any(wh => wh.StartDate == time)
+                    || _organizationContext.WorkingWeekInfo.Any(ww => ww.StartDate == time))
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
                 }
@@ -438,7 +430,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 }
 
                 // Update workingHour per day
-                currentWorkingHourInfo = new WorkingHourInfo
+                var currentWorkingHourInfo = new WorkingHourInfo
                 {
                     StartDate = time,
                     WorkingHourPerDay = data.WorkingHourPerDay,
@@ -490,15 +482,8 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
                 if (time != oldTime)
                 {
-                    var newWorkingHourInfo = await _organizationContext.WorkingHourInfo
-                        .Where(wh => wh.CalendarId == calendarId && wh.StartDate == time)
-                        .FirstOrDefaultAsync();
-
-                    var newWorkingWeeks = await _organizationContext.WorkingWeekInfo
-                       .Where(ww => ww.CalendarId == calendarId && ww.StartDate == time)
-                       .ToListAsync();
-
-                    if (newWorkingHourInfo != null || newWorkingWeeks.Count > 0)
+                    if (_organizationContext.WorkingHourInfo.Any(wh => wh.CalendarId == calendarId && wh.StartDate == time)
+                        || _organizationContext.WorkingWeekInfo.Any(ww => ww.CalendarId == calendarId && ww.StartDate == time))
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} đã tồn tại");
                     }
@@ -523,17 +508,31 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     if (newWorkingWeek == null) throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin làm việc trong tuần chưa đủ");
                 }
 
-                // Update workingHour per day
-                currentWorkingHourInfo.WorkingHourPerDay = data.WorkingHourPerDay;
-                currentWorkingHourInfo.StartDate = time;
+                // Gỡ thông tin cũ
+                _organizationContext.WorkingHourInfo.Remove(currentWorkingHourInfo);
+                _organizationContext.WorkingWeekInfo.RemoveRange(currentWorkingWeeks);
+                _organizationContext.SaveChanges();
 
+                // Update workingHour per day
+                var newWorkingHourInfo = new WorkingHourInfo
+                {
+                    StartDate = time,
+                    WorkingHourPerDay = data.WorkingHourPerDay,
+                    CalendarId = calendarId
+                };
+                _organizationContext.WorkingHourInfo.Add(newWorkingHourInfo);
                 // Update working week
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
                 {
                     var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
-                    var currentWorkingWeek = currentWorkingWeeks.FirstOrDefault(ww => ww.DayOfWeek == (int)day);
-                    currentWorkingWeek.IsDayOff = newWorkingWeek.IsDayOff;
-                    currentWorkingWeek.StartDate = time;
+                    var currentWorkingWeek = new WorkingWeekInfo
+                    {
+                        StartDate = time,
+                        DayOfWeek = (int)day,
+                        IsDayOff = newWorkingWeek.IsDayOff,
+                        CalendarId = calendarId
+                    };
+                    _organizationContext.WorkingWeekInfo.Add(currentWorkingWeek);
                 }
 
                 _organizationContext.SaveChanges();
