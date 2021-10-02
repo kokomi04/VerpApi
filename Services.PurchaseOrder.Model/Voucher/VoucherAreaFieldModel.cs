@@ -39,8 +39,6 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
         public bool? IsImage { get; set; }
-        public string CustomButtonHtml { get; set; }
-        public string CustomerButtonOnClick { get; set; }
 
         protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {
@@ -108,6 +106,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnClick { get; set; }
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
+        public bool IsHiddenOnEdit { get; set; }
         public bool Compare(VoucherAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -141,7 +140,8 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
                 IsBatchSelect == curField.IsBatchSelect &&
                 OnClick == curField.OnClick &&
                 CustomButtonHtml == curField.CustomButtonHtml &&
-                CustomButtonOnClick == curField.CustomButtonOnClick;
+                CustomButtonOnClick == curField.CustomButtonOnClick &&
+                IsHiddenOnEdit == curField.IsHiddenOnEdit;
         }
     }
 
