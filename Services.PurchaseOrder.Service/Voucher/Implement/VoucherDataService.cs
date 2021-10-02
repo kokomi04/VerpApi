@@ -1800,8 +1800,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                               IsMultiRow = a.IsMultiRow,
                               RequireFilters = af.RequireFilters,
                               IsReadOnly = f.IsReadOnly,
-                              IsHidden = af.IsHidden,
-                              IsHiddenOnEdit = af.IsHiddenOnEdit
+                              IsHidden = af.IsHidden
                           }).ToListAsync();
         }
 
@@ -1824,7 +1823,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             };
 
             fields = fields
-                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY && !f.IsHiddenOnEdit)
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY && !f.IsReadOnly)
                 .ToList();
 
             var referTableNames = fields.Select(f => f.RefTableCode).ToList();
@@ -2559,7 +2558,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public string RequireFilters { get; set; }
             public bool IsReadOnly { get; set; }
             public bool IsHidden { get; set; }
-            public bool IsHiddenOnEdit { get; set; }
         }
     }
 }

@@ -45,7 +45,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string OnClick { get; set; }
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
-        public bool IsHiddenOnEdit { get; set; }
 
         public virtual InputArea InputArea { get; set; }
         public virtual InputField InputField { get; set; }

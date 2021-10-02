@@ -107,7 +107,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnClick { get; set; }
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
-        public bool IsHiddenOnEdit { get; set; }
+
         public bool Compare(InputAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -141,8 +141,7 @@ namespace VErp.Services.Accountancy.Model.Input
                 IsBatchSelect == curField.IsBatchSelect &&
                 OnClick == curField.OnClick &&
                 CustomButtonHtml == curField.CustomButtonHtml &&
-                CustomButtonOnClick == curField.CustomButtonOnClick &&
-                IsHiddenOnEdit == curField.IsHiddenOnEdit;
+                CustomButtonOnClick == curField.CustomButtonOnClick;
         }
     }
 

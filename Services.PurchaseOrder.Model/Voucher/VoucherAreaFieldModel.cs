@@ -106,7 +106,6 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnClick { get; set; }
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
-        public bool IsHiddenOnEdit { get; set; }
         public bool Compare(VoucherAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -140,8 +139,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
                 IsBatchSelect == curField.IsBatchSelect &&
                 OnClick == curField.OnClick &&
                 CustomButtonHtml == curField.CustomButtonHtml &&
-                CustomButtonOnClick == curField.CustomButtonOnClick &&
-                IsHiddenOnEdit == curField.IsHiddenOnEdit;
+                CustomButtonOnClick == curField.CustomButtonOnClick;
         }
     }
 
