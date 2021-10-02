@@ -27,10 +27,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Department> Department { get; set; }
         public virtual DbSet<DepartmentCalendar> DepartmentCalendar { get; set; }
         public virtual DbSet<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }
-        public virtual DbSet<DepartmentDayOffCalendar> DepartmentDayOffCalendar { get; set; }
         public virtual DbSet<DepartmentOverHourInfo> DepartmentOverHourInfo { get; set; }
-        public virtual DbSet<DepartmentWorkingHourInfo> DepartmentWorkingHourInfo { get; set; }
-        public virtual DbSet<DepartmentWorkingWeekInfo> DepartmentWorkingWeekInfo { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
@@ -241,7 +238,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<DepartmentCalendar>(entity =>
             {
-                entity.HasKey(e => new { e.CalendarId, e.DepartmentId });
+                entity.HasKey(e => new { e.StartDate, e.DepartmentId });
 
                 entity.Property(e => e.CalendarId).ValueGeneratedOnAdd();
             });
@@ -260,26 +257,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_DepartmentCapacityBalance_Department");
             });
 
-            modelBuilder.Entity<DepartmentDayOffCalendar>(entity =>
-            {
-                entity.HasKey(e => new { e.DepartmentId, e.SubsidiaryId, e.Day });
-
-                entity.Property(e => e.Content).HasMaxLength(255);
-            });
-
             modelBuilder.Entity<DepartmentOverHourInfo>(entity =>
             {
                 entity.Property(e => e.Content).HasMaxLength(255);
-            });
-
-            modelBuilder.Entity<DepartmentWorkingHourInfo>(entity =>
-            {
-                entity.HasKey(e => new { e.DepartmentId, e.StartDate, e.SubsidiaryId });
-            });
-
-            modelBuilder.Entity<DepartmentWorkingWeekInfo>(entity =>
-            {
-                entity.HasKey(e => new { e.DepartmentId, e.DayOfWeek, e.SubsidiaryId, e.StartDate });
             });
 
             modelBuilder.Entity<Employee>(entity =>
