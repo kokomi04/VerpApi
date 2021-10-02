@@ -34,6 +34,28 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost]
+        [Route("{departmentId}")]
+        public async Task<DepartmentCalendarModel> CreateDepartmentCalendar([FromRoute] int departmentId, [FromBody] DepartmentCalendarModel data)
+        {
+            return await _departmentCalendarService.CreateDepartmentCalendar(departmentId, data);
+        }
+
+        [HttpPut]
+        [Route("{departmentId}/date/{oldDate}")]
+        public async Task<DepartmentCalendarModel> UpdateDepartmentCalendar([FromRoute] int departmentId, [FromRoute] long oldDate, [FromBody] DepartmentCalendarModel data)
+        {
+            return await _departmentCalendarService.UpdateDepartmentCalendar(departmentId, oldDate, data);
+        }
+
+        [HttpDelete]
+        [Route("{departmentId}/date/{startDate}")]
+        public async Task<bool> DeleteDepartmentCalendar([FromRoute] int departmentId, [FromRoute] long startDate)
+        {
+            return await _departmentCalendarService.DeleteDepartmentCalendar(departmentId, startDate);
+        }
+
+
+        [HttpPost]
         [Route("multiple")]
         public async Task<IList<DepartmentCalendarListModel>> GetListDepartmentCalendar([FromQuery] long startDate, [FromQuery] long endDate, [FromBody] int[] departmentIds)
         {
