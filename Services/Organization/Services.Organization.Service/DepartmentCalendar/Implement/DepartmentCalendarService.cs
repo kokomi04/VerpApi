@@ -52,6 +52,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             var lstDepartmentCalendar = await (from dc in _organizationContext.DepartmentCalendar
                                                join c in _organizationContext.Calendar on dc.CalendarId equals c.CalendarId
                                                where dc.DepartmentId == departmentId
+                                               orderby dc.StartDate descending
                                                select new DepartmentCalendarModel
                                                {
                                                    CalendarCode = c.CalendarCode,
@@ -59,7 +60,6 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                                    CalendarName = c.CalendarCode,
                                                    StartDate = dc.StartDate.GetUnix()
                                                })
-                                               .OrderByDescending(dc => dc.StartDate)
                                                .ToListAsync();
             return lstDepartmentCalendar;
         }
