@@ -1830,7 +1830,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                               Title = af.Title,
                               IsAutoIncrement = af.IsAutoIncrement,
                               IsHidden = af.IsHidden,
-                              IsHiddenOnEdit = af.IsHiddenOnEdit,
+                              IsReadOnly = f.IsReadOnly,
                               IsRequire = af.IsRequire,
                               IsUnique = af.IsUnique,
                               Filters = af.Filters,
@@ -1865,7 +1865,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             };
 
             fields = fields
-                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY && !f.IsHiddenOnEdit)
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY && !f.IsReadOnly)
                 .ToList();
 
             var referTableNames = fields.Select(f => f.RefTableCode).ToList();
@@ -2497,7 +2497,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string Title { get; set; }
             public bool IsAutoIncrement { get; set; }
             public bool IsHidden { get; set; }
-            public bool IsHiddenOnEdit { get; set; }
+            public bool IsReadOnly { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
             public string Filters { get; set; }

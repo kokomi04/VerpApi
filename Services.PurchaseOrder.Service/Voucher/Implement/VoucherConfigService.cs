@@ -1156,7 +1156,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         curField.CustomButtonHtml = field.CustomButtonHtml;
                         curField.CustomButtonOnClick = field.CustomButtonOnClick;
-                        curField.IsHiddenOnEdit = field.IsHiddenOnEdit;
                     }
                 }
 
