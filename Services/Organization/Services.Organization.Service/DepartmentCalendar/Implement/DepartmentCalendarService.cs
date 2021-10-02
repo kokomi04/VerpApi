@@ -57,7 +57,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                                {
                                                    CalendarCode = c.CalendarCode,
                                                    CalendarId = c.CalendarId,
-                                                   CalendarName = c.CalendarCode,
+                                                   CalendarName = c.CalendarName,
                                                    StartDate = dc.StartDate.GetUnix()
                                                })
                                                .ToListAsync();
