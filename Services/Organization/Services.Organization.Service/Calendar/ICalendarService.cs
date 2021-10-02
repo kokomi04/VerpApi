@@ -21,7 +21,7 @@ namespace VErp.Services.Organization.Service.Calendar
         Task<IList<DayOffCalendarModel>> GetDayOffCalendar(int calendarId, long startDate, long endDate);
 
         Task<WeekCalendarModel> CreateWeekCalendar(int calendarId, WeekCalendarModel data);
-        Task<WeekCalendarModel> UpdateWeekCalendar(int calendarId, long olđate, WeekCalendarModel data);
+        Task<WeekCalendarModel> UpdateWeekCalendar(int calendarId, long oldDate, WeekCalendarModel data);
         Task<bool> DeleteWeekCalendar(int calendarId, long startDate);
         Task<DayOffCalendarModel> UpdateDayOff(int calendarId, DayOffCalendarModel data);
         Task<bool> DeleteDayOff(int calendarId, long day);

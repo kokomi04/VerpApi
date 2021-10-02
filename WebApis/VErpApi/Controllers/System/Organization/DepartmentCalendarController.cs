@@ -28,9 +28,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{departmentId}")]
-        public async Task<DepartmentWeekCalendarModel> GetCurrentDepartmentCalendar([FromRoute] int departmentId)
+        public async Task<IList<DepartmentCalendarModel>> GetDepartmentCalendars([FromRoute] int departmentId)
         {
-            return await _departmentCalendarService.GetCurrentDepartmentCalendar(departmentId);
+            return await _departmentCalendarService.GetDepartmentCalendars(departmentId);
         }
 
         [HttpPost]
@@ -39,35 +39,6 @@ namespace VErpApi.Controllers.System
         {
             return await _departmentCalendarService.GetListDepartmentCalendar(departmentIds, startDate, endDate);
         }
-
-        [HttpPut]
-        [Route("{departmentId}")]
-        public async Task<DepartmentWeekCalendarModel> UpdateDepartmentWeekCalendar([FromRoute] int departmentId, [FromBody] DepartmentWeekCalendarModel data)
-        {
-            return await _departmentCalendarService.UpdateDepartmentWeekCalendar(departmentId, data);
-        }
-
-        [HttpGet]
-        [Route("{departmentId}/dayoff")]
-        public async Task<IList<DepartmentDayOffCalendarModel>> GetDepartmentDayOffCalendar([FromRoute] int departmentId, [FromQuery] long startDate, [FromQuery] long endDate)
-        {
-            return await _departmentCalendarService.GetDepartmentDayOffCalendar(departmentId, startDate, endDate);
-        }
-
-        [HttpPost]
-        [Route("{departmentId}/dayoff")]
-        public async Task<DepartmentDayOffCalendarModel> UpdateDepartmentDayOff([FromRoute] int departmentId, [FromBody] DepartmentDayOffCalendarModel data)
-        {
-            return await _departmentCalendarService.UpdateDepartmentDayOff(departmentId, data);
-        }
-
-        [HttpDelete]
-        [Route("{departmentId}/dayoff/{day}")]
-        public async Task<bool> DeleteDepartmentDayOff([FromRoute] int departmentId, [FromRoute] long day)
-        {
-            return await _departmentCalendarService.DeleteDepartmentDayOff(departmentId, day);
-        }
-
 
         [HttpGet]
         [Route("{departmentId}/over-hour")]
@@ -110,7 +81,5 @@ namespace VErpApi.Controllers.System
         {
             return await _departmentCalendarService.UpdateDepartmentOverHourInfoMultiple(data);
         }
-
-
     }
 }
