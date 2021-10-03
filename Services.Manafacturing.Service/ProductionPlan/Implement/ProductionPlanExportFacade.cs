@@ -23,6 +23,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private IProductHelperService _productHelperService;
         private IProductBomHelperService _productBomHelperService;
         private IProductCateHelperService _productCateHelperService;
+        private IVoucherTypeHelperService _voucherTypeHelperService;
         private ICurrentContextService _currentContext;
         private IList<ProductionOrderListModel> productionPlanInfo = null;
         private IList<InternalProductCateOutput> productCates = null;
@@ -30,6 +31,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private ISheet sheet = null;
         private int currentRow = 0;
         private int maxColumnIndex = 0;
+        private IList<VoucherOrderDetailSimpleModel> mapVoucherOrder;
 
         public ProductionPlanExportFacade SetProductionPlanService(IProductionPlanService productionPlanService)
         {
@@ -56,16 +58,28 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             _currentContext = currentContext;
             return this;
         }
-        public async Task<(Stream stream, string fileName, string contentType)> Export(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
+        public ProductionPlanExportFacade SetVoucherTypeHelperService(IVoucherTypeHelperService voucherTypeHelperService)
+        {
+            _voucherTypeHelperService = voucherTypeHelperService;
+            return this;
+        }
+        public async Task<(Stream stream, string fileName, string contentType)> Export(
+            long startDate,
+            long endDate,
+            ProductionPlanExportModel data,
+            IList<string> mappingFunctionKeys = null)
         {
             maxColumnIndex = 11 + data.ProductCateIds.Length;
             productionPlanInfo = await _productionPlanService.GetProductionPlans(startDate, endDate);
             productCates = (await _productCateHelperService.Search(null, string.Empty, -1, -1, string.Empty, true)).List.Where(pc => data.ProductCateIds.Contains(pc.ProductCateId)).ToList();
+
             var productIds = productionPlanInfo.Select(p => p.ProductId.Value).Distinct().ToList();
-
             var products = await _productHelperService.GetByIds(productIds);
-
             var productElements = await _productBomHelperService.GetElements(productIds.ToArray());
+
+            var orderCodes = productionPlanInfo.Where(x => !string.IsNullOrWhiteSpace(x.OrderCode)).Select(x => x.OrderCode);
+            mapVoucherOrder = await _voucherTypeHelperService.OrderByCodes(orderCodes);
+
 
             // map decimal place
             foreach (var plan in productionPlanInfo)
@@ -179,6 +193,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             currentRow = fRow + 1;
 
             WriteTableDetailData();
+
+            await Task.CompletedTask;
         }
 
 
@@ -208,12 +224,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     sheet.EnsureCell(currentRow, i).CellStyle = style;
                 }
 
-                sheet.EnsureCell(currentRow, 0).SetCellValue(string.IsNullOrEmpty(item.PartnerName) ? item.PartnerCode : $"{item.PartnerCode} ({item.PartnerName})");
+                var voucherOrder = mapVoucherOrder.FirstOrDefault(x=>x.OrderCode == item.OrderCode);
+
+                sheet.EnsureCell(currentRow, 0).SetCellValue(string.IsNullOrEmpty(voucherOrder?.PartnerName) ? voucherOrder?.PartnerCode : $"{voucherOrder?.PartnerCode} ({voucherOrder?.PartnerName})");
                 sheet.EnsureCell(currentRow, 1).SetCellValue(item.OrderCode);
-                sheet.EnsureCell(currentRow, 2).SetCellValue(item.CustomerPO);
+                sheet.EnsureCell(currentRow, 2).SetCellValue(voucherOrder?.CustomerPO);
                 sheet.EnsureCell(currentRow, 3).SetCellValue(item.ProductCode);
                 sheet.EnsureCell(currentRow, 4).SetCellValue(item.ProductName);
-                sheet.EnsureCell(currentRow, 5).SetCellValue(item.ContainerQuantity);
+                sheet.EnsureCell(currentRow, 5).SetCellValue((double)(voucherOrder?.ContainerQuantity));
                 sheet.EnsureCell(currentRow, 6).SetCellValue((double)(item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()));
                 sheet.EnsureCell(currentRow, 7).SetCellValue(item.UnitName);
                 sheet.EnsureCell(currentRow, 8).SetCellValue((item.StartDate + _currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
