@@ -129,9 +129,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var totalSql = new StringBuilder(
                 @"SELECT 
-                    COUNT(*) Total, SUM(g.AdditionResult) AdditionResult 
+                    COUNT(*) Total
                 FROM (
-                    SELECT v.ProductionOrderId, SUM(v.UnitPrice * (v.Quantity + v.ReserveQuantity)) AdditionResult FROM vProductionOrderDetail v ");
+                    SELECT v.ProductionOrderId FROM vProductionOrderDetail v ");
 
             if (whereCondition.Length > 0)
             {
@@ -148,11 +148,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
-            decimal additionResult = 0;
+            // decimal additionResult = 0;
             if (table != null && table.Rows.Count > 0)
             {
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
-                additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
+                // additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
             }
 
             if (size > 0)
@@ -172,7 +172,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
 
-            return (lst, total, additionResult);
+            return (lst, total);
         }
 
         public async Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate)

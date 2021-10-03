@@ -32,6 +32,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.PurchaseOrder.Voucher;
 using static Verp.Resources.PurchaseOrder.Voucher.VoucherDataValidationMessage;
+using AutoMapper.QueryableExtensions;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -2478,7 +2479,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                    orderCodes.ToSqlParameter("@OrderCodes")
                 });
 
-            return data.ConvertData<VoucherOrderDetailSimpleModel>();
+            return data.ConvertData<VoucherOrderDetailSimpleEntity>().AsQueryable().ProjectTo<VoucherOrderDetailSimpleModel>(_mapper.ConfigurationProvider).ToList();
         }
 
         public async Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes(IList<string> orderCodes)
