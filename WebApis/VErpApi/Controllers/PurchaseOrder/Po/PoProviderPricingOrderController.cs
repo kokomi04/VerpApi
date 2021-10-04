@@ -1,27 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.PO;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
-using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
-using VErp.Services.PurchaseOrder.Model.Request;
-using VErp.Services.PurchaseOrder.Service;
 using VErp.Services.PurchaseOrder.Service.Po;
 
 namespace VErpApi.Controllers.PurchaseOrder
@@ -39,20 +28,20 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpGet]
         [Route("GetList")]
-        public async Task<PageData<PoProviderPricingOutputList>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPoProviderPricingStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PoProviderPricingOutputList>> GetList([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPoProviderPricingStatus? poProviderPricingStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _poProviderPricingService
-                .GetList(keyword, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetList(keyword, productIds, poProviderPricingStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(true);
         }
 
 
         [HttpGet]
         [Route("GetListByProduct")]
-        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPoProviderPricingStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPoProviderPricingStatus? poProviderPricingStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _poProviderPricingService
-                .GetListByProduct(keyword, null, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetListByProduct(keyword, null, productIds, poProviderPricingStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
                 .ConfigureAwait(true);
         }
 
