@@ -1,40 +1,31 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Verp.Resources.PurchaseOrder.Po;
-using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Commons.Library.Model;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
-using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
-using VErp.Services.PurchaseOrder.Model.Request;
-using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
-using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
-using static Verp.Resources.PurchaseOrder.PoProviderPricing.PoProviderPricingValidationMessage;
 using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
+using static Verp.Resources.PurchaseOrder.PoProviderPricing.PoProviderPricingValidationMessage;
 using VErp.Commons.Enums.PO;
 using Verp.Resources.PurchaseOrder.PoProviderPricing;
 using AutoMapper;
+using VErp.Services.PurchaseOrder.Service.Po;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
+using PoProviderPricingEntity = VErp.Infrastructure.EF.PurchaseOrderDB.PoProviderPricing;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement
+namespace VErp.Services.PoProviderPricing.Service.Implement
 {
-   
+
 
     public class PoProviderPricingService : IPoProviderPricingService
     {
@@ -59,7 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<PoProviderPricingOutputList>> GetList(string keyword, IList<int> productIds, EnumPoProviderPricingStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PoProviderPricingOutputList>> GetList(string keyword, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = keyword?.Trim();
 
@@ -133,9 +124,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
 
 
-            if (purchaseOrderStatusId.HasValue)
+            if (poProviderPricingStatusId.HasValue)
             {
-                query = query.Where(q => q.PoProviderPricingStatusId == (int)purchaseOrderStatusId.Value);
+                query = query.Where(q => q.PoProviderPricingStatusId == (int)poProviderPricingStatusId.Value);
             }
 
             if (poProcessStatusId.HasValue)
@@ -187,7 +178,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return (result, total, additionResult);
         }
 
-        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct(string keyword, IList<string> poCodes, IList<int> productIds, EnumPoProviderPricingStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct(string keyword, IList<string> poCodes, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -299,9 +290,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     );
             }
 
-            if (purchaseOrderStatusId.HasValue)
+            if (poProviderPricingStatusId.HasValue)
             {
-                query = query.Where(q => q.PoProviderPricingStatusId == (int)purchaseOrderStatusId.Value);
+                query = query.Where(q => q.PoProviderPricingStatusId == (int)poProviderPricingStatusId.Value);
             }
 
             if (poProcessStatusId.HasValue)
@@ -457,7 +448,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var po = _mapper.Map<PoProviderPricing>(model);
+                var po = _mapper.Map<PoProviderPricingEntity>(model);
 
                 po.PoProviderPricingStatusId = (int)EnumPoProviderPricingStatus.Draff;
                 po.IsApproved = null;
@@ -680,23 +671,23 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                var info = await _purchaseOrderDBContext.PoProviderPricing.FirstOrDefaultAsync(d => d.PoProviderPricingId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
-                if (info.PurchaseOrderStatusId == (int)EnumPoProviderPricingStatus.Checked && info.IsChecked == true)
+                if (info.PoProviderPricingStatusId == (int)EnumPoProviderPricingStatus.Checked && info.IsChecked == true)
                 {
                     throw AlreadyChecked.BadRequest();
                 }
 
-                if (info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.WaitToCensor
-                    && info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Checked)
+                if (info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.WaitToCensor
+                    && info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Checked)
                 {
                     throw NotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = true;
 
-                info.PurchaseOrderStatusId = (int)EnumPoProviderPricingStatus.Checked;
+                info.PoProviderPricingStatusId = (int)EnumPoProviderPricingStatus.Checked;
                 info.CheckedDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CheckedByUserId = _currentContext.UserId;
 
@@ -705,8 +696,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CheckApprove)
-                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
-                   .ObjectId(info.PurchaseOrderId)
+                   .MessageResourceFormatDatas(info.PoProviderPricingCode)
+                   .ObjectId(info.PoProviderPricingId)
                    .JsonData((new { purchaseOrderId }).JsonSerialize())
                    .CreateLog();
 
@@ -718,23 +709,23 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                var info = await _purchaseOrderDBContext.PoProviderPricing.FirstOrDefaultAsync(d => d.PoProviderPricingId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
-                if (info.PurchaseOrderStatusId == (int)EnumPoProviderPricingStatus.Checked && info.IsChecked == false)
+                if (info.PoProviderPricingStatusId == (int)EnumPoProviderPricingStatus.Checked && info.IsChecked == false)
                 {
                     throw HasBeenFailAtCheck.BadRequest();
                 }
 
-                if (info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.WaitToCensor
-                    && info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Checked)
+                if (info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.WaitToCensor
+                    && info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Checked)
                 {
                     throw NotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = false;
 
-                info.PurchaseOrderStatusId = (int)EnumPoProviderPricingStatus.Checked;
+                info.PoProviderPricingStatusId = (int)EnumPoProviderPricingStatus.Checked;
                 info.CheckedDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CheckedByUserId = _currentContext.UserId;
 
@@ -744,8 +735,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CheckReject)
-                  .MessageResourceFormatDatas(info.PurchaseOrderCode)
-                  .ObjectId(info.PurchaseOrderId)
+                  .MessageResourceFormatDatas(info.PoProviderPricingCode)
+                  .ObjectId(info.PoProviderPricingId)
                   .JsonData((new { purchaseOrderId }).JsonSerialize())
                   .CreateLog();
                 return true;
@@ -756,10 +747,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                var info = await _purchaseOrderDBContext.PoProviderPricing.FirstOrDefaultAsync(d => d.PoProviderPricingId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
-                if (info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Censored && info.IsApproved == true)
+                if (info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Censored && info.IsApproved == true)
                 {
                     throw AlreadyApproved.BadRequest();
                 }
@@ -769,15 +760,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     throw NotPassCheckYet.BadRequest();
                 }
 
-                if (info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Censored
-                    && info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Checked)
+                if (info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Censored
+                    && info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Checked)
                 {
                     throw NotSentToCensorYet.BadRequest();
                 }
 
                 info.IsApproved = true;
 
-                info.PurchaseOrderStatusId = (int)EnumPoProviderPricingStatus.Censored;
+                info.PoProviderPricingStatusId = (int)EnumPoProviderPricingStatus.Censored;
                 info.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
@@ -787,8 +778,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CensorApprove)
-                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
-                   .ObjectId(info.PurchaseOrderId)
+                   .MessageResourceFormatDatas(info.PoProviderPricingCode)
+                   .ObjectId(info.PoProviderPricingId)
                    .JsonData((new { purchaseOrderId }).JsonSerialize())
                    .CreateLog();
 
@@ -800,10 +791,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                var info = await _purchaseOrderDBContext.PoProviderPricing.FirstOrDefaultAsync(d => d.PoProviderPricingId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
-                if (info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Censored && info.IsApproved == false)
+                if (info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Censored && info.IsApproved == false)
                 {
                     throw AlreadyRejected.BadRequest();
                 }
@@ -813,8 +804,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     throw NotPassCheckYet.BadRequest();
                 }
 
-                if (info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Censored
-                   && info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Checked)
+                if (info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Censored
+                   && info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Checked)
                 {
                     throw NotSentToCensorYet.BadRequest();
                 }
@@ -822,7 +813,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.IsApproved = false;
 
-                info.PurchaseOrderStatusId = (int)EnumPoProviderPricingStatus.Censored;
+                info.PoProviderPricingStatusId = (int)EnumPoProviderPricingStatus.Censored;
                 info.CensorDatetimeUtc = DateTime.Now.Date.GetUnixUtc(_currentContext.TimeZoneOffset).UnixToDateTime();
                 info.CensorByUserId = _currentContext.UserId;
 
@@ -832,8 +823,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CensorReject)
-                  .MessageResourceFormatDatas(info.PurchaseOrderCode)
-                  .ObjectId(info.PurchaseOrderId)
+                  .MessageResourceFormatDatas(info.PoProviderPricingCode)
+                  .ObjectId(info.PoProviderPricingId)
                   .JsonData((new { purchaseOrderId }).JsonSerialize())
                   .CreateLog();
                 return true;
@@ -844,17 +835,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                var info = await _purchaseOrderDBContext.PoProviderPricing.FirstOrDefaultAsync(d => d.PoProviderPricingId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
-                if (info.PurchaseOrderStatusId != (int)EnumPoProviderPricingStatus.Draff)
+                if (info.PoProviderPricingStatusId != (int)EnumPoProviderPricingStatus.Draff)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams);
                 }
 
                 info.IsChecked = null;
                 info.IsApproved = null;
-                info.PurchaseOrderStatusId = (int)EnumPoProviderPricingStatus.WaitToCensor;
+                info.PoProviderPricingStatusId = (int)EnumPoProviderPricingStatus.WaitToCensor;
                 info.UpdatedDatetimeUtc = DateTime.UtcNow;
                 info.UpdatedByUserId = _currentContext.UserId;
 
@@ -864,8 +855,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.SendToCensor)
-                  .MessageResourceFormatDatas(info.PurchaseOrderCode)
-                  .ObjectId(info.PurchaseOrderId)
+                  .MessageResourceFormatDatas(info.PoProviderPricingCode)
+                  .ObjectId(info.PoProviderPricingId)
                   .JsonData((new { purchaseOrderId }).JsonSerialize())
                   .CreateLog();
                 return true;
@@ -877,7 +868,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
+                var info = await _purchaseOrderDBContext.PoProviderPricing.FirstOrDefaultAsync(d => d.PoProviderPricingId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
                 info.PoProcessStatusId = (int)poProcessStatusId;
@@ -887,8 +878,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.UpdatePoProcessStatus)
-                 .MessageResourceFormatDatas(poProcessStatusId, info.PurchaseOrderCode)
-                 .ObjectId(info.PurchaseOrderId)
+                 .MessageResourceFormatDatas(poProcessStatusId, info.PoProviderPricingCode)
+                 .ObjectId(info.PoProviderPricingId)
                  .JsonData((new { purchaseOrderId, poProcessStatusId }).JsonSerialize())
                  .CreateLog();
 
@@ -909,7 +900,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             //    return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
             //}
 
-            PoProviderPricing poInfo = null;
+            PoProviderPricingEntity poInfo = null;
 
             if (poId.HasValue)
             {
