@@ -82,6 +82,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         PurchaseOrder = 25,
 
+        [Description("Đơn đặt hàng")]
+        [GenCodeObject]
+        PoProviderPricing = 25001,
+
         [Description("Đơn đặt hàng chi tiết")]
         PurchaseOrderDetail = 26,
 

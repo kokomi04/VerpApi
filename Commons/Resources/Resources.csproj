@@ -362,6 +362,16 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>PropertyCalcValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="PurchaseOrder\PoProviderPricing\PoProviderPricingActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PoProviderPricingActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\PoProviderPricing\PoProviderPricingValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PoProviderPricingValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="PurchaseOrder\Po\PurchaseOrderActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -823,6 +833,14 @@
     <EmbeddedResource Update="PurchaseOrder\Calc\PropertyCalc\PropertyCalcValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PropertyCalcValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\PoProviderPricing\PoProviderPricingActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PoProviderPricingActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\PoProviderPricing\PoProviderPricingValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PoProviderPricingValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Po\PurchaseOrderActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
