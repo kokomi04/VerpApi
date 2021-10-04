@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
@@ -122,15 +123,49 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         }
         public async Task<bool> DeleteCalendar(int calendarId)
         {
-            var calendar = await _organizationContext.Calendar.FirstOrDefaultAsync(c => c.CalendarId == calendarId);
-            if (calendar == null)
+            using var trans = await _organizationContext.Database.BeginTransactionAsync();
+            try
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                var calendar = await _organizationContext.Calendar.FirstOrDefaultAsync(c => c.CalendarId == calendarId);
+                if (calendar == null)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                }
+
+                if (_organizationContext.DepartmentCalendar.Any(dc => dc.CalendarId == calendarId))
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc đang có bộ phận sử dụng. Vui lòng kiểm tra lại");
+                }
+
+                // Lấy danh sách giờ làm / ngày
+                var workingHourInfos = _organizationContext.WorkingHourInfo
+                    .Where(wh => wh.CalendarId == calendarId)
+                    .ToList();
+                // Lấy danh sách ngày lv trong tuần
+                var workingWeeks = _organizationContext.WorkingWeekInfo
+                  .Where(ww => ww.CalendarId == calendarId)
+                  .ToList();
+                // Lấy danh sách nghỉ phép
+                var dayOffs = _organizationContext.DayOffCalendar
+                    .Where(dof => dof.CalendarId == calendarId)
+                    .ToList();
+
+                _organizationContext.WorkingHourInfo.RemoveRange(workingHourInfos);
+                _organizationContext.WorkingWeekInfo.RemoveRange(workingWeeks);
+                _organizationContext.DayOffCalendar.RemoveRange(dayOffs);
+                _organizationContext.Calendar.Remove(calendar);
+                _organizationContext.SaveChanges();
+
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, calendarId, $"Xóa lịch làm việc {calendar.CalendarName}", calendar.JsonSerialize());
+                return true;
             }
-
-            // TODO
-
-            return true;
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "DeleteCalendar");
+                throw;
+            }
         }
 
 
@@ -298,14 +333,17 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     lstDayOff.Add(new DayOffCalendarModel
                     {
                         Day = day.GetUnix(),
-                        Content = "Nghỉ làm cố định trong tuần"
+                        Content = "Nghỉ làm cố định trong tuần",
+                        DayOffType = EnumDayOffType.Weekend
                     });
                 }
             }
 
             foreach (var dayOff in dayOffCalendar)
             {
-                lstDayOff.Add(_mapper.Map<DayOffCalendarModel>(dayOff));
+                var model = _mapper.Map<DayOffCalendarModel>(dayOff);
+                model.DayOffType = EnumDayOffType.DayOff;
+                lstDayOff.Add(model);
             }
 
             return lstDayOff.OrderBy(d => d.Day).ToList();

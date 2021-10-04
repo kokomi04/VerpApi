@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using System;
+using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -10,6 +11,7 @@ namespace VErp.Services.Organization.Model.Calendar
     {
         public long Day { get; set; }
         public string Content { get; set; }
+        public EnumDayOffType DayOffType { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DayOffCalendar, DayOffCalendarModel>()
