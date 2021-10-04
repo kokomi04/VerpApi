@@ -120,22 +120,22 @@
   <data name="DeleveryDestinationTooLong" xml:space="preserve">
     <value>The delivery destination info is too long</value>
   </data>
-  <data name="PoAlreadyApproved" xml:space="preserve">
-    <value>The purchase order already approved</value>
+  <data name="AlreadyApproved" xml:space="preserve">
+    <value>The provider quote already approved</value>
   </data>
-  <data name="PoAlreadyChecked" xml:space="preserve">
-    <value>The purchase order already checked</value>
+  <data name="AlreadyChecked" xml:space="preserve">
+    <value>The provider quote already checked</value>
   </data>
-  <data name="PoAlreadyRejected" xml:space="preserve">
-    <value>The purchase order already rejected</value>
+  <data name="AlreadyRejected" xml:space="preserve">
+    <value>The provider quote already rejected</value>
   </data>
-  <data name="PoHasBeenFailAtCheck" xml:space="preserve">
-    <value>The purchase order has been fail at check</value>
+  <data name="HasBeenFailAtCheck" xml:space="preserve">
+    <value>The provider quote has been fail at check</value>
   </data>
-  <data name="PoNotPassCheckYet" xml:space="preserve">
-    <value>The purchase order does not pass check yet</value>
+  <data name="NotPassCheckYet" xml:space="preserve">
+    <value>The provider quote does not pass check yet</value>
   </data>
-  <data name="PoNotSentToCensorYet" xml:space="preserve">
-    <value>The purchase order has not been sent to censor yet</value>
+  <data name="NotSentToCensorYet" xml:space="preserve">
+    <value>The provider quote has not been sent to censor yet</value>
   </data>
 </root>

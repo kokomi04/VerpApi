@@ -117,25 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="DeleveryDestinationTooLong" xml:space="preserve">
-    <value>The delivery destination info is too long</value>
+  <data name="CensorApprove" xml:space="preserve">
+    <value>Đã duyệt báo giá từ nhà cung cấp "{0}"</value>
   </data>
-  <data name="PoAlreadyApproved" xml:space="preserve">
-    <value>The purchase order already approved</value>
+  <data name="CensorReject" xml:space="preserve">
+    <value>Từ chối duyệt báo giá từ nhà cung cấp "{0}"</value>
   </data>
-  <data name="PoAlreadyChecked" xml:space="preserve">
-    <value>The purchase order already checked</value>
+  <data name="CheckApprove" xml:space="preserve">
+    <value>Đã kiểm tra báo giá từ nhà cung cấp"{0}"</value>
   </data>
-  <data name="PoAlreadyRejected" xml:space="preserve">
-    <value>The purchase order already rejected</value>
+  <data name="CheckReject" xml:space="preserve">
+    <value>Kiểm tra từ chối báo giá từ nhà cung cấp "{0}"</value>
   </data>
-  <data name="PoHasBeenFailAtCheck" xml:space="preserve">
-    <value>The purchase order has been fail at check</value>
+  <data name="Create" xml:space="preserve">
+    <value>Tạp báo giá từ nhà cung cấp"{0}"</value>
   </data>
-  <data name="PoNotPassCheckYet" xml:space="preserve">
-    <value>The purchase order does not pass check yet</value>
+  <data name="Delete" xml:space="preserve">
+    <value>Xóa báo giá từ nhà cung cấp "{0}"</value>
   </data>
-  <data name="PoNotSentToCensorYet" xml:space="preserve">
-    <value>The purchase order has not been sent to censor yet</value>
+  <data name="SendToCensor" xml:space="preserve">
+    <value>Gửi duyệt báo giá từ nhà cung cấp "{0}"</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Cập nhật báo giá từ nhà cung cấp"{0}"</value>
+  </data>
+  <data name="UpdatePoProcessStatus" xml:space="preserve">
+    <value>Cập nhật trạng thái {0} báo giá nhà cung cấp "{1}"</value>
   </data>
 </root>
