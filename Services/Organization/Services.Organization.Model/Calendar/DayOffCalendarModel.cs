@@ -11,7 +11,7 @@ namespace VErp.Services.Organization.Model.Calendar
     {
         public long Day { get; set; }
         public string Content { get; set; }
-        public EnumDayOffType DayOffType { get; set; }
+        public EnumDayOffType? DayOffType { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DayOffCalendar, DayOffCalendarModel>()
