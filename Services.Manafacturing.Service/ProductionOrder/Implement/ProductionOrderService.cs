@@ -927,6 +927,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
+
+        #region Production Order Configuration
+        public async Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration()
+        {
+            var entity = await _manufacturingDBContext.ProductionOrderConfiguration.FirstOrDefaultAsync();
+            if (entity == null) return new ProductionOrderConfigurationModel();
+
+            return _mapper.Map<ProductionOrderConfigurationModel>(entity);
+        }
+
+        public async Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model)
+        {
+            var entity = await _manufacturingDBContext.ProductionOrderConfiguration.FirstOrDefaultAsync();
+            if (entity == null)
+            {
+                await _manufacturingDBContext.ProductionOrderConfiguration.AddAsync(_mapper.Map<ProductionOrderConfiguration>(model));
+            };
+
+            entity.IsEnablePlanEndDate = model.IsEnablePlanEndDate;
+            entity.NumberOfDayPed = model.NumberOfDayPed;
+
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
+        }
+        #endregion
     }
 
     class ProductionWordloadInfo
