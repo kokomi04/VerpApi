@@ -171,5 +171,19 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.GetProductionCapacity(startDate, endDate);
         }
+
+        [HttpGet]
+        [Route("configuration")]
+        public async Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration()
+        {
+            return await _productionOrderService.GetProductionOrderConfiguration();
+        }
+
+        [HttpPut]
+        [Route("configuration")]
+        public async Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model)
+        {
+            return await _productionOrderService.UpdateProductionOrderConfiguration(model);
+        }
     }
 }

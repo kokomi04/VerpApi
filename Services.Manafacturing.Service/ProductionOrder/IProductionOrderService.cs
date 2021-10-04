@@ -30,5 +30,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 
 
         Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate);
+
+        Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration();
+        Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model);
+        
     }
 }
