@@ -18,7 +18,7 @@ namespace VErpApi.Controllers.System
 {
     [Route("api/organization/data/bills")]
     [ObjectDataApi(EnumObjectType.HrType, "hrTypeId")]
-    public class HrDataController: VErpBaseController
+    public class HrDataController : VErpBaseController
     {
         private readonly IHrDataService _hrDataService;
 
@@ -85,6 +85,13 @@ namespace VErpApi.Controllers.System
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             return await _hrDataService.ImportHrBillFromMapping(hrTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{hrTypeId}/{fId}/reference/{hrAreaId}")]
+        public async Task<bool> UpdateHrBillReference([FromRoute] int hrTypeId, [FromRoute] int fId, [FromRoute] int hrAreaId, [FromQuery] int fReferenceId)
+        {
+            return await _hrDataService.UpdateHrBillReference(hrTypeId, hrAreaId, fId, fReferenceId).ConfigureAwait(true);
         }
     }
 }
