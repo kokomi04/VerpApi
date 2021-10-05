@@ -239,8 +239,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             modelBuilder.Entity<DepartmentCalendar>(entity =>
             {
                 entity.HasKey(e => new { e.StartDate, e.DepartmentId });
-
-                entity.Property(e => e.CalendarId).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<DepartmentCapacityBalance>(entity =>

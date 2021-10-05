@@ -535,7 +535,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
-                                where a.HrAreaId == hrAreaId
+                                where a.HrAreaId == hrAreaId && a.HrTypeReferenceId.HasValue == false
                                 select new
                                 {
                                     t.HrTypeId,
@@ -582,7 +582,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
-                                where a.HrAreaId == hrAreaId
+                                where a.HrAreaId == hrAreaId && a.HrTypeReferenceId.HasValue == false
                                 select new
                                 {
                                     t.HrTypeId,
@@ -632,7 +632,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         {
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
-                                where a.HrAreaId == hrAreaId
+                                where a.HrAreaId == hrAreaId && a.HrTypeReferenceId.HasValue == false
                                 select new
                                 {
                                     t.HrTypeId,

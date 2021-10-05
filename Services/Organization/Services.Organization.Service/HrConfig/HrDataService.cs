@@ -39,6 +39,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<bool> UpdateHr(int hrTypeId, long hrBill_F_Id, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
+        Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, int hrBill_F_Id, int hrBillReference_F_Id);
     }
 
     public class HrDataService : IHrDataService
@@ -82,6 +83,30 @@ namespace VErp.Services.Organization.Service.HrConfig
         }
 
         #region public
+        public async Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, int hrBill_F_Id, int hrBillReference_F_Id)
+        {
+            var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
+            ValidateExistenceHrBill(hrBill_F_Id);
+
+            var hrArea = await _organizationDBContext.HrArea.FirstOrDefaultAsync(x => x.HrAreaId == hrAreaId);
+
+            var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
+
+            var sqlParams = new List<SqlParameter>();
+            var updateSql = new StringBuilder($"UPDATE [{tableName}] SET [HrBillReference_F_Id] = @HrBillReference_F_Id, ");
+            
+            updateSql.Append($"[UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc WHERE [{HR_TABLE_F_IDENTITY}] = @{HR_TABLE_F_IDENTITY}");
+
+            sqlParams.Add(new SqlParameter("@UpdatedDatetimeUtc", DateTime.UtcNow));
+            sqlParams.Add(new SqlParameter("@UpdatedByUserId", _currentContextService.UserId));
+            sqlParams.Add(new SqlParameter($"@{HR_TABLE_F_IDENTITY}", hrBill_F_Id));
+            sqlParams.Add(new SqlParameter($"@HrBillReference_F_Id", hrBillReference_F_Id));
+
+            var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(updateSql.ToString(), sqlParams);
+
+            return true;
+        }
+
         public async Task<PageDataTable> SearchHr(int hrTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
@@ -92,7 +117,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var hrAreas = await (from t in _organizationDBContext.HrType
                                  join a in _organizationDBContext.HrArea on t.HrTypeId equals a.HrTypeId
-                                 where t.HrTypeId == hrTypeId && a.IsMultiRow == false
+                                 where t.HrTypeId == hrTypeId && a.IsMultiRow == false && a.HrTypeReferenceId.HasValue == false
                                  select new
                                  {
                                      t.HrTypeCode,
@@ -246,8 +271,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             for (int i = 0; i < hrAreas.Count; i++)
             {
                 var hrArea = hrAreas[i];
-
-                var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.IsMultiRow);
+                var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.HrTypeReferenceId.HasValue ? false :  hrArea.IsMultiRow);
                 var query = $"{alias} AND [row].[HrBill_F_Id] = @HrBill_F_Id";
 
                 var data = (await _organizationDBContext.QueryDataTable(query, new[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) })).ConvertData();
@@ -317,7 +341,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             ValidateExistenceHrBill(hrBill_F_Id);
 
-            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
+            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId && x.HrTypeReferenceId.HasValue == false).AsNoTracking().ToListAsync();
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
 
@@ -388,7 +412,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     var newHrAreaData = hrAreaData.Where(x => !x.ContainsKey(HR_TABLE_F_IDENTITY) || string.IsNullOrWhiteSpace(x[HR_TABLE_F_IDENTITY].ToString()))
                         .ToList();
-                    await AddHrBillBase(hrTypeId, hrBill_F_Id, tableName, hrAreaData, hrAreaFields, newHrAreaData);
+                    await AddHrBillBase(hrTypeId, hrBill_F_Id, billInfo: null, tableName, hrAreaData, hrAreaFields, newHrAreaData);
                 }
 
                 await @trans.CommitAsync();
@@ -414,7 +438,8 @@ namespace VErp.Services.Organization.Service.HrConfig
         public async Task<long> CreateHr(int hrTypeId, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data)
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
-            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
+            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId && x.HrTypeReferenceId.HasValue == false).AsNoTracking().ToListAsync();
+            var hrAreaReferences = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId && x.HrTypeReferenceId.HasValue == true).AsNoTracking().ToListAsync();
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
 
@@ -445,8 +470,28 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
                     var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
 
-                    await AddHrBillBase(hrTypeId, billInfo.FId, tableName, hrAreaData, hrAreaFields, hrAreaData);
+                    await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, tableName, hrAreaData, hrAreaFields, hrAreaData);
                     
+                }
+
+                for (int i = 0; i < hrAreaReferences.Count; i++)
+                {
+                    var hrArea = hrAreas[i];
+                    var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
+
+                    var sql = $"INSERT INTO [{tableName}](HrBill_F_Id) VALUES(@HrBill_F_Id); SELECT @F_Id = SCOPE_IDENTITY();";
+                    var sqlParams = new List<SqlParameter>();
+                    
+                    sqlParams.Add(new SqlParameter("@HrBill_F_Id", billInfo.FId));
+
+                    var idParam = new SqlParameter("@F_Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
+                    sqlParams.Add(idParam);
+
+                    await _organizationDBContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
+
+                    if (null == idParam.Value)
+                        throw new InvalidProgramException();
+
                 }
 
                 await @trans.CommitAsync();
@@ -541,19 +586,13 @@ namespace VErp.Services.Organization.Service.HrConfig
                 FieldTitle = "Cột kiểm tra",
             });
 
-            result.Fields.Add(new CategoryFieldNameModel
-            {
-                FieldName = ImportStaticFieldConsants.CheckGroupRowData,
-                FieldTitle = "Cột đánh dấu dòng thuộc 1 nhóm chứng từ"
-            });
-
             return result;
         }
 
         public async Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream)
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
-            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
+            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId && x.HrTypeReferenceId.HasValue == false).AsNoTracking().ToListAsync();
 
             var reader = new ExcelReader(stream);
             var dataExcel = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
@@ -790,7 +829,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
                         var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
 
-                        await AddHrBillBase(hrTypeId, billInfo.FId, tableName, hrAreaData, hrAreaFields, hrAreaData);
+                        await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, tableName, hrAreaData, hrAreaFields, hrAreaData);
 
                     }
                 }
@@ -847,7 +886,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return await (from af in _organizationDBContext.HrAreaField
                           join f in _organizationDBContext.HrField on af.HrFieldId equals f.HrFieldId
                           join a in area on af.HrAreaId equals a.HrAreaId
-                          where af.HrTypeId == hrTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != OrganizationConstants.F_IDENTITY
+                          where af.HrTypeId == hrTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly && a.HrTypeReferenceId.HasValue == false //&& f.FieldName != OrganizationConstants.F_IDENTITY
                           orderby a.SortOrder, af.SortOrder
                           select new ValidateField
                           {
@@ -877,6 +916,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var @selectColumn = @$"
                 row.F_Id,
                 row.HrBill_F_Id,
+                row.HrBillReference_F_Id,
                 bill.HrTypeId
             ";
             var @join = @$"
@@ -913,7 +953,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
         }
 
-        private async Task AddHrBillBase(int hrTypeId, long hrBill_F_Id, string tableName, IEnumerable<NonCamelCaseDictionary> hrAreaData, IEnumerable<ValidateField> hrAreaFields, IEnumerable<NonCamelCaseDictionary> newHrAreaData)
+        private async Task AddHrBillBase(int hrTypeId, long hrBill_F_Id, HrBill billInfo, string tableName, IEnumerable<NonCamelCaseDictionary> hrAreaData, IEnumerable<ValidateField> hrAreaFields, IEnumerable<NonCamelCaseDictionary> newHrAreaData)
         {
             var checkData = newHrAreaData.Select(data => new ValidateRowModel(data, null))
                                                              .ToList();
@@ -936,11 +976,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await FillGenerateColumn(hrBill_F_Id, generateTypeLastValues, infoFields, hrAreaData);
 
-            // if (hrAreaFields.Any(x => x.FieldName == OrganizationConstants.BILL_CODE))
-            // {
-            //     Utils.ValidateCodeSpecialCharactors(sct);
-            //     billInfo.BillCode = sct;
-            // }
+            if (billInfo != null && hrAreaData.FirstOrDefault().TryGetValue(OrganizationConstants.BILL_CODE, out var sct))
+            {
+                Utils.ValidateCodeSpecialCharactors(sct);
+                billInfo.BillCode = sct;
+            }
 
             foreach (var row in newHrAreaData)
             {
