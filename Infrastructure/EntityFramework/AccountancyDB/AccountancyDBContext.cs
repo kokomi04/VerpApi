@@ -88,6 +88,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.Column).HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
+
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
                 entity.Property(e => e.InputStyleJson).HasMaxLength(512);

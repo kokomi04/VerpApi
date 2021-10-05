@@ -29,6 +29,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<MaterialCalcSummary> MaterialCalcSummary { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
+        public virtual DbSet<PoProviderPricing> PoProviderPricing { get; set; }
+        public virtual DbSet<PoProviderPricingDetail> PoProviderPricingDetail { get; set; }
+        public virtual DbSet<PoProviderPricingFile> PoProviderPricingFile { get; set; }
         public virtual DbSet<ProductPriceConfig> ProductPriceConfig { get; set; }
         public virtual DbSet<ProductPriceConfigItem> ProductPriceConfigItem { get; set; }
         public virtual DbSet<ProductPriceConfigItemPrice> ProductPriceConfigItemPrice { get; set; }
@@ -259,6 +262,79 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchasingSuggestDetailId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PoAssignmentDetail_PurchasingSuggestDetail");
+            });
+
+            modelBuilder.Entity<PoProviderPricing>(entity =>
+            {
+                entity.Property(e => e.AdditionNote).HasMaxLength(512);
+
+                entity.Property(e => e.Content).HasMaxLength(512);
+
+                entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
+
+                entity.Property(e => e.DeliveryFee).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.PaymentInfo).HasMaxLength(512);
+
+                entity.Property(e => e.PoProviderPricingCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.PoProviderPricingDescription).HasMaxLength(1024);
+
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
+            });
+
+            modelBuilder.Entity<PoProviderPricingDetail>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.ExchangedMoney).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.ProviderProductName).HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.PoProviderPricing)
+                    .WithMany(p => p.PoProviderPricingDetail)
+                    .HasForeignKey(d => d.PoProviderPricingId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PoProviderPricingDetail_PoProviderPricing");
+            });
+
+            modelBuilder.Entity<PoProviderPricingFile>(entity =>
+            {
+                entity.HasKey(e => e.PoProviderPricingId);
+
+                entity.HasOne(d => d.File)
+                    .WithMany(p => p.PoProviderPricingFile)
+                    .HasForeignKey(d => d.FileId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PoProviderPricingFile_PoProviderPricing");
             });
 
             modelBuilder.Entity<ProductPriceConfig>(entity =>

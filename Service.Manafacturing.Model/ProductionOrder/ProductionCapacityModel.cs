@@ -32,12 +32,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionOrderDetailCapacityModel
     {
-     
+
         public long ProductionOrderDetailId { get; set; }
         public int? ProductId { get; set; }
         public decimal? Quantity { get; set; }
         public decimal? ReserveQuantity { get; set; }
-    
+
     }
 
     public class ProductionOrderCapacityModel

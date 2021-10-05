@@ -20,47 +20,41 @@ using System.Linq;
 using VErp.Infrastructure.ServiceCore.Model;
 using AutoMapper.QueryableExtensions;
 using Verp.Cache.RedisCache;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
+using Verp.Resources.PurchaseOrder.Calc.PropertyCalc;
+using static Verp.Resources.PurchaseOrder.Calc.PropertyCalc.PropertyCalcValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class PropertyCalcService : IPropertyCalcService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IAsyncRunnerService _asyncRunner;
-        private readonly ICurrentContextService _currentContext;
-        private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IPropertyHelperService _propertyHelperService;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _propertyCalcActivityLog;
+
+
         public PropertyCalcService(
             PurchaseOrderDBContext purchaseOrderDBContext
-           , IOptions<AppSetting> appSetting
-           , ILogger<PropertyCalcService> logger
            , IActivityLogService activityLogService
-           , IAsyncRunnerService asyncRunner
-           , ICurrentContextService currentContext
-           , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
+            , IPropertyHelperService propertyHelperService
             , IMapper mapper
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _asyncRunner = asyncRunner;
-            _currentContext = currentContext;
-            _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _propertyHelperService = propertyHelperService;
             _mapper = mapper;
+            _propertyCalcActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PropertyCalc);
         }
 
         public async Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = from c in _purchaseOrderDBContext.PropertyCalc
                         join d in _purchaseOrderDBContext.PropertyCalcProduct on c.PropertyCalcId equals d.PropertyCalcId
                         join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId
@@ -154,15 +148,23 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<long> Create(PropertyCalcModel req)
         {
+            var properties = await _propertyHelperService.GetByIds(req.Properties?.Select(p => p.PropertyId)?.ToList());
+            var propertiesName = string.Join(", ", properties);
+
             var ctx = await GenerateCode(null, req);
             await Validate(null, req);
 
             var entity = _mapper.Map<PropertyCalc>(req);
             await _purchaseOrderDBContext.PropertyCalc.AddAsync(entity);
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Thêm mới tính nhu cầu VT có thuộc tính đặc biệt {req.PropertyCalcCode}", req.JsonSerialize());
 
             await ctx.ConfirmCode();
+
+            await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Create)
+               .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
+               .ObjectId(entity.PropertyCalcId)
+               .JsonData(req.JsonSerialize())
+               .CreateLog();
 
             return entity.PropertyCalcId;
         }
@@ -171,7 +173,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw PropertyCalcNotFound.BadRequest();
 
             var requestInfo = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PropertyCalcId == propertyCalcId);
 
@@ -197,9 +199,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<bool> Update(long propertyCalcId, PropertyCalcModel req)
         {
+            var properties = await _propertyHelperService.GetByIds(req.Properties?.Select(p => p.PropertyId)?.ToList());
+            var propertiesName = string.Join(", ", properties);
+
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw PropertyCalcNotFound.BadRequest();
 
             await Validate(propertyCalcId, req);
             _purchaseOrderDBContext.PropertyCalcProperty.RemoveRange(entity.PropertyCalcProperty);
@@ -215,7 +220,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Cập nhật tính nhu cầu VT có thuộc tính đặc biệt {req.PropertyCalcCode}", req.JsonSerialize());
+            await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Update)
+             .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
+             .ObjectId(entity.PropertyCalcId)
+             .JsonData(req.JsonSerialize())
+             .CreateLog();
 
             return true;
         }
@@ -224,12 +233,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw PropertyCalcNotFound.BadRequest();
+
+            var properties = await _propertyHelperService.GetByIds(entity.PropertyCalcProperty?.Select(p => p.PropertyId)?.ToList());
+            var propertiesName = string.Join(", ", properties);
 
             entity.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.PropertyCalc, entity.PropertyCalcId, $"Xóa tính nhu cầu VT có thuộc tính đặc biệt {entity.PropertyCalcCode}", new { propertyCalcId }.JsonSerialize());
 
+            await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Delete)
+           .MessageResourceFormatDatas(propertiesName, entity.PropertyCalcCode)
+           .ObjectId(entity.PropertyCalcId)
+           .JsonData(entity.JsonSerialize())
+           .CreateLog();
             return true;
         }
 
@@ -255,27 +271,28 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             if (propertyCalcId > 0 && string.IsNullOrWhiteSpace(model.PropertyCalcCode))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập mã số");
+                throw PropertyCalcCodeEmpty.BadRequest();
             }
             model.PropertyCalcCode = (model.PropertyCalcCode ?? "").Trim();
             if (!string.IsNullOrWhiteSpace(model.PropertyCalcCode))
             {
                 if (await _purchaseOrderDBContext.PropertyCalc.AnyAsync(s => s.PropertyCalcId != propertyCalcId && s.PropertyCalcCode == model.PropertyCalcCode))
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã số đã tồn tại");
+                    throw PropertyCodeAlreadyExist.BadRequest();
                 }
             }
             if (model.CuttingWorkSheet.Any(s => s.CuttingWorkSheetDest.GroupBy(d => d.ProductId).Any(g => g.Count() > 1)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có chi tiết đầu ra bị trùng lặp");
+                throw DuplicatedOutputCutting.BadRequest();
             }
             if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Any(m => !m.ProductId.HasValue && string.IsNullOrEmpty(m.ExcessMaterial))))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Tên vật tư dư thừa không được để trống");
+                throw ExcessMaterialCuttingNameMustBeNotEmpty.BadRequest();
             }
-            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1)))
+            if (model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Where(m => !m.ProductId.HasValue).GroupBy(m => m.ExcessMaterial).Any(g => g.Count() > 1))
+                || model.CuttingWorkSheet.Any(s => s.CuttingExcessMaterial.Where(m => m.ProductId.HasValue).GroupBy(m => m.ProductId.Value).Any(g => g.Count() > 1)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Phương án cắt có vật tư dư thừa bị trùng lặp");
+                throw DuplicatedExcessMaterialCuttingNameMustBeNotEmpty.BadRequest();
             }
         }
 

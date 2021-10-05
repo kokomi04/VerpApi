@@ -18,17 +18,16 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         }
 
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
+        public virtual DbSet<Calendar> Calendar { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
         public virtual DbSet<DayOffCalendar> DayOffCalendar { get; set; }
         public virtual DbSet<Department> Department { get; set; }
+        public virtual DbSet<DepartmentCalendar> DepartmentCalendar { get; set; }
         public virtual DbSet<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }
-        public virtual DbSet<DepartmentDayOffCalendar> DepartmentDayOffCalendar { get; set; }
         public virtual DbSet<DepartmentOverHourInfo> DepartmentOverHourInfo { get; set; }
-        public virtual DbSet<DepartmentWorkingHourInfo> DepartmentWorkingHourInfo { get; set; }
-        public virtual DbSet<DepartmentWorkingWeekInfo> DepartmentWorkingWeekInfo { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
@@ -90,6 +89,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.UpdatedTime).HasColumnType("datetime");
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<Calendar>(entity =>
+            {
+                entity.Property(e => e.CalendarCode)
+                    .IsRequired()
+                    .HasMaxLength(25);
+
+                entity.Property(e => e.CalendarName).HasMaxLength(64);
             });
 
             modelBuilder.Entity<Customer>(entity =>
@@ -199,7 +207,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<DayOffCalendar>(entity =>
             {
-                entity.HasKey(e => new { e.SubsidiaryId, e.Day });
+                entity.HasKey(e => new { e.SubsidiaryId, e.Day, e.CalendarId });
 
                 entity.Property(e => e.Content).HasMaxLength(255);
             });
@@ -228,6 +236,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_Department_SelfKey");
             });
 
+            modelBuilder.Entity<DepartmentCalendar>(entity =>
+            {
+                entity.HasKey(e => new { e.StartDate, e.DepartmentId });
+
+                entity.Property(e => e.CalendarId).ValueGeneratedOnAdd();
+            });
+
             modelBuilder.Entity<DepartmentCapacityBalance>(entity =>
             {
                 entity.HasIndex(e => new { e.DepartmentId, e.StartDate, e.EndDate }, "UCI_DepartmentCapacityBalance")
@@ -242,26 +257,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_DepartmentCapacityBalance_Department");
             });
 
-            modelBuilder.Entity<DepartmentDayOffCalendar>(entity =>
-            {
-                entity.HasKey(e => new { e.DepartmentId, e.SubsidiaryId, e.Day });
-
-                entity.Property(e => e.Content).HasMaxLength(255);
-            });
-
             modelBuilder.Entity<DepartmentOverHourInfo>(entity =>
             {
                 entity.Property(e => e.Content).HasMaxLength(255);
-            });
-
-            modelBuilder.Entity<DepartmentWorkingHourInfo>(entity =>
-            {
-                entity.HasKey(e => new { e.DepartmentId, e.StartDate, e.SubsidiaryId });
-            });
-
-            modelBuilder.Entity<DepartmentWorkingWeekInfo>(entity =>
-            {
-                entity.HasKey(e => new { e.DepartmentId, e.DayOfWeek, e.SubsidiaryId, e.StartDate });
             });
 
             modelBuilder.Entity<Employee>(entity =>
@@ -595,13 +593,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<WorkingHourInfo>(entity =>
             {
-                entity.HasKey(e => new { e.StartDate, e.SubsidiaryId })
+                entity.HasKey(e => new { e.StartDate, e.SubsidiaryId, e.CalendarId })
                     .HasName("PK_WorkingHourHistory");
             });
 
             modelBuilder.Entity<WorkingWeekInfo>(entity =>
             {
-                entity.HasKey(e => new { e.DayOfWeek, e.SubsidiaryId, e.StartDate })
+                entity.HasKey(e => new { e.DayOfWeek, e.SubsidiaryId, e.StartDate, e.CalendarId })
                     .HasName("PK_WorkingWeek");
             });
 

@@ -546,6 +546,12 @@ namespace VErp.Services.Master.Service.Config.Implement
                fieldName: "Mã kế hoạch sản xuất")
             );
 
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                targeObjectTypeId: EnumObjectType.PropertyCalc,
+                fieldName: "Mã số")
+            );
             return Task.FromResult(result);
         }
 

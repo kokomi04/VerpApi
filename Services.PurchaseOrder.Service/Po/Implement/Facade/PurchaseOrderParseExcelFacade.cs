@@ -11,6 +11,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
+using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderParseExcelValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 {
@@ -40,48 +41,48 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             foreach (var item in rowDatas)
             {
-                IList<ProductModel> productInfo = null;
+                IList<ProductModel> itemProducts = null;
                 if (!string.IsNullOrWhiteSpace(item.ProductCode) && productInfoByCode.ContainsKey(item.ProductCode?.ToLower()))
                 {
-                    productInfo = productInfoByCode[item.ProductCode?.ToLower()];
+                    itemProducts = productInfoByCode[item.ProductCode?.ToLower()];
                 }
                 else
                 {
                     if (!string.IsNullOrWhiteSpace(item.ProductInternalName) && productInfoByInternalName.ContainsKey(item.ProductInternalName))
                     {
-                        productInfo = productInfoByInternalName[item.ProductInternalName];
+                        itemProducts = productInfoByInternalName[item.ProductInternalName];
                     }
                 }
 
-                if (productInfo == null || productInfo.Count == 0)
+                if (itemProducts == null || itemProducts.Count == 0)
                 {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy mặt hàng {item.ProductCode} {item.ProductName}");
+                    throw ProductInfoNotFound.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
                 }
 
-                if (productInfo.Count > 1)
+                if (itemProducts.Count > 1)
                 {
-                    productInfo = productInfo.Where(p => p.ProductName == item.ProductName).ToList();
+                    itemProducts = itemProducts.Where(p => p.ProductName == item.ProductName).ToList();
 
-                    if (productInfo.Count != 1)
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {productInfo.Count} mặt hàng {item.ProductCode} {item.ProductName}");
+                    if (itemProducts.Count != 1)
+                        throw FoundNumberOfProduct.BadRequestFormat(itemProducts.Count, $"{item.ProductCode} {item.ProductName}");
                 }
 
                 var productUnitConversionId = 0;
                 if (!string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
                 {
-                    var pus = productInfo[0].StockInfo.UnitConversions
+                    var pus = itemProducts[0].StockInfo.UnitConversions
                             .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
                             .ToList();
 
                     if (pus.Count != 1)
                     {
-                        pus = productInfo[0].StockInfo.UnitConversions
+                        pus = itemProducts[0].StockInfo.UnitConversions
                            .Where(u => u.ProductUnitConversionName.Contains(item.ProductUnitConversionName) || item.ProductUnitConversionName.Contains(u.ProductUnitConversionName))
                            .ToList();
 
                         if (pus.Count > 1)
                         {
-                            pus = productInfo[0].StockInfo.UnitConversions
+                            pus = itemProducts[0].StockInfo.UnitConversions
                              .Where(u => u.ProductUnitConversionName.Equals(item.ProductUnitConversionName, StringComparison.OrdinalIgnoreCase))
                              .ToList();
                         }
@@ -89,11 +90,11 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                     if (pus.Count == 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PuOfProductNotFound.BadRequestFormat(item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");
                     }
                     if (pus.Count > 1)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy {pus.Count} đơn vị chuyển đổi {item.ProductUnitConversionName} mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw FoundNumberOfPuConversion.BadRequestFormat(pus.Count, item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");
                     }
 
                     productUnitConversionId = pus[0].ProductUnitConversionId;
@@ -101,10 +102,10 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 }
                 else
                 {
-                    var puDefault = productInfo[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
+                    var puDefault = itemProducts[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
                     if (puDefault == null)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dữ liệu đơn vị tính default lỗi, mặt hàng {item.ProductCode} {item.ProductName}");
+                        throw PrimaryPuOfProductNotFound.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
 
                     }
                     productUnitConversionId = puDefault.ProductUnitConversionId;
@@ -115,7 +116,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
                     Description = item.Description,
-                    ProductId = productInfo[0].ProductId.Value,
+                    ProductId = itemProducts[0].ProductId.Value,
                     ProviderProductName = item.ProductProviderName,
 
 
@@ -166,7 +167,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 item.ProductInternalName = item.ProductName?.NormalizeAsInternalName();
             }
-            return data.OrderBy(d=>d.SortOrder).ToList();
+            return data.OrderBy(d => d.SortOrder).ToList();
         }
 
     }

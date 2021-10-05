@@ -52,6 +52,17 @@ namespace VErpApi.Controllers.System.Category
             return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
 
+
+        [HttpPost]
+        [Route("{categoryCode}/data/Search")]
+        [GlobalApi]
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows([FromRoute] string categoryCode, [FromBody] CategoryFilterModel request)
+        {
+            if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
+
+            return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
+        }
+
         [GlobalApi]
         [HttpGet]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]

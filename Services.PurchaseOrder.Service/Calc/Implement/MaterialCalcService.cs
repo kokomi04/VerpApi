@@ -19,20 +19,20 @@ using VErp.Infrastructure.EF.EFExtensions;
 using System.Linq;
 using VErp.Infrastructure.ServiceCore.Model;
 using Microsoft.Data.SqlClient;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
+using static Verp.Resources.PurchaseOrder.Calc.MaterialCalc.MaterialCalcValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class MaterialCalcService : IMaterialCalcService
     {
-        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IAsyncRunnerService _asyncRunner;
-        private readonly ICurrentContextService _currentContext;
-        private readonly IProductHelperService _productHelperService;
+        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;        
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IMapper _mapper;
+
+        private readonly ObjectActivityLogFacade _materialCalcActivityLog;
+
         public MaterialCalcService(
             PurchaseOrderDBContext purchaseOrderDBContext
            , IOptions<AppSetting> appSetting
@@ -46,14 +46,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _asyncRunner = asyncRunner;
-            _currentContext = currentContext;
-            _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _mapper = mapper;
+
+            _materialCalcActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.MaterialCalc);
         }
 
         public async Task<PageData<MaterialCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
@@ -177,9 +173,15 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             var entity = _mapper.Map<MaterialCalc>(req);
             await _purchaseOrderDBContext.MaterialCalc.AddAsync(entity);
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.MaterialCalc, entity.MaterialCalcId, $"Thêm mới tính nhu cầu VT {req.MaterialCalcCode}", req.JsonSerialize());
 
             await ctx.ConfirmCode();
+
+
+            await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Create)
+                .MessageResourceFormatDatas(entity.MaterialCalcCode)
+                .ObjectId(entity.MaterialCalcId)
+                .JsonData(req.JsonSerialize())
+                .CreateLog();
 
             return entity.MaterialCalcId;
         }
@@ -189,7 +191,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw MaterialCalcNotFound.BadRequest();
 
             var requestInfo = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.MaterialCalcId == materialCalcId);
 
@@ -203,7 +205,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw MaterialCalcNotFound.BadRequest();
 
             await Validate(materialCalcId, req);
             _purchaseOrderDBContext.MaterialCalcConsumptionGroup.RemoveRange(entity.MaterialCalcConsumptionGroup);
@@ -218,9 +220,13 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
 
             _mapper.Map(req, entity);
 
-            await _purchaseOrderDBContext.SaveChangesAsync();
+            await _purchaseOrderDBContext.SaveChangesAsync();           
 
-            await _activityLogService.CreateLog(EnumObjectType.MaterialCalc, entity.MaterialCalcId, $"Cập nhật tính nhu cầu VT {req.MaterialCalcCode}", req.JsonSerialize());
+            await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Update)
+                .MessageResourceFormatDatas(entity.MaterialCalcCode)
+                .ObjectId(entity.MaterialCalcId)
+                .JsonData(req.JsonSerialize())
+                .CreateLog();
 
             return true;
         }
@@ -229,12 +235,16 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw MaterialCalcNotFound.BadRequest();
 
             entity.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.MaterialCalc, entity.MaterialCalcId, $"Xóa tính nhu cầu VT {entity.MaterialCalcCode}", new { materialCalcId }.JsonSerialize());
+         
+            await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Delete)
+               .MessageResourceFormatDatas(entity.MaterialCalcCode)
+               .ObjectId(entity.MaterialCalcId)
+               .JsonData(entity.JsonSerialize())
+               .CreateLog();
 
             return true;
         }
@@ -255,14 +265,14 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             if (materialCalcId > 0 && string.IsNullOrWhiteSpace(model.MaterialCalcCode))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập mã số");
+                throw MaterialCalcCodeEmpty.BadRequest();
             }
             model.MaterialCalcCode = (model.MaterialCalcCode ?? "").Trim();
             if (!string.IsNullOrWhiteSpace(model.MaterialCalcCode))
             {
                 if (await _purchaseOrderDBContext.MaterialCalc.AnyAsync(s => s.MaterialCalcId != materialCalcId && s.MaterialCalcCode == model.MaterialCalcCode))
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã số đã tồn tại");
+                    throw MaterialCalcCodeAlreadyExist.BadRequest();
                 }
             }
         }

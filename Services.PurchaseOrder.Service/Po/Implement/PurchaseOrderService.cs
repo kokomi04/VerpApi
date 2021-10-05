@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.PurchaseOrder.Po;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.Enums.MasterEnum;
@@ -17,6 +18,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
@@ -24,21 +26,20 @@ using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
+using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class PurchaseOrderService : IPurchaseOrderService
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContext;
         private readonly IPurchasingSuggestService _purchasingSuggestService;
         private readonly IProductHelperService _productHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
+
+        private readonly ObjectActivityLogFacade _poActivityLog;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -53,15 +54,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IManufacturingHelperService manufacturingHelperService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _asyncRunner = asyncRunner;
+            _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
             _currentContext = currentContext;
             _purchasingSuggestService = purchasingSuggestService;
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _manufacturingHelperService = manufacturingHelperService;
+
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
@@ -402,7 +401,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
 
             var total = await query.CountAsync();
-            var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
+            query = query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder);
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            var pagedData = await query.ToListAsync();
             var additionResult = await (from q in query
                                         group q by 1 into g
                                         select new
@@ -651,7 +655,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (po.DeliveryDestination?.Length > 1024)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    throw DeleveryDestinationTooLong.BadRequest();
                 }
 
                 await _purchaseOrderDBContext.AddAsync(po);
@@ -721,10 +725,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, po.PurchaseOrderId, $"Tạo PO {po.PurchaseOrderCode}", model.JsonSerialize());
 
                 await ctx.ConfirmCode();
 
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
+                  .MessageResourceFormatDatas(po.PurchaseOrderCode)
+                  .ObjectId(po.PurchaseOrderId)
+                  .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                  .CreateLog();
                 return po.PurchaseOrderId;
             }
 
@@ -800,7 +808,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    throw DeleveryDestinationTooLong.BadRequest();
                 }
 
 
@@ -923,8 +931,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                   .ObjectId(info.PurchaseOrderId)
+                   .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                   .CreateLog();
                 return true;
             }
         }
@@ -954,7 +966,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Xóa PO {info.PurchaseOrderCode}", info.JsonSerialize());
+
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                   .ObjectId(info.PurchaseOrderId)
+                   .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model = info }).JsonSerialize())
+                   .CreateLog();
 
                 return true;
             }
@@ -992,13 +1009,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được kiểm tra");
+                    throw PoAlreadyChecked.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = true;
@@ -1013,7 +1030,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Đã kiểm tra PO {info.PurchaseOrderCode}", info.JsonSerialize());
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckApprove)
+                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                   .ObjectId(info.PurchaseOrderId)
+                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .CreateLog();
 
                 return true;
             }
@@ -1028,13 +1049,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == false)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã kiểm tra từ chối");
+                    throw PoHasBeenFailAtCheck.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = false;
@@ -1049,8 +1070,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Kiểm tra từ chối  PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckReject)
+                  .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                  .ObjectId(info.PurchaseOrderId)
+                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .CreateLog();
                 return true;
             }
         }
@@ -1064,18 +1089,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được duyệt");
+                    throw PoAlreadyApproved.BadRequest();
                 }
 
                 if (info.IsChecked != true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                    throw PoNotPassCheckYet.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsApproved = true;
@@ -1090,7 +1115,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CensorApprove)
+                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                   .ObjectId(info.PurchaseOrderId)
+                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .CreateLog();
 
                 return true;
             }
@@ -1105,18 +1134,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == false)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã từ chối");
+                    throw PoAlreadyRejected.BadRequest();
                 }
 
                 if (info.IsChecked != true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                    throw PoNotPassCheckYet.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
                    && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
 
@@ -1132,8 +1161,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchasingSuggest, purchaseOrderId, $"Từ chối PO {info.PurchaseOrderCode}", info.JsonSerialize());
-
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CensorReject)
+                  .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                  .ObjectId(info.PurchaseOrderId)
+                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .CreateLog();
                 return true;
             }
         }
@@ -1163,8 +1195,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Gửi duyệt PO {info.PurchaseOrderCode}", info.JsonSerialize());
 
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.SendToCensor)
+                  .MessageResourceFormatDatas(info.PurchaseOrderCode)
+                  .ObjectId(info.PurchaseOrderId)
+                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .CreateLog();
                 return true;
             }
         }
@@ -1183,8 +1219,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.PurchaseOrder, purchaseOrderId, $"Cập nhật tiến trình PO {info.PurchaseOrderCode}", info.JsonSerialize());
-
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoProcessStatus)
+                 .MessageResourceFormatDatas(poProcessStatusId, info.PurchaseOrderCode)
+                 .ObjectId(info.PurchaseOrderId)
+                 .JsonData((new { purchaseOrderId, poProcessStatusId }).JsonSerialize())
+                 .CreateLog();
                 return true;
             }
         }

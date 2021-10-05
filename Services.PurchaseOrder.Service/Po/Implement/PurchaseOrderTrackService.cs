@@ -6,6 +6,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Verp.Resources.PurchaseOrder.Po;
 using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
@@ -14,8 +15,10 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Commons.Library;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -23,9 +26,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
     {
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly IManufacturingHelperService _manufacturingHelperService;
+        private readonly ObjectActivityLogFacade _poActivityLog;
 
         public PurchaseOrderTrackService(
             PurchaseOrderDBContext purchaseOrderDBContext,
@@ -36,9 +39,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
             _manufacturingHelperService = manufacturingHelperService;
+            _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
         }
 
         public async Task<long> CreatePurchaseOrderTrack(long purchaseOrderId, purchaseOrderTrackedModel req)
@@ -46,6 +49,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
+                var poInfo = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(p => p.PurchaseOrderId == purchaseOrderId);
+                if (poInfo == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
+
                 var entity = _mapper.Map<PurchaseOrderTracked>(req);
                 await _purchaseOrderDBContext.PurchaseOrderTracked.AddAsync(entity);
                 await _purchaseOrderDBContext.SaveChangesAsync();
@@ -53,7 +60,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await trans.CommitAsync();
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
-                
+
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CreatePoTrack)
+                   .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, req.Description)
+                   .ObjectId(purchaseOrderId)
+                   .JsonData(req.JsonSerialize())
+                   .CreateLog();
+
                 return entity.PurchaseOrderTrackedId;
             }
             catch (Exception ex)
@@ -69,8 +82,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
+
+                var poInfo = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(p => p.PurchaseOrderId == purchaseOrderId);
+
                 var track = await _purchaseOrderDBContext.PurchaseOrderTracked.FirstOrDefaultAsync(x => x.PurchaseOrderTrackedId == PurchaseOrderTrackId);
-                if (track == null)
+                if (poInfo == null || track == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
                 _mapper.Map(req, track);
@@ -80,6 +96,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
 
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoTrack)
+                  .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, req.Description)
+                  .ObjectId(purchaseOrderId)
+                  .JsonData(req.JsonSerialize())
+                  .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -96,8 +117,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
+                var poInfo = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(p => p.PurchaseOrderId == purchaseOrderId);
+
                 var track = await _purchaseOrderDBContext.PurchaseOrderTracked.FirstOrDefaultAsync(x => x.PurchaseOrderTrackedId == purchaseOrderTrackId);
-                if (track == null)
+                if (poInfo == null || track == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
                 track.IsDeleted = true;
@@ -107,6 +130,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
 
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoTrack)
+                .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, track.Description)
+                .ObjectId(purchaseOrderId)
+                .JsonData(track.JsonSerialize())
+                .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -132,6 +160,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
+                var poInfo = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(p => p.PurchaseOrderId == purchaseOrderId);
+
+                if (poInfo == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
+
+
                 var purchaseOrderTracks = await _purchaseOrderDBContext.PurchaseOrderTracked
                                             .Where(x => x.PurchaseOrderId == purchaseOrderId)
                                             .ToListAsync();
@@ -153,6 +187,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId);
 
+
+                await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoTrackMulti)
+                  .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, string.Join(",", req?.Select(t => t.Description)?.ToArray()))
+                  .ObjectId(purchaseOrderId)
+                  .JsonData(req.JsonSerialize())
+                  .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -172,7 +212,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .Select(x => x.OutsourceRequestId.GetValueOrDefault())
                 .Distinct()
                 .ToArray();
-            return (outsourceRequestId, (EnumPurchasingOrderType) info.PurchaseOrderType);
+            return (outsourceRequestId, (EnumPurchasingOrderType)info.PurchaseOrderType);
         }
 
         private async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId)

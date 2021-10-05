@@ -105,6 +105,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public string ReferenceUrl { get; set; }
         public bool IsBatchSelect { get; set; }
         public string OnClick { get; set; }
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
+
         public bool Compare(InputAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -136,7 +139,9 @@ namespace VErp.Services.Accountancy.Model.Input
                 RequireFilters == curField.RequireFilters &&
                 ReferenceUrl == curField.ReferenceUrl &&
                 IsBatchSelect == curField.IsBatchSelect &&
-                OnClick == curField.OnClick;
+                OnClick == curField.OnClick &&
+                CustomButtonHtml == curField.CustomButtonHtml &&
+                CustomButtonOnClick == curField.CustomButtonOnClick;
         }
     }
 

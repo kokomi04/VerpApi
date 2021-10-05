@@ -1824,7 +1824,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             };
 
             fields = fields
-                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY)
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY && !f.IsReadOnly)
                 .ToList();
 
             var referTableNames = fields.Select(f => f.RefTableCode).ToList();
