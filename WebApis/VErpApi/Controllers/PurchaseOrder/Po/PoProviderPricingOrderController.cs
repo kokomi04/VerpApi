@@ -14,13 +14,13 @@ using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
 using VErp.Services.PurchaseOrder.Service.Po;
 
 namespace VErpApi.Controllers.PurchaseOrder
-{
-    [Route("api/PurchasingOrder/PoProvidePricing")]
-    public class PoProviderPricingOrderController : VErpBaseController
+{            
+    [Route("api/PurchasingOrder/PoProviderPricing")]
+    public class PoProviderPricingController : VErpBaseController
     {
 
         private readonly IPoProviderPricingService _poProviderPricingService;
-        public PoProviderPricingOrderController(IPoProviderPricingService poProviderPricingService)
+        public PoProviderPricingController(IPoProviderPricingService poProviderPricingService)
         {
             _poProviderPricingService = poProviderPricingService;
 
