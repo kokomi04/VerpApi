@@ -55,6 +55,7 @@ namespace Verp.Services.ReportConfig.Model
         public long? TemplateFileId { get; set; }
         public string GroupTitleSql { get; set; }
         public bool? IsDbPaging { get; set; }
+        public bool? IsImportant { get; set; }
 
         public IList<ReportColumnModel> Columns { get; set; }
         public bool IsBsc { get; set; }
