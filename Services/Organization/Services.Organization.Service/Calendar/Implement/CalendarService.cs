@@ -455,8 +455,8 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
                 DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
 
-                if (_organizationContext.WorkingHourInfo.Any(wh => wh.StartDate == time)
-                    || _organizationContext.WorkingWeekInfo.Any(ww => ww.StartDate == time))
+                if (_organizationContext.WorkingHourInfo.Any(wh => wh.CalendarId == calendarId && wh.StartDate == time)
+                    || _organizationContext.WorkingWeekInfo.Any(ww => ww.CalendarId == calendarId && ww.StartDate == time))
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
                 }
