@@ -126,7 +126,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      t.HrTypeId, 
                                      a.IsMultiRow
                                  }).ToListAsync();
-
+                                 
             var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId)).ToList();
 
             /* 
@@ -142,7 +142,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                                     ON bill.[F_Id] = [v{hrArea.HrAreaCode}].[HrBill_F_Id]
                                 
                                 ";
-                mainColumn += ", " + string.Join(", ", columns.Select(c => $"[v{hrArea.HrAreaCode}].[{c}]"));
+                if(columns.Count > 0)
+                    mainColumn += ", " + string.Join(", ", columns.Select(c => $"[v{hrArea.HrAreaCode}].[{c}]"));
             }
 
             /* 
@@ -906,7 +907,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                               RegularExpression = af.RegularExpression,
                               IsMultiRow = a.IsMultiRow,
                               RequireFilters = af.RequireFilters,
-                              HrAreaTitle = a.Title
+                              HrAreaTitle = a.Title,
+                              HrAreaId = a.HrAreaId,
+                              HrAreaCode = a.HrAreaCode
                           }).ToListAsync();
         }
 
@@ -944,7 +947,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            return ($"SELECT {(isMultiRow ? "" : "TOP 1")} {@selectColumn} {@join} WHERE [row].IsDeleted = 0 AND [row].SubsidiaryId = { _currentContextService.SubsidiaryId}", columns);
+            return ($"SELECT {(isMultiRow ? "" : "TOP 1")} {@selectColumn} {@join} WHERE [row].IsDeleted = 0 AND [row].SubsidiaryId = { _currentContextService.SubsidiaryId}", @columns);
         }
 
         private void ValidateExistenceHrBill(long hrBill_F_Id)
