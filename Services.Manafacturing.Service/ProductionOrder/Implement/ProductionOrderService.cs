@@ -944,10 +944,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (entity == null)
             {
                 await _manufacturingDBContext.ProductionOrderConfiguration.AddAsync(_mapper.Map<ProductionOrderConfiguration>(model));
+            }
+            else
+            {
+                entity.IsEnablePlanEndDate = model.IsEnablePlanEndDate;
+                entity.NumberOfDayPed = model.NumberOfDayPed;
             };
-
-            entity.IsEnablePlanEndDate = model.IsEnablePlanEndDate;
-            entity.NumberOfDayPed = model.NumberOfDayPed;
 
             await _manufacturingDBContext.SaveChangesAsync();
             return true;
