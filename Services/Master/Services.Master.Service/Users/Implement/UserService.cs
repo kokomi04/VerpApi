@@ -265,7 +265,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return true;
         }
 
-        public async Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<UserInfoOutput>> GetList(string keyword, IList<int> userIds, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var employees = _organizationContext.Employee.AsQueryable();
@@ -277,8 +277,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                     || em.EmployeeCode.Contains(keyword)
                     || em.Email.Contains(keyword));
 
-                var userIds = await employees.Select(e => e.UserId).ToListAsync();
-                users = users.Where(u => u.UserName.Contains(keyword) || userIds.Contains(u.UserId));
+                var uIds = await employees.Select(e => e.UserId).ToListAsync();
+                users = users.Where(u => u.UserName.Contains(keyword) || uIds.Contains(u.UserId));
+            }
+
+            if (userIds?.Count > 0)
+            {
+                users = users.Where(u => userIds.Contains(u.UserId));
             }
 
             var total = await employees.CountAsync();
