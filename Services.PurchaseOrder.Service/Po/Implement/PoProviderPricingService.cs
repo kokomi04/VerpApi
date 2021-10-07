@@ -566,7 +566,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                     {
                         if (item.PoProviderPricingDetailId == detail.PoProviderPricingDetailId)
                         {
-                            _mapper.Map(item, info);
+                            _mapper.Map(item, detail);
                             detail.PoProviderPricingId = info.PoProviderPricingId;
                             found = true;
                             break;

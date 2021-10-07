@@ -328,11 +328,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PoProviderPricingFile>(entity =>
             {
-                entity.HasKey(e => e.PoProviderPricingId);
-
-                entity.HasOne(d => d.File)
+                entity.HasOne(d => d.PoProviderPricing)
                     .WithMany(p => p.PoProviderPricingFile)
-                    .HasForeignKey(d => d.FileId)
+                    .HasForeignKey(d => d.PoProviderPricingId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PoProviderPricingFile_PoProviderPricing");
             });
