@@ -39,7 +39,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<bool> UpdateHr(int hrTypeId, long hrBill_F_Id, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
-        Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, int hrBill_F_Id, int hrBillReference_F_Id);
+        Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id);
     }
 
     public class HrDataService : IHrDataService
@@ -83,7 +83,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         }
 
         #region public
-        public async Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, int hrBill_F_Id, int hrBillReference_F_Id)
+        public async Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id)
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
             ValidateExistenceHrBill(hrBill_F_Id);
@@ -92,17 +92,29 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
 
-            var sqlParams = new List<SqlParameter>();
-            var updateSql = new StringBuilder($"UPDATE [{tableName}] SET [HrBillReference_F_Id] = @HrBillReference_F_Id, ");
-            
-            updateSql.Append($"[UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc WHERE [HrBill_F_Id] = @HrBill_F_Id");
+            var existSql = $"SELECT v.[F_Id] FROM [{tableName}] v WHERE v.[HrBill_F_Id] = @HrBill_F_Id";
 
-            sqlParams.Add(new SqlParameter("@UpdatedDatetimeUtc", DateTime.UtcNow));
-            sqlParams.Add(new SqlParameter("@UpdatedByUserId", _currentContextService.UserId));
-            sqlParams.Add(new SqlParameter($"@HrBill_F_Id", hrBill_F_Id));
-            sqlParams.Add(new SqlParameter($"@HrBillReference_F_Id", hrBillReference_F_Id));
+            var result = await _organizationDBContext.QueryDataTable(existSql, new SqlParameter[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) });
+            bool isExisted = result != null && result.Rows.Count > 0;
 
-            var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(updateSql.ToString(), sqlParams);
+            if (!isExisted)
+            {
+                await CreateFistRowReferenceData(hrBill_F_Id, hrBillReference_F_Id, tableName);
+            }
+            else
+            {
+                var sqlParams = new List<SqlParameter>();
+                var updateSql = new StringBuilder($"UPDATE [{tableName}] SET [HrBillReference_F_Id] = @HrBillReference_F_Id, ");
+
+                updateSql.Append($"[UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc WHERE [HrBill_F_Id] = @HrBill_F_Id");
+
+                sqlParams.Add(new SqlParameter("@UpdatedDatetimeUtc", DateTime.UtcNow));
+                sqlParams.Add(new SqlParameter("@UpdatedByUserId", _currentContextService.UserId));
+                sqlParams.Add(new SqlParameter($"@HrBill_F_Id", hrBill_F_Id));
+                sqlParams.Add(new SqlParameter($"@HrBillReference_F_Id", hrBillReference_F_Id));
+
+                var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(updateSql.ToString(), sqlParams);
+            }
 
             return true;
         }
@@ -479,20 +491,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 {
                     var hrArea = hrAreas[i];
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
-
-                    var sql = $"INSERT INTO [{tableName}](HrBill_F_Id) VALUES(@HrBill_F_Id); SELECT @F_Id = SCOPE_IDENTITY();";
-                    var sqlParams = new List<SqlParameter>();
-                    
-                    sqlParams.Add(new SqlParameter("@HrBill_F_Id", billInfo.FId));
-
-                    var idParam = new SqlParameter("@F_Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
-                    sqlParams.Add(idParam);
-
-                    await _organizationDBContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
-
-                    if (null == idParam.Value)
-                        throw new InvalidProgramException();
-
+                    await CreateFistRowReferenceData(billInfo.FId, null, tableName);
                 }
 
                 await @trans.CommitAsync();
@@ -1538,6 +1537,31 @@ namespace VErp.Services.Organization.Service.HrConfig
         private string GetHrAreaTableName(string hrTypeCode, string hrAreaCode)
         {
             return $"{HR_TABLE_NAME_PREFIX}_{hrTypeCode}_{hrAreaCode}";
+        }
+
+        private async Task CreateFistRowReferenceData(long hrBill_F_Id, long? hrBillReference_F_Id, string tableName)
+        {
+            var sqlParams = new List<SqlParameter>();
+            var columns = GetColumnGlobal().ToList();
+            columns.Add("HrBill_F_Id");
+
+            sqlParams.AddRange(GetSqlParamsGlobal());
+            sqlParams.Add(new SqlParameter("@HrBill_F_Id", hrBill_F_Id));
+
+            if(hrBillReference_F_Id.HasValue)
+            {
+                columns.Add("HrBillReference_F_Id");
+                sqlParams.Add(new SqlParameter("@HrBillReference_F_Id", hrBillReference_F_Id));
+            }
+
+            var idParam = new SqlParameter("@F_Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            sqlParams.Add(idParam);
+
+            var sql = $"INSERT INTO [{tableName}]({string.Join(",", columns.Select(c => $"[{c}]"))}) VALUES({string.Join(",", sqlParams.Where(p => p.ParameterName != "@F_Id").Select(p => $"{p.ParameterName}"))}); SELECT @F_Id = SCOPE_IDENTITY();";
+            await _organizationDBContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
+
+            if (null == idParam.Value)
+                throw new InvalidProgramException();
         }
 
         #endregion
