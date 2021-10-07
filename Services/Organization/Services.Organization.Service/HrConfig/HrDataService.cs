@@ -95,11 +95,11 @@ namespace VErp.Services.Organization.Service.HrConfig
             var sqlParams = new List<SqlParameter>();
             var updateSql = new StringBuilder($"UPDATE [{tableName}] SET [HrBillReference_F_Id] = @HrBillReference_F_Id, ");
             
-            updateSql.Append($"[UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc WHERE [{HR_TABLE_F_IDENTITY}] = @{HR_TABLE_F_IDENTITY}");
+            updateSql.Append($"[UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc WHERE [HrBill_F_Id] = @HrBill_F_Id");
 
             sqlParams.Add(new SqlParameter("@UpdatedDatetimeUtc", DateTime.UtcNow));
             sqlParams.Add(new SqlParameter("@UpdatedByUserId", _currentContextService.UserId));
-            sqlParams.Add(new SqlParameter($"@{HR_TABLE_F_IDENTITY}", hrBill_F_Id));
+            sqlParams.Add(new SqlParameter($"@HrBill_F_Id", hrBill_F_Id));
             sqlParams.Add(new SqlParameter($"@HrBillReference_F_Id", hrBillReference_F_Id));
 
             var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(updateSql.ToString(), sqlParams);
