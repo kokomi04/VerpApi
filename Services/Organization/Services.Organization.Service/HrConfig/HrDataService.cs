@@ -149,7 +149,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var mainColumn = "SELECT bill.F_Id AS F_Id";
             foreach (var hrArea in hrAreas)
             {
-                var (alias, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.IsMultiRow);
+                var (alias, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), isMultiRow: true);
                 mainJoin += @$" LEFT JOIN ({alias}) AS v{hrArea.HrAreaCode}
                                     ON bill.[F_Id] = [v{hrArea.HrAreaCode}].[HrBill_F_Id]
                                 
@@ -678,21 +678,22 @@ namespace VErp.Services.Organization.Service.HrConfig
                     {
                         var mapRow = new NonCamelCaseDictionary();
                         var row = bill.ElementAt(rowIndex);
-                        foreach (var mappingField in mapping.MappingFields)
+                        foreach (var field in fields)
                         {
-                            var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
+                            var mappingField = mapping.MappingFields.FirstOrDefault(f => f.FieldName == field.FieldName);
 
-                            if (field == null && mappingField.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty)
+                            if (mappingField == null)
                             {
-                                throw HrDataValidationMessage.FieldNameNotFound.BadRequestFormat(mappingField.FieldName);
+                                // throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.FieldNameNotFound, field.FieldName);
+                                continue;
                             }
 
                             if (field == null) continue;
                             if (!field.IsMultiRow && rowIndex > 0) continue;
 
                             string value = null;
-                            if (row.Data.ContainsKey(mappingField.Column))
-                                value = row.Data[mappingField.Column]?.ToString();
+                            if (row.Data.ContainsKey((string)mappingField.Column))
+                                value = row.Data[(string)mappingField.Column]?.ToString();
                             // Validate require
                             if (string.IsNullOrWhiteSpace(value) && field.IsRequire) throw new BadRequestException(HrErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
@@ -727,7 +728,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                 var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
                                 if (referField == null)
                                 {
-                                    throw HrDataValidationMessage.RefFieldNotExisted.BadRequestFormat(field.Title, mappingField.FieldName);
+                                    throw HrDataValidationMessage.RefFieldNotExisted.BadRequestFormat(field.Title, field.FieldName);
                                 }
                                 var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                                 var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
@@ -788,7 +789,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                 value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                             }
 
-                            mapRow.Add(field.FieldName, value);
+                            mapRow.Add((string)field.FieldName, value);
                         }
                         rows.Add(mapRow);
                     }
