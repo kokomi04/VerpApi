@@ -682,13 +682,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                         {
                             var mappingField = mapping.MappingFields.FirstOrDefault(f => f.FieldName == field.FieldName);
 
-                            if (mappingField == null)
-                            {
-                                // throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.FieldNameNotFound, field.FieldName);
+                            if (mappingField == null && !field.IsRequire)
                                 continue;
-                            }
+                            else if (mappingField == null && field.IsRequire)
+                                throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.FieldNameNotFound, field.FieldName);
 
-                            if (field == null) continue;
                             if (!field.IsMultiRow && rowIndex > 0) continue;
 
                             string value = null;
