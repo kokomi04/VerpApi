@@ -55,6 +55,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal? PrimaryUnitPrice { get; set; }
         public int ProductUnitConversionId { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
+
+        public string PoProviderPricingCode { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public decimal? TaxInPercent { get; set; }

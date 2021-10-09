@@ -50,7 +50,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public int OriginalProductId { get; set; }
 
-        public int? SortOrder { get; set; }
+        public int? SortOrder { get; set; }        
 
         public IMappingExpression<T, PurchasingRequestDetail> MappingBase<T>(Profile profile) where T : PurchasingRequestInputDetail
             => profile.CreateMap<PurchasingRequestDetail, T>()

@@ -35,6 +35,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Description { get; set; }
         public decimal? IntoMoney { get; set; }
         public int? SortOrder { get; set; }
+        public string PoProviderPricingCode { get; set; }
     }
 
    

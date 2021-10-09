@@ -115,6 +115,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                           ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                           ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
+                          PoProviderPricingCode = d.PoProviderPricingCode,
                           OrderCode = d.OrderCode,
                           ProductionOrderCode = d.ProductionOrderCode,
 
@@ -207,6 +208,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             s.PurchasingSuggestId,
                             s.PurchasingSuggestStatusId,
                             s.Date,
+
+                            d.PoProviderPricingCode,
                             d.OrderCode,
                             d.ProductionOrderCode,
                             s.PurchasingSuggestCode,
@@ -253,6 +256,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 query = query
                     .Where(q => q.OrderCode.Contains(keyword)
                     || q.PurchasingSuggestCode.Contains(keyword)
+                    || q.PoProviderPricingCode.Contains(keyword)
                     || q.Content.Contains(keyword));
             }
 
@@ -292,47 +296,49 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
             var result = new List<PurchasingSuggestOutputListByProduct>();
-            foreach (var info in pagedData)
+            foreach (var item in pagedData)
             {
-                requestDetailInfos.TryGetValue(info.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
+                requestDetailInfos.TryGetValue(item.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
 
 
                 result.Add(new PurchasingSuggestOutputListByProduct()
                 {
-                    PurchasingSuggestId = info.PurchasingSuggestId,
-                    PurchasingSuggestCode = info.PurchasingSuggestCode,
-                    Date = info.Date.GetUnix(),
-                    OrderCode = info.OrderCode,
-                    ProductionOrderCode = info.ProductionOrderCode,
-                    PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)info.PurchasingSuggestStatusId,
-                    IsApproved = info.IsApproved,
-                    PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
-                    CreatedByUserId = info.CreatedByUserId,
-                    UpdatedByUserId = info.UpdatedByUserId,
-                    CensorByUserId = info.CensorByUserId,
+                    PurchasingSuggestId = item.PurchasingSuggestId,
+                    PurchasingSuggestCode = item.PurchasingSuggestCode,
+                    Date = item.Date.GetUnix(),
 
-                    CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
-                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    PoProviderPricingCode = item.PoProviderPricingCode,
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                    PurchasingSuggestStatusId = (EnumPurchasingSuggestStatus)item.PurchasingSuggestStatusId,
+                    IsApproved = item.IsApproved,
+                    PoProcessStatusId = (EnumPoProcessStatus?)item.PoProcessStatusId,
+                    CreatedByUserId = item.CreatedByUserId,
+                    UpdatedByUserId = item.UpdatedByUserId,
+                    CensorByUserId = item.CensorByUserId,
 
-                    Content = info.Content,
-                    RejectCount = info.RejectCount,
-                    PurchasingSuggestDetailId = info.PurchasingSuggestDetailId,
-                    CustomerId = info.CustomerId,
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
+                    CensorDatetimeUtc = item.CensorDatetimeUtc.GetUnix(),
 
-                    ProductId = info.ProductId,
-                    PrimaryQuantity = info.PrimaryQuantity,
-                    PrimaryUnitPrice = info.PrimaryUnitPrice,
+                    Content = item.Content,
+                    RejectCount = item.RejectCount,
+                    PurchasingSuggestDetailId = item.PurchasingSuggestDetailId,
+                    CustomerId = item.CustomerId,
 
-                    TaxInPercent = info.TaxInPercent,
-                    TaxInMoney = info.TaxInMoney,
+                    ProductId = item.ProductId,
+                    PrimaryQuantity = item.PrimaryQuantity,
+                    PrimaryUnitPrice = item.PrimaryUnitPrice,
 
-                    Description = info.Description,
+                    TaxInPercent = item.TaxInPercent,
+                    TaxInMoney = item.TaxInMoney,
+
+                    Description = item.Description,
 
                     RequestDetail = requestDetailInfo,
-                    TotalMoney = info.TotalMoney,
-                    IntoMoney = info.IntoMoney,
-                    SortOrder = info.SortOrder
+                    TotalMoney = item.TotalMoney,
+                    IntoMoney = item.IntoMoney,
+                    SortOrder = item.SortOrder
                 });
             }
 
@@ -460,6 +466,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                                 detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
+                                detail.PoProviderPricingCode = item.PoProviderPricingCode;
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
 
@@ -472,6 +479,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 detail.SortOrder = item.SortOrder;
 
+                                
                                 break;
                             }
                         }
@@ -1687,12 +1695,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 DeletedDatetimeUtc = null,
                 CustomerId = d.CustomerId,
 
+                PoProviderPricingCode = d.PoProviderPricingCode,
                 OrderCode = d.OrderCode,
                 ProductionOrderCode = d.ProductionOrderCode,
 
                 Description = d.Description,
                 IntoMoney = d.IntoMoney,
-                SortOrder = d.SortOrder
+                SortOrder = d.SortOrder                
             };
         }
 
