@@ -45,7 +45,14 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .ConfigureAwait(true);
         }
 
-
+        [HttpPost("GetRowsByCodes")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        public async Task<IList<PoProviderPricingOutputListByProduct>> GetRowsByCodes([FromBody] IList<string> codes)
+        {
+            var data = await _poProviderPricingService.GetListByProduct(string.Empty, codes, null, null, null, null, null, null, null, string.Empty, false, 1, 0);
+            return data.List;
+        }
 
         [HttpGet]
         [Route("{poProviderPricingId}")]
