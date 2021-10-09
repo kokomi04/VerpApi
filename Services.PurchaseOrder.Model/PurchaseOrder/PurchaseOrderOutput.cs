@@ -87,6 +87,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
 
         // public decimal? TaxInMoney { get; set; }
+        public string PoProviderPricingCode { get; set; } 
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }

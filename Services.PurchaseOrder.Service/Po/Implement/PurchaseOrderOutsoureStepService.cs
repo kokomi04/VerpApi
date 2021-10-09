@@ -112,10 +112,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
-        private async Task<RefOutsourceStepRequestModel> GetOutsourceStepRequest(long outsourceStepRequestId)
-        {
-            return (await GetOutsourceStepRequest(new[] { outsourceStepRequestId })).FirstOrDefault();
-        }
+        // private async Task<RefOutsourceStepRequestModel> GetOutsourceStepRequest(long outsourceStepRequestId)
+        // {
+        //     return (await GetOutsourceStepRequest(new[] { outsourceStepRequestId })).FirstOrDefault();
+        // }
 
         protected override async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
         {

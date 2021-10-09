@@ -55,9 +55,9 @@ namespace VErpApi.Controllers.System
         [HttpGet]
         [GlobalApi]
         [Route("")]
-        public async Task<PageData<UserInfoOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<UserInfoOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> userIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetList(keyword, page, size).ConfigureAwait(true);
+            return await _userService.GetList(keyword, userIds, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]

@@ -113,6 +113,8 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 yield return new PurchaseOrderInputDetail()
                 {
+                    PoProviderPricingCode = item.PoProviderPricingCode,
+
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
                     Description = item.Description,
@@ -131,8 +133,9 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                     ExchangedMoney = item.ExchangedMoney,
 
-                    SortOrder = item.SortOrder
+                    SortOrder = item.SortOrder,
 
+                    
                     //TaxInMoney = item.TaxInMoney
                 };
 

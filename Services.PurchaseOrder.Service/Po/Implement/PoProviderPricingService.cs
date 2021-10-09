@@ -178,14 +178,14 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
             return (result, total, additionResult);
         }
 
-        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct(string keyword, IList<string> poCodes, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct(string keyword, IList<string> codes, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
             var poQuery = _purchaseOrderDBContext.PoProviderPricing.AsQueryable();
-            if (poCodes?.Count > 0)
+            if (codes?.Count > 0)
             {
-                poQuery = poQuery.Where(po => poCodes.Contains(po.PoProviderPricingCode));
+                poQuery = poQuery.Where(po => codes.Contains(po.PoProviderPricingCode));
 
             }
             var query = from po in poQuery
@@ -566,7 +566,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                     {
                         if (item.PoProviderPricingDetailId == detail.PoProviderPricingDetailId)
                         {
-                            _mapper.Map(item, info);
+                            _mapper.Map(item, detail);
                             detail.PoProviderPricingId = info.PoProviderPricingId;
                             found = true;
                             break;

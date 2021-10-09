@@ -14,13 +14,13 @@ using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
 using VErp.Services.PurchaseOrder.Service.Po;
 
 namespace VErpApi.Controllers.PurchaseOrder
-{
-    [Route("api/PurchasingOrder/PoProvidePricing")]
-    public class PoProviderPricingOrderController : VErpBaseController
+{            
+    [Route("api/PurchasingOrder/PoProviderPricing")]
+    public class PoProviderPricingController : VErpBaseController
     {
 
         private readonly IPoProviderPricingService _poProviderPricingService;
-        public PoProviderPricingOrderController(IPoProviderPricingService poProviderPricingService)
+        public PoProviderPricingController(IPoProviderPricingService poProviderPricingService)
         {
             _poProviderPricingService = poProviderPricingService;
 
@@ -45,7 +45,14 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .ConfigureAwait(true);
         }
 
-
+        [HttpPost("GetRowsByCodes")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        public async Task<IList<PoProviderPricingOutputListByProduct>> GetRowsByCodes([FromBody] IList<string> codes)
+        {
+            var data = await _poProviderPricingService.GetListByProduct(string.Empty, codes, null, null, null, null, null, null, null, string.Empty, false, 1, 0);
+            return data.List;
+        }
 
         [HttpGet]
         [Route("{poProviderPricingId}")]

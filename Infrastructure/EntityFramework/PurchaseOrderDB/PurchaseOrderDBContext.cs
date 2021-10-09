@@ -328,11 +328,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PoProviderPricingFile>(entity =>
             {
-                entity.HasKey(e => e.PoProviderPricingId);
-
-                entity.HasOne(d => d.File)
+                entity.HasOne(d => d.PoProviderPricing)
                     .WithMany(p => p.PoProviderPricingFile)
-                    .HasForeignKey(d => d.FileId)
+                    .HasForeignKey(d => d.PoProviderPricingId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PoProviderPricingFile_PoProviderPricing");
             });
@@ -542,6 +540,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
+                entity.Property(e => e.PoProviderPricingCode).HasMaxLength(128);
+
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
@@ -719,6 +719,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.PoProviderPricingCode).HasMaxLength(128);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 

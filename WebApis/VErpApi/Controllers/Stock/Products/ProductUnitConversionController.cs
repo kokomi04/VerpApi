@@ -53,6 +53,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpGet]
         [Route("ByProducts")]
+        [GlobalApi]
         public async Task<PageData<ProductUnitConversionByProductOutput>> ByProducts([FromQuery] IList<int> productIds, [FromQuery] int page = 0, [FromQuery] int size = 0)
         {
             return await _productUnitConversionService.GetListByProducts(productIds, page, size);
@@ -68,6 +69,7 @@ namespace VErpApi.Controllers.Stock.Products
         /// <returns></returns>
         [HttpPost]
         [Route("GetByProducts")]
+        [GlobalApi]
         [VErpAction(EnumActionType.View)]
         public async Task<PageData<ProductUnitConversionByProductOutput>> GetByProducts([FromBody] IList<int> productIds, [FromQuery] int page = 0, [FromQuery] int size = 0)
         {

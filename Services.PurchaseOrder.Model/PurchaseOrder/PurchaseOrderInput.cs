@@ -63,6 +63,7 @@ namespace VErp.Services.PurchaseOrder.Model
         // decimal? TaxInPercent { get; set; }
         // decimal? TaxInMoney { get; set; }
 
+        string PoProviderPricingCode { get; set; }
         string OrderCode { get; set; }
         string ProductionOrderCode { get; set; }
 
@@ -93,6 +94,8 @@ namespace VErp.Services.PurchaseOrder.Model
 
         // public decimal? TaxInPercent { get; set; }
         // public decimal? TaxInMoney { get; set; }
+
+        public string PoProviderPricingCode { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
 
