@@ -71,6 +71,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("GetByProducts")]
         [GlobalApi]
         [VErpAction(EnumActionType.View)]
+        [GlobalApi]
         public async Task<PageData<ProductUnitConversionByProductOutput>> GetByProducts([FromBody] IList<int> productIds, [FromQuery] int page = 0, [FromQuery] int size = 0)
         {
             return await _productUnitConversionService.GetListByProducts(productIds, page, size);
