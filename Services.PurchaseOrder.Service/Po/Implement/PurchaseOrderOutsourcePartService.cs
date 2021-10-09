@@ -16,6 +16,7 @@ using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
+using VErp.Commons.Library;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement {
 
@@ -40,25 +41,40 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 mapper)
         {
         }
-        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest()
+        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] outsourcePartRequestId)
         {
-            var calculatorTotalQuantityByOutsourceStep = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
+            var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
+
+            if(outsourcePartRequestId != null && outsourcePartRequestId.Length > 0 )
+                queryRefOutsourcePart = queryRefOutsourcePart.Where(x => outsourcePartRequestId.Contains(x.OutsourcePartRequestId));
+
+            var calculatorTotalQuantityByOutsourcePart = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
                                                           join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourcePart } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
                                                           group d by new { d.OutsourceRequestId, d.ProductId } into g
                                                           select new
                                                           {
                                                               g.Key.OutsourceRequestId,
                                                               g.Key.ProductId,
-                                                              TotalQuantity = g.Sum(x => x.PrimaryQuantity)
-                                                          }).ToList();
-            var results = await _purchaseOrderDBContext.RefOutsourcePartRequest.ProjectTo<RefOutsourcePartRequestModel>(_mapper.ConfigurationProvider).ToListAsync();
+                                                              TotalQuantity = (decimal?)g.Sum(x => x.PrimaryQuantity)
+                                                          });
 
-            foreach (var r in results)
-            {
-                var c = calculatorTotalQuantityByOutsourceStep.FirstOrDefault(x => x.OutsourceRequestId == r.OutsourcePartRequestId && x.ProductId == r.ProductId);
-                if (c != null)
-                    r.QuantityProcessed = c.TotalQuantity;
-            }
+            var results = await (from o in queryRefOutsourcePart
+                                 join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId.GetValueOrDefault(), c.ProductId } into gc
+                                 from c in gc.DefaultIfEmpty()
+                                 where c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
+                                 select new RefOutsourcePartRequestModel
+                                 {
+                                     ProductId = o.ProductId,
+                                     ProductionOrderCode = o.ProductionOrderCode,
+                                     ProductionOrderId = o.ProductionOrderId,
+                                     Quantity = o.Quantity,
+                                     QuantityProcessed = c.TotalQuantity.GetValueOrDefault(),
+                                     OutsourcePartRequestCode = o.OutsourcePartRequestCode,
+                                     OutsourcePartRequestDetailFinishDate = o.OutsourcePartRequestDetailFinishDate.GetUnix(),
+                                     OutsourcePartRequestId = o.OutsourcePartRequestId,
+                                     ProductionOrderDetailId = o.ProductionOrderDetailId,
+                                     RootProductId = o.RootProductId
+                                 }).ToListAsync();
 
             return results.OrderByDescending(x => x.OutsourcePartRequestId).ToList();
         }
@@ -82,11 +98,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             return await GetPurchaseOrderOutsource(purchaseOrderId);
         }
 
-        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] arrOutsourcePartId)
-        {
-            return (await GetOutsourcePartRequest()).Where(x => arrOutsourcePartId.Contains(x.OutsourcePartRequestId)).ToList();
-        }
-
         public async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId)
         {
             var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
@@ -96,7 +107,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
         
         private async Task<RefOutsourcePartRequestModel> GetOutsourcePartRequest(long outsourcePartId)
         {
-            return (await GetOutsourcePartRequest()).FirstOrDefault(x => x.OutsourcePartRequestId == outsourcePartId);
+            return (await GetOutsourcePartRequest(new [] { outsourcePartId })).FirstOrDefault();
         }
 
         protected override async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
