@@ -862,7 +862,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
                 if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
 
-                if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate <= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
+                if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
 
                 var overHour = _mapper.Map<DepartmentOverHourInfo>(data);
@@ -890,7 +890,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 var overHour = _organizationContext.DepartmentOverHourInfo.FirstOrDefault(oh => oh.DepartmentOverHourInfoId == departmentOverHourInfoId && oh.DepartmentId == departmentId);
                 if (overHour == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin tăng ca không tồn tại");
 
-                if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.DepartmentOverHourInfoId != departmentOverHourInfoId && oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate <= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
+                if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.DepartmentOverHourInfoId != departmentOverHourInfoId && oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
 
                 _mapper.Map(data, overHour);
