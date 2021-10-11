@@ -541,17 +541,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
         {
             var fDate = fromDate.UnixToDateTime();
             var tDate = toDate.UnixToDateTime();
-
+            keyword = string.IsNullOrEmpty(keyword)? string.Empty : keyword.Trim();
             var assignmentQuery = (
                 from a in _manufacturingDBContext.ProductionAssignment
                 join s in _manufacturingDBContext.ProductionStep.Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder) on a.ProductionStepId equals s.ProductionStepId
                 join o in _manufacturingDBContext.ProductionOrder on a.ProductionOrderId equals o.ProductionOrderId
                 join od in _manufacturingDBContext.ProductionOrderDetail on o.ProductionOrderId equals od.ProductionOrderId
-                where a.DepartmentId == departmentId && (fDate != null && tDate != null ? o.Date >= fDate && o.Date <= tDate : true)
+                where a.DepartmentId == departmentId && (fDate != null && tDate != null ? o.Date >= fDate && o.Date <= tDate : true) && o.ProductionOrderCode.Contains(keyword) 
                 select new
                 {
                     o.ProductionOrderId,
