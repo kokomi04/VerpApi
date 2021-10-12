@@ -201,15 +201,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var total = 0;
             IList<DepartmentHandoverModel> lst = null;
+            Dictionary<string, object> additionResult = new Dictionary<string, object>();
             if (dataSet != null && dataSet.Tables.Count > 0)
             {
                 IList<NonCamelCaseDictionary> data = dataSet.Tables[0].ConvertData();
                 total = (data[0]["Total"] as int?).GetValueOrDefault();
+                foreach(var item in dataSet.Tables[0].ConvertFirstRowData())
+                {
+                    additionResult.Add(item.Key, item.Value.value);
+                }
                 IList<DepartmentHandoverEntity> resultData = dataSet.Tables[1].ConvertData<DepartmentHandoverEntity>();
                 lst = resultData.AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
             }
 
-            return (lst, total);
+            return (lst, total, additionResult);
         }
 
 
