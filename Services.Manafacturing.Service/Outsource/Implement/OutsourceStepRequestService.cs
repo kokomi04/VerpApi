@@ -179,12 +179,17 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 element.ProductionStepCollectionTitle = string.Join(", ", productionStepInfo.ProductionStepTile);
                 element.OrderCode = string.Join(", ", productOrderInfo.OrderCode);
                 element.ProductionOrderCode = productOrderInfo.ProductionOrderCode;
-                element.PurchaseOrder = purchaseOrderInfo;
+                element.PurchaseOrder = purchaseOrderInfo != null ? purchaseOrderInfo.Aggregate(new List<PurchaseOrderSimple>(), (acc, x) =>
+                {
+                    if (!acc.Any(a => a.PurchaseOrderId == x.PurchaseOrderId))
+                        acc.Add(x);
+                    return acc;
+                }) : null;
             }
 
             return (lst, total);
         }
-
+  
         public async Task<OutsourceStepRequestOutput> GetOutsourceStepRequestOutput(long outsourceStepRequestId)
         {
             var request = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
