@@ -47,7 +47,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public long MainImageFileId { get; set; }
-        public long VoucherTypeId { get; set; }
+        // public long VoucherTypeId { get; set; }
         public string OrderCode { get; set; }
         // public string ContainerNumber { get; set; }
         // public int ContainerQuantity { get; set; }
