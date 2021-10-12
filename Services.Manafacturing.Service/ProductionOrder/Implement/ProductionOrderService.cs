@@ -432,6 +432,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                var config = await GetProductionOrderConfiguration();
+
+                if (config != null && !config.IsEnablePlanEndDate)
+                {
+                    data.PlanEndDate = data.EndDate;
+                }
+
                 if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
                 if (data.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
