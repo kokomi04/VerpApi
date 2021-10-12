@@ -186,7 +186,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     DayOfWeek = g.Key,
                     StartDate = g.Max(ww => ww.StartDate)
                 })
-                .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
+                .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek, CalendarId = calendarId }, ww => new { ww.StartDate, ww.DayOfWeek, ww.CalendarId }, (w, ww) => ww)
                 .ProjectTo<WorkingWeekInfoModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
@@ -255,7 +255,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                         DayOfWeek = g.Key,
                         StartDate = g.Max(ww => ww.StartDate)
                     })
-                    .Join(allWorkingWeeks, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
+                    .Join(allWorkingWeeks, w => new { w.StartDate, w.DayOfWeek, CalendarId = calendarId}, ww => new { ww.StartDate, ww.DayOfWeek, ww.CalendarId }, (w, ww) => ww)
                     .AsQueryable()
                     .ProjectTo<WorkingWeekInfoModel>(_mapper.ConfigurationProvider)
                     .ToList();
@@ -300,7 +300,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                    DayOfWeek = g.Key,
                    StartDate = g.Max(ww => ww.StartDate)
                })
-               .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
+               .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek, CalendarId = calendarId }, ww => new { ww.StartDate, ww.DayOfWeek, ww.CalendarId }, (w, ww) => ww)
                .ToListAsync();
 
             foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))

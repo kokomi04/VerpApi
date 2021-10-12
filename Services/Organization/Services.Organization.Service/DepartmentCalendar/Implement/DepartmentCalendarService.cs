@@ -286,14 +286,16 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
             // Lấy thông tin lịch làm việc ban đầu
             var allDepartmentCalendars = _organizationContext.DepartmentCalendar
-                .Where(dc => departmentIds.Contains(dc.DepartmentId) && dc.StartDate <= start).ToList()
-                .GroupBy(dc => dc.DepartmentId)
+                .Where(dc => departmentIds.Contains(dc.DepartmentId) && dc.StartDate <= start)
+                .ToList()
+                .GroupBy(dc => new {dc.DepartmentId, dc.CalendarId })
                 .Select(g => new
                 {
-                    DepartmentId = g.Key,
+                    CalendarId = g.Key.CalendarId,
+                    DepartmentId = g.Key.DepartmentId,
                     StartDate = g.Max(wh => wh.StartDate)
                 })
-                .Join(_organizationContext.DepartmentCalendar, gdc => new { gdc.StartDate, gdc.DepartmentId }, dc => new { dc.StartDate, dc.DepartmentId }, (gdc, dc) => dc)
+                .Join(_organizationContext.DepartmentCalendar, gdc => new { gdc.StartDate, gdc.DepartmentId, gdc.CalendarId }, dc => new { dc.StartDate, dc.DepartmentId, dc.CalendarId }, (gdc, dc) => dc)
                 .ToList();
 
             // Lấy thông tin lịch sử đổi lịch làm việc trong khoảng thời gian
