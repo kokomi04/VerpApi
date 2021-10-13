@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
         public virtual DbSet<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
+        public virtual DbSet<ElectronicInvoiceProvider> ElectronicInvoiceProvider { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
@@ -132,6 +133,29 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.CuttingWorkSheetId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CuttingWorkSheetFile_CuttingWorkSheet");
+            });
+
+            modelBuilder.Entity<ElectronicInvoiceProvider>(entity =>
+            {
+                entity.Property(e => e.ElectronicInvoiceProviderId).ValueGeneratedNever();
+
+                entity.Property(e => e.Address).HasMaxLength(128);
+
+                entity.Property(e => e.CompanyName).HasMaxLength(128);
+
+                entity.Property(e => e.ContactName).HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Email).HasMaxLength(128);
+
+                entity.Property(e => e.Fax).HasMaxLength(128);
+
+                entity.Property(e => e.Name).HasMaxLength(128);
+
+                entity.Property(e => e.Phone).HasMaxLength(32);
+
+                entity.Property(e => e.Website).HasMaxLength(128);
             });
 
             modelBuilder.Entity<MaterialCalc>(entity =>

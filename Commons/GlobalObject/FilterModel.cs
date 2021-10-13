@@ -91,7 +91,7 @@ namespace VErp.Commons.GlobalObject
 
                     resultClause = new ArrayClause
                     {
-                        Condition = MasterEnumExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
+                        Condition = Enums.MasterEnum.EnumValueExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
                         Not = bool.Parse(not)
                     };
                     var arrClause = clauses.ToArray();
