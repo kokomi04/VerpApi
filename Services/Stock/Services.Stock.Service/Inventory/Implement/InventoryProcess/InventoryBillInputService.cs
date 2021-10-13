@@ -512,9 +512,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
+        public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> productCateIds, IList<int> stockIdList, int page = 1, int size = 20)
         {
-            var productList = await _productService.GetList(keyword, new int[0], "", new int[0], new int[0], page, size, null, null, null);
+            var productList = await _productService.GetList(keyword, new int[0], "", new int[0], productCateIds, page, size, null, null, null);
 
             var pagedData = productList.List;
 
