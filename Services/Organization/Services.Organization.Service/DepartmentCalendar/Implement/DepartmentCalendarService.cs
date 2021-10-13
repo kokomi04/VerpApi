@@ -181,6 +181,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 {
                     _organizationContext.DepartmentCalendar.Remove(departmentCalendar);
                 }
+                else
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Thay đổi lịch làm việc của tổ không tồn tại");
+                }
 
                 await _organizationContext.SaveChangesAsync();
                 trans.Commit();
@@ -288,7 +292,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             var allDepartmentCalendars = _organizationContext.DepartmentCalendar
                 .Where(dc => departmentIds.Contains(dc.DepartmentId) && dc.StartDate <= start)
                 .ToList()
-                .GroupBy(dc => new {dc.DepartmentId, dc.CalendarId })
+                .GroupBy(dc => new { dc.DepartmentId, dc.CalendarId })
                 .Select(g => new
                 {
                     CalendarId = g.Key.CalendarId,

@@ -193,7 +193,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 var cloneCalendar = new CalendarEntity
                 {
                     CalendarCode = GetStringClone(sourceCalendar.CalendarCode, true),
-                    CalendarName = GetStringClone(sourceCalendar.CalendarCode, false),
+                    CalendarName = GetStringClone(sourceCalendar.CalendarName, false),
                     Guide = sourceCalendar.Guide,
                     Note = sourceCalendar.Note,
                     SubsidiaryId = sourceCalendar.SubsidiaryId
