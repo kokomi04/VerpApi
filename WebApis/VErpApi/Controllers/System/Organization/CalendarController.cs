@@ -54,6 +54,13 @@ namespace VErpApi.Controllers.System
             return await _calendarService.DeleteCalendar(calendarId);
         }
 
+        [HttpPost]
+        [Route("clone/{calendarId}")]
+        public async Task<CalendarModel> CloneCalendar([FromRoute] int calendarId)
+        {
+            return await _calendarService.CloneCalendar(calendarId);
+        }
+
         [HttpGet]
         [Route("{calendarId}/info")]
         public async Task<WeekCalendarModel> GetCurrentCalendar([FromRoute] int calendarId)
