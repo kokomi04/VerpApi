@@ -133,7 +133,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             foreach (var bom in boms)
             {
                 var materials = materialsConsumptionInheri.Where(x => x.ProductId == bom.ChildProductId).ToList();
-                var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId).ToList();
+
+                var nextPath = bom.PathProductIds.ToList();
+                nextPath.Add(bom.ChildProductId.GetValueOrDefault());
+
+                var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId && x.PathProductIds.Aggregate(0, (arr, value) => arr + value) == nextPath.Aggregate(0, (arr, value) => arr + value)).ToList();
                 var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri, productBom, childBom, productMap);
 
                 var exceptMaterials = materialsInheri.Except(materials, new ProductMaterialsConsumptionBaseComparer())
