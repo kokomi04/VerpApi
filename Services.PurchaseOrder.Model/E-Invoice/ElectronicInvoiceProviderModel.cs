@@ -25,7 +25,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
         public EnumElectronicInvoiceProviderStatus ElectronicInvoiceProviderStatusId { get; set; }
         public EasyInvoiceConnectionConfigModel EasyInvoiceConnection { get; set; }
         public CyberBillConnectionConfiModel CyberBillConnection { get; set; }
-        public ElectronicInvoiceProviderFieldsConfigModel[] FieldsConfig { get; set; }
+        public ElectronicInvoiceProviderFieldsConfigModel FieldsConfig { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -39,7 +39,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
                .ForMember(d => d.ElectronicInvoiceProviderStatusId, s => s.MapFrom(m => (EnumElectronicInvoiceProviderStatus)m.ElectronicInvoiceProviderStatusId))
                .ForMember(d => d.EasyInvoiceConnection, s => s.MapFrom(m => DeserializeConnection(m, EnumElectronicInvoiceProvider.EasyInvoice)))
                .ForMember(d => d.CyberBillConnection, s => s.MapFrom(m => DeserializeConnection(m, EnumElectronicInvoiceProvider.CyberBill)))
-               .ForMember(d => d.FieldsConfig, s => s.MapFrom(m => m.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel[]>()));
+               .ForMember(d => d.FieldsConfig, s => s.MapFrom(m => DeserializeFieldsConfig(m)));
         }
 
         private static string SerializeConnection(ElectronicInvoiceProviderModel model)
@@ -62,13 +62,28 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
             switch (electronicInvoiceProviderId)
             {
                 case EnumElectronicInvoiceProvider.EasyInvoice:
+                    if (string.IsNullOrWhiteSpace(entity.ConnectionConfig)) return new EasyInvoiceConnectionConfigModel();
                     return entity.ConnectionConfig.JsonDeserialize<EasyInvoiceConnectionConfigModel>();
 
                 case EnumElectronicInvoiceProvider.CyberBill:
+                    if (string.IsNullOrWhiteSpace(entity.ConnectionConfig)) return new CyberBillConnectionConfiModel();
                     return entity.ConnectionConfig.JsonDeserialize<CyberBillConnectionConfiModel>();
                 default:
                     throw new NotSupportedException();
             }
+        }
+
+        public ElectronicInvoiceProviderFieldsConfigModel DeserializeFieldsConfig(ElectronicInvoiceProvider entity)
+        {
+            if (string.IsNullOrWhiteSpace(entity.FieldsConfig))
+            {
+                return new ElectronicInvoiceProviderFieldsConfigModel()
+                {
+                    Info = new List<ElectronicInvoiceFieldConfigModel>(),
+                    Details = new List<ElectronicInvoiceFieldConfigModel>(),
+                };
+            }
+            return entity.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel>();
         }
     }
 
@@ -90,8 +105,8 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
     public class ElectronicInvoiceProviderFieldsConfigModel
     {
         public EnumElectronicInvoiceFunction ElectronicInvoiceFunctionId { get; set; }
-        public ElectronicInvoiceFieldConfigModel[] Info { get; set; }
-        public ElectronicInvoiceFieldConfigModel[] Details { get; set; }
+        public IList<ElectronicInvoiceFieldConfigModel> Info { get; set; }
+        public IList<ElectronicInvoiceFieldConfigModel> Details { get; set; }
 
     }
 
