@@ -16,6 +16,8 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Organization.Model.Customer;
 using static VErp.Commons.Constants.CurrencyCateConstants;
 using static VErp.Commons.Constants.CategoryFieldConstants;
+using VErp.Infrastructure.EF.OrganizationDB;
+using Microsoft.EntityFrameworkCore;
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 {
@@ -23,13 +25,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
     {
         private readonly IMapper _mapper;
         private readonly ICategoryHelperService _httpCategoryHelperService;
-        public CusomerImportFacade(IMapper mapper, ICategoryHelperService httpCategoryHelperService)
+        private readonly ICustomerService _customerService;
+        private readonly OrganizationDBContext _organizationContext;
+        private readonly ICurrentContextService _currentContextService;
+
+        private IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
+        private IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
+
+        public CusomerImportFacade(ICustomerService customerService, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext, ICurrentContextService currentContextService)
         {
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
+            _customerService = customerService;
+            _organizationContext = organizationContext;
+            _currentContextService = currentContextService;
         }
 
-        public async Task<List<CustomerModel>> ParseCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
+
+        public async Task<bool> ParseCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var currencies = await _httpCategoryHelperService.GetDataRows(CurrencyCategoryCode, new CategoryFilterModel());
 
@@ -117,7 +130,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 return false;
             });
 
-            var customerModels = new List<CustomerModel>();
+            var customersCode = lstData.Select(x=>x.CustomerCode);
+            var customersName = lstData.Select(x=>x.CustomerName);
+            var existsCumstomers = await _organizationContext.Customer.Where(x => customersCode.Contains(x.CustomerCode) || customersName.Contains(x.CustomerName))
+                .AsNoTracking()
+                .Select(x => new { x.CustomerId, x.CustomerCode, x.CustomerName })
+                .ToListAsync();
 
             foreach (var customerModel in lstData)
             {
@@ -133,12 +151,61 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     customerInfo.CustomerTypeId = customerInfo.Contacts?.Count > 0 ? EnumCustomerType.Organization : EnumCustomerType.Personal;
                 }
 
-                customerModels.Add(customerInfo);
+                var existedCustomers = existsCumstomers.Where(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode);
+
+                if (existedCustomers != null && existedCustomers.Count() > 0 && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                {
+                    var existedCodes = existedCustomers.Select(c => c.CustomerCode).ToList();
+                    var existingCodes = existedCodes.Intersect(new[] { customerInfo.CustomerCode }, StringComparer.OrdinalIgnoreCase);
+
+                    if (existingCodes.Count() > 0)
+                    {
+                        throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{string.Join(", ", existingCodes)}\" đã tồn tại");
+                    }
+
+                    throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{string.Join(", ", existedCustomers.Select(c => c.CustomerName))}\" đã tồn tại");
+                }
+
+                var oldCustomer = existedCustomers.FirstOrDefault();
+
+                if (oldCustomer == null)
+                {
+                    if (lstAddCustomer.Any(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode))
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại nhiều đối tác {customerInfo.CustomerCode} trong file excel");
+                        else
+                            continue;
+
+                    lstAddCustomer.Add(customerInfo);
+                }
+                else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                {
+                    if (lstUpdateCustomer.Any(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode))
+                        continue;
+
+                    customerInfo.CustomerId = oldCustomer.CustomerId;
+
+                    lstUpdateCustomer.Add(customerInfo);
+                }
             }
 
+            var @trans = await _organizationContext.Database.BeginTransactionAsync();
+            try
+            {
+                 foreach(var customer in lstUpdateCustomer)
+                    await _customerService.UpdateCustomerBase(_currentContextService.UserId, customer.CustomerId, customer);
 
-            return customerModels;
+                await _customerService.AddBatchCustomersBase(lstAddCustomer);
 
+                await @trans.CommitAsync();
+            }
+            catch (System.Exception)
+            {
+                await @trans.RollbackAsync();
+                throw;
+            }
+
+            return true;
         }
 
         private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj)

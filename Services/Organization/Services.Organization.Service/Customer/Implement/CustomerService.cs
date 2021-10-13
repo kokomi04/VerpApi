@@ -152,55 +152,62 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         //}
 
-        private async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers)
+        public async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers)
+        {
+            
+
+            using (var transaction = _organizationContext.Database.BeginTransaction())
+            {
+                Dictionary<CustomerEntity, CustomerModel> originData = await AddBatchCustomersBase(customers);
+                transaction.Commit();
+
+                return originData;
+            }
+        }
+
+        public async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers)
         {
             await ValidateCustomerModels(customers);
 
             var (customerEntities, originData, contacts, bankAccounts, attachments) = ConvertToCustomerEntities(customers);
 
-            using (var transaction = _organizationContext.Database.BeginTransaction())
+            await _organizationContext.InsertByBatch(customerEntities);
+
+            var contactEntities = new List<CustomerContact>();
+            var bankAccountEntities = new List<CustomerBankAccount>();
+            var customerAttachments = new List<CustomerAttachment>();
+
+            foreach (var entity in customerEntities)
             {
-                await _organizationContext.InsertByBatch(customerEntities);
+                entity.PartnerId = string.Concat("KH", entity.CustomerId);
 
-                var contactEntities = new List<CustomerContact>();
-                var bankAccountEntities = new List<CustomerBankAccount>();
-                var customerAttachments = new List<CustomerAttachment>();
-
-                foreach (var entity in customerEntities)
+                foreach (var contact in contacts[entity])
                 {
-                    entity.PartnerId = string.Concat("KH", entity.CustomerId);
-
-                    foreach (var contact in contacts[entity])
-                    {
-                        contact.CustomerId = entity.CustomerId;
-                    }
-
-                    foreach (var bacnkAcc in bankAccounts[entity])
-                    {
-                        bacnkAcc.CustomerId = entity.CustomerId;
-                    }
-
-                    foreach (var attach in attachments[entity])
-                    {
-                        attach.CustomerId = entity.CustomerId;
-                    }
-
-                    contactEntities.AddRange(contacts[entity]);
-                    bankAccountEntities.AddRange(bankAccounts[entity]);
-                    customerAttachments.AddRange(attachments[entity]);
+                    contact.CustomerId = entity.CustomerId;
                 }
-                await _organizationContext.UpdateByBatch(customerEntities, false);
-                await _organizationContext.InsertByBatch(contactEntities, false);
-                await _organizationContext.InsertByBatch(bankAccountEntities, false);
-                await _organizationContext.InsertByBatch(customerAttachments, false);
 
-                _organizationContext.SaveChanges();
-                transaction.Commit();
+                foreach (var bacnkAcc in bankAccounts[entity])
+                {
+                    bacnkAcc.CustomerId = entity.CustomerId;
+                }
+
+                foreach (var attach in attachments[entity])
+                {
+                    attach.CustomerId = entity.CustomerId;
+                }
+
+                contactEntities.AddRange(contacts[entity]);
+                bankAccountEntities.AddRange(bankAccounts[entity]);
+                customerAttachments.AddRange(attachments[entity]);
             }
+            await _organizationContext.UpdateByBatch(customerEntities, false);
+            await _organizationContext.InsertByBatch(contactEntities, false);
+            await _organizationContext.InsertByBatch(bankAccountEntities, false);
+            await _organizationContext.InsertByBatch(customerAttachments, false);
 
+            _organizationContext.SaveChanges();
             return originData;
         }
-
 
         public async Task<bool> DeleteCustomer(int customerId)
         {
@@ -373,15 +380,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data)
         {
-            var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
-            if (customerInfo == null)
-            {
-                throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
-            }
-
-            var checkExisted = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
-            if (checkExisted)
-                throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted);
+           
             //var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
             //if (existedCustomer != null)
@@ -397,125 +396,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 try
                 {
-                    var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
-                    var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
-                    var customerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
-
-
-                    customerInfo.LegalRepresentative = data.LegalRepresentative;
-                    customerInfo.CustomerCode = data.CustomerCode;
-                    customerInfo.CustomerName = data.CustomerName;
-                    customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
-                    customerInfo.Address = data.Address;
-                    customerInfo.TaxIdNo = data.TaxIdNo;
-                    customerInfo.PhoneNumber = data.PhoneNumber;
-                    customerInfo.Website = data.Website;
-                    customerInfo.Email = data.Email;
-                    customerInfo.Identify = data.Identify;
-                    customerInfo.DebtDays = data.DebtDays;
-                    customerInfo.DebtLimitation = data.DebtLimitation;
-                    customerInfo.DebtBeginningTypeId = (int)data.DebtBeginningTypeId;
-                    customerInfo.DebtManagerUserId = data.DebtManagerUserId;
-                    customerInfo.LoanDays = data.LoanDays;
-                    customerInfo.LoanLimitation = data.LoanLimitation;
-                    customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
-                    customerInfo.LoanManagerUserId = data.LoanManagerUserId;
-                    customerInfo.Description = data.Description;
-                    customerInfo.IsActived = data.IsActived;
-                    customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-                    customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
-
-                    if (data.Contacts == null)
-                    {
-                        data.Contacts = new List<CustomerContactModel>();
-                    }
-                    if (data.Contacts == null)
-                    {
-                        data.BankAccounts = new List<CustomerBankAccountModel>();
-                    }
-
-                    var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
-                    foreach (var c in deletedContacts)
-                    {
-                        c.IsDeleted = true;
-                        c.UpdatedDatetimeUtc = DateTime.UtcNow;
-                    }
-
-                    var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
-                    {
-                        CustomerId = customerInfo.CustomerId,
-                        FullName = c.FullName,
-                        GenderId = (int?)c.GenderId,
-                        Position = c.Position,
-                        PhoneNumber = c.PhoneNumber,
-                        Email = c.Email,
-                        IsDeleted = false,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow
-                    });
-                    await _organizationContext.CustomerContact.AddRangeAsync(newContacts);
-
-                    foreach (var c in dbContacts)
-                    {
-                        var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId);
-                        if (reqContact != null)
-                        {
-                            c.FullName = reqContact.FullName;
-                            c.GenderId = (int?)reqContact.GenderId;
-                            c.Position = reqContact.Position;
-                            c.PhoneNumber = reqContact.PhoneNumber;
-                            c.Email = reqContact.Email;
-                            c.UpdatedDatetimeUtc = DateTime.UtcNow;
-                        }
-                    }
-
-                    var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
-                    foreach (var ba in deletedBankAccounts)
-                    {
-                        ba.IsDeleted = true;
-                        ba.UpdatedDatetimeUtc = DateTime.UtcNow;
-                        ba.UpdatedUserId = updatedUserId;
-                    }
-
-                    var newBankAccounts = data.BankAccounts
-                        .Where(ba => ba.BankAccountId <= 0)
-                        .Select(ba => TransformBankAccEntity(customerId, ba));
-                    await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
-
-                    foreach (var ba in dbBankAccounts)
-                    {
-                        var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId);
-                        if (reqBankAccount != null)
-                        {
-                            ba.AccountNumber = reqBankAccount.AccountNumber;
-                            ba.SwiffCode = reqBankAccount.SwiffCode;
-                            ba.BankName = reqBankAccount.BankName;
-                            ba.BankAddress = reqBankAccount.BankAddress;
-                            ba.BankBranch = reqBankAccount.BankBranch;
-                            ba.BankCode = reqBankAccount.BankCode;
-                            ba.UpdatedUserId = updatedUserId;
-                            ba.AccountName = reqBankAccount.AccountName;
-                            ba.Province = reqBankAccount.Province;
-                            ba.CurrencyId = reqBankAccount.CurrencyId;
-                            ba.UpdatedDatetimeUtc = DateTime.UtcNow;
-                        }
-                    }
-
-                    foreach (var attach in customerAttachments)
-                    {
-                        var change = data.CustomerAttachments.FirstOrDefault(x => x.CustomerAttachmentId == attach.CustomerAttachmentId);
-                        if (change != null)
-                            _mapper.Map(change, attach);
-                        else
-                            attach.IsDeleted = true;
-                    }
-                    var newAttachment = data.CustomerAttachments.AsQueryable()
-                        .Where(x => !(x.CustomerAttachmentId > 0))
-                        .ProjectTo<CustomerAttachment>(_mapper.ConfigurationProvider).ToList();
-                    newAttachment.ForEach(x => x.CustomerId = customerInfo.CustomerId);
-                    await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
-
-                    await _organizationContext.SaveChangesAsync();
+                    CustomerEntity customerInfo = await UpdateCustomerBase(updatedUserId, customerId, data);
                     trans.Commit();
                     await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Cập nhật đối tác {customerInfo.CustomerName}", data.JsonSerialize());
                     return true;
@@ -526,6 +407,140 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     throw;
                 }
             }
+        }
+
+        public async Task<CustomerEntity> UpdateCustomerBase(int updatedUserId, int customerId, CustomerModel data)
+        {
+            var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
+            if (customerInfo == null)
+            {
+                throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
+            }
+
+            var checkExisted = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
+            if (checkExisted)
+                throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted);
+
+            var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
+            var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
+            var customerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
+
+
+            customerInfo.LegalRepresentative = data.LegalRepresentative;
+            customerInfo.CustomerCode = data.CustomerCode;
+            customerInfo.CustomerName = data.CustomerName;
+            customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
+            customerInfo.Address = data.Address;
+            customerInfo.TaxIdNo = data.TaxIdNo;
+            customerInfo.PhoneNumber = data.PhoneNumber;
+            customerInfo.Website = data.Website;
+            customerInfo.Email = data.Email;
+            customerInfo.Identify = data.Identify;
+            customerInfo.DebtDays = data.DebtDays;
+            customerInfo.DebtLimitation = data.DebtLimitation;
+            customerInfo.DebtBeginningTypeId = (int)data.DebtBeginningTypeId;
+            customerInfo.DebtManagerUserId = data.DebtManagerUserId;
+            customerInfo.LoanDays = data.LoanDays;
+            customerInfo.LoanLimitation = data.LoanLimitation;
+            customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
+            customerInfo.LoanManagerUserId = data.LoanManagerUserId;
+            customerInfo.Description = data.Description;
+            customerInfo.IsActived = data.IsActived;
+            customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+            customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
+
+            if (data.Contacts == null)
+            {
+                data.Contacts = new List<CustomerContactModel>();
+            }
+            if (data.Contacts == null)
+            {
+                data.BankAccounts = new List<CustomerBankAccountModel>();
+            }
+
+            var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
+            foreach (var c in deletedContacts)
+            {
+                c.IsDeleted = true;
+                c.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
+
+            var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
+            {
+                CustomerId = customerInfo.CustomerId,
+                FullName = c.FullName,
+                GenderId = (int?)c.GenderId,
+                Position = c.Position,
+                PhoneNumber = c.PhoneNumber,
+                Email = c.Email,
+                IsDeleted = false,
+                CreatedDatetimeUtc = DateTime.UtcNow,
+                UpdatedDatetimeUtc = DateTime.UtcNow
+            });
+            await _organizationContext.CustomerContact.AddRangeAsync(newContacts);
+
+            foreach (var c in dbContacts)
+            {
+                var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId);
+                if (reqContact != null)
+                {
+                    c.FullName = reqContact.FullName;
+                    c.GenderId = (int?)reqContact.GenderId;
+                    c.Position = reqContact.Position;
+                    c.PhoneNumber = reqContact.PhoneNumber;
+                    c.Email = reqContact.Email;
+                    c.UpdatedDatetimeUtc = DateTime.UtcNow;
+                }
+            }
+
+            var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
+            foreach (var ba in deletedBankAccounts)
+            {
+                ba.IsDeleted = true;
+                ba.UpdatedDatetimeUtc = DateTime.UtcNow;
+                ba.UpdatedUserId = updatedUserId;
+            }
+
+            var newBankAccounts = data.BankAccounts
+                .Where(ba => ba.BankAccountId <= 0)
+                .Select(ba => TransformBankAccEntity(customerId, ba));
+            await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
+
+            foreach (var ba in dbBankAccounts)
+            {
+                var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId);
+                if (reqBankAccount != null)
+                {
+                    ba.AccountNumber = reqBankAccount.AccountNumber;
+                    ba.SwiffCode = reqBankAccount.SwiffCode;
+                    ba.BankName = reqBankAccount.BankName;
+                    ba.BankAddress = reqBankAccount.BankAddress;
+                    ba.BankBranch = reqBankAccount.BankBranch;
+                    ba.BankCode = reqBankAccount.BankCode;
+                    ba.UpdatedUserId = updatedUserId;
+                    ba.AccountName = reqBankAccount.AccountName;
+                    ba.Province = reqBankAccount.Province;
+                    ba.CurrencyId = reqBankAccount.CurrencyId;
+                    ba.UpdatedDatetimeUtc = DateTime.UtcNow;
+                }
+            }
+
+            foreach (var attach in customerAttachments)
+            {
+                var change = data.CustomerAttachments.FirstOrDefault(x => x.CustomerAttachmentId == attach.CustomerAttachmentId);
+                if (change != null)
+                    _mapper.Map(change, attach);
+                else
+                    attach.IsDeleted = true;
+            }
+            var newAttachment = data.CustomerAttachments.AsQueryable()
+                .Where(x => !(x.CustomerAttachmentId > 0))
+                .ProjectTo<CustomerAttachment>(_mapper.ConfigurationProvider).ToList();
+            newAttachment.ForEach(x => x.CustomerId = customerInfo.CustomerId);
+            await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
+
+            await _organizationContext.SaveChangesAsync();
+            return customerInfo;
         }
 
         public CategoryNameModel GetCustomerFieldDataForMapping()
@@ -546,17 +561,17 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var importFacade = new CusomerImportFacade(_mapper, _httpCategoryHelperService);
+            var importFacade = new CusomerImportFacade(this, _mapper, _httpCategoryHelperService, _organizationContext, _currentContextService);
 
             var customerModels = await importFacade.ParseCustomerFromMapping(mapping, stream);
 
-            var insertedData = await AddBatchCustomers(customerModels);
+            // var insertedData = await AddBatchCustomers(customerModels);
 
 
-            foreach (var item in insertedData)
-            {
-                await _activityLogService.CreateLog(EnumObjectType.Customer, item.Key.CustomerId, $"Import đối tác {item.Value.CustomerName}", item.Value.JsonSerialize());
-            }
+            // foreach (var item in insertedData)
+            // {
+            //     await _activityLogService.CreateLog(EnumObjectType.Customer, item.Key.CustomerId, $"Import đối tác {item.Value.CustomerName}", item.Value.JsonSerialize());
+            // }
 
             return true;
 
@@ -708,6 +723,5 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 IsDeleted = false,
             };
         }
-
     }
 }

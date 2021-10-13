@@ -8,6 +8,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Customer;
+using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
 namespace VErp.Services.Organization.Service.Customer
 {
@@ -22,5 +23,8 @@ namespace VErp.Services.Organization.Service.Customer
         Task<bool> DeleteCustomer(int customerId);
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream);
+        Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers);
+        Task<CustomerEntity> UpdateCustomerBase(int updatedUserId, int customerId, CustomerModel data);
+        Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers);
     }
 }
