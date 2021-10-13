@@ -186,8 +186,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chứng từ bán hàng")]
         VoucherBill = 49,
 
-        [Description("Cấu hình phiếu hệ thống")]
+        [Description("Cấu hình phiếu in mặc định")]
         PrintConfigStandard = 50001,
+
         [Description("Cấu hình phiếu in tùy chỉnh")]
         PrintConfigCustom = 50002,
 
@@ -196,6 +197,11 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Thiết lập dữ liệu (Chốt sổ)")]
         DataConfig = 52,
+
+
+        [Description("Cấu hình nhà cung cấp hóa đơn điện tử")]
+        ElectronicInvoiceProvider = 53000,
+
 
         [Description("Loại chứng từ bán hàng")]
         VoucherType = 53,
@@ -217,6 +223,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Trường dữ liệu vùng chứng từ bán hàng")]
         VoucherAreaField = 59,
+
+
 
         [Description("Công đoạn sản xuất")]
         ProductionStep = 60,

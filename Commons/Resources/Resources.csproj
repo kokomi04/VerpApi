@@ -367,6 +367,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>PropertyCalcValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="PurchaseOrder\EInvoice\ElectronicInvoiceProviderActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ElectronicInvoiceProviderActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="PurchaseOrder\PoProviderPricing\PoProviderPricingActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -846,6 +851,10 @@
     <EmbeddedResource Update="PurchaseOrder\Calc\PropertyCalc\PropertyCalcValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PropertyCalcValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\EInvoice\ElectronicInvoiceProviderActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ElectronicInvoiceProviderActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\PoProviderPricing\PoProviderPricingActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
