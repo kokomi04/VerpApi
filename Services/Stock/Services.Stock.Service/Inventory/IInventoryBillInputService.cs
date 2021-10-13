@@ -38,7 +38,7 @@ namespace VErp.Services.Stock.Service.Stock
         /// <returns></returns>
         Task<bool> UpdateInventoryInput(long inventoryId, InventoryInModel model);
 
-      
+
         /// <summary>
         /// Duyệt phiếu nhập kho
         /// </summary>
@@ -47,7 +47,7 @@ namespace VErp.Services.Stock.Service.Stock
         Task<bool> ApproveInventoryInput(long inventoryId);
 
 
-      
+
         /// <summary>
         /// Xóa thông tin phiếu nhập kho
         /// </summary>
@@ -64,8 +64,8 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> stockIdList, int page = 1, int size = 20);
-      
+        Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> productCateIds, IList<int> stockIdList, int page = 1, int size = 20);
+
         Task<IList<CensoredInventoryInputProducts>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req);
 
         Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
