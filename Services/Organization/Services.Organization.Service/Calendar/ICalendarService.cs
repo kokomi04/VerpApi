@@ -15,6 +15,8 @@ namespace VErp.Services.Organization.Service.Calendar
         Task<CalendarModel> AddCalendar(CalendarModel data);
         Task<CalendarModel> UpdateCalendar(int calendarId, CalendarModel data);
         Task<bool> DeleteCalendar(int calendarId);
+        Task<CalendarModel> CloneCalendar(int sourceCalendarId);
+
 
         Task<WeekCalendarModel> GetCurrentCalendar(int calendarId);
         Task<IList<WeekCalendarModel>> GetCalendar(int calendarId);

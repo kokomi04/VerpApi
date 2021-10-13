@@ -167,8 +167,102 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 throw;
             }
         }
+        public string GetStringClone(string source, bool isCode, int suffix = 0)
+        {
+            string suffixText = suffix > 0 ? string.Format("({0})", suffix) : string.Empty;
+            string des = string.Format("{0}_{1}{2}", source, "Copy", suffixText);
+            var isDuplicate = isCode ? _organizationContext.Calendar.Any(c => c.CalendarCode == des) : _organizationContext.Calendar.Any(c => c.CalendarName == des);
+            if (isDuplicate)
+            {
+                suffix++;
+                des = GetStringClone(source, isCode, suffix);
+            }
+            return des;
+        }
 
+        public async Task<CalendarModel> CloneCalendar(int sourceCalendarId)
+        {
+            var sourceCalendar = await _organizationContext.Calendar.FirstOrDefaultAsync(c => c.CalendarId == sourceCalendarId);
+            if (sourceCalendar == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+            }
+            using var trans = await _organizationContext.Database.BeginTransactionAsync();
+            try
+            {
+                var cloneCalendar = new CalendarEntity
+                {
+                    CalendarCode = GetStringClone(sourceCalendar.CalendarCode, true),
+                    CalendarName = GetStringClone(sourceCalendar.CalendarCode, false),
+                    Guide = sourceCalendar.Guide,
+                    Note = sourceCalendar.Note,
+                    SubsidiaryId = sourceCalendar.SubsidiaryId
+                };
 
+                _organizationContext.Calendar.Add(cloneCalendar);
+                _organizationContext.SaveChanges();
+
+                // Clone giờ làm việc / ngày
+                var sourceWorkingHourInfos = await _organizationContext.WorkingHourInfo
+                    .Where(wh => wh.CalendarId == sourceCalendarId)
+                    .ToListAsync();
+                foreach(var sourceWorkingHourInfo in sourceWorkingHourInfos)
+                {
+                    var cloneWorkingHourInfo = new WorkingHourInfo
+                    {
+                        CalendarId = cloneCalendar.CalendarId,
+                        StartDate = sourceWorkingHourInfo.StartDate,
+                        SubsidiaryId = sourceWorkingHourInfo.SubsidiaryId,
+                        WorkingHourPerDay = sourceWorkingHourInfo.WorkingHourPerDay
+                    };
+                    _organizationContext.WorkingHourInfo.Add(cloneWorkingHourInfo);
+                }
+
+                // Clone lịch lv tuần
+                var sourceWorkingWeeks = await _organizationContext.WorkingWeekInfo
+                    .Where(ww => ww.CalendarId == sourceCalendarId)
+                    .ToListAsync();
+                foreach (var sourceWorkingWeek in sourceWorkingWeeks)
+                {
+                    var cloneWorkingWeekInfo = new WorkingWeekInfo
+                    {
+                        CalendarId = cloneCalendar.CalendarId,
+                        StartDate = sourceWorkingWeek.StartDate,
+                        SubsidiaryId = sourceWorkingWeek.SubsidiaryId,
+                        DayOfWeek = sourceWorkingWeek.DayOfWeek,
+                        IsDayOff = sourceWorkingWeek.IsDayOff
+                    };
+                    _organizationContext.WorkingWeekInfo.Add(cloneWorkingWeekInfo);
+                }
+
+                // Clone ngày nghỉ
+                var sourceDayOffs= await _organizationContext.DayOffCalendar
+                    .Where(dof => dof.CalendarId == sourceCalendarId)
+                    .ToListAsync();
+                foreach (var sourceDayOff in sourceDayOffs)
+                {
+                    var cloneDayOffCalendar = new DayOffCalendar
+                    {
+                        CalendarId = cloneCalendar.CalendarId,
+                        SubsidiaryId = sourceDayOff.SubsidiaryId,
+                        Content = sourceDayOff.Content,
+                        Day = sourceDayOff.Day
+                    };
+                    _organizationContext.DayOffCalendar.Add(cloneDayOffCalendar);
+                }
+                _organizationContext.SaveChanges();
+                trans.Commit();
+                await _activityLogService.CreateLog(EnumObjectType.Calendar, sourceCalendarId, $"Copy lịch làm việc từ lịch {sourceCalendar.CalendarName}", sourceCalendar.JsonSerialize());
+                var cloneCalendarModel = _mapper.Map<CalendarModel>(cloneCalendar);
+                return cloneCalendarModel;
+            }
+            catch (Exception ex)
+            {
+                trans.TryRollbackTransaction();
+                _logger.LogError(ex, "CloneCalendar");
+                throw;
+            }
+        }
 
         public async Task<WeekCalendarModel> GetCurrentCalendar(int calendarId)
         {
@@ -255,7 +349,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                         DayOfWeek = g.Key,
                         StartDate = g.Max(ww => ww.StartDate)
                     })
-                    .Join(allWorkingWeeks, w => new { w.StartDate, w.DayOfWeek, CalendarId = calendarId}, ww => new { ww.StartDate, ww.DayOfWeek, ww.CalendarId }, (w, ww) => ww)
+                    .Join(allWorkingWeeks, w => new { w.StartDate, w.DayOfWeek, CalendarId = calendarId }, ww => new { ww.StartDate, ww.DayOfWeek, ww.CalendarId }, (w, ww) => ww)
                     .AsQueryable()
                     .ProjectTo<WorkingWeekInfoModel>(_mapper.ConfigurationProvider)
                     .ToList();
