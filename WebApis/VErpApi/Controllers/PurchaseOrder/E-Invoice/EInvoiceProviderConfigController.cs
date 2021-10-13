@@ -18,12 +18,12 @@ using VErp.Services.PurchaseOrder.Service.Po;
 
 namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 {
-    [Route("api/PurchasingOrder/e-invoice/config")]
-    public class EInvoiceConfigController : VErpBaseController
+    [Route("api/PurchasingOrder/e-invoice/providerConfig")]
+    public class EInvoiceProviderConfigController : VErpBaseController
     {
         private readonly IElectronicInvoiceProviderService electronicInvoiceProviderService;
 
-        public EInvoiceConfigController(IElectronicInvoiceProviderService electronicInvoiceProviderService)
+        public EInvoiceProviderConfigController(IElectronicInvoiceProviderService electronicInvoiceProviderService)
         {
             this.electronicInvoiceProviderService = electronicInvoiceProviderService;
         }
