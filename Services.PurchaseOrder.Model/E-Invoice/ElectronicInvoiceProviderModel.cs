@@ -77,7 +77,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
         {
             if (string.IsNullOrWhiteSpace(entity.FieldsConfig))
             {
-                return new List<ElectronicInvoiceProviderFieldsConfigModel>()
+                return new List<ElectronicInvoiceProviderFieldsConfigModel>();
             }
             return entity.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel[]>();
         }
