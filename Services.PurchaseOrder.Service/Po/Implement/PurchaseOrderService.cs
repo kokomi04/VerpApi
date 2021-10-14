@@ -27,6 +27,8 @@ using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
+using AutoMapper.QueryableExtensions;
+using AutoMapper;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -40,6 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IManufacturingHelperService _manufacturingHelperService;
 
         private readonly ObjectActivityLogFacade _poActivityLog;
+        private readonly IMapper _mapper;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -51,7 +54,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
-           , IManufacturingHelperService manufacturingHelperService)
+           , IManufacturingHelperService manufacturingHelperService, IMapper mapper)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -60,7 +63,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _manufacturingHelperService = manufacturingHelperService;
-
+            _mapper = mapper;
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
@@ -524,6 +527,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .ToDictionary(d => d.PurchasingSuggestDetailId, d => d);
 
             var files = await _purchaseOrderDBContext.PurchaseOrderFile.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+            
+            var excess = await _purchaseOrderDBContext.PurchaseOrderExcess.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderExcessModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderMaterialsModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             return new PurchaseOrderOutput()
             {
@@ -596,7 +602,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ExchangedMoney = d.ExchangedMoney,
                         SortOrder = d.SortOrder
                     };
-                }).ToList()
+                }).ToList(),
+                Excess = excess.OrderBy(e => e.SortOrder).ToList(),
+                Materials = materials.OrderBy(m => m.SortOrder).ToList()
             };
         }
 
