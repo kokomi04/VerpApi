@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using VErp.Commons.Enums.E_Invoice;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -75,11 +77,39 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
 
         public IList<ElectronicInvoiceProviderFieldsConfigModel> DeserializeFieldsConfig(ElectronicInvoiceProvider entity)
         {
-            if (string.IsNullOrWhiteSpace(entity.FieldsConfig))
+            IList<ElectronicInvoiceProviderFieldsConfigModel> functions = new List<ElectronicInvoiceProviderFieldsConfigModel>();
+            if (!string.IsNullOrWhiteSpace(entity.FieldsConfig))
             {
-                return new List<ElectronicInvoiceProviderFieldsConfigModel>();
+                functions = entity.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel[]>();
             }
-            return entity.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel[]>();
+
+            var members = EnumExtensions.GetEnumMembers<EnumElectronicInvoiceFunction>().ToList();
+            foreach (var m in members)
+            {
+                if (!functions.Any(f => f.ElectronicInvoiceFunctionId == m.Enum))
+                {
+                    functions.Add(new ElectronicInvoiceProviderFieldsConfigModel()
+                    {
+                        ElectronicInvoiceFunctionId = m.Enum,
+                        Info = new List<ElectronicInvoiceFieldConfigModel>(),
+                        Details = new List<ElectronicInvoiceFieldConfigModel>()
+                    });
+                }
+            }
+            foreach (var f in functions)
+            {
+                if (f.Info == null)
+                {
+                    f.Info = new List<ElectronicInvoiceFieldConfigModel>();
+                }
+
+                if (f.Details == null)
+                {
+                    f.Details = new List<ElectronicInvoiceFieldConfigModel>();
+                }
+            }
+
+            return functions;
         }
     }
 
