@@ -25,7 +25,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
         public EnumElectronicInvoiceProviderStatus ElectronicInvoiceProviderStatusId { get; set; }
         public EasyInvoiceConnectionConfigModel EasyInvoiceConnection { get; set; }
         public CyberBillConnectionConfiModel CyberBillConnection { get; set; }
-        public ElectronicInvoiceProviderFieldsConfigModel FieldsConfig { get; set; }
+        public IList<ElectronicInvoiceProviderFieldsConfigModel> FieldsConfig { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -73,17 +73,13 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
             }
         }
 
-        public ElectronicInvoiceProviderFieldsConfigModel DeserializeFieldsConfig(ElectronicInvoiceProvider entity)
+        public IList<ElectronicInvoiceProviderFieldsConfigModel> DeserializeFieldsConfig(ElectronicInvoiceProvider entity)
         {
             if (string.IsNullOrWhiteSpace(entity.FieldsConfig))
             {
-                return new ElectronicInvoiceProviderFieldsConfigModel()
-                {
-                    Info = new List<ElectronicInvoiceFieldConfigModel>(),
-                    Details = new List<ElectronicInvoiceFieldConfigModel>(),
-                };
+                return new List<ElectronicInvoiceProviderFieldsConfigModel>()
             }
-            return entity.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel>();
+            return entity.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel[]>();
         }
     }
 
