@@ -480,7 +480,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
+        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productCateIds, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
         {
             var packpages = _stockDbContext.Package.AsQueryable();
             if (packageIds?.Count > 0)
@@ -493,6 +493,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 packpages = packpages.Where(p => productIds.Contains(p.ProductId));
             }
 
+            
+
             if (stockIds?.Count > 0)
             {
                 packpages = packpages.Where(p => stockIds.Contains(p.StockId));
@@ -503,10 +505,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 packpages = packpages.Where(p => productUnitConversionIds.Contains(p.ProductUnitConversionId));
             }
 
+            var productQuery = _stockDbContext.Product.AsQueryable();
+            if (productCateIds?.Count > 0)
+            {
+                productQuery = productQuery.Where(p => productCateIds.Contains(p.ProductCateId));
+
+            }
             var query = from pk in packpages
                         join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
                         from l in ls.DefaultIfEmpty()
-                        join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
+                        join p in productQuery on pk.ProductId equals p.ProductId
                         join s in _stockDbContext.ProductExtraInfo on p.ProductId equals s.ProductId
                         join pu in _stockDbContext.ProductUnitConversion on pk.ProductUnitConversionId equals pu.ProductUnitConversionId
                         where //stockIds.Contains(pk.StockId) &&

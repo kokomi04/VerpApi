@@ -224,6 +224,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         }
 
     
+        /*
 
         /// <summary>
         /// Lấy danh sách kiện để xuất kho
@@ -240,7 +241,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryBillOutputService.GetPackageListForExport(productId: productId, productCateIds,  stockIdList: stockIdList, page: page, size: size);
         }
 
-
+        */
 
 
         /// <summary>
