@@ -762,7 +762,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageOptionId = (int)details.PackageOptionId,
                     SortOrder = details.SortOrder,
                     Description = details.Description,
-                    AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                    //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                     InventoryRequirementCode = details.InventoryRequirementCode
                 });
             }

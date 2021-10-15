@@ -800,7 +800,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageOptionId = null,
                     SortOrder = detail.SortOrder,
                     Description = detail.Description,
-                    AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
+                    //AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
                     InventoryRequirementCode = detail.InventoryRequirementCode,
                 });
 

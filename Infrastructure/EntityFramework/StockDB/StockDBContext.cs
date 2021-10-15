@@ -144,7 +144,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.HasIndex(e => new { e.IsDeleted, e.SubsidiaryId, e.InventoryRequirementDetailId }, "IX_InventoryDetail_InventoryRequirementDetailId");
 
-                entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
+                //entity.Property(e => e.AccountancyAccountNumberDu).HasMaxLength(128);
 
                 entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
 

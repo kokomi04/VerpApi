@@ -74,7 +74,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int SortOrder { get; set; }
         public string Description { get; set; }
 
-        public string AccountancyAccountNumberDu { get; set; }
+        //public string AccountancyAccountNumberDu { get; set; }
         //public long? InventoryRequirementDetailId { get; set; }
         public string InventoryRequirementCode { get; set; }
 
