@@ -162,7 +162,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     RefObjectCode = item.CatePrefixCode,
                     ToPackageId = null,
                     PackageOptionId = EnumPackageOption.NoPackageManager,
-                    AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
+                    //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                 });
             }
 
@@ -292,7 +292,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     RefObjectTypeId = null,
                     RefObjectId = null,
                     RefObjectCode = item.CatePrefixCode,
-                    AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
+                    //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                 });
             }
 
