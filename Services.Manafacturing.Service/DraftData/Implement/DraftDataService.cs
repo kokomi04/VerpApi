@@ -91,7 +91,7 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
             {
                 var draftData = _manufacturingDBContext.DraftData.Where(d => d.ObjectId == objectId && d.ObjectTypeId == objectTypeId).FirstOrDefault();
 
-                if (draftData == null) throw new BadRequestException(GeneralCode.InvalidParams, "Dữ liệu nháp không tồn tại");
+                if (draftData == null) return true;
 
                 _manufacturingDBContext.DraftData.Remove(draftData);
                 _manufacturingDBContext.SaveChanges();

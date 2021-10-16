@@ -381,7 +381,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var productOrder = _manufacturingDBContext.ProductionOrder
                 .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
 
-            ProductionOrderOutputModel model = null; 
+            ProductionOrderOutputModel model = null;
 
             if (productOrder != null)
             {
@@ -397,14 +397,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 model.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
-            } else
+            }
+            else
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX không tồn tại");
             }
 
             return model;
         }
-       
+
         public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds)
         {
             return await (
@@ -497,7 +498,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        private async Task<ProductionOrderEntity> SaveProductionOrder(ProductionOrderInputModel data)
+        private async Task<ProductionOrderEntity> SaveProductionOrder(ProductionOrderInputModel data, int? monthPlanId = null)
         {
             var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
             productionOrder.IsResetProductionProcess = false;
@@ -506,6 +507,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _manufacturingDBContext.ProductionOrder.Add(productionOrder);
             await _manufacturingDBContext.SaveChangesAsync();
 
+            var extraPlans = new List<(ProductionOrderDetail Entity, int SortOrder)>();
+
             // Tạo detail
             foreach (var item in data.ProductionOrderDetail)
             {
@@ -513,7 +516,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 item.ProductionOrderId = productionOrder.ProductionOrderId;
                 // Tạo mới
                 var entity = _mapper.Map<ProductionOrderDetail>(item);
-
+                if (monthPlanId.HasValue && item.SortOrder.HasValue) extraPlans.Add((entity, item.SortOrder.Value));
                 _manufacturingDBContext.ProductionOrderDetail.Add(entity);
             }
 
@@ -528,6 +531,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
+            if(monthPlanId.HasValue)
+            {
+                foreach (var extraPlan in extraPlans)
+                {
+                    var entityInfo = new ProductionPlanExtraInfo
+                    {
+                        MonthPlanId = monthPlanId.Value,
+                        ProductionOrderDetailId = extraPlan.Entity.ProductionOrderDetailId,
+                        Note = extraPlan.Entity.Note,
+                        SortOrder = extraPlan.SortOrder
+                    };
+                    _manufacturingDBContext.ProductionPlanExtraInfo.Add(entityInfo);
+                }
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+            }
 
             return productionOrder;
         }
@@ -578,7 +598,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 long productionOrderId = 0;
                 foreach (var item in data)
                 {
-                    var productionOrder = await SaveProductionOrder(item);
+                    var productionOrder = await SaveProductionOrder(item, monthPlanId);
                     productionOrderId = productionOrder.ProductionOrderId;
                 }
 
