@@ -854,11 +854,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return rs;
         }
 
-        public async Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data)
+        public async Task<bool> UpdateProductionOrderStatus(string productionOrderCode, ProductionOrderStatusDataModel data)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .Include(po => po.ProductionOrderDetail)
-                .FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+                .FirstOrDefault(po => po.ProductionOrderCode == productionOrderCode);
 
             if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");

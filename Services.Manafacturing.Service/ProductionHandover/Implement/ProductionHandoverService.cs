@@ -206,7 +206,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 IList<NonCamelCaseDictionary> data = dataSet.Tables[0].ConvertData();
                 total = (data[0]["Total"] as int?).GetValueOrDefault();
-                foreach(var item in dataSet.Tables[0].ConvertFirstRowData())
+                foreach (var item in dataSet.Tables[0].ConvertFirstRowData())
                 {
                     additionResult.Add(item.Key, item.Value.value);
                 }
@@ -757,7 +757,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return result;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, IList<ProductionInventoryRequirementEntity> inventories = null)
+        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, IList<ProductionInventoryRequirementEntity> inventories = null)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder
+                .FirstOrDefault(po => po.ProductionOrderCode == productionOrderCode);
+
+            if (productionOrder == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+            var productionStepIds = _manufacturingDBContext.ProductionAssignment
+                 .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId && a.DepartmentId == departmentId)
+                 .Select(a => a.ProductionStepId)
+                 .ToList();
+            var bOk = true;
+            foreach (var productionStepId in productionStepIds)
+            {
+                bOk = bOk && (await ChangeAssignedProgressStatus(productionOrder.ProductionOrderId, productionStepId, departmentId, inventories));
+            }
+
+            return bOk;
+
+        }
+
+        private async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, IList<ProductionInventoryRequirementEntity> inventories = null)
         {
             var productionAssignment = _manufacturingDBContext.ProductionAssignment
                    .Where(a => a.ProductionOrderId == productionOrderId
