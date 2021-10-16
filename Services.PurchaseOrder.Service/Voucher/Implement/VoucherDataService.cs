@@ -2309,10 +2309,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     categoryRow.TryGetValue(field, out object value);
                     if (value == null) continue;
+
                     foreach (var referToField in voucherReferToFields.Where(f => f.RefTableField == field))
                     {
-                        var existSql = $"SELECT tk.F_Id FROM {VOUCHERVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                        var result = await _purchaseOrderDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                        //var v = ((EnumDataType)referToField.DataTypeId).GetSqlValue(value);
+
+                        var existSql = $"SELECT tk.F_Id FROM {VOUCHERVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = @value;";
+                        var result = await _purchaseOrderDBContext.QueryDataTable(existSql, new[] { new SqlParameter("@value", value) });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
                         {
