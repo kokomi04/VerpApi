@@ -91,6 +91,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
                     functions.Add(new ElectronicInvoiceProviderFieldsConfigModel()
                     {
                         ElectronicInvoiceFunctionId = m.Enum,
+                        Uri = string.Empty,
                         Info = new List<ElectronicInvoiceFieldConfigModel>(),
                         Details = new List<ElectronicInvoiceFieldConfigModel>()
                     });
@@ -131,6 +132,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
     public class ElectronicInvoiceProviderFieldsConfigModel
     {
         public EnumElectronicInvoiceFunction ElectronicInvoiceFunctionId { get; set; }
+        public string Uri { get; set; }
         public IList<ElectronicInvoiceFieldConfigModel> Info { get; set; }
         public IList<ElectronicInvoiceFieldConfigModel> Details { get; set; }
 
