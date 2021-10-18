@@ -201,7 +201,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Cấu hình nhà cung cấp hóa đơn điện tử")]
         ElectronicInvoiceProvider = 53000,
-
+        [Description("Cấu hình mapping các trường dữ liệu hóa đơn điện tử")]
+        ElectronicInvoiceMapping = 53001,
 
         [Description("Loại chứng từ bán hàng")]
         VoucherType = 53,
@@ -354,6 +355,6 @@ namespace VErp.Commons.Enums.MasterEnum
         DraftData = 1043,
 
         [Description("Thông tin thêm kế hoạch")]
-        ProductionPlanExtraInfo = 1044
+        ProductionPlanExtraInfo = 1044,
     }
 }
