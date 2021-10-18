@@ -21,6 +21,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
         public virtual DbSet<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
+        public virtual DbSet<ElectronicInvoiceMapping> ElectronicInvoiceMapping { get; set; }
         public virtual DbSet<ElectronicInvoiceProvider> ElectronicInvoiceProvider { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
@@ -133,6 +134,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.CuttingWorkSheetId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CuttingWorkSheetFile_CuttingWorkSheet");
+            });
+
+            modelBuilder.Entity<ElectronicInvoiceMapping>(entity =>
+            {
+                entity.Property(e => e.DeletedDatetimeUtc)
+                    .HasMaxLength(10)
+                    .IsFixedLength(true);
+
+                entity.HasOne(d => d.ElectronicInvoiceProvider)
+                    .WithMany(p => p.ElectronicInvoiceMapping)
+                    .HasForeignKey(d => d.ElectronicInvoiceProviderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ElectronicInvoiceMapping_ElectronicInvoiceProvider");
             });
 
             modelBuilder.Entity<ElectronicInvoiceProvider>(entity =>

@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class ElectronicInvoiceProvider
     {
+        public ElectronicInvoiceProvider()
+        {
+            ElectronicInvoiceMapping = new HashSet<ElectronicInvoiceMapping>();
+        }
+
         public int ElectronicInvoiceProviderId { get; set; }
         public string Name { get; set; }
         public string CompanyName { get; set; }
@@ -22,5 +27,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string FieldsConfig { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
+
+        public virtual ICollection<ElectronicInvoiceMapping> ElectronicInvoiceMapping { get; set; }
     }
 }
