@@ -267,6 +267,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>GuideActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Master\Guide\GuideCateActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GuideCateActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Master\Print\ObjectPrintConfigActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -767,6 +772,10 @@
     <EmbeddedResource Update="Master\Guide\GuideActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>GuideActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Guide\GuideCateActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>GuideCateActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Master\Print\ObjectPrintConfigActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
