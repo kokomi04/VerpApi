@@ -31,7 +31,7 @@ namespace VErpApi.Controllers.Stock.StockTake
         }
 
 
-      
+
         [HttpGet]
         [Route("")]
         public async Task<PageData<StockTakePeriotListModel>> GetStockTakePeriods([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int[] stockIds)
@@ -39,13 +39,21 @@ namespace VErpApi.Controllers.Stock.StockTake
             return await _stockTakePeriodService.GetStockTakePeriods(keyword, page, size, fromDate, toDate, stockIds);
         }
 
-     
+
         [HttpGet]
         [Route("{stockTakePeriodId}")]
         public async Task<StockTakePeriotModel> GetStockTakePeriod([FromRoute] long stockTakePeriodId)
         {
             return await _stockTakePeriodService.GetStockTakePeriod(stockTakePeriodId);
         }
+
+        [HttpGet]
+        [Route("{stockTakePeriodId}/unchecked")]
+        public async Task<PageData<StockRemainQuantity>> GetUncheckedData([FromRoute] long stockTakePeriodId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockTakePeriodService.GetUncheckedData(stockTakePeriodId, keyword, page, size);
+        }
+
 
         [HttpPost]
         [Route("")]
@@ -61,7 +69,7 @@ namespace VErpApi.Controllers.Stock.StockTake
             return await _stockTakePeriodService.UpdateStockTakePeriod(stockTakePeriodId, model);
         }
 
-     
+
         [HttpDelete]
         [Route("{stockTakePeriodId}")]
         public async Task<bool> DeleteStockTakePeriod([FromRoute] long stockTakePeriodId)

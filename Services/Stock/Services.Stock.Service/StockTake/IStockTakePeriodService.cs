@@ -19,6 +19,8 @@ namespace VErp.Services.Stock.Service.StockTake
 
         Task<StockTakePeriotModel> GetStockTakePeriod(long stockTakePeriodId);
 
+        Task<PageData<StockRemainQuantity>> GetUncheckedData(long stockTakePeriodId, string keyword, int page, int size);
+
         Task<StockTakePeriotModel> UpdateStockTakePeriod(long stockTakePeriodId, StockTakePeriotModel model);
 
         Task<bool> DeleteStockTakePeriod(long stockTakePeriodId);
