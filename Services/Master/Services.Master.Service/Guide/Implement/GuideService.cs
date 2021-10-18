@@ -30,7 +30,7 @@ namespace VErp.Services.Master.Service.Guide.Implement
 
         public GuideService(MasterDBContext masterDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
-            _masterDBContext = masterDBContext;           
+            _masterDBContext = masterDBContext;
             _mapper = mapper;
             _guideActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Guide);
         }
@@ -84,21 +84,27 @@ namespace VErp.Services.Master.Service.Guide.Implement
                 .FirstOrDefaultAsync(g => g.GuideId == guideId);
         }
 
-        public async Task<PageData<GuideModelOutput>> GetList(string keyword, int page, int size)
+        public async Task<PageData<GuideModelOutput>> GetList(string keyword, int? guideCateId, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = _masterDBContext.Guide.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(x => x.GuideCode.Contains(keyword) || x.Title.Contains(keyword));
             }
+
+            if (guideCateId.HasValue)
+            {
+                query = query.Where(c => c.GuideCateId == guideCateId);
+            }
+
             var total = await query.CountAsync();
             IList<GuideModelOutput> pagedData = null;
 
             if (size > 0)
             {
-                pagedData = await query.OrderBy(q => q.GuideCode).ThenBy(q=>q.SortOrder)
+                pagedData = await query.OrderBy(q => q.GuideCode).ThenBy(q => q.SortOrder)
                     .Skip((page - 1) * size)
                     .Take(size)
                     .ProjectTo<GuideModelOutput>(_mapper.ConfigurationProvider).ToListAsync();

@@ -5,11 +5,10 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.MasterDB
 {
-    public partial class Guide
+    public partial class GuideCate
     {
-        public int GuideId { get; set; }
-        public string GuideCode { get; set; }
-        public int? GuideCateId { get; set; }
+        public int GuideCateId { get; set; }
+        public int? ParentId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public int SortOrder { get; set; }

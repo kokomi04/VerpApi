@@ -172,6 +172,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Hướng dẫn")]
         Guide = 46001,
+        [Description("Danh mục hướng dẫn")]
+        GuideCate = 46002,
 
         [Description("Thiết lập sinh mã đối tượng")]
         ObjectCustomGenCodeMapping = 47,
