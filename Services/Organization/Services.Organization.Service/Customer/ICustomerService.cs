@@ -19,12 +19,12 @@ namespace VErp.Services.Organization.Service.Customer
         Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null);
         Task<IList<CustomerListOutput>> GetListByIds(IList<int> customerIds);
         Task<CustomerModel> GetCustomerInfo(int customerId);
-        Task<bool> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data);
+        Task<bool> UpdateCustomer(int customerId, CustomerModel data);
         Task<bool> DeleteCustomer(int customerId);
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream);
         Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers);
-        Task<CustomerEntity> UpdateCustomerBase(int updatedUserId, int customerId, CustomerModel data);
+        Task<CustomerEntity> UpdateCustomerBase(int customerId, CustomerModel data);
         Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers);
     }
 }

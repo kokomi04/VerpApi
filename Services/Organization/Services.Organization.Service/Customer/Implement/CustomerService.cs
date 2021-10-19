@@ -25,23 +25,20 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using VErp.Services.Organization.Service.Customer.Implement.Facade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Organization.Customer;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
     public class CustomerService : ICustomerService
     {
         private readonly OrganizationDBContext _organizationContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
         private readonly IMapper _mapper;
-        private readonly IActivityLogService _activityLogService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IUserHelperService _userHelperService;
+        private readonly ObjectActivityLogFacade _customerActivityLog;
 
         public CustomerService(OrganizationDBContext organizationContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<CustomerService> logger
             , IMapper mapper
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
@@ -50,20 +47,18 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             )
         {
             _organizationContext = organizationContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
             _mapper = mapper;
-            _activityLogService = activityLogService;
-            _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _userHelperService = userHelperService;
+            _customerActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Customer);
         }
 
         public async Task<int> AddCustomer(int updatedUserId, CustomerModel data)
         {
             var result = await AddBatchCustomers(new[] { data });
 
-            await _activityLogService.CreateLog(EnumObjectType.Customer, result.First().Key.CustomerId, $"Thêm đối tác {data.CustomerName}", data.JsonSerialize());
+
+
 
             return result.First().Key.CustomerId;
 
@@ -154,7 +149,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers)
         {
-            
+
 
             using (var transaction = _organizationContext.Database.BeginTransaction())
             {
@@ -206,6 +201,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _organizationContext.InsertByBatch(customerAttachments, false);
 
             _organizationContext.SaveChanges();
+
+            foreach (var c in originData)
+            {
+                await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Create)
+                  .MessageResourceFormatDatas(c.Key.CustomerCode)
+                  .ObjectId(c.Key.CustomerId)
+                  .JsonData(c.Value.JsonSerialize())
+                  .CreateLog();
+            }
+
             return originData;
         }
 
@@ -228,8 +233,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _organizationContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Xóa đối tác {customerInfo.CustomerName}", customerInfo.JsonSerialize());
-
+            await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Delete)
+            .MessageResourceFormatDatas(customerInfo.CustomerCode)
+            .ObjectId(customerInfo.CustomerId)
+            .JsonData(customerInfo.JsonSerialize())
+            .CreateLog();
             return true;
         }
 
@@ -331,7 +339,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync();
 
             var total = await query.CountAsync();
-          
+
             return (lst, total);
         }
 
@@ -378,9 +386,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             ).ToListAsync();
         }
 
-        public async Task<bool> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data)
+        public async Task<bool> UpdateCustomer(int customerId, CustomerModel data)
         {
-           
+
             //var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
             //if (existedCustomer != null)
@@ -396,9 +404,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 try
                 {
-                    CustomerEntity customerInfo = await UpdateCustomerBase(updatedUserId, customerId, data);
+                    CustomerEntity customerInfo = await UpdateCustomerBase(customerId, data);
                     trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Cập nhật đối tác {customerInfo.CustomerName}", data.JsonSerialize());
+
+
                     return true;
                 }
                 catch (Exception)
@@ -409,7 +418,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
         }
 
-        public async Task<CustomerEntity> UpdateCustomerBase(int updatedUserId, int customerId, CustomerModel data)
+        public async Task<CustomerEntity> UpdateCustomerBase(int customerId, CustomerModel data)
         {
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
@@ -497,8 +506,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             foreach (var ba in deletedBankAccounts)
             {
                 ba.IsDeleted = true;
-                ba.UpdatedDatetimeUtc = DateTime.UtcNow;
-                ba.UpdatedUserId = updatedUserId;
             }
 
             var newBankAccounts = data.BankAccounts
@@ -517,7 +524,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     ba.BankAddress = reqBankAccount.BankAddress;
                     ba.BankBranch = reqBankAccount.BankBranch;
                     ba.BankCode = reqBankAccount.BankCode;
-                    ba.UpdatedUserId = updatedUserId;
                     ba.AccountName = reqBankAccount.AccountName;
                     ba.Province = reqBankAccount.Province;
                     ba.CurrencyId = reqBankAccount.CurrencyId;
@@ -540,6 +546,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
 
             await _organizationContext.SaveChangesAsync();
+
+            await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(customerInfo.CustomerCode)
+                  .ObjectId(customerInfo.CustomerId)
+                  .JsonData(customerInfo.JsonSerialize())
+                  .CreateLog();
+
             return customerInfo;
         }
 
@@ -561,7 +574,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var importFacade = new CusomerImportFacade(this, _mapper, _httpCategoryHelperService, _organizationContext, _currentContextService);
+            var importFacade = new CusomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
 
             var customerModels = await importFacade.ParseCustomerFromMapping(mapping, stream);
 

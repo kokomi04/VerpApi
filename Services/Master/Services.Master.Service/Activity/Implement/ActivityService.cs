@@ -31,12 +31,14 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IAsyncRunnerService _asyncRunnerService;
+        private readonly IActivityLogService _activityLogService;
 
         public ActivityService(ActivityLogDBContext activityLogContext
             , IUserService userService
             , IOptions<AppSetting> appSetting
             , ILogger<ActivityService> logger
             , IAsyncRunnerService asyncRunnerService
+            , IActivityLogService activityLogService
             )
         {
             _activityLogContext = activityLogContext;
@@ -44,6 +46,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _asyncRunnerService = asyncRunnerService;
+            _activityLogService = activityLogService;
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -145,6 +148,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     try
                     {
                         var data = item.MessageResourceFormatData.JsonDeserialize<object[]>();
+                        data = _activityLogService.ParseActivityLogData(data);
                         format = ResourcesAssembly.GetResouceString(item.MessageResourceName);
                         if (!string.IsNullOrWhiteSpace(format))
                         {

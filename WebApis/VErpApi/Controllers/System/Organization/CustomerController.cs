@@ -130,8 +130,7 @@ namespace VErpApi.Controllers.System
         [Route("{customerId}")]
         public async Task<bool> UpdateCustomer([FromRoute] int customerId, [FromBody] CustomerModel customer)
         {
-            var updatedUserId = UserId;
-            return await _customerService.UpdateCustomer(updatedUserId, customerId, customer);
+            return await _customerService.UpdateCustomer(customerId, customer);
         }
 
         /// <summary>

@@ -18,32 +18,25 @@ using VErp.Infrastructure.EF.EFExtensions;
 using DepartmentEntity = VErp.Infrastructure.EF.OrganizationDB.Department;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Organization.Department;
 
 namespace VErp.Services.Organization.Service.Department.Implement
 {
     public class DepartmentService : IDepartmentService
     {
         private readonly OrganizationDBContext _organizationContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IAsyncRunnerService _asyncRunnerService;
+        private readonly ObjectActivityLogFacade _departmentActivityLog;
 
         public DepartmentService(OrganizationDBContext organizationContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<DepartmentService> logger
             , IActivityLogService activityLogService
-            , ICurrentContextService currentContextService
             , IAsyncRunnerService asyncRunnerService
             )
         {
             _organizationContext = organizationContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _currentContextService = currentContextService;
             _asyncRunnerService = asyncRunnerService;
+            _departmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Department);
         }
 
         public async Task<int> AddDepartment(DepartmentModel data)
@@ -87,11 +80,17 @@ namespace VErp.Services.Organization.Service.Department.Implement
             await _organizationContext.Department.AddAsync(department);
             await _organizationContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Department, department.DepartmentId, $"Thêm bộ phận {department.DepartmentName}", data.JsonSerialize());
             if (data.ImageFileId.HasValue)
             {
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.FileAssignToObject(data.ImageFileId.Value, EnumObjectType.Department, department.DepartmentId));
             }
+
+            await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.Create)
+                 .MessageResourceFormatDatas(department.DepartmentCode)
+                 .ObjectId(department.DepartmentId)
+                 .JsonData(data.JsonSerialize())
+                 .CreateLog();
+
             return department.DepartmentId;
         }
 
@@ -113,11 +112,19 @@ namespace VErp.Services.Organization.Service.Department.Implement
             }
             department.IsDeleted = true;
             await _organizationContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Department, departmentId, $"Xóa bộ phận {department.DepartmentName}", department.JsonSerialize());
+           
             if (department.ImageFileId.HasValue)
             {
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.DeleteFile(department.ImageFileId.Value));
             }
+
+
+            await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.Delete)
+                 .MessageResourceFormatDatas(department.DepartmentCode)
+                 .ObjectId(department.DepartmentId)
+                 .JsonData(department.JsonSerialize())
+                 .CreateLog();
+
             return true;
         }
 
@@ -274,8 +281,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.ImageFileId = data.ImageFileId;
 
             await _organizationContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Department, departmentId, $"Cập nhật bộ phận {department.DepartmentName}", data.JsonSerialize());
-
+         
             if (deleteImageFileId.HasValue)
             {
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.DeleteFile(deleteImageFileId.Value));
@@ -285,6 +291,13 @@ namespace VErp.Services.Organization.Service.Department.Implement
             {
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.FileAssignToObject(data.ImageFileId.Value, EnumObjectType.Department, department.DepartmentId));
             }
+
+
+            await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.Update)
+                 .MessageResourceFormatDatas(department.DepartmentCode)
+                 .ObjectId(department.DepartmentId)
+                 .JsonData(data.JsonSerialize())
+                 .CreateLog();
             return true;
         }
     }
