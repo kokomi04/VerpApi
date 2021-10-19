@@ -18,6 +18,7 @@ using static VErp.Commons.Constants.CurrencyCateConstants;
 using static VErp.Commons.Constants.CategoryFieldConstants;
 using VErp.Infrastructure.EF.OrganizationDB;
 using Microsoft.EntityFrameworkCore;
+using VErp.Infrastructure.ServiceCore.Facade;
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 {
@@ -27,18 +28,18 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly ICustomerService _customerService;
         private readonly OrganizationDBContext _organizationContext;
-        private readonly ICurrentContextService _currentContextService;
 
         private IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
         private IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
+        private readonly ObjectActivityLogFacade _customerActivityLog;
 
-        public CusomerImportFacade(ICustomerService customerService, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext, ICurrentContextService currentContextService)
+        public CusomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
         {
+            _customerService = customerService;
+            _customerActivityLog = customerActivityLog;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
-            _customerService = customerService;
             _organizationContext = organizationContext;
-            _currentContextService = currentContextService;
         }
 
 
@@ -130,8 +131,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 return false;
             });
 
-            var customersCode = lstData.Select(x=>x.CustomerCode);
-            var customersName = lstData.Select(x=>x.CustomerName);
+            var customersCode = lstData.Select(x => x.CustomerCode);
+            var customersName = lstData.Select(x => x.CustomerName);
             var existsCumstomers = await _organizationContext.Customer.Where(x => customersCode.Contains(x.CustomerCode) || customersName.Contains(x.CustomerName))
                 .AsNoTracking()
                 .Select(x => new { x.CustomerId, x.CustomerCode, x.CustomerName })
@@ -189,15 +190,18 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 }
             }
 
-            var @trans = await _organizationContext.Database.BeginTransactionAsync();
+            using var activityLog = _customerActivityLog.BeginBatchLog();
+            using var @trans = await _organizationContext.Database.BeginTransactionAsync();
             try
             {
-                 foreach(var customer in lstUpdateCustomer)
-                    await _customerService.UpdateCustomerBase(_currentContextService.UserId, customer.CustomerId, customer);
+                foreach (var customer in lstUpdateCustomer)
+                    await _customerService.UpdateCustomerBase(customer.CustomerId, customer);
 
                 await _customerService.AddBatchCustomersBase(lstAddCustomer);
 
                 await @trans.CommitAsync();
+
+                await activityLog.CommitAsync();
             }
             catch (System.Exception)
             {
