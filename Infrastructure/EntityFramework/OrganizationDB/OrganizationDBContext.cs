@@ -27,6 +27,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Department> Department { get; set; }
         public virtual DbSet<DepartmentCalendar> DepartmentCalendar { get; set; }
         public virtual DbSet<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }
+        public virtual DbSet<DepartmentIncreaseInfo> DepartmentIncreaseInfo { get; set; }
         public virtual DbSet<DepartmentOverHourInfo> DepartmentOverHourInfo { get; set; }
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
@@ -228,8 +229,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.Description).HasMaxLength(128);
 
-                entity.Property(e => e.WorkingHoursPerDay).HasColumnType("decimal(4, 2)");
-
                 entity.HasOne(d => d.Parent)
                     .WithMany(p => p.InverseParent)
                     .HasForeignKey(d => d.ParentId)
@@ -253,6 +252,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.DepartmentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_DepartmentCapacityBalance_Department");
+            });
+
+            modelBuilder.Entity<DepartmentIncreaseInfo>(entity =>
+            {
+                entity.Property(e => e.Content).HasMaxLength(255);
             });
 
             modelBuilder.Entity<DepartmentOverHourInfo>(entity =>

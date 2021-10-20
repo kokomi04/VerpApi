@@ -106,7 +106,34 @@ namespace Verp.Resources.Organization.Department {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận{2}.
+        ///   Looks up a localized string similar to Thêm nhân sự tăng cường từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}.
+        /// </summary>
+        public static string DepartmentIncreaseCreate {
+            get {
+                return ResourceManager.GetString("DepartmentIncreaseCreate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Xóa nhân sự tăng cường từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}.
+        /// </summary>
+        public static string DepartmentIncreaseDelete {
+            get {
+                return ResourceManager.GetString("DepartmentIncreaseDelete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật nhân sự tăng cường từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}.
+        /// </summary>
+        public static string DepartmentIncreaseUpdate {
+            get {
+                return ResourceManager.GetString("DepartmentIncreaseUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Thêm tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}.
         /// </summary>
         public static string DepartmentOverHourCreate {
             get {
@@ -115,7 +142,7 @@ namespace Verp.Resources.Organization.Department {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận{2}.
+        ///   Looks up a localized string similar to Xóa tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}.
         /// </summary>
         public static string DepartmentOverHourDelete {
             get {
@@ -124,7 +151,7 @@ namespace Verp.Resources.Organization.Department {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận{2}.
+        ///   Looks up a localized string similar to Cập nhật tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}.
         /// </summary>
         public static string DepartmentOverHourUpdate {
             get {

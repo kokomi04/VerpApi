@@ -26,11 +26,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsProduction { get; set; }
-        public decimal? WorkingHoursPerDay { get; set; }
         public long? ImageFileId { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
-        public int? NumberOfPerson { get; set; }
+        public int NumberOfPerson { get; set; }
 
         public virtual Department Parent { get; set; }
         public virtual ICollection<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }

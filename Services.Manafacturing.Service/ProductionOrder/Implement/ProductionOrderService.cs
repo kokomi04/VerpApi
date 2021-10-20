@@ -294,8 +294,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .Select(sd => new
                 {
                     sd.StepId,
-                    sd.DepartmentId,
-                    sd.NumberOfPerson
+                    sd.DepartmentId
                 })
                 .ToList();
 
