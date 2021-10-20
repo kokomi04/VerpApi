@@ -44,7 +44,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class ProductivityModel
     {
         public decimal ProductivityPerPerson { get; set; }
-        public int NumberOfPerson { get; set; }
         public int UnitId { get; set; }
     }
 }

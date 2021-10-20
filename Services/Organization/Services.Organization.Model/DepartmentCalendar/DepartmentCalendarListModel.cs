@@ -16,11 +16,13 @@ namespace VErp.Services.Organization.Model.DepartmentCalendar
         public ICollection<WorkingHourInfoModel> DepartmentWorkingHourInfo { get; set; }
         public ICollection<DayOffCalendarModel> DepartmentDayOffCalendar { get; set; }
         public ICollection<DepartmentOverHourInfoModel> DepartmentOverHourInfo { get; set; }
+        public ICollection<DepartmentIncreaseInfoModel> DepartmentIncreaseInfo { get; set; }
         public DepartmentCalendarListModel()
         {
             DepartmentWorkingHourInfo = new List<WorkingHourInfoModel>();
             DepartmentDayOffCalendar = new List<DayOffCalendarModel>();
             DepartmentOverHourInfo = new List<DepartmentOverHourInfoModel>();
+            DepartmentIncreaseInfo = new List<DepartmentIncreaseInfoModel>();
         }
     }
 

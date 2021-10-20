@@ -72,9 +72,9 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 Description = data.Description,
                 IsActived = data.IsActived,
                 IsProduction = data.IsProduction,
-                WorkingHoursPerDay = data.WorkingHoursPerDay,
                 ImageFileId = data.ImageFileId,
                 IsDeleted = false,
+                NumberOfPerson = data.NumberOfPerson
             };
 
             await _organizationContext.Department.AddAsync(department);
@@ -145,8 +145,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentName = department.Parent?.DepartmentName ?? null,
                 IsActived = department.IsActived,
                 IsProduction = department.IsProduction,
-                WorkingHoursPerDay = department.WorkingHoursPerDay,
-                ImageFileId = department.ImageFileId
+                ImageFileId = department.ImageFileId,
+                NumberOfPerson = department.NumberOfPerson
             };
         }
 
@@ -182,8 +182,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentId = d.ParentId,
                 ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
                 IsProduction = d.IsProduction,
-                WorkingHoursPerDay = d.WorkingHoursPerDay,
-                ImageFileId = d.ImageFileId
+                ImageFileId = d.ImageFileId,
+                NumberOfPerson = d.NumberOfPerson
             }).ToListAsync();
 
             var total = await query.CountAsync();
@@ -210,8 +210,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentId = d.ParentId,
                 ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
                 IsProduction = d.IsProduction,
-                WorkingHoursPerDay = d.WorkingHoursPerDay,
-                ImageFileId = d.ImageFileId
+                ImageFileId = d.ImageFileId,
+                NumberOfPerson = d.NumberOfPerson
             }).ToListAsync();
 
             return lst;
@@ -277,8 +277,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.ParentId = data.ParentId;
             department.IsActived = data.IsActived;
             department.IsProduction = data.IsProduction;
-            department.WorkingHoursPerDay = data.WorkingHoursPerDay;
             department.ImageFileId = data.ImageFileId;
+            department.NumberOfPerson = data.NumberOfPerson;
 
             await _organizationContext.SaveChangesAsync();
          

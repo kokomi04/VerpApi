@@ -132,14 +132,23 @@
   <data name="DepartmentCalendarUpdate" xml:space="preserve">
     <value>Cập nhật lịch làm việc {0} từ {1:dd/MM/yyyy} cho bộ phận {2}</value>
   </data>
+  <data name="DepartmentIncreaseCreate" xml:space="preserve">
+    <value>Thêm nhân sự tăng cường từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}</value>
+  </data>
+  <data name="DepartmentIncreaseDelete" xml:space="preserve">
+    <value>Xóa nhân sự tăng cường từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}</value>
+  </data>
+  <data name="DepartmentIncreaseUpdate" xml:space="preserve">
+    <value>Cập nhật nhân sự tăng cường từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}</value>
+  </data>
   <data name="DepartmentOverHourCreate" xml:space="preserve">
-    <value>Thêm tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận{2}</value>
+    <value>Thêm tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}</value>
   </data>
   <data name="DepartmentOverHourDelete" xml:space="preserve">
-    <value>Xóa tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận{2}</value>
+    <value>Xóa tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}</value>
   </data>
   <data name="DepartmentOverHourUpdate" xml:space="preserve">
-    <value>Cập nhật tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận{2}</value>
+    <value>Cập nhật tăng ca từ {0:dd/MM/yyyy} - {1:dd/MM/yyyy} cho bộ phận {2}</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Cập nhật bộ phận {0}</value>
