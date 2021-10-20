@@ -1444,10 +1444,30 @@ namespace VErp.Services.Organization.Service.HrConfig
             var sqlParams = new List<SqlParameter>();
 
             int suffix = 0;
-            var paramName = $"@{field.RefTableField}_{suffix}";
-            var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
+            var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField}";
 
-            sqlParams.Add(new SqlParameter(paramName, value));
+            var referField = (await _httpCategoryHelperService.GetReferFields(new []{field.RefTableCode}, new [] {field.RefTableField})).FirstOrDefault();
+
+            if (field.FormTypeId == (int)EnumFormType.MultiSelect)
+            {
+                var sValue = ((string)value).TrimEnd(']').TrimStart('[').Trim();
+                existSql += " IN (";
+                foreach (var v in sValue.Split(','))
+                {
+                    var paramName = $"@{field.RefTableField}_{suffix}";
+                    existSql += $"{paramName},";
+                    sqlParams.Add(new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(v)));
+                    suffix++;
+                }
+                existSql = existSql.TrimEnd(',');
+                existSql += ") ";
+            }
+            else
+            {
+                var paramName = $"@{field.RefTableField}_{suffix}";
+                existSql += " = {paramName}";
+                sqlParams.Add(new SqlParameter(paramName, value));
+            }
 
             if (!string.IsNullOrEmpty(field.Filters))
             {
@@ -1480,6 +1500,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
+            var checkExistedReferSql = existSql;
             if (whereCondition.Length > 0)
             {
                 existSql += $" AND {whereCondition}";
@@ -1489,10 +1510,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
+                
                 // Check tồn tại
-                var checkExistedReferSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
-                var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, value) };
-                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, sqlParams.ToArray());
                 if (result == null || result.Rows.Count == 0)
                 {
                     throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { field.HrAreaCode, field.Title + ": " + value });
