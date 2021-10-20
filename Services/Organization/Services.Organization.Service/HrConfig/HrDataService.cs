@@ -335,7 +335,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
                         .BillTypeId(hrTypeId)
                         .ObjectId(hrBill_F_Id)
-                        .JsonData(billInfo.JsonSerialize().JsonSerialize())
+                        .JsonData(billInfo.JsonSerialize())
                         .CreateLog();
 
                 return true;
@@ -434,7 +434,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
                         .BillTypeId(hrTypeId)
                         .ObjectId(hrBill_F_Id)
-                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .JsonData(data.JsonSerialize())
                         .CreateLog();
 
                 return true;
@@ -500,7 +500,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, billInfo.FId)
                         .BillTypeId(hrTypeId)
                         .ObjectId(billInfo.FId)
-                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .JsonData(data.JsonSerialize())
                         .CreateLog();
 
                 return billInfo.FId;
