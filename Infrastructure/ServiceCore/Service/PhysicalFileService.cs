@@ -48,7 +48,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public async Task<bool> DeleteFile(long fileId)
         {
-            return await _httpCrossService.Detete<bool>($"/api/internal/InternalFile/{fileId}", new
+            return await _httpCrossService.Deleted<bool>($"/api/internal/InternalFile/{fileId}", new
             {
 
             });

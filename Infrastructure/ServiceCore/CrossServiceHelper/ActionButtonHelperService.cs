@@ -158,7 +158,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 objectId,
                 objectTitle
             };
-            return await _httpCrossService.Detete<bool>($"api/internal/InternalActionButton/{actionButtonId}", data);
+            return await _httpCrossService.Deleted<bool>($"api/internal/InternalActionButton/{actionButtonId}", data);
         }
 
         public async Task<bool> DeleteActionButtonsByType(EnumObjectType objectTypeId, int objectId, string objectTitle)
@@ -169,7 +169,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 objectId,
                 objectTitle
             };
-            return await _httpCrossService.Detete<bool>($"api/internal/InternalActionButton/DeleteByType", data);
+            return await _httpCrossService.Deleted<bool>($"api/internal/InternalActionButton/DeleteByType", data);
         }
     }
 }
