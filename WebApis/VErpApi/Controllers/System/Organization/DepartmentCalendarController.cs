@@ -103,5 +103,48 @@ namespace VErpApi.Controllers.System
         {
             return await _departmentCalendarService.UpdateDepartmentOverHourInfoMultiple(data);
         }
+
+
+        [HttpGet]
+        [Route("{departmentId}/increase")]
+        public async Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo([FromRoute] int departmentId)
+        {
+            return await _departmentCalendarService.GetDepartmentIncreaseInfo(departmentId);
+        }
+
+        [HttpPost]
+        [Route("increase")]
+        public async Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo([FromBody] int[] departmentIds)
+        {
+            return await _departmentCalendarService.GetDepartmentIncreaseInfo(departmentIds);
+        }
+
+        [HttpPost]
+        [Route("{departmentId}/increase")]
+        public async Task<DepartmentIncreaseInfoModel> CreateDepartmentIncreaseInfo([FromRoute] int departmentId, [FromBody] DepartmentIncreaseInfoModel data)
+        {
+            return await _departmentCalendarService.CreateDepartmentIncreaseInfo(departmentId, data);
+        }
+
+        [HttpPut]
+        [Route("{departmentId}/increase/{departmentIncreaseInfoId}")]
+        public async Task<DepartmentIncreaseInfoModel> UpdateDepartmentIncreaseInfo([FromRoute] int departmentId, [FromRoute] long departmentIncreaseInfoId, [FromBody] DepartmentIncreaseInfoModel data)
+        {
+            return await _departmentCalendarService.UpdateDepartmentIncreaseInfo(departmentId, departmentIncreaseInfoId, data);
+        }
+
+        [HttpDelete]
+        [Route("{departmentId}/increase/{departmentIncreaseInfoId}")]
+        public async Task<bool> DeleteDepartmentIncreaseInfo([FromRoute] int departmentId, [FromRoute] long departmentIncreaseInfoId)
+        {
+            return await _departmentCalendarService.DeleteDepartmentIncreaseInfo(departmentId, departmentIncreaseInfoId);
+        }
+
+        [HttpPut]
+        [Route("increase/multiple")]
+        public async Task<IList<DepartmentIncreaseInfoModel>> UpdateDepartmentIncreaseInfoMultiple([FromBody] IList<DepartmentIncreaseInfoModel> data)
+        {
+            return await _departmentCalendarService.UpdateDepartmentIncreaseInfoMultiple(data);
+        }
     }
 }
