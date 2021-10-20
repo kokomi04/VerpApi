@@ -23,6 +23,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Calendar;
 using VErp.Services.Organization.Model.DepartmentCalendar;
 using DepartmentCalendarEntity = VErp.Infrastructure.EF.OrganizationDB.DepartmentCalendar;
+using static Verp.Resources.Organization.Department.DepartmentCalendarValidationMessage;
 
 namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 {
@@ -74,10 +75,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phòng ban không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == data.CalendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
                 DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
 
