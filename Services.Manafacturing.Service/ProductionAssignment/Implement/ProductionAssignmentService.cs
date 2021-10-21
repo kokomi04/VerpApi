@@ -764,29 +764,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     .ToList();
             }
 
-            var otherProductionStepIds = otherAssignments.Select(a => a.ProductionStepId).Distinct().ToList();
-            var otherProductionOrderIds = otherAssignments.Select(a => a.ProductionOrderId).Distinct().ToList();
+            //var otherProductionStepIds = otherAssignments.Select(a => a.ProductionStepId).Distinct().ToList();
+            //var otherProductionOrderIds = otherAssignments.Select(a => a.ProductionOrderId).Distinct().ToList();
 
-            var handovers = _manufacturingDBContext.ProductionHandover
-                .Where(h => otherProductionStepIds.Contains(h.FromProductionStepId) && departmentIds.Contains(h.FromDepartmentId) && h.Status == (int)EnumHandoverStatus.Accepted)
-                .ToList();
+            //var handovers = _manufacturingDBContext.ProductionHandover
+            //    .Where(h => otherProductionStepIds.Contains(h.FromProductionStepId) && departmentIds.Contains(h.FromDepartmentId) && h.Status == (int)EnumHandoverStatus.Accepted)
+            //    .ToList();
 
-            var inventoryRequirements = new Dictionary<long, List<ProductionInventoryRequirementModel>>();
+            //var inventoryRequirements = new Dictionary<long, List<ProductionInventoryRequirementModel>>();
 
-            foreach (var otherProductionOrderId in otherProductionOrderIds)
-            {
-                var parammeters = new SqlParameter[]
-                {
-                    new SqlParameter("@ProductionOrderId", otherProductionOrderId)
-                };
-                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+            //foreach (var otherProductionOrderId in otherProductionOrderIds)
+            //{
+            //    var parammeters = new SqlParameter[]
+            //    {
+            //        new SqlParameter("@ProductionOrderId", otherProductionOrderId)
+            //    };
+            //    var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-                inventoryRequirements.Add(otherProductionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
-                    .Where(ir => ir.DepartmentId.HasValue && departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
-                    .AsQueryable()
-                    .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
-                    .ToList());
-            }
+            //    inventoryRequirements.Add(otherProductionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
+            //        .Where(ir => ir.DepartmentId.HasValue && departmentIds.Contains(ir.DepartmentId.Value) && ir.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+            //        .AsQueryable()
+            //        .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+            //        .ToList());
+            //}
 
             departmentIds = otherAssignments.Select(a => a.DepartmentId).Distinct().ToList();
             var startDateUnix = productionTime.StartDate.GetUnix();
@@ -805,11 +805,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var group in otherAssignments.GroupBy(a => new { a.ProductionOrderId, a.ObjectId, a.ObjectTypeId, a.DepartmentId }))
             {
-                var totalInventoryQuantity = group.Key.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
-                    ? 0
-                    : inventoryRequirements[group.Key.ProductionOrderId]
-                    .Where(ir => !ir.ProductionStepId.HasValue && ir.DepartmentId == group.Key.DepartmentId && ir.ProductId == group.Key.ObjectId)
-                    .Sum(ir => ir.ActualQuantity);
+                //var totalInventoryQuantity = group.Key.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                //    ? 0
+                //    : inventoryRequirements[group.Key.ProductionOrderId]
+                //    .Where(ir => !ir.ProductionStepId.HasValue && ir.DepartmentId == group.Key.DepartmentId && ir.ProductId == group.Key.ObjectId)
+                //    .Sum(ir => ir.ActualQuantity);
 
                 var calendar = departmentCalendar.FirstOrDefault(d => d.DepartmentId == group.Key.DepartmentId);
                 var department = departments.FirstOrDefault(d => d.DepartmentId == group.Key.DepartmentId);
@@ -817,27 +817,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 foreach (var otherAssignment in group)
                 {
                     var productionStepName = $"{otherAssignment.StepName}";
-                    var completedQuantity = handovers
-                    .Where(h => h.FromProductionStepId == otherAssignment.ProductionStepId
-                    && h.FromDepartmentId == otherAssignment.DepartmentId
-                    && h.ObjectId == otherAssignment.ObjectId
-                    && h.ObjectTypeId == otherAssignment.ObjectTypeId)
-                    .Sum(h => h.HandoverQuantity);
+                    //var completedQuantity = handovers
+                    //.Where(h => h.FromProductionStepId == otherAssignment.ProductionStepId
+                    //&& h.FromDepartmentId == otherAssignment.DepartmentId
+                    //&& h.ObjectId == otherAssignment.ObjectId
+                    //&& h.ObjectTypeId == otherAssignment.ObjectTypeId)
+                    //.Sum(h => h.HandoverQuantity);
 
-                    if (otherAssignment.ImportStockQuantity > 0)
-                    {
-                        var allocatedQuantity = inventoryRequirements[group.Key.ProductionOrderId]
-                            .Where(ir => ir.ProductionStepId.HasValue
-                            && ir.ProductionStepId.Value == otherAssignment.ProductionStepId
-                            && ir.DepartmentId == group.Key.DepartmentId
-                            && ir.ProductId == group.Key.ObjectId)
-                            .Sum(ir => ir.ActualQuantity);
+                    //if (otherAssignment.ImportStockQuantity > 0)
+                    //{
+                    //    var allocatedQuantity = inventoryRequirements[group.Key.ProductionOrderId]
+                    //        .Where(ir => ir.ProductionStepId.HasValue
+                    //        && ir.ProductionStepId.Value == otherAssignment.ProductionStepId
+                    //        && ir.DepartmentId == group.Key.DepartmentId
+                    //        && ir.ProductId == group.Key.ObjectId)
+                    //        .Sum(ir => ir.ActualQuantity);
 
-                        var departmentImportStockQuantity = otherAssignment.AssignmentQuantity * otherAssignment.ImportStockQuantity / otherAssignment.TotalQuantity;
-                        var unallocatedQuantity = totalInventoryQuantity > departmentImportStockQuantity - allocatedQuantity ? departmentImportStockQuantity - allocatedQuantity : totalInventoryQuantity;
-                        completedQuantity += (allocatedQuantity + unallocatedQuantity);
-                        totalInventoryQuantity -= unallocatedQuantity;
-                    }
+                    //    var departmentImportStockQuantity = otherAssignment.AssignmentQuantity * otherAssignment.ImportStockQuantity / otherAssignment.TotalQuantity;
+                    //    var unallocatedQuantity = totalInventoryQuantity > departmentImportStockQuantity - allocatedQuantity ? departmentImportStockQuantity - allocatedQuantity : totalInventoryQuantity;
+                    //    completedQuantity += (allocatedQuantity + unallocatedQuantity);
+                    //    totalInventoryQuantity -= unallocatedQuantity;
+                    //}
 
                     var capacityDepartment = new CapacityModel
                     {
@@ -852,7 +852,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         CreatedDatetimeUtc = otherAssignment.CreatedDatetimeUtc.GetUnix(),
                         ObjectId = otherAssignment.ObjectId,
                         ObjectTypeId = otherAssignment.ObjectTypeId,
-                        CompletedQuantity = completedQuantity
+                        //CompletedQuantity = completedQuantity
                     };
 
                     // Nếu có tồn tại năng suất
@@ -860,23 +860,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     {
                         foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
                         {
-
-                            // Tính năng suất tổ theo ngày
-                            // Tìm tăng ca
-                            var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= productionAssignmentDetail.WorkDate.GetUnix() && oh.EndDate >= productionAssignmentDetail.WorkDate.GetUnix());
-                            var productivity = (department.NumberOfPerson + (overHour?.NumberOfPerson ?? 0)) * otherAssignment.ProductivityPerPerson;
-                           
                             var capacityPerDay = otherAssignment.TotalQuantity > 0 ? (otherAssignment.Workload
                                 * productionAssignmentDetail.QuantityPerDay.Value)
                                 / (otherAssignment.TotalQuantity
-                                * productivity) : 0;
+                                * otherAssignment.ProductivityPerPerson) : 0;
                             capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
                             {
                                 WorkDate = productionAssignmentDetail.WorkDate.GetUnix(),
                                 StepName = productionStepName,
                                 ProductionOrderCode = otherAssignment.ProductionOrderCode,
                                 CapacityPerDay = capacityPerDay,
-                                Productivity = productivity
+                                Productivity = otherAssignment.ProductivityPerPerson
                             });
                         }
                     }
@@ -886,10 +880,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         {
                             var workDateUnix = productionAssignmentDetail.WorkDate.GetUnix();
                             // Tính số giờ làm việc theo ngày của tổ
-                            var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= productionAssignmentDetail.WorkDate.GetUnix()).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
+                            // Tìm tăng ca
                             var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= productionAssignmentDetail.WorkDate.GetUnix() && oh.EndDate >= productionAssignmentDetail.WorkDate.GetUnix());
+                            var increase = calendar.DepartmentIncreaseInfo.FirstOrDefault(i => i.StartDate <= productionAssignmentDetail.WorkDate.GetUnix() && i.EndDate >= productionAssignmentDetail.WorkDate.GetUnix());
+                            var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= productionAssignmentDetail.WorkDate.GetUnix()).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
 
-                            var workingHoursPerDay = (decimal)((workingHourInfo?.WorkingHourPerDay ?? 0) + (overHour?.OverHour ?? 0));
+                
+                            var workingHoursPerDay = (decimal)((workingHourInfo?.WorkingHourPerDay??0 * (department?.NumberOfPerson??0 + increase?.NumberOfPerson??0)) + (overHour?.OverHour??0 * overHour?.NumberOfPerson??0));
 
                             var totalHour = capacityDepartments[otherAssignment.DepartmentId]
                                 .SelectMany(c => c.CapacityDetail)
@@ -910,11 +907,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         }
                     }
                     capacityDepartments[otherAssignment.DepartmentId].Add(capacityDepartment);
-                }
-
-                if (totalInventoryQuantity > 0)
-                {
-                    capacityDepartments[group.Key.DepartmentId][capacityDepartments[group.Key.DepartmentId].Count - 1].CompletedQuantity += totalInventoryQuantity;
                 }
             }
 
