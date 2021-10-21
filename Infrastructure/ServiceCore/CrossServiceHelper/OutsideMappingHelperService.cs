@@ -57,7 +57,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> MappingObjectDelete(EnumObjectType billObjectTypeId, long billFId)
         {
-            return await _httpCrossService.Detete<bool>($"api/internal/InternalOutsideImportMappings/MappingObjectDelete/{(int)billObjectTypeId}/{billFId}", new { });
+            return await _httpCrossService.Deleted<bool>($"api/internal/InternalOutsideImportMappings/MappingObjectDelete/{(int)billObjectTypeId}/{billFId}", new { });
         }
     }
 }

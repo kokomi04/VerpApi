@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.ServiceCore
         public static Assembly Assembly => typeof(ServiceCoreAssembly).Assembly;
         public static IServiceCollection AddServiceCoreDependency(this IServiceCollection services)
         {
+            services.AddHttpClient<IHttpClientFactoryService, HttpClientFactoryService>();
             services.AddHttpClient<IHttpCrossService, HttpCrossService>();
 
             services.AddSingleton<IAsyncRunnerService, AsyncRunnerService>();

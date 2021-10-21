@@ -10,5 +10,7 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
     public enum ElectronicInvoiceMappingErrorCode
     {
         ExistsElectronicInvoiceMapping = 1,
+        NotFoundElectronicInvoiceMapping = 2,
+        EInvoiceCreateProcessFailed = 3,
     }
 }

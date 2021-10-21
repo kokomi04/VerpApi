@@ -26,7 +26,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> DeleteDraftData(int objectTypeId, long objectId)
         {
-            return await _httpCrossService.Detete<bool>($"api/internal/InternalDraftData?objectTypeId={objectTypeId}&objectId={objectId}", new { });
+            return await _httpCrossService.Deleted<bool>($"api/internal/InternalDraftData?objectTypeId={objectTypeId}&objectId={objectId}", new { });
         }
     }
 }

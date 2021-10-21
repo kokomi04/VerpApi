@@ -205,6 +205,8 @@ namespace VErp.Commons.Enums.MasterEnum
         ElectronicInvoiceProvider = 53000,
         [Description("Cấu hình mapping các trường dữ liệu hóa đơn điện tử")]
         ElectronicInvoiceMapping = 53001,
+        [Description("Nhà cung cấp dịch vụ HDDT Easy invoice")]
+        EasyInvoiceProvider = 53003,
 
         [Description("Loại chứng từ bán hàng")]
         VoucherType = 53,
