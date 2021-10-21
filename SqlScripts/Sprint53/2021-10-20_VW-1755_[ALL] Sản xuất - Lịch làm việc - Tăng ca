@@ -43,8 +43,17 @@ ALTER COLUMN NumberOfPerson int NOT NULL;
 
 USE ManufacturingDB;
 
+IF OBJECT_ID('dbo.[DF_StepDetail_WorkingHours]') IS NOT NULL 
+  ALTER TABLE StepDetail DROP CONSTRAINT DF_StepDetail_WorkingHours;
+
+IF COL_LENGTH('StepDetail','WorkingHours') IS NOT NULL
 ALTER TABLE StepDetail
 DROP COLUMN WorkingHours;
 
+
+IF OBJECT_ID('dbo.[DF_StepDetail_NumberOfPerson]') IS NOT NULL 
+  ALTER TABLE StepDetail DROP CONSTRAINT DF_StepDetail_NumberOfPerson;
+  
+IF COL_LENGTH('StepDetail','NumberOfPerson') IS NOT NULL
 ALTER TABLE StepDetail
 DROP COLUMN NumberOfPerson;
