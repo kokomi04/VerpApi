@@ -64,6 +64,6 @@ namespace VErp.Services.Stock.Service.Stock
         Task<long> JoinPackage(PackageJoinInput req);
 
 
-        Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20);
+        Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productCateIds, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20);
     }
 }

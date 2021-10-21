@@ -56,17 +56,18 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20);
+        //Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20);
 
 
         /// <summary>
         /// Lấy danh sách kiện để xuất kho
         /// </summary>
         /// <param name="productId">Id sản phẩm</param>
+        /// <param name="productCateIds"></param>
         /// <param name="stockIdList">List Id kho</param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20);
+        //Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> productCateIds, IList<int> stockIdList, int page = 1, int size = 20);
     }
 }

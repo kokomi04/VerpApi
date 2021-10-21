@@ -270,6 +270,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             {
                 element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductId && x.OutsourceRequestId == element.OutsourcePartRequestId)
                     .Select(x => new PurchaseOrderSimple { PurchaseOrderCode = x.PurchaseOrderCode, PurchaseOrderId = x.PurchaseOrderId })
+                    .Aggregate(new List<PurchaseOrderSimple>(), (acc, value) =>
+                    {
+                        if (!acc.Any(a => a.PurchaseOrderId == value.PurchaseOrderId))
+                            acc.Add(value);
+                        return acc;
+                    })
                     .ToList();
             }
 

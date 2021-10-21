@@ -81,9 +81,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                .GroupBy(c => c.Name)
                .ToDictionary(c => c.Key, c => (int?)c.First().CustomerId);
 
-            var stockRules = EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
-            var timeTypes = EnumExtensions.GetEnumMembers<EnumTimeType>();
-            var quantitativeUnitTypes = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
+            var stockRules = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
+            var timeTypes = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumTimeType>();
+            var quantitativeUnitTypes = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;

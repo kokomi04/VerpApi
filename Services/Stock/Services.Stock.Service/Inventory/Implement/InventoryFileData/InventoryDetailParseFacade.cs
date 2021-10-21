@@ -249,7 +249,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
                     Description = item.Description,
-                    AccountancyAccountNumberDu = item.AccountancyAccountNumberDu,
+                    //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu,
                     PackageOptionId = item.PackageOptionId,
                     FromPackageId = fromPackageId,
                     ToPackageId = toPackageId,

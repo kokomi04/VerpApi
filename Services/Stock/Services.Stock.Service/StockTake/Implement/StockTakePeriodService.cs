@@ -99,7 +99,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             try
             {
                 var ctx = await GenerateStockTakePeriotCode(null, model);
-               
+
 
                 var stockTakePeriod = _mapper.Map<StockTakePeriod>(model);
 
@@ -110,7 +110,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _stockContext.SaveChangesAsync();
 
                 trans.Commit();
-                
+
                 model.StockTakePeriodId = stockTakePeriod.StockTakePeriodId;
 
                 await ctx.ConfirmCode();
@@ -208,6 +208,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 .ThenInclude(st => st.StockTakeDetail)
                 .FirstOrDefaultAsync(p => p.StockTakePeriodId == stockTakePeriodId);
 
+            if (stockTakePeriod == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
             var result = _mapper.Map<StockTakePeriotModel>(stockTakePeriod);
 
             result.StockTakeResult = stockTakePeriod.StockTake
@@ -227,7 +230,12 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             // Lấy thông tin tồn kho
             var remainSystem = (from id in _stockContext.InventoryDetail
                                 join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
-                                where i.IsDeleted == false && id.IsDeleted == false && i.IsApproved == true && i.Date <= stockTakePeriod.StockTakePeriodDate && i.StockId == stockTakePeriod.StockId && productIds.Contains(id.ProductId)
+                                where i.IsDeleted == false
+                                && id.IsDeleted == false
+                                && i.IsApproved == true
+                                && i.Date <= stockTakePeriod.StockTakePeriodDate
+                                && i.StockId == stockTakePeriod.StockId
+                                && productIds.Contains(id.ProductId)
                                 select new
                                 {
                                     i.InventoryTypeId,
@@ -236,17 +244,18 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                                     id.PrimaryQuantity,
                                     id.ProductUnitConversionQuantity
                                 })
-                         .GroupBy(id => new
-                         {
-                             id.ProductId,
-                             id.ProductUnitConversionId
-                         }).Select(g => new StockRemainQuantity
-                         {
-                             ProductId = g.Key.ProductId,
-                             ProductUnitConversionId = g.Key.ProductUnitConversionId,
-                             RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
-                             ProductUnitConversionRemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
-                         }).ToList();
+                                .GroupBy(id => new
+                                {
+                                    id.ProductId,
+                                    id.ProductUnitConversionId
+                                }).Select(g => new StockRemainQuantity
+                                {
+                                    ProductId = g.Key.ProductId,
+                                    ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                                    RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
+                                    ProductUnitConversionRemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
+                                })
+                                .ToList();
 
             foreach (var item in result.StockTakeResult)
             {
@@ -258,6 +267,97 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             }
             return result;
         }
+
+
+        public async Task<PageData<StockRemainQuantity>> GetUncheckedData(long stockTakePeriodId, string keyword, int page, int size)
+        {
+            var stockTakePeriod = await _stockContext.StockTakePeriod.FirstOrDefaultAsync(p => p.StockTakePeriodId == stockTakePeriodId);
+
+            if (stockTakePeriod == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
+
+            var productIds = await (from std in _stockContext.StockTakeDetail
+                                    join st in _stockContext.StockTake on std.StockTakeId equals st.StockTakeId
+                                    join stp in _stockContext.StockTakePeriod on st.StockTakePeriodId equals stp.StockTakePeriodId
+                                    where stp.StockTakePeriodId == stockTakePeriodId
+                                    group std by std.ProductId into g
+                                    select g.Key).ToListAsync();
+
+
+            keyword = string.IsNullOrEmpty(keyword) ? string.Empty : keyword.Trim();
+
+            var year = stockTakePeriod.StockTakePeriodDate.Year;
+            var month = stockTakePeriod.StockTakePeriodDate.Month;
+            var hour = stockTakePeriod.StockTakePeriodDate.Hour;
+            var minute = stockTakePeriod.StockTakePeriodDate.Minute;
+            var second = stockTakePeriod.StockTakePeriodDate.Second;
+            var startMonth = new DateTime(year, month, 1, hour, minute, second);
+            var endMonth = startMonth.AddMonths(1).AddDays(-1);
+
+            // Sản phẩm có phát sinh trong tháng
+            var arisenProductId = (from id in _stockContext.InventoryDetail
+                                   join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                                   where i.IsDeleted == false
+                                   && id.IsDeleted == false
+                                   && i.IsApproved == true
+                                   && i.Date >= startMonth
+                                   && i.Date <= endMonth
+                                   && i.StockId == stockTakePeriod.StockId
+                                   && productIds.Contains(id.ProductId)
+                                   group id by id.ProductId into g
+                                   select g.Key
+                                   ).ToList();
+
+            // Lấy thông tin tồn kho chưa kiểm kê
+            var uncheckedData = (from id in _stockContext.InventoryDetail
+                                 join i in _stockContext.Inventory on id.InventoryId equals i.InventoryId
+                                 where i.IsDeleted == false
+                                 && id.IsDeleted == false
+                                 && i.IsApproved == true
+                                 && i.Date <= stockTakePeriod.StockTakePeriodDate
+                                 && i.StockId == stockTakePeriod.StockId
+                                 && !productIds.Contains(id.ProductId)
+                                 join p in _stockContext.Product on id.ProductId equals p.ProductId
+                                 where p.ProductCode.Contains(keyword) || p.ProductName.Contains(keyword)
+                                 select new
+                                 {
+                                     i.InventoryTypeId,
+                                     id.ProductId,
+                                     p.ProductCode,
+                                     id.ProductUnitConversionId,
+                                     id.PrimaryQuantity,
+                                     id.ProductUnitConversionQuantity
+                                 })
+                                 .GroupBy(id => new
+                                 {
+                                     id.ProductId,
+                                     id.ProductCode,
+                                     id.ProductUnitConversionId
+                                 })
+                                 .Select(g => new 
+                                 {
+                                     ProductId = g.Key.ProductId,
+                                     ProductCode = g.Key.ProductCode,
+                                     ProductUnitConversionId = g.Key.ProductUnitConversionId,
+                                     RemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.PrimaryQuantity : -d.PrimaryQuantity),
+                                     ProductUnitConversionRemainQuantity = g.Sum(d => d.InventoryTypeId == (int)EnumInventoryType.Input ? d.ProductUnitConversionQuantity : -d.ProductUnitConversionQuantity)
+                                 })
+                                 .Where(r => r.RemainQuantity > 0 || arisenProductId.Contains(r.ProductId))
+                                 .OrderBy(r => r.ProductCode)
+                                 .Select(r => new StockRemainQuantity
+                                 {
+                                     ProductId = r.ProductId,
+                                     ProductUnitConversionId = r.ProductUnitConversionId,
+                                     RemainQuantity = r.RemainQuantity,
+                                     ProductUnitConversionRemainQuantity = r.ProductUnitConversionRemainQuantity
+                                 });
+            var total = uncheckedData.Count();
+            var result = await (size > 0 ? uncheckedData.Skip((page - 1) * size).Take(size) : uncheckedData).ToListAsync();
+            return (result, total);
+        }
+
+
 
         public async Task<StockTakePeriotModel> UpdateStockTakePeriod(long stockTakePeriodId, StockTakePeriotModel model)
         {
@@ -360,8 +460,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 GenerateCodeContext ctx = null;
                 if (stockTakeAcceptanceCertificate == null)
                 {
-                     ctx = await GenerateAcceptanceCertificateCode(stockTakePeriodId, model);
-                   
+                    ctx = await GenerateAcceptanceCertificateCode(stockTakePeriodId, model);
+
                     stockTakeAcceptanceCertificate = _mapper.Map<StockTakeAcceptanceCertificate>(model);
                     stockTakeAcceptanceCertificate.StockTakeAcceptanceCertificateStatus = (int)EnumStockTakeAcceptanceCertificateStatus.Waiting;
                     _stockContext.StockTakeAcceptanceCertificate.Add(stockTakeAcceptanceCertificate);
@@ -486,7 +586,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _stockContext.SaveChangesAsync();
                 trans.Commit();
 
-                
+
                 await _periodActivityLog.LogBuilder(() => StockTakePeriodActivityLogMessage.DeleteAcceptanceCerfificate)
                     .MessageResourceFormatDatas(stockTakePeriod.StockTakePeriodCode)
                     .ObjectId(stockTakePeriod.StockTakePeriodId)

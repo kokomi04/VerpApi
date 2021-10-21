@@ -39,7 +39,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? SortOrder { get; set; }
         public decimal? PrimaryQuantityRemaning { get; set; }
         public decimal? ProductUnitConversionQuantityRemaning { get; set; }
-        public string AccountancyAccountNumberDu { get; set; }
+//        public string AccountancyAccountNumberDu { get; set; }
         public long? InventoryRequirementDetailId { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }

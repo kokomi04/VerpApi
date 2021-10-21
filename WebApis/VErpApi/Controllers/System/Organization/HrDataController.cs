@@ -89,7 +89,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("{hrTypeId}/{fId}/reference/{hrAreaId}")]
-        public async Task<bool> UpdateHrBillReference([FromRoute] int hrTypeId, [FromRoute] int fId, [FromRoute] int hrAreaId, [FromQuery] int fReferenceId)
+        public async Task<bool> UpdateHrBillReference([FromRoute] int hrTypeId, [FromRoute] long fId, [FromRoute] int hrAreaId, [FromQuery] long fReferenceId)
         {
             return await _hrDataService.UpdateHrBillReference(hrTypeId, hrAreaId, fId, fReferenceId).ConfigureAwait(true);
         }

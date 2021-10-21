@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public decimal? IntoMoney { get; set; }
         public int? SortOrder { get; set; }
+        public string PoProviderPricingCode { get; set; }
 
         public virtual PurchasingRequestDetail PurchasingRequestDetail { get; set; }
         public virtual PurchasingSuggest PurchasingSuggest { get; set; }

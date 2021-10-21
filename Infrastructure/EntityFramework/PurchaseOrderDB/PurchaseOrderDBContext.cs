@@ -21,6 +21,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
         public virtual DbSet<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
+        public virtual DbSet<ElectronicInvoiceMapping> ElectronicInvoiceMapping { get; set; }
+        public virtual DbSet<ElectronicInvoiceProvider> ElectronicInvoiceProvider { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
@@ -132,6 +134,42 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.CuttingWorkSheetId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CuttingWorkSheetFile_CuttingWorkSheet");
+            });
+
+            modelBuilder.Entity<ElectronicInvoiceMapping>(entity =>
+            {
+                entity.Property(e => e.DeletedDatetimeUtc)
+                    .HasMaxLength(10)
+                    .IsFixedLength(true);
+
+                entity.HasOne(d => d.ElectronicInvoiceProvider)
+                    .WithMany(p => p.ElectronicInvoiceMapping)
+                    .HasForeignKey(d => d.ElectronicInvoiceProviderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ElectronicInvoiceMapping_ElectronicInvoiceProvider");
+            });
+
+            modelBuilder.Entity<ElectronicInvoiceProvider>(entity =>
+            {
+                entity.Property(e => e.ElectronicInvoiceProviderId).ValueGeneratedNever();
+
+                entity.Property(e => e.Address).HasMaxLength(128);
+
+                entity.Property(e => e.CompanyName).HasMaxLength(128);
+
+                entity.Property(e => e.ContactName).HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Email).HasMaxLength(128);
+
+                entity.Property(e => e.Fax).HasMaxLength(128);
+
+                entity.Property(e => e.Name).HasMaxLength(128);
+
+                entity.Property(e => e.Phone).HasMaxLength(32);
+
+                entity.Property(e => e.Website).HasMaxLength(128);
             });
 
             modelBuilder.Entity<MaterialCalc>(entity =>
@@ -328,11 +366,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PoProviderPricingFile>(entity =>
             {
-                entity.HasKey(e => e.PoProviderPricingId);
-
-                entity.HasOne(d => d.File)
+                entity.HasOne(d => d.PoProviderPricing)
                     .WithMany(p => p.PoProviderPricingFile)
-                    .HasForeignKey(d => d.FileId)
+                    .HasForeignKey(d => d.PoProviderPricingId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PoProviderPricingFile_PoProviderPricing");
             });
@@ -542,6 +578,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
+                entity.Property(e => e.PoProviderPricingCode).HasMaxLength(128);
+
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 
                 entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
@@ -719,6 +757,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.PoProviderPricingCode).HasMaxLength(128);
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
 

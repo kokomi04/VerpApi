@@ -774,7 +774,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         // Check unique trong danh sách values thêm mới/sửa
                         if (values.Count != values.Distinct().Count())
                         {
-                            throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                            var dupValue = values.GroupBy(v => v).Where(v => v.Count() > 1).FirstOrDefault()?.Key?.ToString();
+                            throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, dupValue, "" });
                         }
                         if (values.Count == 0)
                         {
@@ -789,7 +790,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private async Task ValidUniqueAsync(int inputTypeId, List<object> values, ValidateField field, long? inputValueBillId = null)
         {
-            var existSql = $"SELECT F_Id FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
+            var typeTitleField = "InputType_Title";
+            var existSql = $"SELECT F_Id, {typeTitleField}, {field.FieldName} FROM vInputValueRow WHERE ";
+            if (field.FieldName == AccountantConstants.BILL_CODE)
+            {
+                existSql += $" 1 = 1 ";
+            }
+            else
+            {
+                existSql += $" InputTypeId = {inputTypeId} ";
+            }
+
             if (inputValueBillId.HasValue)
             {
                 existSql += $"AND InputBill_F_Id != {inputValueBillId}";
@@ -814,7 +825,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             if (isExisted)
             {
-                throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, result.Rows[0][field.FieldName]?.ToString(), result.Rows[0][typeTitleField]?.ToString() });
             }
         }
 

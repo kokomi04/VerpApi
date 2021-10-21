@@ -75,7 +75,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("outsourceStep/request")]
         public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest()
         {
-            return await _purchaseOrderOutsourceStepService.GetOutsourceStepRequest();
+            return await _purchaseOrderOutsourceStepService.GetOutsourceStepRequest(null);
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("outsourcePart/request")]
         public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest()
         {
-            return await _purchaseOrderOutsourcePartService.GetOutsourcePartRequest();
+            return await _purchaseOrderOutsourcePartService.GetOutsourcePartRequest(null);
         }
 
         /// <summary>

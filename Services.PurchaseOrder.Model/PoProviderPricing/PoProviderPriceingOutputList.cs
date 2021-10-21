@@ -25,7 +25,7 @@ namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
         public decimal DeliveryFee { get; set; }
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
-        public EnumPoProviderPricingStatus PoProviderPricingStatusId { get; set; }
+        public EnumPoProviderPricingStatus? PoProviderPricingStatusId { get; set; }
         public bool? IsChecked { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
@@ -53,17 +53,23 @@ namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
         public long? CurrencyId { get; set; }
         public decimal? ExchangeRate { get; set; }
 
-        public virtual void Mapping(Profile profile)
+        protected void MappingBase<T>(Profile profile) where T : PoProviderPricingOutputList
         {
-            profile.CreateMap<PoProviderPricingEntity, PoProviderPricingOutputList>()
+            profile.CreateMap<PoProviderPricingEntity, T>()
                 .ForMember(d => d.DeliveryDestination, s => s.MapFrom(f => f.DeliveryDestination.JsonDeserialize<DeliveryDestinationModel>()))
-                .ForMember(d => d.PoProviderPricingStatusId, s => s.MapFrom(f => (EnumPoProviderPricingStatus)f.PoProviderPricingStatusId))
-                .ForMember(d => d.PoProcessStatusId, s => s.MapFrom(f => (EnumPoProcessStatus)f.PoProcessStatusId))
+                .ForMember(d => d.PoProviderPricingStatusId, s => s.MapFrom(f => (EnumPoProviderPricingStatus?)f.PoProviderPricingStatusId))
+                .ForMember(d => d.PoProcessStatusId, s => s.MapFrom(f => (EnumPoProcessStatus?)f.PoProcessStatusId))
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(f => f.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(d => d.UpdatedDatetimeUtc, s => s.MapFrom(f => f.UpdatedDatetimeUtc.GetUnix()))
                 .ForMember(d => d.CensorDatetimeUtc, s => s.MapFrom(f => f.CensorDatetimeUtc.GetUnix()))
                 .ForMember(d => d.CheckedDatetimeUtc, s => s.MapFrom(f => f.CheckedDatetimeUtc.GetUnix()))
-                .ForMember(d => d.DeliveryDate, s => s.MapFrom(f => f.DeliveryDate.GetUnix()));
+                .ForMember(d => d.DeliveryDate, s => s.MapFrom(f => f.DeliveryDate.GetUnix()))
+                .ForMember(d => d.Date, s => s.MapFrom(f => f.Date.GetUnix()));
+        }
+
+        public virtual void Mapping(Profile profile)
+        {
+            MappingBase<PoProviderPricingOutputList>(profile);
         }
     }
 
@@ -79,13 +85,22 @@ namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
 
         public override void Mapping(Profile profile)
         {
-            base.Mapping(profile);
+            MappingBase<PoProviderPricingModel>(profile);
 
-            profile.CreateMap< PoProviderPricingOutputList, PoProviderPricingEntity>()
+            profile.CreateMap<PoProviderPricingModel, PoProviderPricingEntity>()
                .ForMember(d => d.DeliveryDestination, s => s.MapFrom(f => f.DeliveryDestination.JsonSerialize()))
-               .ForMember(d => d.PoProviderPricingStatusId, s => s.MapFrom(f => (int)f.PoProviderPricingStatusId))
+               .ForMember(d => d.PoProviderPricingStatusId, s => s.MapFrom(f => (int?)f.PoProviderPricingStatusId))
                .ForMember(d => d.PoProcessStatusId, s => s.MapFrom(f => (int?)f.PoProcessStatusId))
-               .ForMember(d => d.DeliveryDate, s => s.MapFrom(f => f.DeliveryDate.UnixToDateTime()));
+               .ForMember(d => d.DeliveryDate, s => s.MapFrom(f => f.DeliveryDate.UnixToDateTime()))
+               .ForMember(d => d.Date, s => s.MapFrom(f => f.Date.UnixToDateTime()))
+
+                .ForMember(d => d.PoProcessStatusId, s => s.Ignore())
+                .ForMember(d => d.CreatedDatetimeUtc, s => s.Ignore())
+                .ForMember(d => d.UpdatedDatetimeUtc, s => s.Ignore())
+                .ForMember(d => d.CensorDatetimeUtc, s => s.Ignore())
+                .ForMember(d => d.CheckedDatetimeUtc, s => s.Ignore())
+                .ForMember(d => d.PoProviderPricingDetail, s => s.Ignore())
+                .ForMember(d => d.PoProviderPricingFile, s => s.Ignore());
         }
 
     }

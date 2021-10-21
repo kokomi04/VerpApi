@@ -716,7 +716,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, IList<int> productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
             keyword = (keyword ?? "").Trim();
             productName = (productName ?? "").Trim();
@@ -815,7 +815,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         select p;
             }
 
-            if (productCateIds != null && productCateIds.Length > 0)
+            if (productCateIds != null && productCateIds.Count > 0)
             {
                 query = from p in query
                         where productCateIds.Contains(p.ProductCateId)

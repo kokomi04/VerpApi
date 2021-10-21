@@ -366,7 +366,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            if (data.FormTypeId == EnumFormType.Generate)
+            if (data.FormTypeId == EnumFormType.Generate || data.FormTypeId == EnumFormType.MultiSelect)
             {
                 data.DataTypeId = EnumDataType.Text;
                 data.DataSize = -1;
@@ -441,11 +441,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                 {
                     deleteField.IsDeleted = true;
 
-                    await _organizationDBContext.ExecuteStoreProcedure("asp_HrType_Clear_FieldData", new[] {
-                        new SqlParameter("@HrTypeId",hrTypeId ),
-                        new SqlParameter("@FieldName", deleteField.HrField.FieldName ),
-                        new SqlParameter("@ResStatus", 0){ Direction = ParameterDirection.Output },
-                    });
+                    // await _organizationDBContext.ExecuteStoreProcedure("asp_HrType_Clear_FieldData", new[] {
+                    //     new SqlParameter("@HrTypeId",hrTypeId ),
+                    //     new SqlParameter("@FieldName", deleteField.HrField.FieldName ),
+                    //     new SqlParameter("@ResStatus", 0){ Direction = ParameterDirection.Output },
+                    // });
                 }
 
                 foreach (var field in fields)

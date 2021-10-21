@@ -127,6 +127,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
+                            PoProviderPricingCode = d.PoProviderPricingCode,
                             OrderCode = d.OrderCode,
                             ProductionOrderCode = d.ProductionOrderCode,
                             Description = d.Description,
@@ -291,6 +292,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                                 detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
+                                detail.PoProviderPricingCode = item.PoProviderPricingCode;
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
                                 detail.Description = item.Description;
@@ -316,6 +318,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductUnitConversionId = item.ProductUnitConversionId,
                                 ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                 ProductUnitConversionPrice = item.ProductUnitConversionPrice,
+
+                                PoProviderPricingCode=item.PoProviderPricingCode,
                                 OrderCode = item.OrderCode,
                                 ProductionOrderCode = item.ProductionOrderCode,
                                 Description = item.Description,
@@ -585,6 +589,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
+                        PoProviderPricingCode = d.PoProviderPricingCode,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,

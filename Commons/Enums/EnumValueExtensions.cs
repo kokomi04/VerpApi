@@ -7,7 +7,7 @@ using System.Text;
 
 namespace VErp.Commons.Enums.MasterEnum
 {
-    public static class MasterEnumExtensions
+    public static class EnumValueExtensions
     {
         public static int GetParamNumber(this Enum value)
         {

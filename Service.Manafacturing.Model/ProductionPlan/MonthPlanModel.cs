@@ -35,4 +35,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionPlan
         }
     }
 
+    public class MonthPlanNameModel
+    {
+        public string Value { get; set; }
+    }
+
 }
