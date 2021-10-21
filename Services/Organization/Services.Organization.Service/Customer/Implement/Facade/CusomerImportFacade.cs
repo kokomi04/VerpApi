@@ -263,10 +263,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             for (var number = 1; number <= 3; number++)
             {
                 var name = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.ContactName1), number);
-                var existsEntity = _customerContact.FirstOrDefault(x=>x.FullName == name);
-
-                if (existsEntity != null &&  mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tên người liên hệ \"{name}\" đã tồn tại trong thông tin đối tác");
+                var existsEntity = _customerContact.FirstOrDefault(x => model.CustomerId == x.CustomerId && x.FullName == name);
 
                 if (!string.IsNullOrWhiteSpace(name))
                 {
@@ -292,10 +289,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 var name = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccAccountName1), number);
                 var bankName = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccBankName1), number);
 
-                var existsEntity = _bankAccounts.FirstOrDefault(x => x.BankName == bankName && x.AccountName == name);
-                if (existsEntity != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tài khoản \"{name}\" ngân hàng \"{bankName}\" đã tồn tại trong thông tin đối tác");
-                
+                var existsEntity = _bankAccounts.FirstOrDefault(x =>model.CustomerId == x.CustomerId && x.BankName == bankName && x.AccountName == name);
+               
                 if (!string.IsNullOrWhiteSpace(name))
                 {
                     model.BankAccounts.Add(new CustomerBankAccountModel()
