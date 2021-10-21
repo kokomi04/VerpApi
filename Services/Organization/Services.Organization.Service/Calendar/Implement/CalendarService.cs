@@ -686,7 +686,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
                 if (currentWorkingHourInfo == null || currentWorkingWeeks.Count == 0)
                 {
-                    throw CalendarStartDateInvalid.BadRequestFormat(oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
+                    throw CalendarStartDateInvalid. BadRequestFormat(oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))

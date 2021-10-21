@@ -120,7 +120,22 @@
   <data name="CalendarDoesNotExists" xml:space="preserve">
     <value>Lịch làm việc không tồn tại</value>
   </data>
+  <data name="CalendarWithStartDateAlreadyExists" xml:space="preserve">
+    <value>Đã tồn tại thay đổi lịch làm việc của tổ {0} áp dụng từ ngày {1:dd/MM/yyyy}</value>
+  </data>
+  <data name="CalendarWithStartDateDoesNotExists" xml:space="preserve">
+    <value>Không tồn tại thay đổi lịch làm việc của tổ {0} áp dụng từ ngày {1:dd/MM/yyyy}</value>
+  </data>
   <data name="DepartmentNotFound" xml:space="preserve">
     <value>Phòng ban không tồn tại</value>
+  </data>
+  <data name="DepartmentOverHourInfoNotFound" xml:space="preserve">
+    <value>Thông tin tăng ca không tồn tại</value>
+  </data>
+  <data name="DuplicateDateRange" xml:space="preserve">
+    <value>Trùng khoảng thời gian với giai đoạn đã tồn tại</value>
+  </data>
+  <data name="StartDateMustHaveValue" xml:space="preserve">
+    <value>Vui lòng chọn ngày hiệu lực</value>
   </data>
 </root>

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Organization.Department {
+namespace Verp.Resources.Organization.Subsidiary {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Organization.Department {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class DepartmentCalendarValidationMessage {
+    public class SubsidiaryActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal DepartmentCalendarValidationMessage() {
+        internal SubsidiaryActivityLogMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Organization.Department {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Department.DepartmentCalendarValidationMessage", typeof(DepartmentCalendarValidationMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Subsidiary.SubsidiaryActivityLogMessage", typeof(SubsidiaryActivityLogMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,65 +61,29 @@ namespace Verp.Resources.Organization.Department {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lịch làm việc không tồn tại.
+        ///   Looks up a localized string similar to Thêm cty con/chi nhánh {0}.
         /// </summary>
-        public static string CalendarDoesNotExists {
+        public static string Create {
             get {
-                return ResourceManager.GetString("CalendarDoesNotExists", resourceCulture);
+                return ResourceManager.GetString("Create", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Đã tồn tại thay đổi lịch làm việc của tổ {0} áp dụng từ ngày {1:dd/MM/yyyy}.
+        ///   Looks up a localized string similar to Xóa cty con/chi nhánh {0}.
         /// </summary>
-        public static string CalendarWithStartDateAlreadyExists {
+        public static string Delete {
             get {
-                return ResourceManager.GetString("CalendarWithStartDateAlreadyExists", resourceCulture);
+                return ResourceManager.GetString("Delete", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tồn tại thay đổi lịch làm việc của tổ {0} áp dụng từ ngày {1:dd/MM/yyyy}.
+        ///   Looks up a localized string similar to Cập nhật cty con/chi nhánh {0}.
         /// </summary>
-        public static string CalendarWithStartDateDoesNotExists {
+        public static string Update {
             get {
-                return ResourceManager.GetString("CalendarWithStartDateDoesNotExists", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Phòng ban không tồn tại.
-        /// </summary>
-        public static string DepartmentNotFound {
-            get {
-                return ResourceManager.GetString("DepartmentNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Thông tin tăng ca không tồn tại.
-        /// </summary>
-        public static string DepartmentOverHourInfoNotFound {
-            get {
-                return ResourceManager.GetString("DepartmentOverHourInfoNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Trùng khoảng thời gian với giai đoạn đã tồn tại.
-        /// </summary>
-        public static string DuplicateDateRange {
-            get {
-                return ResourceManager.GetString("DuplicateDateRange", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Vui lòng chọn ngày hiệu lực.
-        /// </summary>
-        public static string StartDateMustHaveValue {
-            get {
-                return ResourceManager.GetString("StartDateMustHaveValue", resourceCulture);
+                return ResourceManager.GetString("Update", resourceCulture);
             }
         }
     }

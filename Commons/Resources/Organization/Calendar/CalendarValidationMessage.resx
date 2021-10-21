@@ -130,7 +130,7 @@
     <value>Đã tồn tại thay đổi lịch làm việc vào ngày {0:dd/MM/yyyy}</value>
   </data>
   <data name="CalendarStartDateInvalid" xml:space="preserve">
-    <value>Đã tồn tại thay đổi lịch làm việc vào ngày {0:dd/MM/yyyy}</value>
+    <value>Không tồn tại thay đổi lịch làm việc vào ngày {0:dd/MM/yyyy}</value>
   </data>
   <data name="MissingDaysOfWeek" xml:space="preserve">
     <value>Thông tin làm việc trong tuần chưa đủ</value>

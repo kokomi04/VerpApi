@@ -117,7 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Date" xml:space="preserve">
-    <value>dd/MM/yyyy</value>
+  <data name="Copy" xml:space="preserve">
+    <value>Created calendar {0} copied from {1}</value>
+  </data>
+  <data name="Create" xml:space="preserve">
+    <value>Created calendar {0}</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Deleted calendar {0}</value>
+  </data>
+  <data name="DeleteDayOff" xml:space="preserve">
+    <value>Deleted off day {0:MM-dd-yyyy} {1} for calendar {2}</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Updated calendar {0}</value>
+  </data>
+  <data name="UpdateDayOff" xml:space="preserve">
+    <value>Updated off day {0:MM-dd-yyyy} {1} for calendar {2}</value>
+  </data>
+  <data name="WeekCalendarCreate" xml:space="preserve">
+    <value>Created week calendar from  {0:MM-dd-yyyy} for calendar {1}</value>
+  </data>
+  <data name="WeekCalendarDelete" xml:space="preserve">
+    <value>Deleted week calendar from  {0:MM-dd-yyyy} for calendar {1}</value>
+  </data>
+  <data name="WeekCalendarUpdate" xml:space="preserve">
+    <value>Updated week calendar from  {0:MM-dd-yyyy} for calendar {1}</value>
   </data>
 </root>

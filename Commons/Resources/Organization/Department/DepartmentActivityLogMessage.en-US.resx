@@ -117,7 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Date" xml:space="preserve">
-    <value>dd/MM/yyyy</value>
+  <data name="Create" xml:space="preserve">
+    <value>Updated departnment {0}</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Deleted departnment {0}</value>
+  </data>
+  <data name="DepartmentCalendarCreate" xml:space="preserve">
+    <value>Created calendar {0} from {1:MM-yy-yyyy} for {2}</value>
+  </data>
+  <data name="DepartmentCalendarDelete" xml:space="preserve">
+    <value>Deleted calendar {0} from {1:MM-yy-yyyy} for {2}</value>
+  </data>
+  <data name="DepartmentCalendarUpdate" xml:space="preserve">
+    <value>Updatedcalendar {0} from {1:MM-yy-yyyy} for {2}</value>
+  </data>
+  <data name="DepartmentOverHourCreate" xml:space="preserve">
+    <value>Created overtime working from {0:MM-day-yyyy}, to {1:MM-dd-yyyy}  for {2}</value>
+  </data>
+  <data name="DepartmentOverHourDelete" xml:space="preserve">
+    <value>Deleted overtime working from {0:MM-day-yyyy}, to {1:MM-dd-yyyy}  for {2}</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Deleted department {0}</value>
+  </data>
+  <data name="DepartmentOverHourUpdate" xml:space="preserve">
+    <value>Updated overtime working from {0:MM-day-yyyy}, to {1:MM-dd-yyyy}  for {2}</value>
   </data>
 </root>

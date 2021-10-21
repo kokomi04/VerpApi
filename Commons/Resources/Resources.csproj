@@ -392,6 +392,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ObjectProcessActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SubsidiaryActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\SystemParameter\SystemParameterActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -926,6 +931,10 @@
     <EmbeddedResource Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ObjectProcessActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SubsidiaryActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\SystemParameter\SystemParameterActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
