@@ -37,7 +37,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly HttpClient _httpClient;
         private readonly ILogger _logger;
 
-        public HttpClientFactoryService(HttpClient httpClient, ILogger<HttpCrossService> logger)
+        public HttpClientFactoryService(HttpClient httpClient, ILogger<HttpClientFactoryService> logger)
         {
             _httpClient = httpClient;
             _logger = logger;
