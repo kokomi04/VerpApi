@@ -19,6 +19,7 @@ using static VErp.Commons.Constants.CategoryFieldConstants;
 using VErp.Infrastructure.EF.OrganizationDB;
 using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 {
@@ -32,6 +33,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
         private IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
         private readonly ObjectActivityLogFacade _customerActivityLog;
+
+        private IList<CustomerBankAccount> _bankAccounts;
+        private IList<CustomerContact> _customerContact;
 
         public CusomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
         {
@@ -120,7 +124,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         );
                         if (currency == null) throw new BadRequestException("Không tìm thấy tiền tệ " + value);
 
-                        var id = Convert.ToInt64(currency[F_Id]);
+                        var id = Convert.ToInt32(currency[F_Id]);
 
                         entity.SetPropertyValue(propertyName, id);
                     }
@@ -138,14 +142,54 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 .Select(x => new { x.CustomerId, x.CustomerCode, x.CustomerName })
                 .ToListAsync();
 
+            var contactNames = lstData.SelectMany(x =>
+            {
+                var rs = new List<string>();
+
+                for (var number = 1; number <= 3; number++)
+                {
+                    var name = GetValueStringByFieldNumber(x, nameof(BaseCustomerImportModel.ContactName1), number);
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        rs.Add(name);
+                    }
+                }
+                return rs;
+            }).ToList();
+
+            var backAccounts = lstData.SelectMany(x =>
+            {
+                var rs = new List<CustomerBankAccountModel>();
+                for (var number = 1; number <= 3; number++)
+                {
+                    var name = GetValueStringByFieldNumber(x, nameof(BaseCustomerImportModel.BankAccAccountName1), number);
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        rs.Add(new CustomerBankAccountModel()
+                        {
+                            BankName = GetValueStringByFieldNumber(x, nameof(BaseCustomerImportModel.BankAccBankName1), number) ?? "",
+                            AccountName = name
+                        });
+                    }
+                }
+                return rs;
+            }).ToList();
+
+            _bankAccounts = await _organizationContext.CustomerBankAccount.Where(x =>
+                backAccounts.Select(b => b.BankName).Contains(x.BankName) &&
+                backAccounts.Select(b => b.AccountName).Contains(x.AccountName)
+            ).AsNoTracking().ToListAsync();
+            
+            _customerContact = await _organizationContext.CustomerContact.Where(x => contactNames.Contains(x.FullName)).AsNoTracking().ToListAsync();
+
             foreach (var customerModel in lstData)
             {
 
                 var customerInfo = _mapper.Map<CustomerModel>(customerModel);
                 customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
 
-                LoadContacts(customerInfo, customerModel);
-                LoadBankAccounts(customerInfo, customerModel);
+                LoadContacts(customerInfo, customerModel, mapping);
+                LoadBankAccounts(customerInfo, customerModel, mapping);
 
                 if (customerInfo.CustomerTypeId == 0)
                 {
@@ -194,8 +238,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             using var @trans = await _organizationContext.Database.BeginTransactionAsync();
             try
             {
-                foreach (var customer in lstUpdateCustomer)
-                    await _customerService.UpdateCustomerBase(customer.CustomerId, customer);
+                 foreach(var customer in lstUpdateCustomer)
+                    await _customerService.UpdateCustomerBase(customer.CustomerId, customer, true);
 
                 await _customerService.AddBatchCustomersBase(lstAddCustomer);
 
@@ -212,16 +256,22 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             return true;
         }
 
-        private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj)
+        private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
         {
             model.Contacts = new List<CustomerContactModel>();
             for (var number = 1; number <= 3; number++)
             {
                 var name = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.ContactName1), number);
+                var existsEntity = _customerContact.FirstOrDefault(x=>x.FullName == name);
+
+                if (existsEntity != null &&  mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tên người liên hệ \"{name}\" đã tồn tại trong thông tin đối tác");
+
                 if (!string.IsNullOrWhiteSpace(name))
                 {
                     model.Contacts.Add(new CustomerContactModel()
                     {
+                        CustomerContactId = existsEntity != null ? existsEntity.CustomerContactId : 0,
                         FullName = name,
                         GenderId = GetValueByFieldNumber<EnumGender>(obj, nameof(BaseCustomerImportModel.ContactGender1), number),
                         Position = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.ContactPosition1), number) ?? "",
@@ -233,17 +283,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
         }
 
-        private void LoadBankAccounts(CustomerModel model, BaseCustomerImportModel obj)
+        private void LoadBankAccounts(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
         {
             model.BankAccounts = new List<CustomerBankAccountModel>();
             for (var number = 1; number <= 3; number++)
             {
                 var name = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccAccountName1), number);
+                var bankName = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccBankName1), number);
+
+                var existsEntity = _bankAccounts.FirstOrDefault(x => x.BankName == bankName && x.AccountName == name);
+                if (existsEntity != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Tài khoản \"{name}\" ngân hàng \"{bankName}\" đã tồn tại trong thông tin đối tác");
+                
                 if (!string.IsNullOrWhiteSpace(name))
                 {
                     model.BankAccounts.Add(new CustomerBankAccountModel()
                     {
-                        BankName = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccBankName1), number) ?? "",
+                        BankAccountId = existsEntity != null ? existsEntity.CustomerBankAccountId : 0,
+                        BankName = bankName ?? "",
                         AccountNumber = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccAccountNo1), number) ?? "",
                         SwiffCode = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccSwiffCode1), number) ?? "",
                         BankCode = "",

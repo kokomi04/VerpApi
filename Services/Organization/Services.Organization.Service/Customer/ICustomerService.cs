@@ -24,7 +24,7 @@ namespace VErp.Services.Organization.Service.Customer
         CategoryNameModel GetCustomerFieldDataForMapping();
         Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream);
         Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers);
-        Task<CustomerEntity> UpdateCustomerBase(int customerId, CustomerModel data);
+        Task<CustomerEntity> UpdateCustomerBase(int customerId, CustomerModel data, bool igDeleteRef = false);
         Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers);
     }
 }
