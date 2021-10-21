@@ -409,7 +409,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
         }
 
-        public async Task<CustomerEntity> UpdateCustomerBase(int updatedUserId, int customerId, CustomerModel data)
+        public async Task<CustomerEntity> UpdateCustomerBase(int updatedUserId, int customerId, CustomerModel data, bool igDeleteRef = false)
         {
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
@@ -458,12 +458,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 data.BankAccounts = new List<CustomerBankAccountModel>();
             }
 
-            var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
-            foreach (var c in deletedContacts)
+            if (!igDeleteRef)
             {
-                c.IsDeleted = true;
-                c.UpdatedDatetimeUtc = DateTime.UtcNow;
+                var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
+                foreach (var c in deletedContacts)
+                {
+                    c.IsDeleted = true;
+                    c.UpdatedDatetimeUtc = DateTime.UtcNow;
+                }
             }
+            
 
             var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
             {
@@ -493,13 +497,18 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
             }
 
-            var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
-            foreach (var ba in deletedBankAccounts)
+            if (!igDeleteRef)
             {
-                ba.IsDeleted = true;
-                ba.UpdatedDatetimeUtc = DateTime.UtcNow;
-                ba.UpdatedUserId = updatedUserId;
+                var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
+
+                foreach (var ba in deletedBankAccounts)
+                {
+                    ba.IsDeleted = true;
+                    ba.UpdatedDatetimeUtc = DateTime.UtcNow;
+                    ba.UpdatedUserId = updatedUserId;
+                }
             }
+            
 
             var newBankAccounts = data.BankAccounts
                 .Where(ba => ba.BankAccountId <= 0)
