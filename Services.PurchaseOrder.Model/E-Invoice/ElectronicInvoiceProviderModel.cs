@@ -80,7 +80,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
             IList<ElectronicInvoiceProviderFieldsConfigModel> functions = new List<ElectronicInvoiceProviderFieldsConfigModel>();
             if (!string.IsNullOrWhiteSpace(entity.FieldsConfig))
             {
-                functions = entity.FieldsConfig.JsonDeserialize<ElectronicInvoiceProviderFieldsConfigModel[]>();
+                functions = entity.FieldsConfig.JsonDeserialize<IList<ElectronicInvoiceProviderFieldsConfigModel>>();
             }
 
             var members = EnumExtensions.GetEnumMembers<EnumElectronicInvoiceFunction>().ToList();
