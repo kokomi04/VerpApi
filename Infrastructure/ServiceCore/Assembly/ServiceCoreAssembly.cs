@@ -17,7 +17,7 @@ namespace VErp.Infrastructure.ServiceCore
         public static IServiceCollection AddServiceCoreDependency(this IServiceCollection services)
         {
             services.AddHttpClient<IHttpClientFactoryService, HttpClientFactoryService>();
-            services.AddHttpClient<IHttpCrossService, HttpCrossService>();
+            services.AddScoped<IHttpCrossService, HttpCrossService>();
 
             services.AddSingleton<IAsyncRunnerService, AsyncRunnerService>();
 
