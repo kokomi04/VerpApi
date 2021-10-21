@@ -19,7 +19,8 @@ using static VErp.Commons.Constants.CategoryFieldConstants;
 using VErp.Infrastructure.EF.OrganizationDB;
 using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Infrastructure.ServiceCore.Service;
+using static Verp.Resources.Organization.Customer.CustomerValidationMessage;
+
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 {
@@ -122,7 +123,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         var currency = currencies.List.FirstOrDefault(c => c.ContainsKey(CurrencyCode) && c[CurrencyCode]?.ToString()?.NormalizeAsInternalName() == val
                          || c.ContainsKey(CurrencyName) && c[CurrencyName]?.ToString()?.NormalizeAsInternalName() == val
                         );
-                        if (currency == null) throw new BadRequestException("Không tìm thấy tiền tệ " + value);
+                        if (currency == null) throw CurrencyNotFound.BadRequestFormat(value);
 
                         var id = Convert.ToInt32(currency[F_Id]);
 
@@ -205,10 +206,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                     if (existingCodes.Count() > 0)
                     {
-                        throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{string.Join(", ", existingCodes)}\" đã tồn tại");
+                        throw CustomerCodeAlreadyExists.BadRequestFormat( string.Join(", ", existingCodes));
                     }
 
-                    throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{string.Join(", ", existedCustomers.Select(c => c.CustomerName))}\" đã tồn tại");
+                    throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", existedCustomers.Select(c => c.CustomerName)));
                 }
 
                 var oldCustomer = existedCustomers.FirstOrDefault();
@@ -217,7 +218,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 {
                     if (lstAddCustomer.Any(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode))
                         if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại nhiều đối tác {customerInfo.CustomerCode} trong file excel");
+                            throw MultipleCustomerFound.BadRequestFormat(customerInfo.CustomerCode);
                         else
                             continue;
 

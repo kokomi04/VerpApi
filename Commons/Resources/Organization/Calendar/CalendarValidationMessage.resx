@@ -117,7 +117,31 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Date" xml:space="preserve">
-    <value>dd/MM/yyyy</value>
+  <data name="CalendarCodeAlreadyExists" xml:space="preserve">
+    <value>Mã lịch làm việc đã tồn tại</value>
+  </data>
+  <data name="CalendarDoesNotExists" xml:space="preserve">
+    <value>Lịch làm việc không tồn tại</value>
+  </data>
+  <data name="CalendarNameAlreadyExists" xml:space="preserve">
+    <value>Tên lịch làm việc đã tồn tại</value>
+  </data>
+  <data name="CalendarStartDateAlreadyExists" xml:space="preserve">
+    <value>Đã tồn tại thay đổi lịch làm việc vào ngày {0:dd/MM/yyyy}</value>
+  </data>
+  <data name="CalendarStartDateInvalid" xml:space="preserve">
+    <value>Không tồn tại thay đổi lịch làm việc vào ngày {0:dd/MM/yyyy}</value>
+  </data>
+  <data name="MissingDaysOfWeek" xml:space="preserve">
+    <value>Thông tin làm việc trong tuần chưa đủ</value>
+  </data>
+  <data name="MissingStartDate" xml:space="preserve">
+    <value>Vui lòng chọn ngày hiệu lực</value>
+  </data>
+  <data name="EmptyCalendarCode" xml:space="preserve">
+    <value>Mã lịch không được để trống</value>
+  </data>
+  <data name="DayOffDoesNotExist" xml:space="preserve">
+    <value>Ngày nghỉ không tồn tại</value>
   </data>
 </root>

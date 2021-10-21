@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Library.Formaters {
+namespace Verp.Resources.Organization.Calendar {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Library.Formaters {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class DateTimeFormaterFormat {
+    public class CalendarTitle {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal DateTimeFormaterFormat() {
+        internal CalendarTitle() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Library.Formaters {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Library.Formaters.DateTimeFormaterFormat", typeof(DateTimeFormaterFormat).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Calendar.CalendarTitle", typeof(CalendarTitle).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,11 +61,11 @@ namespace Verp.Resources.Library.Formaters {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to dd/MM/yyyy.
+        ///   Looks up a localized string similar to Ngày nghỉ cố định trong tuần.
         /// </summary>
-        public static string Date {
+        public static string OffDayOfWeek {
             get {
-                return ResourceManager.GetString("Date", resourceCulture);
+                return ResourceManager.GetString("OffDayOfWeek", resourceCulture);
             }
         }
     }

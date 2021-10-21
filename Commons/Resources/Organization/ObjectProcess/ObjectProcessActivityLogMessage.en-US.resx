@@ -117,7 +117,13 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Date" xml:space="preserve">
-    <value>dd/MM/yyyy</value>
+  <data name="Create" xml:space="preserve">
+    <value>Created bill process step {0}</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Deleted bill process step {0}</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Updated bill process step {0}</value>
   </data>
 </root>

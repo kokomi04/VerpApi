@@ -23,6 +23,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Calendar;
 using VErp.Services.Organization.Model.DepartmentCalendar;
 using DepartmentCalendarEntity = VErp.Infrastructure.EF.OrganizationDB.DepartmentCalendar;
+using static Verp.Resources.Organization.Department.DepartmentCalendarValidationMessage;
+using Verp.Resources.Organization.Calendar;
 
 namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 {
@@ -74,16 +76,16 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phòng ban không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == data.CalendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
                 DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
 
                 if (_organizationContext.DepartmentCalendar.Any(dc => dc.DepartmentId == departmentId && dc.StartDate == time))
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                    throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));                    
                 }
 
                 // Update Calendar
@@ -120,12 +122,12 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phòng ban không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == data.CalendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
-                if (!data.StartDate.HasValue) throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày hiệu lực");
+                if (!data.StartDate.HasValue) throw StartDateMustHaveValue.BadRequest();
 
                 DateTime oldTime = oldDate.UnixToDateTime().Value;
                 DateTime time = data.StartDate.UnixToDateTime().Value;
@@ -134,7 +136,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 {
                     if (_organizationContext.DepartmentCalendar.Any(dc => dc.DepartmentId == departmentId && dc.StartDate == time))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                        throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));                        
                     }
                 }
 
@@ -144,7 +146,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 if (currentDepartmentCalendar == null)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tồn tại thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                    throw CalendarWithStartDateDoesNotExists.BadRequestFormat(department.DepartmentName, oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));                    
                 }
 
                 // Gỡ thông tin cũ
@@ -183,9 +185,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phòng ban không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
-            
+
+
                 DateTime time = startDate.UnixToDateTime().Value;
                 var departmentCalendar = await _organizationContext.DepartmentCalendar.FirstOrDefaultAsync(dc => dc.DepartmentId == departmentId && dc.StartDate == time);
 
@@ -195,7 +198,8 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thay đổi lịch làm việc của tổ không tồn tại");
+                    throw CalendarWithStartDateDoesNotExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
+
                 }
 
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == departmentCalendar.CalendarId);
@@ -367,7 +371,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             lstDayOff.Add(new DayOffCalendarModel
                             {
                                 Day = day.GetUnix(),
-                                Content = "Nghỉ làm cố định trong tuần"
+                                Content = CalendarTitle.OffDayOfWeek
                             });
                         }
                     }
@@ -419,7 +423,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                     lstDayOff.Add(new DayOffCalendarModel
                                     {
                                         Day = day.GetUnix(),
-                                        Content = "Nghỉ làm cố định trong tuần"
+                                        Content = CalendarTitle.OffDayOfWeek
                                     });
                                 }
                             }
@@ -468,7 +472,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             lstDayOff.Add(new DayOffCalendarModel
                             {
                                 Day = day.GetUnix(),
-                                Content = "Nghỉ làm cố định trong tuần"
+                                Content = CalendarTitle.OffDayOfWeek
                             });
                         }
                     }
@@ -524,10 +528,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+                    throw DuplicateDateRange.BadRequest();
 
                 var overHour = _mapper.Map<DepartmentOverHourInfo>(data);
                 overHour.DepartmentId = departmentId;
@@ -554,13 +558,13 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var overHour = _organizationContext.DepartmentOverHourInfo.FirstOrDefault(oh => oh.DepartmentOverHourInfoId == departmentOverHourInfoId && oh.DepartmentId == departmentId);
-                if (overHour == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin tăng ca không tồn tại");
+                if (overHour == null) throw DepartmentOverHourInfoNotFound.BadRequest();
 
                 if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.DepartmentOverHourInfoId != departmentOverHourInfoId && oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+                    throw DuplicateDateRange.BadRequest();
 
                 _mapper.Map(data, overHour);
 
@@ -591,10 +595,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 var departments = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).ToList();
 
-                if (departmentIds.Count != departments.Count) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (departmentIds.Count != departments.Count) throw DepartmentNotFound.BadRequest();
 
                 if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate >= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+                    throw DuplicateDateRange.BadRequest();
 
                 var currentOverHours = _organizationContext.DepartmentOverHourInfo.Where(oh => departmentIds.Contains(oh.DepartmentId)).ToList();
 
@@ -653,10 +657,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var overHour = _organizationContext.DepartmentOverHourInfo.FirstOrDefault(oh => oh.DepartmentOverHourInfoId == departmentOverHourInfoId && oh.DepartmentId == departmentId);
-                if (overHour == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin tăng ca không tồn tại");
+                if (overHour == null) throw DepartmentOverHourInfoNotFound.BadRequest();
 
                 _organizationContext.DepartmentOverHourInfo.Remove(overHour);
                 _organizationContext.SaveChanges();

@@ -27,6 +27,7 @@ using VErp.Services.Organization.Service.Customer.Implement.Facade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.Organization.Customer;
+using static Verp.Resources.Organization.Customer.CustomerValidationMessage;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -149,8 +150,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers)
         {
-
-
             using (var transaction = _organizationContext.Database.BeginTransaction())
             {
                 Dictionary<CustomerEntity, CustomerModel> originData = await AddBatchCustomersBase(customers);
@@ -195,6 +194,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 bankAccountEntities.AddRange(bankAccounts[entity]);
                 customerAttachments.AddRange(attachments[entity]);
             }
+
             await _organizationContext.UpdateByBatch(customerEntities, false);
             await _organizationContext.InsertByBatch(contactEntities, false);
             await _organizationContext.InsertByBatch(bankAccountEntities, false);
@@ -614,10 +614,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 if (existingCodes.Count() > 0)
                 {
-                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{string.Join(", ", existingCodes)}\" đã tồn tại");
+                    throw CustomerCodeAlreadyExists.BadRequestFormat(string.Join(", ", existingCodes));
                 }
 
-                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{string.Join(", ", existedCustomers.Select(c => c.CustomerName))}\" đã tồn tại");
+                throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", existedCustomers.Select(c => c.CustomerName)));
             }
         }
 

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Library.Formaters {
+namespace Verp.Resources.Organization.Customer {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Library.Formaters {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class DateTimeFormaterFormat {
+    public class CustomerValidationMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal DateTimeFormaterFormat() {
+        internal CustomerValidationMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Library.Formaters {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Library.Formaters.DateTimeFormaterFormat", typeof(DateTimeFormaterFormat).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Customer.CustomerValidationMessage", typeof(CustomerValidationMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,11 +61,38 @@ namespace Verp.Resources.Library.Formaters {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to dd/MM/yyyy.
+        ///   Looks up a localized string similar to Không tìm thấy tiền tệ {0}.
         /// </summary>
-        public static string Date {
+        public static string CurrencyNotFound {
             get {
-                return ResourceManager.GetString("Date", resourceCulture);
+                return ResourceManager.GetString("CurrencyNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mã đối tác &quot;{0}&quot; đã tồn tại.
+        /// </summary>
+        public static string CustomerCodeAlreadyExists {
+            get {
+                return ResourceManager.GetString("CustomerCodeAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tên đối tác &quot;{0}&quot; đã tồn tại.
+        /// </summary>
+        public static string CustomerNameAlreadyExists {
+            get {
+                return ResourceManager.GetString("CustomerNameAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tồn tại nhiều đối tác {0} trong file excel.
+        /// </summary>
+        public static string MultipleCustomerFound {
+            get {
+                return ResourceManager.GetString("MultipleCustomerFound", resourceCulture);
             }
         }
     }
