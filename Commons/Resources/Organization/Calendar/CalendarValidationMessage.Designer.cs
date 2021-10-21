@@ -97,11 +97,29 @@ namespace Verp.Resources.Organization.Calendar {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Đã tồn tại thay đổi lịch làm việc vào ngày {0:dd/MM/yyyy}.
+        ///   Looks up a localized string similar to Không tồn tại thay đổi lịch làm việc vào ngày {0:dd/MM/yyyy}.
         /// </summary>
         public static string CalendarStartDateInvalid {
             get {
                 return ResourceManager.GetString("CalendarStartDateInvalid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ngày nghỉ không tồn tại.
+        /// </summary>
+        public static string DayOffDoesNotExist {
+            get {
+                return ResourceManager.GetString("DayOffDoesNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mã lịch không được để trống.
+        /// </summary>
+        public static string EmptyCalendarCode {
+            get {
+                return ResourceManager.GetString("EmptyCalendarCode", resourceCulture);
             }
         }
         

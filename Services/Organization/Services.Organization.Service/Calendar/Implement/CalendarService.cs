@@ -77,7 +77,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         }
         public async Task<CalendarModel> AddCalendar(CalendarModel data)
         {
-            if (string.IsNullOrEmpty(data.CalendarCode)) throw new BadRequestException(GeneralCode.InvalidParams, "Mã lịch làm việc không được để trống");
+            if (string.IsNullOrEmpty(data.CalendarCode)) throw EmptyCalendarCode.BadRequest();
 
             var calendar = await _organizationContext.Calendar.FirstOrDefaultAsync(d => d.CalendarCode == data.CalendarCode || d.CalendarName == data.CalendarName);
 
@@ -484,7 +484,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             try
             {
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
                 var dayOff = await _organizationContext.DayOffCalendar
                 .FirstOrDefaultAsync(dof => dof.Day == data.Day.UnixToDateTime() && dof.CalendarId == calendarId);
                 if (dayOff == null)
@@ -521,9 +521,9 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             {
                 var time = day.UnixToDateTime().Value;
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
                 var dayOff = await _organizationContext.DayOffCalendar.FirstOrDefaultAsync(dof => dof.CalendarId == calendarId && dof.Day == time);
-                if (dayOff == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Ngày nghỉ không tồn tại");
+                if (dayOff == null) throw DayOffDoesNotExist.BadRequest();
                 _organizationContext.DayOffCalendar.Remove(dayOff);
                 _organizationContext.SaveChanges();
 
@@ -548,7 +548,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             try
             {
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
                 DateTime time = startDate.UnixToDateTime().Value;
                 var workingHourInfo = await _organizationContext.WorkingHourInfo.FirstOrDefaultAsync(wh => wh.CalendarId == calendarId && wh.StartDate == time);

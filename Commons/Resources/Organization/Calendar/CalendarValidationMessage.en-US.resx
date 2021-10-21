@@ -138,4 +138,7 @@
   <data name="MissingStartDate" xml:space="preserve">
     <value>Missing the start date to apply on the calendar</value>
   </data>
+  <data name="EmptyCalendarCode" xml:space="preserve">
+    <value>Empty calendar code</value>
+  </data>
 </root>

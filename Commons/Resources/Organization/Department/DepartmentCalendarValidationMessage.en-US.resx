@@ -123,4 +123,19 @@
   <data name="DepartmentNotFound" xml:space="preserve">
     <value>Department does not exist</value>
   </data>
+  <data name="CalendarWithStartDateAlreadyExists" xml:space="preserve">
+    <value>The calendar applied for {0} from {1:MM-dd-yyyy} already exists</value>
+  </data>
+  <data name="CalendarWithStartDateDoesNotExists" xml:space="preserve">
+    <value>The calendar applied for {0} from {1:MM-dd-yyyy} does not exist</value>
+  </data>
+  <data name="DepartmentOverHourInfoNotFound" xml:space="preserve">
+    <value>The over time shift does not exist</value>
+  </data>
+  <data name="DuplicateDateRange" xml:space="preserve">
+    <value>The date range is conflicted</value>
+  </data>
+  <data name="StartDateMustHaveValue" xml:space="preserve">
+    <value>The start date must be had value</value>
+  </data>
 </root>
