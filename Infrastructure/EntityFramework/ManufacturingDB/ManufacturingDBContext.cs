@@ -19,15 +19,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public virtual DbSet<DraftData> DraftData { get; set; }
         public virtual DbSet<MonthPlan> MonthPlan { get; set; }
-        public virtual DbSet<OutsourceOrder> OutsourceOrder { get; set; }
-        public virtual DbSet<OutsourceOrderDetail> OutsourceOrderDetail { get; set; }
-        public virtual DbSet<OutsourceOrderExcess> OutsourceOrderExcess { get; set; }
-        public virtual DbSet<OutsourceOrderMaterials> OutsourceOrderMaterials { get; set; }
         public virtual DbSet<OutsourcePartRequest> OutsourcePartRequest { get; set; }
         public virtual DbSet<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }
         public virtual DbSet<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual DbSet<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
-        public virtual DbSet<OutsourceTrack> OutsourceTrack { get; set; }
         public virtual DbSet<ProductSemi> ProductSemi { get; set; }
         public virtual DbSet<ProductSemiConversion> ProductSemiConversion { get; set; }
         public virtual DbSet<ProductionAssignment> ProductionAssignment { get; set; }
@@ -98,95 +93,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
-            modelBuilder.Entity<OutsourceOrder>(entity =>
-            {
-                entity.HasIndex(e => new { e.SubsidiaryId, e.OutsourceOrderCode }, "IX_OutsourceOrder_OutsourceOrderCode")
-                    .IsUnique()
-                    .HasFilter("([IsDeleted]=(0))");
-
-                entity.HasIndex(e => e.PropertyCalcId, "IX_OutsourceOrder_PropertyCalcId")
-                    .HasFilter("([IsDeleted]=(0) AND [PropertyCalcId] IS NOT NULL)");
-
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
-
-                entity.Property(e => e.FreightCost).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.OtherCost).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.OutsourceOrderCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
-
-                entity.Property(e => e.OutsourceOrderFinishDate).HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.OutsourceTypeId).HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Suppliers)
-                    .HasMaxLength(1024)
-                    .HasComment("");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-            });
-
-            modelBuilder.Entity<OutsourceOrderDetail>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Price).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
-
-                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 16)");
-
-                entity.Property(e => e.Tax).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.OutsourceOrder)
-                    .WithMany(p => p.OutsourceOrderDetail)
-                    .HasForeignKey(d => d.OutsourceOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsourceOrderDetail_OutsourceOrder");
-            });
-
-            modelBuilder.Entity<OutsourceOrderExcess>(entity =>
-            {
-                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
-
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Specification).HasMaxLength(255);
-
-                entity.Property(e => e.Title)
-                    .IsRequired()
-                    .HasMaxLength(255);
-
-                entity.HasOne(d => d.OutsourceOrder)
-                    .WithMany(p => p.OutsourceOrderExcess)
-                    .HasForeignKey(d => d.OutsourceOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsourceOrderExcess_OutsourceOrder");
-            });
-
-            modelBuilder.Entity<OutsourceOrderMaterials>(entity =>
-            {
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
-
-                entity.HasOne(d => d.OutsourceOrder)
-                    .WithMany(p => p.OutsourceOrderMaterials)
-                    .HasForeignKey(d => d.OutsourceOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsourceOrderMaterials_OutsourceOrder");
-            });
-
             modelBuilder.Entity<OutsourcePartRequest>(entity =>
             {
                 entity.HasIndex(e => new { e.SubsidiaryId, e.OutsourcePartRequestCode }, "IX_OutsourcePartRequest_OutsourcePartRequestCode")
@@ -225,7 +131,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasMaxLength(50)
                     .HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
@@ -271,7 +177,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment("1: input 2:input");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.OutsourceStepRequest)
                     .WithMany(p => p.OutsourceStepRequestData)
@@ -290,25 +196,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionStepLinkDataId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_OutsourceStepRequestData_ProductionStepLinkData");
-            });
-
-            modelBuilder.Entity<OutsourceTrack>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18, 5)")
-                    .HasComment("");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.OutsourceOrder)
-                    .WithMany(p => p.OutsourceTrack)
-                    .HasForeignKey(d => d.OutsourceOrderId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsourceTrack_OutsourceOrder");
             });
 
             modelBuilder.Entity<ProductSemi>(entity =>
@@ -349,7 +236,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ProductionStepId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.ProductionAssignment)
@@ -363,7 +250,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.WorkDate, e.ProductionOrderId })
                     .HasName("PK_ProductionAssignment_copy2");
 
-                entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.ProductionAssignment)
                     .WithMany(p => p.ProductionAssignmentDetail)
@@ -389,7 +276,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionConsumMaterialDetail>(entity =>
             {
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.ProductionConsumMaterial)
                     .WithMany(p => p.ProductionConsumMaterialDetail)
@@ -400,7 +287,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionHandover>(entity =>
             {
-                entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<ProductionMaterialsRequirement>(entity =>
@@ -424,7 +311,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionMaterialsRequirementDetail>(entity =>
             {
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.ProductionMaterialsRequirement)
                     .WithMany(p => p.ProductionMaterialsRequirementDetail)
@@ -484,10 +371,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.PartnerId).HasMaxLength(50);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ReserveQuantity)
-                    .HasColumnType("decimal(18, 5)")
+                    .HasColumnType("decimal(32, 12)")
                     .HasComment("Bù hao (dự trữ)");
 
                 entity.HasOne(d => d.ProductionOrder)
@@ -500,12 +387,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             modelBuilder.Entity<ProductionOrderMaterials>(entity =>
             {
                 entity.Property(e => e.ConversionRate)
-                    .HasColumnType("decimal(18, 5)")
+                    .HasColumnType("decimal(32, 12)")
                     .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.InventoryRequirementStatusId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.Parent)
                     .WithMany(p => p.InverseParent)
@@ -521,9 +408,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionOrderMaterialsConsumption>(entity =>
             {
-                entity.Property(e => e.ConversionRate).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.ConversionRate).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<ProductionOrderStatus>(entity =>
@@ -572,7 +459,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Money).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
@@ -646,13 +533,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.ExportOutsourceQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.ExportOutsourceQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.OutsourcePartQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.OutsourcePartQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.OutsourceQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.OutsourceQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ProductionStepLinkDataCode).HasMaxLength(50);
 
@@ -660,9 +547,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ProductionStepLinkTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.QuantityOrigin).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.QuantityOrigin).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 

@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.ReportConfigDB
 {
     public partial class ReportConfigDBContext : DbContext
@@ -25,6 +27,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<ReportType>(entity =>
             {
                 entity.Property(e => e.MainView).HasMaxLength(128);

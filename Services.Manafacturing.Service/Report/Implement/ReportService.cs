@@ -555,9 +555,9 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             var productionOrderIds = lst.Select(s => s.ProductionOrderId).Distinct().ToList();
 
-            var steps = (from ps in _manufacturingDBContext.ProductionStep 
+            var steps = (from ps in _manufacturingDBContext.ProductionStep
                          join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
-                         where productionOrderIds.Contains(ps.ContainerId) && ps.ContainerTypeId == (int) EnumContainerType.ProductionOrder
+                         where productionOrderIds.Contains(ps.ContainerId) && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
                          select new
                          {
                              s.StepId,
@@ -779,11 +779,10 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 .ProjectTo<OutsourcePartRequestReportModel>(_mapper.ConfigurationProvider)
                 .ToList();
 
-            var quantityCompleteMaps = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
-                        .Include(x => x.OutsourceOrder)
-                        .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourcePart && x.ObjectId.GetValueOrDefault() > 0)
+            var quantityCompleteMaps = (await _manufacturingDBContext.RefOutsourcePartTrack.AsNoTracking()
+                        .Where(x => x.ProductId > 0)
                         .ToListAsync())
-                        .GroupBy(x => x.ObjectId)
+                        .GroupBy(x => x.ProductId)
                         .ToDictionary
                         (
                             k => k.Key,
@@ -858,11 +857,10 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 var lsLinkDataInfos = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
                         .ConvertData<ProductionStepLinkDataInput>().ToDictionary(k => k.ProductionStepLinkDataId, v => v);
 
-                var quantityCompleteMaps = (await _manufacturingDBContext.OutsourceTrack.AsNoTracking()
-                        .Include(x => x.OutsourceOrder)
-                        .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep && x.ObjectId.GetValueOrDefault() > 0)
+                var quantityCompleteMaps = (await _manufacturingDBContext.RefOutsourceStepTrack.AsNoTracking()
+                        .Where(x => x.ProductId > 0)
                         .ToListAsync())
-                        .GroupBy(x => x.ObjectId)
+                        .GroupBy(x => x.ProductId)
                         .ToDictionary
                         (
                             k => k.Key,
