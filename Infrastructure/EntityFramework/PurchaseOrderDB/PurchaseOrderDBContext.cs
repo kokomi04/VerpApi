@@ -558,9 +558,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 5)");
             });
@@ -571,7 +571,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
-                entity.Property(e => e.ExchangedMoney).HasColumnType("decimal(18, 5)");            
+                entity.Property(e => e.ExchangedMoney).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 5)");
 
@@ -589,7 +589,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.ProviderProductName).HasMaxLength(128);             
+                entity.Property(e => e.ProviderProductName).HasMaxLength(128);
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -894,19 +894,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
-                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
+                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Height).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Long).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PackingMethod).HasMaxLength(255);
 
@@ -926,9 +926,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ProductNameEng).HasMaxLength(255);
 
-                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<VoucherAction>(entity =>

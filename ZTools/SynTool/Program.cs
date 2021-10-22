@@ -66,16 +66,14 @@ namespace SynTool
 
             var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\" {tableOnly} Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj --no-pluralize";
             Console.WriteLine("\n\n" + cmd + "\n\n");
-            var r = Bash(cmd);
-            Console.WriteLine(r);
-
+            Bash(cmd);
 
             foreach (var f in partialFiles)
             {
                 File.Move(f + ".txt", f);
             }
 
-            if (r.Contains("Build succeeded"))
+            if (File.Exists(contextPath))
             {
                 foreach (var f in toDeleteFiles)
                 {
@@ -101,12 +99,12 @@ namespace SynTool
 
         }
 
-        static string Bash(string cmd)
+        static void Bash(string cmd)
         {
             var cmdRoot = cmd.Split(' ')[0];
             cmd = cmd.Substring(cmdRoot.Length);
 
-            var escapedArgs = cmd.Replace("\"", "\\\"");
+            //var escapedArgs = cmd.Replace("\"", "\\\"");
 
             var process = new Process()
             {
@@ -115,14 +113,27 @@ namespace SynTool
                     FileName = cmdRoot,
                     Arguments = $" {cmd}",
                     RedirectStandardOutput = true,
+                    RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                 }
             };
             process.Start();
             string result = process.StandardOutput.ReadToEnd();
+            var errpr = process.StandardError.ReadToEnd();
             process.WaitForExit();
-            return result;
+
+            if (!string.IsNullOrWhiteSpace(errpr))
+            {
+                var beforeColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(errpr);
+                Console.ForegroundColor = beforeColor;
+            }
+            else
+            {
+                Console.WriteLine(result);
+            }
         }
 
     }

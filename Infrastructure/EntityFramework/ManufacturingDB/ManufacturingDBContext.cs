@@ -644,7 +644,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionWeekPlan>(entity =>
             {
-                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.StartDate).HasColumnType("datetime");
             });
@@ -654,7 +654,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionWeekPlanId, e.ProductCateId })
                     .HasName("PK__Producti__E1D52AC5B60EB4AC");
 
-                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.ProductionWeekPlan)
                     .WithMany(p => p.ProductionWeekPlanDetail)
@@ -704,7 +704,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.ToView("RefOutsourcePartOrder");
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.PurchaseOrderCode)
                     .IsRequired()
@@ -732,7 +732,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.ToView("RefOutsourceStepOrder");
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.PurchaseOrderCode)
                     .IsRequired()
@@ -762,19 +762,19 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
-                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
+                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Height).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Long).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PackingMethod).HasMaxLength(255);
 
@@ -794,9 +794,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ProductNameEng).HasMaxLength(255);
 
-                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<RefPropertyCalc>(entity =>
