@@ -1465,7 +1465,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             else
             {
                 var paramName = $"@{field.RefTableField}_{suffix}";
-                existSql += " = {paramName}";
+                existSql += $" = {paramName}";
                 sqlParams.Add(new SqlParameter(paramName, value));
             }
 
