@@ -15,7 +15,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int UpdatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
-        public string DeletedDatetimeUtc { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ElectronicInvoiceProvider ElectronicInvoiceProvider { get; set; }
     }
