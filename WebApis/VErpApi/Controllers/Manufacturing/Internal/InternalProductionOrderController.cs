@@ -26,10 +26,10 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         }
 
         [HttpPut]
-        [Route("{productionOrderCode}/status")]
-        public async Task<bool> UpdateProductionOrderStatus([FromRoute] string productionOrderCode, [FromBody] ProductionOrderStatusDataModel data)
+        [Route("status")]
+        public async Task<bool> UpdateProductionOrderStatus([FromBody] ProductionOrderStatusDataModel data)
         {
-            return await _productionOrderService.UpdateProductionOrderStatus(productionOrderCode, data);
+            return await _productionOrderService.UpdateProductionOrderStatus(data);
         }
     }
 }
