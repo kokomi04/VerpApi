@@ -1286,6 +1286,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                         case EnumOperator.Contains:
                             isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                             break;
+                        case EnumOperator.NotContains:
+                            isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
+                            break;
                         case EnumOperator.InList:
                             var arrValues = singleClause.Value.ToString().Split(",");
                             isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
@@ -1301,8 +1304,14 @@ namespace VErp.Services.Organization.Service.HrConfig
                         case EnumOperator.StartsWith:
                             isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                             break;
+                        case EnumOperator.NotStartsWith:
+                            isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
+                            break;
                         case EnumOperator.EndsWith:
                             isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
+                            break;
+                        case EnumOperator.NotEndsWith:
+                            isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
                             break;
                         case EnumOperator.IsNull:
                             isRequire = rowValues.Any(v => v == null);

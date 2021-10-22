@@ -519,6 +519,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
                         break;
+                    case EnumOperator.NotContains:
+                        ope = not ? "LIKE" : "NOT LIKE";
+                        condition.Append($"{aliasField} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
+                        break;
                     case EnumOperator.InList:
                         ope = not ? "NOT IN" : "IN";
                         condition.Append($"{aliasField} {ope} (");
@@ -556,8 +561,18 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
                         break;
+                    case EnumOperator.NotStartsWith:
+                        ope = not ? "LIKE" : "NOT LIKE";
+                        condition.Append($"{aliasField} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
+                        break;
                     case EnumOperator.EndsWith:
                         ope = not ? "NOT LIKE" : "LIKE";
+                        condition.Append($"{aliasField} {ope} {paramName}");
+                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+                        break;
+                    case EnumOperator.NotEndsWith:
+                        ope = not ? "LIKE" : "NOT LIKE";
                         condition.Append($"{aliasField} {ope} {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
                         break;

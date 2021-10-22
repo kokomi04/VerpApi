@@ -441,6 +441,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.Contains:
                                 isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
@@ -456,8 +459,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -499,6 +508,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.Contains:
                                 isRequire = value.StringContains(singleClause.Value);
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = !value.StringContains(singleClause.Value);
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = value != null && arrValues.Contains(value.ToString());
@@ -514,8 +526,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = value.StringStartsWith(singleClause.Value);
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = !value.StringStartsWith(singleClause.Value);
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = value.StringEndsWith(singleClause.Value);
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = !value.StringEndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
