@@ -26,7 +26,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> UpdateProductionOrderStatus(string productionOrderCode, DataTable inventories, EnumProductionStatus status)
         {
-            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionOrder/status", new
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionOrder/status", new 
             {
                 ProductionOrderCode = productionOrderCode,
                 ProductionOrderStatus = status,
