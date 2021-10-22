@@ -437,13 +437,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ThenInclude(s => s.Step)
                 .ToListAsync();
 
-            var linkDataIds = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId);
-            var quantityProcessedMap = (await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
-                .Include(x => x.OutsourceOrder)
-                .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep && linkDataIds.Contains(x.ObjectId))
+            var linkDataIds = lsOutsourceStepRequestDetail.Select(x => (long?)x.ProductionStepLinkDataId);
+            var quantityProcessedMap = (await _manufacturingDBContext.RefOutsourceStepOrder
+                .Where(x => linkDataIds.Contains(x.ProductionStepLinkDataId))
                 .ToListAsync())
-                .GroupBy(x => x.ObjectId)
-                .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+                .GroupBy(x => x.ProductionStepLinkDataId)
+                .ToDictionary(k => k.Key, v => v.Sum(x => x.PrimaryQuantity));
 
             var lsProductionStepLinkDataId = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId).ToArray();
             var lsProductionStepLinkDataInfo = await GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
@@ -483,13 +482,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ThenInclude(s => s.Step)
                 .ToListAsync();
 
-            var linkDataIds = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId);
-            var quantityProcessedMap = (await _manufacturingDBContext.OutsourceOrderDetail.AsNoTracking()
-                .Include(x => x.OutsourceOrder)
-                .Where(x => x.OutsourceOrder.OutsourceTypeId == (int)EnumOutsourceType.OutsourceStep && linkDataIds.Contains(x.ObjectId))
-                .ToListAsync())
-                .GroupBy(x => x.ObjectId)
-                .ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
+            var linkDataIds = lsOutsourceStepRequestDetail.Select(x => (long?)x.ProductionStepLinkDataId);
+            var quantityProcessedMap = (await _manufacturingDBContext.RefOutsourceStepOrder
+              .Where(x => linkDataIds.Contains(x.ProductionStepLinkDataId))
+              .ToListAsync())
+              .GroupBy(x => x.ProductionStepLinkDataId)
+              .ToDictionary(k => k.Key, v => v.Sum(x => x.PrimaryQuantity));
 
             var lsProductionStepLinkDataId = lsOutsourceStepRequestDetail.Select(x => x.ProductionStepLinkDataId).ToArray();
             var lsProductionStepLinkDataInfo = await GetProductionStepLinkDataByListId(lsProductionStepLinkDataId);
