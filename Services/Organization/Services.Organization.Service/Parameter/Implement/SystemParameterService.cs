@@ -5,12 +5,14 @@ using Services.Organization.Model.SystemParameter;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.SystemParameter;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -21,7 +23,7 @@ namespace Services.Organization.Service.Parameter.Implement
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ILogger<SystemParameterService> _logger;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _systemParameterActivityLog;
 
         public SystemParameterService(
             OrganizationDBContext organizationDBContext, 
@@ -32,7 +34,7 @@ namespace Services.Organization.Service.Parameter.Implement
             _organizationDBContext = organizationDBContext;
             _logger = logger;
             _currentContextService = currentContextService;
-            _activityLogService = activityLogService;
+            _systemParameterActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SystemParameter);
         }
         public async Task<int> CreateSystemParameter(SystemParameterModel spm)
         {
@@ -62,8 +64,12 @@ namespace Services.Organization.Service.Parameter.Implement
                     await _organizationDBContext.AddAsync(sParameterInfo);
                     await _organizationDBContext.SaveChangesAsync();
                     trans.Commit();
-
-                    await _activityLogService.CreateLog(EnumObjectType.SystemParameter, sParameterInfo.SystemParameterId, $"Thêm mới thông số hệ thống {spm.Fieldname}", spm.JsonSerialize());
+                 
+                    await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Create)
+                      .MessageResourceFormatDatas(spm.Name)
+                      .ObjectId(sParameterInfo.SystemParameterId)
+                      .JsonData(spm.JsonSerialize())
+                      .CreateLog();
 
                     return sParameterInfo.SystemParameterId;
                 }
@@ -91,9 +97,12 @@ namespace Services.Organization.Service.Parameter.Implement
 
                     await _organizationDBContext.SaveChangesAsync();
                     trans.Commit();
-
-                    await _activityLogService.CreateLog(EnumObjectType.Stock, keyId, $"Xóa thông số hệ thống {sParameterInfo.FieldName}", sParameterInfo.JsonSerialize());
-
+                    
+                    await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Delete)
+                     .MessageResourceFormatDatas(sParameterInfo.Name)
+                     .ObjectId(sParameterInfo.SystemParameterId)
+                     .JsonData(sParameterInfo.JsonSerialize())
+                     .CreateLog();
                     return true;
                 }
                 catch (Exception)
@@ -174,8 +183,12 @@ namespace Services.Organization.Service.Parameter.Implement
 
                     await _organizationDBContext.SaveChangesAsync();
                     trans.Commit();
-
-                    await _activityLogService.CreateLog(EnumObjectType.SystemParameter, keyId, $"Cập nhật thông số hệ thống {spm.Fieldname}", spm.JsonSerialize());
+                 
+                    await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Update)
+                       .MessageResourceFormatDatas(sParameterInfo.Name)
+                       .ObjectId(sParameterInfo.SystemParameterId)
+                       .JsonData(sParameterInfo.JsonSerialize())
+                       .CreateLog();
 
                     return true;
                 }

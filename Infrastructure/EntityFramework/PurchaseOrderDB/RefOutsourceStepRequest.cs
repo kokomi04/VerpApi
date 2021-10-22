@@ -19,5 +19,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public bool IsImportant { get; set; }
         public int ProductionStepLinkDataRoleTypeId { get; set; }
         public DateTime OutsourceStepRequestFinishDate { get; set; }
+        public int OutsourceStepRequestStatusId { get; set; }
     }
 }

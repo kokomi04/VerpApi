@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using VErp.Commons.Library;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,8 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement {
+namespace VErp.Services.PurchaseOrder.Service.Implement
+{
 
     public class PurchaseOrderOutsourceStepService : PurchaseOrderOutsourceAbstract, IPurchaseOrderOutsourceStepService
     {
@@ -41,25 +43,43 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
         {
         }
 
-        public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest()
+        public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest(long[] arrOutsourceStepId)
         {
+            
+            var queryRefOutsourceStep = _purchaseOrderDBContext.RefOutsourceStepRequest.AsQueryable();
+
+            if (arrOutsourceStepId != null && arrOutsourceStepId.Length > 0)
+                queryRefOutsourceStep = queryRefOutsourceStep.Where(x => arrOutsourceStepId.Contains(x.OutsourceStepRequestId));
+
             var calculatorTotalQuantityByOutsourceStep = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
                                                           join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourceStep } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
                                                           group d by new { d.OutsourceRequestId, d.ProductionStepLinkDataId } into g
-                                                          select new
+                                                          select new 
                                                           {
                                                               g.Key.OutsourceRequestId,
                                                               g.Key.ProductionStepLinkDataId,
-                                                              TotalQuantity = g.Sum(x => x.PrimaryQuantity)
-                                                          }).ToList();
-            var results = await _purchaseOrderDBContext.RefOutsourceStepRequest.ProjectTo<RefOutsourceStepRequestModel>(_mapper.ConfigurationProvider).ToListAsync();
-
-            foreach (var r in results)
-            {
-                var c = calculatorTotalQuantityByOutsourceStep.FirstOrDefault(x => x.OutsourceRequestId == r.OutsourceStepRequestId && x.ProductionStepLinkDataId == r.ProductionStepLinkDataId);
-                if (c != null)
-                    r.QuantityProcessed = c.TotalQuantity;
-            }
+                                                              TotalQuantity = (decimal?)g.Sum(x => x.PrimaryQuantity)
+                                                          });
+            var results = await (from o in queryRefOutsourceStep
+                                 join c in calculatorTotalQuantityByOutsourceStep on new { o.OutsourceStepRequestId, o.ProductionStepLinkDataId } equals new { OutsourceStepRequestId = c.OutsourceRequestId.GetValueOrDefault(), ProductionStepLinkDataId = c.ProductionStepLinkDataId.GetValueOrDefault() } into gc
+                                 from c in gc.DefaultIfEmpty()
+                                 where c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
+                                 select new RefOutsourceStepRequestModel
+                                 {
+                                     IsImportant = o.IsImportant,
+                                     OutsourceStepRequestCode = o.OutsourceStepRequestCode,
+                                     OutsourceStepRequestFinishDate = o.OutsourceStepRequestFinishDate.GetUnix(),
+                                     OutsourceStepRequestId = o.OutsourceStepRequestId,
+                                     ProductId = o.ProductId,
+                                     ProductionOrderCode = o.ProductionOrderCode,
+                                     ProductionOrderId = o.ProductionOrderId,
+                                     ProductionStepId = o.ProductionStepId,
+                                     ProductionStepLinkDataId = o.ProductionStepLinkDataId,
+                                     ProductionStepLinkDataRoleTypeId = o.ProductionStepLinkDataRoleTypeId,
+                                     Quantity = o.Quantity,
+                                     StepId = o.StepId,
+                                     QuantityProcessed = c.TotalQuantity.GetValueOrDefault()
+                                 }).ToListAsync();
 
             return results.OrderByDescending(x => x.OutsourceStepRequestId).ToList();
         }
@@ -84,22 +104,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             return await GetPurchaseOrderOutsource(purchaseOrderId);
         }
 
-        public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest(long[] arrOutsourceStepId)
-        {
-            return (await GetOutsourceStepRequest()).Where(x => arrOutsourceStepId.Contains(x.OutsourceStepRequestId)).ToList();
-        }
         public async Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId)
         {
             var outsourceRequestId = await GetAllOutsourceRequestIdInPurchaseOrder(purchaseOrderId);
 
             return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
         }
-        
 
-        private async Task<RefOutsourceStepRequestModel> GetOutsourceStepRequest(long outsourceStepRequestId)
-        {
-            return (await GetOutsourceStepRequest()).FirstOrDefault(x => x.OutsourceStepRequestId == outsourceStepRequestId);
-        }
+
+        // private async Task<RefOutsourceStepRequestModel> GetOutsourceStepRequest(long outsourceStepRequestId)
+        // {
+        //     return (await GetOutsourceStepRequest(new[] { outsourceStepRequestId })).FirstOrDefault();
+        // }
 
         protected override async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
         {

@@ -559,55 +559,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-
-        /// <summary>
-        /// Lấy danh sách sản phẩm để xuất kho
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="stockIdList"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public async Task<PageData<ProductListOutput>> GetProductListForExport(string keyword, IList<int> stockIdList, int page = 1, int size = 20)
+        /*
+        public async Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> productCateIds, IList<int> stockIdList, int page = 1, int size = 20)
         {
-            var productList = await _productService.GetList(keyword, new int[0], "", new int[0], new int[0], page, size, null, null, null, null, stockIdList);
 
-            var pagedData = productList.List;
-
-            var productIdList = pagedData.Select(p => p.ProductId).ToList();
-
-            var stockProductData = await _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToListAsync();
-
-            foreach (var item in pagedData)
+            var productQuery = _stockDbContext.Product.AsQueryable();
+            if (productCateIds?.Count > 0)
             {
-                item.StockProductModelList =
-                    stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
-                    {
-                        StockId = q.StockId,
-                        ProductId = q.ProductId,
-                        PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
-                        ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
-                    }).ToList();
+                productQuery = productQuery.Where(p => productCateIds.Contains(p.ProductCateId));
             }
-
-            return productList;
-        }
-
-        /// <summary>
-        /// Lấy danh sách kiện để xuất kho
-        /// </summary>
-        /// <param name="productId"></param>
-        /// <param name="stockIdList"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public async Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> stockIdList, int page = 1, int size = 20)
-        {
-
             var query = from pk in _stockDbContext.Package
-                        join p in _stockDbContext.Product on pk.ProductId equals p.ProductId
+                        join p in productQuery on pk.ProductId equals p.ProductId
                         where stockIdList.Contains(pk.StockId) && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
                         select new
                         {
@@ -687,7 +649,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (packageList, total);
 
         }
-
+        */
 
         private async Task<IList<InventoryDetail>> ProcessInventoryOut(InventoryEntity inventory, InventoryOutModel req)
         {
@@ -838,7 +800,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PackageOptionId = null,
                     SortOrder = detail.SortOrder,
                     Description = detail.Description,
-                    AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
+                    //AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
                     InventoryRequirementCode = detail.InventoryRequirementCode,
                 });
 

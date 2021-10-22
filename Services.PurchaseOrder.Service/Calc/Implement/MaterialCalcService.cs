@@ -21,6 +21,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using Microsoft.Data.SqlClient;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
+using static Verp.Resources.PurchaseOrder.Calc.MaterialCalc.MaterialCalcValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -190,7 +191,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw MaterialCalcNotFound.BadRequest();
 
             var requestInfo = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.MaterialCalcId == materialCalcId);
 
@@ -204,7 +205,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw MaterialCalcNotFound.BadRequest();
 
             await Validate(materialCalcId, req);
             _purchaseOrderDBContext.MaterialCalcConsumptionGroup.RemoveRange(entity.MaterialCalcConsumptionGroup);
@@ -234,7 +235,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bảng tính");
+                throw MaterialCalcNotFound.BadRequest();
 
             entity.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
@@ -264,14 +265,14 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
         {
             if (materialCalcId > 0 && string.IsNullOrWhiteSpace(model.MaterialCalcCode))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng nhập mã số");
+                throw MaterialCalcCodeEmpty.BadRequest();
             }
             model.MaterialCalcCode = (model.MaterialCalcCode ?? "").Trim();
             if (!string.IsNullOrWhiteSpace(model.MaterialCalcCode))
             {
                 if (await _purchaseOrderDBContext.MaterialCalc.AnyAsync(s => s.MaterialCalcId != materialCalcId && s.MaterialCalcCode == model.MaterialCalcCode))
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã số đã tồn tại");
+                    throw MaterialCalcCodeAlreadyExist.BadRequest();
                 }
             }
         }

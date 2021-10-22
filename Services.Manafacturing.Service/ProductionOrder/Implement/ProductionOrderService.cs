@@ -81,9 +81,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (!string.IsNullOrEmpty(keyword))
             {
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
-                whereCondition.Append("OR v.ProductTitle LIKE @Keyword ");
-                whereCondition.Append("OR v.PartnerTitle LIKE @Keyword ");
-                whereCondition.Append("OR v.ContainerNumber LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductName LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -129,9 +128,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var totalSql = new StringBuilder(
                 @"SELECT 
-                    COUNT(*) Total, SUM(g.AdditionResult) AdditionResult 
+                    COUNT(*) Total
                 FROM (
-                    SELECT v.ProductionOrderId, SUM(v.UnitPrice * (v.Quantity + v.ReserveQuantity)) AdditionResult FROM vProductionOrderDetail v ");
+                    SELECT v.ProductionOrderId FROM vProductionOrderDetail v ");
 
             if (whereCondition.Length > 0)
             {
@@ -148,11 +147,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
-            decimal additionResult = 0;
+            // decimal additionResult = 0;
             if (table != null && table.Rows.Count > 0)
             {
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
-                additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
+                // additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
             }
 
             if (size > 0)
@@ -172,7 +171,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
 
-            return (lst, total, additionResult);
+            return (lst, total);
         }
 
         public async Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate)
@@ -295,8 +294,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .Select(sd => new
                 {
                     sd.StepId,
-                    sd.DepartmentId,
-                    sd.NumberOfPerson
+                    sd.DepartmentId
                 })
                 .ToList();
 
@@ -304,22 +302,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             // Lấy thông tin phong ban
             var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
-
+            var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
             var departmentHour = new Dictionary<int, decimal>();
 
             foreach (var departmentId in departmentIds)
             {
                 // Danh sách công đoạn tổ đảm nhiệm
                 var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId).Select(sd => sd.StepId).Distinct().ToList();
-                var calendar = departmentCalendar.FirstOrDefault(d => d.DepartmentId == departmentId);
+                var calendar = departmentCalendar.FirstOrDefault(c => c.DepartmentId == departmentId);
+                var department = departments.FirstOrDefault(d => d.DepartmentId == departmentId);
                 decimal totalHour = 0;
                 for (var workDateUnix = fromDate; workDateUnix < toDate; workDateUnix += 24 * 60 * 60)
                 {
                     // Tính số giờ làm việc theo ngày của tổ
                     var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
                     var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= workDateUnix && oh.EndDate >= workDateUnix);
-
-                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay ?? 0) + (overHour?.OverHour ?? 0));
+                    var increase = calendar.DepartmentIncreaseInfo.FirstOrDefault(i => i.StartDate <= workDateUnix && i.EndDate >= workDateUnix);
+                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay??0 * (department?.NumberOfPerson??0 + increase?.NumberOfPerson??0)) + (overHour?.OverHour??0 * overHour?.NumberOfPerson??0));
                 }
 
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
@@ -382,7 +381,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var productOrder = _manufacturingDBContext.ProductionOrder
                 .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
 
-            ProductionOrderOutputModel model = null; 
+            ProductionOrderOutputModel model = null;
 
             if (productOrder != null)
             {
@@ -398,14 +397,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 model.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
-            } else
+            }
+            else
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX không tồn tại");
             }
 
             return model;
         }
-       
+
         public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds)
         {
             return await (
@@ -433,6 +433,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                var config = await GetProductionOrderConfiguration();
+
+                if (config != null && !config.IsEnablePlanEndDate)
+                {
+                    data.PlanEndDate = data.EndDate;
+                }
+
                 if (data.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
                 if (data.EndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
                 if (data.PlanEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
@@ -491,7 +498,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        private async Task<ProductionOrderEntity> SaveProductionOrder(ProductionOrderInputModel data)
+        private async Task<ProductionOrderEntity> SaveProductionOrder(ProductionOrderInputModel data, int? monthPlanId = null)
         {
             var productionOrder = _mapper.Map<ProductionOrderEntity>(data);
             productionOrder.IsResetProductionProcess = false;
@@ -500,6 +507,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _manufacturingDBContext.ProductionOrder.Add(productionOrder);
             await _manufacturingDBContext.SaveChangesAsync();
 
+            var extraPlans = new List<(ProductionOrderDetail Entity, int SortOrder)>();
+
             // Tạo detail
             foreach (var item in data.ProductionOrderDetail)
             {
@@ -507,7 +516,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 item.ProductionOrderId = productionOrder.ProductionOrderId;
                 // Tạo mới
                 var entity = _mapper.Map<ProductionOrderDetail>(item);
-
+                if (monthPlanId.HasValue && item.SortOrder.HasValue) extraPlans.Add((entity, item.SortOrder.Value));
                 _manufacturingDBContext.ProductionOrderDetail.Add(entity);
             }
 
@@ -522,6 +531,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
+            if(monthPlanId.HasValue)
+            {
+                foreach (var extraPlan in extraPlans)
+                {
+                    var entityInfo = new ProductionPlanExtraInfo
+                    {
+                        MonthPlanId = monthPlanId.Value,
+                        ProductionOrderDetailId = extraPlan.Entity.ProductionOrderDetailId,
+                        Note = extraPlan.Entity.Note,
+                        SortOrder = extraPlan.SortOrder
+                    };
+                    _manufacturingDBContext.ProductionPlanExtraInfo.Add(entityInfo);
+                }
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+            }
 
             return productionOrder;
         }
@@ -572,7 +598,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 long productionOrderId = 0;
                 foreach (var item in data)
                 {
-                    var productionOrder = await SaveProductionOrder(item);
+                    var productionOrder = await SaveProductionOrder(item, monthPlanId);
                     productionOrderId = productionOrder.ProductionOrderId;
                 }
 
@@ -828,11 +854,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return rs;
         }
 
-        public async Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data)
+        public async Task<bool> UpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .Include(po => po.ProductionOrderDetail)
-                .FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+                .FirstOrDefault(po => po.ProductionOrderCode == data.ProductionOrderCode);
 
             if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
@@ -928,6 +954,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
+
+        #region Production Order Configuration
+        public async Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration()
+        {
+            var entity = await _manufacturingDBContext.ProductionOrderConfiguration.FirstOrDefaultAsync();
+            if (entity == null) return new ProductionOrderConfigurationModel();
+
+            return _mapper.Map<ProductionOrderConfigurationModel>(entity);
+        }
+
+        public async Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model)
+        {
+            var entity = await _manufacturingDBContext.ProductionOrderConfiguration.FirstOrDefaultAsync();
+            if (entity == null)
+            {
+                await _manufacturingDBContext.ProductionOrderConfiguration.AddAsync(_mapper.Map<ProductionOrderConfiguration>(model));
+            }
+            else
+            {
+                entity.IsEnablePlanEndDate = model.IsEnablePlanEndDate;
+                entity.NumberOfDayPed = model.NumberOfDayPed;
+            };
+
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
+        }
+        #endregion
     }
 
     class ProductionWordloadInfo

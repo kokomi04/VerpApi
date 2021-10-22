@@ -30,6 +30,8 @@ namespace Services.Organization.Model.HrConfig
 
         public string ColumnStyles { get; set; }
         public int SortOrder { get; set; }
+
+        public int? HrTypeReferenceId { get; set; }
     }
 
     public class HrAreaModel : HrAreaInputModel

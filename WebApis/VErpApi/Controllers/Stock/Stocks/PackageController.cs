@@ -117,9 +117,9 @@ namespace VErpApi.Controllers.Stock.package
 
         [HttpGet]
         [Route("GetProductPackageListForExport")]
-        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> productIds, [FromQuery] IList<long> productUnitConversionIds, [FromQuery] IList<long> packageIds, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> productIds, [FromQuery] IList<long> productUnitConversionIds, [FromQuery] IList<long> packageIds, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _packageService.GetProductPackageListForExport(keyword, isTwoUnit, productIds, productUnitConversionIds, packageIds, stockIds, page, size);
+            return await _packageService.GetProductPackageListForExport(keyword, isTwoUnit, productCateIds, productIds, productUnitConversionIds, packageIds, stockIds, page, size);
         }
     }
 }

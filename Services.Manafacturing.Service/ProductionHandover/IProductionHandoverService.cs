@@ -23,7 +23,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<bool> DeleteProductionHandover(long productionHandoverId);
         Task<Dictionary<long, DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId, IList<ProductionInventoryRequirementEntity> inventories = null);
 
-        Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId,IList<ProductionInventoryRequirementEntity> inventories = null);
+        Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId,IList<ProductionInventoryRequirementEntity> inventories = null);
 
     }
 }

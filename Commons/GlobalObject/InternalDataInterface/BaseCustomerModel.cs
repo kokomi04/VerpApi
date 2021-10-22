@@ -129,7 +129,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "(1) Địa chỉ", GroupName = "TT ngân hàng 1")]
         public string BankAccAddress1 { get; set; }
         [Display(Name = "(1) Loại tiền", GroupName = "TT ngân hàng 1")]
-        public string BankAccCurrency1 { get; set; }
+        public int BankAccCurrency1 { get; set; }
 
 
 
@@ -146,7 +146,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "(2) Địa chỉ", GroupName = "TT ngân hàng 2")]
         public string BankAccAddress2 { get; set; }
         [Display(Name = "(2) Loại tiền", GroupName = "TT ngân hàng 2")]
-        public string BankAccCurrency2 { get; set; }
+        public int BankAccCurrency2 { get; set; }
 
 
 
@@ -163,7 +163,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "(3) Địa chỉ", GroupName = "TT ngân hàng 3")]
         public string BankAccAddress3 { get; set; }
         [Display(Name = "(3) Loại tiền", GroupName = "TT ngân hàng 3")]
-        public string BankAccCurrency3 { get; set; }
+        public int BankAccCurrency3 { get; set; }
 
     }
 

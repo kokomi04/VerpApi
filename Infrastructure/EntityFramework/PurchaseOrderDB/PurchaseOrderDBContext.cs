@@ -21,6 +21,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<CuttingWorkSheet> CuttingWorkSheet { get; set; }
         public virtual DbSet<CuttingWorkSheetDest> CuttingWorkSheetDest { get; set; }
         public virtual DbSet<CuttingWorkSheetFile> CuttingWorkSheetFile { get; set; }
+        public virtual DbSet<ElectronicInvoiceMapping> ElectronicInvoiceMapping { get; set; }
+        public virtual DbSet<ElectronicInvoiceProvider> ElectronicInvoiceProvider { get; set; }
         public virtual DbSet<MaterialCalc> MaterialCalc { get; set; }
         public virtual DbSet<MaterialCalcConsumptionGroup> MaterialCalcConsumptionGroup { get; set; }
         public virtual DbSet<MaterialCalcProduct> MaterialCalcProduct { get; set; }
@@ -29,6 +31,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<MaterialCalcSummary> MaterialCalcSummary { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
+        public virtual DbSet<PoProviderPricing> PoProviderPricing { get; set; }
+        public virtual DbSet<PoProviderPricingDetail> PoProviderPricingDetail { get; set; }
+        public virtual DbSet<PoProviderPricingFile> PoProviderPricingFile { get; set; }
         public virtual DbSet<ProductPriceConfig> ProductPriceConfig { get; set; }
         public virtual DbSet<ProductPriceConfigItem> ProductPriceConfigItem { get; set; }
         public virtual DbSet<ProductPriceConfigItemPrice> ProductPriceConfigItemPrice { get; set; }
@@ -80,11 +85,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ExcessMaterial).HasMaxLength(255);
 
-                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.Specification).HasMaxLength(512);
 
-                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.CuttingWorkSheet)
                     .WithMany(p => p.CuttingExcessMaterial)
@@ -95,7 +100,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<CuttingWorkSheet>(entity =>
             {
-                entity.Property(e => e.InputQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.InputQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.PropertyCalc)
                     .WithMany(p => p.CuttingWorkSheet)
@@ -109,9 +114,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasKey(e => new { e.CuttingWorkSheetId, e.ProductId })
                     .HasName("PK__CuttingW__E19F308DFAD9852B");
 
-                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.WorkpieceQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.CuttingWorkSheet)
                     .WithMany(p => p.CuttingWorkSheetDest)
@@ -129,6 +134,42 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.CuttingWorkSheetId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CuttingWorkSheetFile_CuttingWorkSheet");
+            });
+
+            modelBuilder.Entity<ElectronicInvoiceMapping>(entity =>
+            {
+                entity.Property(e => e.DeletedDatetimeUtc)
+                    .HasMaxLength(10)
+                    .IsFixedLength(true);
+
+                entity.HasOne(d => d.ElectronicInvoiceProvider)
+                    .WithMany(p => p.ElectronicInvoiceMapping)
+                    .HasForeignKey(d => d.ElectronicInvoiceProviderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ElectronicInvoiceMapping_ElectronicInvoiceProvider");
+            });
+
+            modelBuilder.Entity<ElectronicInvoiceProvider>(entity =>
+            {
+                entity.Property(e => e.ElectronicInvoiceProviderId).ValueGeneratedNever();
+
+                entity.Property(e => e.Address).HasMaxLength(128);
+
+                entity.Property(e => e.CompanyName).HasMaxLength(128);
+
+                entity.Property(e => e.ContactName).HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Email).HasMaxLength(128);
+
+                entity.Property(e => e.Fax).HasMaxLength(128);
+
+                entity.Property(e => e.Name).HasMaxLength(128);
+
+                entity.Property(e => e.Phone).HasMaxLength(32);
+
+                entity.Property(e => e.Website).HasMaxLength(128);
             });
 
             modelBuilder.Entity<MaterialCalc>(entity =>
@@ -172,7 +213,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasKey(e => new { e.MaterialCalcProductId, e.ProductMaterialsConsumptionGroupId, e.MaterialProductId })
                     .HasName("PK_MaterialCalcProductDetail_1");
 
-                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.MaterialCalcProduct)
                     .WithMany(p => p.MaterialCalcProductDetail)
@@ -187,7 +228,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.OrderProductQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.OrderProductQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.MaterialCalcProduct)
                     .WithMany(p => p.MaterialCalcProductOrder)
@@ -199,10 +240,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             modelBuilder.Entity<MaterialCalcSummary>(entity =>
             {
                 entity.Property(e => e.ExchangeRate)
-                    .HasColumnType("decimal(32, 16)")
+                    .HasColumnType("decimal(32, 12)")
                     .HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.MaterialCalc)
                     .WithMany(p => p.MaterialCalcSummary)
@@ -234,17 +275,17 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             {
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -259,6 +300,77 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchasingSuggestDetailId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PoAssignmentDetail_PurchasingSuggestDetail");
+            });
+
+            modelBuilder.Entity<PoProviderPricing>(entity =>
+            {
+                entity.Property(e => e.AdditionNote).HasMaxLength(512);
+
+                entity.Property(e => e.Content).HasMaxLength(512);
+
+                entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
+
+                entity.Property(e => e.DeliveryFee).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.PaymentInfo).HasMaxLength(512);
+
+                entity.Property(e => e.PoProviderPricingCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.PoProviderPricingDescription).HasMaxLength(1024);
+
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 5)");
+            });
+
+            modelBuilder.Entity<PoProviderPricingDetail>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.ExchangedMoney).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.ProviderProductName).HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.PoProviderPricing)
+                    .WithMany(p => p.PoProviderPricingDetail)
+                    .HasForeignKey(d => d.PoProviderPricingId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PoProviderPricingDetail_PoProviderPricing");
+            });
+
+            modelBuilder.Entity<PoProviderPricingFile>(entity =>
+            {
+                entity.HasOne(d => d.PoProviderPricing)
+                    .WithMany(p => p.PoProviderPricingFile)
+                    .HasForeignKey(d => d.PoProviderPricingId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PoProviderPricingFile_PoProviderPricing");
             });
 
             modelBuilder.Entity<ProductPriceConfig>(entity =>
@@ -311,7 +423,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ItemKey).HasMaxLength(128);
 
-                entity.Property(e => e.Price).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Price).HasColumnType("decimal(18, 5)");
 
                 entity.HasOne(d => d.ProductPriceConfig)
                     .WithMany(p => p.ProductPriceConfigItemPrice)
@@ -359,7 +471,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.HasKey(e => new { e.PropertyCalcProductId, e.PropertyId, e.MaterialProductId })
                     .HasName("PK_MaterialCalcProductDetail_1_copy1");
 
-                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.PropertyCalcProduct)
                     .WithMany(p => p.PropertyCalcProductDetail)
@@ -375,7 +487,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.OrderProductQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.OrderProductQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.PropertyCalcProduct)
                     .WithMany(p => p.PropertyCalcProductOrder)
@@ -399,10 +511,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             modelBuilder.Entity<PropertyCalcSummary>(entity =>
             {
                 entity.Property(e => e.ExchangeRate)
-                    .HasColumnType("decimal(32, 16)")
+                    .HasColumnType("decimal(32, 12)")
                     .HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.MaterialQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.PropertyCalc)
                     .WithMany(p => p.PropertyCalcSummary)
@@ -432,11 +544,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
 
-                entity.Property(e => e.DeliveryFee).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.DeliveryFee).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PaymentInfo).HasMaxLength(512);
 
@@ -446,11 +558,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<PurchaseOrderDetail>(entity =>
@@ -461,18 +573,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ExchangedMoney).HasColumnType("decimal(18, 5)");
 
-
-                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PoProviderPricingCode).HasMaxLength(128);
 
-                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
@@ -529,7 +642,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchaseOrderMaterials>(entity =>
             {
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.PurchaseOrder)
                     .WithMany(p => p.PurchaseOrderMaterials)
@@ -542,7 +655,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             {
                 entity.Property(e => e.Description).HasMaxLength(255);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.PurchaseOrder)
                     .WithMany(p => p.PurchaseOrderTracked)
@@ -565,9 +678,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OrderDetailId).HasComment("VoucherValueRowId");
 
-                entity.Property(e => e.OrderDetailQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.OrderDetailQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.OrderDetailRequestQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.OrderDetailRequestQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.PurchasingRequestCode)
                     .IsRequired()
@@ -594,9 +707,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
@@ -625,11 +738,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             });
@@ -640,19 +753,25 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Description).HasMaxLength(512);
 
-                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.IntoMoney).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PoProviderPricingCode).HasMaxLength(128);
 
-                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -775,19 +894,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
-                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
+                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Height).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Long).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PackingMethod).HasMaxLength(255);
 
@@ -807,9 +926,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ProductNameEng).HasMaxLength(255);
 
-                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
             });
 
             modelBuilder.Entity<VoucherAction>(entity =>

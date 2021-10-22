@@ -473,6 +473,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.Contains:
                                 isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
@@ -488,8 +491,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -531,6 +540,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.Contains:
                                 isRequire = value.StringContains(singleClause.Value);
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = !value.StringContains(singleClause.Value);
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = value != null && arrValues.Contains(value.ToString());
@@ -546,8 +558,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = value.StringStartsWith(singleClause.Value);
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = !value.StringStartsWith(singleClause.Value);
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = value.StringEndsWith(singleClause.Value);
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = !value.StringEndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
@@ -1841,6 +1859,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                               Title = af.Title,
                               IsAutoIncrement = af.IsAutoIncrement,
                               IsHidden = af.IsHidden,
+                              IsReadOnly = f.IsReadOnly,
                               IsRequire = af.IsRequire,
                               IsUnique = af.IsUnique,
                               Filters = af.Filters,
@@ -1875,7 +1894,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             };
 
             fields = fields
-                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY)
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY && !f.IsReadOnly)
                 .ToList();
 
             var referTableNames = fields.Select(f => f.RefTableCode).ToList();
@@ -2183,7 +2202,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        if (result.Code != 0)
+                        {
+                            if (string.IsNullOrWhiteSpace(result.Message))
+                                throw ProcessActionResultErrorCode.BadRequestFormat(result.Code);
+                            else
+                            {
+                                throw result.Message.BadRequest();
+
+                            }
+                        }
 
                         var billInfo = new InputBill()
                         {
@@ -2507,6 +2536,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string Title { get; set; }
             public bool IsAutoIncrement { get; set; }
             public bool IsHidden { get; set; }
+            public bool IsReadOnly { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
             public string Filters { get; set; }

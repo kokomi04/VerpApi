@@ -24,11 +24,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
         Task<IList<ProductOrderModel>> GetProductionOrders();
 
-        Task<bool> UpdateProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel data);
+        Task<bool> UpdateProductionOrderStatus(ProductionOrderStatusDataModel data);
         Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status);
         Task<bool> EditNote(long productionOrderDetailId, string note);
 
 
         Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate);
+
+        Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration();
+        Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model);
+        
     }
 }

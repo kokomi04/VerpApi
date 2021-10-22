@@ -267,6 +267,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>GuideActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Master\Guide\GuideCateActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>GuideCateActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Master\Print\ObjectPrintConfigActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -332,10 +337,70 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>UserValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\BussinessInfo\BussinessActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>BussinessActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Calendar\CalendarActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CalendarActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Calendar\CalendarTitle.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CalendarTitle.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Calendar\CalendarValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CalendarValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Customer\CustomerActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CustomerActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Customer\CustomerValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CustomerValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Department\DepartmentActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DepartmentActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Department\DepartmentCalendarValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DepartmentCalendarValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\HrBillActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>HrBillActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\HrDataValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HrDataValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ObjectProcessActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SubsidiaryActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\SystemParameter\SystemParameterActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SystemParameterActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="PurchaseOrder\Assignment\PoAssignmentActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -347,15 +412,50 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>MaterialCalcActivityLogMessage.resx</DependentUpon>
     </Compile>
-    <Compile Update="PurchaseOrder\Calc\MaterialCalc\PropertyCalcActivityLogMessage.Designer.cs">
+    <Compile Update="PurchaseOrder\Calc\MaterialCalc\MaterialCalcValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>MaterialCalcValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\Calc\PropertyCalc\PropertyCalcActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PropertyCalcActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\Calc\PropertyCalc\PropertyCalcValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PropertyCalcValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\EInvoice\ElectronicInvoiceProviderActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ElectronicInvoiceProviderActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\PoProviderPricing\PoProviderPricingActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PoProviderPricingActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\PoProviderPricing\PoProviderPricingValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PoProviderPricingValidationMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="PurchaseOrder\Po\PurchaseOrderActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PurchaseOrderActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\Po\PurchaseOrderOutsourceValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchaseOrderOutsourceValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\Po\PurchaseOrderParseExcelValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchaseOrderParseExcelValidationMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.Designer.cs">
       <DependentUpon>ProductPriceConfigActivityLogMessage.resx</DependentUpon>
@@ -376,6 +476,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PurchasingSuggestActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\Suggest\PurchasingSuggestValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PurchasingSuggestValidationMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="PurchaseOrder\Voucher\VoucherBillActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -723,6 +828,10 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>GuideActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Master\Guide\GuideCateActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>GuideCateActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Master\Print\ObjectPrintConfigActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ObjectPrintConfigActivityLogMessage.Designer.cs</LastGenOutput>
@@ -775,9 +884,61 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>UserValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Organization\BussinessInfo\BussinessActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>BussinessActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Calendar\CalendarActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CalendarActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Calendar\CalendarTitle.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CalendarTitle.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Calendar\CalendarValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CalendarValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Customer\CustomerActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CustomerActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Customer\CustomerValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CustomerValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Department\DepartmentActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>DepartmentActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Department\DepartmentCalendarValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>DepartmentCalendarValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Organization\HrBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>HrBillActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\HrDataValidationMessage.en-US.resx">
+      <LastGenOutput>HrDataValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\HrDataValidationMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>HrDataValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ObjectProcessActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SubsidiaryActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\SystemParameter\SystemParameterActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SystemParameterActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Assignment\PoAssignmentActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -787,13 +948,41 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>MaterialCalcActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Update="PurchaseOrder\Calc\MaterialCalc\PropertyCalcActivityLogMessage.resx">
+    <EmbeddedResource Update="PurchaseOrder\Calc\MaterialCalc\MaterialCalcValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>MaterialCalcValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Calc\PropertyCalc\PropertyCalcActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PropertyCalcActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Calc\PropertyCalc\PropertyCalcValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PropertyCalcValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\EInvoice\ElectronicInvoiceProviderActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ElectronicInvoiceProviderActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\PoProviderPricing\PoProviderPricingActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PoProviderPricingActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\PoProviderPricing\PoProviderPricingValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PoProviderPricingValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Po\PurchaseOrderActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PurchaseOrderActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Po\PurchaseOrderOutsourceValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PurchaseOrderOutsourceValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Po\PurchaseOrderParseExcelValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PurchaseOrderParseExcelValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\ProductPriceConfig\ProductPriceConfigActivityLogMessage.resx">
       <LastGenOutput>ProductPriceConfigActivityLogMessage.Designer.cs</LastGenOutput>
@@ -810,6 +999,10 @@
     <EmbeddedResource Update="PurchaseOrder\Suggest\PurchasingSuggestActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PurchasingSuggestActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Suggest\PurchasingSuggestValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PurchasingSuggestValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

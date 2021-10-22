@@ -50,7 +50,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public ProductUnitConversion ProductUnitConversion { set; get; }
 
-        public string AccountancyAccountNumberDu { get; set; }
+        //public string AccountancyAccountNumberDu { get; set; }
         public string InventoryRequirementCode { get; set; }
         //public IList<InventoryRequirementSimpleInfo> InventoryRequirementInfo { set; get; }
 

@@ -24,6 +24,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int ProductUnitConversionId { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionPrice { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
@@ -33,6 +35,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public decimal? IntoMoney { get; set; }
         public int? SortOrder { get; set; }
+        public string PoProviderPricingCode { get; set; }
 
         public virtual PurchasingRequestDetail PurchasingRequestDetail { get; set; }
         public virtual PurchasingSuggest PurchasingSuggest { get; set; }

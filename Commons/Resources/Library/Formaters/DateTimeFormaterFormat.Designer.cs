@@ -61,7 +61,7 @@ namespace Verp.Resources.Library.Formaters {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to dd-MM-yyyy.
+        ///   Looks up a localized string similar to dd/MM/yyyy.
         /// </summary>
         public static string Date {
             get {

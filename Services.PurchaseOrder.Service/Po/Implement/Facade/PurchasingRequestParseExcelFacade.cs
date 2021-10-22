@@ -131,7 +131,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     PrimaryQuantity = item.PrimaryQuantity,
                     ProductUnitConversionId = productUnitConversionId,
                     ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
-                    SortOrder = item.SortOrder
+                    SortOrder = item.SortOrder,
                 };
 
             }

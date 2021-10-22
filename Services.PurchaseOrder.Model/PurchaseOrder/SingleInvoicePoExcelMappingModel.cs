@@ -86,6 +86,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         //[Display(Name = "Thuế theo tiền", GroupName = "TT về lượng")]
         //public decimal TaxInMoney { get; set; }
 
+        [Display(Name = "Mã báo giá nhà cung cấp", GroupName = "Bổ sung")]
+        public string PoProviderPricingCode { get; set; }
+
         [Display(Name = "Mã đơn hàng", GroupName = "Bổ sung")]
         public string OrderCode { get; set; }
         [Display(Name = "Mã LSX", GroupName = "Bổ sung")]
@@ -94,6 +97,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string Description { get; set; }
         [Display(Name = "Thứ tự sắp xếp", GroupName = "Bổ sung")]
         public int? SortOrder { get; set; }
+
+     
 
 
     }

@@ -17,18 +17,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info);
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
-        Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
+        Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
 
-        //Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments(long productionStepId);
-
+        
         Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments();
-
-        //Task<CapacityOutputModel> GetCapacityDepartments(long productionOrderId, long productionStepId, long startDate, long endDate);
         Task<CapacityOutputModel> GetGeneralCapacityDepartments(long productionOrderId);
-
-        //Task<IList<CapacityDepartmentChartsModel>> GetCapacity(long startDate, long endDate);
-
-        //Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable(int[] departmentIds, long startDate, long endDate);
 
         Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId);
 

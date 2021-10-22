@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
+        public virtual DbSet<GuideCate> GuideCate { get; set; }
         public virtual DbSet<I18nLanguage> I18nLanguage { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
@@ -396,10 +397,6 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Guide>(entity =>
             {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
                 entity.Property(e => e.Description).IsRequired();
 
                 entity.Property(e => e.GuideCode)
@@ -410,8 +407,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(255);
+            });
 
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            modelBuilder.Entity<GuideCate>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(512);
             });
 
             modelBuilder.Entity<I18nLanguage>(entity =>

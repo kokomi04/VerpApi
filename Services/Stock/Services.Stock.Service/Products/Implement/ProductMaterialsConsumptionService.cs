@@ -133,7 +133,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
             foreach (var bom in boms)
             {
                 var materials = materialsConsumptionInheri.Where(x => x.ProductId == bom.ChildProductId).ToList();
-                var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId).ToList();
+
+                var nextPath = bom.PathProductIds.ToList();
+                nextPath.Add(bom.ChildProductId.GetValueOrDefault());
+
+                var childBom = productBom.Where(x => x.ProductId == bom.ChildProductId && x.PathProductIds.Aggregate(0, (arr, value) => arr + value) == nextPath.Aggregate(0, (arr, value) => arr + value)).ToList();
                 var materialsInheri = LoopGetMaterialConsumInheri(materialsConsumptionInheri, productBom, childBom, productMap);
 
                 var exceptMaterials = materialsInheri.Except(materials, new ProductMaterialsConsumptionBaseComparer())
@@ -266,35 +270,58 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (product == null)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
-            var materials = await _stockDbContext.ProductMaterialsConsumption
-                .Where(x => x.ProductId == productId)
-                .ToListAsync();
-
-            var newMaterials = model.Where(x => x.ProductMaterialsConsumptionId == 0).AsQueryable()
-                .ProjectTo<ProductMaterialsConsumption>(_mapper.ConfigurationProvider).ToArray();
-
-            foreach (var m in materials)
+            var @trans = await _stockDbContext.Database.BeginTransactionAsync();
+            try
             {
-                var s = model.FirstOrDefault(x => x.ProductMaterialsConsumptionId == m.ProductMaterialsConsumptionId);
-                if (s != null)
+                var materials = await _stockDbContext.ProductMaterialsConsumption
+               .Where(x => x.ProductId == productId)
+               .ToListAsync();
+
+                var newMaterials = model.Where(x => x.ProductId == productId && x.ProductMaterialsConsumptionId == 0).AsQueryable()
+                    .ProjectTo<ProductMaterialsConsumption>(_mapper.ConfigurationProvider).ToArray();
+
+                var otherMaterials = model.Where(x => x.ProductId != productId);
+
+                foreach (var other in otherMaterials) 
                 {
-                    _mapper.Map(s, m);
+                    if(other.ProductMaterialsConsumptionId > 0)
+                        await UpdateProductMaterialsConsumption(other.ProductId, other.ProductMaterialsConsumptionId, other);
+                    else
+                        _stockDbContext.ProductMaterialsConsumption.Add(_mapper.Map<ProductMaterialsConsumption>(other));
                 }
-                else m.IsDeleted = true;
+
+                foreach (var m in materials)
+                {
+                    var s = model.FirstOrDefault(x => x.ProductMaterialsConsumptionId == m.ProductMaterialsConsumptionId);
+                    if (s != null && s.Quantity > 0)
+                    {
+                        _mapper.Map(s, m);
+                    }
+                    else m.IsDeleted = true;
+                }
+
+                _stockDbContext.ProductMaterialsConsumption.AddRange(newMaterials);
+
+                await _stockDbContext.SaveChangesAsync();
+
+                await @trans.CommitAsync();
+
+                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateMaterialConsumption)
+                 .MessageResourceFormatDatas(product.ProductCode)
+                 .ObjectId(productId)
+                 .JsonData(model.JsonSerialize())
+                 .CreateLog();
+
+
+                return true;
+            }
+            catch (System.Exception)
+            {
+                await @trans.RollbackAsync();
+                throw;
             }
 
-            _stockDbContext.ProductMaterialsConsumption.AddRange(newMaterials);
-
-            await _stockDbContext.SaveChangesAsync();
-
-            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateMaterialConsumption)
-             .MessageResourceFormatDatas(product.ProductCode)
-             .ObjectId(productId)
-             .JsonData(model.JsonSerialize())
-             .CreateLog();
-
-
-            return true;
+            
         }
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
@@ -315,7 +342,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             model.ProductId = productId;
-            _mapper.Map(model, material);
+            if(model.Quantity <= 0)
+                material.IsDeleted = true;
+            else
+                _mapper.Map(model, material);
 
             await _stockDbContext.SaveChangesAsync();
 
@@ -414,7 +444,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             foreach (var input in model)
             {
-                if (input.Quantity <= 0)
+                if (input.ProductMaterialsConsumptionId <= 0 && input.Quantity <= 0)
                     throw ProductMaterialConsumptionQuantityError.BadRequestFormat(input.ProductCode, input.ProductMaterialsConsumptionGroupCode);
             }
         }

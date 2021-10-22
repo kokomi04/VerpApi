@@ -31,6 +31,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? IntoMoney { get; set; }
         public decimal? ExchangedMoney { get; set; }
         public int? SortOrder { get; set; }
+        public string PoProviderPricingCode { get; set; }
 
         public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
         public virtual PurchaseOrder PurchaseOrder { get; set; }

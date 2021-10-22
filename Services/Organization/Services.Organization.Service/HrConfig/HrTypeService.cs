@@ -331,11 +331,34 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     foreach (var field in sourceHr.HrAreaField.Where(f => f.HrAreaId == area.HrAreaId).ToList())
                     {
-                        var cloneField = field.HrField;
-                        cloneField.HrFieldId = 0;
-                        cloneField.HrAreaId = cloneArea.HrAreaId;
+                        var cloneField = new HrField
+                        {
+                            DataSize = field.HrField.DataSize,
+                            DataTypeId = field.HrField.DataTypeId,
+                            DecimalPlace = field.HrField.DecimalPlace,
+                            FieldName = field.HrField.FieldName,
+                            FormTypeId = field.HrField.FormTypeId,
+                            IsImage = field.HrField.IsImage,
+                            IsReadOnly = field.HrField.IsReadOnly,
+                            OnBlur = field.HrField.OnBlur,
+                            OnChange = field.HrField.OnChange,
+                            OnClick = field.HrField.OnClick,
+                            OnFocus = field.HrField.OnFocus,
+                            OnKeydown = field.HrField.OnKeydown,
+                            OnKeypress = field.HrField.OnKeypress,
+                            Structure = field.HrField.Structure,
+                            ReferenceUrl = field.HrField.ReferenceUrl,
+                            RefTableCode = field.HrField.RefTableCode,
+                            RefTableField = field.HrField.RefTableField,
+                            RefTableTitle = field.HrField.RefTableTitle,
+                            Title = field.HrField.Title,
+                            Placeholder = field.HrField.Placeholder,
+                            DefaultValue = field.HrField.DefaultValue,
+                            SortOrder = field.HrField.SortOrder,
+                            HrAreaId = cloneArea.HrAreaId
+                        };
 
-                        await _organizationDBContext.HrArea.AddAsync(cloneArea);
+                        await _organizationDBContext.HrField.AddAsync(cloneField);
                         await _organizationDBContext.SaveChangesAsync();
 
                         if (cloneField.FormTypeId != (int)EnumFormType.ViewOnly)

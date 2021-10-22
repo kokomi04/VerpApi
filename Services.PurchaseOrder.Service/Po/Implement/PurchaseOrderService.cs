@@ -26,6 +26,9 @@ using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
+using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
+using AutoMapper.QueryableExtensions;
+using AutoMapper;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -39,6 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IManufacturingHelperService _manufacturingHelperService;
 
         private readonly ObjectActivityLogFacade _poActivityLog;
+        private readonly IMapper _mapper;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -50,7 +54,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
-           , IManufacturingHelperService manufacturingHelperService)
+           , IManufacturingHelperService manufacturingHelperService, IMapper mapper)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -59,7 +63,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _productHelperService = productHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
             _manufacturingHelperService = manufacturingHelperService;
-
+            _mapper = mapper;
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
@@ -307,6 +311,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.TaxInMoney,
                             pod.Description,
 
+                            pod.PoProviderPricingCode,
                             pod.OrderCode,
                             pod.ProductionOrderCode,
 
@@ -349,6 +354,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     || q.ProductName.Contains(keyword)
                     || q.PoAssignmentCode.Contains(keyword)
                     || q.PurchasingSuggestCode.Contains(keyword)
+                    || q.PoProviderPricingCode.Contains(keyword)
                     || q.OrderCode.Contains(keyword)
                     || q.ProductionOrderCode.Contains(keyword)
                     || q.CreatorFullName.Contains(keyword)
@@ -431,74 +437,75 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .ToDictionary(d => d.PurchasingSuggestDetailId, d => d);
 
             var result = new List<PurchaseOrderOutputListByProduct>();
-            foreach (var info in pagedData)
+            foreach (var item in pagedData)
             {
-                assignmentDetails.TryGetValue(info.PoAssignmentDetailId ?? 0, out var assignmentDetailInfo);
+                assignmentDetails.TryGetValue(item.PoAssignmentDetailId ?? 0, out var assignmentDetailInfo);
 
-                suggestDetails.TryGetValue(info.PurchasingSuggestDetailId ?? 0, out var purchasingSuggestDetailInfo);
+                suggestDetails.TryGetValue(item.PurchasingSuggestDetailId ?? 0, out var purchasingSuggestDetailInfo);
 
 
                 result.Add(new PurchaseOrderOutputListByProduct()
                 {
-                    PurchaseOrderId = info.PurchaseOrderId,
-                    PurchaseOrderCode = info.PurchaseOrderCode,
-                    Date = info.Date.GetUnix(),
-                    CustomerId = info.CustomerId,
-                    DeliveryDestination = info.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
-                    Content = info.Content,
-                    AdditionNote = info.AdditionNote,
-                    DeliveryFee = info.DeliveryFee,
-                    OtherFee = info.OtherFee,
-                    TotalMoney = info.TotalMoney,
-                    PurchaseOrderStatusId = (EnumPurchaseOrderStatus)info.PurchaseOrderStatusId,
-                    IsChecked = info.IsChecked,
-                    IsApproved = info.IsApproved,
-                    PoProcessStatusId = (EnumPoProcessStatus?)info.PoProcessStatusId,
-                    CreatedByUserId = info.CreatedByUserId,
-                    UpdatedByUserId = info.UpdatedByUserId,
-                    CheckedByUserId = info.CheckedByUserId,
-                    CensorByUserId = info.CensorByUserId,
+                    PurchaseOrderId = item.PurchaseOrderId,
+                    PurchaseOrderCode = item.PurchaseOrderCode,
+                    Date = item.Date.GetUnix(),
+                    CustomerId = item.CustomerId,
+                    DeliveryDestination = item.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
+                    Content = item.Content,
+                    AdditionNote = item.AdditionNote,
+                    DeliveryFee = item.DeliveryFee,
+                    OtherFee = item.OtherFee,
+                    TotalMoney = item.TotalMoney,
+                    PurchaseOrderStatusId = (EnumPurchaseOrderStatus)item.PurchaseOrderStatusId,
+                    IsChecked = item.IsChecked,
+                    IsApproved = item.IsApproved,
+                    PoProcessStatusId = (EnumPoProcessStatus?)item.PoProcessStatusId,
+                    CreatedByUserId = item.CreatedByUserId,
+                    UpdatedByUserId = item.UpdatedByUserId,
+                    CheckedByUserId = item.CheckedByUserId,
+                    CensorByUserId = item.CensorByUserId,
 
-                    CreatedDatetimeUtc = info.CreatedDatetimeUtc.GetUnix(),
-                    UpdatedDatetimeUtc = info.UpdatedDatetimeUtc.GetUnix(),
-                    CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
-                    CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
+                    CheckedDatetimeUtc = item.CheckedDatetimeUtc.GetUnix(),
+                    CensorDatetimeUtc = item.CensorDatetimeUtc.GetUnix(),
 
 
                     //detail
-                    PurchaseOrderDetailId = info.PurchaseOrderDetailId,
-                    PurchasingSuggestDetailId = info.PurchasingSuggestDetailId,
-                    PoAssignmentDetailId = info.PoAssignmentDetailId,
-                    ProviderProductName = info.ProviderProductName,
+                    PurchaseOrderDetailId = item.PurchaseOrderDetailId,
+                    PurchasingSuggestDetailId = item.PurchasingSuggestDetailId,
+                    PoAssignmentDetailId = item.PoAssignmentDetailId,
+                    ProviderProductName = item.ProviderProductName,
 
-                    ProductId = info.ProductId,
-                    PrimaryQuantity = info.PrimaryQuantity,
-                    PrimaryUnitPrice = info.PrimaryUnitPrice,
+                    ProductId = item.ProductId,
+                    PrimaryQuantity = item.PrimaryQuantity,
+                    PrimaryUnitPrice = item.PrimaryUnitPrice,
 
-                    ProductUnitConversionId = info.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = info.ProductUnitConversionQuantity,
-                    ProductUnitConversionPrice = info.ProductUnitConversionPrice,
+                    ProductUnitConversionId = item.ProductUnitConversionId,
+                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
+                    ProductUnitConversionPrice = item.ProductUnitConversionPrice,
 
-                    TaxInPercent = info.TaxInPercent,
-                    TaxInMoney = info.TaxInMoney,
-                    OrderCode = info.OrderCode,
-                    ProductionOrderCode = info.ProductionOrderCode,
-                    Description = info.Description,
+                    TaxInPercent = item.TaxInPercent,
+                    TaxInMoney = item.TaxInMoney,
+                    PoProviderPricingCode = item.PoProviderPricingCode,
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                    Description = item.Description,
 
                     PoAssignmentDetail = assignmentDetailInfo,
                     PurchasingSuggestDetail = purchasingSuggestDetailInfo,
 
-                    DeliveryDate = info.DeliveryDate.GetUnix(),
-                    CreatorFullName = info.CreatorFullName,
-                    CheckerFullName = info.CheckerFullName,
-                    CensorFullName = info.CensorFullName,
-                    PurchaseOrderType = info.PurchaseOrderType,
-                    IntoMoney = info.IntoMoney,
+                    DeliveryDate = item.DeliveryDate.GetUnix(),
+                    CreatorFullName = item.CreatorFullName,
+                    CheckerFullName = item.CheckerFullName,
+                    CensorFullName = item.CensorFullName,
+                    PurchaseOrderType = item.PurchaseOrderType,
+                    IntoMoney = item.IntoMoney,
 
-                    CurrencyId = info.CurrencyId,
-                    ExchangedMoney = info.ExchangedMoney,
-                    ExchangeRate = info.ExchangeRate,
-                    SortOrder = info.SortOrder
+                    CurrencyId = item.CurrencyId,
+                    ExchangedMoney = item.ExchangedMoney,
+                    ExchangeRate = item.ExchangeRate,
+                    SortOrder = item.SortOrder
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
@@ -523,6 +530,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .ToDictionary(d => d.PurchasingSuggestDetailId, d => d);
 
             var files = await _purchaseOrderDBContext.PurchaseOrderFile.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+            
+            var excess = await _purchaseOrderDBContext.PurchaseOrderExcess.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderExcessModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderMaterialsModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             return new PurchaseOrderOutput()
             {
@@ -584,6 +594,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
+                        PoProviderPricingCode = d.PoProviderPricingCode,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,
@@ -595,7 +606,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ExchangedMoney = d.ExchangedMoney,
                         SortOrder = d.SortOrder
                     };
-                }).ToList()
+                }).ToList(),
+                Excess = excess.OrderBy(e => e.SortOrder).ToList(),
+                Materials = materials.OrderBy(m => m.SortOrder).ToList()
             };
         }
 
@@ -654,7 +667,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (po.DeliveryDestination?.Length > 1024)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    throw DeleveryDestinationTooLong.BadRequest();
                 }
 
                 await _purchaseOrderDBContext.AddAsync(po);
@@ -683,6 +696,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionId = d.ProductUnitConversionId,
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
+
+                        PoProviderPricingCode = d.PoProviderPricingCode,
 
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
@@ -807,7 +822,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                    throw DeleveryDestinationTooLong.BadRequest();
                 }
 
 
@@ -843,6 +858,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                             detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
+                            detail.PoProviderPricingCode = item.PoProviderPricingCode;
                             detail.OrderCode = item.OrderCode;
                             detail.ProductionOrderCode = item.ProductionOrderCode;
                             detail.Description = item.Description;
@@ -850,6 +866,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.IntoMoney = item.IntoMoney;
                             detail.ExchangedMoney = item.ExchangedMoney;
                             detail.SortOrder = item.SortOrder;
+                            
                             break;
                         }
                     }
@@ -872,6 +889,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionId = item.ProductUnitConversionId,
                             ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = item.ProductUnitConversionPrice,
+
+                            PoProviderPricingCode=item.PoProviderPricingCode,
                             OrderCode = item.OrderCode,
                             ProductionOrderCode = item.ProductionOrderCode,
                             Description = item.Description,
@@ -1008,13 +1027,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được kiểm tra");
+                    throw PoAlreadyChecked.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = true;
@@ -1048,13 +1067,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId == (int)EnumPurchaseOrderStatus.Checked && info.IsChecked == false)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã kiểm tra từ chối");
+                    throw PoHasBeenFailAtCheck.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.WaitToCensor
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsChecked = false;
@@ -1088,18 +1107,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã được duyệt");
+                    throw PoAlreadyApproved.BadRequest();
                 }
 
                 if (info.IsChecked != true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                    throw PoNotPassCheckYet.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
                     && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
                 info.IsApproved = true;
@@ -1133,18 +1152,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored && info.IsApproved == false)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO đã từ chối");
+                    throw PoAlreadyRejected.BadRequest();
                 }
 
                 if (info.IsChecked != true)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được qua kiểm tra kiểm soát");
+                    throw PoNotPassCheckYet.BadRequest();
                 }
 
                 if (info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Censored
                    && info.PurchaseOrderStatusId != (int)EnumPurchaseOrderStatus.Checked)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "PO chưa được gửi để duyệt");
+                    throw PoNotSentToCensorYet.BadRequest();
                 }
 
 

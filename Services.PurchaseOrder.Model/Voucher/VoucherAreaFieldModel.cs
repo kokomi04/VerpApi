@@ -39,8 +39,6 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
         public bool? IsImage { get; set; }
-        public string CustomButtonHtml { get; set; }
-        public string CustomerButtonOnClick { get; set; }
 
         protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {

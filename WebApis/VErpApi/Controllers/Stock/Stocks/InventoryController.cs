@@ -215,36 +215,16 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _fileService.Upload(EnumObjectType.InventoryInput, fileTypeId, string.Empty, file);
         }
 
-        /// <summary>
-        /// Lấy danh sách sản phẩm để nhập kho
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="stockIdList"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
+    
         [HttpGet]
         [Route("GetProductListForImport")]
-        public async Task<PageData<ProductListOutput>> GetProductListForImport([FromQuery] string keyword, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductListOutput>> GetProductListForImport([FromQuery] string keyword, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryBillInputService.GetProductListForImport(keyword: keyword, stockIdList: stockIdList, page: page, size: size);
+            return await _inventoryBillInputService.GetProductListForImport(keyword: keyword, productCateIds, stockIdList: stockIdList, page: page, size: size);
         }
 
-
-        /// <summary>
-        /// Lấy danh sách sản phẩm để xuất kho
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="stockIdList"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("GetProductListForExport")]
-        public async Task<PageData<ProductListOutput>> GetProductListForExport([FromQuery] string keyword, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _inventoryBillOutputService.GetProductListForExport(keyword: keyword, stockIdList: stockIdList, page: page, size: size);
-        }
+    
+        /*
 
         /// <summary>
         /// Lấy danh sách kiện để xuất kho
@@ -256,12 +236,12 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpGet]
         [Route("GetPackageListForExport")]
-        public async Task<PageData<PackageOutputModel>> GetPackageListForExport([FromQuery] int productId, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PackageOutputModel>> GetPackageListForExport([FromQuery] int productId, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryBillOutputService.GetPackageListForExport(productId: productId, stockIdList: stockIdList, page: page, size: size);
+            return await _inventoryBillOutputService.GetPackageListForExport(productId: productId, productCateIds,  stockIdList: stockIdList, page: page, size: size);
         }
 
-
+        */
 
 
         /// <summary>

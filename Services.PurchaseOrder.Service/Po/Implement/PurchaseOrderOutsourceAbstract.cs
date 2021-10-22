@@ -21,6 +21,7 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
+using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -103,7 +104,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (po.DeliveryDestination?.Length > 1024)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                        throw DeleveryDestinationTooLong.BadRequest();
                     }
 
                     await _purchaseOrderDBContext.AddAsync(po);
@@ -126,6 +127,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
+                            PoProviderPricingCode = d.PoProviderPricingCode,
                             OrderCode = d.OrderCode,
                             ProductionOrderCode = d.ProductionOrderCode,
                             Description = d.Description,
@@ -263,7 +265,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (info.DeliveryDestination?.Length > 1024)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin liên hệ giao hàng quá dài");
+                        throw DeleveryDestinationTooLong.BadRequest();                        
                     }
 
 
@@ -290,6 +292,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ProductUnitConversionQuantity = item.ProductUnitConversionQuantity;
                                 detail.ProductUnitConversionPrice = item.ProductUnitConversionPrice;
 
+                                detail.PoProviderPricingCode = item.PoProviderPricingCode;
                                 detail.OrderCode = item.OrderCode;
                                 detail.ProductionOrderCode = item.ProductionOrderCode;
                                 detail.Description = item.Description;
@@ -315,6 +318,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductUnitConversionId = item.ProductUnitConversionId,
                                 ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                 ProductUnitConversionPrice = item.ProductUnitConversionPrice,
+
+                                PoProviderPricingCode=item.PoProviderPricingCode,
                                 OrderCode = item.OrderCode,
                                 ProductionOrderCode = item.ProductionOrderCode,
                                 Description = item.Description,
@@ -584,6 +589,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
                         ProductUnitConversionPrice = d.ProductUnitConversionPrice,
 
+                        PoProviderPricingCode = d.PoProviderPricingCode,
                         OrderCode = d.OrderCode,
                         ProductionOrderCode = d.ProductionOrderCode,
                         Description = d.Description,

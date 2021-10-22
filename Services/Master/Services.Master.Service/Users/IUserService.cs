@@ -24,7 +24,7 @@ namespace VErp.Services.Master.Service.Users
         Task<bool> UpdateUser(int userId, UserInfoInput req);
         Task<bool> ChangeUserPassword(int userId, UserChangepasswordInput req);
         Task<bool> DeleteUser(int userId);
-        Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null);
+        Task<PageData<UserInfoOutput>> GetList(string keyword, IList<int> userIds, int page, int size, Clause filters = null);
         Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
         Task<IList<UserBasicInfoOutput>> GetBasicInfoByDepartment(int departmentId);
         Task<IList<RolePermissionModel>> GetMePermission();

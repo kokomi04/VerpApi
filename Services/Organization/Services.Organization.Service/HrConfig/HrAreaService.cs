@@ -298,23 +298,42 @@ namespace VErp.Services.Organization.Service.HrConfig
             return inputAreaField;
         }
 
-        private void ValidateHrField(HrFieldInputModel data, HrField hrField = null, int? hrFieldId = null)
+        private async Task ValidateHrField(int hrTypeId, HrFieldInputModel data, HrField hrField = null, int? hrFieldId = null)
         {
+            var query = from f in _organizationDBContext.HrField
+                        join a in _organizationDBContext.HrArea on f.HrAreaId equals a.HrAreaId
+                        where a.HrTypeId == hrTypeId
+                        select new
+                        {
+                            HrFieldId = f.HrFieldId,
+                            FieldName = f.FieldName
+                        };
+
             if (hrFieldId.HasValue && hrFieldId.Value > 0)
             {
                 if (hrField == null)
                 {
                     throw new BadRequestException(HrErrorCode.HrFieldNotFound);
                 }
-                if (_organizationDBContext.HrField.Any(f => f.HrFieldId != hrFieldId.Value && f.FieldName == data.FieldName))
+
+                var hasFieldName = await query.AnyAsync(x => x.HrFieldId != hrFieldId.Value && data.FieldName == x.FieldName);
+                if (hasFieldName)
                 {
                     throw new BadRequestException(HrErrorCode.HrFieldAlreadyExisted);
                 }
+                
                 if (!((EnumDataType)hrField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)hrField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
                 }
             }
+            else
+            {
+                var hasFieldName = await query.AnyAsync(x => data.FieldName == x.FieldName);
+                if (hasFieldName)
+                    throw new BadRequestException(HrErrorCode.HrFieldAlreadyExisted);
+            }
+
             if (!string.IsNullOrEmpty(data.RefTableCode) && !string.IsNullOrEmpty(data.RefTableField))
             {
                 var categoryCode = data.RefTableCode;
@@ -327,6 +346,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                     throw new BadRequestException(HrErrorCode.SourceCategoryFieldNotFound);
                 }
             }
+
+            await Task.CompletedTask;
         }
 
         private void FieldDataProcess(ref HrFieldInputModel data)
@@ -345,7 +366,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            if (data.FormTypeId == EnumFormType.Generate)
+            if (data.FormTypeId == EnumFormType.Generate || data.FormTypeId == EnumFormType.MultiSelect)
             {
                 data.DataTypeId = EnumDataType.Text;
                 data.DataSize = -1;
@@ -420,11 +441,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                 {
                     deleteField.IsDeleted = true;
 
-                    await _organizationDBContext.ExecuteStoreProcedure("asp_HrType_Clear_FieldData", new[] {
-                        new SqlParameter("@HrTypeId",hrTypeId ),
-                        new SqlParameter("@FieldName", deleteField.HrField.FieldName ),
-                        new SqlParameter("@ResStatus", 0){ Direction = ParameterDirection.Output },
-                    });
+                    // await _organizationDBContext.ExecuteStoreProcedure("asp_HrType_Clear_FieldData", new[] {
+                    //     new SqlParameter("@HrTypeId",hrTypeId ),
+                    //     new SqlParameter("@FieldName", deleteField.HrField.FieldName ),
+                    //     new SqlParameter("@ResStatus", 0){ Direction = ParameterDirection.Output },
+                    // });
                 }
 
                 foreach (var field in fields)
@@ -514,7 +535,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
-                                where a.HrAreaId == hrAreaId
+                                where a.HrAreaId == hrAreaId && a.HrTypeReferenceId.HasValue == false
                                 select new
                                 {
                                     t.HrTypeId,
@@ -526,7 +547,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             _ = hrArea ?? throw new BadRequestException(HrErrorCode.HrAreaNotFound);
 
             FieldDataProcess(ref data);
-            ValidateHrField(data);
+            await ValidateHrField(hrArea.HrTypeId, data);
 
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
@@ -561,7 +582,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
-                                where a.HrAreaId == hrAreaId
+                                where a.HrAreaId == hrAreaId && a.HrTypeReferenceId.HasValue == false
                                 select new
                                 {
                                     t.HrTypeId,
@@ -573,8 +594,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             _ = hrArea ?? throw new BadRequestException(HrErrorCode.HrAreaNotFound);
 
             var inputField = await _organizationDBContext.HrField.FirstOrDefaultAsync(f => f.HrFieldId == hrFieldId);
+
             FieldDataProcess(ref data);
-            ValidateHrField(data, inputField, hrFieldId);
+            await ValidateHrField(hrArea.HrTypeId, data, inputField, hrFieldId);
 
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
@@ -610,7 +632,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         {
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
-                                where a.HrAreaId == hrAreaId
+                                where a.HrAreaId == hrAreaId && a.HrTypeReferenceId.HasValue == false
                                 select new
                                 {
                                     t.HrTypeId,

@@ -29,6 +29,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public string ColumnStyles { get; set; }
+        public int? HrTypeReferenceId { get; set; }
 
         public virtual HrType HrType { get; set; }
         public virtual ICollection<HrAreaField> HrAreaField { get; set; }

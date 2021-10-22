@@ -26,7 +26,12 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, DataTable inventories)
         {
-            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionHandover/productionOrder/{productionOrderCode}/department/{departmentId}/status", inventories.ConvertData<ProductionInventoryRequirementModel>());
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionHandover/status", new
+            {
+                ProductionOrderCode = productionOrderCode,
+                DepartmentId = departmentId,
+                Inventories = inventories.ConvertData<ProductionInventoryRequirementModel>()
+            });
         }
     }
 }

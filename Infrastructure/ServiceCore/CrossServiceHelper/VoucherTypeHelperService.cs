@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     {
         Task<bool> CheckReferFromCategory(ReferFromCategoryModel req);
         Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList();
+        Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IEnumerable<string> orderCodes);
     }
     public class VoucherTypeHelperService : IVoucherTypeHelperService
     {
@@ -31,6 +32,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList()
         {
             return await _httpCrossService.Get<List<VoucherTypeSimpleModel>>($"api/internal/InternalVoucher/simpleList");
+        }
+
+        public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IEnumerable<string> orderCodes)
+        {
+            return await _httpCrossService.Post<IList<VoucherOrderDetailSimpleModel>>($"api/internal/InternalVoucher/OrderByCodes", orderCodes);
         }
     }
 }

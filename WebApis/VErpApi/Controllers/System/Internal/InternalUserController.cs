@@ -26,9 +26,9 @@ namespace VErpApi.Controllers.System.Internal
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<UserInfoOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<UserInfoOutput>> Get([FromBody] Clause filters, [FromQuery] IList<int> userIds, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetList(keyword, page, size, filters).ConfigureAwait(true);
+            return await _userService.GetList(keyword, userIds, page, size, filters).ConfigureAwait(true);
         }
 
         [HttpPost]

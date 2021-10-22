@@ -40,5 +40,12 @@ namespace VErpApi.Controllers.PurchaseOrder.Internal
         {
             return await _voucherConfigService.GetVoucherTypeSimpleList().ConfigureAwait(true);
         }
+
+        [HttpGet]
+        [Route("OrderByCodes")]
+        public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes([FromBody] IList<string> orderCodes)
+        {
+            return await _voucherDataService.OrderByCodes(orderCodes);
+        }
     }
 }

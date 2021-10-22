@@ -473,6 +473,20 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         }
 
                         break;
+                    case EnumOperator.NotContains:
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+
+                        method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Not(Expression.Call(prop, method, value));
+                        }
+                        else
+                        {
+                            expression = Expression.Not(Expression.Call(propExpression, method, value));
+                        }
+
+                        break;
                     case EnumOperator.InList:
                         Type listType = typeof(List<>);
                         Type constructedListType = listType.MakeGenericType(prop.Type);
@@ -498,6 +512,19 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             expression = Expression.Call(propExpression, method, value);
                         }
                         break;
+                    case EnumOperator.NotStartsWith:
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+
+                        method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Not(Expression.Call(prop, method, value));
+                        }
+                        else
+                        {
+                            expression = Expression.Not(Expression.Call(propExpression, method, value));
+                        }
+                        break;
                     case EnumOperator.EndsWith:
                         value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
@@ -508,6 +535,18 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         else
                         {
                             expression = Expression.Call(propExpression, method, value);
+                        }
+                        break;
+                    case EnumOperator.NotEndsWith:
+                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
+                        method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
+                        if (prop.Type == typeof(string))
+                        {
+                            expression = Expression.Not(Expression.Call(prop, method, value));
+                        }
+                        else
+                        {
+                            expression = Expression.Not(Expression.Call(propExpression, method, value));
                         }
                         break;
                     case EnumOperator.GreaterOrEqual:

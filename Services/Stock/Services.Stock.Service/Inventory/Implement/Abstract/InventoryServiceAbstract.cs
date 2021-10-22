@@ -184,18 +184,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 // update trạng thái cho lệnh sản xuất
                 var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
+                var requirementDetailCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.InventoryRequirementCode)).Select(d => d.InventoryRequirementCode).Distinct().ToList();
+
                 var requirementDetails = _stockDbContext.InventoryRequirementDetail
                     .Include(rd => rd.InventoryRequirement)
-                    .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId))
+                    .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId) || requirementDetailCodes.Contains(rd.InventoryRequirement.InventoryRequirementCode))
                     .ToList();
-                var productionOrderCodes = requirementDetails
+
+                var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).ToList();
+
+                productionOrderCodes.AddRange(requirementDetails
                     .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode))
                     .Select(rd => rd.ProductionOrderCode)
-                    .Distinct()
-                    .ToList();
+                    .ToList());
+
+                productionOrderCodes = productionOrderCodes.Distinct().ToList();
 
                 Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
-
                 foreach (var productionOrderCode in productionOrderCodes)
                 {
                     var parammeters = new SqlParameter[]
@@ -208,15 +213,25 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
 
                 // update trạng thái cho phân công công việc
-                var assignments = requirementDetails
+                var assignments = inventoryDetails
+                    .Where(id => !string.IsNullOrEmpty(id.ProductionOrderCode) && id.Inventory.DepartmentId.GetValueOrDefault() > 0)
+                    .Select(rd => new
+                    {
+                        ProductionOrderCode = rd.ProductionOrderCode,
+                        DepartmentId = rd.Inventory.DepartmentId.Value
+                    })
+                    .ToList();
+
+                assignments.AddRange(requirementDetails
                     .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode) && rd.DepartmentId.GetValueOrDefault() > 0)
                     .Select(rd => new
                     {
                         ProductionOrderCode = rd.ProductionOrderCode,
                         DepartmentId = rd.DepartmentId.Value
                     })
-                    .Distinct()
-                    .ToList();
+                    .ToList());
+
+                assignments = assignments.Distinct().ToList();
 
                 foreach (var assignment in assignments)
                 {

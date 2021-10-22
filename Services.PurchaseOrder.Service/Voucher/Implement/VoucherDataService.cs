@@ -32,6 +32,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.PurchaseOrder.Voucher;
 using static Verp.Resources.PurchaseOrder.Voucher.VoucherDataValidationMessage;
+using AutoMapper.QueryableExtensions;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -440,6 +441,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.Contains:
                                 isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
@@ -455,8 +459,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -498,6 +508,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.Contains:
                                 isRequire = value.StringContains(singleClause.Value);
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = !value.StringContains(singleClause.Value);
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = value != null && arrValues.Contains(value.ToString());
@@ -513,8 +526,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = value.StringStartsWith(singleClause.Value);
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = !value.StringStartsWith(singleClause.Value);
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = value.StringEndsWith(singleClause.Value);
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = !value.StringEndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
@@ -1823,7 +1842,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             };
 
             fields = fields
-                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY)
+                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != AccountantConstants.F_IDENTITY && !f.IsReadOnly)
                 .ToList();
 
             var referTableNames = fields.Select(f => f.RefTableCode).ToList();
@@ -2308,10 +2327,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     categoryRow.TryGetValue(field, out object value);
                     if (value == null) continue;
+
                     foreach (var referToField in voucherReferToFields.Where(f => f.RefTableField == field))
                     {
-                        var existSql = $"SELECT tk.F_Id FROM {VOUCHERVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = {value.ToString()};";
-                        var result = await _purchaseOrderDBContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                        //var v = ((EnumDataType)referToField.DataTypeId).GetSqlValue(value);
+
+                        var existSql = $"SELECT tk.F_Id FROM {VOUCHERVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = @value;";
+                        var result = await _purchaseOrderDBContext.QueryDataTable(existSql, new[] { new SqlParameter("@value", value) });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
                         {
@@ -2478,7 +2500,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                    orderCodes.ToSqlParameter("@OrderCodes")
                 });
 
-            return data.ConvertData<VoucherOrderDetailSimpleModel>();
+            return data.ConvertData<VoucherOrderDetailSimpleEntity>().AsQueryable().ProjectTo<VoucherOrderDetailSimpleModel>(_mapper.ConfigurationProvider).ToList();
         }
 
         public async Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes(IList<string> orderCodes)

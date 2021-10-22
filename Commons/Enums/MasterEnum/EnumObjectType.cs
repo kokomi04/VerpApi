@@ -82,6 +82,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         PurchaseOrder = 25,
 
+        [Description("Đơn đặt hàng")]
+        [GenCodeObject]
+        PoProviderPricing = 25001,
+
         [Description("Đơn đặt hàng chi tiết")]
         PurchaseOrderDetail = 26,
 
@@ -168,6 +172,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Hướng dẫn")]
         Guide = 46001,
+        [Description("Danh mục hướng dẫn")]
+        GuideCate = 46002,
 
         [Description("Thiết lập sinh mã đối tượng")]
         ObjectCustomGenCodeMapping = 47,
@@ -182,8 +188,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chứng từ bán hàng")]
         VoucherBill = 49,
 
-        [Description("Cấu hình phiếu hệ thống")]
+        [Description("Cấu hình phiếu in mặc định")]
         PrintConfigStandard = 50001,
+
         [Description("Cấu hình phiếu in tùy chỉnh")]
         PrintConfigCustom = 50002,
 
@@ -192,6 +199,14 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Thiết lập dữ liệu (Chốt sổ)")]
         DataConfig = 52,
+
+
+        [Description("Cấu hình nhà cung cấp hóa đơn điện tử")]
+        ElectronicInvoiceProvider = 53000,
+        [Description("Cấu hình mapping các trường dữ liệu hóa đơn điện tử")]
+        ElectronicInvoiceMapping = 53001,
+        [Description("Nhà cung cấp dịch vụ HDDT Easy invoice")]
+        EasyInvoiceProvider = 53003,
 
         [Description("Loại chứng từ bán hàng")]
         VoucherType = 53,
@@ -213,6 +228,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Trường dữ liệu vùng chứng từ bán hàng")]
         VoucherAreaField = 59,
+
+
 
         [Description("Công đoạn sản xuất")]
         ProductionStep = 60,
@@ -342,6 +359,6 @@ namespace VErp.Commons.Enums.MasterEnum
         DraftData = 1043,
 
         [Description("Thông tin thêm kế hoạch")]
-        ProductionPlanExtraInfo = 1044
+        ProductionPlanExtraInfo = 1044,
     }
 }

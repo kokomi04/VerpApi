@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal LinkDataQuantity { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
-        public decimal CompletedQuantity { get; set; }
+        //public decimal CompletedQuantity { get; set; }
 
         public virtual ICollection<CapacityDetailModel> CapacityDetail { get; set; }
 
@@ -44,7 +44,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class ProductivityModel
     {
         public decimal ProductivityPerPerson { get; set; }
-        public int NumberOfPerson { get; set; }
         public int UnitId { get; set; }
     }
 }

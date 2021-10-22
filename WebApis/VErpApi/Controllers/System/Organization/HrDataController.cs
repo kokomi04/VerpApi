@@ -1,12 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Organization.Service.HrConfig;
@@ -15,7 +18,7 @@ namespace VErpApi.Controllers.System
 {
     [Route("api/organization/data/bills")]
     [ObjectDataApi(EnumObjectType.HrType, "hrTypeId")]
-    public class HrDataController: VErpBaseController
+    public class HrDataController : VErpBaseController
     {
         private readonly IHrDataService _hrDataService;
 
@@ -64,6 +67,31 @@ namespace VErpApi.Controllers.System
         public async Task<bool> DeleteBill([FromRoute] int hrTypeId, [FromRoute] long fId)
         {
             return await _hrDataService.DeleteHr(hrTypeId, fId).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("{hrTypeId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int hrTypeId, [FromQuery] int? areaId)
+        {
+            return await _hrDataService.GetFieldDataForMapping(hrTypeId, areaId);
+        }
+
+        [HttpPost]
+        [Route("{hrTypeId}/importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromRoute] int hrTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _hrDataService.ImportHrBillFromMapping(hrTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{hrTypeId}/{fId}/reference/{hrAreaId}")]
+        public async Task<bool> UpdateHrBillReference([FromRoute] int hrTypeId, [FromRoute] long fId, [FromRoute] int hrAreaId, [FromQuery] long fReferenceId)
+        {
+            return await _hrDataService.UpdateHrBillReference(hrTypeId, hrAreaId, fId, fReferenceId).ConfigureAwait(true);
         }
     }
 }

@@ -63,11 +63,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _monthPlanService.GetMonthPlan(startDate, endDate);
         }
 
-        [HttpGet]
-        [Route("name/{monthPlanName}")]
-        public async Task<MonthPlanModel> GetMonthPlan([FromRoute] string monthPlanName)
+        [HttpPost]
+        [Route("name")]
+        public async Task<MonthPlanModel> GetMonthPlan([FromBody] MonthPlanNameModel data)
         {
-            return await _monthPlanService.GetMonthPlan(monthPlanName);
+            return await _monthPlanService.GetMonthPlan(data.Value);
         }
 
         [HttpDelete]

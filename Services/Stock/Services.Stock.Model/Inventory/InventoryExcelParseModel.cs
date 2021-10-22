@@ -31,8 +31,8 @@ namespace VErp.Services.Stock.Model.Inventory
         [Display(Name = "Giá (Đơn vị chuyển đổi)", GroupName = "Thẻ Kho")]
         public decimal? ProductUnitConversionPrice { set; get; }
 
-        [Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
-        public string AccountancyAccountNumberDu { set; get; }
+        //[Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
+        //public string AccountancyAccountNumberDu { set; get; }
 
         [Display(Name = "Mã PO", GroupName = "TT Bổ sung")]
         public string PoCode { set; get; }
@@ -85,7 +85,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
-        public string AccountancyAccountNumberDu { get; set; }
+        //public string AccountancyAccountNumberDu { get; set; }
         public EnumPackageOption PackageOptionId { get; set; }
         public long? FromPackageId { get; set; }
         public long? ToPackageId { get; set; }
