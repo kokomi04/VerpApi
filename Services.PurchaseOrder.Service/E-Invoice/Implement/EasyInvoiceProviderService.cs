@@ -57,7 +57,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             );
 
             if (configEntity == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
 
             if (mappingEntity == null)
                 throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
@@ -68,7 +68,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.Create);
 
             if (functionConfig == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
@@ -80,7 +80,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             });
 
             if (objectData.Status != 2)
-                throw ElectronicInvoiceMappingErrorCode.EInvoiceCreateProcessFailed.BadRequest(objectData.JsonSerialize());
+                throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
 
             return objectData.Data.JsonDeserialize<CreateElectronicInvoiceSuccess>();
         }
@@ -95,7 +95,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             );
 
             if (configEntity == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
 
             if (mappingEntity == null)
                 throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
@@ -106,7 +106,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.Modify);
 
             if (functionConfig == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
@@ -120,7 +120,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             });
 
             if (objectData.Status != 2)
-                throw ElectronicInvoiceMappingErrorCode.EInvoiceCreateProcessFailed.BadRequest(objectData.JsonSerialize());
+                throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
 
             return objectData.Data.JsonDeserialize<ModifyElectronicInvoiceSuccess>();
         }
@@ -129,7 +129,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
             if (configEntity == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
 
 
             var config = _mapper.Map<ElectronicInvoiceProviderModel>(configEntity);
@@ -137,7 +137,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.PublishTemp);
 
             if (functionConfig == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
@@ -151,7 +151,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             });
 
             if (objectData.Status != 2)
-                throw ElectronicInvoiceMappingErrorCode.EInvoiceCreateProcessFailed.BadRequest(objectData.JsonSerialize());
+                throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
 
             return objectData.Data.JsonDeserialize<PublishElectronicInvoiceSuccess>();
         }
@@ -161,14 +161,14 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
 
             if (configEntity == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
 
             var config = _mapper.Map<ElectronicInvoiceProviderModel>(configEntity);
 
             var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.Publish);
 
             if (functionConfig == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
@@ -182,7 +182,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             });
 
             if (objectData.Status != 2)
-                throw ElectronicInvoiceMappingErrorCode.EInvoiceCreateProcessFailed.BadRequest(objectData.JsonSerialize());
+                throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
 
             return objectData.Data.JsonDeserialize<PublishElectronicInvoiceSuccess>();
         }
@@ -192,14 +192,14 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
 
             if (configEntity == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
 
             var config = _mapper.Map<ElectronicInvoiceProviderModel>(configEntity);
 
             var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.GetPdf);
 
             if (functionConfig == null)
-                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceMapping.BadRequest();
+                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
