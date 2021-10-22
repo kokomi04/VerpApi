@@ -115,7 +115,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Shipper).HasMaxLength(128);
 
-                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
@@ -167,7 +167,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PrimaryQuantityRemaning).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
 
@@ -187,7 +187,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.ToPackageId).HasComment("Nhập kho vào kiện nào");
 
-                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
@@ -316,7 +316,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
 
@@ -325,7 +325,7 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsUnicode(false);
 
                 entity.Property(e => e.UnitPrice)
-                    .HasColumnType("decimal(18, 4)")
+                    .HasColumnType("decimal(18, 5)")
                     .HasDefaultValueSql("((0))");
 
                 entity.HasOne(d => d.AssignStock)
@@ -494,19 +494,19 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Color).HasMaxLength(128);
 
-                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(19, 4)");
+                entity.Property(e => e.EstimatePrice).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.GrossWeight).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Height).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Height).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.LoadAbility).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Long).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Long).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Measurement).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PackingMethod).HasMaxLength(255);
 
@@ -530,9 +530,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.ProductStatusId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.Width).HasColumnType("decimal(18, 4)");
+                entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
 
                 entity.HasOne(d => d.ProductCate)
                     .WithMany(p => p.Product)
@@ -858,13 +858,13 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PrimaryQuantityRemaining).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.PrimaryQuantityWaiting).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductUnitConversionRemaining).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductUnitConversionWaitting).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
