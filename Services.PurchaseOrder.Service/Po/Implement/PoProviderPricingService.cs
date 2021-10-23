@@ -444,7 +444,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 throw new BadRequestException(validate);
             }
 
-            var ctx = await GeneratePurchaseOrderCode(null, model);
+            var ctx = await GeneratePoProviderPricingCode(null, model);
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
@@ -507,7 +507,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
 
         }
 
-        private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? poProviderPricingId, PoProviderPricingModel model)
+        private async Task<GenerateCodeContext> GeneratePoProviderPricingCode(long? poProviderPricingId, PoProviderPricingModel model)
         {
             model.PoProviderPricingCode = (model.PoProviderPricingCode ?? "").Trim();
 
