@@ -175,7 +175,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode") && !propName.EndsWith("reftablecode")
                             && !propName.EndsWith("generatecode") && !propName.EndsWith("categorycode"))
                         {
-                            Utils.ValidateCodeSpecialCharactors(prop.GetValue(obj) as string);
+                            var code = prop.GetValue(obj) as string;
+                            Utils.ValidateCodeSpecialCharactors(code);
+                            prop.SetValue(obj, code?.Trim()?.ToUpper());
                         }
                     }
                 }
