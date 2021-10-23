@@ -1558,6 +1558,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
+                sct = sct?.ToUpper();
+                data.Info[AccountantConstants.BILL_CODE] = sct;
                 billInfo.BillCode = sct;
             }
 

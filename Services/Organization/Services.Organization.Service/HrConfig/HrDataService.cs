@@ -980,6 +980,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             if (billInfo != null && hrAreaData.FirstOrDefault().TryGetValue(OrganizationConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
+                sct = sct?.ToUpper();
+                hrAreaData.FirstOrDefault()[OrganizationConstants.BILL_CODE] = sct;
                 billInfo.BillCode = sct;
             }
 
