@@ -84,7 +84,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             if (obj == null)
             {
                 throw CustomConfigNotExisted.BadRequestFormat(targetObjectTypeId.GetEnumDescription(), configObjectId > 0 ? (long?)configObjectId : null);
-                
+
             }
 
             return await _genCodeConfigService.GetInfo(obj.CustomGenCodeId, fId, code, date);
@@ -149,7 +149,7 @@ namespace VErp.Services.Master.Service.Config.Implement
              .JsonData(model.JsonSerialize())
              .CreateLog();
 
-         
+
             return true;
 
         }
@@ -454,6 +454,13 @@ namespace VErp.Services.Master.Service.Config.Implement
              targeObjectTypeId: EnumObjectType.PoAssignment,
              fieldName: "Mã phân công mua hàng")
            );
+
+            result.Add(
+                  GetObjectGenCodeMappingTypeModel(
+                  moduleTypeId: EnumModuleType.PurchaseOrder,
+                  targeObjectTypeId: EnumObjectType.PoProviderPricing,
+                  fieldName: "Mã báo giá nhà cung cấp")
+              );
 
             result.Add(
                 GetObjectGenCodeMappingTypeModel(
