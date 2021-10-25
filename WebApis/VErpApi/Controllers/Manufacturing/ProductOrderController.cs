@@ -39,6 +39,13 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
+        [Route("order-product")]
+        public async Task<IList<OrderProductInfo>> GetOrderProductInfo([FromBody] IList<long> productionOderIds)
+        {
+            return await _productionOrderService.GetOrderProductInfo(productionOderIds);
+        }
+
+        [HttpPost]
         [Route("multiple/month-plan/{monthPlanId}")]
         public async Task<int> CreateMultipleProductionOrder([FromRoute] int monthPlanId, [FromBody] ProductionOrderInputModel[] req)
         {
@@ -92,7 +99,7 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionOrder(productionOrderId);
         }
 
-        
+
         [HttpGet]
         [Route("GetProductionHistoryByOrder")]
         public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder([FromQuery] IList<int> productIds, [FromQuery] IList<string> orderCodes)
@@ -115,6 +122,7 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.DeleteProductionOrder(productionOrderId);
         }
+
 
         [HttpGet]
         [Route("detail/{productionOrderDetailId}")]

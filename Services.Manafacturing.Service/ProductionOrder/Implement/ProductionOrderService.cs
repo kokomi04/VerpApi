@@ -318,7 +318,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
                     var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= workDateUnix && oh.EndDate >= workDateUnix);
                     var increase = calendar.DepartmentIncreaseInfo.FirstOrDefault(i => i.StartDate <= workDateUnix && i.EndDate >= workDateUnix);
-                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay??0 * (department?.NumberOfPerson??0 + increase?.NumberOfPerson??0)) + (overHour?.OverHour??0 * overHour?.NumberOfPerson??0));
+                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay ?? 0 * (department?.NumberOfPerson ?? 0 + increase?.NumberOfPerson ?? 0)) + (overHour?.OverHour ?? 0 * overHour?.NumberOfPerson ?? 0));
                 }
 
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
@@ -427,6 +427,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                  }).ToListAsync();
         }
 
+        public async Task<IList<OrderProductInfo>> GetOrderProductInfo(IList<long> productionOderIds)
+        {
+            var result = await _manufacturingDBContext.ProductionOrderDetail
+                .Where(pod => productionOderIds.Contains(pod.ProductionOrderId))
+                .Select(pod => new OrderProductInfo
+                {
+                    ProductionOrderId = pod.ProductionOrderId,
+                    ProductionOrderDetailId = pod.ProductionOrderDetailId,
+                    OrderDetailId = pod.OrderDetailId,
+                    ProductId = pod.ProductId
+                })
+                .ToListAsync();
+            return result;
+        }
+
         public async Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
@@ -531,7 +546,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
-            if(monthPlanId.HasValue)
+            if (monthPlanId.HasValue)
             {
                 foreach (var extraPlan in extraPlans)
                 {

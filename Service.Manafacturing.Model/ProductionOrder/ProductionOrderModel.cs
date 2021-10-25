@@ -80,4 +80,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
             Inventories = new List<ProductionInventoryRequirementEntity>();
         }
     }
+
+    public class OrderProductInfo
+    {
+        public long ProductionOrderId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
+        public long? OrderDetailId { get; set; }
+        public int ProductId { get; set; }
+    }
 }
