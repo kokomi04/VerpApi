@@ -170,7 +170,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ToList();
         }
 
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate)
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>()
@@ -181,21 +181,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 new SqlParameter("@Page", page),
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@StepId", stepId.GetValueOrDefault()),
+                new SqlParameter("@ProductId", productId.GetValueOrDefault())
             };
-
-            //var whereCondition = new StringBuilder("");
-
-            //if (filters != null)
-            //{
-            //    var suffix = 0;
-            //    var filterCondition = new StringBuilder();
-            //    filters.FilterClauseProcess("#Data", "v", ref filterCondition, ref parammeters, ref suffix);
-            //    if (filterCondition.Length > 2)
-            //    {
-            //        if (whereCondition.Length > 0) whereCondition.Append(" AND ");
-            //        whereCondition.Append(filterCondition);
-            //    }
-            //}
 
             var dataSet = await _manufacturingDBContext.ExecuteMultipleDataProcedure("asp_ProductionDepartmentHandover", parammeters.ToArray());
 
