@@ -1004,8 +1004,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             newStepLinkData.AddRange(sourceStepLinkData.Where(x => !x.IsDeleted).ToList());
 
             var roles = from r in req.ProductionStepLinkDataRoles
-                        join s in newStep on r.ProductionStepCode equals s.ProductionStepCode
-                        join d in newStepLinkData on r.ProductionStepLinkDataCode equals d.ProductionStepLinkDataCode
+                        join s in newStep on r.ProductionStepCode.ToUpper() equals s.ProductionStepCode
+                        join d in newStepLinkData on r.ProductionStepLinkDataCode.ToUpper() equals d.ProductionStepLinkDataCode
                         select new ProductionStepLinkDataRole
                         {
                             ProductionStepId = s.ProductionStepId,
