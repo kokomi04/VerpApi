@@ -58,7 +58,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
 
         public string Ikey { get; set; }
 
-        public string ArisingDate { get; set; }
+        public DateTime ArisingDate { get; set; }
 
         public DateTime IssueDate { get; set; }
 

@@ -20,12 +20,13 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
 using System.Net.Http;
 using System.IO;
+using Microsoft.Data.SqlClient;
 
 namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 {
     public interface IEasyInvoiceProviderService
     {
-        Task<CreateElectronicInvoiceSuccess> CreateElectronicInvoice(string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
+        Task<CreateElectronicInvoiceSuccess> CreateElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data);
         Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string ikey, string pattern, int option);
         Task<ModifyElectronicInvoiceSuccess> ModifyElectronicInvoice(string ikey, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
         Task<PublishElectronicInvoiceSuccess> PublishElectronicInvoice(IList<string> ikeys, string pattern, string serial, string signature);
@@ -39,6 +40,8 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         private readonly ObjectActivityLogFacade _objectActivityLog;
         private readonly IHttpClientFactoryService _httpClient;
 
+        
+
         public EasyInvoiceProviderService(IHttpClientFactoryService httpClient, PurchaseOrderDBContext purchaseOrderDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -47,7 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             _httpClient = httpClient;
         }
 
-        public async Task<CreateElectronicInvoiceSuccess> CreateElectronicInvoice(string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<CreateElectronicInvoiceSuccess> CreateElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
             var mappingEntity = await _purchaseOrderDBContext.ElectronicInvoiceMapping.FirstOrDefaultAsync(x =>
@@ -71,16 +74,33 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
-            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/importReservedInvoice";
             string xmlData = GetXmlDataOfCreateEInvoice(mappingFields, functionConfig, data);
 
             var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, new ElectronicInvoiceRequestModel(xmlData, pattern, serial), request =>
             {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.HostName, config.EasyInvoiceConnection.Password));
+                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
             });
 
             if (objectData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
+
+            var invoiceData = (objectData.Data.JsonDeserialize<CreateElectronicInvoiceSuccess>()).Invoices.FirstOrDefault();
+
+            var exSql = @$"UPDATE {VoucherConstants.VOUCHER_VALUE_ROW_TABLE} 
+            SET {VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE},
+                {VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE},
+                {VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE} = @{VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE}
+            WHERE {VoucherConstants.VOUCHER_BILL_F_Id} = @{VoucherConstants.VOUCHER_BILL_F_Id}
+            ";
+            var sqlParams = new SqlParameter[] {
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE}", invoiceData.ArisingDate),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE}", invoiceData.IssueDate),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE}", invoiceData.LookupCode),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_BILL_F_Id}", voucherBillId),
+            };
+
+            var _ = await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(exSql, sqlParams);
 
             return objectData.Data.JsonDeserialize<CreateElectronicInvoiceSuccess>();
         }
@@ -116,7 +136,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, bodyData, request =>
             {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.HostName, config.EasyInvoiceConnection.Password));
+                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
             });
 
             if (objectData.Status != 2)
@@ -147,7 +167,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, bodyData, request =>
             {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.HostName, config.EasyInvoiceConnection.Password));
+                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
             });
 
             if (objectData.Status != 2)
@@ -178,7 +198,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, bodyData, request =>
             {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.HostName, config.EasyInvoiceConnection.Password));
+                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
             });
 
             if (objectData.Status != 2)
@@ -209,7 +229,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var objectData = await _httpClient.Download(uri, bodyData, request =>
             {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.HostName, config.EasyInvoiceConnection.Password));
+                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
             });
 
 
@@ -306,12 +326,13 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         private void ValidAndAppendChildXml(ElectronicInvoiceFieldConfigModel field, XmlDocument doc, IGrouping<object, NonCamelCaseDictionary> voucherData, Dictionary<string, string> mapFieldDetail, XmlElement parent)
         {
 
-            if (!mapFieldDetail.ContainsKey(field.FieldName))
-                throw GeneralCode.InvalidParams.BadRequest();
+            // if (!mapFieldDetail.ContainsKey(field.FieldName))
+            //     throw GeneralCode.InvalidParams.BadRequest();
+            
+            
+            var sourceField = mapFieldDetail.ContainsKey(field.FieldName) ? mapFieldDetail[field.FieldName] : "";
 
-            var sourceField = mapFieldDetail[field.FieldName];
-
-            var value = voucherData.ElementAt(0)[sourceField];
+            var value = !string.IsNullOrWhiteSpace(sourceField) ? voucherData.ElementAt(0)[sourceField] : "";
 
             if (field.IsRequired && (value == null || string.IsNullOrWhiteSpace(value.ToString())))
                 throw GeneralCode.InvalidParams.BadRequest();
