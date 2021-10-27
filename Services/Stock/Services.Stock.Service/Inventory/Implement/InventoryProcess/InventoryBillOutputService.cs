@@ -664,6 +664,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var inventoryDetailList = new List<InventoryDetail>();
 
+            var packageRemaining = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
+
             foreach (var detail in req.OutProducts)
             {
                 var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
@@ -762,7 +764,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 }
 
-                if (primaryQualtity > fromPackageInfo.PrimaryQuantityRemaining)
+                if (packageRemaining[fromPackageInfo.PackageId].SubDecimal(primaryQualtity) < 0)
                 {
                     var primaryUnit = productUnitConversions.FirstOrDefault(c => c.IsDefault && c.ProductId == productInfo.ProductId);
                     var remaining = $"{fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}";
@@ -777,6 +779,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     throw NotEnoughBalanceInPackage.BadRequestFormat(fromPackageInfo.PackageCode, productInfo.ProductCode, remaining, totalOutMess);
                 }
+
+                packageRemaining[fromPackageInfo.PackageId] = packageRemaining[fromPackageInfo.PackageId].SubDecimal(primaryQualtity);
+
 
                 inventoryDetailList.Add(new InventoryDetail
                 {
