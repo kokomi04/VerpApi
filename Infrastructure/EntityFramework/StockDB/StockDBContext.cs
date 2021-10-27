@@ -56,7 +56,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<StockTakeDetail> StockTakeDetail { get; set; }
         public virtual DbSet<StockTakePeriod> StockTakePeriod { get; set; }
         public virtual DbSet<StockTakeRepresentative> StockTakeRepresentative { get; set; }
-        public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
+        //public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
