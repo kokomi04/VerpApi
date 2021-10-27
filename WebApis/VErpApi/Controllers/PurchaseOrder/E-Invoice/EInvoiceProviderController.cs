@@ -21,9 +21,9 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
         [HttpPost]
         [Route("create")]
-        public async Task<CreateElectronicInvoiceSuccess> CreateElectronicInvoice([FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<CreateElectronicInvoiceSuccess> CreateElectronicInvoice([FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId,[FromQuery] long voucherBillId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
         {
-            return await _easyInvoiceProviderService.CreateElectronicInvoice(pattern, serial, voucherTypeId, data);
+            return await _easyInvoiceProviderService.CreateElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId, data);
         }
 
         [HttpGet]
