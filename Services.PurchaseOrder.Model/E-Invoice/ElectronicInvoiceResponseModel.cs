@@ -12,6 +12,13 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
         public string Data { get; set; }
     }
 
+    public class ElectronicInvoiceResponseModel<T>
+    {
+        public int Status { get; set; }
+        public string Message { get; set; }
+        public T Data { get; set; }
+    }
+
     public class CreateElectronicInvoiceSuccess
     {
         public string Parttern { get; set; }

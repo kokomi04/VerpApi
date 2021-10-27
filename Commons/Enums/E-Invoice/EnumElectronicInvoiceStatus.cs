@@ -1,11 +1,10 @@
 namespace VErp.Commons.Enums.E_Invoice
 {
-    public enum EnumElectronicInvoiceStatus
+    public enum EnumElectronicInvoiceStatus: int
     {
-        EInvoiceNotExists = -1,
-        EInvoiceWithoutDigitalSignature = 0,
-        EInvoiceWithDigitalSignature = 1,
-        EInvoiceWitDigitalSignature = 2,
+        EInvoiceNotExists = 0,
+        EInvoiceWithoutDigitalSignature = 1,
+        EInvoiceWithDigitalSignature = 2,
         EInvoiceDeclaredTax = 3,
         EInvoiceReplaced = 4,
         EInvoiceAdjusted = 5,

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -26,9 +27,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
     public interface IHttpClientFactoryService
     {
         Task<T> Deleted<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
-        Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null, OptionHttpRequestDelegate optionRequest = null);
-        Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
-        Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
+        Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
+        Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
+        Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
         Task<Stream> Download(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
     }
 
@@ -43,7 +44,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _logger = logger;
         }
 
-        public async Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null)
+        public async Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null)
         {
             try
             {
@@ -70,7 +71,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ThrowErrorResponse("POST", uri, postData, data, response);
                 }
 
-                return response.JsonDeserialize<T>();
+                return response.JsonDeserialize<T>(settings);
             }
             catch (Exception ex)
             {
@@ -80,7 +81,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
 
-        public async Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null)
+        public async Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null)
         {
             try
             {
@@ -107,7 +108,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ThrowErrorResponse("PUT", uri, postData, data, response);
                 }
 
-                return response.JsonDeserialize<T>();
+                return response.JsonDeserialize<T>(settings);
             }
             catch (Exception ex)
             {
@@ -153,7 +154,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public async Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null, OptionHttpRequestDelegate optionRequest = null)
+        public async Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null)
         {
             try
             {
@@ -200,7 +201,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ThrowErrorResponse("GET", uri, null, data, response);
                 }
 
-                return response.JsonDeserialize<T>();
+                return response.JsonDeserialize<T>(settings);
             }
             catch (Exception ex)
             {

@@ -21,6 +21,7 @@ using VErp.Commons.Library;
 using System.Net.Http;
 using System.IO;
 using Microsoft.Data.SqlClient;
+using Newtonsoft.Json;
 
 namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 {
@@ -74,35 +75,41 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
-            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/importReservedInvoice";
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/importInvoice";
             string xmlData = GetXmlDataOfCreateEInvoice(mappingFields, functionConfig, data);
 
-            var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, new ElectronicInvoiceRequestModel(xmlData, pattern, serial), request =>
+            var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel<CreateElectronicInvoiceSuccess>>(uri, new ElectronicInvoiceRequestModel(xmlData, pattern, serial), request =>
             {
                 request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
+            }, new Newtonsoft.Json.JsonSerializerSettings {
+                DateFormatString = "dd/MM/yyyy"
             });
 
             if (objectData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
 
-            var invoiceData = (objectData.Data.JsonDeserialize<CreateElectronicInvoiceSuccess>()).Invoices.FirstOrDefault();
+            var invoiceData = objectData.Data.Invoices.FirstOrDefault();
 
             var exSql = @$"UPDATE {VoucherConstants.VOUCHER_VALUE_ROW_TABLE} 
             SET {VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE},
                 {VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE},
-                {VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE} = @{VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE}
+                {VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE} = @{VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE},
+                {VoucherConstants.VOUCHER_E_INVOICE_NUMBER} = @{VoucherConstants.VOUCHER_E_INVOICE_NUMBER},
+                {VoucherConstants.VOUCHER_E_INVOICE_STATUS} = @{VoucherConstants.VOUCHER_E_INVOICE_STATUS}
             WHERE {VoucherConstants.VOUCHER_BILL_F_Id} = @{VoucherConstants.VOUCHER_BILL_F_Id}
             ";
             var sqlParams = new SqlParameter[] {
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE}", invoiceData.ArisingDate),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE}", invoiceData.IssueDate),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE}", invoiceData.LookupCode),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_NUMBER}", invoiceData.No),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_STATUS}", ConvertEInvoiceStatusOfProviderIntoSystem(invoiceData.InvoiceStatus)),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_BILL_F_Id}", voucherBillId),
             };
 
             var _ = await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(exSql, sqlParams);
 
-            return objectData.Data.JsonDeserialize<CreateElectronicInvoiceSuccess>();
+            return objectData.Data;
         }
 
         public async Task<ModifyElectronicInvoiceSuccess> ModifyElectronicInvoice(string ikey, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
@@ -129,83 +136,85 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
-            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/adjustInvoice";
             string xmlData = GetXmlDataOfModifyEInvoice(mappingFields, functionConfig, data);
             var bodyData = new ElectronicInvoiceRequestModel(xmlData, pattern, serial);
             bodyData.Ikey = ikey;
 
-            var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, bodyData, request =>
+            var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel<ModifyElectronicInvoiceSuccess>>(uri, bodyData, request =>
             {
                 request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
+            }, new JsonSerializerSettings{
+                DateFormatString = "dd/MM/yyyy"
             });
 
             if (objectData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
 
-            return objectData.Data.JsonDeserialize<ModifyElectronicInvoiceSuccess>();
+            return objectData.Data;
         }
 
-        public async Task<PublishElectronicInvoiceSuccess> PublishTempElectronicInvoice(IList<string> ikeys, string pattern, string serial, string certString)
-        {
-            var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
-            if (configEntity == null)
-                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
+        // public async Task<PublishElectronicInvoiceSuccess> PublishTempElectronicInvoice(IList<string> ikeys, string pattern, string serial, string certString)
+        // {
+        //     var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
+        //     if (configEntity == null)
+        //         throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
 
 
-            var config = _mapper.Map<ElectronicInvoiceProviderModel>(configEntity);
+        //     var config = _mapper.Map<ElectronicInvoiceProviderModel>(configEntity);
 
-            var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.PublishTemp);
+        //     var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.PublishTemp);
 
-            if (functionConfig == null)
-                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
-
-
-            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
-            var bodyData = new ElectronicInvoiceRequestModel(null, pattern, serial);
-            bodyData.Ikeys = ikeys;
-            bodyData.CertString = certString;
-
-            var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, bodyData, request =>
-            {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
-            });
-
-            if (objectData.Status != 2)
-                throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
-
-            return objectData.Data.JsonDeserialize<PublishElectronicInvoiceSuccess>();
-        }
-
-        public async Task<PublishElectronicInvoiceSuccess> PublishElectronicInvoice(IList<string> ikeys, string pattern, string serial, string signature)
-        {
-            var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
-
-            if (configEntity == null)
-                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
-
-            var config = _mapper.Map<ElectronicInvoiceProviderModel>(configEntity);
-
-            var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.Publish);
-
-            if (functionConfig == null)
-                throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
+        //     if (functionConfig == null)
+        //         throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
-            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
-            var bodyData = new ElectronicInvoiceRequestModel(null, pattern, serial);
-            bodyData.Ikeys = ikeys;
-            bodyData.Signature = signature;
+        //     var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
+        //     var bodyData = new ElectronicInvoiceRequestModel(null, pattern, serial);
+        //     bodyData.Ikeys = ikeys;
+        //     bodyData.CertString = certString;
 
-            var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, bodyData, request =>
-            {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
-            });
+        //     var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel<PublishElectronicInvoiceSuccess>>(uri, bodyData, request =>
+        //     {
+        //         request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
+        //     });
 
-            if (objectData.Status != 2)
-                throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
+        //     if (objectData.Status != 2)
+        //         throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
 
-            return objectData.Data.JsonDeserialize<PublishElectronicInvoiceSuccess>();
-        }
+        //     return objectData.Data;
+        // }
+
+        // public async Task<PublishElectronicInvoiceSuccess> PublishElectronicInvoice(IList<string> ikeys, string pattern, string serial, string signature)
+        // {
+        //     var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
+
+        //     if (configEntity == null)
+        //         throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceConfig.BadRequest();
+
+        //     var config = _mapper.Map<ElectronicInvoiceProviderModel>(configEntity);
+
+        //     var functionConfig = config.FieldsConfig.FirstOrDefault(x => x.ElectronicInvoiceFunctionId == EnumElectronicInvoiceFunction.Publish);
+
+        //     if (functionConfig == null)
+        //         throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
+
+
+        //     var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/issueInvoices";
+        //     var bodyData = new ElectronicInvoiceRequestModel(null, pattern, serial);
+        //     bodyData.Ikeys = ikeys;
+        //     bodyData.Signature = signature;
+
+        //     var objectData = await _httpClient.Post<ElectronicInvoiceResponseModel>(uri, bodyData, request =>
+        //     {
+        //         request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
+        //     });
+
+        //     if (objectData.Status != 2)
+        //         throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(objectData.JsonSerialize());
+
+        //     return objectData.Data.JsonDeserialize<PublishElectronicInvoiceSuccess>();
+        // }
 
         public async Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string ikey, string pattern, int option)
         {
@@ -222,7 +231,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
 
-            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/{functionConfig.Uri}";
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/getInvoicePdf";
             var bodyData = new ElectronicInvoiceRequestModel(null, pattern, null);
             bodyData.Option = option;
             bodyData.Ikey = ikey;
@@ -365,5 +374,26 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             }
         }
 
+        private EnumElectronicInvoiceStatus ConvertEInvoiceStatusOfProviderIntoSystem(int eInvoiceStatus) => eInvoiceStatus switch {
+            -1 => EnumElectronicInvoiceStatus.EInvoiceNotExists,
+            0 => EnumElectronicInvoiceStatus.EInvoiceWithoutDigitalSignature,
+            1 => EnumElectronicInvoiceStatus.EInvoiceWithDigitalSignature,
+            2 => EnumElectronicInvoiceStatus.EInvoiceDeclaredTax,
+            3 => EnumElectronicInvoiceStatus.EInvoiceReplaced,
+            4 => EnumElectronicInvoiceStatus.EInvoiceAdjusted,
+            5 => EnumElectronicInvoiceStatus.EInvoiceCanceled,
+            6 => EnumElectronicInvoiceStatus.EInvoiceApproved,
+            _ => throw new ArgumentOutOfRangeException(nameof(eInvoiceStatus), $"Not expected direction value: {eInvoiceStatus}"),
+        };
+
+        public Task<PublishElectronicInvoiceSuccess> PublishElectronicInvoice(IList<string> ikeys, string pattern, string serial, string signature)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<PublishElectronicInvoiceSuccess> PublishTempElectronicInvoice(IList<string> ikeys, string pattern, string serial, string certString)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
