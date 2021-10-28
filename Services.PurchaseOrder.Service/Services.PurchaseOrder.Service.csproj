@@ -18,4 +18,13 @@
     <ProjectReference Include="..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="EasyInvoice.Client">
+      <HintPath>..\..\..\..\Users\ERP2\Downloads\EasyInvoice.Client (.NET)\EasyInvoice.Client (.NET)\EasyInvoice.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="EasyInvoice.Json">
+      <HintPath>..\..\..\..\Users\ERP2\Downloads\EasyInvoice.Client (.NET)\EasyInvoice.Client (.NET)\EasyInvoice.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
