@@ -27,4 +27,13 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="E-InvoiceLibrary\EasyInvoice.Client.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="E-InvoiceLibrary\EasyInvoice.Json.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
