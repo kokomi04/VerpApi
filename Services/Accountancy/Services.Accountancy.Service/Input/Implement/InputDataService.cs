@@ -1912,7 +1912,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     FieldName = field.FieldName,
                     FieldTitle = GetTitleCategoryField(field),
                     RefCategory = null,
-                    IsRequired = field.IsRequire
+                    IsRequired = field.IsRequire && string.IsNullOrEmpty(field.RequireFilters)
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
