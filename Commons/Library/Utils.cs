@@ -380,9 +380,10 @@ namespace VErp.Commons.Library
         }
 
 
-        public static decimal RoundBy(this decimal value, int decimalPlace = 11)
+        public static decimal RoundBy(this decimal value, int? decimalPlace = 11)
         {
-            return Math.Round(value, decimalPlace, MidpointRounding.AwayFromZero);
+            if (decimalPlace == null) decimalPlace = 11;
+            return Math.Round(value, decimalPlace.Value, MidpointRounding.AwayFromZero);
         }
 
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
