@@ -21,10 +21,9 @@ using VErp.Commons.Library;
 using System.Net.Http;
 using System.IO;
 using Microsoft.Data.SqlClient;
-using EasyInvoice.Client.Services;
-using EasyInvoice.Client;
 using System.Globalization;
-using EasyInvoiceRequestModel = EasyInvoice.Client.Request;
+using VErp.Services.PurchaseOrder.Model.E_Invoice.EasyInvoice;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 {
@@ -45,16 +44,12 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         private readonly ObjectActivityLogFacade _objectActivityLog;
         private readonly IHttpClientFactoryService _httpClient;
 
-        private readonly EasyService _easyService;
-
-
         public EasyInvoiceProviderService(IHttpClientFactoryService httpClient, PurchaseOrderDBContext purchaseOrderDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _mapper = mapper;
             _objectActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.EasyInvoiceProvider);
             _httpClient = httpClient;
-            _easyService = new EasyService();
         }
 
         public async Task<bool> CreateElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data)
@@ -82,14 +77,14 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
 
             string xmlData = GetXmlDataOfCreateEInvoice(mappingFields, functionConfig, data);
-            var responseData = _easyService.ServerImportInvoices(new Request()
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/importInvoice";
+
+            var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
+                XmlData = xmlData,
                 Pattern = pattern,
-                Serial = serial,
-                XmlData = xmlData
-            }, host: config.EasyInvoiceConnection.HostName,
-                id: config.EasyInvoiceConnection.UserName,
-                password: config.EasyInvoiceConnection.Password);
+                Serial = serial
+            }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password),  errorHandler: EasyInvoiceErrorHandler);
 
             if (responseData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(responseData.JsonSerialize());
@@ -125,14 +120,15 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
             string xmlData = GetXmlDataOfModifyEInvoice(mappingFields, functionConfig, data);
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/adjustInvoice";
 
-            var responseData = _easyService.ServerAdjustInvoice(new Request()
+            var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
                 XmlData = xmlData,
-                Ikey = ikey,
                 Pattern = pattern,
-                Serial = serial
-            }, host: config.EasyInvoiceConnection.HostName, id: config.EasyInvoiceConnection.UserName, password: config.EasyInvoiceConnection.Password);
+                Serial = serial,
+                Ikey = ikey
+            }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password), errorHandler: EasyInvoiceErrorHandler);
 
             if (responseData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(responseData.JsonSerialize());
@@ -158,12 +154,14 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (functionConfig == null)
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
-            var responseData = _easyService.ServerIssueInvoices(new Request()
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/issueInvoices";
+
+            var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
-                Ikeys = new[] { ikey },
                 Pattern = pattern,
-                Serial = serial
-            }, host: config.EasyInvoiceConnection.HostName, id: config.EasyInvoiceConnection.UserName, password: config.EasyInvoiceConnection.Password);
+                Serial = serial,
+                Ikeys = new[] { ikey },
+            }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password), errorHandler: EasyInvoiceErrorHandler);
 
             if (responseData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(responseData.JsonSerialize());
@@ -200,13 +198,15 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             string xmlData = GetXmlDataOfReplaceEInvoice(mappingFields, functionConfig, data);
 
-            var responseData = _easyService.ServerReplaceInvoice(new Request()
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/replaceInvoices";
+
+            var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
                 XmlData = xmlData,
                 Ikey = ikey,
                 Pattern = pattern,
                 Serial = serial
-            }, host: config.EasyInvoiceConnection.HostName, id: config.EasyInvoiceConnection.UserName, password: config.EasyInvoiceConnection.Password);
+            }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password), errorHandler: EasyInvoiceErrorHandler);
 
             if (responseData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(responseData.JsonSerialize());
@@ -233,12 +233,14 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (functionConfig == null)
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
-            var responseData = _easyService.CancelInvoice(new Request()
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/cancelInvoice";
+
+            var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
                 Ikey = ikey,
                 Pattern = pattern,
                 Serial = serial
-            }, host: config.EasyInvoiceConnection.HostName, id: config.EasyInvoiceConnection.UserName, password: config.EasyInvoiceConnection.Password);
+            }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password), errorHandler: EasyInvoiceErrorHandler);
 
             if (responseData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(responseData.JsonSerialize());
@@ -274,10 +276,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 Ikey = ikey
             };
 
-            var streamFile = await _httpClient.Download(uri, bodyData, request =>
-            {
-                request.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
-            });
+            var streamFile = await _httpClient.Download(uri, bodyData, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
 
 
             return (streamFile, ikey, "application/pdf");
@@ -483,6 +482,22 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             6 => EnumElectronicInvoiceStatus.EInvoiceApproved,
             _ => throw new ArgumentOutOfRangeException(nameof(eInvoiceStatus), $"Not expected direction value: {eInvoiceStatus}"),
         };
+
+        private ApiErrorResponse EasyInvoiceErrorHandler(string response)
+        {
+            var result = response.JsonDeserialize<EasyInvoiceResponseModel>();
+
+            if (result.Data.KeyInvoiceMsg.Count > 0)
+                return new ApiErrorResponse() { Message = result.Data.KeyInvoiceMsg.FirstOrDefault().Value };
+
+            return null;
+        }
+
+        private void EasyInvoiceAuthentication(HttpRequestMessage httpRequest, string httpMethod, string username, string password)
+        {
+            httpRequest.Headers.TryAddWithoutValidation(Headers.Authentication, GenerateToken(httpMethod, username, password));
+        }
+
         #endregion 
     }
 }

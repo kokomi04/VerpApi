@@ -28,7 +28,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
     {
         Task<T> Deleted<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
         Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
-        Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
+        Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, Func<string, ApiErrorResponse> errorHandler = null);
         Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
         Task<Stream> Download(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
     }
@@ -44,7 +44,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _logger = logger;
         }
 
-        public async Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null)
+        public async Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, Func<string, ApiErrorResponse> errorHandler = null)
         {
             try
             {
@@ -68,14 +68,18 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 if (!data.IsSuccessStatusCode)
                 {
-                    ThrowErrorResponse("POST", uri, postData, data, response);
+                    ApiErrorResponse errorResult = null;
+                    if (errorHandler != null)
+                        errorResult = errorHandler(response);
+
+                    ThrowErrorResponse("POST", uri, postData, data, response, errorResult);
                 }
 
                 return response.JsonDeserialize<T>(settings);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "HttpCrossService:Post");
+                _logger.LogError(ex, "HttpClientFactoryService:Post");
                 throw;
             }
         }
@@ -112,7 +116,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "HttpCrossService:Put");
+                _logger.LogError(ex, "HttpClientFactoryService:Put");
                 throw;
             }
         }
@@ -149,7 +153,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "HttpCrossService:Put");
+                _logger.LogError(ex, "HttpClientFactoryService:Put");
                 throw;
             }
         }
@@ -205,7 +209,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "HttpCrossService:Get");
+                _logger.LogError(ex, "HttpClientFactoryService:Get");
                 throw;
             }
         }
@@ -241,17 +245,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "HttpCrossService:Post");
+                _logger.LogError(ex, "HttpClientFactoryService:Post");
                 throw;
             }
         }
 
-        private void ThrowErrorResponse(string method, string uri, object body, HttpResponseMessage responseMessage, string response)
+        private void ThrowErrorResponse(string method, string uri, object body, HttpResponseMessage responseMessage, string response, ApiErrorResponse result = null)
         {
-            ApiErrorResponse result = null;
             try
             {
-                result = response.JsonDeserialize<ApiErrorResponse>();
+                if(result == null)
+                    result = response.JsonDeserialize<ApiErrorResponse>();
             }
             catch (Exception)
             {
@@ -260,7 +264,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             if (result != null)
             {
-                _logger.LogError($"HttpCrossService:{method} {uri} {{0}} Warning {responseMessage.StatusCode} {{1}}", body, response);
+                _logger.LogError($"HttpClientFactoryService:{method} {uri} {{0}} Warning {responseMessage.StatusCode} {{1}}", body, response);
 
                 if (responseMessage.StatusCode == System.Net.HttpStatusCode.BadRequest)
                 {
@@ -272,7 +276,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 }
             }
 
-            _logger.LogError($"HttpCrossService:{method} {uri} {{0}} Error {(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {{1}}", body, response);
+            _logger.LogError($"HttpClientFactoryService:{method} {uri} {{0}} Error {(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {{1}}", body, response);
 
             throw new Exception($"{(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {response}");
         }
