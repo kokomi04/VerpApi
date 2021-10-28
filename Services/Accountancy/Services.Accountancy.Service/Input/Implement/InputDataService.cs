@@ -1912,7 +1912,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     FieldName = field.FieldName,
                     FieldTitle = GetTitleCategoryField(field),
                     RefCategory = null,
-                    IsRequired = field.IsRequire
+                    IsRequired = field.IsRequire && string.IsNullOrEmpty(field.RequireFilters)
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
@@ -1967,7 +1967,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
-            var requiredField = fields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
+            var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
             if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
 
@@ -2060,7 +2060,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (row.Data.ContainsKey(mappingField.Column))
                             value = row.Data[mappingField.Column]?.ToString();
                         // Validate require
-                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
+                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
