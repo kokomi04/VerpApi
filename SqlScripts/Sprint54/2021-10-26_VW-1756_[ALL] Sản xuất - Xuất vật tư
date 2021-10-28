@@ -1,0 +1,53 @@
+USE ManufacturingDB;
+
+
+IF EXISTS (SELECT * FROM sys.all_objects WHERE object_id = OBJECT_ID(N'[dbo].[MaterialAllocation]') AND type IN ('U'))
+  DROP TABLE [dbo].[MaterialAllocation]
+GO
+
+CREATE TABLE [dbo].[MaterialAllocation] (
+  [MaterialAllocationId] int IDENTITY(1,1) NOT NULL,
+  [ProductionOrderId] bigint NOT NULL,
+  [InventoryCode] nvarchar(128) NOT NULL,
+  [ProductId] int NOT NULL,
+  [DepartmentId] int NOT NULL,
+  [ProductionStepId] bigint NOT NULL,
+  [AllocationQuantity] decimal(32,16) NOT NULL,
+  [SourceProductId] int,
+  [SourceQuantity] decimal(32,16),
+  [SubsidiaryId] int DEFAULT ((0)) NOT NULL
+)
+GO
+
+ALTER TABLE [dbo].[MaterialAllocation] SET (LOCK_ESCALATION = TABLE)
+GO
+
+
+ALTER TABLE [dbo].[MaterialAllocation] ADD CONSTRAINT [PK_MaterialAllocation] PRIMARY KEY CLUSTERED ([MaterialAllocationId])
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)  
+ON [PRIMARY]
+GO
+
+
+IF EXISTS (SELECT * FROM sys.all_objects WHERE object_id = OBJECT_ID(N'[dbo].[IgnoreAllocation]') AND type IN ('U'))
+  DROP TABLE [dbo].[IgnoreAllocation]
+GO
+
+CREATE TABLE [dbo].[IgnoreAllocation] (
+  [ProductionOrderId] bigint NOT NULL,
+  [InventoryCode] nvarchar(128) NOT NULL,
+  [ProductId] int NOT NULL,
+  [SubsidiaryId] int DEFAULT ((0)) NOT NULL
+)
+GO
+
+ALTER TABLE [dbo].[IgnoreAllocation] SET (LOCK_ESCALATION = TABLE)
+GO
+
+
+ALTER TABLE [dbo].[IgnoreAllocation] ADD CONSTRAINT [PK_MaterialAllocation] PRIMARY KEY CLUSTERED ([ProductionOrderId], [InventoryCode], [ProductId])
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)  
+ON [PRIMARY]
+GO
+
+

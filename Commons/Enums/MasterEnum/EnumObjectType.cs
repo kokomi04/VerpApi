@@ -360,5 +360,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Thông tin thêm kế hoạch")]
         ProductionPlanExtraInfo = 1044,
+
+        [Description("Phân bổ vật tư sản xuất")]
+        MaterialAllocation = 1045
     }
 }
