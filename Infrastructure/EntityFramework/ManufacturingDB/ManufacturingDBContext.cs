@@ -18,6 +18,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         }
 
         public virtual DbSet<DraftData> DraftData { get; set; }
+        public virtual DbSet<IgnoreAllocation> IgnoreAllocation { get; set; }
+        public virtual DbSet<MaterialAllocation> MaterialAllocation { get; set; }
         public virtual DbSet<MonthPlan> MonthPlan { get; set; }
         public virtual DbSet<OutsourcePartRequest> OutsourcePartRequest { get; set; }
         public virtual DbSet<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }
@@ -76,6 +78,24 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             modelBuilder.Entity<DraftData>(entity =>
             {
                 entity.HasKey(e => new { e.ObjectTypeId, e.SubsidiaryId, e.ObjectId });
+            });
+
+            modelBuilder.Entity<IgnoreAllocation>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductionOrderId, e.InventoryCode, e.ProductId });
+
+                entity.Property(e => e.InventoryCode).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<MaterialAllocation>(entity =>
+            {
+                entity.Property(e => e.AllocationQuantity).HasColumnType("decimal(32, 16)");
+
+                entity.Property(e => e.InventoryCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.SourceQuantity).HasColumnType("decimal(32, 16)");
             });
 
             modelBuilder.Entity<MonthPlan>(entity =>
