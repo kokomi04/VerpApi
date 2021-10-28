@@ -10,14 +10,18 @@ namespace VErp.Commons.Enums.E_Invoice
         [Description("Tạo hóa đơn")]
         Create = 1,
         [Description("Điều chỉnh hóa đơn")]
-        Modify = 2,
+        Adjust = 2,
         [Description("Xem hóa đơn (html)")]
         GetHtml = 3,
         [Description("Xem hóa đơn (pdf)")]
         GetPdf = 4,
         [Description("Phát hành hóa đơn")]
-        Publish = 5,
+        Issue = 5,
         [Description("Phát hành hóa đơn tạm")]
-        PublishTemp = 6,
+        IssueTemp = 6,
+        [Description("Thay thế hóa đơn")]
+        Replace = 7,
+        [Description("Hủy bỏ hóa đơn")]
+        Cancel = 6,
     }
 }
