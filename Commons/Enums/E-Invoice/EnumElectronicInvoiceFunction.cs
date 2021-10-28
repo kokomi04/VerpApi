@@ -22,6 +22,6 @@ namespace VErp.Commons.Enums.E_Invoice
         [Description("Thay thế hóa đơn")]
         Replace = 7,
         [Description("Hủy bỏ hóa đơn")]
-        Cancel = 6,
+        Cancel = 8,
     }
 }
