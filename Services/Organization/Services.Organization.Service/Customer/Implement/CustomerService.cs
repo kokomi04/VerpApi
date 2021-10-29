@@ -28,6 +28,8 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.Organization.Customer;
 using static Verp.Resources.Organization.Customer.CustomerValidationMessage;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
@@ -216,14 +218,44 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> DeleteCustomer(int customerId)
         {
+
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
             {
                 throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
             }
 
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                new SqlParameter("@CustomerId",customerId),
+                isInUsed
+            };
+
+            await _organizationContext.ExecuteStoreProcedure("asp_Customer_CheckUsed", checkParams);
+
+            if (isInUsed.Value as bool? == true)
+            {
+                throw CanNotDeleteCustomerWhichIsInUse.BadRequest(ProductErrorCode.ProductInUsed);
+            }
+
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             foreach (var c in customerContacts)
+            {
+                c.IsDeleted = true;
+                c.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
+
+            var customerBanks = await _organizationContext.CustomerBankAccount.Where(c => c.CustomerId == customerId).ToListAsync();
+            foreach (var c in customerBanks)
+            {
+                c.IsDeleted = true;
+                c.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
+
+
+            var customerFiles = await _organizationContext.CustomerAttachment.Where(c => c.CustomerId == customerId).ToListAsync();
+            foreach (var c in customerFiles)
             {
                 c.IsDeleted = true;
                 c.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -475,7 +507,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     c.IsDeleted = true;
                 }
             }
-            
+
 
             var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
             {
@@ -514,7 +546,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     ba.IsDeleted = true;
                 }
             }
-            
+
 
             var newBankAccounts = data.BankAccounts
                 .Where(ba => ba.BankAccountId <= 0)
