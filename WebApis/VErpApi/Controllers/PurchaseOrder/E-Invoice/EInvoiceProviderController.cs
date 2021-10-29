@@ -20,10 +20,10 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
 
         [HttpPost]
-        [Route("create")]
-        public async Task<bool> CreateElectronicInvoice([FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromQuery] long voucherBillId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        [Route("issue")]
+        public async Task<bool> CreateElectronicInvoice([FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromQuery] long voucherBillId)
         {
-            return await _easyInvoiceProviderService.CreateElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId, data);
+            return await _easyInvoiceProviderService.IssueElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId);
         }
 
         [HttpGet]
@@ -37,16 +37,9 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
         [HttpPut]
         [Route("adjust")]
-        public async Task<bool> ModifyElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string ikey, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ModifyElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string ikey, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
         {
-            return await _easyInvoiceProviderService.ModifyElectronicInvoice(voucherBillId, ikey, pattern, serial, voucherTypeId, data);
-        }
-
-        [HttpPut]
-        [Route("issue")]
-        public async Task<bool> PublishElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string ikey, [FromQuery] string pattern, [FromQuery] string serial)
-        {
-            return await _easyInvoiceProviderService.PublishElectronicInvoice(voucherBillId, ikey, pattern, serial);
+            return await _easyInvoiceProviderService.ModifyElectronicInvoice(voucherBillId, ikey, pattern, serial, voucherTypeId);
         }
 
         [HttpPut]
@@ -58,9 +51,9 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
         [HttpPut]
         [Route("replace")]
-        public async Task<bool> ReplaceElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string ikey, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ReplaceElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string ikey, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
         {
-            return await _easyInvoiceProviderService.ReplaceElectronicInvoice(voucherBillId, ikey, pattern, serial, voucherTypeId, data);
+            return await _easyInvoiceProviderService.ReplaceElectronicInvoice(voucherBillId, ikey, pattern, serial, voucherTypeId);
         }
 
     }
