@@ -61,6 +61,15 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Không thể xóa khách hàng đang được sử dụng.
+        /// </summary>
+        public static string CanNotDeleteCustomerWhichIsInUse {
+            get {
+                return ResourceManager.GetString("CanNotDeleteCustomerWhichIsInUse", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy tiền tệ {0}.
         /// </summary>
         public static string CurrencyNotFound {
