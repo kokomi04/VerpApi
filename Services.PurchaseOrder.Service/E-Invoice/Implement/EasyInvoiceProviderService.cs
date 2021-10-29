@@ -33,8 +33,8 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         Task<bool> CancelElectronicInvoice(long voucherBillId, string ikey, string pattern, string serial);
         Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data);
         Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string ikey, string pattern, string serial, int option);
-        Task<bool> ModifyElectronicInvoice(long voucherBillId, string ikey, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
-        Task<bool> ReplaceElectronicInvoice(long voucherBillId, string ikey, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
+        Task<bool> ModifyElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
+        Task<bool> ReplaceElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
     }
 
     public class EasyInvoiceProviderService : IEasyInvoiceProviderService
@@ -44,14 +44,16 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         private readonly ObjectActivityLogFacade _objectActivityLog;
         private readonly IHttpClientFactoryService _httpClient;
         private readonly IVoucherDataService _voucherDataService;
+        private readonly ICurrentContextService _currentContextService;
 
-        public EasyInvoiceProviderService(IHttpClientFactoryService httpClient, PurchaseOrderDBContext purchaseOrderDBContext, IMapper mapper, IActivityLogService activityLogService, IVoucherDataService voucherDataService)
+        public EasyInvoiceProviderService(IHttpClientFactoryService httpClient, PurchaseOrderDBContext purchaseOrderDBContext, IMapper mapper, IActivityLogService activityLogService, IVoucherDataService voucherDataService, ICurrentContextService currentContextService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _mapper = mapper;
             _objectActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.EasyInvoiceProvider);
             _httpClient = httpClient;
             _voucherDataService = voucherDataService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data)
@@ -99,7 +101,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             return await Task.FromResult(true);
         }
 
-        public async Task<bool> ModifyElectronicInvoice(long voucherBillId, string ikey, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ModifyElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
             var mappingEntity = await _purchaseOrderDBContext.ElectronicInvoiceMapping.FirstOrDefaultAsync(x =>
@@ -122,6 +124,11 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (functionConfig == null)
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
+            if(!data.Any(x=> x.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_PARENT) && x[VoucherConstants.VOUCHER_E_INVOICE_PARENT] != null))
+                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceParent.BadRequest();
+
+            var voucherParentCode = data.FirstOrDefault()[VoucherConstants.VOUCHER_E_INVOICE_PARENT] as string;
+
             string xmlData = GetXmlDataOfModifyEInvoice(mappingFields, functionConfig, data);
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/adjustInvoice";
 
@@ -130,7 +137,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 XmlData = xmlData,
                 Pattern = pattern,
                 Serial = serial,
-                Ikey = ikey
+                Ikey = voucherParentCode
             }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password), errorHandler: EasyInvoiceErrorHandler);
 
             if (responseData.Status != 2)
@@ -143,7 +150,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             return true;
         }
 
-        public async Task<bool> ReplaceElectronicInvoice(long voucherBillId, string ikey, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ReplaceElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
             var mappingEntity = await _purchaseOrderDBContext.ElectronicInvoiceMapping.FirstOrDefaultAsync(x =>
@@ -166,6 +173,11 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (functionConfig == null)
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
+            if (!data.Any(x => x.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_PARENT) && x[VoucherConstants.VOUCHER_E_INVOICE_PARENT] != null))
+                throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceParent.BadRequest();
+
+            var voucherParentCode = data.FirstOrDefault()[VoucherConstants.VOUCHER_E_INVOICE_PARENT] as string;
+
             string xmlData = GetXmlDataOfReplaceEInvoice(mappingFields, functionConfig, data);
 
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/replaceInvoices";
@@ -173,7 +185,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
                 XmlData = xmlData,
-                Ikey = ikey,
+                Ikey = voucherParentCode,
                 Pattern = pattern,
                 Serial = serial
             }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password), errorHandler: EasyInvoiceErrorHandler);
@@ -341,6 +353,10 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                     ValidAndAppendChildXml(field, doc, voucherData, mapFieldInfo, body);
                 }
 
+                XmlElement typeAdjust = doc.CreateElement("Type");
+                typeAdjust.AppendChild(doc.CreateTextNode("2"));
+                body.AppendChild(typeAdjust);
+                
                 var mapFieldDetail = mappingFields.MappingFields.Details.ToDictionary(k => k.DestinationField, v => v.SourceField);
                 for (int v = 0; v < voucherData.Count(); v++)
                 {
@@ -414,8 +430,8 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             if (field.DataTypeId == EnumDataType.Date)
             {
-                long valueInNumber = long.Parse(value?.ToString());
-                value = valueInNumber.UnixToDateTime()?.ToString("dd/MM/yyyy");
+                long? valueInNumber = long.Parse(value?.ToString());
+                value = valueInNumber.UnixToDateTime(_currentContextService.TimeZoneOffset)?.ToString("dd/MM/yyyy");
             }
 
             XmlElement element = doc.CreateElement(field.FieldName);
@@ -456,6 +472,9 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         private ApiErrorResponse EasyInvoiceErrorHandler(string response)
         {
             var result = response.JsonDeserialize<EasyInvoiceResponseModel>();
+
+            if(result.Data == null)
+                return new ApiErrorResponse() { Message = result.Message };
 
             if (result.Data.KeyInvoiceMsg.Count > 0)
                 return new ApiErrorResponse() { Message = result.Data.KeyInvoiceMsg.FirstOrDefault().Value };
