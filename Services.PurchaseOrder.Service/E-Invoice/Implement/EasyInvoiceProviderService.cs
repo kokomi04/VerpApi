@@ -181,7 +181,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             string xmlData = GetXmlDataOfReplaceEInvoice(mappingFields, functionConfig, data);
 
-            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/replaceInvoices";
+            var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/replaceInvoice";
 
             var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
@@ -436,6 +436,8 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         {
 
             var sourceField = mapFieldDetail.ContainsKey(field.FieldName) ? mapFieldDetail[field.FieldName] : "";
+
+            if(string.IsNullOrWhiteSpace(sourceField)) return;
 
             var value = !string.IsNullOrWhiteSpace(sourceField) ? voucherData.ElementAt(0)[sourceField] : "";
 
