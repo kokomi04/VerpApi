@@ -353,9 +353,9 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                     ValidAndAppendChildXml(field, doc, voucherData, mapFieldInfo, body);
                 }
 
-                XmlElement typeAdjust = doc.CreateElement("Type");
-                typeAdjust.AppendChild(doc.CreateTextNode("2"));
-                body.AppendChild(typeAdjust);
+                // XmlElement typeAdjust = doc.CreateElement("Type");
+                // typeAdjust.AppendChild(doc.CreateTextNode("2"));
+                // body.AppendChild(typeAdjust);
                 
                 var mapFieldDetail = mappingFields.MappingFields.Details.ToDictionary(k => k.DestinationField, v => v.SourceField);
                 for (int v = 0; v < voucherData.Count(); v++)
