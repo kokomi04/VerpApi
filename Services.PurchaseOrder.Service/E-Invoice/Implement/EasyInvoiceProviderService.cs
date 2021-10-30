@@ -31,10 +31,10 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
     public interface IEasyInvoiceProviderService
     {
         Task<bool> CancelElectronicInvoice(long voucherBillId, string voucherBillCode, string pattern, string serial);
-        Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data);
+        Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId);
         Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string voucherBillCode, string pattern, string serial, int option);
-        Task<bool> ModifyElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
-        Task<bool> ReplaceElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
+        Task<bool> ModifyElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId);
+        Task<bool> ReplaceElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId);
     }
 
     public class EasyInvoiceProviderService : IEasyInvoiceProviderService
@@ -56,7 +56,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             _currentContextService = currentContextService;
         }
 
-        public async Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
             var mappingEntity = await _purchaseOrderDBContext.ElectronicInvoiceMapping.FirstOrDefaultAsync(x =>
@@ -79,8 +79,9 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (functionConfig == null)
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
+            var voucherData = await _voucherDataService.GetVoucherBillInfoRows((int)voucherTypeId, voucherBillId, "", false, 0, 0);
 
-            string xmlData = GetXmlDataOfCreateEInvoice(mappingFields, functionConfig, data);
+            string xmlData = GetXmlDataOfCreateEInvoice(mappingFields, functionConfig, voucherData.List);
             // var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/importInvoice";
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/publish/importAndIssueInvoice";
 
@@ -101,7 +102,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             return await Task.FromResult(true);
         }
 
-        public async Task<bool> ModifyElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ModifyElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
             var mappingEntity = await _purchaseOrderDBContext.ElectronicInvoiceMapping.FirstOrDefaultAsync(x =>
@@ -124,12 +125,17 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (functionConfig == null)
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
-            if(!data.Any(x=> x.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_PARENT) && x[VoucherConstants.VOUCHER_E_INVOICE_PARENT] != null))
+            var voucherData = await _voucherDataService.GetVoucherBillInfoRows((int)voucherTypeId, voucherBillId, "", false, 0, 0);
+
+            if(voucherData.Total == 0)
+                throw ElectronicInvoiceProviderErrorCode.NotFoundXmlData.BadRequest();
+
+            if (!voucherData.List.Any(x => x.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_PARENT) && x[VoucherConstants.VOUCHER_E_INVOICE_PARENT] != null))
                 throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceParent.BadRequest();
 
-            var voucherParentCode = data.FirstOrDefault()[VoucherConstants.VOUCHER_E_INVOICE_PARENT] as string;
+            var voucherParentCode = voucherData.List.FirstOrDefault()[VoucherConstants.VOUCHER_E_INVOICE_PARENT] as string;
 
-            string xmlData = GetXmlDataOfModifyEInvoice(mappingFields, functionConfig, data);
+            string xmlData = GetXmlDataOfModifyEInvoice(mappingFields, functionConfig, voucherData.List);
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/adjustInvoice";
 
             var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
@@ -151,7 +157,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             return true;
         }
 
-        public async Task<bool> ReplaceElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ReplaceElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
             var mappingEntity = await _purchaseOrderDBContext.ElectronicInvoiceMapping.FirstOrDefaultAsync(x =>
@@ -174,12 +180,17 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (functionConfig == null)
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
-            if (!data.Any(x => x.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_PARENT) && x[VoucherConstants.VOUCHER_E_INVOICE_PARENT] != null))
+            var voucherData = await _voucherDataService.GetVoucherBillInfoRows((int)voucherTypeId, voucherBillId, "", false, 0, 0);
+            
+            if (voucherData.Total == 0)
+                throw ElectronicInvoiceProviderErrorCode.NotFoundXmlData.BadRequest();
+
+            if (!voucherData.List.Any(x => x.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_PARENT) && x[VoucherConstants.VOUCHER_E_INVOICE_PARENT] != null))
                 throw ElectronicInvoiceMappingErrorCode.NotFoundElectronicInvoiceParent.BadRequest();
 
-            var voucherParentCode = data.FirstOrDefault()[VoucherConstants.VOUCHER_E_INVOICE_PARENT] as string;
+            var voucherParentCode = voucherData.List.FirstOrDefault()[VoucherConstants.VOUCHER_E_INVOICE_PARENT] as string;
 
-            string xmlData = GetXmlDataOfReplaceEInvoice(mappingFields, functionConfig, data);
+            string xmlData = GetXmlDataOfReplaceEInvoice(mappingFields, functionConfig, voucherData.List);
 
             var uri = $"{config.EasyInvoiceConnection.HostName.TrimEnd('/')}/api/business/replaceInvoice";
 

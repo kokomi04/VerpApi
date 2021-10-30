@@ -21,9 +21,9 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
         [HttpPost]
         [Route("issue")]
-        public async Task<bool> CreateElectronicInvoice([FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromQuery] long voucherBillId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> CreateElectronicInvoice([FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromQuery] long voucherBillId)
         {
-            return await _easyInvoiceProviderService.IssueElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId, data);
+            return await _easyInvoiceProviderService.IssueElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId);
         }
 
         [HttpGet]
@@ -37,9 +37,9 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
         [HttpPut]
         [Route("adjust")]
-        public async Task<bool> ModifyElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ModifyElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
         {
-            return await _easyInvoiceProviderService.ModifyElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId, data);
+            return await _easyInvoiceProviderService.ModifyElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId);
         }
 
         [HttpPut]
@@ -51,9 +51,9 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
         [HttpPut]
         [Route("replace")]
-        public async Task<bool> ReplaceElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        public async Task<bool> ReplaceElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
         {
-            return await _easyInvoiceProviderService.ReplaceElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId, data);
+            return await _easyInvoiceProviderService.ReplaceElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId);
         }
 
     }
