@@ -30,9 +30,9 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 {
     public interface IEasyInvoiceProviderService
     {
-        Task<bool> CancelElectronicInvoice(long voucherBillId, string ikey, string pattern, string serial);
+        Task<bool> CancelElectronicInvoice(long voucherBillId, string voucherBillCode, string pattern, string serial);
         Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId, IEnumerable<NonCamelCaseDictionary> data);
-        Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string ikey, string pattern, string serial, int option);
+        Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string voucherBillCode, string pattern, string serial, int option);
         Task<bool> ModifyElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
         Task<bool> ReplaceElectronicInvoice(long voucherBillId, string pattern, string serial, long voucherTypeId, IEnumerable<NonCamelCaseDictionary> data);
     }
@@ -146,6 +146,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             var invoiceData = responseData.Data.Invoices.FirstOrDefault();
 
             await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData);
+            await UpdateEInvoiceStatus(voucherParentCode, EnumElectronicInvoiceStatus.EInvoiceAdjusted);
 
             return true;
         }
@@ -197,10 +198,11 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData);
 
+            await UpdateEInvoiceStatus(voucherParentCode, EnumElectronicInvoiceStatus.EInvoiceReplaced);
             return true;
         }
 
-        public async Task<bool> CancelElectronicInvoice(long voucherBillId, string ikey, string pattern, string serial)
+        public async Task<bool> CancelElectronicInvoice(long voucherBillId, string voucherBillCode, string pattern, string serial)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
 
@@ -219,7 +221,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var responseData = await _httpClient.Post<EasyInvoiceResponseModel>(uri, new EasyInvoiceRequestModel()
             {
-                Ikey = ikey,
+                Ikey = voucherBillCode,
                 Pattern = pattern,
                 Serial = serial
             }, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password), errorHandler: EasyInvoiceErrorHandler);
@@ -227,14 +229,12 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (responseData.Status != 2)
                 throw ElectronicInvoiceProviderErrorCode.EInvoiceProcessFailed.BadRequest(responseData.JsonSerialize());
 
-            var invoiceData = responseData.Data.Invoices.FirstOrDefault();
-
-            await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData);
+            await UpdateEInvoiceStatus(voucherBillCode, EnumElectronicInvoiceStatus.EInvoiceCanceled);
 
             return true;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string ikey, string pattern, string serial, int option)
+        public async Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string voucherBillCode, string pattern, string serial, int option)
         {
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
 
@@ -255,13 +255,13 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 Pattern = pattern,
                 Serial = serial,
                 Option = option,
-                Ikey = ikey
+                Ikey = voucherBillCode
             };
 
             var streamFile = await _httpClient.Download(uri, bodyData, request => EasyInvoiceAuthentication(request, nameof(HttpMethod.Post), config.EasyInvoiceConnection.UserName, config.EasyInvoiceConnection.Password));
 
 
-            return (streamFile, ikey, "application/pdf");
+            return (streamFile, voucherBillCode, "application/pdf");
         }
 
         #region private
@@ -282,6 +282,20 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_NUMBER}", invoiceData.No),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_STATUS}", ConvertEInvoiceStatusOfProviderIntoSystem(invoiceData.InvoiceStatus)),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_BILL_F_Id}", voucherBillId),
+            };
+
+            var _ = await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(exSql, sqlParams);
+        }
+
+        private async Task UpdateEInvoiceStatus(string voucherBillCode, EnumElectronicInvoiceStatus status)
+        {
+            var exSql = @$"UPDATE {VoucherConstants.VOUCHER_VALUE_ROW_TABLE} 
+            SET {VoucherConstants.VOUCHER_E_INVOICE_STATUS} = @{VoucherConstants.VOUCHER_E_INVOICE_STATUS}
+            WHERE {VoucherConstants.VOUCHER_BILL_CODE} = @{VoucherConstants.VOUCHER_BILL_CODE}
+            ";
+            var sqlParams = new SqlParameter[] {
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_STATUS}", status),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_BILL_CODE}", voucherBillCode),
             };
 
             var _ = await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(exSql, sqlParams);
