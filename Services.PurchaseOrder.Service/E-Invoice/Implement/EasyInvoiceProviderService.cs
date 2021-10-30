@@ -181,7 +181,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 throw ElectronicInvoiceConfigErrorCode.NotFoundElectronicInvoiceFunction.BadRequest();
 
             var voucherData = await _voucherDataService.GetVoucherBillInfoRows((int)voucherTypeId, voucherBillId, "", false, 0, 0);
-            
+
             if (voucherData.Total == 0)
                 throw ElectronicInvoiceProviderErrorCode.NotFoundXmlData.BadRequest();
 
@@ -460,9 +460,13 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 long? valueInNumber = long.Parse(value?.ToString());
                 value = valueInNumber.UnixToDateTime(_currentContextService.TimeZoneOffset)?.ToString("dd/MM/yyyy");
             }
+            else
+            {
+                value = field.DataTypeId.GetSqlValue(value);
+            }
 
             XmlElement element = doc.CreateElement(field.FieldName);
-            XmlText textValue = doc.CreateTextNode(value?.ToString());
+            XmlText textValue = doc.CreateTextNode( value?.ToString());
             element.AppendChild(textValue);
             parent.AppendChild(element);
         }
