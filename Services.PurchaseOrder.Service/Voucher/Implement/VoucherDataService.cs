@@ -1598,7 +1598,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     if (ignoreCopyInfoValues.Contains(item.Key))
                         continue;
 
-                    if (item.Key.IsVndColumn() || item.Key.IsNgoaiTeColumn())
+                    if (/* item.Key.IsVndColumn() || */ item.Key.IsNgoaiTeColumn())
                     {
                         ignoreCopyInfoValues.Add(item.Key);
                         continue;
