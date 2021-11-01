@@ -42,7 +42,7 @@ namespace VErp.Commons.Enums.MasterEnum
         BigInt = 8,
         [Description("Decimal")]
         [DataSize(-1)]
-        [Regex("^(\\-|\\+)?(?(1)[0-9]*(?:\\.[0-9]*)|[0-9]*(?:\\.[0-9]*)*)$")]
+        [Regex("^(\\-|\\+)?(?(1)[0-9]*(?:\\.[0-9]*)*|[0-9]*(?:\\.[0-9]*)*)*$")]
         Decimal = 9,
 
         [Description("Tháng")]
