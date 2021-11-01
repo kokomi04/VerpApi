@@ -19,5 +19,6 @@ namespace ActivityLogDB
         public string Message { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public string IpAddress { get; set; }
     }
 }

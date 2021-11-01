@@ -29,6 +29,8 @@ namespace ActivityLogDB
 
             modelBuilder.Entity<UserActivityLog>(entity =>
             {
+                entity.Property(e => e.IpAddress).HasMaxLength(128);
+
                 entity.Property(e => e.Message).HasMaxLength(512);
 
                 entity.Property(e => e.MessageResourceFormatData).HasMaxLength(512);

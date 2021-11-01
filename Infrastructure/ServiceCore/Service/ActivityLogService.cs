@@ -192,6 +192,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ObjectId = objectId,
                     SubsidiaryId = _currentContext.SubsidiaryId,
                     MessageTypeId = EnumMessageType.ActivityLog,
+                    IpAddress = _currentContext.IpAddress,
                     MessageResourceName = messageResourceName,
                     MessageResourceFormatData = messageResourceFormatData,
                     Message = message,

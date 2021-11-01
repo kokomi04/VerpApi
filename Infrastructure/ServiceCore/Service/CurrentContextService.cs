@@ -81,6 +81,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private RoleInfo _roleInfo;
         private string _language;
 
+        private string _ipAddress;
+
         public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
             , ILogger<HttpCurrentContextService> logger
@@ -138,6 +140,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 _language = language;
             }
 
+            if (headers.TryGetValue(Headers.XForwardedFor, out var xForwardedFor))
+            {
+                _ipAddress = xForwardedFor;
+            }
+
             if (userId > 0)
             {
                 _userId = userId;
@@ -181,7 +188,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             get
             {
                 if (!string.IsNullOrEmpty(_userName)) return _userName;
-              
+
                 var userInfo = _authDataCacheService.UserInfo(_userId).GetAwaiter().GetResult();
 
                 if (userInfo != null)
@@ -376,6 +383,20 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+
+        public string IpAddress
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_ipAddress))
+                    return _ipAddress;
+
+                _ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+                return _ipAddress;
+            }
+        }
+
         private T TryGetSet<T>(string key, Func<T> queryData)
         {
             return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
@@ -398,13 +419,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 currentContextService.StockIds,
                 currentContextService.SubsidiaryId,
                 currentContextService.TimeZoneOffset,
-                currentContextService.Language
+                currentContextService.Language,
+                currentContextService.IpAddress
         )
         {
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language)
+        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language, string ipAddress)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
@@ -413,6 +435,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             StockIds = stockIds == null ? null : stockIds.JsonSerialize().JsonDeserialize<List<int>>();
             TimeZoneOffset = timeZoneOffset;
             Language = language;
+            IpAddress = ipAddress;
         }
 
         public void SetSubsidiaryId(int subsidiaryId)
@@ -428,5 +451,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public int? TimeZoneOffset { get; }
         public bool IsDeveloper { get; } = false;
         public string Language { get; }
+        public string IpAddress { get; }
     }
 }
