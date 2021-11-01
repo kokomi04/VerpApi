@@ -578,7 +578,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action, long voucherBillId = 0)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -590,7 +590,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@Action", (int)action),
                     resultParam,
                     messageParam,
-                    new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
+                    new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" },
+                    new SqlParameter("@VoucherBillId", voucherBillId)
                 };
 
                 resultData = (await _purchaseOrderDBContext.QueryDataTable(script, parammeters)).ConvertData();
@@ -1038,13 +1039,17 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
+                var billInfo = await _purchaseOrderDBContext.VoucherBill.FirstOrDefaultAsync(b => b.VoucherTypeId == voucherTypeId && b.FId == voucherValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
+
+                if (billInfo == null) throw BillNotFound.BadRequest();
+
                 // Get all fields
                 var voucherFields = _purchaseOrderDBContext.VoucherField
                  .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Update);
+                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Update, billInfo.FId);
                 if (result.Code != 0)
                 {
                     if (string.IsNullOrWhiteSpace(result.Message))
@@ -1055,10 +1060,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                     }
                 }
-                var billInfo = await _purchaseOrderDBContext.VoucherBill.FirstOrDefaultAsync(b => b.VoucherTypeId == voucherTypeId && b.FId == voucherValueBillId && b.SubsidiaryId == _currentContextService.SubsidiaryId);
-
-                if (billInfo == null) throw BillNotFound.BadRequest();
-
 
                 await DeleteVoucherBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1366,7 +1367,18 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Delete);
+                var result =  await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Delete, billInfo.FId);
+
+                if (result.Code != 0)
+                {
+                    if (string.IsNullOrWhiteSpace(result.Message))
+                        throw ProcessActionResultErrorCode.BadRequestFormat(result.Code);
+                    else
+                    {
+                        throw result.Message.BadRequest();
+
+                    }
+                }
 
                 await DeleteVoucherBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
