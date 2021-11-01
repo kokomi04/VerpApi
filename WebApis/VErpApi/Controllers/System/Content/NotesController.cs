@@ -45,7 +45,7 @@ namespace VErpApi.Controllers.System
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _activityService.CreateUserActivityLog(req.ObjectId, (int)req.ObjectTypeId, UserId, SubsidiaryId, (int)EnumActionType.View, EnumMessageType.Comment, req.Message, billTypeId: req.BillTypeId);
+            return await _activityService.AddNote(req.BillTypeId, req.ObjectId, (int)req.ObjectTypeId, req.Message);
         }
 
         [HttpGet]

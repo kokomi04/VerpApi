@@ -14,6 +14,7 @@ using Verp.Resources;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -32,6 +33,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly ILogger _logger;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly IActivityLogService _activityLogService;
+        private readonly ICurrentContextService _currentContextService;
 
         public ActivityService(ActivityLogDBContext activityLogContext
             , IUserService userService
@@ -39,6 +41,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             , ILogger<ActivityService> logger
             , IAsyncRunnerService asyncRunnerService
             , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService
             )
         {
             _activityLogContext = activityLogContext;
@@ -47,6 +50,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _logger = logger;
             _asyncRunnerService = asyncRunnerService;
             _activityLogService = activityLogService;
+            _currentContextService = currentContextService;
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -70,7 +74,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     Message = input.Message,
                     MessageResourceName = input.MessageResourceName,
                     MessageResourceFormatData = input.MessageResourceFormatData,
-                    SubsidiaryId = input.SubsidiaryId
+                    SubsidiaryId = input.SubsidiaryId,
+                    IpAddress = input.IpAddress,
                 };
 
                 await _activityLogContext.UserActivityLog.AddAsync(activity);
@@ -95,21 +100,22 @@ namespace VErp.Services.Master.Service.Activity.Implement
             }
         }
 
-        public async Task<bool> CreateUserActivityLog(long objectId, int objectTypeId, int userId, int subsidiaryId, int actionTypeId, EnumMessageType messageTypeId, string message, string messageResourceName = null, string messageResourceFormatData = null, int? billTypeId = null)
+        public async Task<bool> AddNote(int? billTypeId, long objectId, int objectTypeId, string message)
         {
             var activity = new UserActivityLog()
             {
-                UserId = userId,
+                UserId = _currentContextService.UserId,
                 BillTypeId = billTypeId,
                 ObjectTypeId = objectTypeId,
                 ObjectId = objectId,
-                ActionId = actionTypeId,
-                MessageTypeId = (int)messageTypeId,
+                ActionId = (int)EnumActionType.View,
+                MessageTypeId = (int)EnumMessageType.Comment,
                 Message = message,
-                MessageResourceName = messageResourceName,
-                MessageResourceFormatData = messageResourceFormatData,
+                MessageResourceName = string.Empty,
+                MessageResourceFormatData = string.Empty,
                 CreatedDatetimeUtc = DateTime.UtcNow,
-                SubsidiaryId = subsidiaryId
+                SubsidiaryId = _currentContextService.SubsidiaryId,
+                IpAddress = _currentContextService.IpAddress
             };
 
             await _activityLogContext.UserActivityLog.AddAsync(activity);
@@ -117,6 +123,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
             return true;
         }
+        
 
         public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
@@ -159,8 +166,6 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     {
                         _logger.LogError(e, "ResourceFormat {0}", format);
                     }
-
-
                 }
 
                 userInfos.TryGetValue(item.UserId, out var userInfo);
@@ -176,7 +181,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     MessageTypeId = (EnumMessageType)item.MessageTypeId,
                     //MessageResourceName = item.MessageResourceName,
                     //MessageResourceFormatData = item.MessageResourceFormatData,
-                    SubsidiaryId = item.SubsidiaryId
+                    SubsidiaryId = item.SubsidiaryId,
+                    IpAddress = item.IpAddress
                 };
                 result.Add(actLogOutput);
             }

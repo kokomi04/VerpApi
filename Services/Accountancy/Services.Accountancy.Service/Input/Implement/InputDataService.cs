@@ -905,8 +905,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         info.Data.TryGetValue(fieldName, out filterValue);
                     }
-                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+                    if (!string.IsNullOrEmpty(filterValue) && !string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                     {
+                        if (filterValue.Length < start)
+                        {
+                            //TODO: Validate message
+                            throw new BadRequestException($"Invalid value sustring {filterValue} start {start}, length {length}");
+                        }
+
                         filterValue = filterValue.Substring(start, length);
                     }
                     if (string.IsNullOrEmpty(filterValue))
@@ -2115,8 +2121,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     {
                                         info.TryGetValue(fieldName, out filterValue);
                                     }
-                                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+
+
+                                    if (!string.IsNullOrWhiteSpace(filterValue) && !string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                                     {
+                                        if (filterValue.Length < start)
+                                        {
+                                            //TODO: Validate message
+                                            throw new BadRequestException($"Invalid value sustring {filterValue} start {start}, length {length}");
+                                        }
                                         filterValue = filterValue.Substring(start, length);
                                     }
 
