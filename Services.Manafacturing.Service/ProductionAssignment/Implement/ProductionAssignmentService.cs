@@ -218,7 +218,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                     .Select(r => r.ProductionStepLinkData.ObjectId)
                     .ToList();
-                if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
+                if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && r.DepartmentId.HasValue && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
                     || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
@@ -452,7 +452,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                     .Select(r => r.ProductionStepLinkData.ObjectId)
                     .ToList();
-            if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
+            if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && r.DepartmentId.HasValue && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
                 || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
