@@ -1598,7 +1598,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     if (ignoreCopyInfoValues.Contains(item.Key))
                         continue;
 
-                    if (/* item.Key.IsVndColumn() || */ item.Key.IsNgoaiTeColumn())
+                    if (item.Key.IsVndColumn() || item.Key.IsNgoaiTeColumn())
                     {
                         ignoreCopyInfoValues.Add(item.Key);
                         continue;
@@ -1667,7 +1667,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
 
             //Create addition reciprocal sales
-            if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))
+            if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value)))
             {
                 var dataRow = NewVoucherBillVersionRow(dataTable, voucherTypeId, billInfo.FId, billInfo.LatestBillVersion, true);
 
