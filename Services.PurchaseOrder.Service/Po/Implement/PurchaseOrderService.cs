@@ -570,6 +570,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchaseOrderType = info.PurchaseOrderType,
 
                 TaxInPercent = info.TaxInPercent,
+                TaxInMoney = info.TaxInMoney,
                 CurrencyId = info.CurrencyId,
                 ExchangeRate = info.ExchangeRate,
 
