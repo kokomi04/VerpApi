@@ -39,6 +39,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         private readonly IMapper _mapper;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IUserHelperService _userHelperService;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ObjectActivityLogFacade _customerActivityLog;
 
         public CustomerService(OrganizationDBContext organizationContext
@@ -47,12 +48,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IUserHelperService userHelperService
-            )
+            , ICustomGenCodeHelperService customGenCodeHelperService)
         {
             _organizationContext = organizationContext;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
             _userHelperService = userHelperService;
+            _customGenCodeHelperService = customGenCodeHelperService;
             _customerActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Customer);
         }
 
@@ -163,6 +165,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers)
         {
+            var genCodeContexts = new List<GenerateCodeContext>();
+            var baseValueChains = new Dictionary<string, int>();
+
+            foreach (var c in customers)
+                genCodeContexts.Add(await GenerateCustomerCode(null, c, baseValueChains));
+            
             await ValidateCustomerModels(customers);
 
             var (customerEntities, originData, contacts, bankAccounts, attachments) = ConvertToCustomerEntities(customers);
@@ -204,6 +212,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             _organizationContext.SaveChanges();
 
+            foreach (var ctx in genCodeContexts)
+                await ctx.ConfirmCode();
             foreach (var c in originData)
             {
                 await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Create)
@@ -775,6 +785,23 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 CurrencyId = model.CurrencyId,
                 IsDeleted = false,
             };
+        }
+
+        private async Task<GenerateCodeContext> GenerateCustomerCode(int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
+        {
+            model.CustomerCode = (model.CustomerCode ?? "").Trim();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.Customer)
+                .SetConfigData(customerId ?? 0)
+                .TryValidateAndGenerateCode(_organizationContext.Customer, model.CustomerCode, (s, code) => s.CustomerId != customerId && s.CustomerCode == code);
+
+            model.CustomerCode = code;
+
+            return ctx;
+
         }
     }
 }
