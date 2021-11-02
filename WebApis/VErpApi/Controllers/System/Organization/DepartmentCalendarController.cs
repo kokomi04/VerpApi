@@ -64,9 +64,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{departmentId}/over-hour")]
-        public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo([FromRoute] int departmentId)
+        public async Task<PageData<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo([FromRoute] int departmentId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _departmentCalendarService.GetDepartmentOverHourInfo(departmentId);
+            return await _departmentCalendarService.GetDepartmentOverHourInfo(departmentId, page, size);
         }
 
         [HttpPost]
@@ -107,9 +107,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{departmentId}/increase")]
-        public async Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo([FromRoute] int departmentId)
+        public async Task<PageData<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo([FromRoute] int departmentId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _departmentCalendarService.GetDepartmentIncreaseInfo(departmentId);
+            return await _departmentCalendarService.GetDepartmentIncreaseInfo(departmentId, page, size);
         }
 
         [HttpPost]
