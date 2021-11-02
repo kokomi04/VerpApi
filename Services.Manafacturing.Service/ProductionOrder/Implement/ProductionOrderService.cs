@@ -408,10 +408,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds)
         {
+            var procDetails = _manufacturingDBContext.ProductionOrderDetail.AsQueryable();
+            if (productIds?.Count > 0)
+            {
+                procDetails = procDetails.Where(d => productIds.Contains(d.ProductId));
+            }
+
             return await (
                  from o in _manufacturingDBContext.ProductionOrder
-                 join d in _manufacturingDBContext.ProductionOrderDetail on o.ProductionOrderId equals d.ProductionOrderId
-                 where productIds.Contains(d.ProductId) && orderCodes.Contains(d.OrderCode)
+                 join d in procDetails on o.ProductionOrderId equals d.ProductionOrderId
+                 where orderCodes.Contains(d.OrderCode)
                  select new ProductionOrderDetailByOrder
                  {
                      ProductionOrderId = o.ProductionOrderId,
