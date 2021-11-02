@@ -19,11 +19,14 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using static VErp.Infrastructure.ServiceCore.Service.ActivityLogService;
+using VErp.Commons.Library.Formaters;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IActivityLogService
     {
+        object[] ParseActivityLogData(object[] objs);
+
         ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId);
 
         Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null);
@@ -87,6 +90,35 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+
+        const string ACTIVITY_LOG_DATA_PREFIX = "$DATA";
+        public object[] ParseActivityLogData(object[] objs)
+        {
+            if (objs == null) return null;
+
+            return objs.Select(obj =>
+            {
+                if (obj == null) return null;
+
+                if (obj.GetType() == typeof(string) && obj.ToString().StartsWith(ACTIVITY_LOG_DATA_PREFIX))
+                {
+                    var ts = obj.ToString().Split(':');
+                    var typeString = ts[0].Split('-')[1];
+                    var data = ts[1];
+                    if (int.TryParse(typeString, out var dataType))
+                    {
+                        switch ((EnumDataType)dataType)
+                        {
+                            case EnumDataType.Date:
+                                return long.Parse(data).UnixToDateTime().Value;
+                        }
+                    }
+                }
+                return obj;
+            }).ToArray();
+        }
+
+
         public async Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null)
         {
             var propertyInfo = ((MemberExpression)messageResourceName.Body).Member as PropertyInfo;
@@ -101,9 +133,22 @@ namespace VErp.Infrastructure.ServiceCore.Service
             if (messageResourceFormatData == null)
                 messageResourceFormatData = new object[0];
 
-            var message = messageResourceFormatData.Length > 0 ? string.Format(messageFormat, messageResourceFormatData) : messageFormat;
+            var data = messageResourceFormatData?.Select(d =>
+            {
+                if (d?.GetType() == typeof(DateTime))
+                {
+                    var dataType = (int)EnumDataType.Date;
+                    var date = ((DateTime)d).GetUnix();
+                    return $"{ACTIVITY_LOG_DATA_PREFIX}-{dataType}:{date}";
+                }
+                return d;
+            })?.ToArray();
 
-            return await CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, messageResourceFormatData.JsonSerialize(), billTypeId);
+            var formatData = ParseActivityLogData(data);
+
+            var message = messageResourceFormatData.Length > 0 ? string.Format(messageFormat, formatData) : messageFormat;
+
+            return await CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, data.JsonSerialize(), billTypeId);
         }
 
         public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId)
@@ -147,6 +192,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     ObjectId = objectId,
                     SubsidiaryId = _currentContext.SubsidiaryId,
                     MessageTypeId = EnumMessageType.ActivityLog,
+                    IpAddress = _currentContext.IpAddress,
                     MessageResourceName = messageResourceName,
                     MessageResourceFormatData = messageResourceFormatData,
                     Message = message,

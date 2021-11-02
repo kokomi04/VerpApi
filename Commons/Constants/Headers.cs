@@ -11,6 +11,9 @@ namespace VErp.Commons.Constants
         public const string TimeZoneOffset = "x-timezone-offset";
         public const string Language = "x-language";
         public const string Module = "x-module";
+
+        public const string XForwardedFor = "x-forwarded-for";
+
         public const string Authentication = "Authentication";
     }
 }

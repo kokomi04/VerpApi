@@ -1851,31 +1851,24 @@
       },
       "VErp.Commons.Enums/1.0.0": {
         "dependencies": {
-          "VErp.Commons.ObjectExtensions": "1.0.0"
+          "VErp.Commons.ObjectExtensions": "1.0.0",
+          "Verp.Resources": "1.0.0"
         },
         "runtime": {
           "VErp.Commons.Enums.dll": {}
-        },
-        "resources": {
-          "en-US/VErp.Commons.Enums.resources.dll": {
-            "locale": "en-US"
-          }
         }
       },
       "VErp.Commons.GlobalObject/1.0.0": {
         "dependencies": {
           "AutoMapper": "10.0.0",
+          "Newtonsoft.Json": "12.0.3",
           "System.ComponentModel.Annotations": "5.0.0",
           "VErp.Commons.Constants": "1.0.0",
-          "VErp.Commons.Enums": "1.0.0"
+          "VErp.Commons.Enums": "1.0.0",
+          "Verp.Resources": "1.0.0"
         },
         "runtime": {
           "VErp.Commons.GlobalObject.dll": {}
-        },
-        "resources": {
-          "en-US/VErp.Commons.GlobalObject.resources.dll": {
-            "locale": "en-US"
-          }
         }
       },
       "VErp.Commons.Library/1.0.0": {
@@ -1894,11 +1887,6 @@
         },
         "runtime": {
           "VErp.Commons.Library.dll": {}
-        },
-        "resources": {
-          "en-US/VErp.Commons.Library.resources.dll": {
-            "locale": "en-US"
-          }
         }
       },
       "VErp.Commons.ObjectExtensions/1.0.0": {
@@ -1918,6 +1906,16 @@
         },
         "runtime": {
           "VErp.Infrastructure.AppSettings.dll": {}
+        }
+      },
+      "Verp.Resources/1.0.0": {
+        "runtime": {
+          "Verp.Resources.dll": {}
+        },
+        "resources": {
+          "en-US/Verp.Resources.resources.dll": {
+            "locale": "en-US"
+          }
         }
       }
     }
@@ -3228,6 +3226,11 @@
       "sha512": ""
     },
     "VErp.Infrastructure.AppSettings/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Verp.Resources/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

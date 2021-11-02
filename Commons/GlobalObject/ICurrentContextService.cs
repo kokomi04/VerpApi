@@ -14,6 +14,7 @@ namespace VErp.Commons.GlobalObject
         int? TimeZoneOffset { get; }
         bool IsDeveloper { get; }
         string Language { get; }
+        string IpAddress { get; }
     }
 
     public static class CurrentContextServiceExtensions

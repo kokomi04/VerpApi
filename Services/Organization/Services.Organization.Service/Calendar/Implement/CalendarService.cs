@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Calendar;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization;
@@ -17,10 +18,13 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Calendar;
 using CalendarEntity = VErp.Infrastructure.EF.OrganizationDB.Calendar;
+using VErp.Commons.Library.Formaters;
+using static Verp.Resources.Organization.Calendar.CalendarValidationMessage;
 
 namespace VErp.Services.Organization.Service.Calendar.Implement
 {
@@ -32,6 +36,9 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly ICurrentContextService _currentContext;
+        private readonly ObjectActivityLogFacade _calendarActivityLog;
+
+
         public CalendarService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<CalendarService> logger
@@ -46,6 +53,8 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             _activityLogService = activityLogService;
             _mapper = mapper;
             _currentContext = currentContext;
+
+            _calendarActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Calendar);
         }
 
 
@@ -68,7 +77,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         }
         public async Task<CalendarModel> AddCalendar(CalendarModel data)
         {
-            if (string.IsNullOrEmpty(data.CalendarCode)) throw new BadRequestException(GeneralCode.InvalidParams, "Mã lịch làm việc không được để trống");
+            if (string.IsNullOrEmpty(data.CalendarCode)) throw EmptyCalendarCode.BadRequest();
 
             var calendar = await _organizationContext.Calendar.FirstOrDefaultAsync(d => d.CalendarCode == data.CalendarCode || d.CalendarName == data.CalendarName);
 
@@ -76,10 +85,10 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             {
                 if (string.Compare(calendar.CalendarCode, data.CalendarCode, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã lịch làm việc đã tồn tại");
+                    throw CalendarNameAlreadyExists.BadRequest();
                 }
 
-                throw new BadRequestException(GeneralCode.InvalidParams, "Tên lịch làm việc đã tồn tại");
+                throw CalendarNameAlreadyExists.BadRequest();
             }
 
             calendar = _mapper.Map<CalendarEntity>(data);
@@ -87,8 +96,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             await _organizationContext.Calendar.AddAsync(calendar);
             await _organizationContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Calendar, calendar.CalendarId, $"Thêm lịch làm việc {calendar.CalendarCode}", data.JsonSerialize());
             data.CalendarId = calendar.CalendarId;
+
+            await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Create)
+                .MessageResourceFormatDatas(calendar.CalendarCode)
+                .ObjectId(calendar.CalendarId)
+                .JsonData(data.JsonSerialize())
+                .CreateLog();
 
             return data;
         }
@@ -117,7 +131,12 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             _mapper.Map(data, calendar);
 
             await _organizationContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Calendar, calendarId, $"Cập nhật lịch làm việc {calendar.CalendarCode}", data.JsonSerialize());
+
+            await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Update)
+                .MessageResourceFormatDatas(calendar.CalendarCode)
+                .ObjectId(calendar.CalendarId)
+                .JsonData(data.JsonSerialize())
+                .CreateLog();
 
             return data;
         }
@@ -157,7 +176,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 _organizationContext.SaveChanges();
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, calendarId, $"Xóa lịch làm việc {calendar.CalendarName}", calendar.JsonSerialize());
+
+                await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Delete)
+                    .MessageResourceFormatDatas(calendar.CalendarCode)
+                    .ObjectId(calendar.CalendarId)
+                    .JsonData(calendar.JsonSerialize())
+                    .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -185,7 +210,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             var sourceCalendar = await _organizationContext.Calendar.FirstOrDefaultAsync(c => c.CalendarId == sourceCalendarId);
             if (sourceCalendar == null)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                throw CalendarDoesNotExists.BadRequest();
             }
             using var trans = await _organizationContext.Database.BeginTransactionAsync();
             try
@@ -206,7 +231,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 var sourceWorkingHourInfos = await _organizationContext.WorkingHourInfo
                     .Where(wh => wh.CalendarId == sourceCalendarId)
                     .ToListAsync();
-                foreach(var sourceWorkingHourInfo in sourceWorkingHourInfos)
+                foreach (var sourceWorkingHourInfo in sourceWorkingHourInfos)
                 {
                     var cloneWorkingHourInfo = new WorkingHourInfo
                     {
@@ -236,7 +261,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 }
 
                 // Clone ngày nghỉ
-                var sourceDayOffs= await _organizationContext.DayOffCalendar
+                var sourceDayOffs = await _organizationContext.DayOffCalendar
                     .Where(dof => dof.CalendarId == sourceCalendarId)
                     .ToListAsync();
                 foreach (var sourceDayOff in sourceDayOffs)
@@ -252,8 +277,15 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 }
                 _organizationContext.SaveChanges();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, sourceCalendarId, $"Copy lịch làm việc từ lịch {sourceCalendar.CalendarName}", sourceCalendar.JsonSerialize());
                 var cloneCalendarModel = _mapper.Map<CalendarModel>(cloneCalendar);
+
+                await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Create)
+                 .MessageResourceFormatDatas(cloneCalendar.CalendarCode, sourceCalendar.CalendarCode)
+                 .ObjectId(cloneCalendar.CalendarId)
+                 .JsonData(cloneCalendarModel.JsonSerialize())
+                 .CreateLog();
+
+
                 return cloneCalendarModel;
             }
             catch (Exception ex)
@@ -376,6 +408,9 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
             return result;
         }
+
+
+
         public async Task<IList<DayOffCalendarModel>> GetDayOffCalendar(int calendarId, long startDate, long endDate)
         {
             var start = startDate.UnixToDateTime().Value;
@@ -427,7 +462,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     lstDayOff.Add(new DayOffCalendarModel
                     {
                         Day = day.GetUnix(),
-                        Content = "Nghỉ làm cố định trong tuần",
+                        Content = CalendarTitle.OffDayOfWeek,
                         DayOffType = EnumDayOffType.Weekend
                     });
                 }
@@ -444,14 +479,12 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
         }
 
 
-
-
         public async Task<DayOffCalendarModel> UpdateDayOff(int calendarId, DayOffCalendarModel data)
         {
             try
             {
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
                 var dayOff = await _organizationContext.DayOffCalendar
                 .FirstOrDefaultAsync(dof => dof.Day == data.Day.UnixToDateTime() && dof.CalendarId == calendarId);
                 if (dayOff == null)
@@ -466,7 +499,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 }
                 _organizationContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.DayOffCalendar, data.Day, $"Cập nhật ngày nghỉ {data.Day.UnixToDateTime()} cho lịch {calendar.CalendarName}", data.JsonSerialize());
+
+                await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.UpdateDayOff)
+                 .MessageResourceFormatDatas(data.Day.UnixToDateTime(), data.Content, calendar.CalendarCode)
+                 .ObjectId(calendar.CalendarId)
+                 .JsonData(data.JsonSerialize())
+                 .CreateLog();
+
                 return data;
             }
             catch (Exception ex)
@@ -482,12 +521,18 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             {
                 var time = day.UnixToDateTime().Value;
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
                 var dayOff = await _organizationContext.DayOffCalendar.FirstOrDefaultAsync(dof => dof.CalendarId == calendarId && dof.Day == time);
-                if (dayOff == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Ngày nghỉ không tồn tại");
+                if (dayOff == null) throw DayOffDoesNotExist.BadRequest();
                 _organizationContext.DayOffCalendar.Remove(dayOff);
                 _organizationContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.DayOffCalendar, day, $"Xóa ngày nghỉ {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} của lịch {calendar.CalendarName}", dayOff.JsonSerialize());
+
+                await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.DeleteDayOff)
+                .MessageResourceFormatDatas(time, dayOff.Content, calendar.CalendarCode)
+                .ObjectId(calendar.CalendarId)
+                .JsonData(dayOff.JsonSerialize())
+                .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -503,7 +548,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             try
             {
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
                 DateTime time = startDate.UnixToDateTime().Value;
                 var workingHourInfo = await _organizationContext.WorkingHourInfo.FirstOrDefaultAsync(wh => wh.CalendarId == calendarId && wh.StartDate == time);
@@ -525,7 +570,11 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _organizationContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Xóa thay đổi lịch làm việc ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} của lịch {calendar.CalendarName}", string.Empty);
+                await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.WeekCalendarDelete)
+                 .MessageResourceFormatDatas(time, calendar.CalendarCode)
+                 .ObjectId(calendar.CalendarId)
+                 .JsonData(workingWeeks.JsonSerialize())
+                 .CreateLog();
 
                 return true;
             }
@@ -545,20 +594,20 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             {
 
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
                 DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
 
                 if (_organizationContext.WorkingHourInfo.Any(wh => wh.CalendarId == calendarId && wh.StartDate == time)
                     || _organizationContext.WorkingWeekInfo.Any(ww => ww.CalendarId == calendarId && ww.StartDate == time))
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                    throw CalendarStartDateAlreadyExists.BadRequestFormat(time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
                 {
                     var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
-                    if (newWorkingWeek == null) throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin làm việc trong tuần chưa đủ");
+                    if (newWorkingWeek == null) throw MissingDaysOfWeek.BadRequest();
                 }
 
                 // Update workingHour per day
@@ -588,7 +637,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 _organizationContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Thêm mới thay đổi lịch làm việc ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} của lịch {calendar.CalendarName}", data.JsonSerialize());
+
+                await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.WeekCalendarCreate)
+                  .MessageResourceFormatDatas(time, calendar.CalendarCode)
+                  .ObjectId(calendar.CalendarId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
+
 
                 return await GetCurrentCalendar(calendarId);
             }
@@ -606,9 +661,9 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             try
             {
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == calendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
-                if (!data.StartDate.HasValue) throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày hiệu lực");
+                if (!data.StartDate.HasValue) throw MissingStartDate.BadRequest();
                 DateTime oldTime = oldDate.UnixToDateTime().Value;
                 DateTime time = data.StartDate.UnixToDateTime().Value;
 
@@ -617,7 +672,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                     if (_organizationContext.WorkingHourInfo.Any(wh => wh.CalendarId == calendarId && wh.StartDate == time)
                         || _organizationContext.WorkingWeekInfo.Any(ww => ww.CalendarId == calendarId && ww.StartDate == time))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Thay đổi lịch làm việc vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} đã tồn tại");
+                        throw CalendarStartDateAlreadyExists.BadRequestFormat(time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                     }
                 }
 
@@ -631,13 +686,13 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
                 if (currentWorkingHourInfo == null || currentWorkingWeeks.Count == 0)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tồn tại thay đổi lịch làm việc vào ngày {oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                    throw CalendarStartDateInvalid. BadRequestFormat(oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
                 {
                     var newWorkingWeek = data.WorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
-                    if (newWorkingWeek == null) throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin làm việc trong tuần chưa đủ");
+                    if (newWorkingWeek == null) throw MissingDaysOfWeek.BadRequest();
                 }
 
                 // Gỡ thông tin cũ
@@ -670,7 +725,11 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 _organizationContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Cập nhật thay đổi lịch làm việc ngày {oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")} của lịch {calendar.CalendarName}", data.JsonSerialize());
+                await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.WeekCalendarUpdate)
+                   .MessageResourceFormatDatas(time, calendar.CalendarCode)
+                   .ObjectId(calendar.CalendarId)
+                   .JsonData(data.JsonSerialize())
+                   .CreateLog();
 
                 return await GetCurrentCalendar(calendarId);
             }

@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
@@ -158,5 +161,24 @@ namespace VErpApi.Controllers.PurchaseOrder
                 .ConfigureAwait(true);
         }
 
+
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetFieldDataForMapping()
+        {
+            return _poProviderPricingService.GetFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("parseDetailsFromExcelMapping")]
+        public IAsyncEnumerable<PoProviderPricingOutputDetail> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null || mapping == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            mapping.FileName = file.FileName;
+            return _poProviderPricingService.ParseInvoiceDetails(mapping, file.OpenReadStream());
+        }
     }
 }

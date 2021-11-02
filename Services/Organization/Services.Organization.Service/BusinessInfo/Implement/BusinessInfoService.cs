@@ -3,12 +3,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.BussinessInfo;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using BusinessInfoEntity = VErp.Infrastructure.EF.OrganizationDB.BusinessInfo;
@@ -18,9 +20,8 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
     public class BusinessInfoService : IBusinessInfoService
     {
         private readonly OrganizationDBContext _organizationContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+
+        private readonly ObjectActivityLogFacade _bussinessInfoActivityLog;
 
         public BusinessInfoService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
@@ -28,10 +29,9 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
             , IActivityLogService activityLogService
             )
         {
-            _organizationContext = organizationContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
+            _organizationContext = organizationContext;        
+
+            _bussinessInfoActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.BusinessInfo);
         }
 
         public async Task<BusinessInfoModel> GetBusinessInfo()
@@ -93,7 +93,13 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
                 businessInfo.UpdatedUserId = updatedUserId;
             }
             await _organizationContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.BusinessInfo, businessInfo.BusinessInfoId, $"Cập nhật thông tin doanh nghiệp {businessInfo.CompanyName}", data.JsonSerialize());
+
+            await _bussinessInfoActivityLog.LogBuilder(() => BussinessActivityLogMessage.Update)
+                .MessageResourceFormatDatas(businessInfo.CompanyName)
+                .ObjectId(businessInfo.BusinessInfoId)
+                .JsonData(businessInfo.JsonSerialize())
+                .CreateLog();
+
             return true;
         }
     }

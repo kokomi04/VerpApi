@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Department;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -16,11 +17,14 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Calendar;
 using VErp.Services.Organization.Model.DepartmentCalendar;
 using DepartmentCalendarEntity = VErp.Infrastructure.EF.OrganizationDB.DepartmentCalendar;
+using static Verp.Resources.Organization.Department.DepartmentCalendarValidationMessage;
+using Verp.Resources.Organization.Calendar;
 
 namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 {
@@ -29,9 +33,11 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
         private readonly OrganizationDBContext _organizationContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly ICurrentContextService _currentContext;
+        private readonly ObjectActivityLogFacade _departmentActivityLog;
+
+
         public DepartmentCalendarService(OrganizationDBContext organizationContext
             , IOptions<AppSetting> appSetting
             , ILogger<DepartmentCalendarService> logger
@@ -43,9 +49,9 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             _organizationContext = organizationContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
             _currentContext = currentContext;
+            _departmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Department);
         }
         public async Task<IList<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId)
         {
@@ -70,16 +76,16 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phòng ban không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == data.CalendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
                 DateTime time = data.StartDate.HasValue ? data.StartDate.UnixToDateTime().Value : DateTime.UtcNow.Date;
 
                 if (_organizationContext.DepartmentCalendar.Any(dc => dc.DepartmentId == departmentId && dc.StartDate == time))
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                    throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 // Update Calendar
@@ -94,7 +100,11 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 _organizationContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.DepartmentCalendar, time.GetUnix(), $"Thêm mới thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}", data.JsonSerialize());
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentCalendarCreate)
+                .MessageResourceFormatDatas(calendar.CalendarCode, time, department.DepartmentCode)
+                .ObjectId(department.DepartmentId)
+                .JsonData(data.JsonSerialize())
+                .CreateLog();
 
                 return data;
             }
@@ -112,12 +122,12 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phòng ban không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == data.CalendarId);
-                if (calendar == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lịch làm việc không tồn tại");
+                if (calendar == null) throw CalendarDoesNotExists.BadRequest();
 
-                if (!data.StartDate.HasValue) throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày hiệu lực");
+                if (!data.StartDate.HasValue) throw StartDateMustHaveValue.BadRequest();
 
                 DateTime oldTime = oldDate.UnixToDateTime().Value;
                 DateTime time = data.StartDate.UnixToDateTime().Value;
@@ -126,7 +136,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 {
                     if (_organizationContext.DepartmentCalendar.Any(dc => dc.DepartmentId == departmentId && dc.StartDate == time))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                        throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                     }
                 }
 
@@ -136,7 +146,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 if (currentDepartmentCalendar == null)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tồn tại thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}");
+                    throw CalendarWithStartDateDoesNotExists.BadRequestFormat(department.DepartmentName, oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 // Gỡ thông tin cũ
@@ -154,8 +164,11 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 _organizationContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.DepartmentCalendar, time.GetUnix(), $"Cập nhật thay đổi lịch làm việc của tổ  {department.DepartmentName} vào ngày {oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}", data.JsonSerialize());
-
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentCalendarUpdate)
+                   .MessageResourceFormatDatas(calendar.CalendarCode, time, department.DepartmentCode)
+                   .ObjectId(department.DepartmentId)
+                   .JsonData(data.JsonSerialize())
+                   .CreateLog();
                 return data;
             }
             catch (Exception ex)
@@ -172,7 +185,9 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phòng ban không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
+
+
 
                 DateTime time = startDate.UnixToDateTime().Value;
                 var departmentCalendar = await _organizationContext.DepartmentCalendar.FirstOrDefaultAsync(dc => dc.DepartmentId == departmentId && dc.StartDate == time);
@@ -183,14 +198,20 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thay đổi lịch làm việc của tổ không tồn tại");
+                    throw CalendarWithStartDateDoesNotExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
+
                 }
+
+                var calendar = _organizationContext.Calendar.FirstOrDefault(c => c.CalendarId == departmentCalendar.CalendarId);
 
                 await _organizationContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.Calendar, time.GetUnix(), $"Xóa thay đổi lịch làm việc của tổ {department.DepartmentName} vào ngày {time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()).ToString("dd/MM/yyyy")}", string.Empty);
-
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentCalendarDelete)
+                 .MessageResourceFormatDatas(calendar?.CalendarCode, time, department.DepartmentCode)
+                 .ObjectId(department.DepartmentId)
+                 .JsonData(departmentCalendar.JsonSerialize())
+                 .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -200,88 +221,6 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 throw;
             }
         }
-
-
-        //public async Task<DepartmentWeekCalendarModel> GetCurrentDepartmentCalendar(int departmentId)
-        //{
-        //    var now = DateTime.UtcNow.Date;
-        //    double workingHourPerDay = 0;
-        //    var departmentWorkingHourInfo = await _organizationContext.DepartmentWorkingHourInfo
-        //        .Where(wh => wh.StartDate <= now && wh.DepartmentId == departmentId)
-        //        .OrderByDescending(wh => wh.StartDate)
-        //        .FirstOrDefaultAsync();
-
-        //    if (departmentWorkingHourInfo == null)
-        //    {
-        //        var workingHourInfo = await _organizationContext.WorkingHourInfo
-        //               .Where(wh => wh.StartDate <= now)
-        //               .OrderByDescending(wh => wh.StartDate)
-        //               .FirstOrDefaultAsync();
-        //        workingHourPerDay = workingHourInfo?.WorkingHourPerDay ?? OrganizationConstants.WORKING_HOUR_PER_DAY;
-        //    }
-        //    else
-        //    {
-        //        workingHourPerDay = departmentWorkingHourInfo.WorkingHourPerDay;
-        //    }
-
-        //    var departmentWorkingWeeks = await _organizationContext.DepartmentWorkingWeekInfo
-        //       .Where(ww => ww.StartDate <= now && ww.DepartmentId == departmentId)
-        //       .GroupBy(ww => ww.DayOfWeek)
-        //       .Select(g => new
-        //       {
-        //           DayOfWeek = g.Key,
-        //           StartDate = g.Max(ww => ww.StartDate)
-        //       })
-        //       .Join(_organizationContext.DepartmentWorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek, DepartmentId = departmentId }, ww => new { ww.StartDate, ww.DayOfWeek, ww.DepartmentId }, (w, ww) => ww)
-        //       .ProjectTo<DepartmentWorkingWeekInfoModel>(_mapper.ConfigurationProvider)
-        //       .ToListAsync();
-
-        //    if (departmentWorkingWeeks.Count == 0)
-        //    {
-        //        var workingWeeks = await _organizationContext.WorkingWeekInfo
-        //            .Where(ww => ww.StartDate <= now)
-        //            .GroupBy(ww => ww.DayOfWeek)
-        //            .Select(g => new
-        //            {
-        //                DayOfWeek = g.Key,
-        //                StartDate = g.Max(ww => ww.StartDate)
-        //            })
-        //            .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => ww)
-        //            .ToListAsync();
-
-        //        departmentWorkingWeeks = workingWeeks
-        //            .Select(ww => new DepartmentWorkingWeekInfoModel
-        //            {
-        //                DepartmentId = departmentId,
-        //                DayOfWeek = (DayOfWeek)ww.DayOfWeek,
-        //                IsDayOff = ww.IsDayOff
-        //            })
-        //            .ToList();
-        //    }
-
-
-        //    foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
-        //    {
-        //        if (!departmentWorkingWeeks.Any(d => d.DayOfWeek == day))
-        //        {
-        //            departmentWorkingWeeks.Add(new DepartmentWorkingWeekInfoModel
-        //            {
-        //                DepartmentId = departmentId,
-        //                DayOfWeek = day,
-        //                IsDayOff = false
-        //            });
-        //        }
-        //    }
-
-        //    DepartmentWeekCalendarModel result = new DepartmentWeekCalendarModel
-        //    {
-        //        DepartmentId = departmentId,
-        //        WorkingHourPerDay = workingHourPerDay,
-        //        DepartmentWorkingWeek = departmentWorkingWeeks
-        //    };
-
-        //    return result;
-        //}
 
         public async Task<IList<DepartmentCalendarListModel>> GetListDepartmentCalendar(int[] departmentIds, long startDate, long endDate)
         {
@@ -355,6 +294,11 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                .ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
                .ToListAsync();
 
+            // Lấy thông tin nhân sự tăng cường
+            var departmentIncreaseInfos = await _organizationContext.DepartmentIncreaseInfo
+               .Where(oh => departmentIds.Contains(oh.DepartmentId))
+               .ProjectTo<DepartmentIncreaseInfoModel>(_mapper.ConfigurationProvider)
+               .ToListAsync();
 
             var result = new List<DepartmentCalendarListModel>();
             foreach (var departmentId in departmentIds)
@@ -427,7 +371,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             lstDayOff.Add(new DayOffCalendarModel
                             {
                                 Day = day.GetUnix(),
-                                Content = "Nghỉ làm cố định trong tuần"
+                                Content = CalendarTitle.OffDayOfWeek
                             });
                         }
                     }
@@ -479,7 +423,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                     lstDayOff.Add(new DayOffCalendarModel
                                     {
                                         Day = day.GetUnix(),
-                                        Content = "Nghỉ làm cố định trong tuần"
+                                        Content = CalendarTitle.OffDayOfWeek
                                     });
                                 }
                             }
@@ -528,7 +472,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             lstDayOff.Add(new DayOffCalendarModel
                             {
                                 Day = day.GetUnix(),
-                                Content = "Nghỉ làm cố định trong tuần"
+                                Content = CalendarTitle.OffDayOfWeek
                             });
                         }
                     }
@@ -547,7 +491,8 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                     DepartmentId = departmentId,
                     DepartmentWorkingHourInfo = workingHourInfos,
                     DepartmentDayOffCalendar = lstDayOff,
-                    DepartmentOverHourInfo = deparmentOverHourInfos.Where(oh => oh.DepartmentId == departmentId).ToList()
+                    DepartmentOverHourInfo = deparmentOverHourInfos.Where(oh => oh.DepartmentId == departmentId).ToList(),
+                    DepartmentIncreaseInfo = departmentIncreaseInfos.Where(i => i.DepartmentId == departmentId).ToList()
                 };
                 result.Add(departmentCalender);
             }
@@ -556,299 +501,24 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             return result;
         }
 
-        //public async Task<IList<DepartmentDayOffCalendarModel>> GetDepartmentDayOffCalendar(int departmentId, long startDate, long endDate)
-        //{
-        //    var start = startDate.UnixToDateTime().Value;
-        //    var end = endDate.UnixToDateTime().Value;
+        #region Làm thêm giờ
 
-        //    var departmentDayOffCalendar = await _organizationContext.DepartmentDayOffCalendar
-        //        .Where(dof => dof.Day >= start && dof.Day <= end && dof.DepartmentId == departmentId)
-        //        .ToListAsync();
-
-        //    var lstDay = departmentDayOffCalendar.Select(dof => dof.Day).ToList();
-        //    var dayOffCalendar = await _organizationContext.DayOffCalendar
-        //        .Where(dof => dof.Day >= start && dof.Day <= end && !lstDay.Contains(dof.Day))
-        //        .Select(dof => new DepartmentDayOffCalendar
-        //        {
-        //            DepartmentId = departmentId,
-        //            Day = dof.Day,
-        //            Content = dof.Content,
-        //            SubsidiaryId = dof.SubsidiaryId
-        //        })
-        //        .ToListAsync();
-
-        //    bool isWorkingWeekCompany = false;
-        //    // Lấy thông tin ngày làm việc trong tuần từ ngày bắt đầu
-        //    var departmentWorkingWeeks = await _organizationContext.DepartmentWorkingWeekInfo
-        //      .Where(ww => ww.StartDate <= start && ww.DepartmentId == departmentId)
-        //      .GroupBy(ww => ww.DayOfWeek)
-        //      .Select(g => new
-        //      {
-        //          DayOfWeek = g.Key,
-        //          StartDate = g.Max(ww => ww.StartDate)
-        //      })
-        //      .Join(_organizationContext.DepartmentWorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek, DepartmentId = departmentId }, ww => new { ww.StartDate, ww.DayOfWeek, ww.DepartmentId }, (w, ww) => ww)
-        //      .ToListAsync();
-
-        //    if (departmentWorkingWeeks.Count == 0)
-        //    {
-        //        isWorkingWeekCompany = true;
-        //        departmentWorkingWeeks = await _organizationContext.WorkingWeekInfo
-        //            .Where(ww => ww.StartDate <= start)
-        //            .GroupBy(ww => ww.DayOfWeek)
-        //            .Select(g => new
-        //            {
-        //                DayOfWeek = g.Key,
-        //                StartDate = g.Max(ww => ww.StartDate)
-        //            })
-        //            .Join(_organizationContext.WorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek }, ww => new { ww.StartDate, ww.DayOfWeek }, (w, ww) => new DepartmentWorkingWeekInfo
-        //            {
-        //                DepartmentId = departmentId,
-        //                DayOfWeek = ww.DayOfWeek,
-        //                IsDayOff = ww.IsDayOff,
-        //                StartDate = ww.StartDate,
-        //                SubsidiaryId = ww.SubsidiaryId
-        //            })
-        //            .ToListAsync();
-        //    }
-
-        //    foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
-        //    {
-        //        if (!departmentWorkingWeeks.Any(d => d.DayOfWeek == (int)day))
-        //        {
-        //            departmentWorkingWeeks.Add(new DepartmentWorkingWeekInfo
-        //            {
-        //                DepartmentId = departmentId,
-        //                DayOfWeek = (int)day,
-        //                IsDayOff = false,
-        //                StartDate = start,
-        //                SubsidiaryId = _currentContext.SubsidiaryId
-        //            });
-        //        }
-        //    }
-
-        //    // Lấy thông tin thay đổi trong khoảng thời gian
-        //    var departmentChangeWorkingWeeks = await _organizationContext.DepartmentWorkingWeekInfo
-        //        .Where(ww => ww.StartDate > start && ww.StartDate <= end && ww.DepartmentId == departmentId)
-        //        .ToListAsync();
-
-        //    if (isWorkingWeekCompany && departmentChangeWorkingWeeks.Count == 0)
-        //    {
-        //        departmentChangeWorkingWeeks = await _organizationContext.WorkingWeekInfo
-        //            .Where(ww => ww.StartDate > start && ww.StartDate <= end)
-        //            .Select(ww => new DepartmentWorkingWeekInfo
-        //            {
-        //                DepartmentId = departmentId,
-        //                DayOfWeek = ww.DayOfWeek,
-        //                IsDayOff = ww.IsDayOff,
-        //                StartDate = ww.StartDate,
-        //                SubsidiaryId = ww.SubsidiaryId
-        //            })
-        //            .ToListAsync();
-        //    }
-
-        //    var lstDayOff = new List<DepartmentDayOffCalendarModel>();
-        //    for (var day = start; day <= end; day = day.AddDays(1))
-        //    {
-        //        var clientDay = day.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault());
-        //        if (departmentDayOffCalendar.Any(dof => dof.Day == day)) continue;
-        //        var workingWeek = departmentChangeWorkingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek && w.StartDate <= day).OrderByDescending(w => w.StartDate).FirstOrDefault();
-        //        if (workingWeek == null) workingWeek = departmentWorkingWeeks.Where(w => w.DayOfWeek == (int)clientDay.DayOfWeek).FirstOrDefault();
-        //        if (workingWeek?.IsDayOff ?? false)
-        //        {
-        //            lstDayOff.Add(new DepartmentDayOffCalendarModel
-        //            {
-        //                DepartmentId = departmentId,
-        //                Day = day.GetUnix(),
-        //                Content = "Nghỉ làm cố định trong tuần"
-        //            });
-        //        }
-        //    }
-
-        //    foreach (var dayOff in departmentDayOffCalendar)
-        //    {
-        //        lstDayOff.Add(_mapper.Map<DepartmentDayOffCalendarModel>(dayOff));
-        //    }
-
-        //    return lstDayOff.OrderBy(d => d.Day).ToList();
-        //}
-
-
-
-
-        //public async Task<DepartmentDayOffCalendarModel> UpdateDepartmentDayOff(int departmentId, DepartmentDayOffCalendarModel data)
-        //{
-        //    try
-        //    {
-        //        var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-        //        if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
-        //        var dayOff = await _organizationContext.DepartmentDayOffCalendar
-        //        .FirstOrDefaultAsync(dof => dof.Day == data.Day.UnixToDateTime() && dof.DepartmentId == departmentId);
-        //        if (dayOff == null)
-        //        {
-        //            dayOff = _mapper.Map<DepartmentDayOffCalendar>(data);
-        //            _organizationContext.DepartmentDayOffCalendar.Add(dayOff);
-        //        }
-        //        else if (dayOff.Content != data.Content)
-        //        {
-        //            dayOff.Content = data.Content;
-        //        }
-        //        _organizationContext.SaveChanges();
-
-        //        await _activityLogService.CreateLog(EnumObjectType.DepartmentDayOffCalendar, data.Day, $"Cập nhật ngày nghỉ {data.Day.UnixToDateTime()} cho bộ phận {department.DepartmentName}", data.JsonSerialize());
-        //        return data;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "UpdateDepartmentDayOffCalendar");
-        //        throw;
-        //    }
-        //}
-
-        //public async Task<bool> DeleteDepartmentDayOff(int departmentId, long day)
-        //{
-        //    try
-        //    {
-        //        var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-        //        if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
-
-        //        var dayOff = await _organizationContext.DepartmentDayOffCalendar
-        //        .FirstOrDefaultAsync(dof => dof.Day == day.UnixToDateTime() && dof.DepartmentId == departmentId);
-
-        //        if (dayOff == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Ngày nghỉ không tồn tại hoặc là ngày nghỉ chung của công ty");
-
-        //        _organizationContext.DepartmentDayOffCalendar.Remove(dayOff);
-        //        _organizationContext.SaveChanges();
-        //        await _activityLogService.CreateLog(EnumObjectType.DepartmentDayOffCalendar, day, $"Xóa ngày nghỉ {day.UnixToDateTime()} cho bộ phận {department.DepartmentName}", dayOff.JsonSerialize());
-        //        return true;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "DeleteDepartmentDayOffCalendar");
-        //        throw;
-        //    }
-        //}
-
-
-
-        //public async Task<DepartmentWeekCalendarModel> UpdateDepartmentWeekCalendar(int departmentId, DepartmentWeekCalendarModel data)
-        //{
-        //    var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-        //    if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
-
-        //    using var trans = await _organizationContext.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        DateTime now = DateTime.UtcNow.Date;
-
-        //        // Update workingHour per day
-        //        var currentWorkingHourInfo = await _organizationContext.DepartmentWorkingHourInfo
-        //          .Where(wh => wh.StartDate <= now && wh.DepartmentId == departmentId)
-        //          .OrderByDescending(wh => wh.StartDate)
-        //          .FirstOrDefaultAsync();
-
-        //        if (currentWorkingHourInfo == null)
-        //        {
-        //            currentWorkingHourInfo = new DepartmentWorkingHourInfo
-        //            {
-        //                DepartmentId = departmentId,
-        //                StartDate = now,
-        //                WorkingHourPerDay = data.WorkingHourPerDay
-        //            };
-        //            _organizationContext.DepartmentWorkingHourInfo.Add(currentWorkingHourInfo);
-        //        }
-        //        else if (currentWorkingHourInfo.WorkingHourPerDay != data.WorkingHourPerDay)
-        //        {
-        //            if (currentWorkingHourInfo.StartDate < now)
-        //            {
-        //                currentWorkingHourInfo = new DepartmentWorkingHourInfo
-        //                {
-        //                    DepartmentId = departmentId,
-        //                    StartDate = now,
-        //                    WorkingHourPerDay = data.WorkingHourPerDay
-        //                };
-        //                _organizationContext.DepartmentWorkingHourInfo.Add(currentWorkingHourInfo);
-        //            }
-        //            else
-        //            {
-        //                currentWorkingHourInfo.WorkingHourPerDay = data.WorkingHourPerDay;
-        //            }
-        //        }
-
-        //        // Update working week
-
-        //        var workingWeeks = await _organizationContext.DepartmentWorkingWeekInfo
-        //            .Where(ww => ww.StartDate <= now && ww.DepartmentId == departmentId)
-        //            .GroupBy(ww => ww.DayOfWeek)
-        //            .Select(g => new
-        //            {
-        //                DayOfWeek = g.Key,
-        //                StartDate = g.Max(ww => ww.StartDate)
-        //            })
-        //            .Join(_organizationContext.DepartmentWorkingWeekInfo, w => new { w.StartDate, w.DayOfWeek, DepartmentId = departmentId }, ww => new { ww.StartDate, ww.DayOfWeek, ww.DepartmentId }, (w, ww) => ww)
-        //            .ToListAsync();
-
-        //        foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
-        //        {
-        //            var newWorkingWeek = data.DepartmentWorkingWeek.FirstOrDefault(w => w.DayOfWeek == day);
-        //            if (newWorkingWeek == null) continue;
-        //            var currentWorkingWeek = workingWeeks.FirstOrDefault(ww => ww.DayOfWeek == (int)day);
-        //            if (currentWorkingWeek == null)
-        //            {
-        //                currentWorkingWeek = new DepartmentWorkingWeekInfo
-        //                {
-        //                    DepartmentId = departmentId,
-        //                    StartDate = now,
-        //                    DayOfWeek = (int)day,
-        //                    IsDayOff = newWorkingWeek.IsDayOff
-        //                };
-        //                _organizationContext.DepartmentWorkingWeekInfo.Add(currentWorkingWeek);
-        //            }
-        //            else if (currentWorkingWeek.IsDayOff != newWorkingWeek.IsDayOff)
-        //            {
-        //                if (currentWorkingWeek.StartDate < now)
-        //                {
-        //                    currentWorkingWeek = new DepartmentWorkingWeekInfo
-        //                    {
-        //                        DepartmentId = departmentId,
-        //                        StartDate = now,
-        //                        DayOfWeek = (int)day,
-        //                        IsDayOff = newWorkingWeek.IsDayOff
-        //                    };
-        //                    _organizationContext.DepartmentWorkingWeekInfo.Add(currentWorkingWeek);
-        //                }
-        //                else
-        //                {
-        //                    currentWorkingWeek.IsDayOff = newWorkingWeek.IsDayOff;
-        //                }
-        //            }
-        //        }
-
-        //        _organizationContext.SaveChanges();
-        //        trans.Commit();
-
-        //        await _activityLogService.CreateLog(EnumObjectType.DepartmentCalendar, now.GetUnix(), $"Cập nhật lịch làm việc ngày {now.ToString()} cho bộ phận {department.DepartmentName}", data.JsonSerialize());
-
-        //        return await GetCurrentDepartmentCalendar(departmentId);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        trans.TryRollbackTransaction();
-        //        _logger.LogError(ex, "UpdateDepartmentCalendar");
-        //        throw;
-        //    }
-        //}
-
-
-
-        public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int departmentId)
+        public async Task<PageData<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int departmentId, int page, int size)
         {
-            var result = await _organizationContext.DepartmentOverHourInfo
-                .Where(oh => oh.DepartmentId == departmentId)
-                .ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
+            var query = _organizationContext.DepartmentOverHourInfo
+             .Where(oh => oh.DepartmentId == departmentId)
+             .AsQueryable();
+
+            var total = query.Count();
+
+            query = query.OrderByDescending(oh => oh.StartDate);
+
+            if (size > 0) query = query.Skip(size * (page - 1)).Take(size);
+
+            var result = await query.ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return result;
+            return (result, total);
         }
 
         public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int[] departmentIds)
@@ -866,17 +536,22 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+                    throw DuplicateDateRange.BadRequest();
 
                 var overHour = _mapper.Map<DepartmentOverHourInfo>(data);
                 overHour.DepartmentId = departmentId;
                 _organizationContext.DepartmentOverHourInfo.Add(overHour);
                 _organizationContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.DepartmentOverHour, overHour.DepartmentOverHourInfoId, $"Thêm mới lịch tăng ca bộ phận {department.DepartmentName}", data.JsonSerialize());
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourCreate)
+                   .MessageResourceFormatDatas(overHour.StartDate, overHour.EndDate, department.DepartmentCode)
+                   .ObjectId(department.DepartmentId)
+                   .JsonData(data.JsonSerialize())
+                   .CreateLog();
+
                 return data;
             }
             catch (Exception ex)
@@ -891,13 +566,13 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var overHour = _organizationContext.DepartmentOverHourInfo.FirstOrDefault(oh => oh.DepartmentOverHourInfoId == departmentOverHourInfoId && oh.DepartmentId == departmentId);
-                if (overHour == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin tăng ca không tồn tại");
+                if (overHour == null) throw DepartmentOverHourInfoNotFound.BadRequest();
 
                 if (_organizationContext.DepartmentOverHourInfo.Any(oh => oh.DepartmentOverHourInfoId != departmentOverHourInfoId && oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+                    throw DuplicateDateRange.BadRequest();
 
                 _mapper.Map(data, overHour);
 
@@ -905,7 +580,12 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 _organizationContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.DepartmentOverHour, overHour.DepartmentOverHourInfoId, $"Cập nhật lịch tăng ca bộ phận {department.DepartmentName}", data.JsonSerialize());
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourUpdate)
+                 .MessageResourceFormatDatas(overHour.StartDate, overHour.EndDate, department.DepartmentCode)
+                 .ObjectId(department.DepartmentId)
+                 .JsonData(data.JsonSerialize())
+                 .CreateLog();
+
                 return data;
             }
             catch (Exception ex)
@@ -923,31 +603,48 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 var departments = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).ToList();
 
-                if (departmentIds.Count != departments.Count) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (departmentIds.Count != departments.Count) throw DepartmentNotFound.BadRequest();
 
                 if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate >= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+                    throw DuplicateDateRange.BadRequest();
 
                 var currentOverHours = _organizationContext.DepartmentOverHourInfo.Where(oh => departmentIds.Contains(oh.DepartmentId)).ToList();
+
+                var batchLog = _departmentActivityLog.BeginBatchLog();
                 foreach (var model in data)
                 {
+                    var departmentInfo = departments.FirstOrDefault(d => d.DepartmentId == model.DepartmentId);
+
                     var currentOverHour = currentOverHours.FirstOrDefault(oh => oh.DepartmentOverHourInfoId == model.DepartmentOverHourInfoId);
                     if (currentOverHour == null)
                     {
                         currentOverHour = _mapper.Map<DepartmentOverHourInfo>(model);
                         _organizationContext.DepartmentOverHourInfo.Add(currentOverHour);
+
+
+                        await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourCreate)
+                          .MessageResourceFormatDatas(currentOverHour.StartDate, currentOverHour.EndDate, departmentInfo.DepartmentCode)
+                          .ObjectId(departmentInfo.DepartmentId)
+                          .JsonData(model.JsonSerialize())
+                          .CreateLog();
+
                     }
                     else
                     {
                         currentOverHours.Remove(currentOverHour);
                         _mapper.Map(model, currentOverHour);
+
+                        await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourUpdate)
+                          .MessageResourceFormatDatas(currentOverHour.StartDate, currentOverHour.EndDate, departmentInfo.DepartmentCode)
+                          .ObjectId(departmentInfo.DepartmentId)
+                          .JsonData(model.JsonSerialize())
+                          .CreateLog();
                     }
                 }
 
                 _organizationContext.DepartmentOverHourInfo.RemoveRange(currentOverHours);
                 _organizationContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.DepartmentOverHour, 0, $"Cập nhật lịch tăng ca nhiều bộ phận", data.JsonSerialize());
 
                 var result = await _organizationContext.DepartmentOverHourInfo
                       .Where(oh => departmentIds.Contains(oh.DepartmentId))
@@ -968,14 +665,20 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             try
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
-                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (department == null) throw DepartmentNotFound.BadRequest();
 
                 var overHour = _organizationContext.DepartmentOverHourInfo.FirstOrDefault(oh => oh.DepartmentOverHourInfoId == departmentOverHourInfoId && oh.DepartmentId == departmentId);
-                if (overHour == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin tăng ca không tồn tại");
+                if (overHour == null) throw DepartmentOverHourInfoNotFound.BadRequest();
 
                 _organizationContext.DepartmentOverHourInfo.Remove(overHour);
                 _organizationContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.DepartmentOverHour, departmentOverHourInfoId, $"Xóa thông tin tăng ca cho bộ phận {department.DepartmentName}", overHour.JsonSerialize());
+
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourDelete)
+                  .MessageResourceFormatDatas(overHour.StartDate, overHour.EndDate, department.DepartmentCode)
+                  .ObjectId(department.DepartmentId)
+                  .JsonData(overHour.JsonSerialize())
+                  .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -986,5 +689,198 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
         }
 
 
+        #endregion
+
+        #region Nhân sự tăng cường
+        public async Task<PageData<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo(int departmentId, int page, int size)
+        {
+            var query = _organizationContext.DepartmentIncreaseInfo
+                .Where(oh => oh.DepartmentId == departmentId)
+                .AsQueryable();
+
+            var total = query.Count();
+
+            query = query.OrderByDescending(oh => oh.StartDate);
+
+            if (size > 0) query = query.Skip(size * (page - 1)).Take(size);
+
+            var result = await query.ProjectTo<DepartmentIncreaseInfoModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return (result, total);
+        }
+
+        public async Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo(int[] departmentIds)
+        {
+            var result = await _organizationContext.DepartmentIncreaseInfo
+                .Where(oh => departmentIds.Contains(oh.DepartmentId))
+                .ProjectTo<DepartmentIncreaseInfoModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<DepartmentIncreaseInfoModel> CreateDepartmentIncreaseInfo(int departmentId, DepartmentIncreaseInfoModel data)
+        {
+            try
+            {
+                var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
+                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+
+                if (data.NumberOfPerson <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng nhân sự tăng ca không hợp lệ");
+
+                if (_organizationContext.DepartmentIncreaseInfo.Any(oh => oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+
+                var increase = _mapper.Map<DepartmentIncreaseInfo>(data);
+                increase.DepartmentId = departmentId;
+                _organizationContext.DepartmentIncreaseInfo.Add(increase);
+                _organizationContext.SaveChanges();
+
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseCreate)
+                   .MessageResourceFormatDatas(increase.StartDate, increase.EndDate, department.DepartmentCode)
+                   .ObjectId(department.DepartmentId)
+                   .JsonData(data.JsonSerialize())
+                   .CreateLog();
+
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DepartmentIncreaseCreate");
+                throw;
+            }
+        }
+
+        public async Task<DepartmentIncreaseInfoModel> UpdateDepartmentIncreaseInfo(int departmentId, long departmentIncreaseInfoId, DepartmentIncreaseInfoModel data)
+        {
+            try
+            {
+                var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
+                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+
+                if (data.NumberOfPerson <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng nhân sự tăng ca không hợp lệ");
+
+                var increase = _organizationContext.DepartmentIncreaseInfo.FirstOrDefault(oh => oh.DepartmentIncreaseInfoId == departmentIncreaseInfoId && oh.DepartmentId == departmentId);
+                if (increase == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin nhân sự tăng cường không tồn tại");
+
+                if (_organizationContext.DepartmentIncreaseInfo.Any(oh => oh.DepartmentIncreaseInfoId != departmentIncreaseInfoId && oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+
+                _mapper.Map(data, increase);
+
+                increase.DepartmentId = departmentId;
+
+                _organizationContext.SaveChanges();
+
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseUpdate)
+                 .MessageResourceFormatDatas(increase.StartDate, increase.EndDate, department.DepartmentCode)
+                 .ObjectId(department.DepartmentId)
+                 .JsonData(data.JsonSerialize())
+                 .CreateLog();
+
+                return data;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DepartmentIncreaseUpdate");
+                throw;
+            }
+        }
+
+        public async Task<IList<DepartmentIncreaseInfoModel>> UpdateDepartmentIncreaseInfoMultiple(IList<DepartmentIncreaseInfoModel> data)
+        {
+            try
+            {
+                var departmentIds = data.Select(oh => oh.DepartmentId).Distinct().ToList();
+
+                var departments = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).ToList();
+
+                if (departmentIds.Count != departments.Count) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+                if (data.Any(d => d.NumberOfPerson <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng nhân sự tăng ca không hợp lệ");
+                if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate >= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
+
+                var currentIncreases = _organizationContext.DepartmentIncreaseInfo.Where(oh => departmentIds.Contains(oh.DepartmentId)).ToList();
+
+                var batchLog = _departmentActivityLog.BeginBatchLog();
+                foreach (var model in data)
+                {
+                    var departmentInfo = departments.FirstOrDefault(d => d.DepartmentId == model.DepartmentId);
+
+                    var currentIncrease = currentIncreases.FirstOrDefault(oh => oh.DepartmentIncreaseInfoId == model.DepartmentIncreaseInfoId);
+                    if (currentIncrease == null)
+                    {
+                        currentIncrease = _mapper.Map<DepartmentIncreaseInfo>(model);
+                        _organizationContext.DepartmentIncreaseInfo.Add(currentIncrease);
+
+
+                        await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseCreate)
+                          .MessageResourceFormatDatas(currentIncrease.StartDate, currentIncrease.EndDate, departmentInfo.DepartmentCode)
+                          .ObjectId(departmentInfo.DepartmentId)
+                          .JsonData(model.JsonSerialize())
+                          .CreateLog();
+
+                    }
+                    else
+                    {
+                        currentIncreases.Remove(currentIncrease);
+                        _mapper.Map(model, currentIncrease);
+
+                        await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseUpdate)
+                          .MessageResourceFormatDatas(currentIncrease.StartDate, currentIncrease.EndDate, departmentInfo.DepartmentCode)
+                          .ObjectId(departmentInfo.DepartmentId)
+                          .JsonData(model.JsonSerialize())
+                          .CreateLog();
+                    }
+                }
+
+                _organizationContext.DepartmentIncreaseInfo.RemoveRange(currentIncreases);
+                _organizationContext.SaveChanges();
+
+
+                var result = await _organizationContext.DepartmentIncreaseInfo
+                      .Where(oh => departmentIds.Contains(oh.DepartmentId))
+                      .ProjectTo<DepartmentIncreaseInfoModel>(_mapper.ConfigurationProvider)
+                      .ToListAsync();
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateMultipleDepartmentIncrease");
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteDepartmentIncreaseInfo(int departmentId, long departmentIncreaseInfoId)
+        {
+            try
+            {
+                var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
+                if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+
+                var increase = _organizationContext.DepartmentIncreaseInfo.FirstOrDefault(oh => oh.DepartmentIncreaseInfoId == departmentIncreaseInfoId && oh.DepartmentId == departmentId);
+                if (increase == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin tăng ca không tồn tại");
+
+                _organizationContext.DepartmentIncreaseInfo.Remove(increase);
+                _organizationContext.SaveChanges();
+
+                await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseDelete)
+                  .MessageResourceFormatDatas(increase.StartDate, increase.EndDate, department.DepartmentCode)
+                  .ObjectId(department.DepartmentId)
+                  .JsonData(increase.JsonSerialize())
+                  .CreateLog();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DepartmentIncreaseDelete");
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

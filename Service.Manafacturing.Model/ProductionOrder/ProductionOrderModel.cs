@@ -71,7 +71,21 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionOrderStatusDataModel
     {
+        public string ProductionOrderCode { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
         public IList<ProductionInventoryRequirementEntity> Inventories { get; set; }
+
+        public ProductionOrderStatusDataModel()
+        {
+            Inventories = new List<ProductionInventoryRequirementEntity>();
+        }
+    }
+
+    public class OrderProductInfo
+    {
+        public long ProductionOrderId { get; set; }
+        public long ProductionOrderDetailId { get; set; }
+        public long? OrderDetailId { get; set; }
+        public int ProductId { get; set; }
     }
 }

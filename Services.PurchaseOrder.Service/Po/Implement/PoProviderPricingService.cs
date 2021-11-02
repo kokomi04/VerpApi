@@ -22,6 +22,9 @@ using AutoMapper;
 using VErp.Services.PurchaseOrder.Service.Po;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using PoProviderPricingEntity = VErp.Infrastructure.EF.PurchaseOrderDB.PoProviderPricing;
+using VErp.Commons.Library.Model;
+using System.IO;
+using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 
 namespace VErp.Services.PoProviderPricing.Service.Implement
 {
@@ -32,6 +35,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ICurrentContextService _currentContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IProductHelperService _productHelperService;
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _poActivityLog;
 
@@ -40,13 +44,15 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
            , IActivityLogService activityLogService
            , ICurrentContextService currentContext
            , ICustomGenCodeHelperService customGenCodeHelperService
-            , IMapper mapper
+           , IProductHelperService productHelperService
+           , IMapper mapper
            )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PoProviderPricing);
             _currentContext = currentContext;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _productHelperService = productHelperService;
             _mapper = mapper;
         }
 
@@ -444,7 +450,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 throw new BadRequestException(validate);
             }
 
-            var ctx = await GeneratePurchaseOrderCode(null, model);
+            var ctx = await GeneratePoProviderPricingCode(null, model);
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
@@ -507,7 +513,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
 
         }
 
-        private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? poProviderPricingId, PoProviderPricingModel model)
+        private async Task<GenerateCodeContext> GeneratePoProviderPricingCode(long? poProviderPricingId, PoProviderPricingModel model)
         {
             model.PoProviderPricingCode = (model.PoProviderPricingCode ?? "").Trim();
 
@@ -913,5 +919,30 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
 
             return GeneralCode.Success;
         }
+
+
+
+        public CategoryNameModel GetFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = 1,
+                CategoryCode = "PoPricing",
+                CategoryTitle = "PoPricing",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = Utils.GetFieldNameModels<PoPricingDetailRow>();
+            result.Fields = fields;
+            return result;
+        }
+
+        public IAsyncEnumerable<PoProviderPricingOutputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, Stream stream)
+        {
+            return new PoProviderPricingParseExcelFacade(_productHelperService)
+                 .ParseInvoiceDetails(mapping, stream);
+        }
+
+
     }
 }

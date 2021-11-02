@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.PO;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
 
@@ -24,5 +26,9 @@ namespace VErp.Services.PurchaseOrder.Service.Po
         Task<bool> SentToCensor(long purchaseOrderId);
         Task<bool> Update(long poProviderPricingId, PoProviderPricingModel model);
         Task<bool> UpdatePoProcessStatus(long purchaseOrderId, EnumPoProcessStatus poProcessStatusId);
+
+        CategoryNameModel GetFieldDataForMapping();
+
+        IAsyncEnumerable<PoProviderPricingOutputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, Stream stream);
     }
 }

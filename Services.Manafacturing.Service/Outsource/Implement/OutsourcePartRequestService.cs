@@ -21,7 +21,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Manafacturing.Model.Outsource.Order;
+//using VErp.Services.Manafacturing.Model.Outsource.Order;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
@@ -294,26 +294,27 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var hasPurchaseOrder = await _manufacturingDBContext.RefOutsourcePartOrder.AnyAsync(x=>x.OutsourceRequestId == outsourcePartRequestId);
                 if(hasPurchaseOrder)
                     throw new BadRequestException(OutsourceErrorCode.HasPurchaseOrder);
-                
-                var details = await _manufacturingDBContext.OutsourcePartRequestDetail
-                    .Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId)
-                    .ToListAsync();
 
-                var lst = (from o in _manufacturingDBContext.OutsourceOrder
-                           join d in _manufacturingDBContext.OutsourceOrderDetail
-                             on o.OutsourceOrderId equals d.OutsourceOrderId
-                           where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourcePart
-                           select d).GroupBy(x => x.ObjectId).Select(x => new
-                           {
-                               ObjectId = x.Key,
-                               QuantityProcessed = x.Sum(x => x.Quantity)
-                           });
-                foreach (var detail in details)
-                {
-                    if (lst.Where(y => y.ObjectId == detail.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
-                        throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
-                    detail.IsDeleted = true;
-                };
+                /*
+              var details = await _manufacturingDBContext.OutsourcePartRequestDetail
+                  .Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId)
+                  .ToListAsync();
+
+              var lst = (from o in _manufacturingDBContext.OutsourceOrder
+                         join d in _manufacturingDBContext.OutsourceOrderDetail
+                           on o.OutsourceOrderId equals d.OutsourceOrderId
+                         where o.OutsourceTypeId == (int)EnumOutsourceType.OutsourcePart
+                         select d).GroupBy(x => x.ObjectId).Select(x => new
+                         {
+                             ObjectId = x.Key,
+                             QuantityProcessed = x.Sum(x => x.Quantity)
+                         });
+              foreach (var detail in details)
+              {
+                  if (lst.Where(y => y.ObjectId == detail.OutsourcePartRequestDetailId && y.QuantityProcessed > 0).Count() != 0)
+                      throw new BadRequestException(OutsourceErrorCode.InValidRequestOutsource, $"Đã có đơn hàng gia công cho yêu cầu {order.OutsourcePartRequestCode}");
+                  detail.IsDeleted = true;
+              };*/
                 order.IsDeleted = true;
 
                 await _manufacturingDBContext.SaveChangesAsync();

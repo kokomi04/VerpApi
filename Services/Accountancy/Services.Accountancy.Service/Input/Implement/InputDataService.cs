@@ -473,6 +473,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.Contains:
                                 isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
@@ -488,8 +491,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -531,6 +540,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.Contains:
                                 isRequire = value.StringContains(singleClause.Value);
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = !value.StringContains(singleClause.Value);
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = value != null && arrValues.Contains(value.ToString());
@@ -546,8 +558,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = value.StringStartsWith(singleClause.Value);
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = !value.StringStartsWith(singleClause.Value);
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = value.StringEndsWith(singleClause.Value);
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = !value.StringEndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
@@ -887,8 +905,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         info.Data.TryGetValue(fieldName, out filterValue);
                     }
-                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+                    if (!string.IsNullOrEmpty(filterValue) && !string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                     {
+                        if (filterValue.Length < start)
+                        {
+                            //TODO: Validate message
+                            throw new BadRequestException($"Invalid value sustring {filterValue} start {start}, length {length}");
+                        }
+
                         filterValue = filterValue.Substring(start, length);
                     }
                     if (string.IsNullOrEmpty(filterValue))
@@ -1540,6 +1564,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
+                sct = sct?.ToUpper();
+                data.Info[AccountantConstants.BILL_CODE] = sct;
                 billInfo.BillCode = sct;
             }
 
@@ -1892,7 +1918,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     FieldName = field.FieldName,
                     FieldTitle = GetTitleCategoryField(field),
                     RefCategory = null,
-                    IsRequired = field.IsRequire
+                    IsRequired = field.IsRequire && string.IsNullOrEmpty(field.RequireFilters)
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
@@ -1947,7 +1973,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
-            var requiredField = fields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
+            var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
             if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
 
@@ -2040,7 +2066,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (row.Data.ContainsKey(mappingField.Column))
                             value = row.Data[mappingField.Column]?.ToString();
                         // Validate require
-                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
+                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
@@ -2095,8 +2121,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     {
                                         info.TryGetValue(fieldName, out filterValue);
                                     }
-                                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+
+
+                                    if (!string.IsNullOrWhiteSpace(filterValue) && !string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                                     {
+                                        if (filterValue.Length < start)
+                                        {
+                                            //TODO: Validate message
+                                            throw new BadRequestException($"Invalid value sustring {filterValue} start {start}, length {length}");
+                                        }
                                         filterValue = filterValue.Substring(start, length);
                                     }
 
@@ -2184,7 +2217,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        if (result.Code != 0)
+                        {
+                            if (string.IsNullOrWhiteSpace(result.Message))
+                                throw ProcessActionResultErrorCode.BadRequestFormat(result.Code);
+                            else
+                            {
+                                throw result.Message.BadRequest();
+
+                            }
+                        }
 
                         var billInfo = new InputBill()
                         {

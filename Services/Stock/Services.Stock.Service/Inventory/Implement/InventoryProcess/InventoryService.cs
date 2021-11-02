@@ -96,7 +96,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
         {
             keyword = keyword?.Trim();
             accountancyAccountNumber = accountancyAccountNumber?.Trim();
@@ -313,11 +313,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .Where(m => m.SoCt.ToLower() == item.InventoryCode.ToLower())
                         .Select(m => new MappingInputBillModel()
                         {
-                            MappingFunctionKey = null,
+                            //MappingFunctionKey = null,
                             InputTypeId = m.InputTypeId,
-                            SourceId = item.InventoryId.ToString(),
+                            //SourceId = item.InventoryId.ToString(),
                             InputBillFId = m.InputBillFId,
-                            BillObjectTypeId = EnumObjectType.InputBill
+                            BillObjectTypeId = EnumObjectType.InputBill,
+                            InputType_Title = m.InputType_Title
 
                         }).ToList()
                 });
@@ -326,7 +327,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return (pagedData, total);
         }
 
-        public async Task<InventoryOutput> InventoryInfo(long inventoryId, IList<string> mappingFunctionKeys = null)
+        public async Task<InventoryOutput> InventoryInfo(long inventoryId)
         {
             try
             {
@@ -475,21 +476,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var stockInfo = _stockDbContext.Stock.AsNoTracking().FirstOrDefault(q => q.StockId == inventoryObj.StockId);
 
-                IList<MappingInputBillModel> mappingObjects = null;
-
-                if (mappingFunctionKeys != null && mappingFunctionKeys.Count > 0)
-                {
-                    mappingObjects = _stockDbContext.VMappingOusideImportObject
-                        .Where(m => mappingFunctionKeys.Contains(m.MappingFunctionKey) && m.SourceId == inventoryId.ToString())
-                        .Select(m => new MappingInputBillModel()
-                        {
-                            MappingFunctionKey = m.MappingFunctionKey,
-                            InputTypeId = m.InputTypeId,
-                            SourceId = m.SourceId,
-                            InputBillFId = m.InputBillFId
-                        })
-                        .ToList();
-                }
+                var mappingObjects = _stockDbContext.RefInputBillBasic.Where(b => b.SoCt == inventoryObj.InventoryCode)
+                     .Select(m => new MappingInputBillModel()
+                     {
+                         //MappingFunctionKey = m.MappingFunctionKey,
+                         InputTypeId = m.InputTypeId,
+                         //SourceId = inventoryObj.InventoryId.ToString(),
+                         InputBillFId = m.InputBillFId,
+                         InputType_Title = m.InputType_Title
+                     }).ToList();
 
                 var inventoryOutput = new InventoryOutput()
                 {
@@ -533,7 +528,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
+        public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId)
         {
             var inventoryExport = new InventoryExportFacade();
             inventoryExport.SetCurrentContext(_currentContextService);
@@ -541,7 +536,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryExport.SetOrganizationHelperService(_organizationHelperService);
             inventoryExport.SetProductHelperService(_productHelperService);
             inventoryExport.SetStockHelperService(_stockHelperService);
-            return await inventoryExport.InventoryInfoExport(inventoryId, mappingFunctionKeys);
+            return await inventoryExport.InventoryInfoExport(inventoryId);
         }
 
         public CategoryNameModel GetInventoryDetailFieldDataForMapping()

@@ -26,10 +26,10 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         }
 
         [HttpPut]
-        [Route("productionOrder/{productionOrderCode}/department/{departmentId}/status")]
-        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] string productionOrderCode, [FromRoute] int departmentId, [FromBody] IList<ProductionInventoryRequirementEntity> inventories)
+        [Route("status")]
+        public async Task<bool> ChangeAssignedProgressStatus([FromBody] ProgressStatusInputModel data)
         {
-            return await _productionHandoverService.ChangeAssignedProgressStatus(productionOrderCode, departmentId, inventories);
+            return await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.DepartmentId, data.Inventories);
         }
     }
 }

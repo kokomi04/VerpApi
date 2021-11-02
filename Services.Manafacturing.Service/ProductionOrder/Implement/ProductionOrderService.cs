@@ -294,8 +294,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .Select(sd => new
                 {
                     sd.StepId,
-                    sd.DepartmentId,
-                    sd.NumberOfPerson
+                    sd.DepartmentId
                 })
                 .ToList();
 
@@ -303,22 +302,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             // Lấy thông tin phong ban
             var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
-
+            var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
             var departmentHour = new Dictionary<int, decimal>();
 
             foreach (var departmentId in departmentIds)
             {
                 // Danh sách công đoạn tổ đảm nhiệm
                 var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId).Select(sd => sd.StepId).Distinct().ToList();
-                var calendar = departmentCalendar.FirstOrDefault(d => d.DepartmentId == departmentId);
+                var calendar = departmentCalendar.FirstOrDefault(c => c.DepartmentId == departmentId);
+                var department = departments.FirstOrDefault(d => d.DepartmentId == departmentId);
                 decimal totalHour = 0;
                 for (var workDateUnix = fromDate; workDateUnix < toDate; workDateUnix += 24 * 60 * 60)
                 {
                     // Tính số giờ làm việc theo ngày của tổ
                     var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
                     var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= workDateUnix && oh.EndDate >= workDateUnix);
-
-                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay ?? 0) + (overHour?.OverHour ?? 0));
+                    var increase = calendar.DepartmentIncreaseInfo.FirstOrDefault(i => i.StartDate <= workDateUnix && i.EndDate >= workDateUnix);
+                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay ?? 0 * (department?.NumberOfPerson ?? 0 + increase?.NumberOfPerson ?? 0)) + (overHour?.OverHour ?? 0 * overHour?.NumberOfPerson ?? 0));
                 }
 
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
@@ -427,6 +427,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                  }).ToListAsync();
         }
 
+        public async Task<IList<OrderProductInfo>> GetOrderProductInfo(IList<long> productionOderIds)
+        {
+            var result = await _manufacturingDBContext.ProductionOrderDetail
+                .Where(pod => productionOderIds.Contains(pod.ProductionOrderId))
+                .Select(pod => new OrderProductInfo
+                {
+                    ProductionOrderId = pod.ProductionOrderId,
+                    ProductionOrderDetailId = pod.ProductionOrderDetailId,
+                    OrderDetailId = pod.OrderDetailId,
+                    ProductId = pod.ProductId
+                })
+                .ToListAsync();
+            return result;
+        }
+
         public async Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));
@@ -531,7 +546,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
-            if(monthPlanId.HasValue)
+            if (monthPlanId.HasValue)
             {
                 foreach (var extraPlan in extraPlans)
                 {
@@ -854,11 +869,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return rs;
         }
 
-        public async Task<bool> UpdateProductionOrderStatus(string productionOrderCode, ProductionOrderStatusDataModel data)
+        public async Task<bool> UpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .Include(po => po.ProductionOrderDetail)
-                .FirstOrDefault(po => po.ProductionOrderCode == productionOrderCode);
+                .FirstOrDefault(po => po.ProductionOrderCode == data.ProductionOrderCode);
 
             if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");

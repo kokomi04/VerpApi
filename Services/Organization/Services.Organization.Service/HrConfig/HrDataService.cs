@@ -335,7 +335,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
                         .BillTypeId(hrTypeId)
                         .ObjectId(hrBill_F_Id)
-                        .JsonData(billInfo.JsonSerialize().JsonSerialize())
+                        .JsonData(billInfo.JsonSerialize())
                         .CreateLog();
 
                 return true;
@@ -434,7 +434,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
                         .BillTypeId(hrTypeId)
                         .ObjectId(hrBill_F_Id)
-                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .JsonData(data.JsonSerialize())
                         .CreateLog();
 
                 return true;
@@ -500,7 +500,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, billInfo.FId)
                         .BillTypeId(hrTypeId)
                         .ObjectId(billInfo.FId)
-                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .JsonData(data.JsonSerialize())
                         .CreateLog();
 
                 return billInfo.FId;
@@ -980,6 +980,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             if (billInfo != null && hrAreaData.FirstOrDefault().TryGetValue(OrganizationConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
+                sct = sct?.ToUpper();
+                hrAreaData.FirstOrDefault()[OrganizationConstants.BILL_CODE] = sct;
                 billInfo.BillCode = sct;
             }
 
@@ -1286,6 +1288,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                         case EnumOperator.Contains:
                             isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                             break;
+                        case EnumOperator.NotContains:
+                            isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
+                            break;
                         case EnumOperator.InList:
                             var arrValues = singleClause.Value.ToString().Split(",");
                             isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
@@ -1301,8 +1306,14 @@ namespace VErp.Services.Organization.Service.HrConfig
                         case EnumOperator.StartsWith:
                             isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                             break;
+                        case EnumOperator.NotStartsWith:
+                            isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
+                            break;
                         case EnumOperator.EndsWith:
                             isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
+                            break;
+                        case EnumOperator.NotEndsWith:
+                            isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
                             break;
                         case EnumOperator.IsNull:
                             isRequire = rowValues.Any(v => v == null);
@@ -1444,10 +1455,30 @@ namespace VErp.Services.Organization.Service.HrConfig
             var sqlParams = new List<SqlParameter>();
 
             int suffix = 0;
-            var paramName = $"@{field.RefTableField}_{suffix}";
-            var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
+            var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField}";
 
-            sqlParams.Add(new SqlParameter(paramName, value));
+            var referField = (await _httpCategoryHelperService.GetReferFields(new []{field.RefTableCode}, new [] {field.RefTableField})).FirstOrDefault();
+
+            if (field.FormTypeId == (int)EnumFormType.MultiSelect)
+            {
+                var sValue = ((string)value).TrimEnd(']').TrimStart('[').Trim();
+                existSql += " IN (";
+                foreach (var v in sValue.Split(','))
+                {
+                    var paramName = $"@{field.RefTableField}_{suffix}";
+                    existSql += $"{paramName},";
+                    sqlParams.Add(new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(v)));
+                    suffix++;
+                }
+                existSql = existSql.TrimEnd(',');
+                existSql += ") ";
+            }
+            else
+            {
+                var paramName = $"@{field.RefTableField}_{suffix}";
+                existSql += $" = {paramName}";
+                sqlParams.Add(new SqlParameter(paramName, value));
+            }
 
             if (!string.IsNullOrEmpty(field.Filters))
             {
@@ -1480,6 +1511,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
+            var checkExistedReferSql = existSql;
             if (whereCondition.Length > 0)
             {
                 existSql += $" AND {whereCondition}";
@@ -1489,10 +1521,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
+                
                 // Check tồn tại
-                var checkExistedReferSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
-                var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, value) };
-                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, sqlParams.ToArray());
                 if (result == null || result.Rows.Count == 0)
                 {
                     throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { field.HrAreaCode, field.Title + ": " + value });

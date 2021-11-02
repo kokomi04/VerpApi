@@ -17,6 +17,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Contains")]
         Contains = 3,
         [ParamNumber(1)]
+        [Description("NotContains")]
+        NotContains = 33,
+        [ParamNumber(1)]
         [Description("In List")]
         InList = 4,
         [ParamNumber(0)]
@@ -26,8 +29,14 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("StartsWith")]
         StartsWith = 6,
         [ParamNumber(1)]
+        [Description("NotStartsWith")]
+        NotStartsWith = 66,
+        [ParamNumber(1)]
         [Description("EndsWith")]
         EndsWith = 7,
+        [ParamNumber(1)]
+        [Description("NotEndsWith")]
+        NotEndsWith = 77,
 
         [ParamNumber(1)]
         [Description("Greater")]

@@ -441,6 +441,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.Contains:
                                 isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
@@ -456,8 +459,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = rowValues.Any(v => v == null);
@@ -499,6 +508,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.Contains:
                                 isRequire = value.StringContains(singleClause.Value);
                                 break;
+                            case EnumOperator.NotContains:
+                                isRequire = !value.StringContains(singleClause.Value);
+                                break;
                             case EnumOperator.InList:
                                 var arrValues = singleClause.Value.ToString().Split(",");
                                 isRequire = value != null && arrValues.Contains(value.ToString());
@@ -514,8 +526,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             case EnumOperator.StartsWith:
                                 isRequire = value.StringStartsWith(singleClause.Value);
                                 break;
+                            case EnumOperator.NotStartsWith:
+                                isRequire = !value.StringStartsWith(singleClause.Value);
+                                break;
                             case EnumOperator.EndsWith:
                                 isRequire = value.StringEndsWith(singleClause.Value);
+                                break;
+                            case EnumOperator.NotEndsWith:
+                                isRequire = !value.StringEndsWith(singleClause.Value);
                                 break;
                             case EnumOperator.IsNull:
                                 isRequire = value == null;
@@ -1504,6 +1522,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
+                sct = sct?.ToUpper();
+                data.Info[AccountantConstants.BILL_CODE] = sct;
                 billInfo.BillCode = sct;
             }
 
@@ -1904,7 +1924,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
-            var requiredField = fields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
+            var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
             if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
 
@@ -1993,7 +2013,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         if (row.Data.ContainsKey(mappingField.Column))
                             value = row.Data[mappingField.Column]?.ToString();
                         // Validate require
-                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsIgnoredIfEmpty) throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
+                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();

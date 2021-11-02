@@ -1,0 +1,56 @@
+Use OrganizationDB;
+
+IF EXISTS (SELECT * FROM sys.all_objects WHERE object_id = OBJECT_ID(N'[dbo].[DepartmentIncreaseInfo]') AND type IN ('U'))
+	DROP TABLE [dbo].[DepartmentIncreaseInfo]
+GO
+
+CREATE TABLE [dbo].[DepartmentIncreaseInfo] (
+  [DepartmentIncreaseInfoId] bigint  IDENTITY(1,1) NOT NULL,
+  [DepartmentId] int  NOT NULL,
+  [SubsidiaryId] int DEFAULT ((0)) NOT NULL,
+  [StartDate] datetime2(7)  NOT NULL,
+  [EndDate] datetime2(7)  NOT NULL,
+  [NumberOfPerson] int  NOT NULL,
+  [Content] nvarchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS  NULL
+)
+GO
+
+ALTER TABLE [dbo].[DepartmentIncreaseInfo] SET (LOCK_ESCALATION = TABLE)
+GO
+
+ALTER TABLE [dbo].[DepartmentIncreaseInfo] ADD CONSTRAINT [PK_DepartmentIncreaseInfo] PRIMARY KEY CLUSTERED ([DepartmentIncreaseInfoId])
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON)  
+ON [PRIMARY]
+GO
+
+
+WITH nop AS
+(
+  SELECT DepartmentId, NumberOfPerson = MAX(NumberOfPerson)
+	FROM [ManufacturingDB].[dbo].StepDetail
+	GROUP BY DepartmentId
+)
+UPDATE d
+SET NumberOfPerson = ISNULL(nop.NumberOfPerson, 0)
+FROM Department AS d
+LEFT JOIN nop ON d.DepartmentId = nop.DepartmentId;
+
+ALTER TABLE Department
+ALTER COLUMN NumberOfPerson int NOT NULL;
+
+USE ManufacturingDB;
+
+IF OBJECT_ID('dbo.[DF_StepDetail_WorkingHours]') IS NOT NULL 
+  ALTER TABLE StepDetail DROP CONSTRAINT DF_StepDetail_WorkingHours;
+
+IF COL_LENGTH('StepDetail','WorkingHours') IS NOT NULL
+ALTER TABLE StepDetail
+DROP COLUMN WorkingHours;
+
+
+IF OBJECT_ID('dbo.[DF_StepDetail_NumberOfPerson]') IS NOT NULL 
+  ALTER TABLE StepDetail DROP CONSTRAINT DF_StepDetail_NumberOfPerson;
+  
+IF COL_LENGTH('StepDetail','NumberOfPerson') IS NOT NULL
+ALTER TABLE StepDetail
+DROP COLUMN NumberOfPerson;

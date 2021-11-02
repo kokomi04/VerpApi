@@ -22,6 +22,7 @@ namespace VErp.Services.Master.Model.Activity
         //public string MessageResourceFormatData { get; set; }
 
         public long CreatedDatetimeUtc { set; get; }
+        public string IpAddress { get; set; }
 
     }
 

@@ -25,24 +25,24 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using VErp.Services.Organization.Service.Customer.Implement.Facade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Organization.Customer;
+using static Verp.Resources.Organization.Customer.CustomerValidationMessage;
+using Microsoft.Data.SqlClient;
+using System.Data;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
 {
     public class CustomerService : ICustomerService
     {
         private readonly OrganizationDBContext _organizationContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
         private readonly IMapper _mapper;
-        private readonly IActivityLogService _activityLogService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IUserHelperService _userHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly ObjectActivityLogFacade _customerActivityLog;
 
         public CustomerService(OrganizationDBContext organizationContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<CustomerService> logger
             , IMapper mapper
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
@@ -51,21 +51,19 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService)
         {
             _organizationContext = organizationContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
             _mapper = mapper;
-            _activityLogService = activityLogService;
-            _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _userHelperService = userHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _customerActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Customer);
         }
 
         public async Task<int> AddCustomer(int updatedUserId, CustomerModel data)
         {
             var result = await AddBatchCustomers(new[] { data });
 
-            await _activityLogService.CreateLog(EnumObjectType.Customer, result.First().Key.CustomerId, $"Thêm đối tác {data.CustomerName}", data.JsonSerialize());
+
+
 
             return result.First().Key.CustomerId;
 
@@ -206,6 +204,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 bankAccountEntities.AddRange(bankAccounts[entity]);
                 customerAttachments.AddRange(attachments[entity]);
             }
+
             await _organizationContext.UpdateByBatch(customerEntities, false);
             await _organizationContext.InsertByBatch(contactEntities, false);
             await _organizationContext.InsertByBatch(bankAccountEntities, false);
@@ -215,16 +214,39 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             foreach (var ctx in genCodeContexts)
                 await ctx.ConfirmCode();
+            foreach (var c in originData)
+            {
+                await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Create)
+                  .MessageResourceFormatDatas(c.Key.CustomerCode)
+                  .ObjectId(c.Key.CustomerId)
+                  .JsonData(c.Value.JsonSerialize())
+                  .CreateLog();
+            }
 
             return originData;
         }
 
         public async Task<bool> DeleteCustomer(int customerId)
         {
+
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
             {
                 throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
+            }
+
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                new SqlParameter("@CustomerId",customerId),
+                isInUsed
+            };
+
+            await _organizationContext.ExecuteStoreProcedure("asp_Customer_CheckUsed", checkParams);
+
+            if (isInUsed.Value as bool? == true)
+            {
+                throw CanNotDeleteCustomerWhichIsInUse.BadRequest(ProductErrorCode.ProductInUsed);
             }
 
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
@@ -234,12 +256,30 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 c.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
 
+            var customerBanks = await _organizationContext.CustomerBankAccount.Where(c => c.CustomerId == customerId).ToListAsync();
+            foreach (var c in customerBanks)
+            {
+                c.IsDeleted = true;
+                c.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
+
+
+            var customerFiles = await _organizationContext.CustomerAttachment.Where(c => c.CustomerId == customerId).ToListAsync();
+            foreach (var c in customerFiles)
+            {
+                c.IsDeleted = true;
+                c.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
+
             customerInfo.IsDeleted = true;
             customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _organizationContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Xóa đối tác {customerInfo.CustomerName}", customerInfo.JsonSerialize());
-
+            await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Delete)
+            .MessageResourceFormatDatas(customerInfo.CustomerCode)
+            .ObjectId(customerInfo.CustomerId)
+            .JsonData(customerInfo.JsonSerialize())
+            .CreateLog();
             return true;
         }
 
@@ -341,7 +381,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync();
 
             var total = await query.CountAsync();
-          
+
             return (lst, total);
         }
 
@@ -388,9 +428,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             ).ToListAsync();
         }
 
-        public async Task<bool> UpdateCustomer(int updatedUserId, int customerId, CustomerModel data)
+        public async Task<bool> UpdateCustomer(int customerId, CustomerModel data)
         {
-           
+
             //var existedCustomer = await _masterContext.Customer.FirstOrDefaultAsync(s => s.CustomerId != customerId && s.CustomerCode == data.CustomerCode || s.CustomerName == data.CustomerName);
 
             //if (existedCustomer != null)
@@ -406,9 +446,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 try
                 {
-                    CustomerEntity customerInfo = await UpdateCustomerBase(updatedUserId, customerId, data);
+                    CustomerEntity customerInfo = await UpdateCustomerBase(customerId, data);
                     trans.Commit();
-                    await _activityLogService.CreateLog(EnumObjectType.Customer, customerInfo.CustomerId, $"Cập nhật đối tác {customerInfo.CustomerName}", data.JsonSerialize());
+
+
                     return true;
                 }
                 catch (Exception)
@@ -419,7 +460,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
         }
 
-        public async Task<CustomerEntity> UpdateCustomerBase(int updatedUserId, int customerId, CustomerModel data)
+        public async Task<CustomerEntity> UpdateCustomerBase(int customerId, CustomerModel data, bool igDeleteRef = false)
         {
             var customerInfo = await _organizationContext.Customer.FirstOrDefaultAsync(c => c.CustomerId == customerId);
             if (customerInfo == null)
@@ -468,12 +509,15 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 data.BankAccounts = new List<CustomerBankAccountModel>();
             }
 
-            var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
-            foreach (var c in deletedContacts)
+            if (!igDeleteRef)
             {
-                c.IsDeleted = true;
-                c.UpdatedDatetimeUtc = DateTime.UtcNow;
+                var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
+                foreach (var c in deletedContacts)
+                {
+                    c.IsDeleted = true;
+                }
             }
+
 
             var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
             {
@@ -503,13 +547,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
             }
 
-            var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
-            foreach (var ba in deletedBankAccounts)
+            if (!igDeleteRef)
             {
-                ba.IsDeleted = true;
-                ba.UpdatedDatetimeUtc = DateTime.UtcNow;
-                ba.UpdatedUserId = updatedUserId;
+                var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
+
+                foreach (var ba in deletedBankAccounts)
+                {
+                    ba.IsDeleted = true;
+                }
             }
+
 
             var newBankAccounts = data.BankAccounts
                 .Where(ba => ba.BankAccountId <= 0)
@@ -527,7 +574,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     ba.BankAddress = reqBankAccount.BankAddress;
                     ba.BankBranch = reqBankAccount.BankBranch;
                     ba.BankCode = reqBankAccount.BankCode;
-                    ba.UpdatedUserId = updatedUserId;
                     ba.AccountName = reqBankAccount.AccountName;
                     ba.Province = reqBankAccount.Province;
                     ba.CurrencyId = reqBankAccount.CurrencyId;
@@ -550,6 +596,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
 
             await _organizationContext.SaveChangesAsync();
+
+            await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(customerInfo.CustomerCode)
+                  .ObjectId(customerInfo.CustomerId)
+                  .JsonData(customerInfo.JsonSerialize())
+                  .CreateLog();
+
             return customerInfo;
         }
 
@@ -571,7 +624,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var importFacade = new CusomerImportFacade(this, _mapper, _httpCategoryHelperService, _organizationContext, _currentContextService);
+            var importFacade = new CusomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
 
             var customerModels = await importFacade.ParseCustomerFromMapping(mapping, stream);
 
@@ -603,10 +656,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 if (existingCodes.Count() > 0)
                 {
-                    throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted, $"Mã đối tác \"{string.Join(", ", existingCodes)}\" đã tồn tại");
+                    throw CustomerCodeAlreadyExists.BadRequestFormat(string.Join(", ", existingCodes));
                 }
 
-                throw new BadRequestException(CustomerErrorCode.CustomerNameAlreadyExisted, $"Tên đối tác \"{string.Join(", ", existedCustomers.Select(c => c.CustomerName))}\" đã tồn tại");
+                throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", existedCustomers.Select(c => c.CustomerName)));
             }
         }
 

@@ -180,6 +180,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status)
         {
+            var errorProductionOrderCode = "";
             try
             {
                 // update trạng thái cho lệnh sản xuất
@@ -200,6 +201,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 productionOrderCodes = productionOrderCodes.Distinct().ToList();
 
+               
                 Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
                 foreach (var productionOrderCode in productionOrderCodes)
                 {
@@ -235,13 +237,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 foreach (var assignment in assignments)
                 {
+                    errorProductionOrderCode = assignment.ProductionOrderCode;
                     await _productionHandoverHelperService.ChangeAssignedProgressStatus(assignment.ProductionOrderCode, assignment.DepartmentId, inventoryMap[assignment.ProductionOrderCode]);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, UpdateProductionOrderStatusError);
-                throw new Exception(UpdateProductionOrderStatusError + ": " + ex.Message, ex);
+                throw new Exception(string.Format(UpdateProductionOrderStatusError, errorProductionOrderCode) +": "+ ex.Message, ex);
             }
 
         }

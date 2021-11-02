@@ -64,9 +64,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{departmentId}/over-hour")]
-        public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo([FromRoute] int departmentId)
+        public async Task<PageData<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo([FromRoute] int departmentId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _departmentCalendarService.GetDepartmentOverHourInfo(departmentId);
+            return await _departmentCalendarService.GetDepartmentOverHourInfo(departmentId, page, size);
         }
 
         [HttpPost]
@@ -102,6 +102,49 @@ namespace VErpApi.Controllers.System
         public async Task<IList<DepartmentOverHourInfoModel>> UpdateDepartmentOverHourInfoMultiple([FromBody] IList<DepartmentOverHourInfoModel> data)
         {
             return await _departmentCalendarService.UpdateDepartmentOverHourInfoMultiple(data);
+        }
+
+
+        [HttpGet]
+        [Route("{departmentId}/increase")]
+        public async Task<PageData<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo([FromRoute] int departmentId, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _departmentCalendarService.GetDepartmentIncreaseInfo(departmentId, page, size);
+        }
+
+        [HttpPost]
+        [Route("increase")]
+        public async Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo([FromBody] int[] departmentIds)
+        {
+            return await _departmentCalendarService.GetDepartmentIncreaseInfo(departmentIds);
+        }
+
+        [HttpPost]
+        [Route("{departmentId}/increase")]
+        public async Task<DepartmentIncreaseInfoModel> CreateDepartmentIncreaseInfo([FromRoute] int departmentId, [FromBody] DepartmentIncreaseInfoModel data)
+        {
+            return await _departmentCalendarService.CreateDepartmentIncreaseInfo(departmentId, data);
+        }
+
+        [HttpPut]
+        [Route("{departmentId}/increase/{departmentIncreaseInfoId}")]
+        public async Task<DepartmentIncreaseInfoModel> UpdateDepartmentIncreaseInfo([FromRoute] int departmentId, [FromRoute] long departmentIncreaseInfoId, [FromBody] DepartmentIncreaseInfoModel data)
+        {
+            return await _departmentCalendarService.UpdateDepartmentIncreaseInfo(departmentId, departmentIncreaseInfoId, data);
+        }
+
+        [HttpDelete]
+        [Route("{departmentId}/increase/{departmentIncreaseInfoId}")]
+        public async Task<bool> DeleteDepartmentIncreaseInfo([FromRoute] int departmentId, [FromRoute] long departmentIncreaseInfoId)
+        {
+            return await _departmentCalendarService.DeleteDepartmentIncreaseInfo(departmentId, departmentIncreaseInfoId);
+        }
+
+        [HttpPut]
+        [Route("increase/multiple")]
+        public async Task<IList<DepartmentIncreaseInfoModel>> UpdateDepartmentIncreaseInfoMultiple([FromBody] IList<DepartmentIncreaseInfoModel> data)
+        {
+            return await _departmentCalendarService.UpdateDepartmentIncreaseInfoMultiple(data);
         }
     }
 }

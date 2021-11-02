@@ -660,9 +660,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var fromPackageIds = req.OutProducts.Select(p => p.FromPackageId).ToList();
             var fromPackages = await _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToListAsync();
-
+           
 
             var inventoryDetailList = new List<InventoryDetail>();
+
+            var packageRemaining = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
 
             foreach (var detail in req.OutProducts)
             {
@@ -762,7 +764,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 }
 
-                if (primaryQualtity > fromPackageInfo.PrimaryQuantityRemaining)
+                if (packageRemaining[fromPackageInfo.PackageId].SubDecimal(primaryQualtity) < 0)
                 {
                     var primaryUnit = productUnitConversions.FirstOrDefault(c => c.IsDefault && c.ProductId == productInfo.ProductId);
                     var remaining = $"{fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}";
@@ -777,6 +779,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     throw NotEnoughBalanceInPackage.BadRequestFormat(fromPackageInfo.PackageCode, productInfo.ProductCode, remaining, totalOutMess);
                 }
+
+                packageRemaining[fromPackageInfo.PackageId] = packageRemaining[fromPackageInfo.PackageId].SubDecimal(primaryQualtity);
+
 
                 inventoryDetailList.Add(new InventoryDetail
                 {
@@ -804,13 +809,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryRequirementCode = detail.InventoryRequirementCode,
                 });
 
-                fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity);
-                fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.AddDecimal(detail.ProductUnitConversionQuantity);
+                fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity)
+                    .RoundBy(puDefault.DecimalPlace);
+
+                fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.AddDecimal(detail.ProductUnitConversionQuantity)
+                    .RoundBy(puInfo.DecimalPlace);
 
                 var stockProductInfo = await EnsureStockProduct(inventory.StockId, fromPackageInfo.ProductId, fromPackageInfo.ProductUnitConversionId);
 
-                stockProductInfo.PrimaryQuantityWaiting = stockProductInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity);
-                stockProductInfo.ProductUnitConversionWaitting = stockProductInfo.ProductUnitConversionWaitting.AddDecimal(detail.ProductUnitConversionQuantity);
+                stockProductInfo.PrimaryQuantityWaiting = stockProductInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity)
+                     .RoundBy(puDefault.DecimalPlace);
+                stockProductInfo.ProductUnitConversionWaitting = stockProductInfo.ProductUnitConversionWaitting.AddDecimal(detail.ProductUnitConversionQuantity)
+                    .RoundBy(puInfo.DecimalPlace);
             }
             return inventoryDetailList;
         }
@@ -822,6 +832,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var fromPackageIds = inventoryDetails.Select(d => d.FromPackageId).ToList();
 
             var fromPackages = await _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToListAsync();
+           
+            var productIds = inventoryDetails.Select(d => d.ProductId).Distinct().ToList();
+
+            var pus = await _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).ToListAsync();
+
+            var puConversions = pus
+               .ToDictionary(p => p.ProductUnitConversionId, p => p);
+
+            var puDefaults = pus.GroupBy(p => p.ProductId)
+                .ToDictionary(p => p.Key, p => p.FirstOrDefault(d => d.IsDefault));
 
             foreach (var detail in inventoryDetails)
             {
@@ -830,21 +850,72 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var stockProductInfo = await EnsureStockProduct(inventory.StockId, detail.ProductId, detail.ProductUnitConversionId);
 
+                puConversions.TryGetValue(detail.ProductUnitConversionId, out var puInfo);
+
+                puDefaults.TryGetValue(detail.ProductId, out var puDefaultInfo);
+
                 if (!inventory.IsApproved)
                 {
-                    fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
-                    fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
+                    fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity)
+                        .RoundBy(puDefaultInfo?.DecimalPlace);
 
-                    stockProductInfo.PrimaryQuantityWaiting = stockProductInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity);
-                    stockProductInfo.ProductUnitConversionWaitting = stockProductInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity);
+                    fromPackageInfo.ProductUnitConversionWaitting = fromPackageInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity)
+                        .RoundBy(puInfo?.DecimalPlace);
+
+                    if (fromPackageInfo.PrimaryQuantityWaiting == 0)
+                    {
+                        fromPackageInfo.ProductUnitConversionWaitting = 0;
+                    }
+                    if (fromPackageInfo.ProductUnitConversionWaitting == 0)
+                    {
+                        fromPackageInfo.PrimaryQuantityWaiting = 0;
+                    }
+
+                    stockProductInfo.PrimaryQuantityWaiting = stockProductInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity)
+                         .RoundBy(puDefaultInfo?.DecimalPlace); 
+
+                    stockProductInfo.ProductUnitConversionWaitting = stockProductInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity)
+                         .RoundBy(puInfo?.DecimalPlace); 
+
+                    if (stockProductInfo.PrimaryQuantityWaiting == 0)
+                    {
+                        stockProductInfo.ProductUnitConversionWaitting = 0;
+                    }
+
+                    if (stockProductInfo.ProductUnitConversionWaitting == 0)
+                    {
+                        stockProductInfo.PrimaryQuantityWaiting = 0;
+                    }
                 }
                 else
                 {
-                    fromPackageInfo.PrimaryQuantityRemaining = fromPackageInfo.PrimaryQuantityRemaining.AddDecimal(detail.PrimaryQuantity);
-                    fromPackageInfo.ProductUnitConversionRemaining = fromPackageInfo.ProductUnitConversionRemaining.AddDecimal(detail.ProductUnitConversionQuantity);
+                    fromPackageInfo.PrimaryQuantityRemaining = fromPackageInfo.PrimaryQuantityRemaining.AddDecimal(detail.PrimaryQuantity)
+                        .RoundBy(puDefaultInfo?.DecimalPlace);
+                    fromPackageInfo.ProductUnitConversionRemaining = fromPackageInfo.ProductUnitConversionRemaining.AddDecimal(detail.ProductUnitConversionQuantity)
+                         .RoundBy(puInfo?.DecimalPlace);
 
-                    stockProductInfo.PrimaryQuantityRemaining = stockProductInfo.PrimaryQuantityRemaining.AddDecimal(detail.PrimaryQuantity);
-                    stockProductInfo.ProductUnitConversionRemaining = stockProductInfo.ProductUnitConversionRemaining.AddDecimal(detail.ProductUnitConversionQuantity);
+                    if (fromPackageInfo.PrimaryQuantityRemaining == 0)
+                    {
+                        fromPackageInfo.ProductUnitConversionRemaining = 0;
+                    }
+                    if (fromPackageInfo.ProductUnitConversionRemaining == 0)
+                    {
+                        fromPackageInfo.PrimaryQuantityRemaining = 0;
+                    }
+
+                    stockProductInfo.PrimaryQuantityRemaining = stockProductInfo.PrimaryQuantityRemaining.AddDecimal(detail.PrimaryQuantity)
+                        .RoundBy(puDefaultInfo?.DecimalPlace);
+                    stockProductInfo.ProductUnitConversionRemaining = stockProductInfo.ProductUnitConversionRemaining.AddDecimal(detail.ProductUnitConversionQuantity)
+                         .RoundBy(puInfo?.DecimalPlace);
+
+                    if (stockProductInfo.PrimaryQuantityRemaining == 0)
+                    {
+                        stockProductInfo.ProductUnitConversionRemaining = 0;
+                    }
+                    if (stockProductInfo.ProductUnitConversionRemaining == 0)
+                    {
+                        stockProductInfo.PrimaryQuantityRemaining = 0;
+                    }
                 }
 
                 ValidatePackage(fromPackageInfo);
