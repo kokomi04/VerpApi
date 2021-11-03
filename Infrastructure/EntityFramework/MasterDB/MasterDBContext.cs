@@ -34,6 +34,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
+        public virtual DbSet<EmailConfiguration> EmailConfiguration { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
         public virtual DbSet<GuideCate> GuideCate { get; set; }
         public virtual DbSet<I18nLanguage> I18nLanguage { get; set; }
@@ -393,6 +394,21 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasMaxLength(255)
                     .HasDefaultValueSql("('{}')")
                     .HasComment("");
+            });
+
+            modelBuilder.Entity<EmailConfiguration>(entity =>
+            {
+                entity.Property(e => e.MailFrom)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.Password)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.SmtpHost)
+                    .IsRequired()
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<Guide>(entity =>
