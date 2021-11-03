@@ -1468,6 +1468,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             value = generated.CustomCode;
                             lastTypeValue.LastValue = generated.LastValue;
                             lastTypeValue.LastCode = generated.CustomCode;
+                            lastTypeValue.BaseValue = generated.BaseValue;
                         }
                         catch (BadRequestException badRequest)
                         {

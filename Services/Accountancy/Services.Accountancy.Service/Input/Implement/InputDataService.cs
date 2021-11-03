@@ -1519,6 +1519,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             value = generated.CustomCode;
                             lastTypeValue.LastValue = generated.LastValue;
                             lastTypeValue.LastCode = generated.CustomCode;
+                            lastTypeValue.BaseValue = generated.BaseValue;
                         }
                         catch (BadRequestException badRequest)
                         {
