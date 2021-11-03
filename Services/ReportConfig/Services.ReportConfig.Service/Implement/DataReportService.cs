@@ -533,9 +533,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var isSumByGroup = groupColumAlias.Count > 0;
             var groupTokenSums = new GroupTokenSum();
 
+            var total = 0;
+            var pagedData = new List<NonCamelCaseDictionary>();
             for (var i = 0; i < data.Count; i++)
             {
+
                 var row = data[i];
+                if (size > 0 && total >= (page - 1) * size && total < page * size)
+                {
+                    pagedData.Add(row);
+                }
 
                 if (row != null)
                 {
@@ -546,6 +553,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         {
                             groupTokenSum = new ColumnGroupHasBeenSum();
                             groupTokenSums.Add(token, groupTokenSum);
+                            total++;
                         }
 
                         foreach (var column in calSumColumns)
@@ -575,6 +583,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
                     else
                     {
+                        total++;
                         foreach (var column in calSumColumns)
                         {
 
@@ -590,12 +599,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             }
 
-            var total = data.Count;
+            //var total = data.Count;
             if (reportInfo.IsDbPaging.HasValue && reportInfo.IsDbPaging.Value && data.Count > 0 && data[0].ContainsKey("TotalRecord"))
             {
                 total = Convert.ToInt32(data[0]["TotalRecord"]);
             }
-            var pagedData = size > 0 && (!reportInfo.IsDbPaging.HasValue || !reportInfo.IsDbPaging.Value) ? data.Skip((page - 1) * size).Take(size).ToList() : data;
+
+            pagedData = size > 0 && (!reportInfo.IsDbPaging.HasValue || !reportInfo.IsDbPaging.Value) ? pagedData : data;
 
             return (new PageDataTable() { List = pagedData, Total = total }, totals);
         }
