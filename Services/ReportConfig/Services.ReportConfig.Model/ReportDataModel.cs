@@ -10,9 +10,9 @@ namespace Verp.Services.ReportConfig.Model
     {
         public ReportDataModel()
         {
-            Totals = new NonCamelCaseDictionary();
+            Totals = new NonCamelCaseDictionary<decimal>();
         }
-        public NonCamelCaseDictionary Totals { get; set; }
+        public NonCamelCaseDictionary<decimal> Totals { get; set; }
         public PageDataTable Rows { get; set; }
         public NonCamelCaseDictionary Head { get; set; }
         public IList<NonCamelCaseDictionary> HeadTable { get; set; }
