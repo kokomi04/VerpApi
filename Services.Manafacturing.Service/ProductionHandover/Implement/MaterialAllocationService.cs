@@ -22,6 +22,7 @@ using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -127,6 +128,157 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                .ProjectTo<IgnoreAllocationModel>(_mapper.ConfigurationProvider)
                .ToListAsync();
             return ignoreAllocations;
+        }
+
+        public async Task<ConflictHandoverModel> GetConflictHandovers(long productionOrderId)
+        {
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@ProductionOrderId", productionOrderId)
+            };
+
+            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+
+            var inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                .AsQueryable()
+                .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            var materialRequirements = await _manufacturingDBContext.ProductionMaterialsRequirementDetail
+                .Include(rd => rd.ProductionMaterialsRequirement)
+                .Where(rd => rd.ProductionMaterialsRequirement.ProductionOrderId == productionOrderId)
+                .ProjectTo<ProductionMaterialsRequirementDetailListModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            var handovers = await _manufacturingDBContext.ProductionHandover
+                .Where(h => h.ProductionOrderId == productionOrderId)
+                .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
+                                   join p in _manufacturingDBContext.ProductionStep on ps.ParentId equals p.ProductionStepId
+                                   join s in _manufacturingDBContext.Step on p.StepId equals s.StepId
+                                   where !ps.IsDeleted
+                                   && !ps.IsFinish
+                                   && ps.IsGroup != true
+                                   && ps.ContainerTypeId == (int)EnumProductionProcess.EnumContainerType.ProductionOrder
+                                   && ps.ContainerId == productionOrderId
+                                   select new ProductionStepSimpleModel
+                                   {
+                                       ProductionStepId = ps.ProductionStepId,
+                                       Title = !string.IsNullOrEmpty(ps.Title) ? ps.Title : s.StepName
+                                   })
+                                   .ToList();
+
+            var productionStepIds = productionSteps.Select(ps => ps.ProductionStepId).ToList();
+
+            var stepDataMap = (from ldr in _manufacturingDBContext.ProductionStepLinkDataRole
+                               join ld in _manufacturingDBContext.ProductionStepLinkData on ldr.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                               where productionStepIds.Contains(ldr.ProductionStepId)
+                               select new
+                               {
+                                   ldr.ProductionStepLinkDataRoleTypeId,
+                                   ld.ObjectId,
+                                   ld.ObjectTypeId,
+                                   ldr.ProductionStepId
+                               })
+                               .Distinct()
+                               .ToList()
+                               .GroupBy(d => d.ProductionStepId)
+                               .ToDictionary(g => g.Key, g => new InOutProductionStepModel
+                               {
+                                   InputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
+                                   OutputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
+                               });
+
+            var lstAssignments = _manufacturingDBContext.ProductionAssignment
+                .Where(a => productionStepIds.Contains(a.ProductionStepId))
+                .Select(a => new
+                {
+                    a.ProductionStepId,
+                    a.DepartmentId
+                })
+                .Distinct()
+                .ToList();
+
+            var assignments = lstAssignments
+                .GroupBy(a => a.ProductionStepId)
+                .ToDictionary(g => g.Key, g => g.Select(a => a.DepartmentId).ToList());
+
+            var assignmentDataMap = new Dictionary<int, InOutProductionStepModel>();
+            foreach (var item in lstAssignments)
+            {
+                if (!stepDataMap.ContainsKey(item.ProductionStepId)) continue;
+                if (!assignmentDataMap.ContainsKey(item.DepartmentId))
+                {
+                    assignmentDataMap.Add(item.DepartmentId, stepDataMap[item.ProductionStepId]);
+                }
+                else
+                {
+                    assignmentDataMap[item.DepartmentId].InputData.AddRange(stepDataMap[item.ProductionStepId].InputData);
+                    assignmentDataMap[item.DepartmentId].OutputData.AddRange(stepDataMap[item.ProductionStepId].OutputData);
+                }
+            }
+
+            var conflictInventories = inventories
+                .Where(inv => !inv.DepartmentId.HasValue
+                || (inv.ProductionStepId.HasValue &&
+                    (!productionStepIds.Contains(inv.ProductionStepId.Value)
+                    || !assignments.ContainsKey(inv.ProductionStepId.Value)
+                    || !assignments[inv.ProductionStepId.Value].Contains(inv.DepartmentId.Value)
+                    || !stepDataMap.ContainsKey(inv.ProductionStepId.Value)
+                    || (inv.InventoryTypeId == EnumInventoryType.Output && !stepDataMap[inv.ProductionStepId.Value].InputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                    || (inv.InventoryTypeId == EnumInventoryType.Input && !stepDataMap[inv.ProductionStepId.Value].OutputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                    ))
+                || (!inv.ProductionStepId.HasValue &&
+                    (!assignmentDataMap.ContainsKey(inv.DepartmentId.Value)
+                    || (inv.InventoryTypeId == EnumInventoryType.Output && !assignmentDataMap[inv.DepartmentId.Value].InputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                    || (inv.InventoryTypeId == EnumInventoryType.Input && !assignmentDataMap[inv.DepartmentId.Value].OutputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                    ))
+                ).ToList();
+
+            var conflictExportStockInventories = conflictInventories
+              .Where(inv => !string.IsNullOrEmpty(inv.InventoryCode) && inv.InventoryTypeId == EnumInventoryType.Output && inv.Status == EnumProductionInventoryRequirementStatus.Accepted)
+              .ToList();
+
+            var conflictOtherInventories = conflictInventories
+              .Where(inv => string.IsNullOrEmpty(inv.InventoryCode) || inv.InventoryTypeId != EnumInventoryType.Output || inv.Status != EnumProductionInventoryRequirementStatus.Accepted)
+              .ToList();
+
+            var conflictMaterialRequirements = materialRequirements
+                .Where(mr => !productionStepIds.Contains(mr.ProductionStepId)
+                || !assignments.ContainsKey(mr.ProductionStepId)
+                || !assignments[mr.ProductionStepId].Contains(mr.DepartmentId)
+                || !stepDataMap.ContainsKey(mr.ProductionStepId)
+                || !stepDataMap[mr.ProductionStepId].InputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == mr.ProductId))
+                .ToList();
+
+            var conflictHandovers = handovers
+                .Where(ho => !productionStepIds.Contains(ho.FromProductionStepId)
+                || !productionStepIds.Contains(ho.ToProductionStepId)
+                || !assignments.ContainsKey(ho.FromProductionStepId)
+                || !assignments.ContainsKey(ho.ToProductionStepId)
+                || !assignments[ho.FromProductionStepId].Contains(ho.FromDepartmentId)
+                || !assignments[ho.ToProductionStepId].Contains(ho.ToDepartmentId)
+                || !stepDataMap.ContainsKey(ho.FromProductionStepId)
+                || !stepDataMap.ContainsKey(ho.ToProductionStepId)
+                || !stepDataMap[ho.ToProductionStepId].InputData.Any(d => d.ObjectTypeId == (int)ho.ObjectTypeId && d.ObjectId == ho.ObjectId)
+                || !stepDataMap[ho.FromProductionStepId].OutputData.Any(d => d.ObjectTypeId == (int)ho.ObjectTypeId && d.ObjectId == ho.ObjectId))
+                .ToList();
+
+            var result = new ConflictHandoverModel
+            {
+                ConflictExportStockInventories = conflictExportStockInventories,
+                ConflictOtherInventories = conflictOtherInventories,
+                ConflictMaterialRequirements = conflictMaterialRequirements,
+                ConflictHandovers = conflictHandovers,
+                ProductionSteps = productionSteps,
+                StepDataMap = stepDataMap,
+                Assignments = assignments
+            };
+
+
+            return result;
         }
 
     }

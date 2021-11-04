@@ -47,5 +47,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _materialAllocationService.GetIgnoreAllocations(productionOrderId);
         }
+
+        [HttpGet]
+        [Route("{productionOrderId}/conflict")]
+        public async Task<ConflictHandoverModel> GetConflictHandovers([FromRoute] long productionOrderId)
+        {
+            return await _materialAllocationService.GetConflictHandovers(productionOrderId);
+        }
     }
 }
