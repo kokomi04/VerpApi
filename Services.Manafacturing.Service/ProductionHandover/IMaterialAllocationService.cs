@@ -11,6 +11,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
 {
     public interface IMaterialAllocationService
     {
+        Task<ConflictHandoverModel> GetConflictHandovers(long productionOrderId);
+
         Task<IList<IgnoreAllocationModel>> GetIgnoreAllocations(long productionOrderId);
 
         Task<IList<MaterialAllocationModel>> GetMaterialAllocations(long productionOrderId);
