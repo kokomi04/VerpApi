@@ -106,9 +106,9 @@ namespace VErp.Commons.Library
             return data.ToArray();
         }
 
-     
 
-        public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
+
+        public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null)
         {
             var sheetDatas = new List<ExcelSheetDataModel>();
 
@@ -135,6 +135,7 @@ namespace VErp.Commons.Library
             var fromRowIndex = fromRow - 1;
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
 
+            var titleRowIndex = titleRow.HasValue && titleRow > 0 ? fromRowIndex > 0 ? titleRow.Value - 1 : fromRowIndex - 1 : 0;
 
             for (int i = 0; i < _hssfwb.NumberOfSheets; i++)
             {
@@ -161,6 +162,7 @@ namespace VErp.Commons.Library
                 }
 
                 var sheetData = new List<NonCamelCaseDictionary<string>>();
+                var header = new NonCamelCaseDictionary<string>();
 
                 var columns = new HashSet<string>();
 
@@ -206,8 +208,56 @@ namespace VErp.Commons.Library
                     regionValues[re] = cell;
                 }
 
+                var headerRow = sheet.GetRow(titleRowIndex);
+                if (headerRow != null)
+                {
+                    foreach (var col in headerRow.Cells)
+                    {
+                        var columnName = GetExcelColumnName(col.ColumnIndex + 1);
+                        if (!columns.Contains(columnName))
+                        {
+                            columns.Add(columnName);
+                        }
+                        var cell = col;
+                        if (cell.IsMergedCell)
+                        {
+                            for (var regionIdx = 0; regionIdx < mergeRegions.Length; regionIdx++)
+                            {
+                                var region = mergeRegions[regionIdx];
+                                if (region.IsInRange(titleRowIndex, col.ColumnIndex))
+                                {
+                                    var c = regionValues[regionIdx];
+                                    var v = GetCellString(c);
+                                    if (!string.IsNullOrWhiteSpace(v))
+                                    {
+                                        cell = c;
+                                    }
+                                }
+                            }
+                        }
+                        try
+                        {
+                            header.Add(columnName, GetCellString(cell)?.Trim()?.Trim('\''));
+                        }
+                        catch (Exception)
+                        {
+                            header.Add(columnName, cell.StringCellValue.ToString()?.Trim()?.Trim('\''));
+
+                        }
+                    }
+                    //set default value for null column
+                    foreach (var column in columns)
+                    {
+                        if (!header.ContainsKey(column))
+                        {
+                            header.Add(column, null);
+                        }
+                    }
+                }
+              
+
                 var continuousRowEmpty = 0;
-                for (int row = fromRowIndex; row < maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
+                for (int row = fromRowIndex; row < fromRowIndex + maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
 
                     var rowData = new NonCamelCaseDictionary<string>();
@@ -262,7 +312,7 @@ namespace VErp.Commons.Library
                             {
                                 rowData.Add(columnName, GetCellString(cell)?.Trim()?.Trim('\''));
                             }
-                            catch(Exception)
+                            catch (Exception)
                             {
                                 rowData.Add(columnName, cell.StringCellValue.ToString()?.Trim()?.Trim('\''));
 
@@ -308,7 +358,7 @@ namespace VErp.Commons.Library
                     }
                 }
 
-                sheetDatas.Add(new ExcelSheetDataModel() { SheetName = sheet.SheetName, Rows = sheetData.ToArray() });
+                sheetDatas.Add(new ExcelSheetDataModel() { SheetName = sheet.SheetName, Rows = sheetData.ToArray(), Header = header });
             }
 
             return sheetDatas;
@@ -515,7 +565,7 @@ namespace VErp.Commons.Library
 
                             return Convert.ToDecimal(cell.NumericCellValue).ToString();
                         }
-                        
+
                         //try
                         //{
                         //    return cell.DateCellValue.ToString();

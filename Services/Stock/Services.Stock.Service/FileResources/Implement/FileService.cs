@@ -254,7 +254,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        public IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
+        public IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null)
         {
 
             var (validate, fileTypeId) = ValidateUploadFile(file);
@@ -272,7 +272,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var reader = new ExcelReader(file.OpenReadStream());
 
-            return reader.ReadSheets(sheetName, fromRow, toRow, maxrows);
+            return reader.ReadSheets(sheetName, fromRow, toRow, maxrows, titleRow);
         }
 
         public async Task<bool> GenerateThumbnail(long fileId)
