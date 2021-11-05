@@ -7,6 +7,6 @@ INNER JOIN Inventory i ON id.InventoryId = i.InventoryId
 INNER JOIN InventoryRequirement r ON id.InventoryRequirementCode = r.InventoryRequirementCode 
 INNER JOIN InventoryRequirementDetail rd 
 	ON r.InventoryRequirementId = rd.InventoryRequirementId 
-	AND id.ProductId = rd.ProductId AND i.DepartmentId = rd.DepartmentId 
+	AND id.ProductId = rd.ProductId
 	AND id.ProductionOrderCode = rd.ProductionOrderCode
 	AND id.PrimaryQuantity = rd.PrimaryQuantity;
