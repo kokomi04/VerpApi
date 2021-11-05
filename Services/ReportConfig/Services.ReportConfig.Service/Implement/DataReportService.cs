@@ -775,7 +775,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var column in columns.Where(c => c.IsCalcSum))
                 {
-                    totals.Add(column.Alias, Convert.ToDecimal(table.Rows[0][column.Alias]));
+                    var v = table.Rows[0][column.Alias].IsNullObject() ? 0 : Convert.ToDecimal(table.Rows[0][column.Alias]);
+                    totals.Add(column.Alias, v);
                 }
             }
 
