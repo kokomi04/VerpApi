@@ -24,22 +24,21 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public IList<ProductionMaterialsRequirementDetailListModel> ConflictMaterialRequirements { get; set; }
         public IList<ProductionHandoverModel> ConflictHandovers { get; set; }
 
-        public IList<ProductionStepSimpleModel> ProductionSteps { get; set; }
-        public IDictionary<long, InOutProductionStepModel> StepDataMap { get; set; }
+        public IList<ProductionStepSimpleModel> InputProductionSteps { get; set; }
+        public IDictionary<long, List<InOutMaterialModel>> InputDataMap { get; set; }
         public IDictionary<long, List<int>> Assignments { get; set; }
+    }
+
+    public class InOutProductionStepModel
+    {
+        public List<InOutMaterialModel> InputData { get; set; }
+        public List<InOutMaterialModel> OutputData { get; set; }
     }
 
     public class ProductionStepSimpleModel
     {
         public long ProductionStepId { get; set; }
         public string Title { get; set; }
-    }
-
-
-    public class InOutProductionStepModel
-    {
-        public List<InOutMaterialModel> InputData { get; set; }
-        public List<InOutMaterialModel> OutputData { get; set; }
     }
 
     public class InOutMaterialModel
