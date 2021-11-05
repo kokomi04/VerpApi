@@ -182,5 +182,12 @@ namespace VErpApi.Controllers.System
             return  _cachingService.TryGet<HashSet<Guid>>(ModuleApiEndpointMappingsCacheKey(moduleId));
         }
 
+        [HttpGet]
+        [Route("ByModuleAndPermission")]
+        public Task<IList<RolePermissionModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission)
+        {
+            return _roleService.GetRolesPermissionByModuleAndPermission(moduleId, premission);
+        }
+
     }
 }

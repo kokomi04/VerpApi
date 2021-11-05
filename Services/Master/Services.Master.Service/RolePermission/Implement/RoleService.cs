@@ -657,6 +657,23 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         }
 
+        public async Task<IList<RolePermissionModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission)
+        {
+            var lst = 
+                from p in _masterContext.RolePermission
+                where p.ModuleId == moduleId && (p.Permission & premission) == premission
+                select new RolePermissionModel
+                {
+                    RoleId = p.RoleId,
+                    ModuleId = p.ModuleId,
+                    Permission = p.Permission,
+                    ObjectId = p.ObjectId,
+                    ObjectTypeId = p.ObjectTypeId
+                };
+
+            return await lst.ToListAsync();
+        }
+
         #region private
 
         private string FormatRootPath(string parentRootPath, int roleId)
