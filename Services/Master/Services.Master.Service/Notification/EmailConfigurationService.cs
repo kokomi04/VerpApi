@@ -40,7 +40,7 @@ namespace VErp.Services.Master.Service.Notification
 
         public async Task<bool> UpdateEmailConfiguration(EmailConfigurationModel model)
         {
-            var conf = await _masterDBContext.EmailConfiguration.AsNoTracking().FirstOrDefaultAsync();
+            var conf = await _masterDBContext.EmailConfiguration.FirstOrDefaultAsync();
             if (conf == null)
                 _masterDBContext.EmailConfiguration.Add(_mapper.Map<EmailConfiguration>(model));
             else

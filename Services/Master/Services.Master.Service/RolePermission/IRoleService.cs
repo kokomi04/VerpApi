@@ -32,6 +32,8 @@ namespace VErp.Services.Master.Service.RolePermission
 
         void RemoveAuthCache();
 
+        Task<IList<RolePermissionModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission);
+
 
     }
 }

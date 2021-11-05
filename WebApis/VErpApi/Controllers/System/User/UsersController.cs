@@ -82,6 +82,19 @@ namespace VErpApi.Controllers.System
         }
 
         /// <summary>
+        /// Lấy danh sách users theo roles
+        /// </summary>
+        /// <param name="roles"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [GlobalApi]
+        [Route("GetListByRoles")]
+        public async Task<IList<UserInfoOutput>> GetListByRoles([FromBody] IList<int> roles)
+        {
+            return await _userService.GetListByRoleIds(roles).ConfigureAwait(true);
+        }
+
+        /// <summary>
         /// Thêm mới user
         /// </summary>
         /// <param name="req"></param>

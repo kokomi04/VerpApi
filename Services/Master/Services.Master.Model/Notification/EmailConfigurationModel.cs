@@ -9,5 +9,6 @@ namespace VErp.Services.Master.Model.Notification
         public int Port { get; set; }
         public string MailFrom { get; set; }
         public string Password { get; set; }
+        public bool IsSsl { get; set; }
     }
 }

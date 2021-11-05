@@ -349,6 +349,37 @@ namespace VErp.Services.Master.Service.Users.Implement
             return lst;
         }
 
+        public async Task<IList<UserInfoOutput>> GetListByRoleIds(IList<int> roles)
+        {
+            if (roles == null || roles.Count == 0)
+                return new List<UserInfoOutput>();
+
+            var userInfos = await _masterContext.User.AsNoTracking().Where(u => roles.Contains(u.RoleId.GetValueOrDefault())).ToListAsync();
+            var userIds = userInfos.Select(x=>x.UserId).ToList();
+
+            var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
+
+            var lst = (from u in userInfos
+                       join e in employees on u.UserId equals e.UserId
+                       select new UserInfoOutput
+                       {
+                           UserId = u.UserId,
+                           UserName = u.UserName,
+                           UserStatusId = (EnumUserStatus)u.UserStatusId,
+                           RoleId = u.RoleId,
+                           EmployeeCode = e.EmployeeCode,
+                           FullName = e.FullName,
+                           Address = e.Address,
+                           Email = e.Email,
+                           GenderId = (EnumGender?)e.GenderId,
+                           Phone = e.Phone
+                       }).ToList();
+
+            await EnrichDepartments(lst);
+
+            return lst;
+        }
+
         private async Task EnrichDepartments(IList<UserInfoOutput> users)
         {
             var selectedUserIds = users.Select(u => u.UserId).ToList();
