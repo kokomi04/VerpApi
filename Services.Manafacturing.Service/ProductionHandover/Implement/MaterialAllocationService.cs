@@ -172,24 +172,45 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var productionStepIds = productionSteps.Select(ps => ps.ProductionStepId).ToList();
 
-            var stepDataMap = (from ldr in _manufacturingDBContext.ProductionStepLinkDataRole
-                               join ld in _manufacturingDBContext.ProductionStepLinkData on ldr.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
-                               where productionStepIds.Contains(ldr.ProductionStepId)
-                               select new
-                               {
-                                   ldr.ProductionStepLinkDataRoleTypeId,
-                                   ld.ObjectId,
-                                   ld.ObjectTypeId,
-                                   ldr.ProductionStepId
-                               })
-                               .Distinct()
-                               .ToList()
-                               .GroupBy(d => d.ProductionStepId)
-                               .ToDictionary(g => g.Key, g => new InOutProductionStepModel
-                               {
-                                   InputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
-                                   OutputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
-                               });
+            var linkDatas = (from ldr in _manufacturingDBContext.ProductionStepLinkDataRole
+                             join ld in _manufacturingDBContext.ProductionStepLinkData on ldr.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                             where productionStepIds.Contains(ldr.ProductionStepId)
+                             select new
+                             {
+                                 ldr.ProductionStepLinkDataRoleTypeId,
+                                 ld.ProductionStepLinkTypeId,
+                                 ld.ProductionStepLinkDataId,
+                                 ld.ObjectId,
+                                 ld.ObjectTypeId,
+                                 ldr.ProductionStepId
+                             })
+                             .ToList();
+
+            var inpLinkDatas = linkDatas.Where(ld => ld.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).ToList();
+            var outLinkDatas = linkDatas.Where(ld => ld.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).ToList();
+
+            var inputLinkDatas = inpLinkDatas
+                .Where(ild => !outLinkDatas.Any(old => old.ProductionStepLinkDataId == ild.ProductionStepLinkDataId && ild.ProductionStepLinkTypeId == (int)EnumProductionProcess.EnumProductionStepLinkType.Handover))
+                .ToList();
+
+            var inputProductionStepIds = inputLinkDatas
+                .Select(ild => ild.ProductionStepId)
+                .Distinct()
+                .ToList();
+
+            var inputProductionSteps = productionSteps.Where(ps => inputProductionStepIds.Contains(ps.ProductionStepId)).ToList();
+
+            var inputDataMap = inputLinkDatas
+                .GroupBy(d => d.ProductionStepId)
+                .ToDictionary(g => g.Key, g => g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList());
+
+            var stepDataMap = linkDatas
+                .GroupBy(d => d.ProductionStepId)
+                .ToDictionary(g => g.Key, g => new InOutProductionStepModel
+                {
+                    InputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
+                    OutputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
+                });
 
             var lstAssignments = _manufacturingDBContext.ProductionAssignment
                 .Where(a => productionStepIds.Contains(a.ProductionStepId))
@@ -272,8 +293,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 ConflictOtherInventories = conflictOtherInventories,
                 ConflictMaterialRequirements = conflictMaterialRequirements,
                 ConflictHandovers = conflictHandovers,
-                ProductionSteps = productionSteps,
-                StepDataMap = stepDataMap,
+                InputProductionSteps = inputProductionSteps,
+                InputDataMap = inputDataMap,
                 Assignments = assignments
             };
 
