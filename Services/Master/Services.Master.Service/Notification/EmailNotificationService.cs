@@ -29,13 +29,13 @@ namespace VErp.Services.Master.Service.Notification
                 MailTo = mailTo,
                 MailFrom = config.MailFrom,
                 Message = message,
-                Name = "SYSTEM",
+                Name = "VERP",
                 Password = config.Password,
                 Port = config.Port,
                 SmtpHost = config.SmtpHost,
                 Subject = subject
             };
-            return await Dispatch(mailArguments, config.IsSsl, false);
+            return await Dispatch(mailArguments, config.IsSsl, true);
         }
 
         private async Task<bool> Dispatch(MailArguments mailArgs, bool isSsl, bool isBodyHtml)
