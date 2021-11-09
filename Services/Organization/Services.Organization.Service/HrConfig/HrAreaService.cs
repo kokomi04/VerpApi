@@ -603,12 +603,21 @@ namespace VErp.Services.Organization.Service.HrConfig
             {
                 if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
                 {
-                    if (data.FieldName != inputField.FieldName)
+                    if (data.FormTypeId == EnumFormType.ViewOnly)
+                    {
+                        await _organizationDBContext.DeleteColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), inputField.FieldName);
+                    }
+                    else if (data.FieldName != inputField.FieldName)
                     {
                         await _organizationDBContext.RenameColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), inputField.FieldName, data.FieldName);
                     }
                     await _organizationDBContext.UpdateColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
+                }else if (data.FormTypeId != EnumFormType.ViewOnly)
+                {
+                    await _organizationDBContext.AddColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
+                
+
                 _mapper.Map(data, inputField);
 
                 await _organizationDBContext.SaveChangesAsync();
