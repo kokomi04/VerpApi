@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
         public virtual DbSet<EmailConfiguration> EmailConfiguration { get; set; }
+        public virtual DbSet<FileConfiguration> FileConfiguration { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
         public virtual DbSet<GuideCate> GuideCate { get; set; }
         public virtual DbSet<I18nLanguage> I18nLanguage { get; set; }
