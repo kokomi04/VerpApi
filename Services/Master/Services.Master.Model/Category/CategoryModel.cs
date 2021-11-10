@@ -28,6 +28,7 @@ namespace VErp.Services.Master.Model.Category
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
         public OutSideDataConfigModel OutSideDataConfig { get; set; }
+        public bool? IsHide { get; set; }
     }
 
     public class CategoryFullModel : CategoryModel

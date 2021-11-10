@@ -36,6 +36,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
+        public bool? IsHide { get; set; }
 
         public virtual CategoryGroup CategoryGroup { get; set; }
         public virtual OutSideDataConfig OutSideDataConfig { get; set; }

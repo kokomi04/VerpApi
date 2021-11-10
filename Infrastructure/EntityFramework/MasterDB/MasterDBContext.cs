@@ -164,6 +164,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.IsHide).HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.MenuId).HasComment("");
 
                 entity.Property(e => e.ParentTitle).HasMaxLength(255);

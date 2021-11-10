@@ -1080,7 +1080,7 @@ namespace VErp.Services.Master.Service.Category
 
         public async Task<IList<CategoryListModel>> GetDynamicCates()
         {
-            return await _masterContext.Category.Where(c => !c.IsOutSideData)
+            return await _masterContext.Category.Where(c => !c.IsOutSideData && c.IsHide == false)
                 .Select(c => new CategoryListModel()
                 {
                     CategoryId = c.CategoryId,
