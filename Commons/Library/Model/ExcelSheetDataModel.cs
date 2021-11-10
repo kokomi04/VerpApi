@@ -9,6 +9,5 @@ namespace VErp.Commons.Library.Model
     {
         public string SheetName { get; set; }
         public NonCamelCaseDictionary<string>[] Rows { get; set; }
-        public NonCamelCaseDictionary<string> Header { get; set; }
     }
 }
