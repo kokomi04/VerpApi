@@ -97,7 +97,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var invoiceData = responseData.Data.Invoices.FirstOrDefault();
 
-            await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData);
+            await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData, config.UrlSearch);
 
             return await Task.FromResult(true);
         }
@@ -151,7 +151,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var invoiceData = responseData.Data.Invoices.FirstOrDefault();
 
-            await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData);
+            await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData, config.UrlSearch);
             await UpdateEInvoiceStatus(voucherParentCode, EnumElectronicInvoiceStatus.EInvoiceAdjusted);
 
             return true;
@@ -207,7 +207,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             var invoiceData = responseData.Data.Invoices.FirstOrDefault();
 
-            await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData);
+            await UpdateInvoiceInfoForVoucherBill(voucherBillId, invoiceData, config.UrlSearch);
 
             await UpdateEInvoiceStatus(voucherParentCode, EnumElectronicInvoiceStatus.EInvoiceReplaced);
             return true;
@@ -276,15 +276,16 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         }
 
         #region private
-        private async Task UpdateInvoiceInfoForVoucherBill(long voucherBillId, InvoiceInfo invoiceData)
+        private async Task UpdateInvoiceInfoForVoucherBill(long voucherBillId, InvoiceInfo invoiceData, string urlSearch)
         {
             var exSql = @$"UPDATE {VoucherConstants.VOUCHER_VALUE_ROW_TABLE} 
             SET {VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE},
                 {VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE},
                 {VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE} = @{VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE},
                 {VoucherConstants.VOUCHER_E_INVOICE_NUMBER} = @{VoucherConstants.VOUCHER_E_INVOICE_NUMBER},
-                {VoucherConstants.VOUCHER_E_INVOICE_STATUS} = @{VoucherConstants.VOUCHER_E_INVOICE_STATUS}
-            WHERE {VoucherConstants.VOUCHER_BILL_F_Id} = @{VoucherConstants.VOUCHER_BILL_F_Id}
+                {VoucherConstants.VOUCHER_E_INVOICE_STATUS} = @{VoucherConstants.VOUCHER_E_INVOICE_STATUS},
+                {VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH} = @{VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH},
+            WHERE {VoucherConstants.VOUCHER_BILL_F_Id} = @{VoucherConstants.VOUCHER_BILL_F_Id};
             ";
             var sqlParams = new SqlParameter[] {
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE}", DateTime.ParseExact(invoiceData.ArisingDate, "dd/MM/yyyy", CultureInfo.InvariantCulture)),
@@ -293,6 +294,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_NUMBER}", invoiceData.No),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_STATUS}", ConvertEInvoiceStatusOfProviderIntoSystem(invoiceData.InvoiceStatus)),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_BILL_F_Id}", voucherBillId),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH}", $"{urlSearch.Trim()}{invoiceData.LookupCode}"),
             };
 
             var _ = await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(exSql, sqlParams);
