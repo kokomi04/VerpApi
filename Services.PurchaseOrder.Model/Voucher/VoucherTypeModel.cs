@@ -27,6 +27,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
         public string AfterUpdateRowsJsAction { get; set; }
+        public bool IsHide { get; set; }
     }
 
     public class VoucherTypeFullModel : VoucherTypeExecData
