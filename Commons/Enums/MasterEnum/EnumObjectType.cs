@@ -363,6 +363,7 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Phân bổ vật tư sản xuất")]
         MaterialAllocation = 1045,
-        EmailConfiguration = 53004
+        EmailConfiguration = 53004,
+        FileConfiguration = 53005
     }
 }
