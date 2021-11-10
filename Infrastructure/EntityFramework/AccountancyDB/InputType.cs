@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string AfterSaveAction { get; set; }
         public string AfterUpdateRowsJsAction { get; set; }
         public bool IsOpenning { get; set; }
+        public bool IsHide { get; set; }
 
         public virtual InputTypeGroup InputTypeGroup { get; set; }
         public virtual ICollection<InputAction> InputAction { get; set; }
