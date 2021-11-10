@@ -24,6 +24,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
         public string ContactName { get; set; }
         public string Address { get; set; }
         public string Description { get; set; }
+        public string UrlSearch { get; set; }
         public EnumElectronicInvoiceProviderStatus ElectronicInvoiceProviderStatusId { get; set; }
         public EasyInvoiceConnectionConfigModel EasyInvoiceConnection { get; set; }
         public CyberBillConnectionConfiModel CyberBillConnection { get; set; }

@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int ElectronicInvoiceProviderStatusId { get; set; }
         public string ConnectionConfig { get; set; }
         public string FieldsConfig { get; set; }
+        public string UrlSearch { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
 
