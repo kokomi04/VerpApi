@@ -29,6 +29,8 @@ namespace Services.Organization.Model.HrConfig
         public string AfterUpdateRowsJsAction { get; set; }
 
         //public MenuStyleModel MenuStyle { get; set; }
+        public bool IsHide { get; set; }
+
     }
 
 }

@@ -172,7 +172,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         public async Task<IList<HrTypeSimpleModel>> GetHrTypeSimpleList()
         {
-            var hrTypes = await _organizationDBContext.HrType.ProjectTo<HrTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+            var hrTypes = await _organizationDBContext.HrType.Where(x => !x.IsHide).ProjectTo<HrTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
             var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.HrType, null)).OrderBy(t => t.SortOrder).ToList()
                 .GroupBy(a => a.ObjectId)

@@ -169,7 +169,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList()
         {
-            var inputTypes = await _accountancyDBContext.InputType.ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+            var inputTypes = await _accountancyDBContext.InputType.Where(x => !x.IsHide).ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
             var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.InputType, null)).OrderBy(t => t.SortOrder).ToList()
                 .GroupBy(a => a.ObjectId)
