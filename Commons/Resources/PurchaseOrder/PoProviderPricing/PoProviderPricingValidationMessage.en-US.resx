@@ -138,4 +138,7 @@
   <data name="NotSentToCensorYet" xml:space="preserve">
     <value>The provider quote has not been sent to censor yet</value>
   </data>
+  <data name="DateIsRequired" xml:space="preserve">
+    <value>The quote date is required</value>
+  </data>
 </root>
