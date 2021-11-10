@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string AfterSaveAction { get; set; }
         public string AfterUpdateRowsJsAction { get; set; }
         public bool IsOpenning { get; set; }
+        public bool IsHide { get; set; }
 
         public virtual HrTypeGroup HrTypeGroup { get; set; }
         public virtual ICollection<HrAction> HrAction { get; set; }
