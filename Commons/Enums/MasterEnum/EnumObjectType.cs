@@ -365,7 +365,9 @@ namespace VErp.Commons.Enums.MasterEnum
         MaterialAllocation = 1045,
         [Description("Cấu hình mail")]
         EmailConfiguration = 53004,
-        [Description("Mẫu gửi mail ")]
-        MailTemplate = 53005
+        [Description("Mẫu gửi mail")]
+        MailTemplate = 53005,
+        [Description("Cấu hình upload file")]
+        FileConfiguration = 53006
     }
 }
