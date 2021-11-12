@@ -559,6 +559,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                 targeObjectTypeId: EnumObjectType.PropertyCalc,
                 fieldName: "Mã số")
             );
+
+            result.Add(
+                GetObjectGenCodeMappingTypeModel(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                targeObjectTypeId: EnumObjectType.ProductionMaterialsRequirement,
+                fieldName: "Mã yêu cầu vật tư thêm")
+            );
+
             return Task.FromResult(result);
         }
 

@@ -148,6 +148,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return await CreateProductionHandover(productionOrderId, data, EnumHandoverStatus.Accepted);
         }
 
+
+        public async Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data)
+        {
+            var result = new List<ProductionHandoverModel>();
+            foreach (var item in data)
+            {
+                var productionHandover = await CreateProductionHandover(productionOrderId, item, EnumHandoverStatus.Accepted);
+                result.Add(productionHandover);
+            }
+            return result;
+        }
+
+
         public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId)
         {
             return await _manufacturingDBContext.ProductionHandover
