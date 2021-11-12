@@ -456,6 +456,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 voucherType.BeforeSaveAction = data.BeforeSaveAction;
                 voucherType.AfterSaveAction = data.AfterSaveAction;
                 voucherType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
+                voucherType.IsHide = data.IsHide;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 

@@ -452,6 +452,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 hrType.BeforeSaveAction = data.BeforeSaveAction;
                 hrType.AfterSaveAction = data.AfterSaveAction;
                 hrType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
+                hrType.IsHide = data.IsHide;
 
                 await _organizationDBContext.SaveChangesAsync();
 

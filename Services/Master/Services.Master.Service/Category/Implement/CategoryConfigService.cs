@@ -317,6 +317,7 @@ namespace VErp.Services.Master.Service.Category
                 category.BeforeSubmitAction = data.BeforeSubmitAction;
                 category.BeforeSaveAction = data.BeforeSaveAction;
                 category.AfterSaveAction = data.AfterSaveAction;
+                category.IsHide = data.IsHide;
 
                 await _masterContext.SaveChangesAsync();
 
