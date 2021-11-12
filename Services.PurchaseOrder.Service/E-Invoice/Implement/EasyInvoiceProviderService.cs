@@ -286,7 +286,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 {VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE} = @{VoucherConstants.VOUCHER_E_INVOICE_LOOKUP_CODE},
                 {VoucherConstants.VOUCHER_E_INVOICE_NUMBER} = @{VoucherConstants.VOUCHER_E_INVOICE_NUMBER},
                 {VoucherConstants.VOUCHER_E_INVOICE_STATUS} = @{VoucherConstants.VOUCHER_E_INVOICE_STATUS},
-                {VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH} = @{VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH},
+                {VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH} = @{VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH}
             WHERE {VoucherConstants.VOUCHER_BILL_F_Id} = @{VoucherConstants.VOUCHER_BILL_F_Id};
             ";
             var sqlParams = new SqlParameter[] {
