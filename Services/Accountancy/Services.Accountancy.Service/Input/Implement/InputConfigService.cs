@@ -415,6 +415,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.AfterSaveAction = data.AfterSaveAction;
                 inputType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
                 inputType.IsOpenning = data.IsOpenning;
+                inputType.IsHide = data.IsHide;
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
