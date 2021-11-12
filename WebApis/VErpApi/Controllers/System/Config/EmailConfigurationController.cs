@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
@@ -10,10 +11,12 @@ namespace VErpApi.Controllers.System
     public class EmailConfigurationController : VErpBaseController
     {
         private readonly IEmailConfigurationService _emailConfigurationService;
+        private readonly IMailTemplateService _mailTemplateService;
 
-        public EmailConfigurationController(IEmailConfigurationService emailConfigurationService)
+        public EmailConfigurationController(IEmailConfigurationService emailConfigurationService, IMailTemplateService mailTemplateService)
         {
             _emailConfigurationService = emailConfigurationService;
+            _mailTemplateService = mailTemplateService;
         }
 
         [HttpGet]
@@ -22,12 +25,48 @@ namespace VErpApi.Controllers.System
         {
             return await _emailConfigurationService.GetEmailConfiguration();
         }
-        
+
         [HttpPut]
         [Route("")]
         public async Task<bool> UpdateEmailConfiguration([FromBody] EmailConfigurationModel model)
         {
             return await _emailConfigurationService.UpdateEmailConfiguration(model);
+        }
+
+
+        [HttpPost]
+        [Route("template")]
+        public async Task<int> AddMailTemplate([FromBody] MailTemplateModel model)
+        {
+            return await _mailTemplateService.AddMailTemplate(model);
+        }
+
+        [HttpDelete]
+        [Route("template/{mailTemplateId}")]
+        public async Task<bool> DelteMailTemplate([FromRoute] int mailTemplateId)
+        {
+            return await _mailTemplateService.DelteMailTemplate(mailTemplateId);
+        }
+
+        [HttpGet]
+        [Route("template/list")]
+        public async Task<IList<MailTemplateModel>> GetListMailTemplate()
+        {
+            return await _mailTemplateService.GetListMailTemplate();
+        }
+
+        [HttpGet]
+        [Route("template/{mailTemplateId}")]
+        public async Task<MailTemplateModel> GetMailTemplate([FromRoute] int mailTemplateId)
+        {
+            return await _mailTemplateService.GetMailTemplate(mailTemplateId);
+        }
+
+        [HttpPut]
+        [Route("template/{mailTemplateId}")]
+        public async Task<bool> UpdateMailTemplate([FromRoute] int mailTemplateId, [FromBody] MailTemplateModel model)
+        {
+            return await _mailTemplateService.UpdateMailTemplate(mailTemplateId, model);
         }
     }
 }

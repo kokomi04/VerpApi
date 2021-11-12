@@ -29,6 +29,7 @@ using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
 using AutoMapper.QueryableExtensions;
 using AutoMapper;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -43,6 +44,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         private readonly ObjectActivityLogFacade _poActivityLog;
         private readonly IMapper _mapper;
+        private readonly IMailFactoryService _mailFactoryService;
+        private readonly IUserHelperService _userHelperService;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -54,7 +57,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IPurchasingSuggestService purchasingSuggestService
            , IProductHelperService productHelperService
            , ICustomGenCodeHelperService customGenCodeHelperService
-           , IManufacturingHelperService manufacturingHelperService, IMapper mapper)
+           , IManufacturingHelperService manufacturingHelperService
+           , IMapper mapper, IMailFactoryService mailFactoryService
+           , IUserHelperService userHelperService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -64,6 +69,28 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _manufacturingHelperService = manufacturingHelperService;
             _mapper = mapper;
+            _mailFactoryService = mailFactoryService;
+            _userHelperService = userHelperService;
+        }
+
+        public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
+        {
+            var purchaseOrder = await GetInfo(purchaseOrderId);
+            var userIds = new [] {purchaseOrder.CreatedByUserId, purchaseOrder.CheckedByUserId.GetValueOrDefault(), purchaseOrder.UpdatedByUserId, purchaseOrder.CensorByUserId.GetValueOrDefault()};
+            var users = await _userHelperService.GetByIds(userIds);
+
+            var createdUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CreatedByUserId)?.FullName;
+            var updatedUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.UpdatedByUserId)?.FullName;
+            var checkedUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CheckedByUserId)?.FullName;
+            var censortUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CensorByUserId)?.FullName;
+
+            return await _mailFactoryService.Dispatch<PurchaseOrderOutput>(mailTo, mailTemplateCode, new InternalObjectDataMail<PurchaseOrderOutput>(){
+                CensoredByUser = censortUser,
+                CheckedByUser = checkedUser,
+                CreatedByUser =createdUser,
+                UpdatedByUser = updatedUser,
+                Data = purchaseOrder
+            });
         }
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)

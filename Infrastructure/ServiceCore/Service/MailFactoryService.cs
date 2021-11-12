@@ -1,40 +1,64 @@
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using System.Linq;
 
-namespace VErp.Services.Master.Service.Notification
+namespace VErp.Infrastructure.ServiceCore.Service
 {
-    public interface IEmailNotificationService
+    public interface IMailFactoryService
     {
-        Task<bool> Dispatch(string[] mailTo, string subject, string message);
+        Task<bool> Dispatch<T>(string[] mailTo, string mailTemplateCode, InternalObjectDataMail<T> data) where T : class;
     }
 
-    public class EmailNotificationService : IEmailNotificationService
+    public class MailFactoryService : IMailFactoryService
     {
-        private readonly IEmailConfigurationService _emailConfigurationService;
+        private readonly IHttpCrossService _httpCrossService;
 
-        public EmailNotificationService(IEmailConfigurationService emailConfigurationService)
+        public MailFactoryService(IHttpCrossService httpCrossService)
         {
-            _emailConfigurationService = emailConfigurationService;
+            _httpCrossService = httpCrossService;
         }
 
-        public async Task<bool> Dispatch(string[] mailTo, string subject, string message)
+        public async Task<bool> Dispatch<T>(string[] mailTo, string mailTemplateCode, InternalObjectDataMail<T> data) where T : class
         {
-            var config = await _emailConfigurationService.GetEmailConfiguration();
+            var config = await _httpCrossService.Get<EmailConfigSimpleModel>("api/internal/InternalEmailConfiguration");
+            var mailTemplate = await _httpCrossService.Get<MailTemplateSimpleModel>($"api/internal/InternalEmailConfiguration/template?mailTemplateCode={mailTemplateCode}");
+
+            var message = Regex.Replace(mailTemplate.Content, @"{{(?<PropertyName>[^}]+)}}", m =>
+            {
+                var propertyName = m.Groups["PropertyName"].Value;
+
+                var internalType = typeof(InternalObjectDataMail<T>);
+
+                if (internalType.GetProperties().Any(x => x.Name == propertyName) && propertyName != "Data")
+                {
+                    return internalType.GetProperty(propertyName).GetValue(data).ToString();
+                }
+
+                var dynamicType = typeof(T);
+                if (dynamicType.GetProperties().Any(x => x.Name == propertyName))
+                {
+                    return dynamicType.GetProperty(propertyName).GetValue(data.Data).ToString();
+                }
+
+                return "";
+            });
+
             var mailArguments = new MailArguments()
             {
                 MailTo = mailTo,
                 MailFrom = config.MailFrom,
                 Message = message,
-                Name = "VERP",
+                Name = "",
                 Password = config.Password,
                 Port = config.Port,
                 SmtpHost = config.SmtpHost,
-                Subject = subject
+                Subject = mailTemplate.Title
             };
+
             return await Dispatch(mailArguments, config.IsSsl, true);
         }
 
@@ -55,7 +79,7 @@ namespace VErp.Services.Master.Service.Notification
                     IsBodyHtml = isBodyHtml
                 };
                 foreach (var mailTo in mailArgs.MailTo)
-                    mailMsg.To.Add(mailTo);
+                    mailMsg.To.Add(mailTo.Trim());
 
                 mailMsg.From = new MailAddress(mailArgs.MailFrom, mailArgs.Name);
 

@@ -38,6 +38,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Guide> Guide { get; set; }
         public virtual DbSet<GuideCate> GuideCate { get; set; }
         public virtual DbSet<I18nLanguage> I18nLanguage { get; set; }
+        public virtual DbSet<MailTemplate> MailTemplate { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
@@ -443,6 +444,19 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .UseCollation("SQL_Latin1_General_CP1_CS_AS");
 
                 entity.Property(e => e.Vi).HasMaxLength(1024);
+            });
+
+            modelBuilder.Entity<MailTemplate>(entity =>
+            {
+                entity.Property(e => e.Content).IsRequired();
+
+                entity.Property(e => e.TemplateCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<Menu>(entity =>
