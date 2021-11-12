@@ -89,6 +89,15 @@ namespace Verp.Resources.PurchaseOrder.PoProviderPricing {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Vui lòng nhập ngày báo giá.
+        /// </summary>
+        public static string DateIsRequired {
+            get {
+                return ResourceManager.GetString("DateIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Thông tin liên hệ giao hàng quá dài.
         /// </summary>
         public static string DeleveryDestinationTooLong {

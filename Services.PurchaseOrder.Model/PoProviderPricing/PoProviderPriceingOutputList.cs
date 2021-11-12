@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Verp.Resources.PurchaseOrder.PoProviderPricing;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.PO;
 using VErp.Commons.GlobalObject;
@@ -17,6 +19,8 @@ namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
     {
         public long PoProviderPricingId { get; set; }
         public string PoProviderPricingCode { get; set; }
+
+        [Required(ErrorMessageResourceName =nameof(PoProviderPricingValidationMessage.DateIsRequired), ErrorMessageResourceType =typeof(PoProviderPricingValidationMessage))]
         public long? Date { get; set; }
         public int CustomerId { get; set; }
         public DeliveryDestinationModel DeliveryDestination { get; set; }

@@ -126,6 +126,9 @@
   <data name="AlreadyRejected" xml:space="preserve">
     <value>Báo giá nhà cung cấp đã từ chối</value>
   </data>
+  <data name="DateIsRequired" xml:space="preserve">
+    <value>Vui lòng nhập ngày báo giá</value>
+  </data>
   <data name="DeleveryDestinationTooLong" xml:space="preserve">
     <value>Thông tin liên hệ giao hàng quá dài</value>
   </data>
