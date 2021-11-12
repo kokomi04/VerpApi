@@ -278,6 +278,8 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         #region private
         private async Task UpdateInvoiceInfoForVoucherBill(long voucherBillId, InvoiceInfo invoiceData, string urlSearch)
         {
+            urlSearch ??= "";
+
             var exSql = @$"UPDATE {VoucherConstants.VOUCHER_VALUE_ROW_TABLE} 
             SET {VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ARISING_DATE},
                 {VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE} = @{VoucherConstants.VOUCHER_E_INVOICE_ISSUE_DATE},
@@ -294,7 +296,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_NUMBER}", invoiceData.No),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_STATUS}", ConvertEInvoiceStatusOfProviderIntoSystem(invoiceData.InvoiceStatus)),
                 new SqlParameter($"@{VoucherConstants.VOUCHER_BILL_F_Id}", voucherBillId),
-                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH}", $"{urlSearch.Trim()}{invoiceData.LookupCode}"),
+                new SqlParameter($"@{VoucherConstants.VOUCHER_E_INVOICE_URL_SEARCH}", string.Format(urlSearch, invoiceData.LookupCode)),
             };
 
             var _ = await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(exSql, sqlParams);
