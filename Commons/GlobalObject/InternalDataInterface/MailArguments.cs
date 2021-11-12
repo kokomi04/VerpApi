@@ -1,4 +1,4 @@
-namespace VErp.Services.Master.Model.Notification
+namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
     public class MailArguments
     {

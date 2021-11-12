@@ -287,5 +287,19 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService.GetPurchaseOrderByAssignment(poAssignmentIds).ConfigureAwait(true);
         }
+
+        /// <summary>
+        /// Lấy danh sách PO đã tạo từ assignment
+        /// </summary>
+        /// <param name="purchaseOrderId"></param>
+        /// <param name="mailCode"></param>
+        /// <param name="mailTo"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("{purchaseOrderId}/notify/sendMail")]
+        public async Task<bool> SendMailNotifyCheckAndCensor([FromRoute] long purchaseOrderId, [FromQuery] string mailCode, [FromBody] string[] mailTo)
+        {
+            return await _purchaseOrderService.SendMailNotifyCheckAndCensor(purchaseOrderId, mailCode, mailTo).ConfigureAwait(true);
+        }
     }
 }
