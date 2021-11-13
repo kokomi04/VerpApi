@@ -57,7 +57,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         public async Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId)
         {
             var voucherData = await _voucherDataService.GetVoucherBillInfoRows((int)voucherTypeId, voucherBillId, "", false, 0, 0);
-            
+
             var einvoiceType = EnumElectronicInvoiceType.ElectronicInvoiceNormal;
 
             if (voucherData.List.Count > 0)
@@ -71,9 +71,9 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 
             return einvoiceType switch
             {
-                EnumElectronicInvoiceType.ElectronicInvoiceNormal => await IssueElectronicInvoice(pattern, serial, voucherBillId, voucherBillId, voucherData.List),
-                EnumElectronicInvoiceType.ElectronicInvoiceModify => await ModifyElectronicInvoice(pattern, serial, voucherBillId, voucherBillId, voucherData.List),
-                EnumElectronicInvoiceType.ElectronicInvoiceReplace => await ReplaceElectronicInvoice(pattern, serial, voucherBillId, voucherBillId, voucherData.List),
+                EnumElectronicInvoiceType.ElectronicInvoiceNormal => await IssueElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId, voucherData.List),
+                EnumElectronicInvoiceType.ElectronicInvoiceModify => await ModifyElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId, voucherData.List),
+                EnumElectronicInvoiceType.ElectronicInvoiceReplace => await ReplaceElectronicInvoice(pattern, serial, voucherTypeId, voucherBillId, voucherData.List),
                 _ => throw new ArgumentException(message: "Not found electronic invoice type", paramName: nameof(einvoiceType))
             };
         }
