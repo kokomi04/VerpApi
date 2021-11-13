@@ -525,6 +525,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             rows[rowIndex.Value].Data.TryGetValue(field.FieldName, out value);
                         }
+
+                        value = ((EnumDataType)field.DataTypeId).GetSqlValue(value);
+
                         if (sfValues.ContainsKey(field.FieldName) && value != null)
                         {
                             value = sfValues[field.FieldName].ContainsKey(value) ? sfValues[field.FieldName][value] : null;

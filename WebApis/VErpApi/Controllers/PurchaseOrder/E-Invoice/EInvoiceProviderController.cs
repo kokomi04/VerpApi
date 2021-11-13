@@ -35,12 +35,12 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
-        [HttpPut]
-        [Route("adjust")]
-        public async Task<bool> ModifyElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
-        {
-            return await _easyInvoiceProviderService.ModifyElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId);
-        }
+        // [HttpPut]
+        // [Route("adjust")]
+        // public async Task<bool> ModifyElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
+        // {
+        //     return await _easyInvoiceProviderService.ModifyElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId);
+        // }
 
         [HttpPut]
         [Route("cancel")]
@@ -49,12 +49,12 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
             return await _easyInvoiceProviderService.CancelElectronicInvoice(voucherBillId, ikey, pattern, serial);
         }
 
-        [HttpPut]
-        [Route("replace")]
-        public async Task<bool> ReplaceElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
-        {
-            return await _easyInvoiceProviderService.ReplaceElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId);
-        }
+        // [HttpPut]
+        // [Route("replace")]
+        // public async Task<bool> ReplaceElectronicInvoice([FromQuery] long voucherBillId, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId)
+        // {
+        //     return await _easyInvoiceProviderService.ReplaceElectronicInvoice(voucherBillId, pattern, serial, voucherTypeId);
+        // }
 
     }
 }
