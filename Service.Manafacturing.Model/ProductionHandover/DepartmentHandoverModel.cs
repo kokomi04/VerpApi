@@ -54,17 +54,18 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int AssignedProgressStatus { get; set; }
     }
 
-
     public class DepartmentHandoverDetailModel
     {
+        public long ProductionStepId { get; set; }
+        public int DepartmentId { get; set; }
         public IList<StepInOutData> InputDatas { get; set; }
         public IList<StepInOutData> OutputDatas { get; set; }
-        public IList<ProductionAssignmentModel> Assignments { get; set; }
+        public IList<ProductionAssignmentModel> AdjacentAssignments { get; set; }
         public DepartmentHandoverDetailModel()
         {
             InputDatas = new List<StepInOutData>();
             OutputDatas = new List<StepInOutData>();
-            Assignments = new List<ProductionAssignmentModel>();
+            AdjacentAssignments = new List<ProductionAssignmentModel>();
         }
     }
 

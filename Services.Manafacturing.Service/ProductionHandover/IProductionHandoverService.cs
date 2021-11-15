@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data);
         Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status);
         Task<bool> DeleteProductionHandover(long productionHandoverId);
-        Task<Dictionary<long, DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long productionStepId, long departmentId, IList<ProductionInventoryRequirementEntity> inventories = null);
+        Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long? productionStepId = null, int? departmentId = null, IList<ProductionInventoryRequirementEntity> inventories = null);
 
         Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId,IList<ProductionInventoryRequirementEntity> inventories = null);
 
