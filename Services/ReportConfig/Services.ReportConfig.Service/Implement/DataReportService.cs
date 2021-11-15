@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -125,13 +126,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         switch (filterFiled.DataTypeId)
                         {
                             case EnumDataType.Int:
-                                sqlParams.Add((!value.IsNullObject() ? value as int[] : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.BigInt:
-                                sqlParams.Add((!value.IsNullObject() ? value as long[] : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.Text:
-                                sqlParams.Add((!value.IsNullObject() ? value as string[] : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             default:
                                 break;
@@ -588,6 +589,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             else
             {
+                totalRecord = data.Count;
+                
                 foreach (var row in data)
                 {
                     foreach (var column in calSumColumns)
