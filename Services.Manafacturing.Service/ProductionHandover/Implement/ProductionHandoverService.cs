@@ -908,9 +908,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                 if (totalInventoryQuantity > 0 && isLastest) item.ReceivedQuantity += totalInventoryQuantity;
                             }
                         }
-
                     }
-
                     result.Add(detail);
                 }
             }
@@ -918,7 +916,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return result;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, IList<ProductionInventoryRequirementEntity> inventories = null)
+        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int[] departmentIds, IList<ProductionInventoryRequirementEntity> inventories = null)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .FirstOrDefault(po => po.ProductionOrderCode == productionOrderCode);
@@ -926,18 +924,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
-            var productionStepIds = _manufacturingDBContext.ProductionAssignment
-                 .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId && a.DepartmentId == departmentId)
-                 .Select(a => a.ProductionStepId)
+            var productionAssignments = _manufacturingDBContext.ProductionAssignment
+                 .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId && departmentIds.Contains(a.DepartmentId))
+                 .Select(a => new
+                 {
+                     a.ProductionStepId,
+                     a.DepartmentId
+                 })
                  .ToList();
+
             var bOk = true;
-            foreach (var productionStepId in productionStepIds)
+            foreach (var productionAssignment in productionAssignments)
             {
-                bOk = bOk && (await ChangeAssignedProgressStatus(productionOrder.ProductionOrderId, productionStepId, departmentId, inventories));
+                bOk = bOk && (await ChangeAssignedProgressStatus(productionOrder.ProductionOrderId, productionAssignment.ProductionStepId, productionAssignment.DepartmentId, inventories));
             }
-
             return bOk;
-
         }
 
         private async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, IList<ProductionInventoryRequirementEntity> inventories = null, IList<DepartmentHandoverDetailModel> departmentHandoverDetails = null)

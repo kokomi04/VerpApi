@@ -32,17 +32,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
+        private readonly IProductHelperService _productHelperService;
         private const int STOCK_DEPARTMENT_ID = -1;
         public MaterialAllocationService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionHandoverService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , IProductHelperService productHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _productHelperService = productHelperService;
         }
 
         public async Task<IList<MaterialAllocationModel>> GetMaterialAllocations(long productionOrderId)
@@ -81,7 +83,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 _manufacturingDBContext.SaveChanges();
 
-
                 var currentIgnoreAllocations = _manufacturingDBContext.IgnoreAllocation
                    .Where(ia => ia.ProductionOrderId == productionOrderId)
                    .ToList();
@@ -93,7 +94,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var entity = _mapper.Map<IgnoreAllocation>(item);
                     entity.ProductionOrderId = productionOrderId;
                     _manufacturingDBContext.IgnoreAllocation.Add(entity);
-
                 }
 
                 _manufacturingDBContext.SaveChanges();
@@ -298,9 +298,185 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 Assignments = assignments
             };
 
-
             return result;
         }
 
+        private List<int> GetMaterialsConsumptionIds(IEnumerable<VErp.Commons.GlobalObject.InternalDataInterface.ProductMaterialsConsumptionSimpleModel> materialsConsumptions)
+        {
+            var materialsConsumptionIds = new List<int>();
+            foreach (var item in materialsConsumptions)
+            {
+                materialsConsumptionIds.Add(item.ProductId);
+                materialsConsumptionIds.AddRange(GetMaterialsConsumptionIds(item.MaterialsConsumptionInheri));
+            }
+            return materialsConsumptionIds;
+        }
+
+        public async Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes)
+        {
+            var productionOrderIds = _manufacturingDBContext.ProductionOrder
+                .Where(po => productionOrderCodes.Contains(po.ProductionOrderCode))
+                .Select(po => po.ProductionOrderId)
+                .ToList();
+            var productIds = _manufacturingDBContext.ProductionOrderDetail
+                .Where(pod => productionOrderIds.Contains(pod.ProductionOrderId))
+                .Select(pod => pod.ProductId)
+                .Distinct()
+                .ToArray();
+
+            var materialsConsumptions = await _productHelperService.GetProductMaterialsConsumptions(productIds);
+
+            var materialsConsumptionIds = GetMaterialsConsumptionIds(materialsConsumptions).Distinct().ToList();
+
+            foreach (var productionOrderId in productionOrderIds)
+            {
+                var parammeters = new SqlParameter[]
+                {
+                    new SqlParameter("@ProductionOrderId", productionOrderId)
+                };
+
+                var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+
+                var inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                    .AsQueryable()
+                    .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
+                    .ToList();
+
+                var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
+                                       join p in _manufacturingDBContext.ProductionStep on ps.ParentId equals p.ProductionStepId
+                                       join s in _manufacturingDBContext.Step on p.StepId equals s.StepId
+                                       where !ps.IsDeleted
+                                       && !ps.IsFinish
+                                       && ps.IsGroup != true
+                                       && ps.ContainerTypeId == (int)EnumProductionProcess.EnumContainerType.ProductionOrder
+                                       && ps.ContainerId == productionOrderId
+                                       select new ProductionStepSimpleModel
+                                       {
+                                           ProductionStepId = ps.ProductionStepId,
+                                           Title = !string.IsNullOrEmpty(ps.Title) ? ps.Title : s.StepName
+                                       })
+                                       .ToList();
+
+                var productionStepIds = productionSteps.Select(ps => ps.ProductionStepId).ToList();
+
+                var linkDatas = (from ldr in _manufacturingDBContext.ProductionStepLinkDataRole
+                                 join ld in _manufacturingDBContext.ProductionStepLinkData on ldr.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                                 where productionStepIds.Contains(ldr.ProductionStepId)
+                                 select new
+                                 {
+                                     ldr.ProductionStepLinkDataRoleTypeId,
+                                     ld.ProductionStepLinkTypeId,
+                                     ld.ProductionStepLinkDataId,
+                                     ld.ObjectId,
+                                     ld.ObjectTypeId,
+                                     ldr.ProductionStepId
+                                 })
+                                 .ToList();
+
+                var inpLinkDatas = linkDatas.Where(ld => ld.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).ToList();
+                var outLinkDatas = linkDatas.Where(ld => ld.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).ToList();
+
+                var inputLinkDatas = inpLinkDatas
+                    .Where(ild => !outLinkDatas.Any(old => old.ProductionStepLinkDataId == ild.ProductionStepLinkDataId && ild.ProductionStepLinkTypeId == (int)EnumProductionProcess.EnumProductionStepLinkType.Handover))
+                    .ToList();
+
+                var inputProductionStepIds = inputLinkDatas
+                    .Select(ild => ild.ProductionStepId)
+                    .Distinct()
+                    .ToList();
+
+                var inputProductionSteps = productionSteps.Where(ps => inputProductionStepIds.Contains(ps.ProductionStepId)).ToList();
+
+                var inputDataMap = inputLinkDatas
+                    .GroupBy(d => d.ProductionStepId)
+                    .ToDictionary(g => g.Key, g => g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList());
+
+                var stepDataMap = linkDatas
+                    .GroupBy(d => d.ProductionStepId)
+                    .ToDictionary(g => g.Key, g => new InOutProductionStepModel
+                    {
+                        InputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
+                        OutputData = g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Output).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList(),
+                    });
+
+                var lstAssignments = _manufacturingDBContext.ProductionAssignment
+                    .Where(a => productionStepIds.Contains(a.ProductionStepId))
+                    .Select(a => new
+                    {
+                        a.ProductionStepId,
+                        a.DepartmentId
+                    })
+                    .Distinct()
+                    .ToList();
+
+                var assignments = lstAssignments
+                    .GroupBy(a => a.ProductionStepId)
+                    .ToDictionary(g => g.Key, g => g.Select(a => a.DepartmentId).ToList());
+
+                var assignmentDataMap = new Dictionary<int, InOutProductionStepModel>();
+                foreach (var item in lstAssignments)
+                {
+                    if (!stepDataMap.ContainsKey(item.ProductionStepId)) continue;
+                    if (!assignmentDataMap.ContainsKey(item.DepartmentId))
+                    {
+                        assignmentDataMap.Add(item.DepartmentId, stepDataMap[item.ProductionStepId]);
+                    }
+                    else
+                    {
+                        assignmentDataMap[item.DepartmentId].InputData.AddRange(stepDataMap[item.ProductionStepId].InputData);
+                        assignmentDataMap[item.DepartmentId].OutputData.AddRange(stepDataMap[item.ProductionStepId].OutputData);
+                    }
+                }
+
+                var conflictInventories = inventories
+                    .Where(inv => !inv.DepartmentId.HasValue
+                    || (inv.ProductionStepId.HasValue &&
+                        (!productionStepIds.Contains(inv.ProductionStepId.Value)
+                        || !assignments.ContainsKey(inv.ProductionStepId.Value)
+                        || !assignments[inv.ProductionStepId.Value].Contains(inv.DepartmentId.Value)
+                        || !stepDataMap.ContainsKey(inv.ProductionStepId.Value)
+                        || (inv.InventoryTypeId == EnumInventoryType.Output && !stepDataMap[inv.ProductionStepId.Value].InputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                        || (inv.InventoryTypeId == EnumInventoryType.Input && !stepDataMap[inv.ProductionStepId.Value].OutputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                        ))
+                    || (!inv.ProductionStepId.HasValue &&
+                        (!assignmentDataMap.ContainsKey(inv.DepartmentId.Value)
+                        || (inv.InventoryTypeId == EnumInventoryType.Output && !assignmentDataMap[inv.DepartmentId.Value].InputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                        || (inv.InventoryTypeId == EnumInventoryType.Input && !assignmentDataMap[inv.DepartmentId.Value].OutputData.Any(d => d.ObjectTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataObjectType.Product && d.ObjectId == inv.ProductId))
+                        ))
+                    ).ToList();
+
+                var conflictExportStockInventories = conflictInventories
+                  .Where(inv => !string.IsNullOrEmpty(inv.InventoryCode) && inv.InventoryTypeId == EnumInventoryType.Output && inv.Status == EnumProductionInventoryRequirementStatus.Accepted)
+                  .ToList();
+
+                var ignoreAllocations = _manufacturingDBContext.IgnoreAllocation
+                    .Where(ma => ma.ProductionOrderId == productionOrderId)
+                    .ToList();
+
+                var materialAllocations = await _manufacturingDBContext.MaterialAllocation
+                    .Where(ma => ma.ProductionOrderId == productionOrderId)
+                    .ToListAsync();
+
+
+
+                foreach (var item in conflictExportStockInventories)
+                {
+                    if (ignoreAllocations.Any(ia => ia.InventoryCode == item.InventoryCode) || materialAllocations.Any(ma => ma.InventoryCode == item.InventoryCode)) continue;
+
+                    if (materialsConsumptionIds.Contains(item.ProductId))
+                    {
+                        var entity = new IgnoreAllocation
+                        {
+                            ProductId = item.ProductId,
+                            InventoryCode = item.InventoryCode,
+                            ProductionOrderId = productionOrderId
+                        };
+                        _manufacturingDBContext.IgnoreAllocation.Add(entity);
+                    }
+                }
+            }
+            _manufacturingDBContext.SaveChanges();
+            return true;
+        }
     }
 }
