@@ -31,6 +31,10 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public string JsCodeAfterSourceDataLoaded { get; set; }
+        public string JsCodeBeforeDataMapped { get; set; }
+        public string JsCodeAfterDataMapped { get; set; }
+        public string JsCodeAfterTargetBillCreated { get; set; }
 
         public virtual ICollection<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual ICollection<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
