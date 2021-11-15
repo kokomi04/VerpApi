@@ -45,6 +45,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
     public class ProgressStatusInputModel
     {
         public string ProductionOrderCode { get; set; }
+        public string InventoryCode { get; set; }
         public IList<ProductionInventoryRequirementEntity> Inventories { get; set; }
         public ProgressStatusInputModel()
         {

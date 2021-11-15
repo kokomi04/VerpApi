@@ -465,7 +465,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await ReCalculateRemainingAfterUpdate(inventoryId);
 
-                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Processing);
+                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Processing, inventoryObj.InventoryCode);
 
                         trans.Commit();
 

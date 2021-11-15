@@ -191,7 +191,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status)
+        protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status, string inventoryCode)
         {
             var errorProductionOrderCode = "";
             try
@@ -202,6 +202,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
                 foreach (var productionOrderCode in productionOrderCodes)
                 {
+                    errorProductionOrderCode = productionOrderCode;
                     var parammeters = new SqlParameter[]
                     {
                         new SqlParameter("@ProductionOrderCode", productionOrderCode)
@@ -209,12 +210,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
                     inventoryMap.Add(productionOrderCode, resultData);
                     await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderCode, resultData, status);
-                }
-
-                foreach (var productionOrderCode in productionOrderCodes)
-                {
-                    errorProductionOrderCode = productionOrderCode;
-                    await _productionHandoverHelperService.ChangeAssignedProgressStatus(productionOrderCode, inventoryMap[productionOrderCode]);
+                    await _productionHandoverHelperService.ChangeAssignedProgressStatus(productionOrderCode, inventoryCode, inventoryMap[productionOrderCode]);
                 }
             }
             catch (Exception ex)
