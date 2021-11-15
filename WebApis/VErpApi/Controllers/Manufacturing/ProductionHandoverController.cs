@@ -36,9 +36,11 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}")]
-        public async Task<Dictionary<long, DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] long departmentId)
+        public async Task<Dictionary<long, DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId)
         {
-            return await _productionHandoverService.GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
+            var lstDetail = await _productionHandoverService.GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
+            var group = lstDetail.GroupBy(d => d.ProductionStepId).ToDictionary(g => g.Key, g => g.First());
+            return group;
         }
 
         [HttpPost]
