@@ -32,7 +32,7 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         [Route("status")]
         public async Task<bool> ChangeAssignedProgressStatus([FromBody] ProgressStatusInputModel data)
         {
-            return await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.DepartmentIds, data.Inventories);
+            return await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.Inventories);
         }
 
         [HttpPut]

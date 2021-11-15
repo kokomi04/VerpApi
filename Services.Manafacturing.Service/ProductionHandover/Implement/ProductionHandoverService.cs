@@ -916,7 +916,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return result;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int[] departmentIds, IList<ProductionInventoryRequirementEntity> inventories = null)
+        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, IList<ProductionInventoryRequirementEntity> inventories = null)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .FirstOrDefault(po => po.ProductionOrderCode == productionOrderCode);
@@ -925,7 +925,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
             var productionAssignments = _manufacturingDBContext.ProductionAssignment
-                 .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId && departmentIds.Contains(a.DepartmentId))
+                 .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId)
                  .Select(a => new
                  {
                      a.ProductionStepId,
@@ -934,9 +934,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                  .ToList();
 
             var bOk = true;
+
+            var departmentHandoverDetails = await GetDepartmentHandoverDetail(productionOrder.ProductionOrderId);
+
             foreach (var productionAssignment in productionAssignments)
             {
-                bOk = bOk && (await ChangeAssignedProgressStatus(productionOrder.ProductionOrderId, productionAssignment.ProductionStepId, productionAssignment.DepartmentId, inventories));
+                bOk = bOk && (await ChangeAssignedProgressStatus(productionOrder.ProductionOrderId, productionAssignment.ProductionStepId, productionAssignment.DepartmentId, inventories, departmentHandoverDetails));
             }
             return bOk;
         }

@@ -211,22 +211,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderCode, resultData, status);
                 }
 
-                // update trạng thái cho phân công công việc
-                var groupAssignments = inventoryDetails
-                    .Where(id => !string.IsNullOrEmpty(id.ProductionOrderCode) && id.Inventory.DepartmentId.GetValueOrDefault() > 0)
-                     .Select(rd => new
-                     {
-                         ProductionOrderCode = rd.ProductionOrderCode,
-                         DepartmentId = rd.Inventory.DepartmentId.Value
-                     })
-                    .Distinct()
-                    .GroupBy(rd => rd.ProductionOrderCode)
-                    .ToDictionary(g => g.Key, g => g.Select(rd => rd.DepartmentId).ToArray());
-
-                foreach (var group in groupAssignments)
+                foreach (var productionOrderCode in productionOrderCodes)
                 {
-                    errorProductionOrderCode = group.Key;
-                    await _productionHandoverHelperService.ChangeAssignedProgressStatus(group.Key, group.Value, inventoryMap[group.Key]);
+                    errorProductionOrderCode = productionOrderCode;
+                    await _productionHandoverHelperService.ChangeAssignedProgressStatus(productionOrderCode, inventoryMap[productionOrderCode]);
                 }
             }
             catch (Exception ex)
