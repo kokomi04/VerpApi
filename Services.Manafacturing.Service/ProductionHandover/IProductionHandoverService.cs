@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<bool> DeleteProductionHandover(long productionHandoverId);
         Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long? productionStepId = null, int? departmentId = null, IList<ProductionInventoryRequirementEntity> inventories = null);
 
-        Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId,IList<ProductionInventoryRequirementEntity> inventories = null);
+        Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int[] departmentIds, IList<ProductionInventoryRequirementEntity> inventories = null);
 
     }
 }

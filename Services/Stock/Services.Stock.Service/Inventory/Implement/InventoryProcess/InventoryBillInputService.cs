@@ -34,7 +34,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     {
         //const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER;
 
-        
+
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
@@ -53,7 +53,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductionHandoverHelperService productionHandoverHelperService
             ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
-         
+
             _asyncRunner = asyncRunner;
             _currentContextService = currentContextService;
             _productService = productService;
@@ -489,7 +489,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .ObjectId(inventoryId)
                         .JsonData(inventoryObj.JsonSerialize())
                         .CreateLog();
-
 
                         return true;
                     }

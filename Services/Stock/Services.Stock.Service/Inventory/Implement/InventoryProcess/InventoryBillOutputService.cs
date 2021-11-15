@@ -475,6 +475,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .JsonData(inventoryObj.JsonSerialize())
                             .CreateLog();
 
+                        UpdateIgnoreAllocation(inventoryDetails);
+
                         return true;
                     }
                     catch (Exception ex)

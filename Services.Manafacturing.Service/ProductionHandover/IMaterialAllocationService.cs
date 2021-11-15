@@ -18,5 +18,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<IList<MaterialAllocationModel>> GetMaterialAllocations(long productionOrderId);
 
         Task<AllocationModel> UpdateMaterialAllocation(long productionOrderId, AllocationModel data);
+
+
+        Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes);
     }
 }
