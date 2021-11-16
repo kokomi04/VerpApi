@@ -20,40 +20,26 @@ namespace VErpApi.Controllers.PurchaseOrder.EInvoice
 
 
         [HttpPost]
-        [Route("create")]
-        public async Task<CreateElectronicInvoiceSuccess> CreateElectronicInvoice([FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        [Route("issue")]
+        public async Task<bool> CreateElectronicInvoice([FromQuery] long voucherTypeId, [FromQuery] long voucherBillId)
         {
-            return await _easyInvoiceProviderService.CreateElectronicInvoice(pattern, serial, voucherTypeId, data);
+            return await _easyInvoiceProviderService.IssueElectronicInvoice(voucherTypeId, voucherBillId);
         }
 
         [HttpGet]
         [Route("viewPdf")]
-        public async Task<IActionResult> GetElectronicInvoicePdf([FromQuery] string ikey, [FromQuery] string pattern, [FromQuery] int option)
+        public async Task<IActionResult> GetElectronicInvoicePdf([FromQuery] long voucherTypeId, [FromQuery] long voucherBillId, [FromQuery] int option)
         {
-            var (stream, fileName, contentType) = await _easyInvoiceProviderService.GetElectronicInvoicePdf(ikey, pattern, option);
+            var (stream, fileName, contentType) = await _easyInvoiceProviderService.GetElectronicInvoicePdf(voucherTypeId, voucherBillId, option);
 
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
         [HttpPut]
-        [Route("modify")]
-        public async Task<ModifyElectronicInvoiceSuccess> ModifyElectronicInvoice([FromQuery] string ikey, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] long voucherTypeId, [FromBody] IEnumerable<NonCamelCaseDictionary> data)
+        [Route("cancel")]
+        public async Task<bool> CancelElectronicInvoice([FromQuery] long voucherTypeId, [FromQuery] long voucherBillId)
         {
-            return await _easyInvoiceProviderService.ModifyElectronicInvoice(ikey, pattern, serial, voucherTypeId, data);
-        }
-
-        [HttpPut]
-        [Route("publish")]
-        public async Task<PublishElectronicInvoiceSuccess> PublishElectronicInvoice([FromBody] IList<string> ikeys, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] string signature)
-        {
-            return await _easyInvoiceProviderService.PublishElectronicInvoice(ikeys, pattern, serial, signature);
-        }
-
-        [HttpPut]
-        [Route("publishTemp")]
-        public async Task<PublishElectronicInvoiceSuccess> PublishTempElectronicInvoice([FromBody] IList<string> ikeys, [FromQuery] string pattern, [FromQuery] string serial, [FromQuery] string certString)
-        {
-            return await _easyInvoiceProviderService.PublishTempElectronicInvoice(ikeys, pattern, serial, certString);
+            return await _easyInvoiceProviderService.CancelElectronicInvoice(voucherTypeId, voucherBillId);
         }
 
     }

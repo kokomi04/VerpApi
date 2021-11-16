@@ -11,5 +11,7 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
     {
         EInvoiceProcessFailed = 1,
         ThisFunctionIsInDevelopment = 2,
+        NotFoundXmlData = 3,
+        NotFoundPatternOrSerialOfEInvoice = 4,
     }
 }

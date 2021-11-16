@@ -25,6 +25,7 @@ namespace Verp.Services.ReportConfig.Model
         public string ColSpan { get; set; }
         public bool IsGroup { get; set; }
         public bool IsGroupRow { get; set; }
+        public bool isGroupRowLevel2 { get; set; }
         public string VAlign { get; set; }
         public string HAlign { get; set; }
         public bool IsColGroup { get; set; }

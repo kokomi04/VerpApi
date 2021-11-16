@@ -574,8 +574,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 throw InvRequestIsNotWaitingCensor.BadRequest();
 
             // Validate assign stock
-            if (status == EnumInventoryRequirementStatus.Accepted && (assignStocks == null || inventoryRequirement.InventoryRequirementDetail.Any(d => !assignStocks.ContainsKey(d.InventoryRequirementDetailId))))
-                throw InvRequestDetailNeedAssignToStock.BadRequest();
+            //if (status == EnumInventoryRequirementStatus.Accepted && (assignStocks == null || inventoryRequirement.InventoryRequirementDetail.Any(d => !assignStocks.ContainsKey(d.InventoryRequirementDetailId))))
+            //    throw InvRequestDetailNeedAssignToStock.BadRequest();
 
             await ValidateInventoryRequirementConfig(inventoryRequirement.Date, inventoryRequirement.Date);
 
@@ -586,7 +586,10 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             {
                 foreach (var item in inventoryRequirement.InventoryRequirementDetail)
                 {
-                    item.AssignStockId = assignStocks[item.InventoryRequirementDetailId];
+                    if(assignStocks.ContainsKey(item.InventoryRequirementDetailId))
+                    {
+                        item.AssignStockId = assignStocks[item.InventoryRequirementDetailId];
+                    }
                 }
             }
             await _stockDbContext.SaveChangesAsync();

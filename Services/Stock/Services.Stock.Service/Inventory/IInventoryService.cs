@@ -35,18 +35,18 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, IList<string> mappingFunctionKeys = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10);
 
 
         /// <summary>
         /// Lấy thông tin của phiếu nhập xuất
         /// </summary>
-        /// <param name="inventoryId">Mã phiếu</param>
+        /// <param name="inventoryId">ID phiếu</param>
         /// <returns></returns>
-        Task<InventoryOutput> InventoryInfo(long inventoryId, IList<string> mappingFunctionKeys = null);
+        Task<InventoryOutput> InventoryInfo(long inventoryId);
 
 
-        Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null);
+        Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId);
 
         CategoryNameModel GetInventoryDetailFieldDataForMapping();
 

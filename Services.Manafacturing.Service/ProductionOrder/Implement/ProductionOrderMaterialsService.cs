@@ -54,7 +54,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (productionOrder.IsResetProductionProcess)
                 await ResetProductionOrderMaterials(productionOrderId);
 
-            var productMap = productionOrder.ProductionOrderDetail.ToDictionary(k => k.ProductId, v => v.Quantity);
+            var productMap = productionOrder.ProductionOrderDetail.GroupBy(x => x.ProductId).ToDictionary(k => k.Key, v => v.Sum(x => x.Quantity));
 
             var materialsMain = await GetProductionOrderMaterialsMainCalc(productionOrderId);
             var materialsConsump = await GetProductionOrderMaterialsConsumptionCalc(productionOrderId, productMap);

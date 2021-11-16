@@ -41,6 +41,7 @@ namespace VErp.Services.Master.Service.Users
         Task<PageData<UserInfoOutput>> GetListByModuleId(int currentUserId, int moduleId, string keyword, int pageIndex, int pageSize);
 
         Task<IList<UserInfoOutput>> GetListByUserIds(IList<int> userIds);
+        Task<IList<UserInfoOutput>> GetListByRoleIds(IList<int> roles);
         CategoryNameModel GetFieldDataForMapping();
         Task<bool> ImportUserFromMapping(ImportExcelMapping mapping, Stream stream);
       

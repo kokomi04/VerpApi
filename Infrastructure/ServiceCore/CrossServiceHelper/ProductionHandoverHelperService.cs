@@ -13,7 +13,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
     public interface IProductionHandoverHelperService
     {
-        Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, DataTable inventories);
+        Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, string inventoryCode, DataTable inventories);
+
+        Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes);
     }
     public class ProductionHandoverHelperService : IProductionHandoverHelperService
     {
@@ -24,14 +26,20 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _httpCrossService = httpCrossService;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, int departmentId, DataTable inventories)
+        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, string inventoryCode, DataTable inventories)
         {
             return await _httpCrossService.Put<bool>($"api/internal/InternalProductionHandover/status", new
             {
                 ProductionOrderCode = productionOrderCode,
-                DepartmentId = departmentId,
+                InventoryCode = inventoryCode,
                 Inventories = inventories.ConvertData<ProductionInventoryRequirementModel>()
             });
+        }
+
+
+        public async Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes)
+        {
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionHandover/ignore-allocation", productionOrderCodes);
         }
     }
 }

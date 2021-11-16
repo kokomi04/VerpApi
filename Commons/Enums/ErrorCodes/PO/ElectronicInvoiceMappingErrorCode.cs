@@ -6,11 +6,11 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
 {
     [ErrorCodePrefix("POEVM")]
     [LocalizedDescription(ResourceType = typeof(ElectronicInvoiceMappingErrorCodeDescription))]
-
     public enum ElectronicInvoiceMappingErrorCode
     {
         ExistsElectronicInvoiceMapping = 1,
         NotFoundElectronicInvoiceMapping = 2,
         EInvoiceCreateProcessFailed = 3,
+        NotFoundElectronicInvoiceParent = 4,
     }
 }

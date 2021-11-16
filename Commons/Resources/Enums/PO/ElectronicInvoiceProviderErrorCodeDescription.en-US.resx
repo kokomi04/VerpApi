@@ -120,6 +120,12 @@
   <data name="EInvoiceProcessFailed" xml:space="preserve">
     <value>E-invoice processing has an error</value>
   </data>
+  <data name="NotFoundPatternOrSerialOfEInvoice" xml:space="preserve">
+    <value>Not found pattern or serial of Electronic Invoice</value>
+  </data>
+  <data name="NotFoundXmlData" xml:space="preserve">
+    <value>Not found template xml data</value>
+  </data>
   <data name="ThisFunctionIsInDevelopment" xml:space="preserve">
     <value>This function is in development</value>
   </data>

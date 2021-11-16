@@ -20,6 +20,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -45,6 +46,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _userActivityLog;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public UserService(MasterDBContext masterContext
             , UnAuthorizeMasterDBContext unAuthorizeMasterDBContext
@@ -57,7 +59,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             , IAsyncRunnerService asyncRunnerService
             , IServiceScopeFactory serviceScopeFactory
             , IMapper mapper
-            )
+            , ICustomGenCodeHelperService customGenCodeHelperService)
         {
             _masterContext = masterContext;
             _unAuthorizeMasterDBContext = unAuthorizeMasterDBContext;
@@ -70,6 +72,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             _serviceScopeFactory = serviceScopeFactory;
             _mapper = mapper;
             _userActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.UserAndEmployee);
+            _customGenCodeHelperService = customGenCodeHelperService;
         }
 
 
@@ -324,6 +327,37 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
 
+
+            var lst = (from u in userInfos
+                       join e in employees on u.UserId equals e.UserId
+                       select new UserInfoOutput
+                       {
+                           UserId = u.UserId,
+                           UserName = u.UserName,
+                           UserStatusId = (EnumUserStatus)u.UserStatusId,
+                           RoleId = u.RoleId,
+                           EmployeeCode = e.EmployeeCode,
+                           FullName = e.FullName,
+                           Address = e.Address,
+                           Email = e.Email,
+                           GenderId = (EnumGender?)e.GenderId,
+                           Phone = e.Phone
+                       }).ToList();
+
+            await EnrichDepartments(lst);
+
+            return lst;
+        }
+
+        public async Task<IList<UserInfoOutput>> GetListByRoleIds(IList<int> roles)
+        {
+            if (roles == null || roles.Count == 0)
+                return new List<UserInfoOutput>();
+
+            var userInfos = await _masterContext.User.AsNoTracking().Where(u => roles.Contains(u.RoleId.GetValueOrDefault())).ToListAsync();
+            var userIds = userInfos.Select(x=>x.UserId).ToList();
+
+            var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
 
             var lst = (from u in userInfos
                        join e in employees on u.UserId equals e.UserId
@@ -743,6 +777,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             await using var trans = new MultipleDbTransaction(_masterContext, _organizationContext);
             try
             {
+
                 var employees = await AddBatchEmployees(req, employeeTypeId);
 
                 await AddBatchUserAuthen(employees);
@@ -942,6 +977,13 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         private async Task<List<(int userId, UserInfoInput userInfo)>> AddBatchEmployees(IList<UserInfoInput> userInfos, EnumEmployeeType employeeTypeId)
         {
+            var genCodeContexts = new List<GenerateCodeContext>();
+            var baseValueChains = new Dictionary<string, int>();
+            
+            foreach(var u in userInfos)
+                genCodeContexts.Add(await GenerateEmployeeCode(null, u, baseValueChains));
+
+
             var employees = userInfos.Select(e => new Employee()
             {
                 EmployeeCode = e.EmployeeCode,
@@ -966,6 +1008,10 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 rs.Add((employees[i].UserId, userInfos[i]));
             }
+
+            foreach (var ctx in genCodeContexts)
+                await ctx.ConfirmCode();
+
             return rs;
         }
 
@@ -1095,6 +1141,23 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             public User User { get; set; }
             public Employee Employee { get; set; }
+        }
+
+        private async Task<GenerateCodeContext> GenerateEmployeeCode(int? userId, UserInfoInput model, Dictionary<string, int> baseValueChains)
+        {
+            model.EmployeeCode = (model.EmployeeCode ?? "").Trim();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.UserAndEmployee)
+                .SetConfigData(userId ?? 0)
+                .TryValidateAndGenerateCode(_organizationContext.Employee, model.EmployeeCode, (s, code) => s.UserId != userId && s.EmployeeCode == code);
+
+            model.EmployeeCode = code;
+
+            return ctx;
+
         }
         #endregion
     }

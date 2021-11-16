@@ -36,7 +36,7 @@ namespace VErp.Services.Stock.Service.FileResources
 
         Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb);
 
-        IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null);
+        IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null);
 
         Task<long> SaveFileInfo(EnumObjectType objectTypeId, SimpleFileInfo simpleFileInfo);
         Task<SimpleFileInfo> GetSimpleFileInfo(long fileId);

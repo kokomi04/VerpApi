@@ -53,21 +53,27 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             _currentContext = currentContext;
             _departmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Department);
         }
-        public async Task<IList<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId)
+        public async Task<PageData<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId, int page, int size)
         {
-            var lstDepartmentCalendar = await (from dc in _organizationContext.DepartmentCalendar
-                                               join c in _organizationContext.Calendar on dc.CalendarId equals c.CalendarId
-                                               where dc.DepartmentId == departmentId
-                                               orderby dc.StartDate descending
-                                               select new DepartmentCalendarModel
-                                               {
-                                                   CalendarCode = c.CalendarCode,
-                                                   CalendarId = c.CalendarId,
-                                                   CalendarName = c.CalendarName,
-                                                   StartDate = dc.StartDate.GetUnix()
-                                               })
-                                               .ToListAsync();
-            return lstDepartmentCalendar;
+            var query = (from dc in _organizationContext.DepartmentCalendar
+                         join c in _organizationContext.Calendar on dc.CalendarId equals c.CalendarId
+                         where dc.DepartmentId == departmentId
+                         orderby dc.StartDate descending
+                         select new DepartmentCalendarModel
+                         {
+                             CalendarCode = c.CalendarCode,
+                             CalendarId = c.CalendarId,
+                             CalendarName = c.CalendarName,
+                             StartDate = dc.StartDate.GetUnix()
+                         }).AsQueryable();
+
+            var total = query.Count();
+
+            if (size > 0) query = query.Skip(size * (page - 1)).Take(size);
+
+            var lstDepartmentCalendar = await query.ToListAsync();
+
+            return (lstDepartmentCalendar, total);
         }
 
         public async Task<DepartmentCalendarModel> CreateDepartmentCalendar(int departmentId, DepartmentCalendarModel data)
@@ -85,7 +91,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 if (_organizationContext.DepartmentCalendar.Any(dc => dc.DepartmentId == departmentId && dc.StartDate == time))
                 {
-                    throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));                    
+                    throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 // Update Calendar
@@ -136,7 +142,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 {
                     if (_organizationContext.DepartmentCalendar.Any(dc => dc.DepartmentId == departmentId && dc.StartDate == time))
                     {
-                        throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));                        
+                        throw CalendarWithStartDateAlreadyExists.BadRequestFormat(department.DepartmentName, time.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                     }
                 }
 
@@ -146,7 +152,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 if (currentDepartmentCalendar == null)
                 {
-                    throw CalendarWithStartDateDoesNotExists.BadRequestFormat(department.DepartmentName, oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));                    
+                    throw CalendarWithStartDateDoesNotExists.BadRequestFormat(department.DepartmentName, oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 // Gỡ thông tin cũ
@@ -163,7 +169,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 _organizationContext.DepartmentCalendar.Add(newDepartmentCalendar);
                 _organizationContext.SaveChanges();
                 trans.Commit();
-               
+
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentCalendarUpdate)
                    .MessageResourceFormatDatas(calendar.CalendarCode, time, department.DepartmentCode)
                    .ObjectId(department.DepartmentId)
@@ -186,8 +192,6 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
                 if (department == null) throw DepartmentNotFound.BadRequest();
-
-
 
                 DateTime time = startDate.UnixToDateTime().Value;
                 var departmentCalendar = await _organizationContext.DepartmentCalendar.FirstOrDefaultAsync(dc => dc.DepartmentId == departmentId && dc.StartDate == time);
@@ -503,14 +507,22 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
         #region Làm thêm giờ
 
-        public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int departmentId)
+        public async Task<PageData<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int departmentId, int page, int size)
         {
-            var result = await _organizationContext.DepartmentOverHourInfo
-                .Where(oh => oh.DepartmentId == departmentId)
-                .ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
+            var query = _organizationContext.DepartmentOverHourInfo
+             .Where(oh => oh.DepartmentId == departmentId)
+             .AsQueryable();
+
+            var total = query.Count();
+
+            query = query.OrderByDescending(oh => oh.StartDate);
+
+            if (size > 0) query = query.Skip(size * (page - 1)).Take(size);
+
+            var result = await query.ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return result;
+            return (result, total);
         }
 
         public async Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int[] departmentIds)
@@ -543,7 +555,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                    .ObjectId(department.DepartmentId)
                    .JsonData(data.JsonSerialize())
                    .CreateLog();
-                
+
                 return data;
             }
             catch (Exception ex)
@@ -637,7 +649,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 _organizationContext.DepartmentOverHourInfo.RemoveRange(currentOverHours);
                 _organizationContext.SaveChanges();
 
-            
+
                 var result = await _organizationContext.DepartmentOverHourInfo
                       .Where(oh => departmentIds.Contains(oh.DepartmentId))
                       .ProjectTo<DepartmentOverHourInfoModel>(_mapper.ConfigurationProvider)
@@ -684,14 +696,22 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
         #endregion
 
         #region Nhân sự tăng cường
-        public async Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo(int departmentId)
+        public async Task<PageData<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo(int departmentId, int page, int size)
         {
-            var result = await _organizationContext.DepartmentIncreaseInfo
+            var query = _organizationContext.DepartmentIncreaseInfo
                 .Where(oh => oh.DepartmentId == departmentId)
-                .ProjectTo<DepartmentIncreaseInfoModel>(_mapper.ConfigurationProvider)
+                .AsQueryable();
+
+            var total = query.Count();
+
+            query = query.OrderByDescending(oh => oh.StartDate);
+
+            if (size > 0) query = query.Skip(size * (page - 1)).Take(size);
+
+            var result = await query.ProjectTo<DepartmentIncreaseInfoModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return result;
+            return (result, total);
         }
 
         public async Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo(int[] departmentIds)
@@ -710,6 +730,8 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
                 if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+
+                if (data.NumberOfPerson <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng nhân sự tăng ca không hợp lệ");
 
                 if (_organizationContext.DepartmentIncreaseInfo.Any(oh => oh.StartDate <= data.EndDate.UnixToDateTime() && oh.EndDate >= data.StartDate.UnixToDateTime() && oh.DepartmentId == departmentId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
@@ -740,6 +762,8 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
                 if (department == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
+
+                if (data.NumberOfPerson <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng nhân sự tăng ca không hợp lệ");
 
                 var increase = _organizationContext.DepartmentIncreaseInfo.FirstOrDefault(oh => oh.DepartmentIncreaseInfoId == departmentIncreaseInfoId && oh.DepartmentId == departmentId);
                 if (increase == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Thông tin nhân sự tăng cường không tồn tại");
@@ -777,7 +801,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 var departments = _organizationContext.Department.Where(d => departmentIds.Contains(d.DepartmentId)).ToList();
 
                 if (departmentIds.Count != departments.Count) throw new BadRequestException(GeneralCode.ItemNotFound, "Bộ phận không tồn tại");
-
+                if (data.Any(d => d.NumberOfPerson <= 0)) throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng nhân sự tăng ca không hợp lệ");
                 if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate >= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Trùng khoảng thời gian với giai đoạn đã tồn tại");
 

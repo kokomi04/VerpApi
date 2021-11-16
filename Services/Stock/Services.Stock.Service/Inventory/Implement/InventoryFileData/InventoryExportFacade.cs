@@ -64,9 +64,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             return this;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId, IList<string> mappingFunctionKeys = null)
+        public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId)
         {
-            inventoryInfo = await _inventoryService.InventoryInfo(inventoryId, mappingFunctionKeys);
+            inventoryInfo = await _inventoryService.InventoryInfo(inventoryId);
 
             inventoryTypeId = (EnumInventoryType)inventoryInfo.InventoryTypeId;
 

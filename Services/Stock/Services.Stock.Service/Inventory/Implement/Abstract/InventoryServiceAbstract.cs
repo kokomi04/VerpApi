@@ -177,34 +177,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
+        protected async Task UpdateIgnoreAllocation(IList<InventoryDetail> inventoryDetails)
+        {
+            try
+            {
+                var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).Distinct().ToArray();
+                await _productionHandoverHelperService.UpdateIgnoreAllocation(productionOrderCodes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AutoIgnoreAllocation");
+            }
 
-        protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status)
+        }
+
+        protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status, string inventoryCode)
         {
             var errorProductionOrderCode = "";
             try
             {
                 // update trạng thái cho lệnh sản xuất
-                var requirementDetailIds = inventoryDetails.Where(d => d.InventoryRequirementDetailId.HasValue).Select(d => d.InventoryRequirementDetailId).Distinct().ToList();
-                var requirementDetailCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.InventoryRequirementCode)).Select(d => d.InventoryRequirementCode).Distinct().ToList();
+                var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).Distinct().ToList();
 
-                var requirementDetails = _stockDbContext.InventoryRequirementDetail
-                    .Include(rd => rd.InventoryRequirement)
-                    .Where(rd => requirementDetailIds.Contains(rd.InventoryRequirementDetailId) || requirementDetailCodes.Contains(rd.InventoryRequirement.InventoryRequirementCode))
-                    .ToList();
-
-                var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).ToList();
-
-                productionOrderCodes.AddRange(requirementDetails
-                    .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode))
-                    .Select(rd => rd.ProductionOrderCode)
-                    .ToList());
-
-                productionOrderCodes = productionOrderCodes.Distinct().ToList();
-
-               
                 Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
                 foreach (var productionOrderCode in productionOrderCodes)
                 {
+                    errorProductionOrderCode = productionOrderCode;
                     var parammeters = new SqlParameter[]
                     {
                         new SqlParameter("@ProductionOrderCode", productionOrderCode)
@@ -212,39 +210,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
                     inventoryMap.Add(productionOrderCode, resultData);
                     await _productionOrderHelperService.UpdateProductionOrderStatus(productionOrderCode, resultData, status);
-                }
-
-                // update trạng thái cho phân công công việc
-                var assignments = inventoryDetails
-                    .Where(id => !string.IsNullOrEmpty(id.ProductionOrderCode) && id.Inventory.DepartmentId.GetValueOrDefault() > 0)
-                    .Select(rd => new
-                    {
-                        ProductionOrderCode = rd.ProductionOrderCode,
-                        DepartmentId = rd.Inventory.DepartmentId.Value
-                    })
-                    .ToList();
-
-                assignments.AddRange(requirementDetails
-                    .Where(rd => !string.IsNullOrEmpty(rd.ProductionOrderCode) && rd.DepartmentId.GetValueOrDefault() > 0)
-                    .Select(rd => new
-                    {
-                        ProductionOrderCode = rd.ProductionOrderCode,
-                        DepartmentId = rd.DepartmentId.Value
-                    })
-                    .ToList());
-
-                assignments = assignments.Distinct().ToList();
-
-                foreach (var assignment in assignments)
-                {
-                    errorProductionOrderCode = assignment.ProductionOrderCode;
-                    await _productionHandoverHelperService.ChangeAssignedProgressStatus(assignment.ProductionOrderCode, assignment.DepartmentId, inventoryMap[assignment.ProductionOrderCode]);
+                    await _productionHandoverHelperService.ChangeAssignedProgressStatus(productionOrderCode, inventoryCode, inventoryMap[productionOrderCode]);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, UpdateProductionOrderStatusError);
-                throw new Exception(string.Format(UpdateProductionOrderStatusError, errorProductionOrderCode) +": "+ ex.Message, ex);
+                throw new Exception(string.Format(UpdateProductionOrderStatusError, errorProductionOrderCode) + ": " + ex.Message, ex);
             }
 
         }

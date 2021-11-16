@@ -433,6 +433,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                  }).ToListAsync();
         }
 
+        public async Task<IList<OrderProductInfo>> GetOrderProductInfo(IList<long> productionOderIds)
+        {
+            var result = await _manufacturingDBContext.ProductionOrderDetail
+                .Where(pod => productionOderIds.Contains(pod.ProductionOrderId))
+                .Select(pod => new OrderProductInfo
+                {
+                    ProductionOrderId = pod.ProductionOrderId,
+                    ProductionOrderDetailId = pod.ProductionOrderDetailId,
+                    OrderDetailId = pod.OrderDetailId,
+                    ProductId = pod.ProductId
+                })
+                .ToListAsync();
+            return result;
+        }
+
         public async Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockProductionOrderKey(0));

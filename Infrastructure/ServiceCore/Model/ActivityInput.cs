@@ -19,5 +19,6 @@ namespace VErp.Infrastructure.ServiceCore.Model
         public string MessageResourceFormatData { get; set; }
         public string Data { get; set; }
         public int SubsidiaryId { get; set; }
+        public string IpAddress { get; set; }
     }
 }

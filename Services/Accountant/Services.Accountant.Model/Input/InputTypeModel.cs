@@ -27,6 +27,7 @@ namespace VErp.Services.Accountant.Model.Input
         public int? InputTypeGroupId { get; set; }
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
+        public bool IsHide { get; set; }
     }
 
     public class InputTypeFullModel : InputTypeModel

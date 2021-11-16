@@ -80,9 +80,9 @@ namespace VErpApi.Controllers.Stock.Files
         [GlobalApi]
         [HttpPost]
         [Route("ParseExcel")]
-        public IList<ExcelSheetDataModel> ParseExcel([FromForm] IFormFile file, [FromQuery] string sheetName, [FromQuery] int fromRow = 1, [FromQuery] int? toRow = null, [FromQuery] int? maxrows = null)
+        public IList<ExcelSheetDataModel> ParseExcel([FromForm] IFormFile file, [FromQuery] string sheetName, [FromQuery] int fromRow = 1, [FromQuery] int? toRow = null, [FromQuery] int? maxrows = null, [FromQuery] int? titleRow = null)
         {
-            return _fileService.ParseExcel(file, sheetName, fromRow, toRow, maxrows);
+            return _fileService.ParseExcel(file, sheetName, fromRow, toRow, maxrows, titleRow);
         }
     }
 }

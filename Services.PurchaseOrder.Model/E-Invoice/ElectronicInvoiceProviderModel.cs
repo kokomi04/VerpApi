@@ -24,6 +24,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
         public string ContactName { get; set; }
         public string Address { get; set; }
         public string Description { get; set; }
+        public string UrlSearch { get; set; }
         public EnumElectronicInvoiceProviderStatus ElectronicInvoiceProviderStatusId { get; set; }
         public EasyInvoiceConnectionConfigModel EasyInvoiceConnection { get; set; }
         public CyberBillConnectionConfiModel CyberBillConnection { get; set; }
@@ -91,7 +92,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
                     functions.Add(new ElectronicInvoiceProviderFieldsConfigModel()
                     {
                         ElectronicInvoiceFunctionId = m.Enum,
-                        Uri = string.Empty,
+                        //Uri = string.Empty,
                         Info = new List<ElectronicInvoiceFieldConfigModel>(),
                         Details = new List<ElectronicInvoiceFieldConfigModel>()
                     });
@@ -132,7 +133,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
     public class ElectronicInvoiceProviderFieldsConfigModel
     {
         public EnumElectronicInvoiceFunction ElectronicInvoiceFunctionId { get; set; }
-        public string Uri { get; set; }
+        //public string Uri { get; set; }
         public IList<ElectronicInvoiceFieldConfigModel> Info { get; set; }
         public IList<ElectronicInvoiceFieldConfigModel> Details { get; set; }
 

@@ -59,9 +59,10 @@ namespace VErp.Services.Stock.Model.Inventory
 
     public class MappingInputBillModel
     {
-        public string MappingFunctionKey { get; set; }
+        //public string MappingFunctionKey { get; set; }
         public int InputTypeId { get; set; }
-        public string SourceId { get; set; }
+        public string InputType_Title { get; set; }
+        //public string SourceId { get; set; }
         public long InputBillFId { get; set; }
         public EnumObjectType BillObjectTypeId { get; set; }
     }

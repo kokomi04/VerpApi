@@ -227,7 +227,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList()
         {
-            var voucherTypes = await _purchaseOrderDBContext.VoucherType.ProjectTo<VoucherTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+            var voucherTypes = await _purchaseOrderDBContext.VoucherType.Where(x => !x.IsHide).ProjectTo<VoucherTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
             var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.VoucherType, null)).OrderBy(t => t.SortOrder).ToList()
                  .GroupBy(a => a.ObjectId)
@@ -456,6 +456,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 voucherType.BeforeSaveAction = data.BeforeSaveAction;
                 voucherType.AfterSaveAction = data.AfterSaveAction;
                 voucherType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
+                voucherType.IsHide = data.IsHide;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 

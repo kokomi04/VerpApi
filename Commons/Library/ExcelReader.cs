@@ -106,9 +106,9 @@ namespace VErp.Commons.Library
             return data.ToArray();
         }
 
-     
 
-        public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
+
+        public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null)
         {
             var sheetDatas = new List<ExcelSheetDataModel>();
 
@@ -135,6 +135,7 @@ namespace VErp.Commons.Library
             var fromRowIndex = fromRow - 1;
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
 
+            var titleRowIndex = titleRow.HasValue && titleRow > 0 ? fromRowIndex > 0 ? titleRow.Value - 1 : fromRowIndex - 1 : 0;
 
             for (int i = 0; i < _hssfwb.NumberOfSheets; i++)
             {
@@ -207,7 +208,7 @@ namespace VErp.Commons.Library
                 }
 
                 var continuousRowEmpty = 0;
-                for (int row = fromRowIndex; row < maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
+                for (int row = fromRowIndex; row < fromRowIndex + maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
 
                     var rowData = new NonCamelCaseDictionary<string>();
@@ -215,14 +216,14 @@ namespace VErp.Commons.Library
                     {
                         continuousRowEmpty++;
                         //continue;
-                        if (continuousRowEmpty > 100)
+                        if (continuousRowEmpty > 1000)
                         {
                             break;
                         }
                     }
                     else
                     {
-                        if (continuousRowEmpty > 100)
+                        if (continuousRowEmpty > 1000)
                         {
                             break;
                         }
@@ -262,7 +263,7 @@ namespace VErp.Commons.Library
                             {
                                 rowData.Add(columnName, GetCellString(cell)?.Trim()?.Trim('\''));
                             }
-                            catch(Exception)
+                            catch (Exception)
                             {
                                 rowData.Add(columnName, cell.StringCellValue.ToString()?.Trim()?.Trim('\''));
 
@@ -515,7 +516,7 @@ namespace VErp.Commons.Library
 
                             return Convert.ToDecimal(cell.NumericCellValue).ToString();
                         }
-                        
+
                         //try
                         //{
                         //    return cell.DateCellValue.ToString();

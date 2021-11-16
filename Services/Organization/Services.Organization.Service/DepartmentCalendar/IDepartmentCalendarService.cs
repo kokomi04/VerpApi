@@ -9,7 +9,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar
 {
     public interface IDepartmentCalendarService
     {
-        Task<IList<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId);
+        Task<PageData<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId, int page, int size);
         Task<DepartmentCalendarModel> CreateDepartmentCalendar(int departmentId, DepartmentCalendarModel data);
         Task<DepartmentCalendarModel> UpdateDepartmentCalendar(int departmentId, long oldDate, DepartmentCalendarModel data);
         Task<bool> DeleteDepartmentCalendar(int departmentId, long startDate);
@@ -19,7 +19,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar
 
 
 
-        Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int departmentId);
+        Task<PageData<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int departmentId, int page, int size);
         Task<DepartmentOverHourInfoModel> CreateDepartmentOverHourInfo(int departmentId, DepartmentOverHourInfoModel data);
         Task<DepartmentOverHourInfoModel> UpdateDepartmentOverHourInfo(int departmentId, long departmentOverHourInfoId, DepartmentOverHourInfoModel data);
         Task<IList<DepartmentOverHourInfoModel>> UpdateDepartmentOverHourInfoMultiple(IList<DepartmentOverHourInfoModel> data);
@@ -27,7 +27,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar
         Task<IList<DepartmentOverHourInfoModel>> GetDepartmentOverHourInfo(int[] departmentIds);
 
 
-        Task<IList<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo(int departmentId);
+        Task<PageData<DepartmentIncreaseInfoModel>> GetDepartmentIncreaseInfo(int departmentId, int page, int size);
         Task<DepartmentIncreaseInfoModel> CreateDepartmentIncreaseInfo(int departmentId, DepartmentIncreaseInfoModel data);
         Task<DepartmentIncreaseInfoModel> UpdateDepartmentIncreaseInfo(int departmentId, long departmentIncreaseInfoId, DepartmentIncreaseInfoModel data);
         Task<IList<DepartmentIncreaseInfoModel>> UpdateDepartmentIncreaseInfoMultiple(IList<DepartmentIncreaseInfoModel> data);
