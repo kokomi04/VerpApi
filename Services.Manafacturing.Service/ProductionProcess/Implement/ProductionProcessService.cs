@@ -515,10 +515,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 var maxY = bottomStep?.CoordinateY.GetValueOrDefault() ?? 0;
                 var newMaxY = maxY;
-                foreach (var productionOrderDetail in productionOrderDetails)
+                foreach (var productionOrderDetail in productionOrderDetails.GroupBy(x=> x.ProductId))
                 {
                     // Tạo step ứng với quy trình sản xuất
-                    var product = products.First(p => p.ProductId == productionOrderDetail.ProductId);
+                    var product = products.First(p => p.ProductId == productionOrderDetail.Key);
+                    var totalQuantity = productionOrderDetail.Sum(x => x.Quantity + x.ReserveQuantity);
 
                     // create productionStep
                     var stepMap = new Dictionary<long, ProductionStep>();
@@ -574,8 +575,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         {
                             ObjectId = item.ObjectId,
                             ObjectTypeId = item.ObjectTypeId,
-                            Quantity = item.Quantity * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault() / product.Coefficient,
-                            QuantityOrigin = item.QuantityOrigin * (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity).GetValueOrDefault() / product.Coefficient,
+                            Quantity = item.Quantity * (totalQuantity).GetValueOrDefault() / product.Coefficient,
+                            QuantityOrigin = item.QuantityOrigin * (totalQuantity).GetValueOrDefault() / product.Coefficient,
                             SortOrder = item.SortOrder,
                             ProductionStepLinkDataCode = Guid.NewGuid().ToString(),
                             ProductionStepLinkTypeId = item.ProductionStepLinkTypeId,
