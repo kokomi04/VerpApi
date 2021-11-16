@@ -30,9 +30,9 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 {
     public interface IEasyInvoiceProviderService
     {
-        Task<bool> CancelElectronicInvoice(long voucherBillId, string voucherBillCode, string pattern, string serial);
-        Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string voucherBillCode, string pattern, string serial, int option);
-        Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId);
+        Task<bool> CancelElectronicInvoice(long voucherTypeId, long voucherBillId);
+        Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(long voucherTypeId, long voucherBillId, int option);
+        Task<bool> IssueElectronicInvoice(long voucherTypeId, long voucherBillId);
     }
 
     public class EasyInvoiceProviderService : IEasyInvoiceProviderService
@@ -54,11 +54,14 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             _currentContextService = currentContextService;
         }
 
-        public async Task<bool> IssueElectronicInvoice(string pattern, string serial, long voucherTypeId, long voucherBillId)
+        private async Task<(string, string, string, EnumElectronicInvoiceType, PageDataTable)> GetInfoVoucherEInvoice(long voucherTypeId, long voucherBillId)
         {
             var voucherData = await _voucherDataService.GetVoucherBillInfoRows((int)voucherTypeId, voucherBillId, "", false, 0, 0);
 
             var einvoiceType = EnumElectronicInvoiceType.ElectronicInvoiceNormal;
+            string einvoicePattern, einvoiceSerial, voucherBillCode;
+
+            einvoicePattern = einvoiceSerial = voucherBillCode = "";
 
             if (voucherData.List.Count > 0)
             {
@@ -67,7 +70,32 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 {
                     einvoiceType = (EnumElectronicInvoiceType)(firstRow[VoucherConstants.VOUCHER_E_INVOICE_TYPE]);
                 }
+
+                if (firstRow.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_PATTERN))
+                {
+                    einvoicePattern = firstRow[VoucherConstants.VOUCHER_E_INVOICE_PATTERN]?.ToString();
+                }
+
+                if (firstRow.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_SERIAL))
+                {
+                    einvoiceSerial = firstRow[VoucherConstants.VOUCHER_E_INVOICE_SERIAL]?.ToString();
+                }
+
+                if (firstRow.ContainsKey(VoucherConstants.VOUCHER_BILL_CODE))
+                {
+                    voucherBillCode = firstRow[VoucherConstants.VOUCHER_BILL_CODE]?.ToString();
+                }
             }
+
+            if (string.IsNullOrWhiteSpace(einvoicePattern) || string.IsNullOrWhiteSpace(einvoiceSerial))
+                throw ElectronicInvoiceProviderErrorCode.NotFoundPatternOrSerialOfEInvoice.BadRequest();
+
+            return (voucherBillCode, einvoicePattern, einvoiceSerial, einvoiceType, voucherData);
+        }
+
+        public async Task<bool> IssueElectronicInvoice(long voucherTypeId, long voucherBillId)
+        {
+            var (_, pattern, serial, einvoiceType, voucherData) = await GetInfoVoucherEInvoice(voucherTypeId, voucherBillId);
 
             return einvoiceType switch
             {
@@ -232,8 +260,10 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             return true;
         }
 
-        public async Task<bool> CancelElectronicInvoice(long voucherBillId, string voucherBillCode, string pattern, string serial)
+        public async Task<bool> CancelElectronicInvoice(long voucherTypeId, long voucherBillId)
         {
+            var (voucherBillCode, pattern, serial, _, _) = await GetInfoVoucherEInvoice(voucherTypeId, voucherBillId);
+
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
 
             if (configEntity == null)
@@ -264,8 +294,10 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             return true;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(string voucherBillCode, string pattern, string serial, int option)
+        public async Task<(Stream stream, string fileName, string contentType)> GetElectronicInvoicePdf(long voucherTypeId, long voucherBillId, int option)
         {
+            var (voucherBillCode, pattern, serial, _, _) = await GetInfoVoucherEInvoice(voucherTypeId, voucherBillId);
+
             var configEntity = await _purchaseOrderDBContext.ElectronicInvoiceProvider.FirstOrDefaultAsync(x => x.ElectronicInvoiceProviderId == (int)EnumElectronicInvoiceProvider.EasyInvoice);
 
             if (configEntity == null)

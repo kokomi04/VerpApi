@@ -120,6 +120,12 @@
   <data name="EInvoiceProcessFailed" xml:space="preserve">
     <value>Xử lý tiến trình của hóa đơn điện tử gặp lỗi</value>
   </data>
+  <data name="NotFoundPatternOrSerialOfEInvoice" xml:space="preserve">
+    <value>Không tìm thấy mẫu số và ký hiệu của hóa đơn</value>
+  </data>
+  <data name="NotFoundXmlData" xml:space="preserve">
+    <value>Không tìm thấy mẫu dữ liệu</value>
+  </data>
   <data name="ThisFunctionIsInDevelopment" xml:space="preserve">
     <value>Chức năng đang được hoàn thiện</value>
   </data>

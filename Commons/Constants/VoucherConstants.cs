@@ -18,5 +18,7 @@ namespace VErp.Commons.Constants
         public const string VOUCHER_E_INVOICE_NUMBER = "no";
         public const string VOUCHER_E_INVOICE_URL_SEARCH = "einvoice_url_search";
         public const string VOUCHER_E_INVOICE_TYPE = "einvoice_type";
+        public const string VOUCHER_E_INVOICE_PATTERN = "einvoice_pattern";
+        public const string VOUCHER_E_INVOICE_SERIAL = "einvoice_serial";
     }
 }
