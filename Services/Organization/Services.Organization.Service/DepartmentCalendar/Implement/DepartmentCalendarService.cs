@@ -53,21 +53,27 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             _currentContext = currentContext;
             _departmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Department);
         }
-        public async Task<IList<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId)
+        public async Task<PageData<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId, int page, int size)
         {
-            var lstDepartmentCalendar = await (from dc in _organizationContext.DepartmentCalendar
-                                               join c in _organizationContext.Calendar on dc.CalendarId equals c.CalendarId
-                                               where dc.DepartmentId == departmentId
-                                               orderby dc.StartDate descending
-                                               select new DepartmentCalendarModel
-                                               {
-                                                   CalendarCode = c.CalendarCode,
-                                                   CalendarId = c.CalendarId,
-                                                   CalendarName = c.CalendarName,
-                                                   StartDate = dc.StartDate.GetUnix()
-                                               })
-                                               .ToListAsync();
-            return lstDepartmentCalendar;
+            var query = (from dc in _organizationContext.DepartmentCalendar
+                         join c in _organizationContext.Calendar on dc.CalendarId equals c.CalendarId
+                         where dc.DepartmentId == departmentId
+                         orderby dc.StartDate descending
+                         select new DepartmentCalendarModel
+                         {
+                             CalendarCode = c.CalendarCode,
+                             CalendarId = c.CalendarId,
+                             CalendarName = c.CalendarName,
+                             StartDate = dc.StartDate.GetUnix()
+                         }).AsQueryable();
+
+            var total = query.Count();
+
+            if (size > 0) query = query.Skip(size * (page - 1)).Take(size);
+
+            var lstDepartmentCalendar = await query.ToListAsync();
+
+            return (lstDepartmentCalendar, total);
         }
 
         public async Task<DepartmentCalendarModel> CreateDepartmentCalendar(int departmentId, DepartmentCalendarModel data)
@@ -186,8 +192,6 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             {
                 var department = _organizationContext.Department.FirstOrDefault(d => d.DepartmentId == departmentId);
                 if (department == null) throw DepartmentNotFound.BadRequest();
-
-
 
                 DateTime time = startDate.UnixToDateTime().Value;
                 var departmentCalendar = await _organizationContext.DepartmentCalendar.FirstOrDefaultAsync(dc => dc.DepartmentId == departmentId && dc.StartDate == time);

@@ -9,7 +9,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar
 {
     public interface IDepartmentCalendarService
     {
-        Task<IList<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId);
+        Task<PageData<DepartmentCalendarModel>> GetDepartmentCalendars(int departmentId, int page, int size);
         Task<DepartmentCalendarModel> CreateDepartmentCalendar(int departmentId, DepartmentCalendarModel data);
         Task<DepartmentCalendarModel> UpdateDepartmentCalendar(int departmentId, long oldDate, DepartmentCalendarModel data);
         Task<bool> DeleteDepartmentCalendar(int departmentId, long startDate);
