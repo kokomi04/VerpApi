@@ -28,9 +28,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("{departmentId}")]
-        public async Task<IList<DepartmentCalendarModel>> GetDepartmentCalendars([FromRoute] int departmentId)
+        public async Task<PageData<DepartmentCalendarModel>> GetDepartmentCalendars([FromRoute] int departmentId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _departmentCalendarService.GetDepartmentCalendars(departmentId);
+            return await _departmentCalendarService.GetDepartmentCalendars(departmentId, page, size);
         }
 
         [HttpPost]

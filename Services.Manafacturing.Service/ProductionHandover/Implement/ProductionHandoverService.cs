@@ -24,7 +24,7 @@ using Microsoft.Data.SqlClient;
 using ProductionHandoverEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionHandover;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
-using ProductionAssignmentEntity  = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
+using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using Newtonsoft.Json;
 
@@ -732,8 +732,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                 if (inv == null) continue;
                                 var history = JsonConvert.DeserializeObject<ProductionInventoryRequirementModel>(JsonConvert.SerializeObject(inv));
 
-                                history.ActualQuantity = materialAllocation.SourceQuantity.GetValueOrDefault();
-                                history.ProductId = materialAllocation.SourceProductId.GetValueOrDefault();
+                                if (!materialAllocation.SourceProductId.HasValue && inv.ProductId == inputLinkData.ObjectId)
+                                {
+                                    history.ActualQuantity = materialAllocation.AllocationQuantity;
+                                }
+                                else
+                                {
+                                    history.ActualQuantity = materialAllocation.SourceQuantity.GetValueOrDefault();
+                                    history.ProductId = materialAllocation.SourceProductId.GetValueOrDefault();
+                                }
+
                                 item.InventoryRequirementHistories.Add(history);
                                 item.ReceivedQuantity += history.ActualQuantity;
                             }
@@ -951,7 +959,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     }
 
                     var departmentHandoverDetail = departmentHandoverDetails.FirstOrDefault(dh => dh.DepartmentId == productionAssignment.DepartmentId && dh.ProductionStepId == productionAssignment.ProductionStepId);
-                    
+
                     if (departmentHandoverDetail == null) continue;
                     var inoutDatas = departmentHandoverDetail.InputDatas.Union(departmentHandoverDetail.OutputDatas);
                     var status = inoutDatas.All(d => d.ReceivedQuantity >= d.RequireQuantity) ? EnumAssignedProgressStatus.Finish : EnumAssignedProgressStatus.HandingOver;
