@@ -56,7 +56,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<StockTakeDetail> StockTakeDetail { get; set; }
         public virtual DbSet<StockTakePeriod> StockTakePeriod { get; set; }
         public virtual DbSet<StockTakeRepresentative> StockTakeRepresentative { get; set; }
-        //public virtual DbSet<VMappingOusideImportObject> VMappingOusideImportObject { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -85,11 +84,17 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<Inventory>(entity =>
             {
+                entity.HasIndex(e => e.Date, "IDX_Date");
+
+                entity.HasIndex(e => e.InventoryTypeId, "IDX_InventoryType");
+
+                entity.HasIndex(e => e.StockId, "IDX_Stock");
+
                 entity.HasIndex(e => new { e.SubsidiaryId, e.InventoryCode }, "IX_Inventory_InventoryCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
-                entity.HasIndex(e => new { e.IsDeleted, e.IsApproved, e.SubsidiaryId }, "IX_Inventory_IsApproved");
+                entity.HasIndex(e => new { e.SubsidiaryId, e.IsDeleted, e.IsApproved }, "IX_Inventory_IsApproved");
 
                 entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
 
@@ -138,9 +143,9 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.HasIndex(e => new { e.IsDeleted, e.OrderCode }, "IDX_InventoryDetail_OrderCode");
 
-                entity.HasIndex(e => e.IsDeleted, "IDX_InventoryDetail_Product");
+                entity.HasIndex(e => e.ProductId, "IDX_InventoryDetail_Product");
 
-                entity.HasIndex(e => new { e.InventoryId, e.IsDeleted, e.SubsidiaryId }, "IDX_InventoryDetail_Search");
+                entity.HasIndex(e => new { e.IsDeleted, e.InventoryId, e.SubsidiaryId }, "IDX_InventoryDetail_Search");
 
                 entity.HasIndex(e => new { e.IsDeleted, e.SubsidiaryId, e.InventoryRequirementDetailId }, "IX_InventoryDetail_InventoryRequirementDetailId");
 
@@ -488,6 +493,14 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
+                entity.Property(e => e.BoxHeight).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.BoxLong).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.BoxQuantitative).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.BoxWidth).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.Coefficient)
                     .HasDefaultValueSql("((1))")
                     .HasComment("Cơ số sản phẩm");
@@ -770,6 +783,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<ProductUnitConversion>(entity =>
             {
+                entity.HasIndex(e => new { e.ProductId, e.IsDefault }, "IDX_Product");
+
                 entity.Property(e => e.ConversionDescription).HasMaxLength(512);
 
                 entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
@@ -819,6 +834,10 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.ToView("RefInputBillBasic");
 
                 entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+
+                entity.Property(e => e.InputTypeTitle)
+                    .HasMaxLength(128)
+                    .HasColumnName("InputType_Title");
 
                 entity.Property(e => e.SoCt)
                     .HasMaxLength(512)
@@ -931,23 +950,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.StockTakePeriodId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_StockTakeRepresentative_StockTakePeriod");
-            });
-
-            modelBuilder.Entity<VMappingOusideImportObject>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToView("vMappingOusideImportObject");
-
-                entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
-
-                entity.Property(e => e.MappingFunctionKey)
-                    .IsRequired()
-                    .HasMaxLength(128);
-
-                entity.Property(e => e.SourceId)
-                    .IsRequired()
-                    .HasMaxLength(128);
             });
 
             OnModelCreatingPartial(modelBuilder);

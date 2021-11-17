@@ -42,6 +42,12 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int Coefficient { get; set; }
         public string Color { get; set; }
 
+        public decimal? BoxQuantitative { get; set; }
+        public decimal? BoxWidth { get; set; }
+        public decimal? BoxLong { get; set; }
+        public decimal? BoxHeight { get; set; }
+
+
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
         public ProductModelExtra Extra { get; set; }
         public ProductModelStock StockInfo { get; set; }
