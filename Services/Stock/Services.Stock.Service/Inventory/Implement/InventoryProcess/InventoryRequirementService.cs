@@ -332,7 +332,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 //}
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
+                if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw DuplicateProduct.BadRequest();
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
@@ -431,7 +431,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
+                if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw DuplicateProduct.BadRequest();
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), inventoryRequirement.Date);
