@@ -1029,7 +1029,8 @@ namespace VErp.Services.Master.Service.Category
             {
                 Value = (int)m.Enum,
                 Title = m.Description,
-                ParamNumber = m.Enum.GetParamNumber()
+                ParamNumber = m.Enum.GetParamNumber(),
+                AllowedDataType = m.Enum.GetAllowedDataType()
             }).ToList();
             int total = operators.Count;
             if (size > 0)
