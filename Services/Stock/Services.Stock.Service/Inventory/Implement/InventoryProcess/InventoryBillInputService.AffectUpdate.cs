@@ -98,6 +98,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var details = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
 
+            // Validate nếu thông tin nhập kho tạo từ phiếu yêu cầu => không cho phép thêm/sửa mặt hàng
+            if (details.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
+            {
+                if (req.InProducts.Any(d => !details.Any(id => id.ProductId == d.ProductId && id.InventoryRequirementDetailId == d.InventoryRequirementDetailId)))
+                {
+                    throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
+                }
+            }
+
             var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));
 
             var updateDetail = await ValidateInventoryIn(true, req);

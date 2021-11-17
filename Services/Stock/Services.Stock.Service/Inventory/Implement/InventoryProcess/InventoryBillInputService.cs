@@ -252,6 +252,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         #endregion
 
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
+
+                        // Validate nếu thông tin nhập kho tạo từ phiếu yêu cầu => không cho phép thêm/sửa mặt hàng
+                        if(inventoryDetails.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
+                        {
+                            if(validate.Data.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId && id.InventoryRequirementDetailId == d.InventoryRequirementDetailId)))
+                            {
+                                throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
+                            }
+                        }
+
                         foreach (var d in inventoryDetails)
                         {
                             d.IsDeleted = true;
@@ -642,21 +652,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var toPackages = await _stockDbContext.Package.Where(p => toPackageIds.Contains(p.PackageId) && p.PackageTypeId == (int)EnumPackageType.Custom).ToListAsync();
 
             var inventoryDetailList = new List<InventoryDetail>(req.InProducts.Count);
-            foreach (var details in req.InProducts)
+            foreach (var detail in req.InProducts)
             {
-                productInfos.TryGetValue(details.ProductId, out var productInfo);
+                productInfos.TryGetValue(detail.ProductId, out var productInfo);
                 if (productInfo == null)
                 {
                     return ProductErrorCode.ProductNotFound;
                 }
-                var puDefault = productUnitConversions.FirstOrDefault(c => c.ProductId == details.ProductId && c.IsDefault);
+                var puDefault = productUnitConversions.FirstOrDefault(c => c.ProductId == detail.ProductId && c.IsDefault);
 
-                var puInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == details.ProductUnitConversionId);
+                var puInfo = productUnitConversions.FirstOrDefault(c => c.ProductUnitConversionId == detail.ProductUnitConversionId);
                 if (puInfo == null)
                 {
                     return ProductUnitConversionErrorCode.ProductUnitConversionNotFound;
                 }
-                if (puInfo.ProductId != details.ProductId)
+                if (puInfo.ProductId != detail.ProductId)
                 {
                     return ProductUnitConversionErrorCode.ProductUnitConversionNotBelongToProduct;
                 }
@@ -667,10 +677,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     var calcModel = new QuantityPairInputModel()
                     {
-                        PrimaryQuantity = details.PrimaryQuantity,
+                        PrimaryQuantity = detail.PrimaryQuantity,
                         PrimaryDecimalPlace = puDefault?.DecimalPlace ?? 12,
 
-                        PuQuantity = details.ProductUnitConversionQuantity,
+                        PuQuantity = detail.ProductUnitConversionQuantity,
                         PuDecimalPlace = puInfo.DecimalPlace,
 
                         FactorExpression = puInfo.FactorExpression,
@@ -685,17 +695,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     if (isSuccess)
                     {
-                        details.ProductUnitConversionQuantity = pucQuantity;
+                        detail.ProductUnitConversionQuantity = pucQuantity;
                     }
                     else
                     {
-                        _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={details.PrimaryQuantity}, FactorExpression={puInfo.FactorExpression}, ProductUnitConversionQuantity={details.ProductUnitConversionQuantity}, evalData={pucQuantity}");
+                        _logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={detail.PrimaryQuantity}, FactorExpression={puInfo.FactorExpression}, ProductUnitConversionQuantity={detail.ProductUnitConversionQuantity}, evalData={pucQuantity}");
                         //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                         throw PuConversionError.BadRequestFormat(puInfo.ProductUnitConversionName, productInfo.ProductCode);
                     }
                 }
 
-                if (!isApproved && details.ProductUnitConversionQuantity <= 0)
+                if (!isApproved && detail.ProductUnitConversionQuantity <= 0)
                 {
                     //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
                     throw PuConversionError.BadRequestFormat(puInfo.ProductUnitConversionName, productInfo.ProductCode);
@@ -705,21 +715,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!isApproved)
                 {
-                    if (details.ProductUnitConversionQuantity <= 0 || details.PrimaryQuantity <= 0)
+                    if (detail.ProductUnitConversionQuantity <= 0 || detail.PrimaryQuantity <= 0)
                     {
                         return GeneralCode.InvalidParams;
                     }
                 }
 
-                switch (details.PackageOptionId)
+                switch (detail.PackageOptionId)
                 {
                     case EnumPackageOption.Append:
 
-                        var toPackageInfo = toPackages.FirstOrDefault(p => p.PackageId == details.ToPackageId);
+                        var toPackageInfo = toPackages.FirstOrDefault(p => p.PackageId == detail.ToPackageId);
                         if (toPackageInfo == null) return PackageErrorCode.PackageNotFound;
 
-                        if (toPackageInfo.ProductId != details.ProductId
-                            || toPackageInfo.ProductUnitConversionId != details.ProductUnitConversionId
+                        if (toPackageInfo.ProductId != detail.ProductId
+                            || toPackageInfo.ProductUnitConversionId != detail.ProductUnitConversionId
                             || toPackageInfo.StockId != req.StockId)
                         {
                             return InventoryErrorCode.InvalidPackage;
@@ -729,7 +739,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     case EnumPackageOption.CreateMerge:
                     case EnumPackageOption.NoPackageManager:
 
-                        if (!isApproved && details.ToPackageId.HasValue)
+                        if (!isApproved && detail.ToPackageId.HasValue)
                         {
                             return GeneralCode.InvalidParams;
                         }
@@ -738,31 +748,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 inventoryDetailList.Add(new InventoryDetail
                 {
-                    InventoryDetailId = isApproved ? details.InventoryDetailId ?? 0 : 0,
-                    ProductId = details.ProductId,
+                    InventoryDetailId = isApproved ? detail.InventoryDetailId ?? 0 : 0,
+                    ProductId = detail.ProductId,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
                     IsDeleted = false,
-                    RequestPrimaryQuantity = details.RequestPrimaryQuantity?.RoundBy(puDefault.DecimalPlace),
-                    PrimaryQuantity = details.PrimaryQuantity.RoundBy(puDefault.DecimalPlace),
-                    UnitPrice = details.UnitPrice.RoundBy(puDefault.DecimalPlace),
-                    ProductUnitConversionId = details.ProductUnitConversionId,
-                    RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
-                    ProductUnitConversionQuantity = details.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
-                    ProductUnitConversionPrice = details.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
-                    RefObjectTypeId = details.RefObjectTypeId,
-                    RefObjectId = details.RefObjectId,
-                    RefObjectCode = details.RefObjectCode,
-                    OrderCode = details.OrderCode,
-                    Pocode = details.POCode,
-                    ProductionOrderCode = details.ProductionOrderCode,
+                    RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(puDefault.DecimalPlace),
+                    PrimaryQuantity = detail.PrimaryQuantity.RoundBy(puDefault.DecimalPlace),
+                    UnitPrice = detail.UnitPrice.RoundBy(puDefault.DecimalPlace),
+                    ProductUnitConversionId = detail.ProductUnitConversionId,
+                    RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
+                    RefObjectTypeId = detail.RefObjectTypeId,
+                    RefObjectId = detail.RefObjectId,
+                    RefObjectCode = detail.RefObjectCode,
+                    OrderCode = detail.OrderCode,
+                    Pocode = detail.POCode,
+                    ProductionOrderCode = detail.ProductionOrderCode,
                     FromPackageId = null,
-                    ToPackageId = details.ToPackageId,
-                    PackageOptionId = (int)details.PackageOptionId,
-                    SortOrder = details.SortOrder,
-                    Description = details.Description,
+                    ToPackageId = detail.ToPackageId,
+                    PackageOptionId = (int)detail.PackageOptionId,
+                    SortOrder = detail.SortOrder,
+                    Description = detail.Description,
                     //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
-                    InventoryRequirementCode = details.InventoryRequirementCode
+                    InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
+                    InventoryRequirementCode = detail.InventoryRequirementCode
                 });
             }
             return inventoryDetailList;
