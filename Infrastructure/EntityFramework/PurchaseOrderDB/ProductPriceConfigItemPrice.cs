@@ -10,8 +10,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long ProductPriceConfigItemPriceId { get; set; }
         public int SubsidiaryId { get; set; }
         public int ProductPriceConfigId { get; set; }
-        public bool? IsForeignPrice { get; set; }
-        public bool? IsEditable { get; set; }
+        public bool IsForeignPrice { get; set; }
+        public bool IsEditable { get; set; }
         public string ItemKey { get; set; }
         public decimal? Price { get; set; }
         public string Description { get; set; }
