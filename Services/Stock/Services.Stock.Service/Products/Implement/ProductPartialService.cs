@@ -362,7 +362,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 PackingMethod = productInfo.PackingMethod,
                 GrossWeight = productInfo.GrossWeight,
                 NetWeight = productInfo.NetWeight,
-                LoadAbility = productInfo.NetWeight,
+                LoadAbility = productInfo.LoadAbility,
                 SellDescription = productInfo.SellDescription,
 
                 ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers)
@@ -386,7 +386,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.PackingMethod = model.PackingMethod;
                 productInfo.GrossWeight = model.GrossWeight;
                 productInfo.NetWeight = model.NetWeight;
-                productInfo.LoadAbility = model.NetWeight;
+                productInfo.LoadAbility = model.LoadAbility;
                 productInfo.SellDescription = model.SellDescription;
 
                 if (model.ProductCustomers == null)
