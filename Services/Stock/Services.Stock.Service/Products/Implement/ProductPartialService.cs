@@ -364,7 +364,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 NetWeight = productInfo.NetWeight,
                 LoadAbility = productInfo.NetWeight,
                 SellDescription = productInfo.SellDescription,
-
+                BoxQuantitative = productInfo.BoxQuantitative,
+                BoxWidth = productInfo.BoxWidth,
+                BoxLong = productInfo.BoxLong,
+                BoxHeight = productInfo.BoxHeight,
                 ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers)
             };
         }
@@ -388,6 +391,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.NetWeight = model.NetWeight;
                 productInfo.LoadAbility = model.NetWeight;
                 productInfo.SellDescription = model.SellDescription;
+                productInfo.BoxQuantitative = model.BoxQuantitative;
+                productInfo.BoxWidth = model.BoxWidth;
+                productInfo.BoxLong = model.BoxLong;
+                productInfo.BoxHeight = model.BoxHeight;
 
                 if (model.ProductCustomers == null)
                 {

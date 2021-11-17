@@ -318,7 +318,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             //SourceId = item.InventoryId.ToString(),
                             InputBillFId = m.InputBillFId,
                             BillObjectTypeId = EnumObjectType.InputBill,
-                            InputType_Title = m.InputType_Title
+                            InputType_Title = m.InputTypeTitle
 
                         }).ToList()
                 });
@@ -483,7 +483,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                          InputTypeId = m.InputTypeId,
                          //SourceId = inventoryObj.InventoryId.ToString(),
                          InputBillFId = m.InputBillFId,
-                         InputType_Title = m.InputType_Title
+                         InputType_Title = m.InputTypeTitle
                      }).ToList();
 
                 var inventoryOutput = new InventoryOutput()
