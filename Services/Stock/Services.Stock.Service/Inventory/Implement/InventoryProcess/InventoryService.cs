@@ -384,23 +384,34 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //        InventoryRequirementCode = id.InventoryRequirementCode
                 //    }).ToList());
 
-                foreach (var details in inventoryDetails)
+                var requirementInventoryDetailIds = inventoryDetails.Select(id => id.InventoryRequirementDetailId).ToList();
+                var requirementInventoryCodeMap = (from ird in _stockDbContext.InventoryRequirementDetail
+                                                   join ir in _stockDbContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
+                                                   where requirementInventoryDetailIds.Contains(ird.InventoryRequirementDetailId)
+                                                   select new
+                                                   {
+                                                       ird.InventoryRequirementDetailId,
+                                                       ir.InventoryRequirementCode
+                                                   })
+                                                   .ToDictionary(ird => ird.InventoryRequirementDetailId, ird => ird.InventoryRequirementCode);
+
+                foreach (var detail in inventoryDetails)
                 {
                     ProductListOutput productOutput = null;
 
                     PackageEntity packageInfo = null;
 
-                    if (details.FromPackageId > 0)
+                    if (detail.FromPackageId > 0)
                     {
-                        packgeInfos.TryGetValue(details.FromPackageId.Value, out packageInfo);
+                        packgeInfos.TryGetValue(detail.FromPackageId.Value, out packageInfo);
                     }
 
-                    if (details.ToPackageId > 0)
+                    if (detail.ToPackageId > 0)
                     {
-                        packgeInfos.TryGetValue(details.ToPackageId.Value, out packageInfo);
+                        packgeInfos.TryGetValue(detail.ToPackageId.Value, out packageInfo);
                     }
 
-                    if (productInfos.TryGetValue(details.ProductId, out var productInfo))
+                    if (productInfos.TryGetValue(detail.ProductId, out var productInfo))
                     {
                         productOutput = new ProductListOutput
                         {
@@ -419,40 +430,41 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         };
                     }
 
-                    productUnitConversions.TryGetValue(details.ProductUnitConversionId, out var productUnitConversionInfo);
-
-                    var detail = new InventoryDetailOutput
+                    productUnitConversions.TryGetValue(detail.ProductUnitConversionId, out var productUnitConversionInfo);
+                    var inventoryRequirementCode = detail.InventoryRequirementDetailId.HasValue && requirementInventoryCodeMap.ContainsKey(detail.InventoryRequirementDetailId.Value) ? requirementInventoryCodeMap[detail.InventoryRequirementDetailId.Value] : null;
+                    var detailModel = new InventoryDetailOutput
                     {
-                        InventoryId = details.InventoryId,
-                        InventoryDetailId = details.InventoryDetailId,
-                        ProductId = details.ProductId,
+                        InventoryId = detail.InventoryId,
+                        InventoryDetailId = detail.InventoryDetailId,
+                        ProductId = detail.ProductId,
                         PrimaryUnitId = productInfo?.UnitId,
-                        RequestPrimaryQuantity = details.RequestPrimaryQuantity?.RoundBy(),
-                        PrimaryQuantity = details.PrimaryQuantity.RoundBy(),
-                        UnitPrice = details.UnitPrice,
-                        ProductUnitConversionId = details.ProductUnitConversionId,
-                        RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity?.RoundBy(),
-                        ProductUnitConversionQuantity = details.ProductUnitConversionQuantity.RoundBy(),
-                        ProductUnitConversionPrice = details.ProductUnitConversionPrice,
-                        FromPackageId = details.FromPackageId,
-                        ToPackageId = details.ToPackageId,
+                        RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(),
+                        PrimaryQuantity = detail.PrimaryQuantity.RoundBy(),
+                        UnitPrice = detail.UnitPrice,
+                        ProductUnitConversionId = detail.ProductUnitConversionId,
+                        RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(),
+                        ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(),
+                        ProductUnitConversionPrice = detail.ProductUnitConversionPrice,
+                        FromPackageId = detail.FromPackageId,
+                        ToPackageId = detail.ToPackageId,
                         ToPackageCode = packageInfo?.PackageCode,
                         FromPackageCode = packageInfo?.PackageCode,
-                        PackageOptionId = details.PackageOptionId,
+                        PackageOptionId = detail.PackageOptionId,
 
-                        RefObjectTypeId = details.RefObjectTypeId,
-                        RefObjectId = details.RefObjectId,
-                        RefObjectCode = details.RefObjectCode,
-                        OrderCode = details.OrderCode,
-                        POCode = details.Pocode,
-                        ProductionOrderCode = details.ProductionOrderCode,
+                        RefObjectTypeId = detail.RefObjectTypeId,
+                        RefObjectId = detail.RefObjectId,
+                        RefObjectCode = detail.RefObjectCode,
+                        OrderCode = detail.OrderCode,
+                        POCode = detail.Pocode,
+                        ProductionOrderCode = detail.ProductionOrderCode,
 
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo ?? null,
-                        SortOrder = details.SortOrder,
-                        Description = details.Description,
+                        SortOrder = detail.SortOrder,
+                        Description = detail.Description,
                         //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
-                        InventoryRequirementCode = details.InventoryRequirementCode,
+                        InventoryRequirementCode = inventoryRequirementCode,
+                        InventoryRequirementDetailId = detail.InventoryRequirementDetailId
                     };
 
                     //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
@@ -460,7 +472,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //    detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
                     //}
 
-                    listInventoryDetailsOutput.Add(detail);
+                    listInventoryDetailsOutput.Add(detailModel);
                 }
                 #endregion
 

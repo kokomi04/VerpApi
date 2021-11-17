@@ -188,7 +188,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     try
                     {
-
                         var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
                         if (inventoryObj == null)
                         {
@@ -203,6 +202,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }
 
                         await ValidateInventoryConfig(req.Date.UnixToDateTime(), inventoryObj.Date);
+
+                        // Validate nếu thông tin xuất kho tạo từ phiếu yêu cầu => không cho phép thêm/sửa mặt hàng
+                        var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryObj.InventoryId).ToListAsync();
+                        if (inventoryDetails.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
+                        {
+                            if (req.OutProducts.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId && id.InventoryRequirementDetailId == d.InventoryRequirementDetailId)))
+                            {
+                                throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
+                            }
+                        }
 
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
@@ -809,6 +818,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Description = detail.Description,
                     //AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
                     InventoryRequirementCode = detail.InventoryRequirementCode,
+                    InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity)
