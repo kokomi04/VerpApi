@@ -46,6 +46,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IMapper _mapper;
         private readonly IMailFactoryService _mailFactoryService;
         private readonly IUserHelperService _userHelperService;
+        private readonly IOrganizationHelperService _organizationHelperService;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -59,7 +60,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , ICustomGenCodeHelperService customGenCodeHelperService
            , IManufacturingHelperService manufacturingHelperService
            , IMapper mapper, IMailFactoryService mailFactoryService
-           , IUserHelperService userHelperService)
+           , IUserHelperService userHelperService, IOrganizationHelperService organizationHelperService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -71,6 +72,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
             _mailFactoryService = mailFactoryService;
             _userHelperService = userHelperService;
+            _organizationHelperService = organizationHelperService;
         }
 
         public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
@@ -84,11 +86,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var checkedUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CheckedByUserId)?.FullName;
             var censortUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CensorByUserId)?.FullName;
 
+            var businessInfo = await _organizationHelperService.BusinessInfo();
+
             return await _mailFactoryService.Dispatch<PurchaseOrderOutput>(mailTo, mailTemplateCode, new InternalObjectDataMail<PurchaseOrderOutput>(){
                 CensoredByUser = censortUser,
                 CheckedByUser = checkedUser,
                 CreatedByUser =createdUser,
                 UpdatedByUser = updatedUser,
+                CompanyName = businessInfo.CompanyName,
                 Data = purchaseOrder
             });
         }

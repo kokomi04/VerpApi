@@ -8,5 +8,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string CensoredByUser { get; set; }
 
         public T Data { get; set; }
+        public string CompanyName { get; set; }
     }
 }
