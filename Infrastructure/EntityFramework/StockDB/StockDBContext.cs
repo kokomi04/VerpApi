@@ -493,13 +493,13 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
-                entity.Property(e => e.BoxHeight).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.PackingHeight).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.BoxLong).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.PackingLong).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.BoxQuantitative).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.PackingQuantitative).HasColumnType("decimal(18, 5)");
 
-                entity.Property(e => e.BoxWidth).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.PackingWidth).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.Coefficient)
                     .HasDefaultValueSql("((1))")
