@@ -711,9 +711,27 @@ namespace VErp.Commons.Library
             obj.GetType().GetProperty(propertyName).SetValue(obj, value);
         }
 
-        public static T GetPropertyValue<T>(this object obj, string propertyName)
+        // public static T GetPropertyValue<T>(this object obj, string propertyName)
+        // {
+        //     return (T)obj.GetType().GetProperty(propertyName).GetValue(obj);
+        // }
+
+        public static T GetPropertyValue<T>(this object sourceObject, string propertyName)
         {
-            return (T)obj.GetType().GetProperty(propertyName).GetValue(obj);
+            if (sourceObject == null) throw new ArgumentNullException(nameof(sourceObject));
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new ArgumentException(nameof(propertyName));
+
+            foreach (string currentPropertyName in propertyName.Split('.'))
+            {
+                if (string.IsNullOrWhiteSpace(currentPropertyName)) throw new InvalidOperationException($"Invalid property '{propertyName}'");
+
+                PropertyInfo propertyInfo = sourceObject.GetType().GetProperty(currentPropertyName);
+                if (propertyInfo == null) throw new InvalidOperationException($"Property '{currentPropertyName}' not found");
+
+                sourceObject = propertyInfo.GetValue(sourceObject);
+            }
+
+            return sourceObject is T result ? result : default;
         }
 
 

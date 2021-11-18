@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using System.Linq;
+using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -31,40 +32,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 var propertyName = m.Groups["PropertyName"].Value;
 
-                var internalType = typeof(InternalObjectDataMail<T>);
-
-                if (internalType.GetProperties().Any(x => x.Name == propertyName) && propertyName != "Data")
-                {
-                    return internalType.GetProperty(propertyName).GetValue(data).ToString();
-                }
-
-                var dynamicType = typeof(T);
-                if (dynamicType.GetProperties().Any(x => x.Name == propertyName))
-                {
-                    return dynamicType.GetProperty(propertyName).GetValue(data.Data).ToString();
-                }
-
-                return "";
+                return data.GetPropertyValue<object>(propertyName).ToString();
             });
 
             var subject = Regex.Replace(mailTemplate.Title, @"{{(?<PropertyName>[^}]+)}}", m =>
             {
                 var propertyName = m.Groups["PropertyName"].Value;
 
-                var internalType = typeof(InternalObjectDataMail<T>);
-
-                if (internalType.GetProperties().Any(x => x.Name == propertyName) && propertyName != "Data")
-                {
-                    return internalType.GetProperty(propertyName).GetValue(data).ToString();
-                }
-
-                var dynamicType = typeof(T);
-                if (dynamicType.GetProperties().Any(x => x.Name == propertyName))
-                {
-                    return dynamicType.GetProperty(propertyName).GetValue(data.Data).ToString();
-                }
-
-                return "";
+                return data.GetPropertyValue<object>(propertyName).ToString();
             });
 
             var mailArguments = new MailArguments()
@@ -72,7 +47,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 MailTo = mailTo,
                 MailFrom = config.MailFrom,
                 Message = message,
-                Name = "",
+                Name = "VERP",
                 Password = config.Password,
                 Port = config.Port,
                 SmtpHost = config.SmtpHost,
