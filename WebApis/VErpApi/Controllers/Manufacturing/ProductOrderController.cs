@@ -67,6 +67,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.EditNote(productionOrderDetailId, note);
         }
 
+        [HttpPut]
+        [Route("update-datetime")]
+        public async Task<bool> EditDate([FromBody] UpdateDatetimeModel data)
+        {
+            return await _productionOrderService.EditDate(data.ProductionOrderDetailIds, data.StartDate, data.PlanEndDate, data.EndDate);
+        }
+
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("Search")]
