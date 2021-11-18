@@ -47,6 +47,26 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return "";
             });
 
+            var subject = Regex.Replace(mailTemplate.Title, @"{{(?<PropertyName>[^}]+)}}", m =>
+            {
+                var propertyName = m.Groups["PropertyName"].Value;
+
+                var internalType = typeof(InternalObjectDataMail<T>);
+
+                if (internalType.GetProperties().Any(x => x.Name == propertyName) && propertyName != "Data")
+                {
+                    return internalType.GetProperty(propertyName).GetValue(data).ToString();
+                }
+
+                var dynamicType = typeof(T);
+                if (dynamicType.GetProperties().Any(x => x.Name == propertyName))
+                {
+                    return dynamicType.GetProperty(propertyName).GetValue(data.Data).ToString();
+                }
+
+                return "";
+            });
+
             var mailArguments = new MailArguments()
             {
                 MailTo = mailTo,
@@ -56,7 +76,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 Password = config.Password,
                 Port = config.Port,
                 SmtpHost = config.SmtpHost,
-                Subject = mailTemplate.Title
+                Subject = subject
             };
 
             return await Dispatch(mailArguments, config.IsSsl, true);
