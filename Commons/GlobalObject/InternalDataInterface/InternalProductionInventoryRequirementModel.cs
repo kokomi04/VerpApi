@@ -8,7 +8,7 @@ using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
-    public class ProductionInventoryRequirementModel
+    public class InternalProductionInventoryRequirementModel
     {
         public int Status { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

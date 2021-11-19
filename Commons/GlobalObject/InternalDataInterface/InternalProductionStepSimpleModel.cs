@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
-    public class ProductionStepSimpleModel
+    public class InternalProductionStepSimpleModel
     {
         public long? ProductionStepId { get; set; }
         public string ProductionStepCode { get; set; }

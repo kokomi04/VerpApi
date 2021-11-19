@@ -1550,7 +1550,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         }
 
-        public async Task<IList<ProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId)
+        public async Task<IList<InternalProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId && s.IsGroup == false && s.IsFinish == false && s.StepId.HasValue)
@@ -1590,7 +1590,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     else return productSemiInfoMap.ContainsKey(objectId) ? productSemiInfoMap[objectId] : "";
                 });
                 var title = string.IsNullOrEmpty(s.Title) ? s.Step?.StepName : s.Title;
-                return new ProductionStepSimpleModel
+                return new InternalProductionStepSimpleModel
                 {
                     ProductionStepId = s.ProductionStepId,
                     ProductionStepCode = s.ProductionStepCode,
