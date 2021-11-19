@@ -379,6 +379,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public async Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId)
         {
             var productOrder = _manufacturingDBContext.ProductionOrder
+                .Include(x=>x.ProductionOrderAttachment)
                 .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
 
             ProductionOrderOutputModel model = null;
