@@ -30,7 +30,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             {
                 ProductionOrderCode = productionOrderCode,
                 ProductionOrderStatus = status,
-                Inventories = inventories.ConvertData<ProductionInventoryRequirementModel>()
+                Inventories = inventories.ConvertData<InternalProductionInventoryRequirementModel>()
             });
         }
     }
