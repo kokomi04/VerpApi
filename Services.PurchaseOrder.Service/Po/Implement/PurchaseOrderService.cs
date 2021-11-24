@@ -48,6 +48,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IUserHelperService _userHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
 
+        private readonly AppSetting _appSetting;
+
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
            , IOptions<AppSetting> appSetting
@@ -73,6 +75,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mailFactoryService = mailFactoryService;
             _userHelperService = userHelperService;
             _organizationHelperService = organizationHelperService;
+            _appSetting = appSetting.Value;
         }
 
         public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
@@ -88,13 +91,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var businessInfo = await _organizationHelperService.BusinessInfo();
 
-            return await _mailFactoryService.Dispatch<PurchaseOrderOutput>(mailTo, mailTemplateCode, new InternalObjectDataMail<PurchaseOrderOutput>(){
+            
+            return await _mailFactoryService.Dispatch(mailTo, mailTemplateCode, new ObjectDataTemplateMail()
+            {
                 CensoredByUser = censortUser,
                 CheckedByUser = checkedUser,
-                CreatedByUser =createdUser,
+                CreatedByUser = createdUser,
                 UpdatedByUser = updatedUser,
                 CompanyName = businessInfo.CompanyName,
-                Data = purchaseOrder
+                F_Id = purchaseOrderId,
+                PurchaseOrderCode = purchaseOrder.PurchaseOrderCode,
+                TotalMoney = purchaseOrder.TotalMoney.ToString("#,##0.##"),
+                Domain = _appSetting.Identity.Endpoint.Replace("endpoint", "").TrimEnd('/')
             });
         }
 
