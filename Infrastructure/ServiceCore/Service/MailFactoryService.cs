@@ -31,14 +31,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 var propertyName = m.Groups["PropertyName"].Value;
 
-                return data.GetPropertyValue<object>(propertyName).ToString();
+                return data.GetPropertyValue<object>(propertyName)?.ToString();
             });
 
             var subject = Regex.Replace(mailTemplate.Title, @"{{(?<PropertyName>[^}]+)}}", m =>
             {
                 var propertyName = m.Groups["PropertyName"].Value;
 
-                return data.GetPropertyValue<object>(propertyName).ToString();
+                return data.GetPropertyValue<object>(propertyName)?.ToString();
             });
 
             var mailArguments = new MailArguments()
