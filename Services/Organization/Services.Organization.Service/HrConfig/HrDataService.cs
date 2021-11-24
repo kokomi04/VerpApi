@@ -139,7 +139,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      a.IsMultiRow
                                  }).ToListAsync();
                                  
-            var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId)).ToList();
+            var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId) && x.FormTypeId != (int)EnumFormType.MultiSelect).ToList();
 
             /* 
              * Xử lý câu truy vấn lấy dữ liệu từ các vùng dữ liệu 
@@ -933,15 +933,34 @@ namespace VErp.Services.Organization.Service.HrConfig
                 @columns.Add(field.FieldName);
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode)
-                    && ((EnumFormType)field.FormTypeId).IsJoinForm()
+                    && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == (int)EnumFormType.MultiSelect)
                     && !string.IsNullOrWhiteSpace(field.RefTableTitle))
                 {
-                    var refFields = field.RefTableTitle.Split(",").Select(refTitle => $", [v{field.FieldName}].[{refTitle}] AS [{field.FieldName}_{refTitle}]");
-
-                    @selectColumn += string.Join("", refFields);
                     @columns.AddRange(field.RefTableTitle.Split(",").Select(refTitle => $"{field.FieldName}_{refTitle}"));
+                    if (field.FormTypeId == (int)EnumFormType.MultiSelect)
+                    {
+                        var refFields = field.RefTableTitle.Split(",").Select(refTitle => @$", 
+                            (
+                                SELECT STRING_AGG({refTitle}, ', ') AS [{refTitle}]
+                                FROM  (
+                                    SELECT [row].F_Id, [{refTitle}] 
+                                    FROM v{field.RefTableCode} 
+                                    WHERE [v{field.RefTableCode}].[F_Id] IN (
+                                        SELECT [value] FROM OPENJSON(ISNULL([row].[{field.FieldName}],'[]')) WITH (  [value] INT '$' )
+                                    )
+                                ) c GROUP BY c.F_Id
+                            ) AS [{field.FieldName}_{refTitle}]
+                        ");
+                        @selectColumn += string.Join("", refFields);
 
-                    @join += $" LEFT JOIN [v{field.RefTableCode}] as [v{field.FieldName}] WITH(NOLOCK) ON [row].[{field.FieldName}] = [v{field.FieldName}].[{field.RefTableField}]";
+                    }
+                    else
+                    {
+                        var refFields = field.RefTableTitle.Split(",").Select(refTitle => $", [v{field.FieldName}].[{refTitle}] AS [{field.FieldName}_{refTitle}]");
+                        @selectColumn += string.Join("", refFields);
+
+                        @join += $" LEFT JOIN [v{field.RefTableCode}] as [v{field.FieldName}] WITH(NOLOCK) ON [row].[{field.FieldName}] = [v{field.FieldName}].[{field.RefTableField}]";
+                    }
                 }
             }
 
