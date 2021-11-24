@@ -4,14 +4,13 @@ using System.Net.Mail;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using System.Linq;
 using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IMailFactoryService
     {
-        Task<bool> Dispatch<T>(string[] mailTo, string mailTemplateCode, InternalObjectDataMail<T> data) where T : class;
+        Task<bool> Dispatch(string[] mailTo, string mailTemplateCode, ObjectDataTemplateMail data);
     }
 
     public class MailFactoryService : IMailFactoryService
@@ -23,7 +22,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _httpCrossService = httpCrossService;
         }
 
-        public async Task<bool> Dispatch<T>(string[] mailTo, string mailTemplateCode, InternalObjectDataMail<T> data) where T : class
+        public async Task<bool> Dispatch(string[] mailTo, string mailTemplateCode, ObjectDataTemplateMail data)
         {
             var config = await _httpCrossService.Get<EmailConfigSimpleModel>("api/internal/InternalEmailConfiguration");
             var mailTemplate = await _httpCrossService.Get<MailTemplateSimpleModel>($"api/internal/InternalEmailConfiguration/template?mailTemplateCode={mailTemplateCode}");
