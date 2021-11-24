@@ -51,7 +51,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _propertyCalcActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PropertyCalc);
         }
 
-        public async Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size)
+        public async Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size, string sortBy, bool? asc = true)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -86,6 +86,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 );
 
             query = query.InternalFilter(filter);
+            if(!string.IsNullOrEmpty(sortBy))
+            {
+                query = query.InternalOrderBy(sortBy, asc.HasValue ? asc.Value : true);
+            }
 
             var total = await query.CountAsync();
             var paged = (await query.Skip((page - 1) * size).Take(size).ToListAsync())
