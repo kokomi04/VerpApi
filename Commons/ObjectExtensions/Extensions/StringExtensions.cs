@@ -22,6 +22,15 @@ namespace VErp.Commons.ObjectExtensions.Extensions
             return Regex.Replace(s, "[^a-zA-Z0-9\\.\\-]", "");
         }
 
+        public static string NormalizeAsUrlRouteParam(this string s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+
+            s = s.ConvertToUnSign2();
+            s = s.Trim();
+            return Regex.Replace(s, "[^a-zA-Z0-9\\.\\-]", "-");
+        }
+
         public static string ConvertToUnSign2(this string s)
         {
             string stFormD = s.Normalize(NormalizationForm.FormD);
