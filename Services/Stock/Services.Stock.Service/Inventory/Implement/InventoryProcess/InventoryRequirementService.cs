@@ -423,10 +423,10 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 //if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
                 //    throw ChangeInRequestCodeNotAllow.BadRequest();
 
-                    //if (inventoryRequirement.ProductionOrderId.HasValue)
-                    //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
+                //if (inventoryRequirement.ProductionOrderId.HasValue)
+                //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
 
-                    // validate product duplicate
+                // validate product duplicate
                 if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw DuplicateProduct.BadRequest();
 
