@@ -400,7 +400,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             OnBlur = field.OnBlur,
                             OnChange = field.OnChange,
                             AutoFocus = field.AutoFocus,
-                            Column = field.Column
+                            Column = field.Column,
+                            MouseEnter = field.MouseEnter,
+                            MouseLeave = field.MouseLeave
                         };
                         await _purchaseOrderDBContext.VoucherAreaField.AddAsync(cloneField);
                     }
@@ -1157,6 +1159,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         curField.CustomButtonHtml = field.CustomButtonHtml;
                         curField.CustomButtonOnClick = field.CustomButtonOnClick;
+                        curField.MouseEnter = field.MouseEnter;
+                        curField.MouseLeave = field.MouseLeave;
                     }
                 }
 
