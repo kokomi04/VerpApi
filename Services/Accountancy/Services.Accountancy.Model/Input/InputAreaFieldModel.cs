@@ -40,7 +40,8 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
         public bool? IsImage { get; set; }
-
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
         public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
@@ -107,7 +108,8 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnClick { get; set; }
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
-
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
         public bool Compare(InputAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -141,8 +143,10 @@ namespace VErp.Services.Accountancy.Model.Input
                 IsBatchSelect == curField.IsBatchSelect &&
                 OnClick == curField.OnClick &&
                 CustomButtonHtml == curField.CustomButtonHtml &&
-                CustomButtonOnClick == curField.CustomButtonOnClick;
-        }
+                CustomButtonOnClick == curField.CustomButtonOnClick &&
+                MouseEnter == curField.MouseEnter &&
+                MouseLeave == curField.MouseLeave;
+    }
     }
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel, IFieldExecData

@@ -41,7 +41,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
         public bool? IsImage { get; set; }
-
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
     }
 }
