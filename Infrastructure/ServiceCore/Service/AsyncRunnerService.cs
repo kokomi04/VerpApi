@@ -37,6 +37,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 var timeZone = _currentContext.TimeZoneOffset;
                 var language = _currentContext.Language;
                 var ipAddress = _currentContext.IpAddress;
+                var domain = _currentContext.Domain;
                 Task.Run(async () =>
                 {
                     try
@@ -44,7 +45,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         using (var scope = _serviceScopeFactory.CreateScope())
                         {
                             var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
-                            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, roleInfo, stockIds, subsidiaryId, timeZone, language, ipAddress));
+                            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, actionId, roleInfo, stockIds, subsidiaryId, timeZone, language, ipAddress, domain));
                             var obj = scope.ServiceProvider.GetService<T>();
                             var fn = action.Compile();
                             await fn.Invoke(obj);

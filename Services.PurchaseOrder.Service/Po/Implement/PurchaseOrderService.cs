@@ -30,6 +30,7 @@ using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMes
 using AutoMapper.QueryableExtensions;
 using AutoMapper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using Microsoft.AspNetCore.Http;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -48,11 +49,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IUserHelperService _userHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
 
-        private readonly AppSetting _appSetting;
-
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
-           , IOptions<AppSetting> appSetting
            , ILogger<PurchasingSuggestService> logger
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
@@ -75,7 +73,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mailFactoryService = mailFactoryService;
             _userHelperService = userHelperService;
             _organizationHelperService = organizationHelperService;
-            _appSetting = appSetting.Value;
         }
 
         public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
@@ -90,7 +87,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var censortUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CensorByUserId)?.FullName;
 
             var businessInfo = await _organizationHelperService.BusinessInfo();
-
             
             return await _mailFactoryService.Dispatch(mailTo, mailTemplateCode, new ObjectDataTemplateMail()
             {
@@ -102,7 +98,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 F_Id = purchaseOrderId,
                 PurchaseOrderCode = purchaseOrder.PurchaseOrderCode,
                 TotalMoney = purchaseOrder.TotalMoney.ToString("#,##0.##"),
-                Domain = _appSetting.Identity.Endpoint.Replace("endpoint", "").TrimEnd('/')
+                Domain = _currentContext.Domain
             });
         }
 

@@ -82,6 +82,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private string _language;
 
         private string _ipAddress;
+        private string _domain;
 
         public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
@@ -397,6 +398,19 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+        public string Domain
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_domain))
+                    return _domain;
+
+                _domain = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
+
+                return _domain;
+            }
+        }
+
         private T TryGetSet<T>(string key, Func<T> queryData)
         {
             return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
@@ -420,13 +434,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 currentContextService.SubsidiaryId,
                 currentContextService.TimeZoneOffset,
                 currentContextService.Language,
-                currentContextService.IpAddress
+                currentContextService.IpAddress,
+                currentContextService.Domain
         )
         {
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language, string ipAddress)
+        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language, string ipAddress, string domain)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
@@ -436,6 +451,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             TimeZoneOffset = timeZoneOffset;
             Language = language;
             IpAddress = ipAddress;
+            Domain = domain;
         }
 
         public void SetSubsidiaryId(int subsidiaryId)
@@ -452,5 +468,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public bool IsDeveloper { get; } = false;
         public string Language { get; }
         public string IpAddress { get; }
+        public string Domain {get;}
     }
 }
