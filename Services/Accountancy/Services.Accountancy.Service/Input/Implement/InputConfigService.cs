@@ -352,6 +352,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             OnChange = field.OnChange,
                             AutoFocus = field.AutoFocus,
                             Column = field.Column,
+                            CustomButtonHtml = field.CustomButtonHtml,
+                            CustomButtonOnClick = field.CustomButtonOnClick,
                             MouseEnter = field.MouseEnter,
                             MouseLeave = field.MouseLeave
                         };
@@ -1151,6 +1153,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.ReferenceUrl = field.ReferenceUrl;
                         curField.IsBatchSelect = field.IsBatchSelect;
                         curField.OnClick = field.OnClick;
+
+                        curField.CustomButtonHtml = field.CustomButtonHtml;
+                        curField.CustomButtonOnClick = field.CustomButtonOnClick;
                         curField.MouseEnter = field.MouseEnter;
                         curField.MouseLeave = field.MouseLeave;
                     }
