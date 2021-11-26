@@ -402,7 +402,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             AutoFocus = field.AutoFocus,
                             Column = field.Column,
                             MouseEnter = field.MouseEnter,
-                            MouseLeave = field.MouseLeave
+                            MouseLeave = field.MouseLeave,
+                            CustomButtonHtml = field.CustomButtonHtml,
+                            CustomButtonOnClick = field.CustomButtonOnClick
                         };
                         await _purchaseOrderDBContext.VoucherAreaField.AddAsync(cloneField);
                     }
