@@ -41,7 +41,10 @@ namespace Services.Organization.Model.HrConfig
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
         public bool? IsImage { get; set; }
-
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
         public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T : HrFieldInputModel
         {
@@ -106,6 +109,11 @@ namespace Services.Organization.Model.HrConfig
         public string ReferenceUrl { get; set; }
         public bool IsBatchSelect { get; set; }
         public string OnClick { get; set; }
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
+
         public bool Compare(HrAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -137,7 +145,11 @@ namespace Services.Organization.Model.HrConfig
                 RequireFilters == curField.RequireFilters &&
                 ReferenceUrl == curField.ReferenceUrl &&
                 IsBatchSelect == curField.IsBatchSelect &&
-                OnClick == curField.OnClick;
+                OnClick == curField.OnClick &&
+                CustomButtonHtml == curField.CustomButtonHtml &&
+                CustomButtonOnClick == curField.CustomButtonOnClick &&
+                MouseEnter == curField.MouseEnter &&
+                MouseLeave == curField.MouseLeave;
         }
     }
 
@@ -159,5 +171,9 @@ namespace Services.Organization.Model.HrConfig
         public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), HrField);
 
         public string ReferenceUrlExec => execCodeCombine.GetExecCode(nameof(IFieldData.ReferenceUrl), HrField);
+
+        public string MouseEnterExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseEnter), HrField);
+        public string MouseLeaveExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseLeave), HrField);
+        public string CustomButtonOnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.CustomButtonOnClick), HrField);
     }
 }

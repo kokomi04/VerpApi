@@ -492,6 +492,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                         curField.ReferenceUrl = field.ReferenceUrl;
                         curField.IsBatchSelect = field.IsBatchSelect;
                         curField.OnClick = field.OnClick;
+
+                        curField.CustomButtonHtml = field.CustomButtonHtml;
+                        curField.CustomButtonOnClick = field.CustomButtonOnClick;
+                        curField.MouseEnter = field.MouseEnter;
+                        curField.MouseLeave = field.MouseLeave;
                     }
                 }
 

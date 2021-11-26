@@ -169,5 +169,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), InputField);
 
         public string ReferenceUrlExec => execCodeCombine.GetExecCode(nameof(IFieldData.ReferenceUrl), InputField);
+
+        public string MouseEnterExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseEnter), InputField);
+        public string MouseLeaveExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseLeave), InputField);
+        public string CustomButtonOnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.CustomButtonOnClick), InputField);
     }
 }
