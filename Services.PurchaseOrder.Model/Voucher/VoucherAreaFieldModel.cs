@@ -41,6 +41,8 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public bool? IsImage { get; set; }
         public string MouseEnter { get; set; }
         public string MouseLeave { get; set; }
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
         protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {
             profile.CreateMap<VoucherField, T>()
