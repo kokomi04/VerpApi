@@ -167,6 +167,10 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string OnChangeExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnChange), VoucherField);
         public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), VoucherField);
         public string ReferenceUrlExec => execCodeCombine.GetExecCode(nameof(IFieldData.ReferenceUrl), VoucherField);
+
+        public string MouseEnterExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseEnter), VoucherField);
+        public string MouseLeaveExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseLeave), VoucherField);
+        public string CustomButtonOnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.CustomButtonOnClick), VoucherField);
     }
 
 }
