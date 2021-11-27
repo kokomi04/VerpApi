@@ -64,6 +64,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool? IsProduct { get; set; }
         public string Color { get; set; }
         public bool? IsMaterials { get; set; }
+        public decimal? PackingQuantitative { get; set; }
+        public decimal? PackingWidth { get; set; }
+        public decimal? PackingLong { get; set; }
+        public decimal? PackingHeight { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }

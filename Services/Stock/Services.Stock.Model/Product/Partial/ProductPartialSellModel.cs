@@ -15,6 +15,11 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public decimal? LoadAbility { get; set; }
         public string SellDescription { get; set; }
 
+        public decimal? PackingQuantitative { get; set; }
+        public decimal? PackingWidth { get; set; }
+        public decimal? PackingLong { get; set; }
+        public decimal? PackingHeight { get; set; }
+
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
     }
 }
