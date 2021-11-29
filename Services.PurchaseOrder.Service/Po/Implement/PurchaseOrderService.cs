@@ -96,7 +96,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 UpdatedByUser = updatedUser,
                 CompanyName = businessInfo.CompanyName,
                 F_Id = purchaseOrderId,
-                PurchaseOrderCode = purchaseOrder.PurchaseOrderCode,
+                Code = purchaseOrder.PurchaseOrderCode,
                 TotalMoney = purchaseOrder.TotalMoney.ToString("#,##0.##"),
                 Domain = _currentContext.Domain
             });

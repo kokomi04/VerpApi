@@ -30,16 +30,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string Quantity {get;set;}
         [Description("Tỉ lệ")]
         public string Rate {get;set;}
-        [Description("Mã đơn hàng")]
-        public string OrderCode {get;set;}
-        [Description("Mã lệnh sản xuất")]
-        public string ProductionOrderCode {get;set;}
-        [Description("Mã mua hàng")]
-        public string PurchaseOrderCode {get;set;}
-        [Description("Mã nhập/xuất kho")]
-        public string InventoryCode {get;set;}
-        [Description("Mã chứng từ")]
-        public string BillCode {get;set;}
+        [Description("Mã code")]
+        public string Code {get;set;}
         [Description("Tên mặt hàng")]
         public string ProductName {get;set;}
         [Description("Mã mặt hàng")]
