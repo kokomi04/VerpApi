@@ -22,6 +22,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
+using VErp.Commons.ObjectExtensions.Extensions;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -508,7 +509,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private string GenerateFileUrl(long fileId, string filePath, string contentType)
         {
-            var fileName = Path.GetFileName(filePath).Replace('?', ' ').Replace('#', ' ').Replace(" ", "");
+            var fileName = Path.GetFileName(filePath).NormalizeAsUrlRouteParam();// Path.GetFileName(filePath).Replace('?', ' ').Replace('#', ' ').Replace(" ", "");
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
             return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + $"/filestorage/view/{fileName}?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }
