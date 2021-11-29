@@ -78,7 +78,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
         }
 
-        public async Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBills(int inputTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -101,11 +101,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 select f
             ).ToListAsync();
 
+            var sqlParams = new List<SqlParameter>();
+
             var whereCondition = new StringBuilder();
 
             whereCondition.Append($"r.InputTypeId = {inputTypeId} AND {GlobalFilter()}");
+            if (fromDate.HasValue && toDate.HasValue)
+            {
+                whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @FromDate AND @ToDate");
 
-            var sqlParams = new List<SqlParameter>();
+                sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
+                sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
+            }
+           
+
             int suffix = 0;
             if (filters != null)
             {
