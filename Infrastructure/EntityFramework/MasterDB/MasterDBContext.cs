@@ -84,6 +84,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.IconName).HasMaxLength(25);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
@@ -402,6 +404,10 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<EmailConfiguration>(entity =>
             {
+                entity.Property(e => e.IsSsl)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.MailFrom)
                     .IsRequired()
                     .HasMaxLength(256);

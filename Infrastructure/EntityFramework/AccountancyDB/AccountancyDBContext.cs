@@ -18,7 +18,7 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         }
 
         public virtual DbSet<CalcPeriod> CalcPeriod { get; set; }
-        public virtual DbSet<InputAction> InputAction { get; set; }
+        //public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
@@ -44,22 +44,24 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.Title).HasMaxLength(512);
             });
 
-            modelBuilder.Entity<InputAction>(entity =>
-            {
-                entity.Property(e => e.IconName).HasMaxLength(25);
+            //modelBuilder.Entity<InputAction>(entity =>
+            //{
+            //    entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
 
-                entity.Property(e => e.InputActionCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
+            //    entity.Property(e => e.IconName).HasMaxLength(25);
 
-                entity.Property(e => e.Title).HasMaxLength(128);
+            //    entity.Property(e => e.InputActionCode)
+            //        .IsRequired()
+            //        .HasMaxLength(128);
 
-                entity.HasOne(d => d.InputType)
-                    .WithMany(p => p.InputAction)
-                    .HasForeignKey(d => d.InputTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_InputAction_InputType");
-            });
+            //    entity.Property(e => e.Title).HasMaxLength(128);
+
+            //    entity.HasOne(d => d.InputType)
+            //        .WithMany(p => p.InputAction)
+            //        .HasForeignKey(d => d.InputTypeId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_InputAction_InputType");
+            //});
 
             modelBuilder.Entity<InputArea>(entity =>
             {
@@ -144,6 +146,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
             modelBuilder.Entity<InputField>(entity =>
             {
+                entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
+
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
                 entity.Property(e => e.FieldName)

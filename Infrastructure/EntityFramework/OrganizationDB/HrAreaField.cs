@@ -43,10 +43,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string ReferenceUrl { get; set; }
         public bool IsBatchSelect { get; set; }
         public string OnClick { get; set; }
-        public string CustomButtonHtml { get; set; }
-        public string CustomButtonOnClick { get; set; }
         public string MouseEnter { get; set; }
         public string MouseLeave { get; set; }
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
+
         public virtual HrArea HrArea { get; set; }
         public virtual HrField HrField { get; set; }
         public virtual HrType HrType { get; set; }

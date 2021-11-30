@@ -47,6 +47,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string CustomButtonOnClick { get; set; }
         public string MouseEnter { get; set; }
         public string MouseLeave { get; set; }
+
         public virtual VoucherArea VoucherArea { get; set; }
         public virtual VoucherField VoucherField { get; set; }
         public virtual VoucherType VoucherType { get; set; }
