@@ -12,6 +12,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public int Page { get; set; }
         public int Size { get; set; }
 
+        public long? FromDate { get; set; }
+        public long? ToDate { get; set; }
+
         public Clause ColumnsFilters { get; set; }
     }
 }
