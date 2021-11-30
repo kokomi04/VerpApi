@@ -35,7 +35,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<long> CreateHr(int hrTypeId, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
         Task<bool> DeleteHr(int hrTypeId, long hrBill_F_Id);
         Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id);
-        Task<PageDataTable> SearchHr(int hrTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> SearchHr(int hrTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
         Task<bool> UpdateHr(int hrTypeId, long hrBill_F_Id, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
@@ -119,7 +119,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return true;
         }
 
-        public async Task<PageDataTable> SearchHr(int hrTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> SearchHr(int hrTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -135,7 +135,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      t.HrTypeCode,
                                      a.HrAreaCode,
                                      a.HrAreaId,
-                                     t.HrTypeId, 
+                                     t.HrTypeId,
                                      a.IsMultiRow
                                  }).ToListAsync();
                                  
@@ -146,7 +146,7 @@ namespace VErp.Services.Organization.Service.HrConfig
              * trong thiết lập chứng từ hành chính nhân sự
             */
             var mainJoin = " FROM HrBill bill";
-            var mainColumn = "SELECT bill.F_Id AS F_Id";
+            var mainColumn = "SELECT bill.F_Id AS F_Id, CreatedDatetimeUtc ";
             foreach (var hrArea in hrAreas)
             {
                 var (alias, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), isMultiRow: true);
@@ -154,9 +154,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                                     ON bill.[F_Id] = [v{hrArea.HrAreaCode}].[HrBill_F_Id]
                                 
                                 ";
-                if(columns.Count > 0)
+                if (columns.Count > 0)
                     mainColumn += ", " + string.Join(", ", columns.Select(c => $"[v{hrArea.HrAreaCode}].[{c}]"));
-            }
+            }//CreatedDatetimeUtc
 
             /* 
              * Xử lý các bộ lọc
@@ -171,6 +171,20 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var whereCondition = new StringBuilder("1 = 1");
             var sqlParams = new List<SqlParameter>();
+            if (fromDate.HasValue && toDate.HasValue)
+            {
+                var dateField = "CreatedDatetimeUtc";
+                if (mainColumn.Contains("ngay_ct"))
+                {
+                    dateField = "ngay_ct";
+                }
+                whereCondition.Append($" AND r.{dateField} BETWEEN @FromDate AND @ToDate");
+
+                sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
+                sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
+            }
+
+
             int suffix = 0;
             if (filters != null)
             {
@@ -221,7 +235,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
 
             sqlParams.Add(new SqlParameter("@HrTypeId", hrTypeId));
-            
+
             /* 
                 * Tính toán tổng số dòng dữ liệu trả về cho clients
              */
@@ -284,7 +298,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             for (int i = 0; i < hrAreas.Count; i++)
             {
                 var hrArea = hrAreas[i];
-                var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.HrTypeReferenceId.HasValue ? false :  hrArea.IsMultiRow);
+                var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.HrTypeReferenceId.HasValue ? false : hrArea.IsMultiRow);
                 var query = $"{alias} AND [row].[HrBill_F_Id] = @HrBill_F_Id";
 
                 var data = (await _organizationDBContext.QueryDataTable(query, new[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) })).ConvertData();
@@ -477,14 +491,14 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var hrArea = hrAreas[i];
 
                     if (!data.ContainsKey(hrArea.HrAreaCode) || data[hrArea.HrAreaCode].Count == 0) continue;
-                    
+
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
 
                     var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
                     var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
 
                     await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, tableName, hrAreaData, hrAreaFields, hrAreaData);
-                    
+
                 }
 
                 for (int i = 0; i < hrAreaReferences.Count; i++)
@@ -1476,7 +1490,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             int suffix = 0;
             var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField}";
 
-            var referField = (await _httpCategoryHelperService.GetReferFields(new []{field.RefTableCode}, new [] {field.RefTableField})).FirstOrDefault();
+            var referField = (await _httpCategoryHelperService.GetReferFields(new[] { field.RefTableCode }, new[] { field.RefTableField })).FirstOrDefault();
 
             if (field.FormTypeId == (int)EnumFormType.MultiSelect)
             {
@@ -1540,7 +1554,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
-                
+
                 // Check tồn tại
                 result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, sqlParams.ToArray());
                 if (result == null || result.Rows.Count == 0)
@@ -1597,7 +1611,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             sqlParams.AddRange(GetSqlParamsGlobal());
             sqlParams.Add(new SqlParameter("@HrBill_F_Id", hrBill_F_Id));
 
-            if(hrBillReference_F_Id.HasValue)
+            if (hrBillReference_F_Id.HasValue)
             {
                 columns.Add("HrBillReference_F_Id");
                 sqlParams.Add(new SqlParameter("@HrBillReference_F_Id", hrBillReference_F_Id));
@@ -1616,7 +1630,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         #endregion
 
         #region protected class
-             
+
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
             private readonly EnumDataType dataType;

@@ -15,7 +15,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 {
     public interface IVoucherDataService
     {
-        Task<PageDataTable> GetVoucherBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetVoucherBills(int inputTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         //Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
 
