@@ -484,7 +484,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .JsonData(inventoryObj.JsonSerialize())
                             .CreateLog();
 
-                        UpdateIgnoreAllocation(inventoryDetails);
+                        await UpdateIgnoreAllocation(inventoryDetails);
 
                         return true;
                     }
@@ -671,7 +671,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var fromPackageIds = req.OutProducts.Select(p => p.FromPackageId).ToList();
             var fromPackages = await _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToListAsync();
-           
+
 
             var inventoryDetailList = new List<InventoryDetail>();
 
@@ -844,7 +844,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var fromPackageIds = inventoryDetails.Select(d => d.FromPackageId).ToList();
 
             var fromPackages = await _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToListAsync();
-           
+
             var productIds = inventoryDetails.Select(d => d.ProductId).Distinct().ToList();
 
             var pus = await _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).ToListAsync();
@@ -884,10 +884,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
 
                     stockProductInfo.PrimaryQuantityWaiting = stockProductInfo.PrimaryQuantityWaiting.SubDecimal(detail.PrimaryQuantity)
-                         .RoundBy(puDefaultInfo?.DecimalPlace); 
+                         .RoundBy(puDefaultInfo?.DecimalPlace);
 
                     stockProductInfo.ProductUnitConversionWaitting = stockProductInfo.ProductUnitConversionWaitting.SubDecimal(detail.ProductUnitConversionQuantity)
-                         .RoundBy(puInfo?.DecimalPlace); 
+                         .RoundBy(puInfo?.DecimalPlace);
 
                     if (stockProductInfo.PrimaryQuantityWaiting == 0)
                     {

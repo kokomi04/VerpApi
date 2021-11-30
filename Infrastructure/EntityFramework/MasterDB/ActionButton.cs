@@ -25,5 +25,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string Style { get; set; }
         public string JsVisible { get; set; }
         public int? ActionTypeId { get; set; }
+        public int ActionPositionId { get; set; }
     }
 }

@@ -27,6 +27,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string Style { get; set; }
         public string JsVisible { get; set; }
         public int ActionTypeId { get; set; }
+        public EnumActionPosition ActionPositionId { get; set; }
 
 
     }

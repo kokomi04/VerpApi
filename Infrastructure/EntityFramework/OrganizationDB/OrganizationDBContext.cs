@@ -32,7 +32,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
-        public virtual DbSet<HrAction> HrAction { get; set; }
+        //public virtual DbSet<HrAction> HrAction { get; set; }
         public virtual DbSet<HrArea> HrArea { get; set; }
         public virtual DbSet<HrAreaField> HrAreaField { get; set; }
         public virtual DbSet<HrBill> HrBill { get; set; }
@@ -324,23 +324,25 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_EmployeeSubsidiary_Employee");
             });
 
-            modelBuilder.Entity<HrAction>(entity =>
-            {
-                entity.Property(e => e.HractionCode)
-                    .IsRequired()
-                    .HasMaxLength(128)
-                    .HasColumnName("HRActionCode");
+            //modelBuilder.Entity<HrAction>(entity =>
+            //{
+            //    entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
 
-                entity.Property(e => e.IconName).HasMaxLength(25);
+            //    entity.Property(e => e.HractionCode)
+            //        .IsRequired()
+            //        .HasMaxLength(128)
+            //        .HasColumnName("HRActionCode");
 
-                entity.Property(e => e.Title).HasMaxLength(128);
+            //    entity.Property(e => e.IconName).HasMaxLength(25);
 
-                entity.HasOne(d => d.HrType)
-                    .WithMany(p => p.HrAction)
-                    .HasForeignKey(d => d.HrTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_HRAction_HRType");
-            });
+            //    entity.Property(e => e.Title).HasMaxLength(128);
+
+            //    entity.HasOne(d => d.HrType)
+            //        .WithMany(p => p.HrAction)
+            //        .HasForeignKey(d => d.HrTypeId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_HRAction_HRType");
+            //});
 
             modelBuilder.Entity<HrArea>(entity =>
             {
@@ -365,6 +367,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .IsUnique();
 
                 entity.Property(e => e.Column).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
 
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
@@ -419,6 +423,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<HrField>(entity =>
             {
+                entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
+
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
                 entity.Property(e => e.FieldName)
