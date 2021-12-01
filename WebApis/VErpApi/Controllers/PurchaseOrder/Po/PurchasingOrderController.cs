@@ -289,7 +289,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Lấy danh sách PO đã tạo từ assignment
+        /// Gửi email thông báo kiểm tra/duyệt đơn mua hàng
         /// </summary>
         /// <param name="purchaseOrderId"></param>
         /// <param name="mailCode"></param>

@@ -322,5 +322,19 @@ namespace VErpApi.Controllers.Stock.Inventory
             return _inventoryService.ParseExcel(mapping, file.OpenReadStream(), inventoryTypeId);
         }
 
+        /// <summary>
+        /// Gửi email thông báo duyệt xuất/nhập kho
+        /// </summary>
+        /// <param name="inventoryId"></param>
+        /// <param name="mailCode"></param>
+        /// <param name="mailTo"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("{inventoryId}/notify/sendMail")]
+        public async Task<bool> SendMailNotifyCheckAndCensor([FromRoute] long inventoryId, [FromQuery] string mailCode, [FromBody] string[] mailTo)
+        {
+            return await _inventoryService.SendMailNotifyCensor(inventoryId, mailCode, mailTo).ConfigureAwait(true);
+        }
+
     }
 }

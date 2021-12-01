@@ -57,5 +57,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId);
 
+        Task<bool> SendMailNotifyCensor(long inventoryId, string mailCode, string[] mailTo);
+
     }
 }

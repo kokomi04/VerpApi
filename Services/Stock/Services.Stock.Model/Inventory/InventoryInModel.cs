@@ -10,6 +10,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int StockId { get; set; }
         public string InventoryCode { get; set; }
         public long Date { get; set; }
+        public int InventoryActionId { get; set; }
     }
     public class InventoryInModel : InventoryModelBase
     {

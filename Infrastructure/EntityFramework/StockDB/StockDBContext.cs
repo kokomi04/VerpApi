@@ -114,6 +114,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Department).HasMaxLength(128);
 
+                entity.Property(e => e.InventoryActionId).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.InventoryCode)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -521,7 +523,15 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.NetWeight).HasColumnType("decimal(18, 5)");
 
+                entity.Property(e => e.PackingHeight).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.PackingLong).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.PackingMethod).HasMaxLength(255);
+
+                entity.Property(e => e.PackingQuantitative).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.PackingWidth).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.ProductCode)
                     .IsRequired()
