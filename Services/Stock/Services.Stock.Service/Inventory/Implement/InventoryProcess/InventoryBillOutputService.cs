@@ -134,7 +134,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
                     IsApproved = false,
-                    DepartmentId = req.DepartmentId
+                    DepartmentId = req.DepartmentId,
+                    InventoryActionId = req.InventoryActionId
                 };
 
                 await _stockDbContext.AddAsync(inventoryObj);
@@ -679,6 +680,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             foreach (var detail in req.OutProducts)
             {
+                if ((int)EnumInventoryAction.OutputForSell == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.OrderCode))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Xuất kho thành phẩm bán hàng bắt buộc phải có mã đơn hàng");
+                else if ((int)EnumInventoryAction.OutputForManufacture == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.ProductionOrderCode))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Xuất kho vật tư cho sản xuất bắt buộc phải có mã lệnh sản xuất");
+
                 var fromPackageInfo = fromPackages.FirstOrDefault(p => p.PackageId == detail.FromPackageId);
                 if (fromPackageInfo == null) throw PackageErrorCode.PackageNotFound.BadRequest();
 

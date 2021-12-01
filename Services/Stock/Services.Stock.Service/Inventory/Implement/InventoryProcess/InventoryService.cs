@@ -62,6 +62,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IProductService _productService;
         private readonly IInventoryBillOutputService _inventoryBillOutputService;
         private readonly IInventoryBillInputService _inventoryBillInputService;
+        private readonly IUserHelperService _userHelperService;
+        private readonly IMailFactoryService _mailFactoryService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -80,7 +82,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductionHandoverHelperService productionHandoverHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
+            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;
@@ -92,6 +94,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _productService = productService;
             _inventoryBillOutputService = inventoryBillOutputService;
             _inventoryBillInputService = inventoryBillInputService;
+            _userHelperService = userHelperService;
+            _mailFactoryService = mailFactoryService;
         }
 
 
@@ -326,8 +330,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             return (pagedData, total);
         }
-
         public async Task<InventoryOutput> InventoryInfo(long inventoryId)
+
         {
             try
             {
@@ -520,6 +524,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
                     DepartmentId = inventoryObj.DepartmentId,
+                    CensorByUserId = inventoryObj.CensorByUserId,
                     StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
@@ -529,7 +534,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     },
                     InventoryDetailOutputList = listInventoryDetailsOutput,
                     FileList = attachedFiles,
-                    InputBills = mappingObjects
+                    InputBills = mappingObjects,
+                    IsSendMail = inventoryObj.IsSendMail,
+                    InventoryActionId = inventoryObj.InventoryActionId
                 };
                 return inventoryOutput;
             }
@@ -669,6 +676,40 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return inventoryType == EnumInventoryType.Input
                 ? _inventoryBillInputService.ImportedLogBuilder()
                 : _inventoryBillOutputService.ImportedLogBuilder();
+        }
+
+        public async Task<bool> SendMailNotifyCensor(long inventoryId, string mailTemplateCode, string[] mailTo)
+        {
+            var inventoryInfo = await InventoryInfo(inventoryId);
+            var userIds = new[] { inventoryInfo.CreatedByUserId, inventoryInfo.UpdatedByUserId, inventoryInfo.CensorByUserId.GetValueOrDefault() };
+            var users = await _userHelperService.GetByIds(userIds);
+
+            var createdUser = users.FirstOrDefault(x => x.UserId == inventoryInfo.CreatedByUserId)?.FullName;
+            var updatedUser = users.FirstOrDefault(x => x.UserId == inventoryInfo.UpdatedByUserId)?.FullName;
+            var censortUser = users.FirstOrDefault(x => x.UserId == inventoryInfo.CensorByUserId)?.FullName;
+
+            var businessInfo = await _organizationHelperService.BusinessInfo();
+
+            var sendSuccess = await _mailFactoryService.Dispatch(mailTo, mailTemplateCode, new ObjectDataTemplateMail()
+            {
+                CensoredByUser = censortUser,
+                CreatedByUser = createdUser,
+                UpdatedByUser = updatedUser,
+                CompanyName = businessInfo.CompanyName,
+                F_Id = inventoryId,
+                Code = inventoryInfo.InventoryCode,
+                TotalMoney = inventoryInfo.TotalMoney.ToString("#,##0.##"),
+                Domain = _currentContextService.Domain
+            });
+
+            if (sendSuccess)
+            {
+                var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                inventoryObj.IsSendMail = true;
+                await _stockDbContext.SaveChangesAsync();
+            }
+
+            return sendSuccess;
         }
 
     }

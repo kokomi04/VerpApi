@@ -39,6 +39,8 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsOpening { get; set; }
         public string AccountancyAccountNumber { get; set; }
         public int? DepartmentId { get; set; }
+        public int InventoryActionId { get; set; }
+        public bool IsSendMail { get; set; }
 
         public virtual Stock Stock { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
