@@ -238,7 +238,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private IList<ObjectCustomGenCodeMapping> _objectCustomGenCodeMappings;
         private IList<CustomGenCode> _customGenCodes;
 
-        public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes(string keyword, int page, int size)
+        public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes(EnumModuleType? moduleTypeId, string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim().ToLower();
 
@@ -265,6 +265,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             result.AddRange(await vourcherTask);
             result.AddRange(await inputTask);
             result.AddRange(await manufactureTask);
+
+            if (moduleTypeId.HasValue)
+            {
+                result = result.Where(c => c.ModuleTypeId == moduleTypeId.Value).ToList();
+            }
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
