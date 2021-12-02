@@ -655,8 +655,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var inventoryDetailList = new List<InventoryDetail>(req.InProducts.Count);
             foreach (var detail in req.InProducts)
             {
-                if ((int)EnumInventoryAction.InputOfMaterial == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.OrderCode))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Nhập kho vật tư bắt buộc phải có mã đơn hàng");
+                if ((int)EnumInventoryAction.InputOfMaterial == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.POCode))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Nhập kho vật tư bắt buộc phải có mã đơn mua hàng");
                 else if ((int)EnumInventoryAction.InputOfProduct == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.ProductionOrderCode))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Nhập kho thành phẩm bắt buộc phải có mã lệnh sản xuất");
 

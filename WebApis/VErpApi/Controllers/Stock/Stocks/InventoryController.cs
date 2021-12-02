@@ -64,15 +64,16 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="asc">Tăng dần hay giảm dần</param>
         /// <param name="page">Trang</param>
         /// <param name="size">Số bản ghi/trang</param>
+        /// <param name="inventoryActionId"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? inventoryActionId)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, customerId, productIds, accountancyAccountNumber, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, productIds, accountancyAccountNumber, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size, inventoryActionId).ConfigureAwait(true);
         }
 
 
