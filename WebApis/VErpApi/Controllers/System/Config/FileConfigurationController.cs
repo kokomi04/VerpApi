@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Model.FileConfig;
 using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Notification;
@@ -19,6 +20,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<FileConfigurationModel> GetFileConfiguration()
         {
             return await _fileConfigurationService.GetFileConfiguration();
