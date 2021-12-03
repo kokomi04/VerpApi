@@ -329,7 +329,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             BillObjectTypeId = EnumObjectType.InputBill,
                             InputType_Title = m.InputTypeTitle
 
-                        }).ToList()
+                        }).ToList(),
+                    InventoryActionId = item.InventoryActionId
                 });
 
             }
