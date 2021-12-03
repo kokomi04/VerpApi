@@ -131,7 +131,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if(inventoryActionId.HasValue)
             {
-                inventoryQuery = inventoryQuery.Where(q => q.InventoryActionId <= inventoryActionId);
+                inventoryQuery = inventoryQuery.Where(q => q.InventoryActionId == inventoryActionId);
             }
 
 
