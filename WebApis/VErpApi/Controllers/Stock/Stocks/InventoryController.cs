@@ -337,5 +337,26 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.SendMailNotifyCensor(inventoryId, mailCode, mailTo).ConfigureAwait(true);
         }
 
+        
+        [HttpPut]
+        [Route("{inventoryId}/checked")]
+        public async Task<bool> Checked(long inventoryId){
+            return await _inventoryService.Checked(inventoryId);
+        }
+        
+        [HttpPut]
+        [Route("{inventoryId}/rejectChecked")]
+        public async Task<bool> RejectChecked(long inventoryId)
+        {
+            return await _inventoryService.RejectChecked(inventoryId);
+        }
+        
+        [HttpPut]
+        [Route("{inventoryId}/rejectCensored")]
+        public async Task<bool> RejectCensored(long inventoryId)
+        {
+            return await _inventoryService.RejectCensored(inventoryId);
+        }
+
     }
 }

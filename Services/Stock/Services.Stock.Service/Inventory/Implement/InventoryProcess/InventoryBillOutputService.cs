@@ -135,7 +135,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     UpdatedByUserId = _currentContextService.UserId,
                     IsApproved = false,
                     DepartmentId = req.DepartmentId,
-                    InventoryActionId = req.InventoryActionId
+                    InventoryActionId = req.InventoryActionId,
+                    InventoryStatusId = (int)EnumInventoryStatus.Draff
                 };
 
                 await _stockDbContext.AddAsync(inventoryObj);
@@ -252,6 +253,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
                         inventoryObj.UpdatedByUserId = _currentContextService.UserId;
                         inventoryObj.DepartmentId = req.DepartmentId;
+                        inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Draff;
+                        inventoryObj.InventoryActionId = req.InventoryActionId;
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
 
@@ -341,13 +344,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
 
-                        if (inventoryObj.IsApproved)
+                        if (inventoryObj.InventoryStatusId == (int) EnumInventoryStatus.Censored)
                         {
                             trans.Rollback();
                             throw new BadRequestException(InventoryErrorCode.InventoryAlreadyApproved);
                         }
 
-                        inventoryObj.IsApproved = true;
+                        inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Censored;
                         //inventoryObj.UpdatedByUserId = currentUserId;
                         //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
                         inventoryObj.CensorByUserId = _currentContextService.UserId;

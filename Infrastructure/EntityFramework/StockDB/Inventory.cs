@@ -40,7 +40,9 @@ namespace VErp.Infrastructure.EF.StockDB
         public string AccountancyAccountNumber { get; set; }
         public int? DepartmentId { get; set; }
         public int InventoryActionId { get; set; }
-        public bool IsSendMail { get; set; }
+        public int InventoryStatusId { get; set; }
+        public DateTime? CheckedDatetimeUtc { get; set; }
+        public int? CheckedByUserId { get; set; }
 
         public virtual Stock Stock { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }

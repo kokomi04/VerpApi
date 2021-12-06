@@ -34,4 +34,15 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Nhập kho vật tư")]
         InputOfMaterial = 5
     }
+
+    public enum EnumInventoryStatus 
+    {
+
+        Draff = 1,
+        WaitToCensor = 2,
+        Checked = 3,
+        Censored = 4,
+        RejectChecked = 5,
+        RejectCensored = 6,
+    }
 }

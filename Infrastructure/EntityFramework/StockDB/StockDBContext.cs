@@ -120,6 +120,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.InventoryStatusId).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.Shipper).HasMaxLength(128);
 
                 entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 5)");
@@ -494,14 +496,6 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.HasIndex(e => e.ProductCode, "idx_Product_ProductCode");
 
                 entity.Property(e => e.Barcode).HasMaxLength(128);
-
-                entity.Property(e => e.PackingHeight).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.PackingLong).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.PackingQuantitative).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.PackingWidth).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.Coefficient)
                     .HasDefaultValueSql("((1))")
