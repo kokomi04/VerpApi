@@ -100,7 +100,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null)
         {
             keyword = keyword?.Trim();
             accountancyAccountNumber = accountancyAccountNumber?.Trim();
@@ -180,9 +180,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                  select q;
             }
 
-            if (isApproved.HasValue)
+            if (inventoryStatusId.HasValue)
             {
-                inventoryQuery = inventoryQuery.Where(q => q.IsApproved == isApproved);
+                inventoryQuery = inventoryQuery.Where(q => q.InventoryStatusId == inventoryStatusId.Value);
             }
 
             if (customerId.HasValue)
