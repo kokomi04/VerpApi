@@ -339,23 +339,16 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         
         [HttpPut]
-        [Route("{inventoryId}/checked")]
-        public async Task<bool> Checked(long inventoryId){
-            return await _inventoryService.Checked(inventoryId);
+        [Route("{inventoryId}/sentToCensor")]
+        public async Task<bool> SentToCensor(long inventoryId){
+            return await _inventoryService.SentToCensor(inventoryId);
         }
         
         [HttpPut]
-        [Route("{inventoryId}/rejectChecked")]
-        public async Task<bool> RejectChecked(long inventoryId)
-        {
-            return await _inventoryService.RejectChecked(inventoryId);
-        }
-        
-        [HttpPut]
-        [Route("{inventoryId}/rejectCensored")]
+        [Route("{inventoryId}/reject")]
         public async Task<bool> RejectCensored(long inventoryId)
         {
-            return await _inventoryService.RejectCensored(inventoryId);
+            return await _inventoryService.Reject(inventoryId);
         }
 
     }

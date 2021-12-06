@@ -350,6 +350,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(InventoryErrorCode.InventoryAlreadyApproved);
                         }
 
+                        inventoryObj.IsApproved = true;
+
                         inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Censored;
                         //inventoryObj.UpdatedByUserId = currentUserId;
                         //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
