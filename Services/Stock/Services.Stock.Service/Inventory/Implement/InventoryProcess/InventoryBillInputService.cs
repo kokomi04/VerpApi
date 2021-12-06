@@ -153,7 +153,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     UpdatedByUserId = _currentContextService.UserId,
                     IsApproved = false,
                     DepartmentId = req.DepartmentId,
-                    InventoryActionId = req.InventoryActionId
+                    InventoryActionId = req.InventoryActionId,
+                    InventoryStatusId = (int)EnumInventoryStatus.Draff
                 };
                 await _stockDbContext.AddAsync(inventoryObj);
                 await _stockDbContext.SaveChangesAsync();
@@ -350,6 +351,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.UpdatedByUserId = _currentContextService.UserId;
             inventoryObj.TotalMoney = totalMoney;
             inventoryObj.DepartmentId = req.DepartmentId;
+            inventoryObj.InventoryStatusId = (int) EnumInventoryStatus.Draff;
+            inventoryObj.InventoryActionId = req.InventoryActionId;
         }
 
 
@@ -462,13 +465,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //reload after lock
                         inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
 
-                        if (inventoryObj.IsApproved)
+                        if (inventoryObj.InventoryStatusId == (int) EnumInventoryStatus.Censored)
                         {
                             trans.Rollback();
                             throw new BadRequestException(InventoryErrorCode.InventoryAlreadyApproved);
                         }
 
-                        inventoryObj.IsApproved = true;
+                        inventoryObj.InventoryStatusId = (int) EnumInventoryStatus.Censored;
                         //inventoryObj.UpdatedByUserId = currentUserId;
                         //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
                         inventoryObj.CensorByUserId = _currentContextService.UserId;

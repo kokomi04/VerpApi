@@ -330,7 +330,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InputType_Title = m.InputTypeTitle
 
                         }).ToList(),
-                    InventoryActionId = item.InventoryActionId
+                    InventoryActionId = item.InventoryActionId,
+                    InventoryStatusId = item.InventoryStatusId
                 });
 
             }
@@ -541,7 +542,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryDetailOutputList = listInventoryDetailsOutput,
                     FileList = attachedFiles,
                     InputBills = mappingObjects,
-                    IsSendMail = inventoryObj.IsSendMail,
+                    InventoryStatusId = inventoryObj.InventoryStatusId,
                     InventoryActionId = inventoryObj.InventoryActionId
                 };
                 return inventoryOutput;
@@ -708,15 +709,95 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 Domain = _currentContextService.Domain
             });
 
-            if (sendSuccess)
-            {
-                var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                inventoryObj.IsSendMail = true;
-                await _stockDbContext.SaveChangesAsync();
-            }
-
             return sendSuccess;
         }
 
+        public async Task<bool> Checked(long inventoryId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
+                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor
+                    && info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
+                }
+
+                info.InventoryStatusId = (int)EnumInventoryStatus.Checked;
+                info.CheckedDatetimeUtc = DateTime.UtcNow;
+                info.CheckedByUserId = _currentContextService.UserId;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                return true;
+            }
+        }
+
+        public async Task<bool> RejectChecked(long inventoryId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
+                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor
+                    && info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
+                }
+
+                info.InventoryStatusId = (int)EnumInventoryStatus.RejectChecked;
+                info.CheckedDatetimeUtc = DateTime.UtcNow;
+                info.CheckedByUserId = _currentContextService.UserId;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                return true;
+            }
+        }
+
+        public async Task<bool> RejectCensored(long inventoryId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
+                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+                if (info.InventoryStatusId == (int)EnumInventoryStatus.RejectChecked || info.IsApproved == false)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryAlreadyRejected);
+                }
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotPassCheckYet);
+                }
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.Censored
+                   && info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
+                }
+
+
+                info.IsApproved = false;
+
+                info.InventoryStatusId = (int)EnumInventoryStatus.RejectCensored;
+                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorByUserId = _currentContextService.UserId;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                trans.Commit();
+              
+                return true;
+            }
+        }
     }
 }

@@ -57,7 +57,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public IList<MappingInputBillModel> InputBills { get; set; }
         public int? CensorByUserId { get; set; }
         public int InventoryActionId {get;set;}
-        public bool IsSendMail {get;set;}
+        public int InventoryStatusId { get; set; }
     }
 
     public class MappingInputBillModel

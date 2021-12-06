@@ -26,5 +26,8 @@ namespace VErp.Commons.Enums.StandardEnum
         CanNotChangeStock = 10,
         InventoryNotApprovedYet = 11,
         CanNotChangeProductInventoryHasRequirement = 12,
+        InventoryNotSentToCensorYet = 13,
+        InventoryAlreadyRejected = 14,
+        InventoryNotPassCheckYet = 15,
     }
 }
