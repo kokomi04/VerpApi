@@ -59,8 +59,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<bool> SendMailNotifyCensor(long inventoryId, string mailCode, string[] mailTo);
 
-        Task<bool> Checked (long inventoryId);
-        Task<bool> RejectChecked (long inventoryId);
-        Task<bool> RejectCensored (long inventoryId);
+        Task<bool> SentToCensor (long inventoryId);
+        Task<bool> Reject (long inventoryId);
     }
 }

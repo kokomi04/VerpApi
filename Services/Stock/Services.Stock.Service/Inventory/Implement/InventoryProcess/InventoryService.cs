@@ -712,22 +712,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return sendSuccess;
         }
 
-        public async Task<bool> Checked(long inventoryId)
+        public async Task<bool> SentToCensor(long inventoryId)
         {
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
                 if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
 
-                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor
-                    && info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.Draff)
                 {
-                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotDraffYet);
                 }
 
-                info.InventoryStatusId = (int)EnumInventoryStatus.Checked;
-                info.CheckedDatetimeUtc = DateTime.UtcNow;
-                info.CheckedByUserId = _currentContextService.UserId;
+                info.InventoryStatusId = (int)EnumInventoryStatus.WaitToCensor;
 
                 await _stockDbContext.SaveChangesAsync();
 
@@ -737,58 +734,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<bool> RejectChecked(long inventoryId)
+        public async Task<bool> Reject(long inventoryId)
         {
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
                 if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
 
-                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor
-                    && info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor)
                 {
                     throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
                 }
-
-                info.InventoryStatusId = (int)EnumInventoryStatus.RejectChecked;
-                info.CheckedDatetimeUtc = DateTime.UtcNow;
-                info.CheckedByUserId = _currentContextService.UserId;
-
-                await _stockDbContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                return true;
-            }
-        }
-
-        public async Task<bool> RejectCensored(long inventoryId)
-        {
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-            {
-                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
-                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
-
-                if (info.InventoryStatusId == (int)EnumInventoryStatus.RejectChecked || info.IsApproved == false)
-                {
-                    throw new BadRequestException(InventoryErrorCode.InventoryAlreadyRejected);
-                }
-
-                if (info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
-                {
-                    throw new BadRequestException(InventoryErrorCode.InventoryNotPassCheckYet);
-                }
-
-                if (info.InventoryStatusId != (int)EnumInventoryStatus.Censored
-                   && info.InventoryStatusId != (int)EnumInventoryStatus.Checked)
-                {
-                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
-                }
-
 
                 info.IsApproved = false;
 
-                info.InventoryStatusId = (int)EnumInventoryStatus.RejectCensored;
+                info.InventoryStatusId = (int)EnumInventoryStatus.Reject;
                 info.CensorDatetimeUtc = DateTime.UtcNow;
                 info.CensorByUserId = _currentContextService.UserId;
 

@@ -29,5 +29,7 @@ namespace VErp.Commons.Enums.StandardEnum
         InventoryNotSentToCensorYet = 13,
         InventoryAlreadyRejected = 14,
         InventoryNotPassCheckYet = 15,
+        InventoryNotDraffYet = 16,
+        InventoryNotCensoredYet = 17,
     }
 }
