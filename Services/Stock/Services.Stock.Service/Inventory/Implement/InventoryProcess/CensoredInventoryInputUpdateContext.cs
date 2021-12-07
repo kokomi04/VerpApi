@@ -240,7 +240,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         _otherInventoryInput = new CensoredInventoryInputObject()
                         {
                             ObjectId = OTHER_INVENTORY_INPUT_ID,
-                            ObjectCode = OtherInventoryOutputCode,
+                            ObjectCode = OtherInventoryInputCode,
                             ObjectTypeId = EnumObjectType.InventoryDetail,
                             IsRoot = false,
 
