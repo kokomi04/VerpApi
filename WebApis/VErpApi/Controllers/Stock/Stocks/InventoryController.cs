@@ -340,15 +340,33 @@ namespace VErpApi.Controllers.Stock.Inventory
         
         [HttpPut]
         [Route("{inventoryId}/sentToCensor")]
-        public async Task<bool> SentToCensor(long inventoryId){
-            return await _inventoryService.SentToCensor(inventoryId);
+        public async Task<bool> SentToCensor([FromRoute]long inventoryId, [FromQuery] EnumInventoryType type){
+            switch (type)
+            {
+                case EnumInventoryType.Input:
+                    return await _inventoryBillInputService.SentToCensor(inventoryId);
+
+                case EnumInventoryType.Output:
+                    return await _inventoryBillOutputService.SentToCensor(inventoryId);
+                default:
+                    throw new BadRequestException(GeneralCode.InvalidParams);
+            }
         }
         
         [HttpPut]
         [Route("{inventoryId}/reject")]
-        public async Task<bool> RejectCensored(long inventoryId)
+        public async Task<bool> RejectCensored([FromRoute]long inventoryId, [FromQuery] EnumInventoryType type)
         {
-            return await _inventoryService.Reject(inventoryId);
+            switch (type)
+            {
+                case EnumInventoryType.Input:
+                    return await _inventoryBillInputService.Reject(inventoryId);
+
+                case EnumInventoryType.Output:
+                    return await _inventoryBillOutputService.Reject(inventoryId);
+                default:
+                    throw new BadRequestException(GeneralCode.InvalidParams);
+            }
         }
 
     }

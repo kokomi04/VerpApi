@@ -719,7 +719,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
                 if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
 
-                if (info.InventoryStatusId != (int)EnumInventoryStatus.Draff)
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.Draff && info.InventoryStatusId != (int) EnumInventoryStatus.Reject)
                 {
                     throw new BadRequestException(InventoryErrorCode.InventoryNotDraffYet);
                 }

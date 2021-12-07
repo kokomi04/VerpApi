@@ -504,6 +504,67 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+        public async Task<bool> SentToCensor(long inventoryId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
+                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.Draff && info.InventoryStatusId != (int)EnumInventoryStatus.Reject)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotDraffYet);
+                }
+
+                info.InventoryStatusId = (int)EnumInventoryStatus.WaitToCensor;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.WaitToCensor)
+                        .MessageResourceFormatDatas(info.InventoryCode)
+                        .ObjectId(inventoryId)
+                        .JsonData(info.JsonSerialize())
+                        .CreateLog();
+
+                return true;
+            }
+        }
+
+        public async Task<bool> Reject(long inventoryId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
+                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
+                }
+
+                info.IsApproved = false;
+
+                info.InventoryStatusId = (int)EnumInventoryStatus.Reject;
+                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorByUserId = _currentContextService.UserId;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                await _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.Reject)
+                        .MessageResourceFormatDatas(info.InventoryCode)
+                        .ObjectId(inventoryId)
+                        .JsonData(info.JsonSerialize())
+                        .CreateLog();
+
+
+                return true;
+            }
+        }
+
 
         /// <summary>
         /// Xoá phiếu xuất kho

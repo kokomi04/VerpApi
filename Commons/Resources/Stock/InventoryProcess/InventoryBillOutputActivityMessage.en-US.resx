@@ -129,7 +129,13 @@
   <data name="Import" xml:space="preserve">
     <value>Imported output inventory "{0}"</value>
   </data>
+  <data name="Reject" xml:space="preserve">
+    <value>Refuse to approve output inventory {0}</value>
+  </data>
   <data name="Update" xml:space="preserve">
     <value>Updated output inventory "{0}"</value>
+  </data>
+  <data name="WaitToCensor" xml:space="preserve">
+    <value>Send for approval of output inventory {0}</value>
   </data>
 </root>
