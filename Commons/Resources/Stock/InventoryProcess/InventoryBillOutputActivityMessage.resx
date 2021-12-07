@@ -129,7 +129,13 @@
   <data name="Import" xml:space="preserve">
     <value>Nhập từ excel phiếu xuất kho "{0}"</value>
   </data>
+  <data name="Reject" xml:space="preserve">
+    <value>Từ chối duyệt phiếu nhập kho {0}</value>
+  </data>
   <data name="Update" xml:space="preserve">
     <value>Cập nhật phiếu nhập kho "{0}"</value>
+  </data>
+  <data name="WaitToCensor" xml:space="preserve">
+    <value>Gửi duyệt phiếu nhập kho {0}</value>
   </data>
 </root>

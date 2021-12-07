@@ -97,11 +97,29 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Từ chối duyệt phiếu nhập kho {0}.
+        /// </summary>
+        public static string Reject {
+            get {
+                return ResourceManager.GetString("Reject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cập nhật phiếu nhập kho &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {
                 return ResourceManager.GetString("Update", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gửi duyệt phiếu nhập kho {0}.
+        /// </summary>
+        public static string WaitToCensor {
+            get {
+                return ResourceManager.GetString("WaitToCensor", resourceCulture);
             }
         }
     }

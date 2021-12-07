@@ -70,5 +70,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
 
+        Task<bool> SentToCensor(long inventoryId);
+        Task<bool> Reject(long inventoryId);
     }
 }
