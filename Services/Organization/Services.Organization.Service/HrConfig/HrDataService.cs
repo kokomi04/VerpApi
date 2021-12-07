@@ -299,7 +299,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             {
                 var hrArea = hrAreas[i];
                 var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.HrTypeReferenceId.HasValue ? false : hrArea.IsMultiRow);
-                var query = $"{alias} AND [row].[HrBill_F_Id] = @HrBill_F_Id";
+                var query = $"{alias} AND [row].[HrBill_F_Id] IN (SELECT F_Id FROM HrBill WHERE F_Id = @HrBill_F_Id AND IsDeleted = 0)  ";
 
                 var data = (await _organizationDBContext.QueryDataTable(query, new[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) })).ConvertData();
 
@@ -311,42 +311,15 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         public async Task<bool> DeleteHr(int hrTypeId, long hrBill_F_Id)
         {
-            var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
-            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
-
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
-
             var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
-                var billInfo = await _organizationDBContext.HrBill.FirstOrDefaultAsync(b => b.FId == hrBill_F_Id);
-
-                if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ hành chính nhân sự");
-
-                for (int i = 0; i < hrAreas.Count; i++)
-                {
-                    var hrArea = hrAreas[i];
-
-                    var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
-
-                    var deleteSql = $@"UPDATE [{tableName}] SET [UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc, [DeletedDatetimeUtc] = @DeletedDatetimeUtc, [IsDeleted] = @IsDeleted WHERE [HrBill_F_Id] = @HrBill_F_Id";
-                    var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(deleteSql, new[] {
-                        new SqlParameter($"@HrBill_F_Id", hrBill_F_Id),
-                        new SqlParameter($"@DeletedDatetimeUtc", DateTime.UtcNow),
-                        new SqlParameter($"@UpdatedDatetimeUtc", DateTime.UtcNow),
-                        new SqlParameter($"@UpdatedByUserId", _currentContextService.UserId),
-                        new SqlParameter($"@IsDeleted", true),
-                        });
-                }
-
-                billInfo.IsDeleted = true;
-
-                await _organizationDBContext.SaveChangesAsync();
+                var (billInfo, HrTypeTitle) = await SubDeleteHr(hrTypeId, hrBill_F_Id, true);
 
                 await @trans.CommitAsync();
 
                 await _hrDataActivityLog.LogBuilder(() => HrBillActivityLogMessage.Update)
-                        .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
+                        .MessageResourceFormatDatas(HrTypeTitle, hrBill_F_Id)
                         .BillTypeId(hrTypeId)
                         .ObjectId(hrBill_F_Id)
                         .JsonData(billInfo.JsonSerialize())
@@ -1625,6 +1598,79 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             if (null == idParam.Value)
                 throw new InvalidProgramException();
+        }
+
+        private async Task<(HrBill, string)> SubDeleteHr(int hrTypeId, long hrBill_F_Id, bool isDeletedHrAreaRef)
+        {
+
+            var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
+            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
+
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
+
+            var billInfo = await _organizationDBContext.HrBill.FirstOrDefaultAsync(b => b.FId == hrBill_F_Id);
+
+            if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ hành chính nhân sự");
+
+            for (int i = 0; i < hrAreas.Count; i++)
+            {
+                var hrArea = hrAreas[i];
+
+                var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
+
+                if (hrArea.HrTypeReferenceId.HasValue)
+                {
+                    var selectSql = $@"SELECT [HrBillReference_F_Id] {OrganizationConstants.HR_TABLE_F_IDENTITY} FROM [{tableName}] WHERE [IsDeleted] = 0 AND [HrBill_F_Id] = @HrBill_F_Id";
+                    var dataRef = (await _organizationDBContext.QueryDataTable(selectSql, new[] {
+                        new SqlParameter($"@HrBill_F_Id", hrBill_F_Id),
+                        })).ConvertData();
+
+                    if (dataRef.Count > 0)
+                    {
+                        var refFId = (int) dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
+                        await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long) refFId, false);
+                    }
+
+                }
+
+                var deleteSql = $@"UPDATE [{tableName}] SET [UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc, [DeletedDatetimeUtc] = @DeletedDatetimeUtc, [IsDeleted] = @IsDeleted WHERE [HrBill_F_Id] = @HrBill_F_Id";
+                var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(deleteSql, new[] {
+                        new SqlParameter($"@HrBill_F_Id", hrBill_F_Id),
+                        new SqlParameter($"@DeletedDatetimeUtc", DateTime.UtcNow),
+                        new SqlParameter($"@UpdatedDatetimeUtc", DateTime.UtcNow),
+                        new SqlParameter($"@UpdatedByUserId", _currentContextService.UserId),
+                        new SqlParameter($"@IsDeleted", true),
+                        });
+
+            }
+
+            if (isDeletedHrAreaRef)
+            {
+                var hrAreasRef = await _organizationDBContext.HrArea.Where(x => x.HrTypeReferenceId == hrTypeId).AsNoTracking().ToListAsync();
+
+                for (int i = 0; i < hrAreasRef.Count; i++)
+                {
+                    var hrArea = hrAreasRef[i];
+                    var hrType = await GetHrTypExecInfo(hrArea.HrTypeId);
+
+                    var tableName = GetHrAreaTableName(hrType.HrTypeCode, hrArea.HrAreaCode);
+
+                    var deleteSql = $@"UPDATE [{tableName}] SET [UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc, [DeletedDatetimeUtc] = @DeletedDatetimeUtc, [IsDeleted] = @IsDeleted WHERE [HrBillReference_F_Id] = @HrBill_F_Id";
+                    var _ = await _organizationDBContext.Database.ExecuteSqlRawAsync(deleteSql, new[] {
+                        new SqlParameter($"@HrBill_F_Id", hrBill_F_Id),
+                        new SqlParameter($"@DeletedDatetimeUtc", DateTime.UtcNow),
+                        new SqlParameter($"@UpdatedDatetimeUtc", DateTime.UtcNow),
+                        new SqlParameter($"@UpdatedByUserId", _currentContextService.UserId),
+                        new SqlParameter($"@IsDeleted", true),
+                        });
+                }
+            }
+
+            billInfo.IsDeleted = true;
+
+            await _organizationDBContext.SaveChangesAsync();
+
+            return (billInfo, hrTypeInfo.Title);
         }
 
         #endregion
