@@ -83,6 +83,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
+                whereCondition.Append("OR v.CustomerPO LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
