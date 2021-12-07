@@ -21,5 +21,7 @@ namespace VErp.Services.Stock.Service.Products
 
 
         Task<PageData<ProductUnitConversionByProductOutput>> GetListByProducts(IList<int> productIds, int page = 0, int size = 0);
+
+        Task<IList<ProductUnitConversionByProductOutput>> GetByInStockProducts(IList<int> productIds, int stockId, long unixDate);
     }
 }
