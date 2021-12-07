@@ -75,5 +75,16 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _productUnitConversionService.GetListByProducts(productIds, page, size);
         }
+
+
+        [HttpPost]
+        [Route("GetByInStockProducts")]
+        [GlobalApi]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<ProductUnitConversionByProductOutput>> GetByInStockProducts([FromBody] IList<int> productIds, [FromQuery] int stockId, [FromQuery] long unixDate)
+        {
+            return await _productUnitConversionService.GetByInStockProducts(productIds, stockId, unixDate);
+        }
+
     }
 }
