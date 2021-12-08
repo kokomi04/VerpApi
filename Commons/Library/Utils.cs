@@ -268,9 +268,9 @@ namespace VErp.Commons.Library
                 var result = Convert.ToDecimal(outPut);
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, ProductErrorCode.InvalidUnitConversionExpression.GetEnumDescription() + " => " + expression + " " + ex.Message);
             }
         }
 
@@ -280,7 +280,7 @@ namespace VErp.Commons.Library
             return Eval(expression);
         }
 
-
+        /*
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity_bak(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData, int round)
         {
             var value = (productUnitConversionQuantity / factorExpression).RoundBy(round);
@@ -336,7 +336,7 @@ namespace VErp.Commons.Library
                 return (false, value.RoundBy(round));
             }
 
-        }
+        }*/
 
         public static (bool result, decimal primaryQuantity, decimal puQuantity) GetProductUnitConversionQuantityFromPrimaryQuantity(QuantityPairInputModel input)
         {
