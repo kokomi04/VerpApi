@@ -351,8 +351,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.UpdatedByUserId = _currentContextService.UserId;
             inventoryObj.TotalMoney = totalMoney;
             inventoryObj.DepartmentId = req.DepartmentId;
-            inventoryObj.InventoryStatusId = (int) EnumInventoryStatus.Draff;
             inventoryObj.InventoryActionId = req.InventoryActionId;
+
+            if (inventoryObj.InventoryStatusId != (int)EnumInventoryStatus.Censored)
+                inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Draff;
+
         }
 
 
