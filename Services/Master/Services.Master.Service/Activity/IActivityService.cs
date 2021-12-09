@@ -12,7 +12,7 @@ namespace VErp.Services.Master.Service.Activity
     public interface IActivityService
     {
         void CreateActivityAsync(ActivityInput input);
-        Task<bool> CreateActivityTask(ActivityInput input);
+        Task<long> CreateActivityTask(ActivityInput input);
 
         Task<bool> AddNote(int? billTypeId, long objectId, int objectTypeId, string message);
 

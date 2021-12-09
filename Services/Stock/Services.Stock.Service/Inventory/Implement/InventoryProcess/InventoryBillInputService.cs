@@ -27,6 +27,7 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
 using Verp.Resources.Stock.InventoryProcess;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -40,6 +41,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IProductService _productService;
         private readonly ObjectActivityLogFacade _invInputActivityLog;
         private readonly ObjectActivityLogFacade _packageActivityLog;
+        private readonly INotificationFactoryService _notificationFactoryService;
 
         public InventoryBillInputService(
             StockDBContext stockContext
@@ -51,7 +53,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverHelperService productionHandoverHelperService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
 
             _asyncRunner = asyncRunner;
@@ -60,6 +62,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _invInputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryInput);
 
             _packageActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Package); ;
+            _notificationFactoryService = notificationFactoryService;
         }
 
 
@@ -534,6 +537,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _stockDbContext.SaveChangesAsync();
 
                 trans.Commit();
+
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
+                {
+                    ObjectId = inventoryId,
+                    UserId = _currentContextService.UserId,
+                    ObjectTypeId = (int)EnumObjectType.InventoryInput
+                });
 
                 await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.WaitToCensor)
                         .MessageResourceFormatDatas(info.InventoryCode)

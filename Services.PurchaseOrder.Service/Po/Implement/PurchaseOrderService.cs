@@ -48,6 +48,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IMailFactoryService _mailFactoryService;
         private readonly IUserHelperService _userHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly INotificationFactoryService _notificationFactoryService;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -60,7 +61,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , ICustomGenCodeHelperService customGenCodeHelperService
            , IManufacturingHelperService manufacturingHelperService
            , IMapper mapper, IMailFactoryService mailFactoryService
-           , IUserHelperService userHelperService, IOrganizationHelperService organizationHelperService)
+           , IUserHelperService userHelperService, IOrganizationHelperService organizationHelperService
+           , INotificationFactoryService notificationFactoryService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -73,6 +75,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mailFactoryService = mailFactoryService;
             _userHelperService = userHelperService;
             _organizationHelperService = organizationHelperService;
+            _notificationFactoryService = notificationFactoryService;
         }
 
         public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
@@ -1084,6 +1087,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
+                {
+                    ObjectId = purchaseOrderId,
+                    UserId = _currentContext.UserId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder
+                });
 
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckApprove)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
@@ -1249,7 +1258,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
-
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel{
+                    ObjectId = purchaseOrderId,
+                    UserId = _currentContext.UserId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder
+                });
 
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.SendToCensor)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)

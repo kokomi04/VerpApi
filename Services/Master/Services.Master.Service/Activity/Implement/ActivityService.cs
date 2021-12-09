@@ -58,7 +58,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
         }
 
-        public async Task<bool> CreateActivityTask(ActivityInput input)
+        public async Task<long> CreateActivityTask(ActivityInput input)
         {
             using (var trans = await _activityLogContext.Database.BeginTransactionAsync())
             {
@@ -96,7 +96,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
                 trans.Commit();
 
-                return true;
+                return activity.UserActivityLogId;
             }
         }
 

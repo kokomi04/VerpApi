@@ -45,6 +45,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
+        public virtual DbSet<Notification> Notification { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigStandardMapping> ObjectPrintConfigStandardMapping { get; set; }
@@ -59,6 +60,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
+        public virtual DbSet<Subscription> Subscription { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<User> User { get; set; }
 
@@ -167,8 +169,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.IsHide).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.MenuId).HasComment("");
 
