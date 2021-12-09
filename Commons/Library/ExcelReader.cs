@@ -401,10 +401,12 @@ namespace VErp.Commons.Library
 
 
                 var entityInfo = Activator.CreateInstance<T>();
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count; fieldIndx++)//&& !isIgnoreRow
-                {
+                //for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count; fieldIndx++)//&& !isIgnoreRow
+                //{
 
-                    var mappingField = mapping.MappingFields[fieldIndx];
+                //    var mappingField = mapping.MappingFields[fieldIndx];
+                foreach (var mappingField in mapping.MappingFields.Where(f => f.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty).ToList())//&& !isIgnoreRow
+                {
 
                     var fieldDisplay = "";
                     try

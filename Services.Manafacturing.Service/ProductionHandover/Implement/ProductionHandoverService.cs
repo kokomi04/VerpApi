@@ -953,10 +953,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                     var productionStep = productionSteps.FirstOrDefault(ps => ps.ProductionStepId == productionAssignment.ProductionStepId);
 
-                    if (productionStep == null)
-                    {
-                        throw new BadRequestException(GeneralCode.ItemNotFound, "Quy trình sản xuất đã thay đổi sau khi tạo phiếu. Vui lòng tạo lại yêu cầu xuất/nhập kho từ bàn giao/thống kê theo quy trình");
-                    }
+                    if (productionStep == null) continue;
 
                     var departmentHandoverDetail = departmentHandoverDetails.FirstOrDefault(dh => dh.DepartmentId == productionAssignment.DepartmentId && dh.ProductionStepId == productionAssignment.ProductionStepId);
 
