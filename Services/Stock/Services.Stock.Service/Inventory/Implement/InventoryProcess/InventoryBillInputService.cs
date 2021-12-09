@@ -261,7 +261,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         // Validate nếu thông tin nhập kho tạo từ phiếu yêu cầu => không cho phép thêm/sửa mặt hàng
                         if(inventoryDetails.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
                         {
-                            if(validate.Data.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId && id.InventoryRequirementDetailId == d.InventoryRequirementDetailId)))
+                            if(validate.Data.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId)))
                             {
                                 throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
                             }

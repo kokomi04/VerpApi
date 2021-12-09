@@ -212,7 +212,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryObj.InventoryId).ToListAsync();
                         if (inventoryDetails.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
                         {
-                            if (req.OutProducts.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId && id.InventoryRequirementDetailId == d.InventoryRequirementDetailId)))
+                            if (req.OutProducts.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId)))
                             {
                                 throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
                             }
