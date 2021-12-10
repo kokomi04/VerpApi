@@ -27,9 +27,9 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("markerRead")]
-        public async Task<bool> MarkerReadNotification([FromBody] long[] lsNotificationId)
+        public async Task<bool> MarkerReadNotification([FromBody] long[] lsNotificationId, [FromQuery] bool mark)
         {
-            return await _notificationService.MarkerReadNotification(lsNotificationId);
+            return await _notificationService.MarkerReadNotification(lsNotificationId, mark);
         }
 
         [HttpGet]
@@ -37,6 +37,13 @@ namespace VErpApi.Controllers.System
         public async Task<IList<SubscriptionModel>> GetListSubscriptionByUserId([FromQuery] int userId)
         {
             return await _subscriptionService.GetListByUserId(userId);
+        }
+
+        [HttpGet]
+        [Route("subscription")]
+        public async Task<long> AddSubscription([FromQuery] SubscriptionModel model)
+        {
+            return await _subscriptionService.AddSubscription(model);
         }
 
         [HttpDelete]
