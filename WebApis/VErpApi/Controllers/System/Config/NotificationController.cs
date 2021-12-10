@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.System
             return await _subscriptionService.GetListByUserId(userId);
         }
 
-        [HttpPut]
+        [HttpDelete]
         [Route("subscription/{subscriptionId}")]
         public async Task<bool> UnSubscription([FromRoute] long subscriptionId)
         {
