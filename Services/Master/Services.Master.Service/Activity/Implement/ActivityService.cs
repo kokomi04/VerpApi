@@ -1,4 +1,6 @@
 ﻿using ActivityLogDB;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyModel;
@@ -15,13 +17,16 @@ using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Activity;
+using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Users;
+using NotificationEntity = ActivityLogDB.Notification;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
@@ -34,6 +39,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IMapper _mapper;
 
         public ActivityService(ActivityLogDBContext activityLogContext
             , IUserService userService
@@ -42,7 +48,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             , IAsyncRunnerService asyncRunnerService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
-            )
+            , IMapper mapper)
         {
             _activityLogContext = activityLogContext;
             _userService = userService;
@@ -51,6 +57,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _asyncRunnerService = asyncRunnerService;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _mapper = mapper;
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -93,6 +100,16 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     await _activityLogContext.UserActivityLogChange.AddAsync(change);
                 }
                 await _activityLogContext.SaveChangesAsync();
+
+                var bodyNotification = new NotificationAdditionalModel
+                {
+                    BillTypeId = input.BillTypeId,
+                    ObjectId = (int)input.ObjectTypeId,
+                    ObjectTypeId = (int)input.ObjectTypeId,
+                    UserActivityLogId = activity.UserActivityLogId
+                };
+
+                await AddNotification(bodyNotification);
 
                 trans.Commit();
 
@@ -245,6 +262,27 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 results.Add(actLogOutput);
             }
             return results;
+        }
+
+        private async Task<bool> AddNotification(NotificationAdditionalModel model)
+        {
+            var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId);
+            if (model.BillTypeId.HasValue)
+                querySub = querySub.Where(x => x.BillTypeId == model.BillTypeId);
+
+            var lsSubscription = await querySub.ProjectTo<SubscriptionModel>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var lsNewNotification = lsSubscription.Select(x => new NotificationEntity
+            {
+                IsRead = false,
+                UserId = x.UserId,
+                UserActivityLogId = model.UserActivityLogId
+            });
+
+            _activityLogContext.Notification.AddRange(lsNewNotification);
+            await _activityLogContext.SaveChangesAsync();
+
+            return true;
         }
     }
 }

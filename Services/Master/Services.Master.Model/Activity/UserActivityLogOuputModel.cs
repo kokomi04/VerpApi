@@ -23,7 +23,7 @@ namespace VErp.Services.Master.Model.Activity
 
         public long CreatedDatetimeUtc { set; get; }
         public string IpAddress { get; set; }
-
+        public long UserActivityLogId { get; set; }
     }
 
 

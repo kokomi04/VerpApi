@@ -200,19 +200,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Data = jsonData
                 };
 
-                var activityLogId = await _httpCrossService.Post<long>($"/api/internal/InternalActivityLog/Log", body);
-
-                var bodyNotification = new NotificationAdditionalModel
-                {
-                    BillTypeId = billTypeId,
-                    ObjectId = objectId,
-                    ObjectTypeId = (int) objectTypeId,
-                    UserActivityLogId = activityLogId
-                };
-
-                var _ = await _httpCrossService.Post<long>($"/api/internal/InternalNotification", bodyNotification);
-
-                return true;
+                return await _httpCrossService.Post<bool>($"/api/internal/InternalActivityLog/Log", body);
 
             }
             catch (Exception ex)
