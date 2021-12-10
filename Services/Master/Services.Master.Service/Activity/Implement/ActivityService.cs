@@ -182,7 +182,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     //MessageResourceName = item.MessageResourceName,
                     //MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId,
-                    IpAddress = item.IpAddress
+                    IpAddress = item.IpAddress,
+                    UserActivityLogId = item.UserActivityLogId
                 };
                 result.Add(actLogOutput);
             }
@@ -238,7 +239,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     //MessageResourceName = item.MessageResourceName,
                     //MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId,
-                    IpAddress = item.IpAddress
+                    IpAddress = item.IpAddress,
+                    UserActivityLogId = item.UserActivityLogId
                 };
                 results.Add(actLogOutput);
             }
