@@ -55,5 +55,13 @@ namespace VErpApi.Controllers.System
         {
             return await _activityService.GetListUserActivityLog(billTypeId, objectId, objectTypeId, page, size);
         }
+
+        [HttpPost]
+        [Route("byArrayId")]
+        [GlobalApi]
+        public async Task<IList<UserActivityLogOuputModel>> GetNoteList([FromBody] long[] arrActivityLogId)
+        {
+            return await _activityService.GetListUserActivityLogByArrayId(arrActivityLogId);
+        }
     }
 }
