@@ -18,7 +18,7 @@ namespace VErp.Services.Master.Service.Notification
     {
         Task<bool> AddNotification(NotificationAdditionalModel model);
         Task<IList<NotificationModel>> GetListByUserId(int userId);
-        Task<bool> MarkerReadNotification(long[] lsNotificationId);
+        Task<bool> MarkerReadNotification(long[] lsNotificationId, bool mark);
     }
 
     public class NotificationService : INotificationService
@@ -62,12 +62,12 @@ namespace VErp.Services.Master.Service.Notification
             return true;
         }
 
-        public async Task<bool> MarkerReadNotification(long[] lsNotificationId)
+        public async Task<bool> MarkerReadNotification(long[] lsNotificationId, bool mark)
         {
             var lsNotification = await _masterDBContext.Notification.Where(x => lsNotificationId.Contains(x.NotificationId)).ToListAsync();
             foreach (var item in lsNotification)
             {
-                item.IsRead = true;
+                item.IsRead = mark;
             }
 
             await _masterDBContext.SaveChangesAsync();
