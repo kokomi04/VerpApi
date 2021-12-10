@@ -39,7 +39,7 @@ namespace VErpApi.Controllers.System
             return await _subscriptionService.GetListByUserId(userId);
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("subscription")]
         public async Task<long> AddSubscription([FromQuery] SubscriptionModel model)
         {
