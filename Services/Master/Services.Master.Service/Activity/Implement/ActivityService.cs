@@ -188,5 +188,61 @@ namespace VErp.Services.Master.Service.Activity.Implement
             }
             return (result, total);
         }
+
+        public async Task<IList<UserActivityLogOuputModel>> GetListUserActivityLogByArrayId(long[] arrActivityLogId)
+        {
+            var query = _activityLogContext.UserActivityLog.Where(x=> arrActivityLogId.Contains(x.UserActivityLogId));
+           
+            var ualDataList = query.AsNoTracking().ToList();
+
+            var userIds = ualDataList.Select(q => q.UserId).ToList();
+
+            var userInfos = (await _userService.GetBasicInfos(userIds))
+                 .ToDictionary(u => u.UserId, u => u);
+
+            var results = new List<UserActivityLogOuputModel>(ualDataList.Count);
+
+            foreach (var item in ualDataList)
+            {
+                var message = item.Message;
+                if (!string.IsNullOrWhiteSpace(item.MessageResourceName))
+                {
+                    string format = "";
+                    try
+                    {
+                        var data = item.MessageResourceFormatData.JsonDeserialize<object[]>();
+                        data = _activityLogService.ParseActivityLogData(data);
+                        format = ResourcesAssembly.GetResouceString(item.MessageResourceName);
+                        if (!string.IsNullOrWhiteSpace(format))
+                        {
+                            message = string.Format(format, data);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "ResourceFormat {0}", format);
+                    }
+                }
+
+                userInfos.TryGetValue(item.UserId, out var userInfo);
+                var actLogOutput = new UserActivityLogOuputModel
+                {
+                    UserId = item.UserId,
+                    UserName = userInfo?.UserName,
+                    FullName = userInfo?.FullName,
+                    AvatarFileId = userInfo?.AvatarFileId,
+                    ActionId = (EnumActionType?)item.ActionId,
+                    Message = message,
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
+                    MessageTypeId = (EnumMessageType)item.MessageTypeId,
+                    //MessageResourceName = item.MessageResourceName,
+                    //MessageResourceFormatData = item.MessageResourceFormatData,
+                    SubsidiaryId = item.SubsidiaryId,
+                    IpAddress = item.IpAddress
+                };
+                results.Add(actLogOutput);
+            }
+            return results;
+        }
     }
 }
