@@ -17,6 +17,8 @@ namespace ActivityLogDB
         {
         }
 
+        public virtual DbSet<Notification> Notification { get; set; }
+        public virtual DbSet<Subscription> Subscription { get; set; }
         public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
         public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
 
