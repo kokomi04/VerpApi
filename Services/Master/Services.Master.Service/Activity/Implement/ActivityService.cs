@@ -104,7 +104,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 var bodyNotification = new NotificationAdditionalModel
                 {
                     BillTypeId = input.BillTypeId,
-                    ObjectId = (int)input.ObjectTypeId,
+                    ObjectId = input.ObjectId,
                     ObjectTypeId = (int)input.ObjectTypeId,
                     UserActivityLogId = activity.UserActivityLogId
                 };

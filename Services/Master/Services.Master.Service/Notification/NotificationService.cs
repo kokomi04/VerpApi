@@ -69,6 +69,8 @@ namespace VErp.Services.Master.Service.Notification
             foreach (var item in lsNotification)
             {
                 item.IsRead = mark;
+                if (mark)
+                    item.ReadDateTimeUtc = System.DateTime.UtcNow;
             }
 
             await _activityLogContext.SaveChangesAsync();
