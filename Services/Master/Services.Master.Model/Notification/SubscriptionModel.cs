@@ -1,8 +1,6 @@
-using AutoMapper;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Commons.Library;
-using VErp.Infrastructure.EF.MasterDB;
+using ActivityLogDB;
 
 namespace VErp.Services.Master.Model.Notification
 {
