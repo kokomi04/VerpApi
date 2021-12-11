@@ -17,7 +17,7 @@ namespace VErp.Services.Master.Service.Notification
     public interface ISubscriptionService
     {
         Task<long> AddSubscription(SubscriptionModel model);
-        Task<IList<SubscriptionModel>> GetListByUserId(int userId);
+        Task<IList<SubscriptionModel>> GetListByUserId();
         Task<bool> UnSubscription(long subscriptionId);
     }
 
@@ -25,18 +25,20 @@ namespace VErp.Services.Master.Service.Notification
     {
         private readonly ActivityLogDBContext _activityLogContext;
         private readonly ObjectActivityLogFacade _activityLog;
+        private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
 
-        public SubscriptionService(ActivityLogDBContext activityLogContext, IMapper mapper, IActivityLogService activityLogService)
+        public SubscriptionService(ActivityLogDBContext activityLogContext, IMapper mapper, IActivityLogService activityLogService, ICurrentContextService currentContextService)
         {
             _activityLogContext = activityLogContext;
             _mapper = mapper;
             _activityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Notification);
+            _currentContextService = currentContextService;
         }
 
-        public async Task<IList<SubscriptionModel>> GetListByUserId(int userId)
+        public async Task<IList<SubscriptionModel>> GetListByUserId()
         {
-            var query = _activityLogContext.Subscription.Where(x => x.UserId == userId).AsNoTracking();
+            var query = _activityLogContext.Subscription.Where(x => x.UserId == _currentContextService.UserId).AsNoTracking();
             return await query.ProjectTo<SubscriptionModel>(_mapper.ConfigurationProvider).ToListAsync();
         }
 

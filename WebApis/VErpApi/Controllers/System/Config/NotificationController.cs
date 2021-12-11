@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Notification;
@@ -8,7 +9,7 @@ using VErp.Services.Master.Service.Notification;
 namespace VErpApi.Controllers.System
 {
     [Route("api/notification")]
-    public class NotificationController
+    public class NotificationController: VErpBaseController
     {
         private readonly INotificationService _notificationService;
         private readonly ISubscriptionService _subscriptionService;
@@ -22,9 +23,9 @@ namespace VErpApi.Controllers.System
         [HttpGet]
         [Route("")]
         [GlobalApi]
-        public async Task<IList<NotificationModel>> GetListByUserId([FromQuery] int userId)
+        public async Task<IList<NotificationModel>> GetListByUserId()
         {
-            return await _notificationService.GetListByUserId(userId);
+            return await _notificationService.GetListByUserId();
         }
 
         [HttpPut]
@@ -38,9 +39,9 @@ namespace VErpApi.Controllers.System
         [HttpGet]
         [Route("subscription")]
         [GlobalApi]
-        public async Task<IList<SubscriptionModel>> GetListSubscriptionByUserId([FromQuery] int userId)
+        public async Task<IList<SubscriptionModel>> GetListSubscriptionByUserId()
         {
-            return await _subscriptionService.GetListByUserId(userId);
+            return await _subscriptionService.GetListByUserId();
         }
 
         [HttpPost]
