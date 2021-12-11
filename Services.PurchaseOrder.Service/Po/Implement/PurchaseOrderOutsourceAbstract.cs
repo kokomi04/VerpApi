@@ -438,7 +438,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
                    
-                    await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
+                    await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Update)
                       .MessageResourceFormatDatas(info.PurchaseOrderCode)
                       .ObjectId(info.PurchaseOrderId)
                       .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model }).JsonSerialize())
