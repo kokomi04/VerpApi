@@ -1261,7 +1261,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel{
                     ObjectId = purchaseOrderId,
                     UserId = _currentContext.UserId,
-                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder, 
                 });
 
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.SendToCensor)
