@@ -259,7 +259,10 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     //MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId,
                     IpAddress = item.IpAddress,
-                    UserActivityLogId = item.UserActivityLogId
+                    UserActivityLogId = item.UserActivityLogId,
+                    ObjectTypeId = item.ObjectTypeId,
+                    ObjectId = item.ObjectId,
+                    BillTypeId =item.BillTypeId
                 };
                 results.Add(actLogOutput);
             }
