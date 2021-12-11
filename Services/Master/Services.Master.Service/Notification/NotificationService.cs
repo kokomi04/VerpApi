@@ -37,7 +37,7 @@ namespace VErp.Services.Master.Service.Notification
 
         public async Task<IList<NotificationModel>> GetListByUserId(int userId)
         {
-            var query = _activityLogContext.Notification.Where(x => userId == x.UserId && x.IsRead == false);
+            var query = _activityLogContext.Notification.Where(x => userId == x.UserId);
 
             return await query.AsNoTracking().OrderBy(x => x.CreatedDatetimeUtc).ProjectTo<NotificationModel>(_mapper.ConfigurationProvider).ToListAsync();
         }

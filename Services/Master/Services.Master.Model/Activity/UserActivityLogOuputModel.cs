@@ -24,6 +24,9 @@ namespace VErp.Services.Master.Model.Activity
         public long CreatedDatetimeUtc { set; get; }
         public string IpAddress { get; set; }
         public long UserActivityLogId { get; set; }
+        public int ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
+        public int? BillTypeId { get; set; }
     }
 
 
