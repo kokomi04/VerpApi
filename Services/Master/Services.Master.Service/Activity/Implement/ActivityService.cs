@@ -111,6 +111,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
                 await AddNotification(bodyNotification);
 
+                await _activityLogContext.SaveChangesAsync();
+
                 trans.Commit();
 
                 return activity.UserActivityLogId;
