@@ -112,7 +112,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
 
         public static void ConfigActivityLogContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
-            services.AddDbContext<ActivityLogDBContext>((option) =>
+            services.AddDbContext<ActivityLogDBContext, ActivityLogDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.ActivityLogDatabase);
             }, ServiceLifetime.Scoped);
