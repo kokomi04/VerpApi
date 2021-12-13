@@ -47,7 +47,8 @@ namespace VErpApi.Controllers.System
                     reqMessage.Headers.Add(h.Key, h.Value);
                 }
             }
-            reqMessage.Content = new StringContent(req.Body, Encoding.UTF8);
+            if (!string.IsNullOrWhiteSpace(req.Body))
+                reqMessage.Content = new StringContent(req.Body, Encoding.UTF8);
             var response = await client.SendAsync(reqMessage);
             return new HttpResponseModel()
             {
