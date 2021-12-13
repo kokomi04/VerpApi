@@ -13,6 +13,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErpApi.Models;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Enums.StandardEnum;
+using System.Net;
 
 namespace VErpApi.Controllers.System
 {
@@ -47,6 +48,8 @@ namespace VErpApi.Controllers.System
                     reqMessage.Headers.Add(h.Key, h.Value);
                 }
             }
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+
             if (!string.IsNullOrWhiteSpace(req.Body))
                 reqMessage.Content = new StringContent(req.Body, Encoding.UTF8);
             var response = await client.SendAsync(reqMessage);
