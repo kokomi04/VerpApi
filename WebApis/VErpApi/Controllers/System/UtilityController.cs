@@ -48,7 +48,9 @@ namespace VErpApi.Controllers.System
                     reqMessage.Headers.Add(h.Key, h.Value);
                 }
             }
+
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+            ServicePointManager.ServerCertificateValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
 
             if (!string.IsNullOrWhiteSpace(req.Body))
                 reqMessage.Content = new StringContent(req.Body, Encoding.UTF8);
