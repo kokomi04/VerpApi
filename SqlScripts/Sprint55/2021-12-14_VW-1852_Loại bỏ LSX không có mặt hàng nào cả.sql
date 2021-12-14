@@ -1,0 +1,1 @@
+UPDATE ProductionOrder SET IsDeleted = 1 WHERE ProductionOrderId NOT IN (SELECT DISTINCT ProductionOrderId FROM ProductionOrderDetail WHERE IsDeleted = 0) AND IsDeleted = 0

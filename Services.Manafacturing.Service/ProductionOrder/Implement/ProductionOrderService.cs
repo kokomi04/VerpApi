@@ -470,6 +470,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.PlanEndDate > data.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
+                if(data.ProductionOrderDetail.Count == 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Cần có thông tin mặt hàng cần sản xuất");
+
                 if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
                     .Where(x => x.Count() > 1)
                     .Count() > 0)
@@ -662,6 +665,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Where(x => x.Count() > 1)
                     .Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
+
+                if (data.ProductionOrderDetail.Count == 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Cần có thông tin mặt hàng cần sản xuất");
 
                 var productionOrder = _manufacturingDBContext.ProductionOrder
                     .Where(o => o.ProductionOrderId == productionOrderId)
