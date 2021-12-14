@@ -1087,11 +1087,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
-                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
+
+                await _notificationFactoryService.AddSubscriptionToThePermissionPerson(new SubscriptionToThePermissionPersonSimpleModel
                 {
-                    ObjectId = purchaseOrderId,
-                    UserId = _currentContext.UserId,
-                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder
+                    ObjectId = info.PurchaseOrderId,
+                    ObjectTypeId = (int)EnumObjectType.InventoryInput,
+                    ModuleId = _currentContext.ModuleId,
+                    PermissionId = (int)EnumActionType.Censor
                 });
 
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckApprove)
@@ -1099,6 +1101,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                    .ObjectId(info.PurchaseOrderId)
                    .JsonData((new { purchaseOrderId }).JsonSerialize())
                    .CreateLog();
+
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
+                {
+                    ObjectId = purchaseOrderId,
+                    UserId = _currentContext.UserId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder
+                });
 
                 return true;
             }
@@ -1258,10 +1267,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 trans.Commit();
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
-                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel{
-                    ObjectId = purchaseOrderId,
-                    UserId = _currentContext.UserId,
-                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder, 
+
+                await _notificationFactoryService.AddSubscriptionToThePermissionPerson(new SubscriptionToThePermissionPersonSimpleModel
+                {
+                    ObjectId = info.PurchaseOrderId,
+                    ObjectTypeId = (int)EnumObjectType.InventoryInput,
+                    ModuleId = _currentContext.ModuleId,
+                    PermissionId = (int)EnumActionType.Check
                 });
 
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.SendToCensor)
@@ -1269,6 +1281,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .ObjectId(info.PurchaseOrderId)
                   .JsonData((new { purchaseOrderId }).JsonSerialize())
                   .CreateLog();
+
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel{
+                    ObjectId = purchaseOrderId,
+                    UserId = _currentContext.UserId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder, 
+                });
                 return true;
             }
         }

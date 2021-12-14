@@ -541,11 +541,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 trans.Commit();
 
-                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
+                await _notificationFactoryService.AddSubscriptionToThePermissionPerson(new SubscriptionToThePermissionPersonSimpleModel
                 {
                     ObjectId = inventoryId,
-                    UserId = _currentContextService.UserId,
-                    ObjectTypeId = (int)EnumObjectType.InventoryInput
+                    ObjectTypeId = (int)EnumObjectType.InventoryInput,
+                    ModuleId = _currentContextService.ModuleId,
+                    PermissionId = (int)EnumActionType.Censor
                 });
 
                 await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.WaitToCensor)
@@ -554,6 +555,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .JsonData(info.JsonSerialize())
                         .CreateLog();
 
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
+                {
+                    ObjectId = inventoryId,
+                    UserId = _currentContextService.UserId,
+                    ObjectTypeId = (int)EnumObjectType.InventoryInput
+                });
                 return true;
             }
         }

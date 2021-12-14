@@ -83,6 +83,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         private string _ipAddress;
         private string _domain;
+        private int _moduleId;
 
         public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
@@ -411,6 +412,22 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+        public int ModuleId 
+        {
+            get
+            {
+                if (_moduleId > 0)
+                    return _moduleId;
+                    
+                _httpContextAccessor.HttpContext.Request.Headers.TryGetValue(Headers.Module, out var moduleIds);
+
+                if(moduleIds.Count == 0) return 0;
+                
+                _moduleId = int.Parse(moduleIds[0]);
+                return _moduleId;
+            }
+        }
+
         private T TryGetSet<T>(string key, Func<T> queryData)
         {
             return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
@@ -469,5 +486,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public string Language { get; }
         public string IpAddress { get; }
         public string Domain {get;}
+        public int ModuleId {get;}
     }
 }

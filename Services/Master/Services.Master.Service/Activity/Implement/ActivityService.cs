@@ -271,7 +271,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         private async Task<bool> AddNotification(NotificationAdditionalModel model)
         {
-            var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId);
+            var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && _currentContextService.UserId != x.UserId);
             if (model.BillTypeId.HasValue)
                 querySub = querySub.Where(x => x.BillTypeId == model.BillTypeId);
 
