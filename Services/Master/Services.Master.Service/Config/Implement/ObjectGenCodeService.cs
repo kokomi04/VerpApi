@@ -274,11 +274,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 result = result.Where(c =>
-                 c.ObjectTypeName?.Contains(keyword) == true
-                 || c.TargetObjectName?.Contains(keyword) == true
-                 || c.TargetObjectTypeName?.Contains(keyword) == true
-                 || c.FieldName?.Contains(keyword) == true
-                 || c.CustomGenCodeName?.Contains(keyword) == true
+                 c.ObjectTypeName?.ToLower().Contains(keyword) == true
+                 || c.TargetObjectName?.ToLower()?.Contains(keyword) == true
+                 || c.TargetObjectTypeName?.ToLower()?.Contains(keyword) == true
+                 || c.FieldName?.ToLower()?.Contains(keyword) == true
+                 || c.CustomGenCodeName?.ToLower()?.Contains(keyword) == true
                 ).ToList();
             }
             var total = result.Count;
