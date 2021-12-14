@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     public interface IUserHelperService
     {
         Task<IList<UserInfoOutput>> GetByIds(IList<int> userIds);
+        Task<IList<UserInfoOutput>> GetListByRoles(IList<int> roles);
 
     }
 
@@ -38,6 +39,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<UserInfoOutput>> GetByIds(IList<int> userIds)
         {
             return await _httpCrossService.Post<List<UserInfoOutput>>($"api/internal/InternalUser/GetByIds", userIds);
+        }
+
+        public async Task<IList<UserInfoOutput>> GetListByRoles(IList<int> roles)
+        {
+            return await _httpCrossService.Post<List<UserInfoOutput>>($"api/internal/InternalUser/GetListByRoles", roles);
         }
 
 

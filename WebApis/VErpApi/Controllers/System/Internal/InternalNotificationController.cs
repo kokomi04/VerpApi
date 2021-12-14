@@ -21,16 +21,23 @@ namespace VErpApi.Controllers.System.Internal
 
         [HttpPost]
         [Route("")]
-        public async Task<bool> AddNotification(NotificationAdditionalModel model)
+        public async Task<bool> AddNotification([FromBody]NotificationAdditionalModel model)
         {
             return await _notificationService.AddNotification(model);
         }
 
         [HttpPost]
         [Route("subscription")]
-        public async Task<long> AddSubscription(SubscriptionModel model)
+        public async Task<long> AddSubscription([FromBody] SubscriptionModel model)
         {
             return await _subscriptionService.AddSubscription(model);
+        }
+
+        [HttpPost]
+        [Route("subscriptionToThePermissionPerson")]
+        public async Task<bool> AddSubscriptionToThePermissionPerson([FromBody] SubscriptionToThePermissionPersonSimpleModel req)
+        {
+            return await _subscriptionService.AddSubscriptionToThePermissionPerson(req);
         }
     }
 }
