@@ -48,6 +48,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
         public virtual DbSet<SystemParameter> SystemParameter { get; set; }
+        public virtual DbSet<TimeSheet> TimeSheet { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
         public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
         public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
@@ -590,6 +591,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.UpdatedDateTimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.Value).HasMaxLength(512);
+            });
+
+            modelBuilder.Entity<TimeSheet>(entity =>
+            {
+                entity.Property(e => e.Date).HasColumnType("date");
             });
 
             modelBuilder.Entity<UserData>(entity =>
