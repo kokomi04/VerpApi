@@ -15,8 +15,8 @@ namespace Services.Organization.Model.TimeKeeping
         public long TimeSheetId { get; set; }
         public long EmployeeId { get; set; }
         public long Date { get; set; }
-        public int TimeIn { get; set; }
-        public int TimeOut { get; set; }
+        public double TimeIn { get; set; }
+        public double TimeOut { get; set; }
 
         public void Mapping(Profile profile)
         {
