@@ -48,7 +48,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<IList<RolePermissionSimpleModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission)
         {
-            return await _httpCrossService.Get<IList<RolePermissionSimpleModel>>($"api/internal/InternalRole/GrantPermissionForAllRoles?moduleId={moduleId}&premission={premission}");
+            return await _httpCrossService.Get<IList<RolePermissionSimpleModel>>($"api/internal/InternalRole/ByModuleAndPermission?moduleId={moduleId}&premission={premission}");
         }
 
 
