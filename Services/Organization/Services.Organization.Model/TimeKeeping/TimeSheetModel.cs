@@ -26,8 +26,8 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.TimeOut, v => v.MapFrom(m => TimeSpan.FromSeconds(m.TimeOut)))
             .ReverseMap()
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()))
-            .ForMember(m => m.TimeIn, v => v.MapFrom(m => m.TimeIn.Seconds))
-            .ForMember(m => m.TimeOut, v => v.MapFrom(m => m.TimeOut.Seconds));
+            .ForMember(m => m.TimeIn, v => v.MapFrom(m => m.TimeIn.TotalSeconds))
+            .ForMember(m => m.TimeOut, v => v.MapFrom(m => m.TimeOut.TotalSeconds));
         }
     }
 }

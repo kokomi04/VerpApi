@@ -32,6 +32,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<long> AddTimeSheet(TimeSheetModel model)
         {
+            if(model.TimeOut < model.TimeIn)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian checkin phải nhỏ hơn thời gian checkout");
+
             var entity = _mapper.Map<TimeSheet>(model);
 
             await _organizationDBContext.TimeSheet.AddAsync(entity);
