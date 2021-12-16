@@ -15,7 +15,7 @@ using VErp.Services.Organization.Service.TimeKeeping;
 namespace VErpApi.Controllers.System.Organization
 {
     [Route("api/organization/timekeeping/timesheet")]
-    public class TimeSheetController
+    public class TimeSheetController: VErpBaseController
     {
         private readonly ITimeSheetService _timeSheetService;
 
