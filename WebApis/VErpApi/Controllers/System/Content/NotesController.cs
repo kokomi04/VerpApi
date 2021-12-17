@@ -63,5 +63,19 @@ namespace VErpApi.Controllers.System
         {
             return await _activityService.GetListUserActivityLogByArrayId(arrActivityLogId);
         }
+
+        [HttpPost]
+        [Route("loginLog")]
+        public async Task<PageData<UserLoginLogModel>> GetUserLoginLogs([FromQuery] int page,
+            [FromQuery] int size,
+            [FromQuery] string keyword,
+            [FromQuery] string orderByFieldName,
+            [FromQuery] bool asc,
+            [FromQuery] long fromDate,
+            [FromQuery] long toDate,
+            [FromBody] Clause filter)
+        {
+            return await _activityService.GetUserLoginLogs(page, size, keyword, orderByFieldName, asc, fromDate, toDate, filter);
+        }
     }
 }
