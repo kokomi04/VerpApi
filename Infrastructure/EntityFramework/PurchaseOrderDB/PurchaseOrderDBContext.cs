@@ -138,10 +138,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<ElectronicInvoiceMapping>(entity =>
             {
-                entity.Property(e => e.DeletedDatetimeUtc)
-                    .HasMaxLength(10)
-                    .IsFixedLength(true);
-
                 entity.HasOne(d => d.ElectronicInvoiceProvider)
                     .WithMany(p => p.ElectronicInvoiceMapping)
                     .HasForeignKey(d => d.ElectronicInvoiceProviderId)
@@ -168,6 +164,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.Name).HasMaxLength(128);
 
                 entity.Property(e => e.Phone).HasMaxLength(32);
+
+                entity.Property(e => e.UrlSearch).HasMaxLength(256);
 
                 entity.Property(e => e.Website).HasMaxLength(128);
             });
@@ -376,10 +374,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             modelBuilder.Entity<ProductPriceConfig>(entity =>
             {
                 entity.Property(e => e.Currency).HasMaxLength(128);
-
-                entity.Property(e => e.IsActived)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<ProductPriceConfigItem>(entity =>
@@ -388,11 +382,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsUnique();
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
-
-                entity.Property(e => e.IsTable)
-                    .IsRequired()
-                    .HasColumnName("isTable")
-                    .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ItemKey)
                     .IsRequired()
@@ -412,14 +401,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
             modelBuilder.Entity<ProductPriceConfigItemPrice>(entity =>
             {
                 entity.Property(e => e.Description).HasMaxLength(512);
-
-                entity.Property(e => e.IsEditable)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.IsForeignPrice)
-                    .IsRequired()
-                    .HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.ItemKey).HasMaxLength(128);
 

@@ -26,6 +26,7 @@ namespace MasterTests
 {
     public class OutsourceOrderTests : BaseDevelopmentUnitStartup
     {
+        /*
         private readonly IOutsourcePartOrderService outsourcePartOrderService;
 
         public OutsourceOrderTests()
@@ -49,7 +50,7 @@ namespace MasterTests
             }
 
 
-        }
+        }*/
         
     }
 }
