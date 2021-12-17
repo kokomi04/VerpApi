@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -6,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
@@ -32,7 +34,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<long> AddTimeSheet(TimeSheetModel model)
         {
-            if(model.TimeOut < model.TimeIn)
+            if (model.TimeOut < model.TimeIn)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian checkin phải nhỏ hơn thời gian checkout");
 
             var entity = _mapper.Map<TimeSheet>(model);
@@ -80,7 +82,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<IList<TimeSheetModel>> GetListTimeSheet()
         {
-            return await _organizationDBContext.TimeSheet.AsNoTracking().ProjectTo<TimeSheetModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var query = _organizationDBContext.TimeSheet.AsNoTracking();
+
+            return await query.Select(x => new TimeSheetModel
+            {
+                Date = x.Date.GetUnix(),
+                TimeIn = x.TimeIn.TotalSeconds,
+                TimeOut = x.TimeOut.TotalSeconds,
+                EmployeeId = x.EmployeeId,
+                TimeSheetId = x.TimeSheetId
+            }).ToListAsync();
         }
     }
 }
