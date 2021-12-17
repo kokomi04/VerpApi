@@ -20,6 +20,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -119,6 +120,44 @@ namespace VErp.Services.Master.Service.Activity.Implement
             }
         }
 
+
+        public async Task<PageData<UserLoginLogModel>> GetUserLoginLogs(int pageIdex, int pageSize, string keyword, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters)
+        {
+            var query = _activityLogContext.UserLoginLog.AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(l => l.UserName.Contains(keyword) || l.UserAgent.Contains(keyword));
+            }
+
+            if (fromDate > 0 && toDate > 0)
+            {
+                var fromDateTime = fromDate.UnixToDateTime().Value.AddMinutes(-_currentContextService.TimeZoneOffset.Value);
+                var toDateTime = toDate.UnixToDateTime().Value.AddMinutes(-_currentContextService.TimeZoneOffset.Value);
+                query = query.Where(l => l.CreatedDatetimeUtc.Date >= fromDateTime && l.CreatedDatetimeUtc.Date <= toDateTime);
+            }
+
+            if (string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "CreatedDatetimeUtc";
+                asc = false;
+            }
+
+            if (filters != null)
+            {
+                query = query.InternalFilter(filters);
+            }
+
+            var total = query.Count();
+
+            query = query.InternalOrderBy(orderByFieldName, asc);
+            query = pageSize > 0 ? query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize) : query.AsNoTracking();
+
+            var result = await query.ProjectTo<UserLoginLogModel>(_mapper.ConfigurationProvider).ToListAsync();
+            return (result, total);
+        }
+
+
         public async Task<bool> AddNote(int? billTypeId, long objectId, int objectTypeId, string message)
         {
             var activity = new UserActivityLog()
@@ -142,7 +181,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
             return true;
         }
-        
+
 
         public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
@@ -211,8 +250,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public async Task<IList<UserActivityLogOuputModel>> GetListUserActivityLogByArrayId(long[] arrActivityLogId)
         {
-            var query = _activityLogContext.UserActivityLog.Where(x=> arrActivityLogId.Contains(x.UserActivityLogId));
-           
+            var query = _activityLogContext.UserActivityLog.Where(x => arrActivityLogId.Contains(x.UserActivityLogId));
+
             var ualDataList = query.AsNoTracking().ToList();
 
             var userIds = ualDataList.Select(q => q.UserId).ToList();
@@ -262,7 +301,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     UserActivityLogId = item.UserActivityLogId,
                     ObjectTypeId = item.ObjectTypeId,
                     ObjectId = item.ObjectId,
-                    BillTypeId =item.BillTypeId
+                    BillTypeId = item.BillTypeId
                 };
                 results.Add(actLogOutput);
             }

@@ -116,6 +116,14 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.ActivityLogDatabase);
             }, ServiceLifetime.Scoped);
+
+
+            services.AddDbContext<UnAuthorizActivityLogDBContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.ActivityLogDatabase);
+            }, ServiceLifetime.Transient);
+
+            services.AddSingleton<Func<UnAuthorizActivityLogDBContext>>(option => () => option.GetService<UnAuthorizActivityLogDBContext>());
         }
 
         public static IApplicationBuilder UseEndpointsGrpcService(this IApplicationBuilder app, Assembly assembly)

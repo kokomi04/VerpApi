@@ -130,7 +130,7 @@ namespace VErp.WebApis.VErpApi
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ManufacturingModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(GlobalObjectAssembly.Assembly);
-
+            profile.ApplyMappingsFromAssembly(ServiceCoreAssembly.Assembly);
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }

@@ -9,6 +9,23 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace ActivityLogDB
 {
+    public class UnAuthorizActivityLogDBContext : ActivityLogDBContext
+    {
+        public UnAuthorizActivityLogDBContext(DbContextOptions<UnAuthorizActivityLogDBContext> options
+            , ILoggerFactory loggerFactory)
+            : base(options.ChangeOptionsType<ActivityLogDBContext>(loggerFactory))
+        {
+
+        }
+
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.AddFilterBase();
+        }
+    }
+
     public partial class ActivityLogDBRestrictionContext : ActivityLogDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }

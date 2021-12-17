@@ -8,6 +8,7 @@ namespace VErp.Commons.Enums
     {
         None = 0,
         ActivityLog = 1,
-        Comment = 2
+        Comment = 2,
+        UserLogin = 3,
     }
 }
