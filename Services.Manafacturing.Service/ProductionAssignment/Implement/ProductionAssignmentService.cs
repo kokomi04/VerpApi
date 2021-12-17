@@ -110,18 +110,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                    .ToList();
 
             // Validate tổ đã thực hiện sản xuất
-            var parammeters = new SqlParameter[]
-            {
-                new SqlParameter("@ProductionOrderId", productionOrderId)
-            };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+            //var parammeters = new SqlParameter[]
+            //{
+            //    new SqlParameter("@ProductionOrderId", productionOrderId)
+            //};
+            //var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-            var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
-                .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
-                .ToList();
+            //var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+            //    .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
+            //    .ToList();
 
             var handovers = _manufacturingDBContext.ProductionHandover
-                .Where(h => h.ProductionOrderId == productionOrderId && h.Status != (int)EnumHandoverStatus.Rejected)
+                .Where(h => h.ProductionOrderId == productionOrderId)
                 .ToList();
 
             var mapData = new Dictionary<long,
@@ -217,15 +217,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
 
                 // Validate xóa tổ đã tham gia sản xuất
-                var productIds = step.ProductionStepLinkDataRole
-                    .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
-                    .Select(r => r.ProductionStepLinkData.ObjectId)
-                    .ToList();
-                if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && r.DepartmentId.HasValue && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
-                    || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
-                }
+                //var productIds = step.ProductionStepLinkDataRole
+                //    .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                //    .Select(r => r.ProductionStepLinkData.ObjectId)
+                //    .ToList();
+
+                //if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && r.DepartmentId.HasValue && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
+                //    || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
+                //{
+                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
+                //}
 
                 mapData.Add(productionStepAssignments.ProductionStepId, (oldProductionStepAssignments, updateAssignments, newAssignments));
             }
@@ -251,12 +252,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
                 }
 
-                // Validate xóa tổ đã tham gia sản xuất
-
-                if (inputInventorys.Any(r => handovers.Any(h => (h.FromProductionStepId == item.ProductionStepId || h.ToProductionStepId == item.ProductionStepId) && (h.FromDepartmentId == item.DepartmentId || h.ToDepartmentId == item.DepartmentId))))
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
-                }
+                //Validate xóa tổ đã tham gia sản xuất
+                //if (inputInventorys.Any(r => handovers.Any(h => (h.FromProductionStepId == item.ProductionStepId || h.ToProductionStepId == item.ProductionStepId) && (h.FromDepartmentId == item.DepartmentId || h.ToDepartmentId == item.DepartmentId))))
+                //{
+                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
+                //}
             }
 
             try
@@ -284,6 +284,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Xóa phân công có công đoạn bị xóa khỏi quy trình
                 foreach (var oldProductionAssignment in deletedProductionStepAssignments)
                 {
+                    // Xóa bàn giao liên quan tới phân công bị xóa
+                    var deleteHandovers = handovers
+                        .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
+                        && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
+                        .ToList();
+
+                    _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
                     oldProductionAssignment.ProductionAssignmentDetail.Clear();
                 }
                 _manufacturingDBContext.ProductionAssignment.RemoveRange(deletedProductionStepAssignments);
@@ -309,6 +316,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     {
                         foreach (var oldProductionAssignment in mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments)
                         {
+                            // Xóa bàn giao liên quan tới phân công bị xóa
+                            var deleteHandovers = handovers
+                                .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
+                                && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
+                                .ToList();
+
+                            _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
+
                             oldProductionAssignment.ProductionAssignmentDetail.Clear();
                         }
                         _manufacturingDBContext.SaveChanges();
@@ -470,32 +485,30 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
             // Validate tổ đã thực hiện sản xuất
-            var parammeters = new SqlParameter[]
-            {
-                new SqlParameter("@ProductionOrderId", productionOrderId)
-            };
-            var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+            //var parammeters = new SqlParameter[]
+            //{
+            //    new SqlParameter("@ProductionOrderId", productionOrderId)
+            //};
+            //var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-            var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
-                .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
-                .ToList();
+            //var inputInventorys = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+            //    .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
+            //    .ToList();
 
             var handovers = _manufacturingDBContext.ProductionHandover
-                .Where(h => h.ProductionOrderId == productionOrderId
-                && (h.FromProductionStepId == productionStepId || h.ToProductionStepId == productionStepId)
-                && h.Status != (int)EnumHandoverStatus.Rejected)
+                .Where(h => h.ProductionOrderId == productionOrderId && (h.FromProductionStepId == productionStepId || h.ToProductionStepId == productionStepId))
                 .ToList();
 
             // Validate xóa tổ đã tham gia sản xuất
-            var productIds = step.ProductionStepLinkDataRole
-                    .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
-                    .Select(r => r.ProductionStepLinkData.ObjectId)
-                    .ToList();
-            if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && r.DepartmentId.HasValue && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
-                || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
-            }
+            //var productIds = step.ProductionStepLinkDataRole
+            //        .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+            //        .Select(r => r.ProductionStepLinkData.ObjectId)
+            //        .ToList();
+            //if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && r.DepartmentId.HasValue && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
+            //    || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
+            //{
+            //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
+            //}
 
             // Validate sửa tổ đã tham gia sản xuất
             //foreach (var tuple in updateAssignments)
@@ -543,6 +556,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     foreach (var oldProductionAssignment in oldProductionAssignments)
                     {
+                        // Xóa bàn giao liên quan tới phân công bị xóa
+                        var deleteHandovers = handovers
+                            .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
+                            && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
+                            .ToList();
+
+                        _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
                         oldProductionAssignment.ProductionAssignmentDetail.Clear();
                     }
                     _manufacturingDBContext.SaveChanges();

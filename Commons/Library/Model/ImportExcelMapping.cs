@@ -11,7 +11,7 @@ namespace VErp.Commons.Library.Model
         public string FileName { get; set; }
         public string SheetName { get; set; }
         public int FromRow { get; set; }
-        public int ToRow { get; set; }
+        public int? ToRow { get; set; }
         public EnumImportDuplicateOption? ImportDuplicateOptionId { get; set; }
         public IList<ImportExcelMappingField> MappingFields { get; set; }
     }
