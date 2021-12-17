@@ -53,7 +53,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             await _consumptionGroupActivityLog.LogBuilder(() => ConsumptionGroupActivityLogMessage.Create)
                .MessageResourceFormatDatas(model.ProductMaterialsConsumptionGroupCode)
-               .ObjectId(group.ProductMaterialsConsumptionGroupId)
+               .ObjectId(entity.ProductMaterialsConsumptionGroupId)
                .JsonData(model.JsonSerialize())
                .CreateLog();
 
