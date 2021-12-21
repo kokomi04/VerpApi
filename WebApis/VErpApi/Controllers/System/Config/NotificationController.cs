@@ -58,7 +58,7 @@ namespace VErpApi.Controllers.System
             });
         }
 
-        [HttpGet]
+        [HttpPut]
         [Route("subscription/marker")]
         [GlobalApi]
         public async Task<bool> UnSubscriptionByUserId([FromQuery] int objectTypeId, [FromQuery] int objectId, [FromQuery] int? billTypeId, [FromQuery] bool marker)
