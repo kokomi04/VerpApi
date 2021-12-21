@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Model.Notification;
@@ -42,6 +43,32 @@ namespace VErpApi.Controllers.System
         public async Task<IList<SubscriptionModel>> GetListSubscriptionByUserId()
         {
             return await _subscriptionService.GetListByUserId();
+        }
+
+        [HttpGet]
+        [Route("subscription/check")]
+        [GlobalApi]
+        public async Task<bool> CheckSubscriptionByUserId([FromQuery] int objectTypeId, [FromQuery] int objectId, [FromQuery] int? billTypeId)
+        {
+            return await _subscriptionService.CheckSubscription(new CheckSubscriptionSimpleModel 
+            {
+                BillTypeId = billTypeId,
+                ObjectId = objectId,
+                ObjectTypeId = objectTypeId
+            });
+        }
+
+        [HttpPut]
+        [Route("subscription/marker")]
+        [GlobalApi]
+        public async Task<bool> UnSubscriptionByUserId([FromQuery] int objectTypeId, [FromQuery] int objectId, [FromQuery] int? billTypeId, [FromQuery] bool marker)
+        {
+            return await _subscriptionService.MarkerSubscription(new CheckSubscriptionSimpleModel
+            {
+                BillTypeId = billTypeId,
+                ObjectId = objectId,
+                ObjectTypeId = objectTypeId
+            }, marker);
         }
 
         [HttpPost]
