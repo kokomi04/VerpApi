@@ -13,6 +13,7 @@ namespace VErp.Services.Master.Model.Notification
         public long CreatedDatetimeUtc { get; set; }
         public long? ReadDateTimeUtc { get; set; }
         public bool IsRead { get; set; }
+        public long SubscriptionId {get;set;}
 
         public void Mapping(Profile profile)
         {

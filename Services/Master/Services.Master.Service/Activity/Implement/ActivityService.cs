@@ -109,7 +109,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     UserActivityLogId = activity.UserActivityLogId
                 };
 
-                await AddNotification(bodyNotification);
+                await AddNotification(bodyNotification, input.UserId);
 
                 await _activityLogContext.SaveChangesAsync();
 
@@ -269,9 +269,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return results;
         }
 
-        private async Task<bool> AddNotification(NotificationAdditionalModel model)
+        private async Task<bool> AddNotification(NotificationAdditionalModel model, int userId)
         {
-            var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && _currentContextService.UserId != x.UserId);
+            var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && userId != x.UserId);
             if (model.BillTypeId.HasValue)
                 querySub = querySub.Where(x => x.BillTypeId == model.BillTypeId);
 

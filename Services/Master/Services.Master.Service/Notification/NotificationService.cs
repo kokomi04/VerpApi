@@ -39,6 +39,22 @@ namespace VErp.Services.Master.Service.Notification
 
         public async Task<IList<NotificationModel>> GetListByUserId()
         {
+            // var query = from nf in _activityLogContext.Notification
+            //             join l in _activityLogContext.UserActivityLog on nf.UserActivityLogId equals l.UserActivityLogId into lg
+            //             from l in lg.DefaultIfEmpty()
+            //             join s in _activityLogContext.Subscription on new { nf.UserId, l.ObjectId, l.ObjectTypeId, l.BillTypeId } equals new { s.UserId, s.ObjectId, s.ObjectTypeId, s.BillTypeId } into sg
+            //             from s in sg.DefaultIfEmpty()
+            //             where nf.UserId == _currentContextService.UserId
+            //             select new NotificationModel
+            //             {
+            //                 CreatedDatetimeUtc = nf.CreatedDatetimeUtc.GetUnix(),
+            //                 IsRead = nf.IsRead,
+            //                 NotificationId = nf.NotificationId,
+            //                 ReadDateTimeUtc = nf.ReadDateTimeUtc.GetUnix(),
+            //                 SubscriptionId = s.SubscriptionId,
+            //                 UserActivityLogId = nf.UserActivityLogId,
+            //                 UserId = s.UserId
+            //             };
             var query = _activityLogContext.Notification.Where(x => x.UserId == _currentContextService.UserId);
 
             return await query.AsNoTracking().OrderBy(x => x.CreatedDatetimeUtc).ProjectTo<NotificationModel>(_mapper.ConfigurationProvider).ToListAsync();
