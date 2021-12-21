@@ -1091,7 +1091,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _notificationFactoryService.AddSubscriptionToThePermissionPerson(new SubscriptionToThePermissionPersonSimpleModel
                 {
                     ObjectId = info.PurchaseOrderId,
-                    ObjectTypeId = (int)EnumObjectType.InventoryInput,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder,
                     ModuleId = _currentContext.ModuleId,
                     PermissionId = (int)EnumActionType.Censor
                 });
@@ -1271,7 +1271,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _notificationFactoryService.AddSubscriptionToThePermissionPerson(new SubscriptionToThePermissionPersonSimpleModel
                 {
                     ObjectId = info.PurchaseOrderId,
-                    ObjectTypeId = (int)EnumObjectType.InventoryInput,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder,
                     ModuleId = _currentContext.ModuleId,
                     PermissionId = (int)EnumActionType.Check
                 });

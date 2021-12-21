@@ -19,9 +19,11 @@ namespace VErp.Services.Master.Service.Notification
     public interface ISubscriptionService
     {
         Task<long> AddSubscription(SubscriptionModel model);
-        Task<IList<SubscriptionModel>> GetListByUserId();
-        Task<bool> UnSubscription(long subscriptionId);
         Task<bool> AddSubscriptionToThePermissionPerson(SubscriptionToThePermissionPersonSimpleModel req);
+        Task<bool> CheckSubscription(CheckSubscriptionSimpleModel model);
+        Task<IList<SubscriptionModel>> GetListByUserId();
+        Task<bool> MarkerSubscription(CheckSubscriptionSimpleModel model, bool marker);
+        Task<bool> UnSubscription(long subscriptionId);
     }
 
     public class SubscriptionService : ISubscriptionService
@@ -41,6 +43,37 @@ namespace VErp.Services.Master.Service.Notification
             _currentContextService = currentContextService;
             _userHelperService = userHelperService;
             _roleHelperService = roleHelperService;
+        }
+
+        public async Task<bool> CheckSubscription(CheckSubscriptionSimpleModel model)
+        {
+            return await _activityLogContext.Subscription.AnyAsync(x => x.UserId == _currentContextService.UserId && x.BillTypeId == model.BillTypeId && x.ObjectTypeId == model.ObjectTypeId && x.ObjectId == model.ObjectId);
+        }
+
+        public async Task<bool> MarkerSubscription(CheckSubscriptionSimpleModel model, bool marker)
+        {
+            var exists = await _activityLogContext.Subscription.FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId && x.BillTypeId == model.BillTypeId && x.ObjectTypeId == model.ObjectTypeId && x.ObjectId == model.ObjectId);
+            if (exists == null)
+            {
+                if(marker)
+                {
+                    await AddSubscription(new SubscriptionModel
+                    {
+                        BillTypeId = model.BillTypeId,
+                        ObjectId = model.ObjectId,
+                        ObjectTypeId = model.ObjectTypeId,
+                        UserId = _currentContextService.UserId
+                    });
+                }
+                return true;
+            }
+
+            if(!marker)
+                exists.IsDeleted = true;
+                
+            _activityLogContext.SaveChanges();
+
+            return true;
         }
 
         public async Task<IList<SubscriptionModel>> GetListByUserId()
