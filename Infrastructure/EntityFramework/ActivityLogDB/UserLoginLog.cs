@@ -12,6 +12,7 @@ namespace ActivityLogDB
         public string UserName { get; set; }
         public string IpAddress { get; set; }
         public string UserAgent { get; set; }
+        public int Status { get; set; }
         public int MessageTypeId { get; set; }
         public string MessageResourceName { get; set; }
         public string MessageResourceFormatData { get; set; }

@@ -438,7 +438,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 foreach (var propertyName in propertyNames)
                 {
                     prop = Expression.PropertyOrField(prop, propertyName);
+                    if (Nullable.GetUnderlyingType(prop.Type) != null)
+                    {
+                        var getValueMethod = prop.Type.GetMethod("GetValueOrDefault", Type.EmptyTypes);
+                        prop = Expression.Call(prop, getValueMethod);
+                    }
                 }
+
 
                 if (clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
                     clause.DataType = EnumDataType.BigInt;
