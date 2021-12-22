@@ -123,6 +123,9 @@
   <data name="ExistedChildrenRoles" xml:space="preserve">
     <value>Đang tồn tại nhóm con</value>
   </data>
+  <data name="ExistsUserInRole" xml:space="preserve">
+    <value>Đang tồn tại người dùng sử dụng nhóm quyền này ("{0}")</value>
+  </data>
   <data name="LoopbackParentRole" xml:space="preserve">
     <value>Nhóm cha không được là chính nó</value>
   </data>

@@ -123,6 +123,9 @@
   <data name="ExistedChildrenRoles" xml:space="preserve">
     <value>There are some children roles</value>
   </data>
+  <data name="ExistsUserInRole" xml:space="preserve">
+    <value>Exists user in this role  ("{0}")</value>
+  </data>
   <data name="LoopbackParentRole" xml:space="preserve">
     <value>The parent role can not be itself</value>
   </data>
