@@ -24,6 +24,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<ProductModel> GetProduct(int productId);
 
         Task<IEnumerable<ProductMaterialsConsumptionSimpleModel>> GetProductMaterialsConsumptions(int[] productIds);
+        Task<bool> UpdateProductionProcessVersion(long productId);
+        Task<long> GetProductionProcessVersion(long productId);
     }
 
 
@@ -202,6 +204,16 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IEnumerable<ProductMaterialsConsumptionSimpleModel>> GetProductMaterialsConsumptions(int[] productIds)
         {
             return await _httpCrossService.Post<IEnumerable<ProductMaterialsConsumptionSimpleModel>>($"api/internal/InternalProductMaterialsConsumption", productIds);
+        }
+
+        public async Task<bool> UpdateProductionProcessVersion(long productId)
+        {
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProduct/{productId}/productionProcessVersion", new {});
+        }
+
+        public async Task<long> GetProductionProcessVersion(long productId)
+        {
+            return await _httpCrossService.Get<long>($"api/internal/InternalProduct/{productId}/productionProcessVersion");
         }
     }
 }

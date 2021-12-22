@@ -916,6 +916,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 await UpdateProductionProcessManual(containerTypeId, containerId, req);
 
+                if(containerTypeId == EnumContainerType.Product)
+                    await _productHelperService.UpdateProductionProcessVersion(containerId);
+
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req.JsonSerialize());
 

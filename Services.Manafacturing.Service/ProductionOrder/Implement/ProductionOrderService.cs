@@ -57,6 +57,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _draftDataHelperService = draftDataHelperService;
         }
 
+        public async Task<bool> UpdateProductionProcessVersion(long productionOrderId)
+        {
+            var productOrder = _manufacturingDBContext.ProductionOrder
+                .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
+
+            if (productOrder == null)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX không tồn tại");
+
+            var productOrderDetails = _manufacturingDBContext.ProductionOrderDetail
+                .Where(o => o.ProductionOrderId == productionOrderId).ToList();
+
+            if (productOrderDetails.Count > 1)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX có nhiều mặt hàng. Không thể cập nhật phiên bản mới nhất của quy trình sản xuất");
+
+            var version = await _productHelperService.GetProductionProcessVersion(productOrderDetails.First().ProductId);
+
+            productOrder.ProductionProcessVersion = version;
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
         {
             if (productionOrderCodes.Count == 0) return Array.Empty<ProductionOrderListModel>();

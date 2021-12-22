@@ -200,5 +200,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.UpdateProductionOrderConfiguration(model);
         }
+
+        [HttpPut]
+        [Route("{productionOrderId}/productionProcessVersion")]
+        public async Task<bool> UpdateProductionProcessVersion([FromRoute]long productionOrderId)
+        {
+            return await _productionOrderService.UpdateProductionProcessVersion(productionOrderId);
+        }
     }
 }

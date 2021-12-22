@@ -68,6 +68,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? PackingWidth { get; set; }
         public decimal? PackingLong { get; set; }
         public decimal? PackingHeight { get; set; }
+        public long? ProductionProcessVersion { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }

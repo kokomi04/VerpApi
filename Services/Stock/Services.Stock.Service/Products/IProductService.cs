@@ -40,5 +40,8 @@ namespace VErp.Services.Stock.Service.Products
         Task<int> CopyProductBom(int sourceProductId, int destProductId);
         Task<int> CopyProductMaterialConsumption(int sourceProductId, int destProductId);
 
+        Task<bool> UpdateProductionProcessVersion(int productId);
+        Task<long> GetProductionProcessVersion(int productId);
+
     }
 }

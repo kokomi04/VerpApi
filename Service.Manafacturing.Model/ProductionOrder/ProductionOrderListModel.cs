@@ -26,6 +26,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public bool IsInvalid { get; set; }
 
         public decimal? DecimalPlace { get; set; }
+
+        public bool HasNewProductionProcessVersion { get; set; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionOrderListEntity, ProductionOrderListModel>()
@@ -56,5 +59,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal UnitPrice { get; set; }
         public bool HasAssignment { get; set; }
         public bool IsInvalid { get; set; }
+        public bool HasNewProductionProcessVersion { get; set; }
     }
 }
