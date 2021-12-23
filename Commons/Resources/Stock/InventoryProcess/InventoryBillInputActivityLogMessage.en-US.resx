@@ -135,10 +135,16 @@
   <data name="Import" xml:space="preserve">
     <value>Imported from excel the input inventory "{0}"</value>
   </data>
+  <data name="Reject" xml:space="preserve">
+    <value>Refuse to approve input inventory {0}</value>
+  </data>
   <data name="Update" xml:space="preserve">
     <value>Updated input inventory "{0}"</value>
   </data>
   <data name="UpdateAndApprove" xml:space="preserve">
     <value>Updated and approved the input inventory "{0}"</value>
+  </data>
+  <data name="WaitToCensor" xml:space="preserve">
+    <value>Send for approval of input inventory {0}</value>
   </data>
 </root>

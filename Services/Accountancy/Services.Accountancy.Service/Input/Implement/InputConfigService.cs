@@ -351,7 +351,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             OnBlur = field.OnBlur,
                             OnChange = field.OnChange,
                             AutoFocus = field.AutoFocus,
-                            Column = field.Column
+                            Column = field.Column,
+                            CustomButtonHtml = field.CustomButtonHtml,
+                            CustomButtonOnClick = field.CustomButtonOnClick,
+                            MouseEnter = field.MouseEnter,
+                            MouseLeave = field.MouseLeave
                         };
                         await _accountancyDBContext.InputAreaField.AddAsync(cloneField);
                     }
@@ -1149,6 +1153,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.ReferenceUrl = field.ReferenceUrl;
                         curField.IsBatchSelect = field.IsBatchSelect;
                         curField.OnClick = field.OnClick;
+
+                        curField.CustomButtonHtml = field.CustomButtonHtml;
+                        curField.CustomButtonOnClick = field.CustomButtonOnClick;
+                        curField.MouseEnter = field.MouseEnter;
+                        curField.MouseLeave = field.MouseLeave;
                     }
                 }
 

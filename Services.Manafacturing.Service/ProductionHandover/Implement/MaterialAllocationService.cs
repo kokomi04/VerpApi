@@ -202,7 +202,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var inputDataMap = inputLinkDatas
                 .GroupBy(d => d.ProductionStepId)
-                .ToDictionary(g => g.Key, g => g.Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input).Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId }).Distinct().ToList());
+                .ToDictionary(g => g.Key, g => g
+                    .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionProcess.EnumProductionStepLinkDataRoleType.Input)
+                    .Select(d => new InOutMaterialModel { ObjectId = d.ObjectId, ObjectTypeId = d.ObjectTypeId })
+                    .Distinct()
+                    .ToList()
+                );
 
             var stepDataMap = linkDatas
                 .GroupBy(d => d.ProductionStepId)
@@ -225,6 +230,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var assignments = lstAssignments
                 .GroupBy(a => a.ProductionStepId)
                 .ToDictionary(g => g.Key, g => g.Select(a => a.DepartmentId).ToList());
+
+            // Map thông tin vật tư đầu vào, bộ phận phân công theo công đoạn
+            var inputStepObjectMap = new List<InputStepObjectDepartmentModel>();
+            foreach (var inputProductionStepId in inputProductionStepIds)
+            {
+                var inputStepObjectDepartment = new InputStepObjectDepartmentModel
+                {
+                    ProductionStepId = inputProductionStepId,
+                    ProductIds = inputLinkDatas.Where(d => d.ProductionStepId == inputProductionStepId).Select(d => d.ObjectId).Distinct().ToList(),
+                    DepartmentIds = assignments.ContainsKey(inputProductionStepId) ? assignments[inputProductionStepId] : new List<int>()
+                };
+                inputStepObjectMap.Add(inputStepObjectDepartment);
+            }
 
             var assignmentDataMap = new Dictionary<int, InOutProductionStepModel>();
             foreach (var item in lstAssignments)
@@ -294,6 +312,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 ConflictMaterialRequirements = conflictMaterialRequirements,
                 ConflictHandovers = conflictHandovers,
                 InputProductionSteps = inputProductionSteps,
+                InputStepObjectMap = inputStepObjectMap,
                 InputDataMap = inputDataMap,
                 Assignments = assignments
             };
@@ -412,6 +431,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var assignments = lstAssignments
                     .GroupBy(a => a.ProductionStepId)
                     .ToDictionary(g => g.Key, g => g.Select(a => a.DepartmentId).ToList());
+
 
                 var assignmentDataMap = new Dictionary<int, InOutProductionStepModel>();
                 foreach (var item in lstAssignments)

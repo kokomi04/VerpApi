@@ -55,7 +55,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="productIds">Danh sách ID mặt hàng</param>
         /// <param name="accountancyAccountNumber">Tài khoản kế toán</param>
         /// <param name="stockId">ID kho</param>
-        /// <param name="isApproved">Đã duyệt hay chưa</param>
+        /// <param name="inventoryStatusId">Trạng thái</param>
         /// <param name="type">Loại (1: Nhập kho, 2: Xuất kho)</param>
         /// <param name="beginTime">Từ ngày</param>
         /// <param name="endTime">Đến ngày</param>
@@ -64,15 +64,16 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="asc">Tăng dần hay giảm dần</param>
         /// <param name="page">Trang</param>
         /// <param name="size">Số bản ghi/trang</param>
+        /// <param name="inventoryActionId">Hành động</param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] bool? isApproved, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] int? inventoryStatusId, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? inventoryActionId)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, customerId, productIds, accountancyAccountNumber, stockId, isApproved, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, productIds, accountancyAccountNumber, stockId, inventoryStatusId, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size, inventoryActionId).ConfigureAwait(true);
         }
 
 
@@ -320,6 +321,52 @@ namespace VErpApi.Controllers.Stock.Inventory
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             return _inventoryService.ParseExcel(mapping, file.OpenReadStream(), inventoryTypeId);
+        }
+
+        /// <summary>
+        /// Gửi email thông báo duyệt xuất/nhập kho
+        /// </summary>
+        /// <param name="inventoryId"></param>
+        /// <param name="mailCode"></param>
+        /// <param name="mailTo"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("{inventoryId}/notify/sendMail")]
+        public async Task<bool> SendMailNotifyCheckAndCensor([FromRoute] long inventoryId, [FromQuery] string mailCode, [FromBody] string[] mailTo)
+        {
+            return await _inventoryService.SendMailNotifyCensor(inventoryId, mailCode, mailTo).ConfigureAwait(true);
+        }
+
+        
+        [HttpPut]
+        [Route("{inventoryId}/sentToCensor")]
+        public async Task<bool> SentToCensor([FromRoute]long inventoryId, [FromQuery] EnumInventoryType type){
+            switch (type)
+            {
+                case EnumInventoryType.Input:
+                    return await _inventoryBillInputService.SentToCensor(inventoryId);
+
+                case EnumInventoryType.Output:
+                    return await _inventoryBillOutputService.SentToCensor(inventoryId);
+                default:
+                    throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+        }
+        
+        [HttpPut]
+        [Route("{inventoryId}/reject")]
+        public async Task<bool> RejectCensored([FromRoute]long inventoryId, [FromQuery] EnumInventoryType type)
+        {
+            switch (type)
+            {
+                case EnumInventoryType.Input:
+                    return await _inventoryBillInputService.Reject(inventoryId);
+
+                case EnumInventoryType.Output:
+                    return await _inventoryBillOutputService.Reject(inventoryId);
+                default:
+                    throw new BadRequestException(GeneralCode.InvalidParams);
+            }
         }
 
     }

@@ -9,6 +9,22 @@ namespace VErp.Commons.Enums.MasterEnum
 {
     public static class EnumValueExtensions
     {
+        public static EnumDataType[] GetAllowedDataType(this Enum value)
+        {
+            try
+            {
+                FieldInfo fi = value.GetType().GetField(value.ToString());
+                if (fi == null)
+                    return Array.Empty<EnumDataType>();
+                var attributes = (AllowedDataTypeAttribute[])fi.GetCustomAttributes(typeof(AllowedDataTypeAttribute), false);
+                return (attributes.Length > 0) ? attributes[0].AllowedDataType : Array.Empty<EnumDataType>();
+            }
+            catch (Exception)
+            {
+                return Array.Empty<EnumDataType>();
+            }
+        }
+
         public static int GetParamNumber(this Enum value)
         {
             try

@@ -61,7 +61,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<RefOutsourcePartRequest> RefOutsourcePartRequest { get; set; }
         public virtual DbSet<RefOutsourceStepRequest> RefOutsourceStepRequest { get; set; }
         public virtual DbSet<RefProduct> RefProduct { get; set; }
-        public virtual DbSet<VoucherAction> VoucherAction { get; set; }
+        //public virtual DbSet<VoucherAction> VoucherAction { get; set; }
         public virtual DbSet<VoucherArea> VoucherArea { get; set; }
         public virtual DbSet<VoucherAreaField> VoucherAreaField { get; set; }
         public virtual DbSet<VoucherBill> VoucherBill { get; set; }
@@ -912,22 +912,24 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
             });
 
-            modelBuilder.Entity<VoucherAction>(entity =>
-            {
-                entity.Property(e => e.IconName).HasMaxLength(25);
+            //modelBuilder.Entity<VoucherAction>(entity =>
+            //{
+            //    entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
 
-                entity.Property(e => e.Title).HasMaxLength(128);
+            //    entity.Property(e => e.IconName).HasMaxLength(25);
 
-                entity.Property(e => e.VoucherActionCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
+            //    entity.Property(e => e.Title).HasMaxLength(128);
 
-                entity.HasOne(d => d.VoucherType)
-                    .WithMany(p => p.VoucherAction)
-                    .HasForeignKey(d => d.VoucherTypeId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Action_VoucherType");
-            });
+            //    entity.Property(e => e.VoucherActionCode)
+            //        .IsRequired()
+            //        .HasMaxLength(128);
+
+            //    entity.HasOne(d => d.VoucherType)
+            //        .WithMany(p => p.VoucherAction)
+            //        .HasForeignKey(d => d.VoucherTypeId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_Action_VoucherType");
+            //});
 
             modelBuilder.Entity<VoucherArea>(entity =>
             {
@@ -1014,6 +1016,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<VoucherField>(entity =>
             {
+                entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
+
                 entity.Property(e => e.DefaultValue).HasMaxLength(512);
 
                 entity.Property(e => e.FieldName)

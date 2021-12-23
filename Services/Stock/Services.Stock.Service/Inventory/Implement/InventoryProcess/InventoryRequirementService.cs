@@ -53,7 +53,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , ICurrentContextService currentContextService
             , IOutsideMappingHelperService outsideMappingHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            ):base(stockDBContext)
+            ) : base(stockDBContext)
         {
             _activityLogService = activityLogService;
             _logger = logger;
@@ -231,31 +231,25 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
             // Lấy thông tin xuất/nhập kho theo yêu cầu, mã lệnh SX, tổ nhận, sản phẩm
             // Do 1 phiếu yêu cầu tạo cho nhiều lệnh SX nên cần thêm thông tin mã lệnh SX, tổ nhận, sản phẩm để map chi tiết xuất/nhập kho nào với chi tiết yêu cầu nào
-            var productionOrderCodes = entity.InventoryRequirementDetail.Select(ird => ird.ProductionOrderCode).Distinct().ToList();
-            var departmentIds = entity.InventoryRequirementDetail.Select(ird => ird.DepartmentId).Distinct().ToList();
-            var productIds = entity.InventoryRequirementDetail.Select(ird => ird.ProductId).Distinct().ToList();
+            //var productionOrderCodes = entity.InventoryRequirementDetail.Select(ird => ird.ProductionOrderCode).Distinct().ToList();
+            //var departmentIds = entity.InventoryRequirementDetail.Select(ird => ird.DepartmentId).Distinct().ToList();
+            //var productIds = entity.InventoryRequirementDetail.Select(ird => ird.ProductId).Distinct().ToList();
+            var inventoryRequirementDetailIds = model.InventoryRequirementDetail.Select(ird => ird.InventoryRequirementDetailId).ToList();
+
+            // Lấy thông tin xuất/nhập kho theo ID chi tiết yêu cầu
             var inventoryMaps = _stockDbContext.InventoryDetail
                 .Include(id => id.Inventory)
-                .Where(id => model.InventoryRequirementCode == id.InventoryRequirementCode
-                && productionOrderCodes.Contains(id.ProductionOrderCode)
-                && departmentIds.Contains(id.Inventory.DepartmentId)
-                && productIds.Contains(id.ProductId))
+                .Where(id => id.InventoryRequirementDetailId.HasValue
+                && inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId.Value))
                 .Select(id => new
                 {
-                    id.ProductId,
-                    id.ProductionOrderCode,
-                    id.Inventory.DepartmentId,
-                    id.PrimaryQuantity,
-                    id.InventoryId,
-                    id.Inventory.InventoryCode
+                    InventoryRequirementDetailId = id.InventoryRequirementDetailId.Value,
+                    id.Inventory.InventoryCode,
+                    id.Inventory.InventoryId,
+                    id.PrimaryQuantity
                 })
                 .ToList()
-                .GroupBy(id => new
-                {
-                    id.ProductId,
-                    id.ProductionOrderCode,
-                    id.DepartmentId,
-                })
+                .GroupBy(id => id.InventoryRequirementDetailId)
                 .ToDictionary(g => g.Key, g => new
                 {
                     PrimaryQuantity = g.Sum(id => id.PrimaryQuantity),
@@ -272,7 +266,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 InventoryRequirementDetailOutputModel lastestDetail = null;
                 foreach (var detail in model.InventoryRequirementDetail)
                 {
-                    if (detail.ProductId == data.Key.ProductId && detail.ProductionOrderCode == data.Key.ProductionOrderCode && detail.DepartmentId == data.Key.DepartmentId)
+                    if (detail.InventoryRequirementDetailId == data.Key)
                     {
                         detail.InventoryInfo = data.Value.InventorySimpleInfos;
                         if (quantity <= 0) break;
@@ -332,7 +326,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 //}
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
+                if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw DuplicateProduct.BadRequest();
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
@@ -424,14 +418,16 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
                 if (inventoryRequirement == null) throw InvRequestNotFound.BadRequest();
 
-                if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
-                    throw ChangeInRequestCodeNotAllow.BadRequest();
+                if (string.IsNullOrEmpty(req.InventoryRequirementCode)) req.InventoryRequirementCode = inventoryRequirement.InventoryRequirementCode;
+
+                //if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
+                //    throw ChangeInRequestCodeNotAllow.BadRequest();
 
                 //if (inventoryRequirement.ProductionOrderId.HasValue)
                 //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
 
                 // validate product duplicate
-                if (req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
+                if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
                     throw DuplicateProduct.BadRequest();
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), inventoryRequirement.Date);
@@ -586,7 +582,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             {
                 foreach (var item in inventoryRequirement.InventoryRequirementDetail)
                 {
-                    if(assignStocks.ContainsKey(item.InventoryRequirementDetailId))
+                    if (assignStocks.ContainsKey(item.InventoryRequirementDetailId))
                     {
                         item.AssignStockId = assignStocks[item.InventoryRequirementDetailId];
                     }
@@ -614,7 +610,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 .ToListAsync();
 
             var entity = inventoryRequirements.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId.GetValueOrDefault() == productMaterialsConsumptionGroupId);
-          
+
             if (entity == null)
                 return null;
 

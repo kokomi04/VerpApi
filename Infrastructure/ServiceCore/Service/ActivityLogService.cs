@@ -20,6 +20,7 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using static VErp.Infrastructure.ServiceCore.Service.ActivityLogService;
 using VErp.Commons.Library.Formaters;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -34,6 +35,15 @@ namespace VErp.Infrastructure.ServiceCore.Service
         Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null);
 
         ActivityLogBatchs BeginBatchLog();
+
+        Task<bool> CreateUserLoginLog(int? userId,
+            string userName,
+            string ipAddress,
+            string userAgent,
+            string strSubId,
+            string message = null,
+            string messageResourceName = null,
+            string messageResourceFormatData = null);
 
     }
 
@@ -64,6 +74,40 @@ namespace VErp.Infrastructure.ServiceCore.Service
             return logBatchs;
         }
 
+        public async Task<bool> CreateUserLoginLog(int? userId,
+           string userName,
+           string ipAddress,
+           string userAgent,
+           string strSubId,
+           string message = null,
+           string messageResourceName = null,
+           string messageResourceFormatData = null)
+        {
+            try
+            {
+                var userLoginLog = new UserLoginLogModel
+                {
+                    UserId = userId,
+                    UserName = userName,
+                    IpAddress = ipAddress,
+                    UserAgent = userAgent,
+                    MessageTypeId = EnumMessageType.UserLogin,
+                    MessageResourceName = messageResourceName,
+                    MessageResourceFormatData = messageResourceFormatData,
+                    Message = message,
+                    CreatedDatetimeUtc = DateTime.UtcNow.GetUnix(),
+                    StrSubId = strSubId,
+                };
+                return await _httpCrossService.Post<bool>($"/api/internal/InternalActivityLog/LoginLog", userLoginLog);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ActivityLogService:CreateLoginLog");
+                return false;
+            }
+        }
+
         public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
         {
             if (ignoreBatch)
@@ -89,7 +133,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 return true;
             }
         }
-
 
         const string ACTIVITY_LOG_DATA_PREFIX = "$DATA";
         public object[] ParseActivityLogData(object[] objs)
@@ -198,7 +241,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     Message = message,
                     Data = jsonData
                 };
-
 
                 return await _httpCrossService.Post<bool>($"/api/internal/InternalActivityLog/Log", body);
 

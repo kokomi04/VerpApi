@@ -34,7 +34,7 @@ namespace VErpApi.Controllers.System
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _hrDataService.SearchHr(hrTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _hrDataService.SearchHr(hrTypeId, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
         [HttpGet]

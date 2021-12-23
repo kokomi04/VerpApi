@@ -4,13 +4,13 @@ using System.Net.Mail;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using System.Linq;
+using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IMailFactoryService
     {
-        Task<bool> Dispatch<T>(string[] mailTo, string mailTemplateCode, InternalObjectDataMail<T> data) where T : class;
+        Task<bool> Dispatch(string[] mailTo, string mailTemplateCode, ObjectDataTemplateMail data);
     }
 
     public class MailFactoryService : IMailFactoryService
@@ -22,7 +22,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _httpCrossService = httpCrossService;
         }
 
-        public async Task<bool> Dispatch<T>(string[] mailTo, string mailTemplateCode, InternalObjectDataMail<T> data) where T : class
+        public async Task<bool> Dispatch(string[] mailTo, string mailTemplateCode, ObjectDataTemplateMail data)
         {
             var config = await _httpCrossService.Get<EmailConfigSimpleModel>("api/internal/InternalEmailConfiguration");
             var mailTemplate = await _httpCrossService.Get<MailTemplateSimpleModel>($"api/internal/InternalEmailConfiguration/template?mailTemplateCode={mailTemplateCode}");
@@ -31,20 +31,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 var propertyName = m.Groups["PropertyName"].Value;
 
-                var internalType = typeof(InternalObjectDataMail<T>);
+                return data.GetPropertyValue<object>(propertyName)?.ToString();
+            });
 
-                if (internalType.GetProperties().Any(x => x.Name == propertyName) && propertyName != "Data")
-                {
-                    return internalType.GetProperty(propertyName).GetValue(data).ToString();
-                }
+            var subject = Regex.Replace(mailTemplate.Title, @"{{(?<PropertyName>[^}]+)}}", m =>
+            {
+                var propertyName = m.Groups["PropertyName"].Value;
 
-                var dynamicType = typeof(T);
-                if (dynamicType.GetProperties().Any(x => x.Name == propertyName))
-                {
-                    return dynamicType.GetProperty(propertyName).GetValue(data.Data).ToString();
-                }
-
-                return "";
+                return data.GetPropertyValue<object>(propertyName)?.ToString();
             });
 
             var mailArguments = new MailArguments()
@@ -52,11 +46,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 MailTo = mailTo,
                 MailFrom = config.MailFrom,
                 Message = message,
-                Name = "",
+                Name = "VERP",
                 Password = config.Password,
                 Port = config.Port,
                 SmtpHost = config.SmtpHost,
-                Subject = mailTemplate.Title
+                Subject = subject
             };
 
             return await Dispatch(mailArguments, config.IsSsl, true);

@@ -13,5 +13,6 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
         ThisFunctionIsInDevelopment = 2,
         NotFoundXmlData = 3,
         NotFoundPatternOrSerialOfEInvoice = 4,
+        NotFoundEInvoiceType = 5,
     }
 }

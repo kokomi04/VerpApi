@@ -66,8 +66,11 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             if (voucherData.List.Count > 0)
             {
                 var firstRow = voucherData.List[0];
-                if (firstRow.ContainsKey(VoucherConstants.VOUCHER_E_INVOICE_TYPE))
+                if (firstRow.ContainsKey(VoucherConstants.VOUCHER_BILL_CODE))
                 {
+                    var vEinvoiceType = firstRow[VoucherConstants.VOUCHER_E_INVOICE_TYPE];
+                    if(!Enum.IsDefined(typeof(EnumElectronicInvoiceType), vEinvoiceType))
+                        throw ElectronicInvoiceProviderErrorCode.NotFoundEInvoiceType.BadRequest();
                     einvoiceType = (EnumElectronicInvoiceType)(firstRow[VoucherConstants.VOUCHER_E_INVOICE_TYPE]);
                 }
 

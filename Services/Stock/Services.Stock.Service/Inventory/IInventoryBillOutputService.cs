@@ -69,5 +69,8 @@ namespace VErp.Services.Stock.Service.Stock
         /// <param name="size"></param>
         /// <returns></returns>
         //Task<PageData<PackageOutputModel>> GetPackageListForExport(int productId, IList<int> productCateIds, IList<int> stockIdList, int page = 1, int size = 20);
+
+        Task<bool> SentToCensor(long inventoryId);
+        Task<bool> Reject(long inventoryId);
     }
 }

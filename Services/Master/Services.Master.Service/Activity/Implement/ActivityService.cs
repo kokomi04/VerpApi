@@ -1,4 +1,6 @@
 ﻿using ActivityLogDB;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyModel;
@@ -15,13 +17,17 @@ using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Activity;
+using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Users;
+using NotificationEntity = ActivityLogDB.Notification;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
@@ -34,6 +40,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IMapper _mapper;
 
         public ActivityService(ActivityLogDBContext activityLogContext
             , IUserService userService
@@ -42,7 +49,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             , IAsyncRunnerService asyncRunnerService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
-            )
+            , IMapper mapper)
         {
             _activityLogContext = activityLogContext;
             _userService = userService;
@@ -51,6 +58,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _asyncRunnerService = asyncRunnerService;
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _mapper = mapper;
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -58,7 +66,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
         }
 
-        public async Task<bool> CreateActivityTask(ActivityInput input)
+        public async Task<long> CreateActivityTask(ActivityInput input)
         {
             using (var trans = await _activityLogContext.Database.BeginTransactionAsync())
             {
@@ -94,11 +102,61 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 }
                 await _activityLogContext.SaveChangesAsync();
 
+                var bodyNotification = new NotificationAdditionalModel
+                {
+                    BillTypeId = input.BillTypeId,
+                    ObjectId = input.ObjectId,
+                    ObjectTypeId = (int)input.ObjectTypeId,
+                    UserActivityLogId = activity.UserActivityLogId
+                };
+
+                await AddNotification(bodyNotification, input.UserId);
+
+                await _activityLogContext.SaveChangesAsync();
+
                 trans.Commit();
 
-                return true;
+                return activity.UserActivityLogId;
             }
         }
+
+
+        public async Task<PageData<UserLoginLogModel>> GetUserLoginLogs(int pageIdex, int pageSize, string keyword, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters)
+        {
+            var query = _activityLogContext.UserLoginLog.AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(l => l.UserName.Contains(keyword) || l.UserAgent.Contains(keyword));
+            }
+
+            if (fromDate > 0 && toDate > 0)
+            {
+                var fromDateTime = fromDate.UnixToDateTime().Value.AddMinutes(-_currentContextService.TimeZoneOffset.Value);
+                var toDateTime = toDate.UnixToDateTime().Value.AddMinutes(-_currentContextService.TimeZoneOffset.Value);
+                query = query.Where(l => l.CreatedDatetimeUtc.Date >= fromDateTime && l.CreatedDatetimeUtc.Date <= toDateTime);
+            }
+
+            if (string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "CreatedDatetimeUtc";
+                asc = false;
+            }
+
+            if (filters != null)
+            {
+                query = query.InternalFilter(filters);
+            }
+
+            var total = query.Count();
+
+            query = query.InternalOrderBy(orderByFieldName, asc);
+            query = pageSize > 0 ? query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize) : query.AsNoTracking();
+
+            var result = await query.ProjectTo<UserLoginLogModel>(_mapper.ConfigurationProvider).ToListAsync();
+            return (result, total);
+        }
+
 
         public async Task<bool> AddNote(int? billTypeId, long objectId, int objectTypeId, string message)
         {
@@ -123,7 +181,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
             return true;
         }
-        
+
 
         public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
@@ -182,11 +240,93 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     //MessageResourceName = item.MessageResourceName,
                     //MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId,
-                    IpAddress = item.IpAddress
+                    IpAddress = item.IpAddress,
+                    UserActivityLogId = item.UserActivityLogId
                 };
                 result.Add(actLogOutput);
             }
             return (result, total);
+        }
+
+        public async Task<IList<UserActivityLogOuputModel>> GetListUserActivityLogByArrayId(long[] arrActivityLogId)
+        {
+            var query = _activityLogContext.UserActivityLog.Where(x => arrActivityLogId.Contains(x.UserActivityLogId));
+
+            var ualDataList = query.AsNoTracking().ToList();
+
+            var userIds = ualDataList.Select(q => q.UserId).ToList();
+
+            var userInfos = (await _userService.GetBasicInfos(userIds))
+                 .ToDictionary(u => u.UserId, u => u);
+
+            var results = new List<UserActivityLogOuputModel>(ualDataList.Count);
+
+            foreach (var item in ualDataList)
+            {
+                var message = item.Message;
+                if (!string.IsNullOrWhiteSpace(item.MessageResourceName))
+                {
+                    string format = "";
+                    try
+                    {
+                        var data = item.MessageResourceFormatData.JsonDeserialize<object[]>();
+                        data = _activityLogService.ParseActivityLogData(data);
+                        format = ResourcesAssembly.GetResouceString(item.MessageResourceName);
+                        if (!string.IsNullOrWhiteSpace(format))
+                        {
+                            message = string.Format(format, data);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "ResourceFormat {0}", format);
+                    }
+                }
+
+                userInfos.TryGetValue(item.UserId, out var userInfo);
+                var actLogOutput = new UserActivityLogOuputModel
+                {
+                    UserId = item.UserId,
+                    UserName = userInfo?.UserName,
+                    FullName = userInfo?.FullName,
+                    AvatarFileId = userInfo?.AvatarFileId,
+                    ActionId = (EnumActionType?)item.ActionId,
+                    Message = message,
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
+                    MessageTypeId = (EnumMessageType)item.MessageTypeId,
+                    //MessageResourceName = item.MessageResourceName,
+                    //MessageResourceFormatData = item.MessageResourceFormatData,
+                    SubsidiaryId = item.SubsidiaryId,
+                    IpAddress = item.IpAddress,
+                    UserActivityLogId = item.UserActivityLogId,
+                    ObjectTypeId = item.ObjectTypeId,
+                    ObjectId = item.ObjectId,
+                    BillTypeId = item.BillTypeId
+                };
+                results.Add(actLogOutput);
+            }
+            return results;
+        }
+
+        private async Task<bool> AddNotification(NotificationAdditionalModel model, int userId)
+        {
+            var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && userId != x.UserId);
+            if (model.BillTypeId.HasValue)
+                querySub = querySub.Where(x => x.BillTypeId == model.BillTypeId);
+
+            var lsSubscription = await querySub.ProjectTo<SubscriptionModel>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var lsNewNotification = lsSubscription.Select(x => new NotificationEntity
+            {
+                IsRead = false,
+                UserId = x.UserId,
+                UserActivityLogId = model.UserActivityLogId
+            });
+
+            _activityLogContext.Notification.AddRange(lsNewNotification);
+            await _activityLogContext.SaveChangesAsync();
+
+            return true;
         }
     }
 }

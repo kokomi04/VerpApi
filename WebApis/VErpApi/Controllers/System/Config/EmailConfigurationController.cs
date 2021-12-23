@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Notification;
@@ -67,6 +68,13 @@ namespace VErpApi.Controllers.System
         public async Task<bool> UpdateMailTemplate([FromRoute] int mailTemplateId, [FromBody] MailTemplateModel model)
         {
             return await _mailTemplateService.UpdateMailTemplate(mailTemplateId, model);
+        }
+
+        [HttpGet]
+        [Route("template/fields")]
+        public async Task<IList<TemplateMailField>> GetTemplateMailFields()
+        {
+            return await _mailTemplateService.GetTemplateMailFields();
         }
     }
 }

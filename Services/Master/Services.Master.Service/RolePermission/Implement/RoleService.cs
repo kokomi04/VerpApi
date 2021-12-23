@@ -233,7 +233,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 trans.Commit();
             }
 
-         
+
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Create)
                .MessageResourceFormatDatas(roleInfo.RoleName)
                .ObjectId(roleInfo.RoleId)
@@ -375,7 +375,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             .ObjectId(roleInfo.RoleId)
             .JsonData(roleInfo.JsonSerialize())
             .CreateLog();
-       
+
             return true;
         }
 
@@ -393,6 +393,12 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             if (_masterContext.Role.Any(r => r.ParentRoleId == roleId))
             {
                 throw new BadRequestException(RoleErrorCode.ExistedChildrenRoles);
+            }
+
+            var user = await _masterContext.User.FirstOrDefaultAsync(u => u.RoleId == roleId);
+            if (user != null)
+            {
+                throw new BadRequestException(RoleErrorCode.ExistsUserInRole, new[] { user?.UserName });
             }
 
             using (var trans = _masterContext.Database.BeginTransaction())
@@ -544,7 +550,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             }));
             await _masterContext.SaveChangesAsync();
 
-            await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleStockPermission)          
+            await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleStockPermission)
                 .JsonData(req.JsonSerialize())
                 .CreateLog();
 
@@ -659,7 +665,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
         public async Task<IList<RolePermissionModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission)
         {
-            var lst = 
+            var lst =
                 from p in _masterContext.RolePermission
                 where p.ModuleId == moduleId && (p.Permission & premission) == premission
                 select new RolePermissionModel
@@ -737,14 +743,15 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 }
 
                 var roleInfo = roles.FirstOrDefault(r => r.RoleId == roleId);
-                roleInfo.ChildrenRoleIds = string.Join(",", childrenRoleIds);
+                if (roleInfo != null)
+                    roleInfo.ChildrenRoleIds = string.Join(",", childrenRoleIds);
             }
             _masterContext.SaveChanges();
         }
 
 
 
-    
+
 
 
         #endregion

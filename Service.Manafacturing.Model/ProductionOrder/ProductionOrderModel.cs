@@ -88,4 +88,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long? OrderDetailId { get; set; }
         public int ProductId { get; set; }
     }
+
+    public class UpdateDatetimeModel
+    {
+        public long[] ProductionOrderDetailIds { get; set; }
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
+        public long PlanEndDate { get; set; }
+    }
 }

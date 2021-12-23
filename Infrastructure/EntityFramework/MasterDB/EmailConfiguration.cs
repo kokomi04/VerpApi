@@ -12,7 +12,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int Port { get; set; }
         public string MailFrom { get; set; }
         public string Password { get; set; }
-        public bool IsSsl { get; set; }
+        public bool? IsSsl { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
     }

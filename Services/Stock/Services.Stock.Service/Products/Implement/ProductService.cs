@@ -745,8 +745,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(x => x.IsMaterials == isMaterials.Value);
             }
 
-
-            products = products.InternalFilter(filters);
             if (!string.IsNullOrWhiteSpace(productName))
             {
                 products = products.Where(p => p.ProductInternalName == productInternalName);
@@ -807,6 +805,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.Color
               });
 
+
             if (productTypeIds != null && productTypeIds.Length > 0)
             {
                 var types = productTypeIds.Select(t => (int?)t);
@@ -835,6 +834,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         || c.Description.Contains(keyword)
                         select c;
             }
+            query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
             var lstData = await query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size).ToListAsync();

@@ -56,12 +56,13 @@ namespace VErpApi.Controllers.System
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        [HttpGet]
-        [Route("")]
+        [HttpPost]
+        [Route("Search")]
+        [VErpAction(EnumActionType.View)]
         [GlobalApi]
-        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
-            return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size);
+            return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size, filters);
         }
 
 

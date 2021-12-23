@@ -1,0 +1,1 @@
+Update Inventory SET InventoryStatusId = 4 WHERE IsApproved = 1 and IsDeleted = 0;

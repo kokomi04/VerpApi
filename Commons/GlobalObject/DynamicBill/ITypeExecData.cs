@@ -27,6 +27,10 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string OnChange { get; set; }
         string OnClick { get; set; }
         string ReferenceUrl { get; set; }
+
+        string MouseEnter { get; set; }
+        string MouseLeave { get; set; }
+        string CustomButtonOnClick { get; set; }
     }
 
 
@@ -55,6 +59,10 @@ namespace VErp.Commons.GlobalObject.DynamicBill
         string OnClickExec { get; }
 
         string ReferenceUrlExec { get; }
+
+        string MouseEnterExec { get; }
+        string MouseLeaveExec { get; }
+        string CustomButtonOnClickExec { get; }
     }
 
 

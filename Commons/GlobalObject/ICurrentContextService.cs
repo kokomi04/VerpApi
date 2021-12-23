@@ -15,6 +15,8 @@ namespace VErp.Commons.GlobalObject
         bool IsDeveloper { get; }
         string Language { get; }
         string IpAddress { get; }
+        string Domain { get; }
+        int ModuleId {get;}
     }
 
     public static class CurrentContextServiceExtensions
