@@ -162,4 +162,10 @@
   <data name="ImportConsumption" xml:space="preserve">
     <value>Import vật tư tiêu hao cho mặt hàng "{0}"</value>
   </data>
+  <data name="ImportNew" xml:space="preserve">
+    <value>Thêm mặt hàng từ excel  "{0}"</value>
+  </data>
+  <data name="ImportUpdate" xml:space="preserve">
+    <value>Cập nhật mặt hàng từ excel  "{0}"</value>
+  </data>
 </root>

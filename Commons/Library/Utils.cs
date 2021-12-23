@@ -1063,15 +1063,8 @@ namespace VErp.Commons.Library
                     {
                         try
                         {
-                            var v = dr[column.ColumnName];
-                            if (pro.PropertyType == typeof(long) && v?.GetType() == typeof(DateTime))
-                            {
-                                pro.SetValue(obj, (dr[column.ColumnName] as DateTime?).GetUnix(), null);
-                            }
-                            else
-                            {
-                                pro.SetValue(obj, dr[column.ColumnName], null);
-                            }
+                            var v = ConvertObjectToSpecialType(pro, dr[column.ColumnName]);
+                            pro.SetValue(obj, v, null);
 
                         }
                         catch (Exception)
@@ -1088,6 +1081,26 @@ namespace VErp.Commons.Library
             return obj;
         }
 
+        private static object ConvertObjectToSpecialType(PropertyInfo pro, object v)
+        {
+            var type = pro.PropertyType;
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                type = pro.PropertyType.GenericTypeArguments[0];
+            }
+
+            if (type == typeof(long) && v?.GetType() == typeof(DateTime))
+            {
+                return (v as DateTime?).GetUnix();
+            }
+
+            if (type.IsEnum)
+            {
+                return Enum.ToObject(type, v);
+            }
+
+            return v;
+        }
         public static List<T> ConvertDataModel<T>(this DataTable data) where T : NonCamelCaseDictionary, new()
         {
             var lst = new List<T>();
