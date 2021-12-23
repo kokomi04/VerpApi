@@ -12,7 +12,9 @@ namespace VErp.Services.Master.Model.Data
         public string ObjectCode { get; set; }
         public long ObjectId { get; set; }
         public string ObjectTitle { get; set; }
+        public long? ObjectDate { get; set; }
         public EnumObjectType? Parent_ObjectTypeId { get; set; }
         public string Parent_ObjectCode { get; set; }
+        
     }
 }
