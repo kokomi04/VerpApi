@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using AutoMapper.QueryableExtensions;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using System.ComponentModel;
 
 namespace VErp.Services.Master.Service.Notification
 {
@@ -22,6 +24,8 @@ namespace VErp.Services.Master.Service.Notification
         Task<MailTemplateModel> GetMailTemplate(int mailTemplateId);
         Task<MailTemplateModel> GetMailTemplateByCode(string code);
         Task<bool> UpdateMailTemplate(int mailTemplateId, MailTemplateModel model);
+        Task<IList<TemplateMailField>> GetTemplateMailFields();
+
     }
 
     public class MailTemplateService : IMailTemplateService
@@ -102,6 +106,23 @@ namespace VErp.Services.Master.Service.Notification
             await _masterDBContext.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<IList<TemplateMailField>> GetTemplateMailFields()
+        {
+            var fields = new List<TemplateMailField>();
+
+            foreach (var prop in typeof(ObjectDataTemplateMail).GetProperties())
+            {
+                var attributes = (DescriptionAttribute[])prop.GetCustomAttributes(typeof(DescriptionAttribute), false);
+
+                var title = (attributes.Length > 0) ? attributes[0].Description : prop.Name;
+                var fieldName = prop.Name;
+
+
+                fields.Add(new TemplateMailField() { Title = title, FieldName = fieldName });
+            }
+            return await Task.FromResult(fields);
         }
 
         private async Task<bool> HasMailTemplateInSystem(string templateCode)

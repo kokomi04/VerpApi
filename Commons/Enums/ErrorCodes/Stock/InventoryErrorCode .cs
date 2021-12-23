@@ -25,5 +25,11 @@ namespace VErp.Commons.Enums.StandardEnum
         InOuputAffectObjectsInvalid = 9,
         CanNotChangeStock = 10,
         InventoryNotApprovedYet = 11,
+        CanNotChangeProductInventoryHasRequirement = 12,
+        InventoryNotSentToCensorYet = 13,
+        InventoryAlreadyRejected = 14,
+        InventoryNotPassCheckYet = 15,
+        InventoryNotDraffYet = 16,
+        InventoryNotCensoredYet = 17,
     }
 }

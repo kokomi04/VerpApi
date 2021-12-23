@@ -11,6 +11,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
+using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.RolePermission;
@@ -41,6 +42,13 @@ namespace VErpApi.Controllers.System.Internal
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _roleService.GrantPermissionForAllRoles(data.ModuleId, data.ObjectTypeId, data.ObjectId);
+        }
+
+        [HttpGet]
+        [Route("ByModuleAndPermission")]
+        public Task<IList<RolePermissionModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission)
+        {
+            return _roleService.GetRolesPermissionByModuleAndPermission(moduleId, premission);
         }
 
     }

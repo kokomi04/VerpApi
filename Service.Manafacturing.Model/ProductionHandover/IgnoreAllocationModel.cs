@@ -25,6 +25,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public IList<ProductionHandoverModel> ConflictHandovers { get; set; }
 
         public IList<ProductionStepSimpleModel> InputProductionSteps { get; set; }
+        public IList<InputStepObjectDepartmentModel> InputStepObjectMap { get; set; }
         public IDictionary<long, List<InOutMaterialModel>> InputDataMap { get; set; }
         public IDictionary<long, List<int>> Assignments { get; set; }
     }
@@ -45,5 +46,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
     {
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
+    }
+
+    public class InputStepObjectDepartmentModel
+    {
+        public long ProductionStepId { get; set; }
+        public List<long> ProductIds { get; set; }
+        public List<int> DepartmentIds { get; set; }
     }
 }

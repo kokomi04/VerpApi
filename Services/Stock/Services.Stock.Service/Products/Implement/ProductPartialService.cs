@@ -272,9 +272,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
                     var checkParams = new[]
                     {
-                            removeConversionIds.ToSqlParameter("@ProductUnitConverionIds"),
-                            isInUsed
-                        };
+                        removeConversionIds.ToSqlParameter("@ProductUnitConverionIds"),
+                        isInUsed
+                    };
 
                     await _stockContext.ExecuteStoreProcedure("asp_ProductUnitConversion_CheckUsed", checkParams);
 
@@ -306,7 +306,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         c.ProductId = productId;
                         c.ProductUnitConversionId = 0;
+
+                        ValidatePu(c);
                     }
+
                     await _stockContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                 }
 
@@ -317,8 +320,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     if (db != null && u != null)
                     {
                         _mapper.Map(u, db);
+                        ValidatePu(db);
                     }
                 }
+
                 var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
                 if (defaultUnitConversion != null)
                 {
@@ -343,6 +348,29 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
+
+        private void ValidatePu(ProductUnitConversion pu)
+        {
+            try
+            {
+                if (!pu.IsDefault)
+                {
+                    var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
+                    if (!(eval > 0))
+                    {
+                        throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
+                    }
+                }
+                else
+                {
+                    pu.FactorExpression = "1";
+                }
+            }
+            catch (Exception)
+            {
+                throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
+            }
+        }
 
 
         public async Task<ProductPartialSellModel> SellInfo(int productId)

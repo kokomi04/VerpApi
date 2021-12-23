@@ -81,6 +81,15 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".csv" , EnumFileType.Document },
         };
 
+        private static readonly Dictionary<string, EnumFileType> ImageFileExtensionTypes = new Dictionary<string, EnumFileType>()
+        {
+            { ".jpg", EnumFileType.Image },
+            { ".jpeg", EnumFileType.Image },
+            { ".bmp", EnumFileType.Image },
+            { ".png"  , EnumFileType.Image },
+        };
+
+
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
         {
             { ".doc" , "application/msword" },
@@ -268,7 +277,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             if (!new[] { ".xlsx" }.Contains(ext))
             {
-                throw new BadRequestException(FileErrorCode.InvalidFileExtension,"Hệ thống chỉ hỗ trợ file *.xlsx");
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension, "Hệ thống chỉ hỗ trợ file *.xlsx");
             }
 
             var reader = new ExcelReader(file.OpenReadStream());
@@ -287,6 +296,11 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var filePath = GetPhysicalFilePath(fileInfo.FilePath);
             var fileName = Path.GetFileNameWithoutExtension(filePath);
+            var ext = Path.GetExtension(fileName).ToLower();
+            if (!ImageFileExtensionTypes.ContainsKey(ext))
+            {
+                return false;
+            }
 
             var relDirectory = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
             relDirectory = "/" + relDirectory.Trim('/') + "/thumbs";

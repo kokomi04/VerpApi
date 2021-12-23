@@ -30,6 +30,7 @@ using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMes
 using AutoMapper.QueryableExtensions;
 using AutoMapper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using Microsoft.AspNetCore.Http;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -46,10 +47,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IMapper _mapper;
         private readonly IMailFactoryService _mailFactoryService;
         private readonly IUserHelperService _userHelperService;
+        private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly INotificationFactoryService _notificationFactoryService;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
-           , IOptions<AppSetting> appSetting
            , ILogger<PurchasingSuggestService> logger
            , IActivityLogService activityLogService
            , IAsyncRunnerService asyncRunner
@@ -59,7 +61,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , ICustomGenCodeHelperService customGenCodeHelperService
            , IManufacturingHelperService manufacturingHelperService
            , IMapper mapper, IMailFactoryService mailFactoryService
-           , IUserHelperService userHelperService)
+           , IUserHelperService userHelperService, IOrganizationHelperService organizationHelperService
+           , INotificationFactoryService notificationFactoryService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -71,6 +74,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
             _mailFactoryService = mailFactoryService;
             _userHelperService = userHelperService;
+            _organizationHelperService = organizationHelperService;
+            _notificationFactoryService = notificationFactoryService;
         }
 
         public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
@@ -84,12 +89,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var checkedUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CheckedByUserId)?.FullName;
             var censortUser = users.FirstOrDefault(x=>x.UserId == purchaseOrder.CensorByUserId)?.FullName;
 
-            return await _mailFactoryService.Dispatch<PurchaseOrderOutput>(mailTo, mailTemplateCode, new InternalObjectDataMail<PurchaseOrderOutput>(){
+            var businessInfo = await _organizationHelperService.BusinessInfo();
+            
+            return await _mailFactoryService.Dispatch(mailTo, mailTemplateCode, new ObjectDataTemplateMail()
+            {
                 CensoredByUser = censortUser,
                 CheckedByUser = checkedUser,
-                CreatedByUser =createdUser,
+                CreatedByUser = createdUser,
                 UpdatedByUser = updatedUser,
-                Data = purchaseOrder
+                CompanyName = businessInfo.CompanyName,
+                F_Id = purchaseOrderId,
+                Code = purchaseOrder.PurchaseOrderCode,
+                TotalMoney = purchaseOrder.TotalMoney.ToString("#,##0.##"),
+                Domain = _currentContext.Domain
             });
         }
 
@@ -1076,11 +1088,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
+                await _notificationFactoryService.AddSubscriptionToThePermissionPerson(new SubscriptionToThePermissionPersonSimpleModel
+                {
+                    ObjectId = info.PurchaseOrderId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder,
+                    ModuleId = _currentContext.ModuleId,
+                    PermissionId = (int)EnumActionType.Censor
+                });
+
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckApprove)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
                    .JsonData((new { purchaseOrderId }).JsonSerialize())
                    .CreateLog();
+
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
+                {
+                    ObjectId = purchaseOrderId,
+                    UserId = _currentContext.UserId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder
+                });
 
                 return true;
             }
@@ -1241,12 +1268,25 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
+                await _notificationFactoryService.AddSubscriptionToThePermissionPerson(new SubscriptionToThePermissionPersonSimpleModel
+                {
+                    ObjectId = info.PurchaseOrderId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder,
+                    ModuleId = _currentContext.ModuleId,
+                    PermissionId = (int)EnumActionType.Check
+                });
 
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.SendToCensor)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
                   .ObjectId(info.PurchaseOrderId)
                   .JsonData((new { purchaseOrderId }).JsonSerialize())
                   .CreateLog();
+
+                await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel{
+                    ObjectId = purchaseOrderId,
+                    UserId = _currentContext.UserId,
+                    ObjectTypeId = (int)EnumObjectType.PurchaseOrder, 
+                });
                 return true;
             }
         }

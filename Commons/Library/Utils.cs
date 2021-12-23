@@ -268,9 +268,9 @@ namespace VErp.Commons.Library
                 var result = Convert.ToDecimal(outPut);
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, ProductErrorCode.InvalidUnitConversionExpression.GetEnumDescription() + " => " + expression + " " + ex.Message);
             }
         }
 
@@ -280,7 +280,7 @@ namespace VErp.Commons.Library
             return Eval(expression);
         }
 
-
+        /*
         public static (bool, decimal) GetPrimaryQuantityFromProductUnitConversionQuantity_bak(decimal productUnitConversionQuantity, decimal factorExpression, decimal inputData, int round)
         {
             var value = (productUnitConversionQuantity / factorExpression).RoundBy(round);
@@ -336,7 +336,7 @@ namespace VErp.Commons.Library
                 return (false, value.RoundBy(round));
             }
 
-        }
+        }*/
 
         public static (bool result, decimal primaryQuantity, decimal puQuantity) GetProductUnitConversionQuantityFromPrimaryQuantity(QuantityPairInputModel input)
         {
@@ -711,9 +711,27 @@ namespace VErp.Commons.Library
             obj.GetType().GetProperty(propertyName).SetValue(obj, value);
         }
 
-        public static T GetPropertyValue<T>(this object obj, string propertyName)
+        // public static T GetPropertyValue<T>(this object obj, string propertyName)
+        // {
+        //     return (T)obj.GetType().GetProperty(propertyName).GetValue(obj);
+        // }
+
+        public static T GetPropertyValue<T>(this object sourceObject, string propertyName)
         {
-            return (T)obj.GetType().GetProperty(propertyName).GetValue(obj);
+            if (sourceObject == null) throw new ArgumentNullException(nameof(sourceObject));
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new ArgumentException(nameof(propertyName));
+
+            foreach (string currentPropertyName in propertyName.Split('.'))
+            {
+                if (string.IsNullOrWhiteSpace(currentPropertyName)) throw new InvalidOperationException($"Invalid property '{propertyName}'");
+
+                PropertyInfo propertyInfo = sourceObject.GetType().GetProperty(currentPropertyName);
+                if (propertyInfo == null) throw new InvalidOperationException($"Property '{currentPropertyName}' not found");
+
+                sourceObject = propertyInfo.GetValue(sourceObject);
+            }
+
+            return sourceObject is T result ? result : default;
         }
 
 
@@ -1045,15 +1063,8 @@ namespace VErp.Commons.Library
                     {
                         try
                         {
-                            var v = dr[column.ColumnName];
-                            if (pro.PropertyType == typeof(long) && v?.GetType() == typeof(DateTime))
-                            {
-                                pro.SetValue(obj, (dr[column.ColumnName] as DateTime?).GetUnix(), null);
-                            }
-                            else
-                            {
-                                pro.SetValue(obj, dr[column.ColumnName], null);
-                            }
+                            var v = ConvertObjectToSpecialType(pro, dr[column.ColumnName]);
+                            pro.SetValue(obj, v, null);
 
                         }
                         catch (Exception)
@@ -1070,6 +1081,26 @@ namespace VErp.Commons.Library
             return obj;
         }
 
+        private static object ConvertObjectToSpecialType(PropertyInfo pro, object v)
+        {
+            var type = pro.PropertyType;
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                type = pro.PropertyType.GenericTypeArguments[0];
+            }
+
+            if (type == typeof(long) && v?.GetType() == typeof(DateTime))
+            {
+                return (v as DateTime?).GetUnix();
+            }
+
+            if (type.IsEnum)
+            {
+                return Enum.ToObject(type, v);
+            }
+
+            return v;
+        }
         public static List<T> ConvertDataModel<T>(this DataTable data) where T : NonCamelCaseDictionary, new()
         {
             var lst = new List<T>();

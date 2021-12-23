@@ -83,6 +83,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
+                whereCondition.Append("OR v.CustomerPO LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -379,6 +380,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public async Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId)
         {
             var productOrder = _manufacturingDBContext.ProductionOrder
+                .Include(x=>x.ProductionOrderAttachment)
                 .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
 
             ProductionOrderOutputModel model = null;
@@ -467,6 +469,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.StartDate > data.PlanEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.PlanEndDate > data.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
+
+                if(data.ProductionOrderDetail.Count == 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Cần có thông tin mặt hàng cần sản xuất");
 
                 if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
                     .Where(x => x.Count() > 1)
@@ -660,6 +665,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Where(x => x.Count() > 1)
                     .Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
+
+                if (data.ProductionOrderDetail.Count == 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Cần có thông tin mặt hàng cần sản xuất");
 
                 var productionOrder = _manufacturingDBContext.ProductionOrder
                     .Where(o => o.ProductionOrderId == productionOrderId)
@@ -972,6 +980,54 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "UpdateProductOrderNote");
+                throw;
+            }
+        }
+
+        public async Task<bool> EditDate(long[] productionOrderDetailId, long startDate, long planEndDate, long endDate)
+        {
+            if (startDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
+            if (endDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
+            if (planEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
+            if (startDate > planEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
+            if (planEndDate > endDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
+          
+            var productionOrderDetails = await _manufacturingDBContext.ProductionOrderDetail
+                .Where(pod => productionOrderDetailId.Contains(pod.ProductionOrderDetailId))
+                .ToListAsync();
+
+            var productionOrderIds = productionOrderDetails.Select(pod => pod.ProductionOrderId).Distinct().ToList();
+
+            var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => productionOrderIds.Contains(po.ProductionOrderId)).ToList();
+
+            if (productionOrders.Count == 0)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+            // Validate trạng thái
+            if (productionOrders.Any(po => po.ProductionOrderStatus == (int)EnumProductionStatus.Processing 
+            || po.ProductionOrderStatus == (int)EnumProductionStatus.OverDeadline
+            || po.ProductionOrderStatus == (int)EnumProductionStatus.Finished))
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất đã đi vào sản xuất");
+
+            try
+            {
+                foreach(var productionOrder in productionOrders)
+                {
+                    productionOrder.StartDate = startDate.UnixToDateTime().Value;
+                    productionOrder.EndDate = endDate.UnixToDateTime().Value;
+                    productionOrder.PlanEndDate = planEndDate.UnixToDateTime().Value;
+                }
+                _manufacturingDBContext.SaveChanges();
+
+                foreach (var productionOrder in productionOrders)
+                {
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật thời gian lệch sản xuất từ kế hoạch", productionOrder.JsonSerialize());
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateProductOrderDateTime");
                 throw;
             }
         }

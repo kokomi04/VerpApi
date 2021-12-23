@@ -62,6 +62,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IProductService _productService;
         private readonly IInventoryBillOutputService _inventoryBillOutputService;
         private readonly IInventoryBillInputService _inventoryBillInputService;
+        private readonly IUserHelperService _userHelperService;
+        private readonly IMailFactoryService _mailFactoryService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -80,7 +82,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductionHandoverHelperService productionHandoverHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            ) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
+            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;
@@ -92,11 +94,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _productService = productService;
             _inventoryBillOutputService = inventoryBillOutputService;
             _inventoryBillInputService = inventoryBillInputService;
+            _userHelperService = userHelperService;
+            _mailFactoryService = mailFactoryService;
         }
 
 
 
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, bool? isApproved = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null)
         {
             keyword = keyword?.Trim();
             accountancyAccountNumber = accountancyAccountNumber?.Trim();
@@ -123,6 +127,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 var endDate = endTime?.UnixToDateTime();
                 inventoryQuery = inventoryQuery.Where(q => q.Date <= endDate);
+            }
+
+            if(inventoryActionId.HasValue)
+            {
+                inventoryQuery = inventoryQuery.Where(q => q.InventoryActionId == inventoryActionId);
             }
 
 
@@ -171,9 +180,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                  select q;
             }
 
-            if (isApproved.HasValue)
+            if (inventoryStatusId.HasValue)
             {
-                inventoryQuery = inventoryQuery.Where(q => q.IsApproved == isApproved);
+                inventoryQuery = inventoryQuery.Where(q => q.InventoryStatusId == inventoryStatusId.Value);
             }
 
             if (customerId.HasValue)
@@ -320,14 +329,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             BillObjectTypeId = EnumObjectType.InputBill,
                             InputType_Title = m.InputTypeTitle
 
-                        }).ToList()
+                        }).ToList(),
+                    InventoryActionId = item.InventoryActionId,
+                    InventoryStatusId = item.InventoryStatusId
                 });
 
             }
             return (pagedData, total);
         }
-
         public async Task<InventoryOutput> InventoryInfo(long inventoryId)
+
         {
             try
             {
@@ -384,23 +395,34 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 //        InventoryRequirementCode = id.InventoryRequirementCode
                 //    }).ToList());
 
-                foreach (var details in inventoryDetails)
+                var requirementInventoryDetailIds = inventoryDetails.Select(id => id.InventoryRequirementDetailId).ToList();
+                var requirementInventoryCodeMap = (from ird in _stockDbContext.InventoryRequirementDetail
+                                                   join ir in _stockDbContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
+                                                   where requirementInventoryDetailIds.Contains(ird.InventoryRequirementDetailId)
+                                                   select new
+                                                   {
+                                                       ird.InventoryRequirementDetailId,
+                                                       ir.InventoryRequirementCode
+                                                   })
+                                                   .ToDictionary(ird => ird.InventoryRequirementDetailId, ird => ird.InventoryRequirementCode);
+
+                foreach (var detail in inventoryDetails)
                 {
                     ProductListOutput productOutput = null;
 
                     PackageEntity packageInfo = null;
 
-                    if (details.FromPackageId > 0)
+                    if (detail.FromPackageId > 0)
                     {
-                        packgeInfos.TryGetValue(details.FromPackageId.Value, out packageInfo);
+                        packgeInfos.TryGetValue(detail.FromPackageId.Value, out packageInfo);
                     }
 
-                    if (details.ToPackageId > 0)
+                    if (detail.ToPackageId > 0)
                     {
-                        packgeInfos.TryGetValue(details.ToPackageId.Value, out packageInfo);
+                        packgeInfos.TryGetValue(detail.ToPackageId.Value, out packageInfo);
                     }
 
-                    if (productInfos.TryGetValue(details.ProductId, out var productInfo))
+                    if (productInfos.TryGetValue(detail.ProductId, out var productInfo))
                     {
                         productOutput = new ProductListOutput
                         {
@@ -419,40 +441,41 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         };
                     }
 
-                    productUnitConversions.TryGetValue(details.ProductUnitConversionId, out var productUnitConversionInfo);
-
-                    var detail = new InventoryDetailOutput
+                    productUnitConversions.TryGetValue(detail.ProductUnitConversionId, out var productUnitConversionInfo);
+                    var inventoryRequirementCode = detail.InventoryRequirementDetailId.HasValue && requirementInventoryCodeMap.ContainsKey(detail.InventoryRequirementDetailId.Value) ? requirementInventoryCodeMap[detail.InventoryRequirementDetailId.Value] : null;
+                    var detailModel = new InventoryDetailOutput
                     {
-                        InventoryId = details.InventoryId,
-                        InventoryDetailId = details.InventoryDetailId,
-                        ProductId = details.ProductId,
+                        InventoryId = detail.InventoryId,
+                        InventoryDetailId = detail.InventoryDetailId,
+                        ProductId = detail.ProductId,
                         PrimaryUnitId = productInfo?.UnitId,
-                        RequestPrimaryQuantity = details.RequestPrimaryQuantity?.RoundBy(),
-                        PrimaryQuantity = details.PrimaryQuantity.RoundBy(),
-                        UnitPrice = details.UnitPrice,
-                        ProductUnitConversionId = details.ProductUnitConversionId,
-                        RequestProductUnitConversionQuantity = details.RequestProductUnitConversionQuantity?.RoundBy(),
-                        ProductUnitConversionQuantity = details.ProductUnitConversionQuantity.RoundBy(),
-                        ProductUnitConversionPrice = details.ProductUnitConversionPrice,
-                        FromPackageId = details.FromPackageId,
-                        ToPackageId = details.ToPackageId,
+                        RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(),
+                        PrimaryQuantity = detail.PrimaryQuantity.RoundBy(),
+                        UnitPrice = detail.UnitPrice,
+                        ProductUnitConversionId = detail.ProductUnitConversionId,
+                        RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(),
+                        ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(),
+                        ProductUnitConversionPrice = detail.ProductUnitConversionPrice,
+                        FromPackageId = detail.FromPackageId,
+                        ToPackageId = detail.ToPackageId,
                         ToPackageCode = packageInfo?.PackageCode,
                         FromPackageCode = packageInfo?.PackageCode,
-                        PackageOptionId = details.PackageOptionId,
+                        PackageOptionId = detail.PackageOptionId,
 
-                        RefObjectTypeId = details.RefObjectTypeId,
-                        RefObjectId = details.RefObjectId,
-                        RefObjectCode = details.RefObjectCode,
-                        OrderCode = details.OrderCode,
-                        POCode = details.Pocode,
-                        ProductionOrderCode = details.ProductionOrderCode,
+                        RefObjectTypeId = detail.RefObjectTypeId,
+                        RefObjectId = detail.RefObjectId,
+                        RefObjectCode = detail.RefObjectCode,
+                        OrderCode = detail.OrderCode,
+                        POCode = detail.Pocode,
+                        ProductionOrderCode = detail.ProductionOrderCode,
 
                         ProductOutput = productOutput,
                         ProductUnitConversion = productUnitConversionInfo ?? null,
-                        SortOrder = details.SortOrder,
-                        Description = details.Description,
+                        SortOrder = detail.SortOrder,
+                        Description = detail.Description,
                         //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
-                        InventoryRequirementCode = details.InventoryRequirementCode,
+                        InventoryRequirementCode = inventoryRequirementCode,
+                        InventoryRequirementDetailId = detail.InventoryRequirementDetailId
                     };
 
                     //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
@@ -460,7 +483,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //    detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
                     //}
 
-                    listInventoryDetailsOutput.Add(detail);
+                    listInventoryDetailsOutput.Add(detailModel);
                 }
                 #endregion
 
@@ -508,6 +531,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
                     DepartmentId = inventoryObj.DepartmentId,
+                    CensorByUserId = inventoryObj.CensorByUserId,
                     StockOutput = stockInfo == null ? null : new StockOutput
                     {
                         StockId = stockInfo.StockId,
@@ -517,7 +541,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     },
                     InventoryDetailOutputList = listInventoryDetailsOutput,
                     FileList = attachedFiles,
-                    InputBills = mappingObjects
+                    InputBills = mappingObjects,
+                    InventoryStatusId = inventoryObj.InventoryStatusId,
+                    InventoryActionId = inventoryObj.InventoryActionId
                 };
                 return inventoryOutput;
             }
@@ -659,5 +685,79 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 : _inventoryBillOutputService.ImportedLogBuilder();
         }
 
+        public async Task<bool> SendMailNotifyCensor(long inventoryId, string mailTemplateCode, string[] mailTo)
+        {
+            var inventoryInfo = await InventoryInfo(inventoryId);
+            var userIds = new[] { inventoryInfo.CreatedByUserId, inventoryInfo.UpdatedByUserId, inventoryInfo.CensorByUserId.GetValueOrDefault() };
+            var users = await _userHelperService.GetByIds(userIds);
+
+            var createdUser = users.FirstOrDefault(x => x.UserId == inventoryInfo.CreatedByUserId)?.FullName;
+            var updatedUser = users.FirstOrDefault(x => x.UserId == inventoryInfo.UpdatedByUserId)?.FullName;
+            var censortUser = users.FirstOrDefault(x => x.UserId == inventoryInfo.CensorByUserId)?.FullName;
+
+            var businessInfo = await _organizationHelperService.BusinessInfo();
+
+            var sendSuccess = await _mailFactoryService.Dispatch(mailTo, mailTemplateCode, new ObjectDataTemplateMail()
+            {
+                CensoredByUser = censortUser,
+                CreatedByUser = createdUser,
+                UpdatedByUser = updatedUser,
+                CompanyName = businessInfo.CompanyName,
+                F_Id = inventoryId,
+                Code = inventoryInfo.InventoryCode,
+                TotalMoney = inventoryInfo.TotalMoney.ToString("#,##0.##"),
+                Domain = _currentContextService.Domain
+            });
+
+            return sendSuccess;
+        }
+
+        public async Task<bool> SentToCensor(long inventoryId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
+                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.Draff && info.InventoryStatusId != (int) EnumInventoryStatus.Reject)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotDraffYet);
+                }
+
+                info.InventoryStatusId = (int)EnumInventoryStatus.WaitToCensor;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                trans.Commit();
+
+                return true;
+            }
+        }
+
+        public async Task<bool> Reject(long inventoryId)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
+                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
+                }
+
+                info.IsApproved = false;
+
+                info.InventoryStatusId = (int)EnumInventoryStatus.Reject;
+                info.CensorDatetimeUtc = DateTime.UtcNow;
+                info.CensorByUserId = _currentContextService.UserId;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                trans.Commit();
+              
+                return true;
+            }
+        }
     }
 }

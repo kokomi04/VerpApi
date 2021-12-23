@@ -75,7 +75,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _voucherDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherBill);
         }
 
-        public async Task<PageDataTable> GetVoucherBills(int voucherTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetVoucherBills(int voucherTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -95,8 +95,21 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 select f
             ).ToListAsync();
             var whereCondition = new StringBuilder();
-            whereCondition.Append($"r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()}");
+            
             var sqlParams = new List<SqlParameter>();
+
+            whereCondition.Append($" r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()}");
+            
+            if (fromDate.HasValue && toDate.HasValue)
+            {
+                whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @FromDate AND @ToDate");
+
+                sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
+                sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
+            }
+
+
+            
             int suffix = 0;
             if (filters != null)
             {

@@ -149,6 +149,8 @@ namespace VErp.Infrastructure.ApiCore
             {
                 options.Interceptors.Add<GrpcServerLoggerInterceptor>();
             });
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
         }
 
         protected void ConfigReadWriteDBContext(IServiceCollection services)

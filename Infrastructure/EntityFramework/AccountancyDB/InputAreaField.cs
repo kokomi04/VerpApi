@@ -45,6 +45,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string OnClick { get; set; }
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
 
         public virtual InputArea InputArea { get; set; }
         public virtual InputField InputField { get; set; }

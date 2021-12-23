@@ -26,13 +26,12 @@ namespace MasterTests
 {
     public class OutsourceOrderTests : BaseDevelopmentUnitStartup
     {
-        /*
-        private readonly IOutsourcePartOrderService outsourcePartOrderService;
+        //private readonly IOutsourcePartOrderService outsourcePartOrderService;
 
         public OutsourceOrderTests()
             : base(subsidiaryId: 2, userId: 2)
         {
-            outsourcePartOrderService = webHost.Services.GetService<IOutsourcePartOrderService>();
+           // outsourcePartOrderService = webHost.Services.GetService<IOutsourcePartOrderService>();
         }
 
         [Fact]
@@ -41,7 +40,7 @@ namespace MasterTests
             var outsourceOrderId = 10055;
             try
             {
-                var rs = await outsourcePartOrderService.GetMaterials(outsourceOrderId);
+               // var rs = await outsourcePartOrderService.GetMaterials(outsourceOrderId);
             }
             catch (Exception)
             {
@@ -50,7 +49,7 @@ namespace MasterTests
             }
 
 
-        }*/
+        }
         
     }
 }

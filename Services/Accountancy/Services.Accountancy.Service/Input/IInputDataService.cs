@@ -16,7 +16,7 @@ namespace VErp.Services.Accountancy.Service.Input
 {
     public interface IInputDataService
     {
-        Task<PageDataTable> GetBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetBills(int inputTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 

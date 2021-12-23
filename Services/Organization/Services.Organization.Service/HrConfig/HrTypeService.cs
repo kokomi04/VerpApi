@@ -355,8 +355,13 @@ namespace VErp.Services.Organization.Service.HrConfig
                             Placeholder = field.HrField.Placeholder,
                             DefaultValue = field.HrField.DefaultValue,
                             SortOrder = field.HrField.SortOrder,
-                            HrAreaId = cloneArea.HrAreaId
-                        };
+                            HrAreaId = cloneArea.HrAreaId,
+
+                            CustomButtonHtml = field.CustomButtonHtml,
+                            CustomButtonOnClick = field.CustomButtonOnClick,
+                            MouseEnter = field.MouseEnter,
+                            MouseLeave = field.MouseLeave,
+                    };
 
                         await _organizationDBContext.HrField.AddAsync(cloneField);
                         await _organizationDBContext.SaveChangesAsync();
@@ -391,7 +396,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                             OnBlur = field.OnBlur,
                             OnChange = field.OnChange,
                             AutoFocus = field.AutoFocus,
-                            Column = field.Column
+                            Column = field.Column,
+                            CustomButtonHtml = field.CustomButtonHtml,
+                            CustomButtonOnClick = field.CustomButtonOnClick,
+                            MouseEnter = field.MouseEnter,
+                            MouseLeave = field.MouseLeave,
                         };
                         await _organizationDBContext.HrAreaField.AddAsync(cloneAreaField);
                         

@@ -11,7 +11,7 @@ namespace VErp.Services.PurchaseOrder.Service
 {
     public interface IPropertyCalcService
     {
-        Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size);
+        Task<PageData<PropertyCalcListModel>> GetList(string keyword, ArrayClause filter, int page, int size, string sortBy, bool? asc);
 
         IAsyncEnumerable<PropertyOrderProductHistory> GetHistoryProductOrderList(IList<int> productIds, IList<string> orderCodes);
 

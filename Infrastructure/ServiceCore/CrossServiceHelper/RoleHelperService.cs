@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> GrantDataForAllRoles(EnumObjectType objectTypeId, long objectId);
 
         Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId);
+        Task<IList<RolePermissionSimpleModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission);
 
     }
 
@@ -43,6 +44,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<bool> GrantPermissionForAllRoles(EnumModule moduleId, EnumObjectType objectTypeId, long objectId)
         {
             return await _httpCrossService.Post<bool>($"api/internal/InternalRole/GrantPermissionForAllRoles", new { moduleId, objectTypeId, objectId });
+        }
+
+        public async Task<IList<RolePermissionSimpleModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission)
+        {
+            return await _httpCrossService.Get<IList<RolePermissionSimpleModel>>($"api/internal/InternalRole/ByModuleAndPermission?moduleId={moduleId}&premission={premission}");
         }
 
 

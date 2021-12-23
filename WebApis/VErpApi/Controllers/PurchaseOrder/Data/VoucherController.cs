@@ -40,7 +40,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _voucherDataService.GetVoucherBills(voucherTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _voucherDataService.GetVoucherBills(voucherTypeId, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
         [HttpGet]

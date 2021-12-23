@@ -223,7 +223,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     PrimaryQuantity = g.Sum(d => d.PrimaryQuantity),
                     ProductUnitConversionQuantity = g.Sum(d => d.ProductUnitConversionQuantity.GetValueOrDefault()),
                     Note = string.Join(". ", g.Where(d => !string.IsNullOrEmpty(d.Note)).Select(d => d.Note).ToList())
-                }).ToList();
+                })
+                .ToList();
 
             var productIds = result.StockTakeResult.Select(p => p.ProductId).ToList();
 
@@ -257,14 +258,40 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                                 })
                                 .ToList();
 
-            foreach (var item in result.StockTakeResult)
+            foreach (var remain in remainSystem)
             {
-                var remain = remainSystem.FirstOrDefault(r => r.ProductId == item.ProductId && r.ProductUnitConversionId == item.ProductUnitConversionId);
-                item.StockRemainQuantity = remain?.RemainQuantity ?? 0;
-                item.StockProductUnitConversionRemainQuantity = remain?.ProductUnitConversionRemainQuantity;
-                item.StockQuantityDifference = item.PrimaryQuantity.SubProductionDecimal(remain?.RemainQuantity ?? 0);
-                item.StockProductUnitConversionQuantityDifference = item.ProductUnitConversionQuantity.GetValueOrDefault().SubProductionDecimal(remain?.ProductUnitConversionRemainQuantity ?? 0);
+                var stockTakeResult = result.StockTakeResult
+                    .Where(r => r.ProductId == remain.ProductId && r.ProductUnitConversionId == remain.ProductUnitConversionId)
+                    .FirstOrDefault();
+
+                // Nếu tồn tại
+                if (stockTakeResult != null)
+                {
+                    stockTakeResult.StockRemainQuantity = remain.RemainQuantity;
+                    stockTakeResult.StockProductUnitConversionRemainQuantity = remain.ProductUnitConversionRemainQuantity;
+                    stockTakeResult.StockQuantityDifference = stockTakeResult.PrimaryQuantity.SubProductionDecimal(remain.RemainQuantity);
+                    stockTakeResult.StockProductUnitConversionQuantityDifference = stockTakeResult.ProductUnitConversionQuantity.GetValueOrDefault().SubProductionDecimal(remain.ProductUnitConversionRemainQuantity);
+                }
+                else
+                {
+                    stockTakeResult = new StockTakeResultModel
+                    {
+                        ProductId = remain.ProductId,
+                        ProductUnitConversionId = remain.ProductUnitConversionId,
+                        PrimaryQuantity = 0,
+                        ProductUnitConversionQuantity = 0,
+                        Note = string.Empty,
+                        StockRemainQuantity = remain.RemainQuantity,
+                        StockProductUnitConversionRemainQuantity = remain.ProductUnitConversionRemainQuantity,
+                        StockQuantityDifference = -remain.RemainQuantity,
+                        StockProductUnitConversionQuantityDifference = -remain.ProductUnitConversionRemainQuantity
+                    };
+                    result.StockTakeResult.Add(stockTakeResult);
+                }
             }
+
+            result.StockTakeResult = result.StockTakeResult.OrderBy(r => r.ProductId).ToList();
+
             return result;
         }
 
@@ -335,7 +362,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                                      id.ProductCode,
                                      id.ProductUnitConversionId
                                  })
-                                 .Select(g => new 
+                                 .Select(g => new
                                  {
                                      ProductId = g.Key.ProductId,
                                      ProductCode = g.Key.ProductCode,
@@ -353,8 +380,15 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                                      ProductUnitConversionRemainQuantity = r.ProductUnitConversionRemainQuantity
                                  });
             var total = uncheckedData.Count();
+
+            var additionResult = new
+            {
+                RemainQuantity = uncheckedData.Sum(r => r.RemainQuantity),
+                ProductUnitConversionRemainQuantity = uncheckedData.Sum(r => r.ProductUnitConversionRemainQuantity)
+            };
+
             var result = await (size > 0 ? uncheckedData.Skip((page - 1) * size).Take(size) : uncheckedData).ToListAsync();
-            return (result, total);
+            return (result, total, additionResult);
         }
 
 

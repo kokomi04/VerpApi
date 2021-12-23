@@ -61,6 +61,15 @@ namespace Verp.Resources.Enums.Stock {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Không được phép thay đổi thông tin sản phẩm của phiếu nhập/xuất được tạo từ yêu cầu.
+        /// </summary>
+        public static string CanNotChangeProductInventoryHasRequirement {
+            get {
+                return ResourceManager.GetString("CanNotChangeProductInventoryHasRequirement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Không thể thay đổi kho ở phiếu nhập/xuất.
         /// </summary>
         public static string CanNotChangeStock {
