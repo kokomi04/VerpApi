@@ -1021,7 +1021,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService)
+            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog)
                    .ImportProductFromMapping(mapping, stream);
 
         }
