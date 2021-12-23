@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -29,12 +30,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private StockDBContext _stockContext;
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
+        private ObjectActivityLogFacade _productActivityLog;
 
-        public ProductImportFacade(StockDBContext stockContext, MasterDBContext masterDBContext, IOrganizationHelperService organizationHelperService)
+        public ProductImportFacade(StockDBContext stockContext, MasterDBContext masterDBContext, IOrganizationHelperService organizationHelperService, ObjectActivityLogFacade productActivityLog)
         {
             _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _organizationHelperService = organizationHelperService;
+            _productActivityLog = productActivityLog;
         }
 
 
@@ -357,26 +360,54 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
-
-                foreach (var row in newProducts)
+                using (var logBatch = _productActivityLog.BeginBatchLog())
                 {
-                    var newProduct = new Product();
-                    ParseProductInfoEntity(newProduct, row);
-
-                    _stockContext.Product.Add(newProduct);
-                }
-
-                if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
-                {
-                    if (updateProducts.Count > 0)
+                    var productsMap = new Dictionary<ProductImportModel, Product>();
+                    foreach (var row in newProducts)
                     {
-                        UpdateProduct(updateProducts, existsProduct);
-                    }
-                }
+                        var newProduct = new Product();
+                        ParseProductInfoEntity(newProduct, row);
 
-                _stockContext.SaveChanges();
-                trans.Commit();
-                return data.Count > 0;
+                        _stockContext.Product.Add(newProduct);
+                        productsMap.Add(row, newProduct);
+                    }
+
+                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                    {
+                        if (updateProducts.Count > 0)
+                        {
+                            UpdateProduct(productsMap, updateProducts, existsProduct);
+                        }
+                    }
+
+                    _stockContext.SaveChanges();
+
+                    foreach (var row in newProducts)
+                    {
+
+                        await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportNew)
+                              .MessageResourceFormatDatas(row.ProductCode)
+                              .ObjectId(productsMap[row].ProductId)
+                              .JsonData(row.JsonSerialize())
+                              .CreateLog();
+
+                    }
+
+                    foreach (var row in updateProducts)
+                    {
+
+                        await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
+                              .MessageResourceFormatDatas(row.ProductCode)
+                              .ObjectId(productsMap[row].ProductId)
+                              .JsonData(row.JsonSerialize())
+                              .CreateLog();
+
+                    }
+
+                    await trans.CommitAsync();
+                    await logBatch.CommitAsync();
+                    return data.Count > 0;
+                }
             }
             catch (Exception)
             {
@@ -386,7 +417,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private void UpdateProduct(IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        private void UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
         {
 
             var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
@@ -406,6 +437,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
 
                 ParseProductInfoEntity(existedProduct, row);
+
+                productsMap.Add(row, existedProduct);
+
             }
 
         }
@@ -610,6 +644,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         private IList<ProductUnitConversionUpdate> ParsePuConverions(ProductImportModel row, int productId)
         {
+            var defaultDecPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault : null;
+
             var lstUnitConverions = new List<ProductUnitConversionUpdate>(){
                             new ProductUnitConversionUpdate()
                             {
@@ -620,8 +656,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 ConversionDescription = "Default",
                                 IsDefault = true,
                                 IsFreeStyle = false,
-                                DecimalPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault??DECIMAL_PLACE_DEFAULT : DECIMAL_PLACE_DEFAULT,
-                                UploadDecimalPlace=null
+                                DecimalPlace = defaultDecPlace??DECIMAL_PLACE_DEFAULT,
+                                UploadDecimalPlace= defaultDecPlace
                             }
                         };
 
