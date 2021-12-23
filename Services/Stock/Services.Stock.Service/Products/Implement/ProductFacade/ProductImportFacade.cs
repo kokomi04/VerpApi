@@ -393,15 +393,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                     }
 
-                    foreach (var row in updateProducts)
+                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                     {
+                        foreach (var row in updateProducts)
+                        {
 
-                        await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
-                              .MessageResourceFormatDatas(row.ProductCode)
-                              .ObjectId(productsMap[row].ProductId)
-                              .JsonData(row.JsonSerialize())
-                              .CreateLog();
+                            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
+                                  .MessageResourceFormatDatas(row.ProductCode)
+                                  .ObjectId(productsMap[row].ProductId)
+                                  .JsonData(row.JsonSerialize())
+                                  .CreateLog();
 
+                        }
                     }
 
                     await trans.CommitAsync();
