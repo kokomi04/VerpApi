@@ -19,6 +19,7 @@ namespace VErp.Services.Master.Service.Notification
     {
         Task<bool> AddNotification(NotificationAdditionalModel model);
         Task<IList<NotificationModel>> GetListByUserId();
+        Task<long> GetCountNotification();
         Task<bool> MarkerReadNotification(long[] lsNotificationId, bool mark);
     }
 
@@ -58,6 +59,11 @@ namespace VErp.Services.Master.Service.Notification
             var query = _activityLogContext.Notification.Where(x => x.UserId == _currentContextService.UserId);
 
             return await query.AsNoTracking().OrderBy(x => x.CreatedDatetimeUtc).ProjectTo<NotificationModel>(_mapper.ConfigurationProvider).ToListAsync();
+        }
+
+        public async Task<long> GetCountNotification()
+        {
+            return (await GetListByUserId()).Where(x => !x.IsRead).Count();
         }
 
         public async Task<bool> AddNotification(NotificationAdditionalModel model)
