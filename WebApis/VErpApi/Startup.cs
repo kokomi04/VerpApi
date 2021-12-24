@@ -147,6 +147,7 @@ namespace VErp.WebApis.VErpApi
             ConfigureBase(app, env, loggerFactory, true);
 
             app.UseEndpointsGrpcService(GrpcServiceAssembly.Assembly);
+            app.UseSignalRHubEndpoints(ServiceCoreAssembly.Assembly);
 
             app.UseSwagger()
               .UseSwaggerUI(c =>

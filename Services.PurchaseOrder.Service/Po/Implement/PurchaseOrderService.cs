@@ -31,6 +31,8 @@ using AutoMapper.QueryableExtensions;
 using AutoMapper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
+using VErp.Infrastructure.ServiceCore.SignalR;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -50,6 +52,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly INotificationFactoryService _notificationFactoryService;
 
+        private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
+
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
            , ILogger<PurchasingSuggestService> logger
@@ -62,7 +66,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IManufacturingHelperService manufacturingHelperService
            , IMapper mapper, IMailFactoryService mailFactoryService
            , IUserHelperService userHelperService, IOrganizationHelperService organizationHelperService
-           , INotificationFactoryService notificationFactoryService)
+           , INotificationFactoryService notificationFactoryService
+           , IHubContext<BroadcastSignalRHub, IBroadcastHubClient> hubNotifyContext)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -76,6 +81,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _userHelperService = userHelperService;
             _organizationHelperService = organizationHelperService;
             _notificationFactoryService = notificationFactoryService;
+            _hubNotifyContext = hubNotifyContext;
         }
 
         public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
@@ -995,6 +1001,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                    .ObjectId(info.PurchaseOrderId)
                    .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
                    .CreateLog();
+
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
                 return true;
             }
         }
@@ -1030,6 +1038,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                    .ObjectId(info.PurchaseOrderId)
                    .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model = info }).JsonSerialize())
                    .CreateLog();
+
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
 
                 return true;
             }
@@ -1109,6 +1119,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ObjectTypeId = (int)EnumObjectType.PurchaseOrder
                 });
 
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
+
                 return true;
             }
         }
@@ -1149,6 +1161,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .ObjectId(info.PurchaseOrderId)
                   .JsonData((new { purchaseOrderId }).JsonSerialize())
                   .CreateLog();
+
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
                 return true;
             }
         }
@@ -1194,6 +1208,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                    .JsonData((new { purchaseOrderId }).JsonSerialize())
                    .CreateLog();
 
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
                 return true;
             }
         }
@@ -1239,6 +1254,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .ObjectId(info.PurchaseOrderId)
                   .JsonData((new { purchaseOrderId }).JsonSerialize())
                   .CreateLog();
+
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
                 return true;
             }
         }
@@ -1287,6 +1304,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     UserId = _currentContext.UserId,
                     ObjectTypeId = (int)EnumObjectType.PurchaseOrder, 
                 });
+
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
+
                 return true;
             }
         }
@@ -1310,6 +1330,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                  .ObjectId(info.PurchaseOrderId)
                  .JsonData((new { purchaseOrderId, poProcessStatusId }).JsonSerialize())
                  .CreateLog();
+
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
+                
                 return true;
             }
         }

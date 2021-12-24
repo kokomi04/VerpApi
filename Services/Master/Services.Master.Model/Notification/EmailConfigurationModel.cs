@@ -10,5 +10,6 @@ namespace VErp.Services.Master.Model.Notification
         public string MailFrom { get; set; }
         public string Password { get; set; }
         public bool IsSsl { get; set; }
+        public bool IsEnable { get; set; }
     }
 }

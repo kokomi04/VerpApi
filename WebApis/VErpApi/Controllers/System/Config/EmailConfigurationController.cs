@@ -34,6 +34,13 @@ namespace VErpApi.Controllers.System
             return await _emailConfigurationService.UpdateEmailConfiguration(model);
         }
 
+        [HttpGet]
+        [Route("ready")]
+        public async Task<bool> IsEnableEmailConfiguration()
+        {
+            return await _emailConfigurationService.IsEnableEmailConfiguration();
+        }
+
 
         [HttpPost]
         [Route("template")]
