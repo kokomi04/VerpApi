@@ -465,6 +465,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 product.ProductInternalName = row.ProductName.NormalizeAsInternalName();
             }
 
+            product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductNameEng);
+            product.UpdateIfAvaiable(p => p.Color, row.Color);
+          
             //product.IsCanBuy = row.IsCanBuy ?? true;
             //product.IsCanSell = row.IsCanSell ?? true;
             //product.MainImageFileId = null;
@@ -513,6 +516,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.IsProduct, row.IsProduct);
 
+            product.UpdateIfAvaiable(p => p.PackingQuantitative, row.PackingQuantitative);
+            product.UpdateIfAvaiable(p => p.PackingHeight, row.PackingHeight);
+            product.UpdateIfAvaiable(p => p.PackingLong, row.PackingLong);
+            product.UpdateIfAvaiable(p => p.PackingWidth, row.PackingWidth);
+
             if (product.ProductId == 0)
             {
                 product.Coefficient = 1;
@@ -550,6 +558,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             product.UpdateIfAvaiable(p => p.ProductStockInfo.AmountWarningMax, row.AmountWarningMax);
             product.UpdateIfAvaiable(p => p.ProductStockInfo.ExpireTimeTypeId, (int?)row.ExpireTimeTypeId);
             product.UpdateIfAvaiable(p => p.ProductStockInfo.ExpireTimeAmount, row.ExpireTimeAmount);
+            product.UpdateIfAvaiable(p => p.ProductStockInfo.DescriptionToStock, row.DescriptionToStock);
 
             var stockValidations = ParseProductStockValidations(row, product.ProductId);
             foreach (var newStock in stockValidations)
