@@ -48,8 +48,8 @@ namespace VErpApi.Controllers.Stock.Inventory
         }
 
         [HttpGet]
-        [Route("inventorytype/{inventoryType}/inventoryrequirement/code/{inventoryRequirementcode}")]
-        public async Task<long> GetInventoryRequirementId([FromRoute] EnumInventoryType inventoryType, [FromRoute] string inventoryRequirementCode)
+        [Route("inventorytype/{inventoryType}/inventoryrequirement/code")]
+        public async Task<long> GetInventoryRequirementIdByCode([FromRoute] EnumInventoryType inventoryType, [FromQuery] string inventoryRequirementCode)
         {
             return await _inventoryRequirementService.GetInventoryRequirementId(inventoryType, inventoryRequirementCode);
         }
