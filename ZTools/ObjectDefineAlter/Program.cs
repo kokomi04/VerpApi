@@ -1,8 +1,10 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ObjectDefineAlter
 {
@@ -11,7 +13,7 @@ namespace ObjectDefineAlter
     {
         static void Main(string[] args)
         {
-            var file = $"/usr/verp/config/config.Development.json";
+            var file = $"/usr/verp/config/config.Production.json";
             if (!System.IO.File.Exists(file))
             {
                 Console.WriteLine("File not found: " + file);
@@ -23,25 +25,43 @@ namespace ObjectDefineAlter
 
             var dbHelper = new DbHelper(cnn);
 
-            var sqlStr = @"SELECT
+            var typeStr = string.Join(',', ObjectTypes.Keys.Select(t => $"'{t}'").ToArray());
+            var refSqlStr = @$"SELECT
+                            
+	                        o.name                                          [Name],
+                            SCHEMA_NAME(o.SCHEMA_ID)                        [Schema],
+                            m.definition                                    [Definition],
+                            o.type                                          [Type],
+
+	                        sed.referenced_database_name                    [RefDbName],
+                            sed.referenced_schema_name                      [RefSchema],
+                            ISNULL(o1.name, sed.referenced_entity_name)     [RefName]
+
+                        FROM                            
+                            _DatabaseName_.sys.sql_expression_dependencies sed
+                            LEFT JOIN _DatabaseName_.sys.objects o ON sed.referencing_id = o.[object_id]
+                            LEFT JOIN _DatabaseName_.sys.objects o1 ON sed.referenced_id = o1.[object_id]
+                            LEFT JOIN _DatabaseName_.sys.sql_modules m on o.[object_id] = m.[object_id]
+
+                        WHERE o.type IN ({typeStr})
+";
+
+            var noRefSqlStr = @$"
+                        SELECT
                             
 	                        o.name                                  [Name],
                             SCHEMA_NAME(o.SCHEMA_ID)                [Schema],
                             m.definition                            [Definition],
-                            o.type                                  [Type],
-
-	                        referenced_database_name                [RefDbName],
-                            referenced_schema_name                  [RefSchema],
-                            o1.name                                 [RefName]
-
+                            o.type                                  [Type]	                       
                         FROM
-                            _DatabaseName_.sys.sql_expression_dependencies sed
-                            INNER JOIN _DatabaseName_.sys.objects o ON sed.referencing_id = o.[object_id]
-                            LEFT OUTER JOIN _DatabaseName_.sys.objects o1 ON sed.referenced_id = o1.[object_id]
+                            _DatabaseName_.sys.objects o
+                            LEFT JOIN _DatabaseName_.sys.sql_expression_dependencies sed ON sed.referencing_id = o.[object_id] AND (sed.referenced_id IS NOT NULL OR sed.referenced_schema_name IS NOT NULL)
                             LEFT JOIN _DatabaseName_.sys.sql_modules m on o.[object_id] = m.[object_id]
 
-                        WHERE o.type_desc <> 'USER_TABLE' AND ISNULL(o.name,'') <> ISNULL(o1.name, '')
+                        WHERE o.type IN ({typeStr}) AND sed.referenced_id IS NULL AND sed.referenced_schema_name IS NULL
+
 ";
+
             var dbs = new[] { "AccountancyDB", "ManufacturingDB", "MasterDB", "OrganizationDB", "PurchaseOrderDB", "StockDB" };
 
             var objectRefs = new List<KeyValuePair<string, string>>();
@@ -49,38 +69,36 @@ namespace ObjectDefineAlter
             var objectDefines = new Dictionary<string, DataDefine>();
 
 
+            //No ref
             foreach (var db in dbs)
             {
 
-                var sql = sqlStr.Replace("_DatabaseName_", db);
+                var sql = noRefSqlStr.Replace("_DatabaseName_", db);
+                var dataTable = dbHelper.GetDataTable(sql);
+                for (var i = 0; i < dataTable.Rows.Count; i++)
+                {
+                    var objName = AddToDefines(objectDefines, db, dataTable.Rows[i]);
+                }
+            }
+
+            //Refs
+            foreach (var db in dbs)
+            {
+
+                var sql = refSqlStr.Replace("_DatabaseName_", db);
                 var dataTable = dbHelper.GetDataTable(sql);
 
                 for (var i = 0; i < dataTable.Rows.Count; i++)
                 {
-                    var name = dataTable.Rows[i]["Name"]?.ToString();
-                    var schema = dataTable.Rows[i]["Schema"]?.ToString();
-                    var definition = dataTable.Rows[i]["Definition"]?.ToString();
-                    var type = dataTable.Rows[i]["Type"]?.ToString();
+                    var objName = AddToDefines(objectDefines, db, dataTable.Rows[i]);
 
                     var refDbName = dataTable.Rows[i]["RefDbName"]?.ToString();
                     var refSchema = dataTable.Rows[i]["RefSchema"]?.ToString();
                     var refName = dataTable.Rows[i]["RefName"]?.ToString();
 
-                    var objName = NormalizeObjectName(db, schema, name);
                     var refObjName = NormalizeObjectName(refDbName, refSchema, refName);
-                    if (!objectDefines.ContainsKey(objName) && !name.ToLower().EndsWith("_bak") && !name.ToLower().EndsWith("_old") && !name.ToLower().StartsWith("test") && !name.ToLower().Contains("diagram"))
-                    {
-                        objectDefines.Add(objName, new DataDefine()
-                        {
-                            Database = db,
-                            Name = name,
-                            Schema = string.IsNullOrWhiteSpace(schema) ? "dbo" : schema,
-                            Definition = definition,
-                            Type = type
-                        });
-                    }
-
-                    objectRefs.Add(new KeyValuePair<string, string>(objName, refObjName));
+                    if (objName?.Equals(refObjName, StringComparison.OrdinalIgnoreCase) != true)
+                        objectRefs.Add(new KeyValuePair<string, string>(objName, refObjName));
                 }
 
             }
@@ -106,7 +124,10 @@ namespace ObjectDefineAlter
                 {
                     var refs = objectRefs.Where(r => r.Key == o.Key && objectDefines.Keys.Contains(r.Value)).Select(r => r.Value).Distinct().ToList();
 
-                    if (refs.Count == 0 || refs.All(r => objDefineSorts.Keys.Contains(r)))
+                    if (refs.Count == 0 || refs.All(r =>
+                    objDefineSorts.Keys.Contains(r)
+                    || !objectDefines.Keys.Contains(r)
+                    ))
                     {
                         objDefineSorts.Add(o.Key, o.Value);
                     }
@@ -127,32 +148,55 @@ namespace ObjectDefineAlter
             System.IO.File.WriteAllText("/usr/Verp.sql", alterStr.ToString());
         }
 
+        private static string AddToDefines(Dictionary<string, DataDefine> objectDefines, string db, DataRow row)
+        {
+            var name = row["Name"]?.ToString();
+            var schema = row["Schema"]?.ToString();
+            var definition = row["Definition"]?.ToString();
+            var type = row["Type"]?.ToString();
+
+            var objName = NormalizeObjectName(db, schema, name);
+
+            if (!objectDefines.ContainsKey(objName) && !name.ToLower().EndsWith("_bak") && !name.ToLower().EndsWith("_old") && !name.ToLower().StartsWith("test") && !name.ToLower().Contains("diagram"))
+            {
+                objectDefines.Add(objName, new DataDefine()
+                {
+                    Database = db,
+                    Name = name,
+                    Schema = string.IsNullOrWhiteSpace(schema) ? "dbo" : schema,
+                    Definition = definition,
+                    Type = type
+                });
+            }
+            return objName;
+        }
+
+        static private Dictionary<string, string> ObjectTypes = new Dictionary<string, string>()
+        {
+            {"P","PROCEDURE" },
+            {"TF","FUNCTION" },
+            {"FN","FUNCTION" },
+            {"V","VIEW" },
+            {"TR","TRIGGER" },
+        };
+
+
         private static void ReplaceAlter(DataDefine obj)
         {
             var str = obj.Definition;
             var fullType = obj.Type?.Trim();
 
-            switch (fullType)
+            if (ObjectTypes.ContainsKey(fullType))
             {
-                case "P":
-                    fullType = "PROCEDURE";
-                    break;
-                case "TF":
-                    fullType = "FUNCTION";
-                    break;
-                case "FN":
-                    fullType = "FUNCTION";
-                    break;
-                case "V":
-                    fullType = "VIEW";
-                    break;
-                case "TR":
-                    fullType = "TRIGGER";
-                    break;
-                default:
-                    throw new Exception("Not support " + fullType);
+                fullType = ObjectTypes[fullType];
+            }
+            else
+            {
+                throw new Exception("Not support " + fullType);
             }
 
+
+            /*
             while (str.IndexOf("  " + fullType) >= 0)
             {
                 str = str.Replace("  " + fullType, " " + fullType);
@@ -161,10 +205,14 @@ namespace ObjectDefineAlter
             while (str.IndexOf(fullType + "  ") >= 0)
             {
                 str = str.Replace(fullType + "  ", fullType + " ");
-            }
+            }*/
 
             var objDef = $"CREATE OR ALTER {fullType} [{obj.Schema}].[{obj.Name}]";
 
+            var defineReg = $"CREATE\\s*{fullType}\\s*\\[?({obj.Schema})?\\]?\\.?\\[?{obj.Name}\\]?";
+            str = Regex.Replace(str, defineReg, objDef, RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+            /*
             var schemas = new[] { $"{obj.Schema}.", $"[{obj.Schema}].", "" };
             var objs = new[] { obj.Name, $"[{obj.Name}]" };
 
@@ -173,9 +221,9 @@ namespace ObjectDefineAlter
                 foreach (var d in objs)
                 {
                     var originalDef = $"CREATE {fullType} {s}{d}";
-                    str = str.Replace(originalDef, objDef);
+                    str = str.Replace(originalDef, objDef, StringComparison.OrdinalIgnoreCase);
                 }
-            }
+            }*/
 
             if (str.IndexOf(objDef) < 0)
             {
