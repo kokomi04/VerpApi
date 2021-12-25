@@ -15,7 +15,6 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.InventoryRequirement;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Stock;
@@ -48,12 +47,11 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryRequirementService.GetListInventoryRequirements(inventoryType, keyword, page, size, orderByFieldName, asc, hasInventory, filters).ConfigureAwait(true);
         }
 
-        [HttpPost]
-        [VErpAction(EnumActionType.View)]
+        [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/code")]
-        public async Task<long> GetInventoryRequirementId([FromRoute] EnumInventoryType inventoryType, [FromBody] InventoryRequireInput data)
+        public async Task<long> GetInventoryRequirementIdByCode([FromRoute] EnumInventoryType inventoryType, [FromQuery] string inventoryRequirementCode)
         {
-            return await _inventoryRequirementService.GetInventoryRequirementId(inventoryType, data.InventoryRequirementCode);
+            return await _inventoryRequirementService.GetInventoryRequirementId(inventoryType, inventoryRequirementCode);
         }
 
         [HttpGet]
