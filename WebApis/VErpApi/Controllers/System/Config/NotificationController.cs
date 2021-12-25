@@ -28,6 +28,14 @@ namespace VErpApi.Controllers.System
         {
             return await _notificationService.GetListByUserId();
         }
+        
+        [HttpGet]
+        [Route("numberOfUnRead")]
+        [GlobalApi]
+        public async Task<long> GetCountNotification()
+        {
+            return await _notificationService.GetCountNotification();
+        }
 
         [HttpPut]
         [Route("markerRead")]

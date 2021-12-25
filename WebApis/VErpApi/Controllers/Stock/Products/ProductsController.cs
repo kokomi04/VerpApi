@@ -235,5 +235,12 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _productService.CopyProductMaterialConsumption(sourceProductId, destProductId);
         }
+
+        [HttpGet]
+        [Route("{productId}/productionProcessVersion")]
+        public async Task<long> GetProductionProcessVersion([FromRoute] int productId)
+        {
+            return await _productService.GetProductionProcessVersion(productId);
+        }
     }
 }

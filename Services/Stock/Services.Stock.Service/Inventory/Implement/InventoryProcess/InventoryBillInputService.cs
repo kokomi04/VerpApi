@@ -28,6 +28,8 @@ using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
 using Verp.Resources.Stock.InventoryProcess;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using Microsoft.AspNetCore.SignalR;
+using VErp.Infrastructure.ServiceCore.SignalR;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -42,6 +44,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly ObjectActivityLogFacade _invInputActivityLog;
         private readonly ObjectActivityLogFacade _packageActivityLog;
         private readonly INotificationFactoryService _notificationFactoryService;
+        private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
 
         public InventoryBillInputService(
             StockDBContext stockContext
@@ -53,7 +56,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverHelperService productionHandoverHelperService
-            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
+            , INotificationFactoryService notificationFactoryService
+            , IHubContext<BroadcastSignalRHub, IBroadcastHubClient> hubNotifyContext) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
 
             _asyncRunner = asyncRunner;
@@ -63,6 +67,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             _packageActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Package); ;
             _notificationFactoryService = notificationFactoryService;
+            _hubNotifyContext = hubNotifyContext;
         }
 
 
@@ -312,6 +317,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .ObjectId(inventoryId)
                             .JsonData(req.JsonSerialize())
                             .CreateLog();
+
+                        await _hubNotifyContext.Clients.All.BroadcastMessage();
                     }
                     catch (Exception ex)
                     {
@@ -423,6 +430,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                           .JsonData(inventoryObj.JsonSerialize())
                           .CreateLog();
 
+                        await _hubNotifyContext.Clients.All.BroadcastMessage();
+
                         return true;
                     }
                     catch (Exception ex)
@@ -511,6 +520,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .JsonData(inventoryObj.JsonSerialize())
                         .CreateLog();
 
+                        await _hubNotifyContext.Clients.All.BroadcastMessage();
+
                         return true;
                     }
                     catch (Exception ex)
@@ -561,6 +572,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     UserId = _currentContextService.UserId,
                     ObjectTypeId = (int)EnumObjectType.InventoryInput
                 });
+
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
+
                 return true;
             }
         }
@@ -593,7 +607,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .JsonData(info.JsonSerialize())
                         .CreateLog();
 
-
+                await _hubNotifyContext.Clients.All.BroadcastMessage();
                 return true;
             }
         }

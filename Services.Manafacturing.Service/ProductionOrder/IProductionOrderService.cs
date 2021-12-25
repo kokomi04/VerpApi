@@ -36,6 +36,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 
         Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration();
         Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model);
-        
+        Task<bool> UpdateProductionProcessVersion(long productionOrderId);
     }
 }

@@ -151,6 +151,8 @@ namespace VErp.Infrastructure.ApiCore
             });
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            services.AddSignalR();
         }
 
         protected void ConfigReadWriteDBContext(IServiceCollection services)

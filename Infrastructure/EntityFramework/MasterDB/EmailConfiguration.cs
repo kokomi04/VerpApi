@@ -15,5 +15,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool? IsSsl { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
+        public bool IsEnable { get; set; }
     }
 }

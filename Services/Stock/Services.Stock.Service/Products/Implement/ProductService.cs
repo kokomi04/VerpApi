@@ -75,6 +75,34 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
+        public async Task<bool> UpdateProductionProcessVersion(int productId)
+        {
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            if (!productInfo.ProductionProcessVersion.HasValue)
+                productInfo.ProductionProcessVersion = 1;
+            else productInfo.ProductionProcessVersion += 1;
+
+            await _stockDbContext.SaveChangesAsync();
+
+            return true;
+        }
+        
+        public async Task<long> GetProductionProcessVersion(int productId)
+        {
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            return productInfo.ProductionProcessVersion.GetValueOrDefault();
+        }
+
         public async Task<int> AddProduct(ProductModel req)
         {
             //var customGenCode = await GenerateProductCode(null, req);
