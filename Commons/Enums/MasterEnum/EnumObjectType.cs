@@ -256,6 +256,8 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductionHandover = 75,
         [Description("Lịch sử sản xuất")]
         ProductionHistory = 76,
+        [Description("Nhân công sản xuất")]
+        ProductionHumanResource = 79,
 
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,

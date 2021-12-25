@@ -9,33 +9,29 @@ using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
-    public class ProductionHistoryModel : ProductionHistoryInputModel
+    public class ProductionHumanResourceModel : ProductionHumanResourceInputModel
     {
-        public long? ProductionHistoryId { get; set; }
+        public long? ProductionHumanResourceId { get; set; }
         public int CreatedByUserId { get; set; }
 
         public override void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionHistory, ProductionHistoryModel>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataObjectType)m.ObjectTypeId))
+            profile.CreateMap<ProductionHumanResource, ProductionHumanResourceModel>()
                 .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()));
         }
     }
 
-    public class ProductionHistoryInputModel : IMapFrom<ProductionHistory>
+    public class ProductionHumanResourceInputModel : IMapFrom<ProductionHumanResource>
     {
-        public decimal ProductionQuantity { get; set; }
-        public decimal? OvertimeProductionQuantity { get; set; }
-        public long ObjectId { get; set; }
-        public EnumProductionProcess.EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
+        public decimal OfficeWorkDay { get; set; }
+        public decimal OvertimeWorkDay { get; set; }
         public int DepartmentId { get; set; }
         public long ProductionStepId { get; set; }
         public long? Date { get; set; }
         public string Note { get; set; }
         public virtual void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionHistoryInputModel, ProductionHistory>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId))
+            profile.CreateMap<ProductionHumanResourceInputModel, ProductionHumanResource>()
                 .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.UnixToDateTime()));
         }
     }
