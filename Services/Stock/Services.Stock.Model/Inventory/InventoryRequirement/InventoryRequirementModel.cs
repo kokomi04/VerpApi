@@ -125,4 +125,9 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.CensorStatus, opt => opt.MapFrom(source => (EnumInventoryRequirementStatus)source.CensorStatus));
         }
     }
+
+    public class InventoryRequireInput
+    {
+        public string InventoryRequirementCode { get; set; }
+    }
 }
