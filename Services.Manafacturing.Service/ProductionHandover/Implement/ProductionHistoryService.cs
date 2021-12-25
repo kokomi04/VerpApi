@@ -87,7 +87,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "CreateProductHistory");
+                _logger.LogError(ex, "DeleteProductionHistory");
                 throw;
             }
         }
@@ -138,7 +138,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             catch (Exception ex)
             {
                 trans.Rollback();
-                _logger.LogError(ex, "CreateProductHistory");
+                _logger.LogError(ex, "CreateMultipleProductionHistory");
                 throw;
             }
         }
