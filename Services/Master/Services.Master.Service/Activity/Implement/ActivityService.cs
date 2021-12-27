@@ -332,8 +332,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
             _activityLogContext.Notification.AddRange(lsNewNotification);
             await _activityLogContext.SaveChangesAsync();
-
-            await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(querySub.Select(x => x.UserId.ToString()).ToArray())).BroadcastMessage();
+            
+            if(_principalBroadcaster.IsUserConnected())
+                await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(querySub.Select(x => x.UserId.ToString()).ToArray())).BroadcastMessage();
             return true;
         }
     }
