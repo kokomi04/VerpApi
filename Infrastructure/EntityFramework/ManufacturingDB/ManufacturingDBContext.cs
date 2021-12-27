@@ -32,6 +32,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
+        public virtual DbSet<ProductionHistory> ProductionHistory { get; set; }
+        public virtual DbSet<ProductionHumanResource> ProductionHumanResource { get; set; }
         public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
         public virtual DbSet<ProductionMaterialsRequirementDetail> ProductionMaterialsRequirementDetail { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
@@ -308,6 +310,20 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             modelBuilder.Entity<ProductionHandover>(entity =>
             {
                 entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(32, 12)");
+            });
+
+            modelBuilder.Entity<ProductionHistory>(entity =>
+            {
+                entity.Property(e => e.OvertimeProductionQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.ProductionQuantity).HasColumnType("decimal(32, 12)");
+            });
+
+            modelBuilder.Entity<ProductionHumanResource>(entity =>
+            {
+                entity.Property(e => e.OfficeWorkDay).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.OvertimeWorkDay).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<ProductionMaterialsRequirement>(entity =>

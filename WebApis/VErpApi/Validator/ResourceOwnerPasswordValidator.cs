@@ -56,7 +56,7 @@ namespace VErp.WebApis.VErpApi.Validator
             if (string.IsNullOrEmpty(strSubId))
             {
                 message = "Bạn chưa chọn công ty";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -64,7 +64,7 @@ namespace VErp.WebApis.VErpApi.Validator
             if (!int.TryParse(strSubId, out subsidiaryId))
             {
                 message = "Thông tin công ty không hợp lệ";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -73,7 +73,7 @@ namespace VErp.WebApis.VErpApi.Validator
             if (subdiaryInfo == null)
             {
                 message = "Thông tin công ty không tồn tại";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -82,7 +82,7 @@ namespace VErp.WebApis.VErpApi.Validator
             if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(context.Password))
             {
                 message = "Bạn chưa nhập tên đăng nhập hoặc mật khẩu";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -91,7 +91,7 @@ namespace VErp.WebApis.VErpApi.Validator
             if (user == null)
             {
                 message = $"Tên đăng nhập  {userName} không tồn tại";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -102,7 +102,7 @@ namespace VErp.WebApis.VErpApi.Validator
             if (userStatus != EnumUserStatus.Actived)
             {
                 message = $"Tài khoản {userName} chưa được kích hoạt hoặc đã bị khóa";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -110,7 +110,7 @@ namespace VErp.WebApis.VErpApi.Validator
             if (user.SubsidiaryId != subsidiaryId)
             {
                 message = $"Thông tin công ty của tài khoản {userName} không hợp lệ";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -119,7 +119,7 @@ namespace VErp.WebApis.VErpApi.Validator
             {
                 await MaxFailedAccessAttempts(user, false);
                 message = $"Mật khẩu không đúng. Số lần nhập sai {user.AccessFailedCount}/{MAX_FAIL_ACCESS}";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, message);
+                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
@@ -133,7 +133,7 @@ namespace VErp.WebApis.VErpApi.Validator
             };
             await MaxFailedAccessAttempts(user, true);
 
-            await CreateUserLoginLog(userId, userName, ipAddress, userAgent, strSubId, "Đăng nhập thành công");
+            await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Success, strSubId, "Đăng nhập thành công");
             context.Result = new GrantValidationResult(
                 userName,
                 authenticationMethod: "password",
@@ -146,6 +146,7 @@ namespace VErp.WebApis.VErpApi.Validator
             string userName,
             string ipAddress,
             string userAgent,
+            EnumUserLoginStatus status,
             string strSubId,
             string message = null,
             string messageResourceName = null,
@@ -158,6 +159,7 @@ namespace VErp.WebApis.VErpApi.Validator
                 UserName = userName,
                 IpAddress = ipAddress,
                 UserAgent = userAgent,
+                Status = (int)status,
                 MessageTypeId = (int)EnumMessageType.UserLogin,
                 MessageResourceName = messageResourceName,
                 MessageResourceFormatData = messageResourceFormatData,

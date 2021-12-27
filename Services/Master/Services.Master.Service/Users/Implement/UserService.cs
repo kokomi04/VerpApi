@@ -218,10 +218,16 @@ namespace VErp.Services.Master.Service.Users.Implement
             return user;
         }
 
+      
         public async Task<bool> DeleteUser(int userId)
         {
             var userInfo = await GetUserFullInfo(userId);
             long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
+
+            if (await IsDeveloper(userInfo.User.UserName))
+            {
+                throw UserErrorCode.UserNotFound.BadRequest();
+            }
 
             await using (var trans = new MultipleDbTransaction(_masterContext, _organizationContext))
             {
@@ -273,6 +279,10 @@ namespace VErp.Services.Master.Service.Users.Implement
             keyword = (keyword ?? "").Trim();
             var employees = _organizationContext.Employee.AsQueryable();
             var users = _masterContext.User.AsQueryable();
+            if (_appSetting.Developer?.Users?.Count() > 0)
+            {
+                users = users.Where(u => !_appSetting.Developer.Users.Contains(u.UserName));
+            }
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -355,7 +365,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 return new List<UserInfoOutput>();
 
             var userInfos = await _masterContext.User.AsNoTracking().Where(u => roles.Contains(u.RoleId.GetValueOrDefault())).ToListAsync();
-            var userIds = userInfos.Select(x=>x.UserId).ToList();
+            var userIds = userInfos.Select(x => x.UserId).ToList();
 
             var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
 
@@ -543,7 +553,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                 {
                     keyword = (keyword ?? "").Trim();
 
-                    var users = (from u in _masterContext.User
+                    var userDbs = _masterContext.User.AsQueryable();
+                    if (_appSetting.Developer?.Users?.Count() > 0)
+                    {
+                        userDbs = userDbs.Where(u => !_appSetting.Developer.Users.Contains(u.UserName));
+                    }
+
+                    var users = (from u in userDbs
                                  join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
                                  where rp.ModuleId == moduleId
                                  select u).AsEnumerable();
@@ -835,7 +851,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                 {
                     throw CannotChangeOwnerRole.BadRequest();
                 }
+
+                if (await IsDeveloper(req.UserName) && userInfo.UserName?.Equals(userInfo.UserName) != true)
+                {
+                    throw UserErrorCode.UserNotFound.BadRequest();
+                }
             }
+
 
 
             //if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
@@ -979,8 +1001,8 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             var genCodeContexts = new List<GenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
-            
-            foreach(var u in userInfos)
+
+            foreach (var u in userInfos)
                 genCodeContexts.Add(await GenerateEmployeeCode(null, u, baseValueChains));
 
 
@@ -1141,6 +1163,12 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             public User User { get; set; }
             public Employee Employee { get; set; }
+        }
+
+        private async Task<bool> IsDeveloper(string userName)
+        {
+            var sb = await _organizationContext.Subsidiary.FirstOrDefaultAsync(e => e.SubsidiaryId == _currentContextService.SubsidiaryId);
+            return _appSetting.Developer?.IsDeveloper(userName, sb.SubsidiaryCode) == true;
         }
 
         private async Task<GenerateCodeContext> GenerateEmployeeCode(int? userId, UserInfoInput model, Dictionary<string, int> baseValueChains)

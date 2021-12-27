@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Notification;
 
@@ -36,6 +37,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("ready")]
+        [GlobalApi]
         public async Task<bool> IsEnableEmailConfiguration()
         {
             return await _emailConfigurationService.IsEnableEmailConfiguration();

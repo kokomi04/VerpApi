@@ -10,6 +10,7 @@ namespace VErp.Services.Stock.Model.Product
         public int ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
+        public string ProductNameEng { get; set; }
         public long? MainImageFileId { get; set; }
         public int? ProductTypeId { get; set; }
         public string ProductTypeCode { get; set; }
@@ -32,8 +33,14 @@ namespace VErp.Services.Stock.Model.Product
         public int DecimalPlace { get; set; }
 
         //public int? CustomerId { get; set; }
+        public string Color { get; set; }
 
         public string PackingMethod { get; set; }
+        public decimal? PackingQuantitative { get; set; }
+        public decimal? PackingHeight { get; set; }
+        public decimal? PackingWidth { get; set; }
+        public decimal? PackingLong { get; set; }
+
 
         public decimal? Quantitative { get; set; }
 
@@ -60,9 +67,10 @@ namespace VErp.Services.Stock.Model.Product
 
 
         public List<StockProductOutput> StockProductModelList { set; get; }
+        public string DescriptionToStock { get; set; }
 
         public IList<ProductModelUnitConversion> ProductUnitConversions { get; set; }
         public string Description { get; set; }
-        public string Color { get; set; }
+        
     }
 }

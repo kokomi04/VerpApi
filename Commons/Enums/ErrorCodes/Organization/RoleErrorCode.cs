@@ -18,5 +18,6 @@ namespace VErp.Commons.Enums.StandardEnum
         LoopbackParentRole = 5,
         ParentRoleNotFound = 6,
         ExistedChildrenRoles = 7,
+        ExistsUserInRole = 8,
     }
 }
