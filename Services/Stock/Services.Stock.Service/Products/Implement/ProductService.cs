@@ -91,7 +91,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return true;
         }
-        
+
         public async Task<long> GetProductionProcessVersion(int productId)
         {
             var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -796,6 +796,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.ProductId,
                   p.ProductCode,
                   p.ProductName,
+                  p.ProductNameEng,
                   p.MainImageFileId,
                   p.ProductTypeId,
                   ProductTypeCode = pt == null ? null : pt.IdentityCode,
@@ -825,11 +826,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.NetWeight,
                   p.GrossWeight,
                   p.LoadAbility,
+
+                  p.PackingQuantitative,
+                  p.PackingWidth,
+                  p.PackingHeight,
+                  p.PackingLong,
+
                   s.StockOutputRuleId,
                   s.AmountWarningMin,
                   s.AmountWarningMax,
                   s.ExpireTimeAmount,
                   s.ExpireTimeTypeId,
+
+                  s.DescriptionToStock,
+
                   p.Color
               });
 
@@ -856,10 +866,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         c.ProductCode.Contains(keyword)
                         || c.Barcode.Contains(keyword)
                         || c.ProductName.Contains(keyword)
+                        || c.ProductNameEng.Contains(keyword)
                         || c.ProductTypeName.Contains(keyword)
                         || c.ProductCateName.Contains(keyword)
                         || c.Specification.Contains(keyword)
                         || c.Description.Contains(keyword)
+                        || c.DescriptionToStock.Contains(keyword)
                         select c;
             }
             query = query.InternalFilter(filters);
@@ -880,6 +892,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             foreach (var item in lstData)
             {
                 productUnitConverions.TryGetValue(item.ProductId, out var pus);
+                var puDefault = pus.FirstOrDefault(p => p.IsDefault);
+
                 var barcodeConfigId = item.BarcodeConfigId ?? 0;
                 barCodeConfigs.TryGetValue(barcodeConfigId, out var barcodeConfig);
                 var product = new ProductListOutput()
@@ -887,6 +901,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductId = item.ProductId,
                     ProductCode = item.ProductCode,
                     ProductName = item.ProductName,
+                    ProductNameEng = item.ProductNameEng,
                     BarcodeConfigName = barcodeConfig?.Name,
                     Barcode = item.Barcode,
                     MainImageFileId = item.MainImageFileId,
@@ -908,6 +923,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     //CustomerId = item.CustomerId,
                     PackingMethod = item.PackingMethod,
                     Quantitative = item.Quantitative,
+
+                    PackingQuantitative = item.PackingQuantitative,
+                    PackingHeight = item.PackingHeight,
+                    PackingLong = item.PackingLong,
+                    PackingWidth = item.PackingWidth,
+
                     QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)item.QuantitativeUnitTypeId,
                     Measurement = item.Measurement,
                     NetWeight = item.NetWeight,
@@ -918,7 +939,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     AmountWarningMax = item.AmountWarningMax,
                     ExpireTimeAmount = item.ExpireTimeAmount,
                     ExpireTimeTypeId = (EnumTimeType?)item.ExpireTimeTypeId,
-                    DecimalPlace = pus.FirstOrDefault(p => p.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
+                    DescriptionToStock = item.DescriptionToStock,
+                    DecimalPlace = puDefault?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
+                    UnitName = puDefault?.ProductUnitConversionName,
                     ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
                     Description = item.Description,
                     Color = item.Color

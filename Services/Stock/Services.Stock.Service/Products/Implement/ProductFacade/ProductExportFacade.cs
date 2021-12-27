@@ -156,6 +156,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Text, product.ProductCode);
                 case nameof(ProductImportModel.ProductName):
                     return (EnumDataType.Text, product.ProductName);
+                case nameof(ProductImportModel.ProductNameEng):
+                    return (EnumDataType.Text, product.ProductNameEng);
+                case nameof(ProductImportModel.Color):
+                    return (EnumDataType.Text, product.Color);
                 case nameof(ProductImportModel.ProductTypeCode):
                     return (EnumDataType.Text, product.ProductTypeCode);
                 case nameof(ProductImportModel.ProductTypeName):
@@ -209,6 +213,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 case nameof(ProductImportModel.QuantitativeUnitTypeId):
                     return (EnumDataType.Text, product.QuantitativeUnitTypeId?.GetEnumDescription());
 
+                case nameof(ProductImportModel.PackingQuantitative):
+                    return (EnumDataType.Decimal, product.PackingQuantitative);
+                case nameof(ProductImportModel.PackingHeight):
+                    return (EnumDataType.Decimal, product.PackingHeight);
+                case nameof(ProductImportModel.PackingWidth):
+                    return (EnumDataType.Decimal, product.PackingWidth);
+                case nameof(ProductImportModel.PackingLong):
+                    return (EnumDataType.Decimal, product.PackingLong);              
+
                 case nameof(ProductImportModel.Long):
                     return (EnumDataType.Decimal, product.Long);
                 case nameof(ProductImportModel.Width):
@@ -225,6 +238,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Decimal, product.LoadAbility);
                 case nameof(ProductImportModel.StockOutputRuleId):
                     return (EnumDataType.Text, product.StockOutputRuleId?.GetEnumDescription());
+                case nameof(ProductImportModel.DescriptionToStock):
+                    return (EnumDataType.Text, product.DescriptionToStock);
                 case nameof(ProductImportModel.AmountWarningMin):
                     return (EnumDataType.Decimal, product.AmountWarningMin);
                 case nameof(ProductImportModel.AmountWarningMax):
