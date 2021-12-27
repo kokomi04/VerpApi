@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
+        public virtual DbSet<CustomerCate> CustomerCate { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
         public virtual DbSet<DayOffCalendar> DayOffCalendar { get; set; }
         public virtual DbSet<Department> Department { get; set; }
@@ -32,7 +33,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
-        //public virtual DbSet<HrAction> HrAction { get; set; }
         public virtual DbSet<HrArea> HrArea { get; set; }
         public virtual DbSet<HrAreaField> HrAreaField { get; set; }
         public virtual DbSet<HrBill> HrBill { get; set; }
@@ -190,6 +190,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_BankAccount_Customer");
             });
 
+            modelBuilder.Entity<CustomerCate>(entity =>
+            {
+                entity.Property(e => e.CustomerCateCode).HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Name).HasMaxLength(256);
+            });
+
             modelBuilder.Entity<CustomerContact>(entity =>
             {
                 entity.Property(e => e.Email).HasMaxLength(128);
@@ -324,26 +333,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_EmployeeSubsidiary_Employee");
             });
-
-            //modelBuilder.Entity<HrAction>(entity =>
-            //{
-            //    entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
-
-            //    entity.Property(e => e.HractionCode)
-            //        .IsRequired()
-            //        .HasMaxLength(128)
-            //        .HasColumnName("HRActionCode");
-
-            //    entity.Property(e => e.IconName).HasMaxLength(25);
-
-            //    entity.Property(e => e.Title).HasMaxLength(128);
-
-            //    entity.HasOne(d => d.HrType)
-            //        .WithMany(p => p.HrAction)
-            //        .HasForeignKey(d => d.HrTypeId)
-            //        .OnDelete(DeleteBehavior.ClientSetNull)
-            //        .HasConstraintName("FK_HRAction_HRType");
-            //});
 
             modelBuilder.Entity<HrArea>(entity =>
             {
