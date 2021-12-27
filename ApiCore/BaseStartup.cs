@@ -394,6 +394,13 @@ namespace VErp.Infrastructure.ApiCore
 
     public class ConfigureJwtBearerOptions : IPostConfigureOptions<JwtBearerOptions>
     {
+        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+
+        public ConfigureJwtBearerOptions(Microsoft.Extensions.Logging.ILogger<ConfigureJwtBearerOptions> logger)
+        {
+            _logger = logger;
+        }
+
         public void PostConfigure(string name, JwtBearerOptions options)
         {
             var originalOnMessageReceived = options.Events.OnMessageReceived;
@@ -403,6 +410,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 if (string.IsNullOrEmpty(context.Token))
                 {
+                    _logger.LogInformation("[Before-JwtBearer]-{0}", context.HttpContext.Request.Path);
                     var accessToken = context.Request.Query["access_token"];
                     var path = context.HttpContext.Request.Path;
 
