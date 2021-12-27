@@ -48,7 +48,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IProductService _productService;
         private readonly ObjectActivityLogFacade _invOutputActivityLog;
         private readonly INotificationFactoryService _notificationFactoryService;
-        private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
 
         public InventoryBillOutputService(
             StockDBContext stockContext
@@ -60,15 +59,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverHelperService productionHandoverHelperService
-            , INotificationFactoryService notificationFactoryService
-            , IHubContext<BroadcastSignalRHub, IBroadcastHubClient> hubNotifyContext) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
             _asyncRunner = asyncRunner;
             _currentContextService = currentContextService;
             _productService = productService;
             _invOutputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
             _notificationFactoryService = notificationFactoryService;
-            _hubNotifyContext = hubNotifyContext;
         }
 
 
@@ -297,7 +294,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .JsonData(req.JsonSerialize())
                             .CreateLog();
 
-                        await _hubNotifyContext.Clients.All.BroadcastMessage();
+                        
                     }
                     catch (Exception ex)
                     {
@@ -503,7 +500,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await UpdateIgnoreAllocation(inventoryDetails);
 
-                        await _hubNotifyContext.Clients.All.BroadcastMessage();
+                        
 
                         return true;
                     }
@@ -556,7 +553,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ObjectTypeId = (int)EnumObjectType.InventoryInput
                 });
 
-                await _hubNotifyContext.Clients.All.BroadcastMessage();
+                
 
                 return true;
             }
@@ -590,7 +587,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .JsonData(info.JsonSerialize())
                         .CreateLog();
 
-                await _hubNotifyContext.Clients.All.BroadcastMessage();
+                
 
                 return true;
             }
@@ -653,7 +650,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .JsonData(inventoryObj.JsonSerialize())
                             .CreateLog();
 
-                        await _hubNotifyContext.Clients.All.BroadcastMessage();
+                        
 
                         return true;
                     }

@@ -15,9 +15,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
@@ -32,6 +34,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.BackgroundTasks;
 using VErp.Infrastructure.ApiCore.Extensions;
@@ -297,7 +300,29 @@ namespace VErp.Infrastructure.ApiCore
 
                 options.EnableCaching = false;
                 options.CacheDuration = TimeSpan.FromMinutes(10);
+
+                // options.Events = new JwtBearerEvents
+                // {
+                //     OnMessageReceived = context =>
+                //     {
+                //         var accessToken = context.Request.Query["access_token"];
+
+                //         // If the request is for our hub...
+                //         var path = context.HttpContext.Request.Path;
+                //         if (!string.IsNullOrEmpty(accessToken) &&
+                //             (path.StartsWithSegments("/signalr/hubs")))
+                //         {
+                //             // Read the token out of the query string
+                //             context.Token = accessToken;
+                //         }
+                //         return Task.CompletedTask;
+                //     }
+                // };
             });
+
+            services.TryAddEnumerable(
+    ServiceDescriptor.Singleton<IPostConfigureOptions<JwtBearerOptions>,
+        ConfigureJwtBearerOptions>());
         }
 
         protected virtual void ConfigureHelthCheck(IApplicationBuilder app)
@@ -364,6 +389,30 @@ namespace VErp.Infrastructure.ApiCore
             var hcBuilder = services.AddHealthChecks();
             hcBuilder.AddCheck("self", () => HealthCheckResult.Healthy());
             return services;
+        }
+    }
+
+    public class ConfigureJwtBearerOptions : IPostConfigureOptions<JwtBearerOptions>
+    {
+        public void PostConfigure(string name, JwtBearerOptions options)
+        {
+            var originalOnMessageReceived = options.Events.OnMessageReceived;
+            options.Events.OnMessageReceived = async context =>
+            {
+                await originalOnMessageReceived(context);
+
+                if (string.IsNullOrEmpty(context.Token))
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+
+                    if (!string.IsNullOrEmpty(accessToken) &&
+                        path.StartsWithSegments("/signalr/hubs"))
+                    {
+                        context.Token = accessToken;
+                    }
+                }
+            };
         }
     }
 }
