@@ -77,11 +77,11 @@ namespace VErp.Infrastructure.ApiCore
             {
                 options.AddPolicy("CorsPolicy",
                     builder => builder
-                    .SetIsOriginAllowed((host) => true)
+                    // .AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    //.AllowCredentials()
-                    .AllowAnyOrigin()
+                    .SetIsOriginAllowed((host) => true)
+                    // .AllowCredentials()
                     .WithExposedHeaders("Content-Disposition")
                     );
             })
