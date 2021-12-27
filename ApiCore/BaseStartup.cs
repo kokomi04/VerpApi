@@ -407,7 +407,7 @@ namespace VErp.Infrastructure.ApiCore
                     var path = context.HttpContext.Request.Path;
 
                     if (!string.IsNullOrEmpty(accessToken) &&
-                        path.StartsWithSegments("/signalr/hubs"))
+                        (path.StartsWithSegments("/signalr/hubs") || path.StartsWithSegments("/endpoint/signalr/hubs")))
                     {
                         context.Token = accessToken;
                     }
