@@ -14,44 +14,53 @@ namespace VErp.Infrastructure.ServiceCore.SignalR
 
     public class PrincipalBroadcasterService : IPrincipalBroadcasterService
     {
-        private readonly Dictionary<string, IList<string>> ConnectedUsers = new Dictionary<string, IList<string>>();
+        private readonly Dictionary<string, IList<string>> _ConnectedUsers = new Dictionary<string, IList<string>>();
 
         public bool IsUserConnected()
         {
-            return ConnectedUsers.Count > 0;
+            return _ConnectedUsers.Count > 0;
         }
 
         public bool IsUserConnected(string userId)
         {
-            return ConnectedUsers.ContainsKey(userId) ? ConnectedUsers[userId].Count > 0 : false;
+            return _ConnectedUsers.ContainsKey(userId) ? _ConnectedUsers[userId].Count > 0 : false;
         }
 
         public void AddUserConnected(string userId, string connectionId)
         {
             if(string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(connectionId)) return;
 
-            if (!ConnectedUsers.ContainsKey(userId))
+            if (!_ConnectedUsers.ContainsKey(userId))
             {
-                ConnectedUsers.Add(userId, new List<string>());
+                _ConnectedUsers.Add(userId, new List<string>());
             }
 
-            if (!ConnectedUsers[userId].Contains(connectionId))
-                ConnectedUsers[userId].Add(connectionId);
+            if (!_ConnectedUsers[userId].Contains(connectionId))
+                _ConnectedUsers[userId].Add(connectionId);
         }
 
         public void RemoveUserConnected(string userId, string connectionId)
         {
-            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(connectionId)) return;
+            if (string.IsNullOrWhiteSpace(connectionId)) return;
 
-            if (ConnectedUsers.ContainsKey(userId) && ConnectedUsers[userId].Contains(connectionId))
+            if (string.IsNullOrWhiteSpace(userId))
             {
-                ConnectedUsers[userId] = ConnectedUsers[userId].Where(eConnectionId => eConnectionId != connectionId).ToList();
+                var userConnected = _ConnectedUsers.SelectMany(x => x.Value.Select(y => new { UserId = x.Key, ConnectionId = y })).FirstOrDefault(x => x.ConnectionId == userId);
+                if (userConnected != null)
+                    userId = userConnected.UserId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(userId) && _ConnectedUsers.ContainsKey(userId) && _ConnectedUsers[userId].Contains(connectionId))
+            {
+                _ConnectedUsers[userId] = _ConnectedUsers[userId].Where(eConnectionId => eConnectionId != connectionId).ToList();
+                if (_ConnectedUsers[userId].Count == 0)
+                    _ConnectedUsers.Remove(userId);
             }
         }
 
         public IReadOnlyList<string> GetAllConnectionId(string[] arrUserId)
         {
-            return ConnectedUsers.Where(x => arrUserId.Contains(x.Key)).SelectMany(x => x.Value).ToList();
+            return _ConnectedUsers.Where(x => arrUserId.Contains(x.Key)).SelectMany(x => x.Value).ToList();
         }
     }
 }
