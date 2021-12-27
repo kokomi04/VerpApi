@@ -8,6 +8,7 @@ using Verp.Cache.MemCache;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.ServiceCore.SignalR;
 
 namespace VErp.Infrastructure.ServiceCore
 {
@@ -50,6 +51,8 @@ namespace VErp.Infrastructure.ServiceCore
 
             services.AddScoped<IMailFactoryService, MailFactoryService>();
             services.AddScoped<INotificationFactoryService, NotificationFactoryService>();
+
+            services.AddSingleton<IPrincipalBroadcasterService, PrincipalBroadcasterService>();
 
             return services;
         }

@@ -2,6 +2,7 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.ServiceCore.SignalR;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Users;
@@ -41,6 +43,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
+        private readonly IPrincipalBroadcasterService _principalBroadcaster;
+        private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
 
         public ActivityService(ActivityLogDBContext activityLogContext
             , IUserService userService
@@ -49,7 +53,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
             , IAsyncRunnerService asyncRunnerService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
-            , IMapper mapper)
+            , IMapper mapper, IPrincipalBroadcasterService principalBroadcaster
+            , IHubContext<BroadcastSignalRHub, IBroadcastHubClient> hubNotifyContext)
         {
             _activityLogContext = activityLogContext;
             _userService = userService;
@@ -59,6 +64,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
             _mapper = mapper;
+            _principalBroadcaster = principalBroadcaster;
+            _hubNotifyContext = hubNotifyContext;
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -326,6 +333,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _activityLogContext.Notification.AddRange(lsNewNotification);
             await _activityLogContext.SaveChangesAsync();
 
+            await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(querySub.Select(x => x.UserId.ToString()).ToArray())).BroadcastMessage();
             return true;
         }
     }

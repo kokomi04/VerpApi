@@ -2,6 +2,7 @@
 using Grpc.AspNetCore.ClientFactory;
 using Grpc.Net.ClientFactory;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -156,13 +157,14 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             app.UseEndpoints(opt =>
             {
-                AddSignalRHub(opt, assembly, "SignalRHub");
+                AddSignalRHub(opt, assembly, "SignalRHub", (options) =>{
+                });
             });
 
             return app;
         }
 
-        public static void AddSignalRHub(IEndpointRouteBuilder builder, Assembly assembly, string surfix)
+        public static void AddSignalRHub(IEndpointRouteBuilder builder, Assembly assembly, string surfix, Action<HttpConnectionDispatcherOptions> configureOptions)
         {
             var types = assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith(surfix))
@@ -174,9 +176,9 @@ namespace VErp.Infrastructure.ApiCore.Extensions
 
                 var pattern = "/signalr/hubs/" + (attributes.Length > 0 ? attributes[0].Pattern.ToLower() : type.Name.Replace(surfix, "").ToLower());
 
-                var method = typeof(HubEndpointRouteBuilderExtensions).GetMethod("MapHub", new Type[] {typeof(IEndpointRouteBuilder), typeof(string)})
+                var method = typeof(HubEndpointRouteBuilderExtensions).GetMethod("MapHub", new Type[] {typeof(IEndpointRouteBuilder), typeof(string), typeof (Action<HttpConnectionDispatcherOptions>)})
                     .MakeGenericMethod(type);
-                method?.Invoke(null, new object[] { builder, pattern });
+                method?.Invoke(null, new object[] { builder, pattern, configureOptions });
             }
         }
 
