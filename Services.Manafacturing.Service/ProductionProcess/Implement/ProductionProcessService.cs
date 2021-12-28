@@ -586,6 +586,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         _manufacturingDBContext.ProductionStepLinkData.Add(newLinkData);
                         linkDataMap.Add(item.ProductionStepLinkDataId, newLinkData);
                     }
+
+                    //Gán version mới nhất của MH vào chi tiết MH trong LSX
+                    productionOrderDetail.ToList().ForEach(x => x.ProductionProcessVersion = product.ProductionProcessVersion);
+
                     _manufacturingDBContext.SaveChanges();
 
                     // Create role

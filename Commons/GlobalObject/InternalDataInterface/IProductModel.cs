@@ -47,6 +47,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal? PackingLong { get; set; }
         public decimal? PackingHeight { get; set; }
 
+        public long? ProductionProcessVersion { get; set; }
+
 
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
         public ProductModelExtra Extra { get; set; }
