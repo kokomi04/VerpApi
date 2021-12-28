@@ -57,24 +57,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _draftDataHelperService = draftDataHelperService;
         }
 
-        public async Task<bool> UpdateProductionProcessVersion(long productionOrderId)
+        public async Task<bool> UpdateProductionProcessVersion(long productionOrderId, int productId)
         {
-            var productOrder = _manufacturingDBContext.ProductionOrder
-                .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
+            var details = _manufacturingDBContext.ProductionOrderDetail
+                .Where(o => o.ProductionOrderId == productionOrderId && o.ProductId == productId)
+                .ToList();
 
-            if (productOrder == null)
+            if (details.Count == 0)
                 throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX không tồn tại");
 
-            var productOrderDetails = _manufacturingDBContext.ProductionOrderDetail
-                .Where(o => o.ProductionOrderId == productionOrderId).ToList();
+            var version = await _productHelperService.GetProductionProcessVersion(productId);
 
-            if (productOrderDetails.Count > 1)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX có nhiều mặt hàng. Không thể cập nhật phiên bản mới nhất của quy trình sản xuất");
+            details.ForEach(x => x.ProductionProcessVersion = version);
 
-            var version = await _productHelperService.GetProductionProcessVersion(productOrderDetails.First().ProductId);
-
-            productOrder.ProductionProcessVersion = version;
             await _manufacturingDBContext.SaveChangesAsync();
+
             return true;
         }
 
@@ -89,11 +86,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderCodes
             };
 
-            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, filter);
+            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate,bool? hasNewProductionProcessVersion = null, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -107,6 +104,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("OR v.CustomerPO LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+
+            if(hasNewProductionProcessVersion.HasValue)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" v.HasNewProductionProcessVersion = @HasNewProductionProcessVersion ");
+                parammeters.Add(new SqlParameter("@HasNewProductionProcessVersion", hasNewProductionProcessVersion.Value));
             }
 
             if (fromDate > 0 && toDate > 0)

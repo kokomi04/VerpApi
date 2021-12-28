@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
     {
         Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes);
 
-        Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null);
+        Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate,bool? hasNewProductionProcessVersion = null, Clause filters = null);
         Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId);
         Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId);
         Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder(IList<string> orderCodes, IList<int> productIds);
@@ -36,6 +36,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 
         Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration();
         Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model);
-        Task<bool> UpdateProductionProcessVersion(long productionOrderId);
+        Task<bool> UpdateProductionProcessVersion(long productionOrderId, int productId);
     }
 }
