@@ -79,6 +79,42 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mã danh mục đối tác quá dài.
+        /// </summary>
+        public static string CustomerCateCodeTooLong {
+            get {
+                return ResourceManager.GetString("CustomerCateCodeTooLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mã danh mục đối tác quá ngắn.
+        /// </summary>
+        public static string CustomerCateCodeTooShort {
+            get {
+                return ResourceManager.GetString("CustomerCateCodeTooShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tên danh mục đối tác quá dài.
+        /// </summary>
+        public static string CustomerCateNameTooLong {
+            get {
+                return ResourceManager.GetString("CustomerCateNameTooLong", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tên danh mục đối tác quá ngắn.
+        /// </summary>
+        public static string CustomerCateNameTooShort {
+            get {
+                return ResourceManager.GetString("CustomerCateNameTooShort", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Danh mục đối tác &quot;{0}&quot; không tồn tại.
         /// </summary>
         public static string CustomerCateNotFound {
