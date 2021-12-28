@@ -77,7 +77,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateProductionProcessVersion(int productId)
         {
-            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
