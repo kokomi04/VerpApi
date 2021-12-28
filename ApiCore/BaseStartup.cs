@@ -2,6 +2,7 @@
 using Autofac.Extensions.DependencyInjection;
 using Elastic.Apm.NetCoreAll;
 using HealthChecks.UI.Client;
+using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -21,6 +22,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -301,28 +303,8 @@ namespace VErp.Infrastructure.ApiCore
                 options.EnableCaching = false;
                 options.CacheDuration = TimeSpan.FromMinutes(10);
 
-                // options.Events = new JwtBearerEvents
-                // {
-                //     OnMessageReceived = context =>
-                //     {
-                //         var accessToken = context.Request.Query["access_token"];
-
-                //         // If the request is for our hub...
-                //         var path = context.HttpContext.Request.Path;
-                //         if (!string.IsNullOrEmpty(accessToken) &&
-                //             (path.StartsWithSegments("/signalr/hubs")))
-                //         {
-                //             // Read the token out of the query string
-                //             context.Token = accessToken;
-                //         }
-                //         return Task.CompletedTask;
-                //     }
-                // };
+                options.TokenRetriever = CustomTokenRetriever.FromHeaderAndQueryString;
             });
-
-            services.TryAddEnumerable(
-    ServiceDescriptor.Singleton<IPostConfigureOptions<JwtBearerOptions>,
-        ConfigureJwtBearerOptions>());
         }
 
         protected virtual void ConfigureHelthCheck(IApplicationBuilder app)
@@ -392,35 +374,42 @@ namespace VErp.Infrastructure.ApiCore
         }
     }
 
-    public class ConfigureJwtBearerOptions : IPostConfigureOptions<JwtBearerOptions>
+    public class CustomTokenRetriever
     {
-        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        internal const string TokenItemsKey = "idsrv4:tokenvalidation:token";
+        // custom token key change it to the one you use for sending the access_token to the server
+        // during websocket handshake
+        internal const string SignalRTokenKey = "signalr_token";
 
-        public ConfigureJwtBearerOptions(Microsoft.Extensions.Logging.ILogger<ConfigureJwtBearerOptions> logger)
+        static Func<HttpRequest, string> AuthHeaderTokenRetriever { get; set; }
+        static Func<HttpRequest, string> QueryStringTokenRetriever { get; set; }
+
+        static CustomTokenRetriever()
         {
-            _logger = logger;
+            AuthHeaderTokenRetriever = TokenRetrieval.FromAuthorizationHeader();
+            QueryStringTokenRetriever = TokenRetrieval.FromQueryString();
         }
 
-        public void PostConfigure(string name, JwtBearerOptions options)
+        public static string FromHeaderAndQueryString(HttpRequest request)
         {
-            var originalOnMessageReceived = options.Events.OnMessageReceived;
-            options.Events.OnMessageReceived = async context =>
+            var token = AuthHeaderTokenRetriever(request);
+
+            if (string.IsNullOrEmpty(token))
             {
-                await originalOnMessageReceived(context);
+                token = QueryStringTokenRetriever(request);
+            }
 
-                if (string.IsNullOrEmpty(context.Token))
-                {
-                    _logger.LogInformation("[Before-JwtBearer]-{0}", context.HttpContext.Request.Path);
-                    var accessToken = context.Request.Query["access_token"];
-                    var path = context.HttpContext.Request.Path;
+            if (string.IsNullOrEmpty(token))
+            {
+                token = request.HttpContext.Items[TokenItemsKey] as string;
+            }
 
-                    if (!string.IsNullOrEmpty(accessToken) &&
-                        (path.StartsWithSegments("/signalr/hubs") || path.StartsWithSegments("/endpoint/signalr/hubs")))
-                    {
-                        context.Token = accessToken;
-                    }
-                }
-            };
+            if (string.IsNullOrEmpty(token) && request.Query.TryGetValue(SignalRTokenKey, out StringValues extract))
+            {
+                token = extract.ToString();
+            }
+
+            return token;
         }
     }
 }
