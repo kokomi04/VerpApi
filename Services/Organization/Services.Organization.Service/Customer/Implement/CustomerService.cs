@@ -168,8 +168,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var genCodeContexts = new List<GenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
+            var cates = await _organizationContext.CustomerCate.ToListAsync();
+
             foreach (var c in customers)
-                genCodeContexts.Add(await GenerateCustomerCode(null, c, baseValueChains));
+                genCodeContexts.Add(await GenerateCustomerCode(cates, null, c, baseValueChains));
 
             await ValidateCustomerModels(customers);
 
@@ -822,15 +824,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        private async Task<GenerateCodeContext> GenerateCustomerCode(int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
+        private async Task<GenerateCodeContext> GenerateCustomerCode(IList<CustomerCate> cates, int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
         {
             model.CustomerCode = (model.CustomerCode ?? "").Trim();
 
+            var cateInfo = cates.FirstOrDefault(c => c.CustomerCateId == model.CustomerCateId);
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
             var code = await ctx
                 .SetConfig(EnumObjectType.Customer)
-                .SetConfigData(customerId ?? 0)
+                .SetConfigData(customerId ?? 0, null, cateInfo?.CustomerCateCode)
                 .TryValidateAndGenerateCode(_organizationContext.Customer, model.CustomerCode, (s, code) => s.CustomerId != customerId && s.CustomerCode == code);
 
             model.CustomerCode = code;

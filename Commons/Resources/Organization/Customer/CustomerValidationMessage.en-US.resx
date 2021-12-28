@@ -123,6 +123,18 @@
   <data name="CurrencyNotFound" xml:space="preserve">
     <value>Currency "{0}" was not found</value>
   </data>
+  <data name="CustomerCateCodeTooLong" xml:space="preserve">
+    <value>Customer category code too long</value>
+  </data>
+  <data name="CustomerCateCodeTooShort" xml:space="preserve">
+    <value>Customer category code too short</value>
+  </data>
+  <data name="CustomerCateNameTooLong" xml:space="preserve">
+    <value>Customer category name too long</value>
+  </data>
+  <data name="CustomerCateNameTooShort" xml:space="preserve">
+    <value>Customer category name too short</value>
+  </data>
   <data name="CustomerCateNotFound" xml:space="preserve">
     <value>Customer category "{0}" does not exist</value>
   </data>

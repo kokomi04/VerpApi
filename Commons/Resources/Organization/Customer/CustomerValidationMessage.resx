@@ -123,6 +123,18 @@
   <data name="CurrencyNotFound" xml:space="preserve">
     <value>Không tìm thấy tiền tệ "{0}"</value>
   </data>
+  <data name="CustomerCateCodeTooLong" xml:space="preserve">
+    <value>Mã danh mục đối tác quá dài</value>
+  </data>
+  <data name="CustomerCateCodeTooShort" xml:space="preserve">
+    <value>Mã danh mục đối tác quá ngắn</value>
+  </data>
+  <data name="CustomerCateNameTooLong" xml:space="preserve">
+    <value>Tên danh mục đối tác quá dài</value>
+  </data>
+  <data name="CustomerCateNameTooShort" xml:space="preserve">
+    <value>Tên danh mục đối tác quá ngắn</value>
+  </data>
   <data name="CustomerCateNotFound" xml:space="preserve">
     <value>Danh mục đối tác "{0}" không tồn tại</value>
   </data>
