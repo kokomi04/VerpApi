@@ -62,6 +62,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             var strBankAccCurrency = nameof(BaseCustomerImportModel.BankAccCurrency1);
             strBankAccCurrency = strBankAccCurrency.Substring(0, strBankAccCurrency.Length - 1);
 
+
+            var lstCates = await _organizationContext.CustomerCate.ToListAsync();
+            var cates = lstCates.GroupBy(c => c.Name.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.FirstOrDefault());
+
             var lstData = reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (propertyName == nameof(BaseCustomerImportModel.CustomerTypeId))
@@ -103,6 +107,23 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         entity.LoanBeginningTypeId = EnumBeginningType.BillDate;
                     }
 
+                    return true;
+                }
+
+                if (propertyName == nameof(BaseCustomerImportModel.CustomerCateId))
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        var v = value.NormalizeAsInternalName();
+                        if (cates.ContainsKey(v))
+                        {
+                            entity.CustomerCateId = cates[v].CustomerCateId;
+                        }
+                        else
+                        {
+                            throw CustomerCateNotFound.BadRequestFormat(value);
+                        }
+                    }
                     return true;
                 }
 
@@ -180,7 +201,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 backAccounts.Select(b => b.BankName).Contains(x.BankName) &&
                 backAccounts.Select(b => b.AccountName).Contains(x.AccountName)
             ).AsNoTracking().ToListAsync();
-            
+
             _customerContact = await _organizationContext.CustomerContact.Where(x => contactNames.Contains(x.FullName)).AsNoTracking().ToListAsync();
 
             foreach (var customerModel in lstData)
@@ -206,7 +227,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                     if (existingCodes.Count() > 0)
                     {
-                        throw CustomerCodeAlreadyExists.BadRequestFormat( string.Join(", ", existingCodes));
+                        throw CustomerCodeAlreadyExists.BadRequestFormat(string.Join(", ", existingCodes));
                     }
 
                     throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", existedCustomers.Select(c => c.CustomerName)));
@@ -239,7 +260,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             using var @trans = await _organizationContext.Database.BeginTransactionAsync();
             try
             {
-                 foreach(var customer in lstUpdateCustomer)
+                foreach (var customer in lstUpdateCustomer)
                     await _customerService.UpdateCustomerBase(customer.CustomerId, customer, true);
 
                 await _customerService.AddBatchCustomersBase(lstAddCustomer);
@@ -289,8 +310,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 var name = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccAccountName1), number);
                 var bankName = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccBankName1), number);
 
-                var existsEntity = _bankAccounts.FirstOrDefault(x =>model.CustomerId == x.CustomerId && x.BankName == bankName && x.AccountName == name);
-               
+                var existsEntity = _bankAccounts.FirstOrDefault(x => model.CustomerId == x.CustomerId && x.BankName == bankName && x.AccountName == name);
+
                 if (!string.IsNullOrWhiteSpace(name))
                 {
                     model.BankAccounts.Add(new CustomerBankAccountModel()

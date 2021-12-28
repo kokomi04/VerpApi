@@ -137,6 +137,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+
+                entity.HasOne(d => d.CustomerCate)
+                    .WithMany(p => p.Customer)
+                    .HasForeignKey(d => d.CustomerCateId)
+                    .HasConstraintName("FK_Customer_CustomerCate");
             });
 
             modelBuilder.Entity<CustomerAttachment>(entity =>

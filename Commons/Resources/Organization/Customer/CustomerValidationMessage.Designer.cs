@@ -19,7 +19,7 @@ namespace Verp.Resources.Organization.Customer {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class CustomerValidationMessage {
@@ -70,11 +70,20 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy tiền tệ {0}.
+        ///   Looks up a localized string similar to Không tìm thấy tiền tệ &quot;{0}&quot;.
         /// </summary>
         public static string CurrencyNotFound {
             get {
                 return ResourceManager.GetString("CurrencyNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Danh mục đối tác &quot;{0}&quot; không tồn tại.
+        /// </summary>
+        public static string CustomerCateNotFound {
+            get {
+                return ResourceManager.GetString("CustomerCateNotFound", resourceCulture);
             }
         }
         
@@ -97,7 +106,7 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tồn tại nhiều đối tác {0} trong file excel.
+        ///   Looks up a localized string similar to Tồn tại nhiều đối tác &quot;{0}&quot; trong file excel.
         /// </summary>
         public static string MultipleCustomerFound {
             get {
