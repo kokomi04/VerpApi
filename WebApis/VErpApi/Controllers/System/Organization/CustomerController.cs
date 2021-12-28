@@ -47,22 +47,13 @@ namespace VErpApi.Controllers.System
         }
 
 
-        /// <summary>
-        /// Lấy danh sách đối tác
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="customerIds"></param>
-        /// <param name="customerStatusId"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
         [HttpPost]
         [Route("Search")]
         [VErpAction(EnumActionType.View)]
         [GlobalApi]
-        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
+        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerCateId, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
-            return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size, filters);
+            return await _customerService.GetList(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
         }
 
 
@@ -75,7 +66,7 @@ namespace VErpApi.Controllers.System
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            var (stream, fileName, contentType) = await _customerService.ExportList(req.FieldNames, req.Keyword, req.CustomerIds, req.CustomerStatusId, req.Page, req.Size);
+            var (stream, fileName, contentType) = await _customerService.ExportList(req.FieldNames, req.Keyword, req.CustomerCateId, req.CustomerIds, req.CustomerStatusId, req.Page, req.Size);
 
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }

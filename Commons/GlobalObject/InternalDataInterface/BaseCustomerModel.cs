@@ -8,7 +8,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
     public class BaseCustomerImportModel
     {
-        [Display(Name = "Mã KH", GroupName ="TT chung")]
+        [Display(Name = "Mã KH", GroupName = "TT chung")]
         [Required(ErrorMessage = "Vui lòng nhập mã đối tác")]
         [MaxLength(128, ErrorMessage = "Tên đối tác quá dài")]
         public string CustomerCode { get; set; }
@@ -18,8 +18,11 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [MaxLength(128, ErrorMessage = "Tên đối tác quá dài")]
         public string CustomerName { get; set; }
 
+        [Display(Name = "Danh mục KH", GroupName = "TT chung")]
+        public int? CustomerCateId { get; set; }
+
         [Display(Name = "Loại KH (Cá nhân, tổ chức)", GroupName = "TT chung")]
-        public EnumCustomerType CustomerTypeId { get; set; }
+        public EnumCustomerType? CustomerTypeId { get; set; }
         [MaxLength(128, ErrorMessage = "Địa chỉ đối tác quá dài")]
 
         [Display(Name = "Địa chỉ", GroupName = "TT chung")]
@@ -59,7 +62,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "Hạn mức nợ", GroupName = "TT bán hàng")]
         public decimal? DebtLimitation { get; set; }
         [Display(Name = "Thời điểm tính nợ (0: Ngày HĐ, 1: Cuối tháng)", GroupName = "TT bán hàng")]
-        public EnumBeginningType DebtBeginningTypeId { get; set; }
+        public EnumBeginningType? DebtBeginningTypeId { get; set; }
         [Display(Name = "NV quản lý nợ", GroupName = "TT bán hàng")]
         public int? DebtManagerUserId { get; set; }
 
@@ -174,12 +177,12 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public static string ContactPosition = nameof(BaseCustomerImportModel.ContactPosition1)[..^1];
         public static string ContactPhone = nameof(BaseCustomerImportModel.ContactPhone1)[..^1];
         public static string ContactEmail = nameof(BaseCustomerImportModel.ContactEmail1)[..^1];
-        public static string[] ContactFieldPrefix = new[] { 
-            ContactName, 
-            ContactGender, 
-            ContactPosition, 
+        public static string[] ContactFieldPrefix = new[] {
+            ContactName,
+            ContactGender,
+            ContactPosition,
             ContactPhone,
-            ContactEmail 
+            ContactEmail
         };
 
         public static string BankAccAccountName = nameof(BaseCustomerImportModel.BankAccAccountName1)[..^1];
@@ -199,13 +202,13 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
             BankAccAddress,
             BankAccCurrency
         };
-    }                        
+    }
 
-    public class BaseCustomerModel: BaseCustomerImportModel
+    public class BaseCustomerModel : BaseCustomerImportModel
     {
-        public bool IsActived { get; set; }
+        public bool? IsActived { get; set; }
 
-        public EnumCustomerStatus CustomerStatusId { get; set; }
+        public EnumCustomerStatus? CustomerStatusId { get; set; }
     }
 
     public class BasicCustomerListModel
