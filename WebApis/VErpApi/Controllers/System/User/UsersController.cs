@@ -44,14 +44,6 @@ namespace VErpApi.Controllers.System
             _fileService = fileService;
         }
 
-        /// <summary>
-        /// Tìm kiếm user
-        /// </summary>
-        /// <param name="keyword">Từ khóa</param>
-        /// <param name="page">Trang hiện tại</param>
-        /// <param name="size">Kích thước trang</param>
-        /// <returns>
-        /// </returns>
         [HttpGet]
         [GlobalApi]
         [Route("")]
@@ -63,7 +55,7 @@ namespace VErpApi.Controllers.System
         [HttpGet]
         [GlobalApi]
         [Route("Departments/{departmentId}")]
-        public async Task<IList<UserBasicInfoOutput>> GetByDepartment([FromRoute]int departmentId)
+        public async Task<IList<UserBasicInfoOutput>> GetByDepartment([FromRoute] int departmentId)
         {
             return await _userService.GetBasicInfoByDepartment(departmentId).ConfigureAwait(true);
         }
@@ -187,7 +179,7 @@ namespace VErpApi.Controllers.System
         {
             return await _fileService.Upload(EnumObjectType.UserAndEmployee, EnumFileType.Image, string.Empty, file).ConfigureAwait(true);
         }
-      
+
 
         [HttpGet]
         [Route("fieldDataForMapping")]
