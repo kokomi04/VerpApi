@@ -355,13 +355,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return remainStocks;
         }
 
-        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int? stockId, int productId, int page, int size)
+        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(IList<int> stockIds, int productId, int page, int size)
         {
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
             var packages = _stockContext.Package.AsQueryable();
-            if (stockId.HasValue)
+            if (stockIds?.Count > 0)
             {
-                packages = packages.Where(p => p.StockId == stockId);
+                packages = packages.Where(p => stockIds.Contains(p.StockId));
             }
             var query = (
                 from pk in packages

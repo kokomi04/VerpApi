@@ -182,7 +182,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("{stockId}/StockProducts/{productId}")]
         public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails([FromRoute] int stockId, [FromRoute] int productId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockProductService.StockProductPackageDetails(stockId, productId, page, size);
+            return await _stockProductService.StockProductPackageDetails(new[] { stockId }, productId, page, size);
         }
 
         /// <summary>
@@ -195,11 +195,11 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("{productId}/Packages")]
-        public async Task<PageData<StockProductPackageDetail>> ProductPackages([FromRoute] int productId, [FromQuery] int? stockId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<StockProductPackageDetail>> ProductPackages([FromRoute] int productId, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockProductService.StockProductPackageDetails(stockId, productId, page, size);
+            return await _stockProductService.StockProductPackageDetails(stockIds, productId, page, size);
         }
-        
+
 
         [HttpPost]
         [Route("RemainStock")]
@@ -296,7 +296,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReportProductUnitConversionQuantity")]
-        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockProductService.StockSumaryReportProductUnitConversionQuantity(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }
