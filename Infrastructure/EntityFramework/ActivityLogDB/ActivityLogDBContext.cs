@@ -18,6 +18,7 @@ namespace ActivityLogDB
         }
 
         public virtual DbSet<Notification> Notification { get; set; }
+        public virtual DbSet<PushSubscription> PushSubscription { get; set; }
         public virtual DbSet<Subscription> Subscription { get; set; }
         public virtual DbSet<UserActivityLog> UserActivityLog { get; set; }
         public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
@@ -29,6 +30,21 @@ namespace ActivityLogDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
+            modelBuilder.Entity<PushSubscription>(entity =>
+            {
+                entity.Property(e => e.Auth)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.Endpoint)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.P256dh)
+                    .IsRequired()
+                    .HasMaxLength(1000);
+            });
 
             modelBuilder.Entity<UserActivityLog>(entity =>
             {
