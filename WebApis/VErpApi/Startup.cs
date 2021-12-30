@@ -37,6 +37,8 @@ using VErp.Services.Stock.Model;
 using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 using VErp.Commons.Library;
+using VErp.Services.Master.Service.Webpush;
+using Lib.Net.Http.WebPush;
 
 namespace VErp.WebApis.VErpApi
 {
@@ -100,6 +102,9 @@ namespace VErp.WebApis.VErpApi
             ConfigSwagger(services);
 
             ConfigureAutoMaper(services);
+
+            services.AddHttpClient<PushServiceClient>();
+            services.AddHostedService<WebPushNotificationsProducer>();
 
             return BuildService(services);
         }
