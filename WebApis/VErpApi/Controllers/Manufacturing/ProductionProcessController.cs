@@ -142,7 +142,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
-        [Route("{productionOrderId}")]
+        [Route("{productionOrderId}/dismissUpdateQuantity")]
         public async Task<bool> DismissUpdateQuantity([FromRoute] long productionOrderId)
         {
             var rs = await _productionProcessService.DismissUpdateQuantity(productionOrderId);
