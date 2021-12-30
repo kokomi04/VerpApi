@@ -67,6 +67,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public bool IsDraft { get; set; }
         public bool IsInvalid { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
+        public bool? IsUpdateQuantity { get; set; }
+        public bool? IsUpdateProcessForAssignment { get; set; }
     }
 
     public class ProductionOrderStatusDataModel

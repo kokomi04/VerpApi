@@ -515,7 +515,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 var maxY = bottomStep?.CoordinateY.GetValueOrDefault() ?? 0;
                 var newMaxY = maxY;
-                foreach (var productionOrderDetail in productionOrderDetails.GroupBy(x=> x.ProductId))
+                foreach (var productionOrderDetail in productionOrderDetails.GroupBy(x => x.ProductId))
                 {
                     // Tạo step ứng với quy trình sản xuất
                     var product = products.First(p => p.ProductId == productionOrderDetail.Key);
@@ -920,7 +920,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 await UpdateProductionProcessManual(containerTypeId, containerId, req);
 
-                if(containerTypeId == EnumContainerType.Product)
+                if (containerTypeId == EnumContainerType.Product)
                     await _productHelperService.UpdateProductionProcessVersion(containerId);
 
                 await trans.CommitAsync();
@@ -934,11 +934,44 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 _logger.LogError(ex, "UpdateProductionProcess");
                 throw;
             }
+        }
 
+        public async Task<bool> DismissUpdateQuantity(long productionOrderId)
+        {
+            try
+            {
+                // Cập nhật lại trạng thái thay đổi số lượng LSX
+                var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+                if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+                if (productionOrder.IsUpdateQuantity == true)
+                {
+                    productionOrder.IsUpdateQuantity = false;
+                }
+                await _manufacturingDBContext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DismissUpdateQuantity");
+                throw;
+            }
         }
 
         private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
+            if (containerTypeId == EnumContainerType.ProductionOrder)
+            {
+                // Cập nhật lại trạng thái thay đổi số lượng LSX
+                var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == containerId);
+                if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+                if (productionOrder.IsUpdateQuantity == true)
+                {
+                    productionOrder.IsUpdateQuantity = false;
+                }
+                // Cập nhật trạng thái thay đổi quy trình LSX cho phân công
+                productionOrder.IsUpdateProcessForAssignment = true;
+            }
+
             if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
