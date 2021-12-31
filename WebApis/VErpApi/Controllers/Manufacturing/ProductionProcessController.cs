@@ -149,6 +149,14 @@ namespace VErpApi.Controllers.Manufacturing
             return rs;
         }
 
+        [HttpGet]
+        [Route("{productionOrderId}/hasAssignment")]
+        public async Task<bool> CheckHasAssignment([FromRoute] long productionOrderId)
+        {
+            var rs = await _productionProcessService.CheckHasAssignment(productionOrderId);
+            return rs;
+        }
+
         [HttpPost]
         [Route("productionStepLinkData/searchByListProductionStepLinkDataId")]
         public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepLinkDataId)
