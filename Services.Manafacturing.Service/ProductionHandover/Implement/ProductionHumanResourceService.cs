@@ -35,7 +35,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _mapper = mapper;
         }
 
-   
+
         public async Task<ProductionHumanResourceModel> CreateProductionHumanResource(long productionOrderId, ProductionHumanResourceInputModel data)
         {
             try
@@ -44,7 +44,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHumanResource.ProductionOrderId = productionOrderId;
                 _manufacturingDBContext.ProductionHumanResource.Add(productionHumanResource);
                 _manufacturingDBContext.SaveChanges();
-            
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResource.ProductionHumanResourceId, $"Tạo thống kê nhân công sản xuất", data.JsonSerialize());
                 return _mapper.Map<ProductionHumanResourceModel>(productionHumanResource);
             }
@@ -83,14 +83,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                var currentProductionHumanResources = _manufacturingDBContext.ProductionHumanResource.Where(r => r.ProductionOrderId == productionOrderId).ToList();
+
+
                 foreach (var item in data)
                 {
-                    var productionHumanResource = _mapper.Map<ProductionHumanResource>(item);
-                    productionHumanResource.ProductionOrderId = productionOrderId;
-                    _manufacturingDBContext.ProductionHumanResource.Add(productionHumanResource);
-
-                    insertData.Add(productionHumanResource);
+                    var current = currentProductionHumanResources.FirstOrDefault(r => r.ProductionHumanResourceId == item.ProductionHumanResourceId);
+                    // Thêm mới
+                    if (current == null)
+                    {
+                        var productionHumanResource = _mapper.Map<ProductionHumanResource>(item);
+                        productionHumanResource.ProductionOrderId = productionOrderId;
+                        _manufacturingDBContext.ProductionHumanResource.Add(productionHumanResource);
+                        insertData.Add(productionHumanResource);
+                    } 
+                    else // Cập nhật
+                    {
+                        _mapper.Map(item, current);
+                        currentProductionHumanResources.Remove(current);
+                    }
                 }
+
+                // Xóa
+                _manufacturingDBContext.ProductionHumanResource.RemoveRange(currentProductionHumanResources);
 
                 _manufacturingDBContext.SaveChanges();
 
