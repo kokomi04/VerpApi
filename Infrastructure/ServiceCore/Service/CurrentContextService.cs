@@ -110,8 +110,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         private void CrossServiceLogin()
         {
-            var httpContext = _httpContextAccessor?.HttpContext;
-            if (httpContext == null) return;
+            HttpContext httpContext;
+            try
+            {
+                httpContext = _httpContextAccessor?.HttpContext;
+                if (httpContext == null) return;
+            }
+            catch (Exception)
+            {
+                return;
+            }
 
             var headers = httpContext.Request.Headers;
             headers.TryGetValue(Headers.CrossServiceKey, out var crossServiceKeys);
@@ -412,17 +420,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public int ModuleId 
+        public int ModuleId
         {
             get
             {
                 if (_moduleId > 0)
                     return _moduleId;
-                    
+
                 _httpContextAccessor.HttpContext.Request.Headers.TryGetValue(Headers.Module, out var moduleIds);
 
-                if(moduleIds.Count == 0) return 0;
-                
+                if (moduleIds.Count == 0) return 0;
+
                 _moduleId = int.Parse(moduleIds[0]);
                 return _moduleId;
             }
@@ -485,7 +493,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public bool IsDeveloper { get; } = false;
         public string Language { get; }
         public string IpAddress { get; }
-        public string Domain {get;}
-        public int ModuleId {get;}
+        public string Domain { get; }
+        public int ModuleId { get; }
     }
 }

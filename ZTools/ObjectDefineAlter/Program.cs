@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,15 +12,55 @@ namespace ObjectDefineAlter
 
     class Program
     {
+
+
+        static Dictionary<string, string> databaseConfigKeys = new Dictionary<string, string>()
+        {
+            {"AccountancyDB","AccountancyDatabase" },
+            {"ManufacturingDB","ManufacturingDatabase" },
+            {"MasterDB","MasterDatabase" },
+            {"OrganizationDB","OrganizationDatabase" },
+            {"PurchaseOrderDB","PurchaseOrderDatabase" },
+            {"StockDB","StockDatabase" },
+        };
+
+        static string sv1 = $"/usr/verp/config/config.Development.json";
+        static string sv2 = $"";
+        static string scripts = "";
+
+
         static void Main(string[] args)
         {
-            var file = $"/usr/verp/config/config.Production.json";
-            if (!System.IO.File.Exists(file))
+            if (args?.Count() > 0)
             {
-                Console.WriteLine("File not found: " + file);
+                foreach (var a in args)
+                {
+                    var vas = a.Split(':', 2);
+                    var aName = vas[0]?.ToLower();
+                    var aValue = vas.Length > 1 ? vas[1] : null;
+                    if (!string.IsNullOrWhiteSpace(aName) && !string.IsNullOrWhiteSpace(aValue))
+                    {
+                        switch (aName)
+                        {
+                            case "/sv1":
+                                sv1 = aValue?.Trim('"');
+                                break;
+                            case "/sv2":
+                                sv2 = aValue?.Trim('"');
+                                break;
+                            case "/scripts":
+                                scripts = aValue?.Trim('"');
+                                break;
+                        }
+                    }
+                }
+            }
+            if (!System.IO.File.Exists(sv1))
+            {
+                Console.WriteLine("File not found: " + sv1);
                 return;
             }
-            var setting = JObject.Parse(System.IO.File.ReadAllText(file));
+            var setting = JObject.Parse(System.IO.File.ReadAllText(sv1));
 
             var cnn = setting.SelectToken("$.DatabaseConnections.MasterDatabase").ToString();
 
@@ -62,7 +103,7 @@ namespace ObjectDefineAlter
 
 ";
 
-            var dbs = new[] { "AccountancyDB", "ManufacturingDB", "MasterDB", "OrganizationDB", "PurchaseOrderDB", "StockDB" };
+            var dbs = databaseConfigKeys.Keys.ToList();
 
             var objectRefs = new List<KeyValuePair<string, string>>();
 
@@ -145,7 +186,66 @@ namespace ObjectDefineAlter
                 alterStr.AppendLine("");
             }
 
-            System.IO.File.WriteAllText("/usr/Verp.sql", alterStr.ToString());
+
+            if (!Directory.Exists("/usr"))
+            {
+                Directory.CreateDirectory("/usr");
+            }
+
+            System.IO.File.WriteAllText($"/usr/Verp_{DateTime.Now.ToString("yyyy_MM_dd")}.sql", alterStr.ToString());
+
+
+            if (!string.IsNullOrWhiteSpace(sv2))
+                Deploy(sv2, objDefineSorts);
+
+            if (!string.IsNullOrWhiteSpace(scripts))
+                RunScripts(sv2, scripts);
+        }
+
+        private static void Deploy(string sv, Dictionary<string, DataDefine> objDefineSorts)
+        {
+            if (!System.IO.File.Exists(sv))
+            {
+                Console.WriteLine("File not found: " + sv);
+                return;
+            }
+            var setting = JObject.Parse(System.IO.File.ReadAllText(sv));
+            foreach (var obj in objDefineSorts)
+            {
+                var cnn = setting.SelectToken($"$.DatabaseConnections.{databaseConfigKeys[obj.Value.Database]}").ToString();
+
+                var dbHelper = new DbHelper(cnn);
+                dbHelper.ExecuteNonQuery(obj.Value.Definition);
+            }
+        }
+
+        private static void RunScripts(string sv, string dic)
+        {
+            if (!System.IO.File.Exists(sv))
+            {
+                Console.WriteLine("File not found: " + sv);
+                return;
+            }
+
+            var setting = JObject.Parse(System.IO.File.ReadAllText(sv));
+            foreach (var db in databaseConfigKeys.Keys)
+            {
+                var cnn = setting.SelectToken($"$.DatabaseConnections.{databaseConfigKeys[db]}").ToString();
+
+                var folder = dic + "/" + db;
+                if (Directory.Exists(folder))
+                {
+                    var files = Directory.GetFiles(folder).OrderBy(f => f).ToList();
+                    var dbHelper = new DbHelper(cnn);
+                    foreach (var file in files)
+                    {
+                        var sql = System.IO.File.ReadAllText(file);
+
+                        dbHelper.ExecuteNonQuery(sql);
+                    }
+
+                }
+            }
         }
 
         private static string AddToDefines(Dictionary<string, DataDefine> objectDefines, string db, DataRow row)

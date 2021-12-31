@@ -355,21 +355,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return remainStocks;
         }
 
-        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size)
+        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(IList<int> stockIds, int productId, int page, int size)
         {
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+            var packages = _stockContext.Package.AsQueryable();
+            if (stockIds?.Count > 0)
+            {
+                packages = packages.Where(p => stockIds.Contains(p.StockId));
+            }
             var query = (
-                from pk in _stockContext.Package
+                from pk in packages
+                join st in _stockContext.Stock on pk.StockId equals st.StockId
                 join p in _stockContext.Product on pk.ProductId equals p.ProductId
                 join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
                 from c in cs.DefaultIfEmpty()
                 join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
                 from l in ls.DefaultIfEmpty()
-                where pk.StockId == stockId && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
+                where pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
                 select new
                 {
                     PackageId = pk.PackageId,
                     PackageCode = pk.PackageCode,
+                    pk.StockId,
+                    st.StockName,
                     pk.OrderCode,
                     pk.ProductionOrderCode,
                     pk.Pocode,
@@ -411,7 +419,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 PackageId = pk.PackageId,
                 PackageCode = pk.PackageCode,
-
+                StockId = pk.StockId,
+                StockName = pk.StockName,
                 LocationId = pk.LocationId,
                 LocationName = pk.LocationName,
                 Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
@@ -651,8 +660,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var total = productInfoQuery.Count();
-            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();         
-          
+            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();
+
             var stockProductDataList = (from sp in stockProductAsQueryable
                                         join s in _stockContext.Stock.AsQueryable() on sp.StockId equals s.StockId
                                         select new
