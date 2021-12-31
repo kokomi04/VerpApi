@@ -19,6 +19,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Commons.Library.Model;
+using VErp.Services.Accountancy.Service.Input.Implement.Facade;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -29,11 +30,13 @@ namespace VErpApi.Controllers.Accountancy.Data
     {
         private readonly IInputDataService _inputDataService;
         private readonly ICalcBillService _calcBillService;
+        private readonly IInpuDataExportFacadeService _inpuDataExportFacadeService;
 
-        public InputController(IInputDataService inputDataService, ICalcBillService calcBillService)
+        public InputController(IInputDataService inputDataService, ICalcBillService calcBillService, IInpuDataExportFacadeService inpuDataExportFacadeService)
         {
             _inputDataService = inputDataService;
             _calcBillService = calcBillService;
+            _inpuDataExportFacadeService = inpuDataExportFacadeService;
         }
 
 
@@ -44,8 +47,24 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.GetBills(inputTypeId, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _inputDataService.GetBills(inputTypeId, false, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/Export")]
+        public async Task<IActionResult> ExportList([FromRoute] int inputTypeId, [FromBody] InputTypeBillsExporttFilterModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _inpuDataExportFacadeService.Export(inputTypeId, req);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}")]
