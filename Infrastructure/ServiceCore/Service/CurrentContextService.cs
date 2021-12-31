@@ -104,7 +104,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _serviceScopeFactory = serviceScopeFactory;
             _cachingService = cachingService;
             _authDataCacheService = authDataCacheService;
-            CrossServiceLogin();
+            try
+            {
+                CrossServiceLogin();
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
 

@@ -273,6 +273,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long? productionStepId = null, int? departmentId = null, IList<ProductionInventoryRequirementEntity> inventories = null)
         {
+            var result = new List<DepartmentHandoverDetailModel>();
             var productionSteps = _manufacturingDBContext.ProductionStep
                 .Where(ps => ps.ContainerId == productionOrderId
                 && (!productionStepId.HasValue || ps.ProductionStepId == productionStepId)
@@ -282,14 +283,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 && !ps.IsFinish)
                 .ToList();
 
-            if (productionSteps.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại công đoạn");
+            if (productionSteps.Count == 0) return result;
             var parentIds = productionSteps.Select(ps => ps.ProductionStepId).ToList();
 
             var groups = _manufacturingDBContext.ProductionStep
                 .Where(ps => ps.ParentId.HasValue && parentIds.Contains(ps.ParentId.Value) && !ps.IsFinish)
                 .ToList();
 
-            var result = new List<DepartmentHandoverDetailModel>();
             var outsourceStepRequestIds = groups.Where(g => g.OutsourceStepRequestId.HasValue).Select(g => g.OutsourceStepRequestId).ToList();
             var outsourceStepRequests = _manufacturingDBContext.OutsourceStepRequest.Where(o => outsourceStepRequestIds.Contains(o.OutsourceStepRequestId)).ToList();
             var groupIds = groups.Select(g => g.ProductionStepId).ToList();
@@ -944,6 +944,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var bOk = true;
 
             var departmentHandoverDetails = await GetDepartmentHandoverDetail(productionOrder.ProductionOrderId, null, null, inventories);
+            if (departmentHandoverDetails.Count == 0) return bOk;
+
             var updateAssignments = new List<ProductionAssignmentEntity>();
             try
             {
@@ -1001,6 +1003,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 departmentHandoverDetails = (await GetDepartmentHandoverDetail(productionOrderId, productionStep.ParentId.Value, departmentId, inventories));
             }
+            if (departmentHandoverDetails.Count == 0) return true;
             var departmentHandoverDetail = departmentHandoverDetails.FirstOrDefault(dh => dh.DepartmentId == departmentId && dh.ProductionStepId == productionStepId);
             if (departmentHandoverDetail == null) return true;
             var inoutDatas = departmentHandoverDetail.InputDatas.Union(departmentHandoverDetail.OutputDatas);
