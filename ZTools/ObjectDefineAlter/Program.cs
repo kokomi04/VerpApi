@@ -35,7 +35,7 @@ namespace ObjectDefineAlter
             {
                 foreach (var a in args)
                 {
-                    var vas = a.Split(':',2);
+                    var vas = a.Split(':', 2);
                     var aName = vas[0]?.ToLower();
                     var aValue = vas.Length > 1 ? vas[1] : null;
                     if (!string.IsNullOrWhiteSpace(aName) && !string.IsNullOrWhiteSpace(aValue))
@@ -187,8 +187,14 @@ namespace ObjectDefineAlter
             }
 
 
+            if (!Directory.Exists("/usr"))
+            {
+                Directory.CreateDirectory("/usr");
+            }
 
-            System.IO.File.WriteAllText("/usr/Verp.sql", alterStr.ToString());
+            System.IO.File.WriteAllText($"/usr/Verp_{DateTime.Now.ToString("yyyy_MM_dd")}.sql", alterStr.ToString());
+
+
             if (!string.IsNullOrWhiteSpace(sv2))
                 Deploy(sv2, objDefineSorts);
 
@@ -214,14 +220,14 @@ namespace ObjectDefineAlter
         }
 
         private static void RunScripts(string sv, string dic)
-        {          
+        {
             if (!System.IO.File.Exists(sv))
             {
                 Console.WriteLine("File not found: " + sv);
                 return;
             }
 
-            var setting = JObject.Parse(sv);
+            var setting = JObject.Parse(System.IO.File.ReadAllText(sv));
             foreach (var db in databaseConfigKeys.Keys)
             {
                 var cnn = setting.SelectToken($"$.DatabaseConnections.{databaseConfigKeys[db]}").ToString();
