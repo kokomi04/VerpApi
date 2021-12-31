@@ -104,7 +104,7 @@ namespace VErp.WebApis.VErpApi
             ConfigureAutoMaper(services);
 
             services.AddHttpClient<PushServiceClient>();
-            services.AddHostedService<WebPushNotificationsProducer>();
+            // services.AddHostedService<WebPushNotificationsProducer>();
 
             return BuildService(services);
         }

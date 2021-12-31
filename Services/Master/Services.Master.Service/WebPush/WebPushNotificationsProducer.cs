@@ -58,16 +58,20 @@ namespace VErp.Services.Master.Service.Webpush
 
             foreach (var subscription in subs)
             {
-                var keys = new Dictionary<string, string>();
-                keys.Add("auth", subscription.Auth);
-                keys.Add("p256dh", subscription.P256dh);
-
-                // Fire-and-forget 
-                await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
+                if(!_principalBroadcaster.IsUserConnected(subscription.UserId.ToString()))
                 {
-                    Endpoint = subscription.Endpoint,
-                    Keys = keys,
-                }, notification);
+                    var keys = new Dictionary<string, string>();
+                    keys.Add("auth", subscription.Auth);
+                    keys.Add("p256dh", subscription.P256dh);
+
+                    // Fire-and-forget 
+                    await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
+                    {
+                        Endpoint = subscription.Endpoint,
+                        Keys = keys,
+                    }, notification);
+                }
+                
             }
         }
 

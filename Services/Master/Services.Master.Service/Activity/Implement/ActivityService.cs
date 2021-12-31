@@ -1,6 +1,8 @@
 ﻿using ActivityLogDB;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Lib.Net.Http.WebPush;
+using Lib.Net.Http.WebPush.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +30,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.SignalR;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.Master.Model.Notification;
+using VErp.Services.Master.Model.WebPush;
 using VErp.Services.Master.Service.Users;
 using NotificationEntity = ActivityLogDB.Notification;
 
@@ -45,6 +48,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly IMapper _mapper;
         private readonly IPrincipalBroadcasterService _principalBroadcaster;
         private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
+        private readonly PushServiceClient _pushClient;
 
         public ActivityService(ActivityLogDBContext activityLogContext
             , IUserService userService
@@ -54,7 +58,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
             , IMapper mapper, IPrincipalBroadcasterService principalBroadcaster
-            , IHubContext<BroadcastSignalRHub, IBroadcastHubClient> hubNotifyContext)
+            , IHubContext<BroadcastSignalRHub, IBroadcastHubClient> hubNotifyContext
+            , PushServiceClient pushClient)
         {
             _activityLogContext = activityLogContext;
             _userService = userService;
@@ -66,6 +71,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _mapper = mapper;
             _principalBroadcaster = principalBroadcaster;
             _hubNotifyContext = hubNotifyContext;
+            _pushClient = pushClient;
+
+            _pushClient.DefaultAuthentication = new VapidAuthentication(_appSetting.WebPush.PublicKey, _appSetting.WebPush.PrivateKey);
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -117,7 +125,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     UserActivityLogId = activity.UserActivityLogId
                 };
 
-                await AddNotification(bodyNotification, input.UserId);
+                await AddNotification(bodyNotification, input.UserId, input);
 
                 await _activityLogContext.SaveChangesAsync();
 
@@ -315,7 +323,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return results;
         }
 
-        private async Task<bool> AddNotification(NotificationAdditionalModel model, int userId)
+        private async Task<bool> AddNotification(NotificationAdditionalModel model, int userId, ActivityInput log)
         {
             var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && userId != x.UserId);
             if (model.BillTypeId.HasValue)
@@ -332,9 +340,68 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
             _activityLogContext.Notification.AddRange(lsNewNotification);
             await _activityLogContext.SaveChangesAsync();
-            
-            if(_principalBroadcaster.IsUserConnected())
-                await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(querySub.Select(x => x.UserId.ToString()).ToArray())).BroadcastMessage();
+
+            foreach (var sub in querySub)
+            {
+                var subUserId = sub.UserId;
+                if (_principalBroadcaster.IsUserConnected(subUserId.ToString()))
+                    await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(new[] { subUserId.ToString() })).BroadcastMessage();
+                else
+                {
+                    var pushSubscription = await _activityLogContext.PushSubscription.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == subUserId);
+                    if (pushSubscription != null)
+                    {
+                        PushMessage notification = new AngularPushNotification
+                        {
+                            Title = "VERP Thông Báo",
+                            Body = log.Message,
+                            NotifyData = model
+                        }.ToPushMessage();
+
+                        var keys = new Dictionary<string, string>();
+                        keys.Add("auth", pushSubscription.Auth);
+                        keys.Add("p256dh", pushSubscription.P256dh);
+
+                        // Fire-and-forget 
+                        await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
+                        {
+                            Endpoint = pushSubscription.Endpoint,
+                            Keys = keys,
+                        }, notification);
+                    }
+                }
+            }
+
+            // if (_principalBroadcaster.IsUserConnected())
+            //     await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(querySub.Select(x => x.UserId.ToString()).ToArray())).BroadcastMessage();
+            // else
+            // {
+            //     PushMessage notification = new AngularPushNotification
+            //     {
+            //         Title = "VERP DEMO WEBPUSH",
+            //         Body = $"ABC",
+            //     }.ToPushMessage();
+
+            //     var subs = await _activityLogContext.PushSubscription.AsNoTracking().ToListAsync();
+
+            //     foreach (var subscription in subs)
+            //     {
+            //         if (!_principalBroadcaster.IsUserConnected(subscription.UserId.ToString()))
+            //         {
+            //             var keys = new Dictionary<string, string>();
+            //             keys.Add("auth", subscription.Auth);
+            //             keys.Add("p256dh", subscription.P256dh);
+
+            //             // Fire-and-forget 
+            //             await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
+            //             {
+            //                 Endpoint = subscription.Endpoint,
+            //                 Keys = keys,
+            //             }, notification);
+            //         }
+
+            //     }
+            // }
             return true;
         }
     }

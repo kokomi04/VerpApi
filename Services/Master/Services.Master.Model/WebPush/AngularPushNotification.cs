@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Lib.Net.Http.WebPush;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Master.Model.WebPush
 {
@@ -39,6 +40,8 @@ namespace VErp.Services.Master.Model.WebPush
         public IDictionary<string, object> Data { get; set; }
 
         public IList<NotificationAction> Actions { get; set; } = new List<NotificationAction>();
+
+        public NotificationAdditionalModel NotifyData { get; set; }
 
         public PushMessage ToPushMessage(string topic = null, int? timeToLive = null, PushMessageUrgency urgency = PushMessageUrgency.Normal)
         {
