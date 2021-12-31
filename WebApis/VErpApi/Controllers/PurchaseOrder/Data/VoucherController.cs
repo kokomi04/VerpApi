@@ -18,6 +18,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Commons.Library.Model;
+using VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade;
 
 namespace VErpApi.Controllers.PurchaseOrder.Data
 {
@@ -27,20 +28,36 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
     public class VoucherController : VErpBaseController
     {
         private readonly IVoucherDataService _voucherDataService;
+        private readonly IVoucherDataExportFacadeService _voucherDataExportFacadeService;
 
-        public VoucherController(IVoucherDataService voucherDataService)
+        public VoucherController(IVoucherDataService voucherDataService, IVoucherDataExportFacadeService voucherDataExportFacadeService)
         {
             _voucherDataService = voucherDataService;
+            _voucherDataExportFacadeService = voucherDataExportFacadeService;
         }
 
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{voucherTypeId}/Search")]
-        public async Task<PageDataTable> GetVoucherBills([FromRoute] int voucherTypeId, [FromBody] VoucherTypeBillsRequestModel request)
+        public async Task<PageDataTable> GetVoucherBills([FromRoute] int voucherTypeId, [FromBody] VoucherTypeBillsFilterPagingModel request)
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _voucherDataService.GetVoucherBills(voucherTypeId, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _voucherDataService.GetVoucherBills(voucherTypeId, false, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{voucherTypeId}/Export")]
+        public async Task<IActionResult> ExportList([FromRoute] int voucherTypeId, [FromBody] VoucherTypeBillsExportModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _voucherDataExportFacadeService.Export(voucherTypeId, req);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
         [HttpGet]

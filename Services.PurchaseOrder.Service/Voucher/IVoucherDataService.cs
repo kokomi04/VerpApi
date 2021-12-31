@@ -10,12 +10,13 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
+using static VErp.Services.PurchaseOrder.Service.Voucher.Implement.VoucherDataService;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher
 {
     public interface IVoucherDataService
     {
-        Task<PageDataTable> GetVoucherBills(int inputTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetVoucherBills(int inputTypeId, bool isMultiRow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         //Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
 
@@ -30,6 +31,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<bool> DeleteVoucherBill(int inputTypeId, long inputValueBillId);
 
         Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId = null);
+
+        Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null);
 
         Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 

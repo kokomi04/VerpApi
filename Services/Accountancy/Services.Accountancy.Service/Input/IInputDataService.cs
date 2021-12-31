@@ -11,12 +11,13 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
+using static VErp.Services.Accountancy.Service.Input.Implement.InputDataService;
 
 namespace VErp.Services.Accountancy.Service.Input
 {
     public interface IInputDataService
     {
-        Task<PageDataTable> GetBills(int inputTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
@@ -27,6 +28,8 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data);
 
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
+
+        Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null);
 
         Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId);
 

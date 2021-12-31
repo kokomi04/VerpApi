@@ -24,6 +24,8 @@ namespace VErp.Commons.Library.Model
         public string FieldTitle { get; set; }
         public bool IsRequired { get; set; }
         public int? Type { get; set; }
+
+        public EnumDataType? DataTypeId { get; set; }
         public CategoryNameModel RefCategory { get; set; }
     }
 

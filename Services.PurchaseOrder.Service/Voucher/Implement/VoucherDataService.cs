@@ -75,7 +75,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _voucherDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherBill);
         }
 
-        public async Task<PageDataTable> GetVoucherBills(int voucherTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetVoucherBills(int voucherTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -95,11 +95,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 select f
             ).ToListAsync();
             var whereCondition = new StringBuilder();
-            
+
             var sqlParams = new List<SqlParameter>();
 
             whereCondition.Append($" r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()}");
-            
+
             if (fromDate.HasValue && toDate.HasValue)
             {
                 whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @FromDate AND @ToDate");
@@ -109,7 +109,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
 
 
-            
+
             int suffix = 0;
             if (filters != null)
             {
@@ -145,12 +145,29 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
                 columnsFilters.FilterClauseProcess(VOUCHERVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix);
             }
-            var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
+
+            string totalSql;
+
+            var fieldToSelect = fields.Values.ToList();
+
+            if (isMultirow)
+            {
+                totalSql = @$"SELECT COUNT(0) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}";
+            }
+            else
+            {
+                totalSql = @$"SELECT COUNT(DISTINCT r.VoucherBill_F_Id) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}";
+                fieldToSelect = fieldToSelect.Where(f => !f.IsMultiRow).ToList();
+            }
+
+
+            var selectColumns = fieldToSelect.SelectMany(f =>
             {
                 var refColumns = new List<string>()
                 {
                     f.FieldName
                 };
+
                 if (((EnumFormType)f.FormTypeId).IsJoinForm()
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle)
                 && !string.IsNullOrWhiteSpace(f.RefTableTitle))
@@ -159,20 +176,36 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
                 return refColumns;
             }).ToList();
-            if (!mainColumns.Contains(orderByFieldName))
+
+            if (!selectColumns.Contains(orderByFieldName))
             {
-                orderByFieldName = mainColumns.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
+                orderByFieldName = selectColumns.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
-            var totalSql = @$"SELECT COUNT(DISTINCT r.VoucherBill_F_Id) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}";
+
             var table = await _purchaseOrderDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
             var total = 0;
             if (table != null && table.Rows.Count > 0)
             {
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
             }
-            var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
-            var dataSql = @$"
+            var selectColumn = string.Join(",", selectColumns.Select(c => $"r.[{c}]"));
+
+            string dataSql;
+            if (isMultirow)
+            {
+                dataSql = @$"
+                 
+                    SELECT r.VoucherBill_F_Id, r.F_Id {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
+                    FROM {VOUCHERVALUEROW_VIEW} r
+                    WHERE {whereCondition}
+               
+                    ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
+                ";
+            }
+            else
+            {
+                dataSql = @$"
                  ;WITH tmp AS (
                     SELECT r.VoucherBill_F_Id, MAX(F_Id) as F_Id
                     FROM {VOUCHERVALUEROW_VIEW} r
@@ -185,6 +218,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 FROM tmp t JOIN {VOUCHERVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
                 ";
+            }
+
+
             if (size >= 0)
             {
                 dataSql += @$" OFFSET {(page - 1) * size} ROWS
@@ -1383,7 +1419,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result =  await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Delete, billInfo.FId);
+                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Delete, billInfo.FId);
 
                 if (result.Code != 0)
                 {
@@ -1819,7 +1855,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }, true);
         }
 
-        private async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null)
+        public async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null)
         {
             var area = _purchaseOrderDBContext.VoucherArea.AsQueryable();
             if (areaId > 0)
@@ -1827,6 +1863,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 area = area.Where(a => a.VoucherAreaId == areaId);
 
             }
+
             return await (from af in _purchaseOrderDBContext.VoucherAreaField
                           join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
                           join a in area on af.VoucherAreaId equals a.VoucherAreaId
@@ -1850,7 +1887,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                               IsMultiRow = a.IsMultiRow,
                               RequireFilters = af.RequireFilters,
                               IsReadOnly = f.IsReadOnly,
-                              IsHidden = af.IsHidden
+                              IsHidden = af.IsHidden,
+                              AreaTitle = a.Title
                           }).ToListAsync();
         }
 
@@ -1889,7 +1927,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     FieldName = field.FieldName,
                     FieldTitle = GetTitleCategoryField(field),
                     RefCategory = null,
-                    IsRequired = field.IsRequire
+                    IsRequired = field.IsRequire,
+                    GroupName = field.AreaTitle
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
@@ -2591,7 +2630,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        protected class ValidateVoucherField
+        public class ValidateVoucherField
         {
             public int VoucherAreaFieldId { get; set; }
             public string Title { get; set; }
@@ -2611,6 +2650,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public string RequireFilters { get; set; }
             public bool IsReadOnly { get; set; }
             public bool IsHidden { get; set; }
+            public string AreaTitle { get; set; }
         }
     }
 }
