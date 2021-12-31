@@ -53,6 +53,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             _organizationHelperService = organizationHelperService;
         }
 
+        public async Task<bool> DismissUpdateWarning(long productionOrderId)
+        {
+            try
+            {
+                // Cập nhật lại trạng thái thay đổi số lượng LSX
+                var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+                if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+                if (productionOrder.IsUpdateProcessForAssignment == true)
+                {
+                    productionOrder.IsUpdateProcessForAssignment = false;
+                }
+                await _manufacturingDBContext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DismissUpdateWarning");
+                throw;
+            }
+        }
 
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId)
         {
@@ -79,6 +99,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             // 
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
             if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+
+            // Cập nhật trạng thái sau khi thay đổi phân công do update quy trình cho LSX
+            if (productionOrder.IsUpdateProcessForAssignment == true)
+            {
+                productionOrder.IsUpdateProcessForAssignment = false;
+            }
 
             // Validate
             var steps = _manufacturingDBContext.ProductionStep

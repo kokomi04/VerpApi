@@ -913,6 +913,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
+
         public async Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -957,21 +958,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
         }
 
+        public async Task<bool> CheckHasAssignment(long productionOrderId)
+        {
+            return await _manufacturingDBContext.ProductionAssignment.AnyAsync(a => a.ProductionOrderId == productionOrderId);
+        }
+
+
         private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
         {
-            if (containerTypeId == EnumContainerType.ProductionOrder)
-            {
-                // Cập nhật lại trạng thái thay đổi số lượng LSX
-                var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == containerId);
-                if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
-                if (productionOrder.IsUpdateQuantity == true)
-                {
-                    productionOrder.IsUpdateQuantity = false;
-                }
-                // Cập nhật trạng thái thay đổi quy trình LSX cho phân công
-                productionOrder.IsUpdateProcessForAssignment = true;
-            }
-
             if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
@@ -1020,6 +1014,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             //Cập nhật, xóa và tạo mới step
             var sourceStep = await _manufacturingDBContext.ProductionStep.Where(p => p.ContainerId == containerId && p.ContainerTypeId == (int)containerTypeId).ToListAsync();
+           
             foreach (var dest in sourceStep)
             {
                 var source = req.ProductionSteps.SingleOrDefault(x => x.ProductionStepId == dest.ProductionStepId);
@@ -1081,6 +1076,57 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
+
+            // Xóa thông tin phân công, bàn giao, khai báo nhân công khi thay đổi quy trình
+            if (containerTypeId == EnumContainerType.ProductionOrder)
+            {
+                // Cập nhật lại trạng thái thay đổi số lượng LSX
+                var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == containerId);
+                if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+                if (productionOrder.IsUpdateQuantity == true)
+                {
+                    productionOrder.IsUpdateQuantity = false;
+                }
+                // Cập nhật trạng thái thay đổi quy trình LSX cho phân công
+                productionOrder.IsUpdateProcessForAssignment = true;
+
+                // Lấy danh sách công đoạn hiện tại của lệnh
+                var currentProductionStepIds = _manufacturingDBContext.ProductionStep
+                    .Where(ps => ps.ContainerId == containerId && ps.ContainerTypeId == (int)containerTypeId)
+                    .Select(ps => ps.ProductionStepId)
+                    .ToList();
+
+
+                // Xóa phân công cho các công đoạn bị xóa khỏi quy trình
+                var deletedProductionStepAssignments = _manufacturingDBContext.ProductionAssignment
+                    .Include(a => a.ProductionAssignmentDetail)
+                    .Where(s => s.ProductionOrderId == containerId && !currentProductionStepIds.Contains(s.ProductionStepId))
+                    .ToList();
+
+                var handovers = _manufacturingDBContext.ProductionHandover
+                    .Where(h => h.ProductionOrderId == containerId)
+                    .ToList();
+
+                foreach (var oldProductionAssignment in deletedProductionStepAssignments)
+                {
+                    // Xóa bàn giao liên quan tới phân công bị xóa
+                    var deleteHandovers = handovers
+                        .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
+                        && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
+                        .ToList();
+
+                    _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
+
+                    // Xóa khai báo nhân công
+                    // TODO
+
+                    // Xóa chi tiết phân công
+                    oldProductionAssignment.ProductionAssignmentDetail.Clear();
+                }
+                _manufacturingDBContext.ProductionAssignment.RemoveRange(deletedProductionStepAssignments);
+
+                await _manufacturingDBContext.SaveChangesAsync();
+            }
         }
 
         private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
