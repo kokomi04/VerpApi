@@ -12,6 +12,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 {
     public interface IProductionAssignmentService
     {
+        Task<bool> DismissUpdateWarning(long productionOrderId);
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId);
         Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId);
 

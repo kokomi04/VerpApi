@@ -50,7 +50,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()))
                 .ForMember(dest => dest.PlanEndDate, opt => opt.MapFrom(source => source.PlanEndDate.UnixToDateTime()))
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.UnixToDateTime()))
-                .ForMember(dest => dest.CreatedDatetimeUtc, opt => opt.MapFrom(source => source.CreatedDatetimeUtc.UnixToDateTime()));
+                .ForMember(dest => dest.CreatedDatetimeUtc, opt => opt.MapFrom(source => source.CreatedDatetimeUtc.UnixToDateTime()))
+                .ForMember(dest => dest.IsUpdateQuantity, opt => opt.Ignore())
+                .ForMember(dest => dest.IsUpdateProcessForAssignment, opt => opt.Ignore());
         }
     }
 
