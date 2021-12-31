@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Model.WebPush;
 using VErp.Services.Master.Service.Webpush;
 
@@ -18,6 +19,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("")]
+        [GlobalApi]
         public async Task<bool> Subscribe([FromBody]PushSubscriptionRequest subscription)
         {
             return await _pushSubscriptionService.Subscribe(subscription);
@@ -25,6 +27,7 @@ namespace VErpApi.Controllers.System
 
         [HttpDelete]
         [Route("")]
+        [GlobalApi]
         public async Task<bool> UnSubscribe([FromQuery]string endpoint)
         {
             return  await _pushSubscriptionService.UnSubscribe(endpoint);
@@ -32,6 +35,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("publicKey")]
+        [GlobalApi]
         public async Task<string> PublicKey()
         {
             return await _pushSubscriptionService.GetPublicKey();
