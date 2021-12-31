@@ -11,7 +11,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class ProductionHumanResourceModel : ProductionHumanResourceInputModel
     {
-        public long? ProductionHumanResourceId { get; set; }
         public int CreatedByUserId { get; set; }
 
         public override void Mapping(Profile profile)
@@ -23,6 +22,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
     public class ProductionHumanResourceInputModel : IMapFrom<ProductionHumanResource>
     {
+        public long? ProductionHumanResourceId { get; set; }
         public decimal OfficeWorkDay { get; set; }
         public decimal OvertimeWorkDay { get; set; }
         public int DepartmentId { get; set; }
