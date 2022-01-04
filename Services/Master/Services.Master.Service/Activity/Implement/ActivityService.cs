@@ -3,28 +3,23 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Lib.Net.Http.WebPush;
 using Lib.Net.Http.WebPush.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Resources;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.SignalR;
@@ -73,7 +68,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _hubNotifyContext = hubNotifyContext;
             _pushClient = pushClient;
 
-            _pushClient.DefaultAuthentication = new VapidAuthentication(_appSetting.WebPush.PublicKey, _appSetting.WebPush.PrivateKey);
+            if (_appSetting.WebPush != null && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey) && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PrivateKey))
+                _pushClient.DefaultAuthentication = new VapidAuthentication(_appSetting.WebPush.PublicKey, _appSetting.WebPush.PrivateKey);
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -346,7 +342,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 var subUserId = sub.UserId;
                 if (_principalBroadcaster.IsUserConnected(subUserId.ToString()))
                     await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(new[] { subUserId.ToString() })).BroadcastMessage();
-                else
+                else if (_appSetting.WebPush != null && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey) && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PrivateKey))
                 {
                     var pushSubscription = await _activityLogContext.PushSubscription.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == subUserId);
                     if (pushSubscription != null)
@@ -355,7 +351,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
                         {
                             Title = "VERP Thông Báo",
                             Body = log.Message,
-                            NotifyData = model
+                            NotifyData = model,
+                            // Actions = new NotificationAction[] { new NotificationAction("https://test-app.verp.vn/", "Xem") },
+                            Icon = "https://verp.vn/pic/Settings/log_63712_637654394979921899.png"
                         }.ToPushMessage();
 
                         var keys = new Dictionary<string, string>();
@@ -372,36 +370,6 @@ namespace VErp.Services.Master.Service.Activity.Implement
                 }
             }
 
-            // if (_principalBroadcaster.IsUserConnected())
-            //     await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(querySub.Select(x => x.UserId.ToString()).ToArray())).BroadcastMessage();
-            // else
-            // {
-            //     PushMessage notification = new AngularPushNotification
-            //     {
-            //         Title = "VERP DEMO WEBPUSH",
-            //         Body = $"ABC",
-            //     }.ToPushMessage();
-
-            //     var subs = await _activityLogContext.PushSubscription.AsNoTracking().ToListAsync();
-
-            //     foreach (var subscription in subs)
-            //     {
-            //         if (!_principalBroadcaster.IsUserConnected(subscription.UserId.ToString()))
-            //         {
-            //             var keys = new Dictionary<string, string>();
-            //             keys.Add("auth", subscription.Auth);
-            //             keys.Add("p256dh", subscription.P256dh);
-
-            //             // Fire-and-forget 
-            //             await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
-            //             {
-            //                 Endpoint = subscription.Endpoint,
-            //                 Keys = keys,
-            //             }, notification);
-            //         }
-
-            //     }
-            // }
             return true;
         }
     }
