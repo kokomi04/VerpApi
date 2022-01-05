@@ -417,6 +417,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     //Update
 
                     //Productinfo
+                    req.ProductionProcessVersion = productInfo.ProductionProcessVersion;
+
                     _mapper.Map(req, productInfo);
 
                     productInfo.ProductInternalName = req.ProductName.NormalizeAsInternalName();
