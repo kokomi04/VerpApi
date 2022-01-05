@@ -142,7 +142,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepLinkDataCode = d.ProductionStepLinkDataCode,
                 ProductionStepLinkDataRoleTypeId = d.ProductionStepLinkDataRoleTypeId,
                 ProductionStepLinkTypeId = (int)d.ProductionStepLinkTypeId,
-                ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup,
+                //ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup,
                 WorkloadConvertRate = d.WorkloadConvertRate
             }).ToList();
 
@@ -313,7 +313,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepLinkDataCode = d.ProductionStepLinkData.ProductionStepLinkDataCode,
                 ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
                 ProductionStepLinkTypeId = d.ProductionStepLinkData.ProductionStepLinkTypeId,
-                ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup
+                //ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup
             }).ToList();
 
             //Lấy thông tin dữ liệu của steplinkdata
@@ -381,7 +381,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ProductionStepLinkDataCode = r.ProductionStepLinkDataCode,
                         ProductionStepLinkDataRoleTypeId = r.ProductionStepLinkDataRoleTypeId,
                         ProductionStepLinkTypeId = r.ProductionStepLinkTypeId,
-                        ProductionStepLinkDataGroup = r.ProductionStepLinkDataGroup,
+                        //ProductionStepLinkDataGroup = r.ProductionStepLinkDataGroup,
                         WorkloadConvertRate = r.WorkloadConvertRate
                     })
                     .ToList();
@@ -600,7 +600,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ProductionStepLinkDataId = linkDataMap[role.ProductionStepLinkDataId].ProductionStepLinkDataId,
                             ProductionStepId = stepMap[role.ProductionStepId].ProductionStepId,
                             ProductionStepLinkDataRoleTypeId = role.ProductionStepLinkDataRoleTypeId,
-                            ProductionStepLinkDataGroup = role.ProductionStepLinkDataGroup
+                            //ProductionStepLinkDataGroup = role.ProductionStepLinkDataGroup
                         };
                         _manufacturingDBContext.ProductionStepLinkDataRole.Add(newRole);
                     }
@@ -1047,7 +1047,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ProductionStepId = s.ProductionStepId,
                             ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                             ProductionStepLinkDataRoleTypeId = (int)r.ProductionStepLinkDataRoleTypeId,
-                            ProductionStepLinkDataGroup = r.ProductionStepLinkDataGroup
+                            //ProductionStepLinkDataGroup = r.ProductionStepLinkDataGroup
                         };
             var oldRoles = _manufacturingDBContext.ProductionStepLinkDataRole.Where(x => newStep.Select(y => y.ProductionStepId).Contains(x.ProductionStepId)).ToList();
 

@@ -599,7 +599,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepLinkDataId, e.ProductionStepId })
                     .HasName("PK_InOutStepMapping");
 
-                entity.Property(e => e.ProductionStepLinkDataGroup).HasMaxLength(50);
+                //entity.Property(e => e.ProductionStepLinkDataGroup).HasMaxLength(50);
 
                 entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment("1: Input\r\n2: Output");
 
@@ -882,9 +882,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18, 5)")
-                    .HasComment("Nang suat/nguoi-may");
+                //entity.Property(e => e.Quantity)
+                //    .HasColumnType("decimal(18, 5)")
+                //    .HasComment("Nang suat/nguoi-may");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
