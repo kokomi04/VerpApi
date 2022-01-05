@@ -344,8 +344,8 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(new[] { subUserId.ToString() })).BroadcastMessage();
                 else if (_appSetting.WebPush != null && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey) && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PrivateKey))
                 {
-                    var pushSubscription = await _activityLogContext.PushSubscription.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == subUserId);
-                    if (pushSubscription != null)
+                    var pushSubscriptions = await _activityLogContext.PushSubscription.AsNoTracking().Where(x => x.UserId == subUserId).ToListAsync();
+                    foreach (var pushSubscription in pushSubscriptions)
                     {
                         PushMessage notification = new AngularPushNotification
                         {
