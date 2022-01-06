@@ -512,30 +512,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var temp = groupbyLinkDataRole.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepCode == linkData.ProductionStepCode).Count() > 0).ToList();
                     TraceProductionStepRelationship(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRole, lsProductionStepIdInGroup);
                 }
-
-                var productionStepLinkData = from l in productionProcess.ProductionStepLinkDatas
-                                             join r in productionProcess.ProductionStepLinkDataRoles
-                                                on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
-                                             where lsProductionStepIdInGroup.Contains(r.ProductionStepCode) && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
-                                             select l;
-                var productionLinkDataDuplicate = productionStepLinkData
-                                                .GroupBy(x => x.ObjectId)
-                                                .Where(x => x.Count() > 1)
-                                                .SelectMany(x => x)
-                                                .ToList();
-                if (productionLinkDataDuplicate.Count > 0)
-                {
-                    foreach (var linkData in productionLinkDataDuplicate)
-                    {
-                        var currentRole = productionProcess.ProductionStepLinkDataRoles
-                                       .Where(x => x.ProductionStepLinkDataCode == linkData.ProductionStepLinkDataCode
-                                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                                       .ToList();
-                        var warning = SeekingLinkDataInRelationship(productionProcess, currentRole, linkData/*, linkDataInProcess*/);
-                        if (warning != null)
-                            lsWarning.Add(warning);
-                    }
-                }
+                
+                
+                // var productionStepLinkData = from l in productionProcess.ProductionStepLinkDatas
+                //                              join r in productionProcess.ProductionStepLinkDataRoles
+                //                                 on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
+                //                              where lsProductionStepIdInGroup.Contains(r.ProductionStepCode) && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                //                              select l;
+                // var productionLinkDataDuplicate = productionStepLinkData
+                //                                 .GroupBy(x => x.ObjectId)
+                //                                 .Where(x => x.Count() > 1)
+                //                                 .SelectMany(x => x)
+                //                                 .ToList();
+                // if (productionLinkDataDuplicate.Count > 0)
+                // {
+                //     foreach (var linkData in productionLinkDataDuplicate)
+                //     {
+                //         var currentRole = productionProcess.ProductionStepLinkDataRoles
+                //                        .Where(x => x.ProductionStepLinkDataCode == linkData.ProductionStepLinkDataCode
+                //                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
+                //                        .ToList();
+                //         var warning = SeekingLinkDataInRelationship(productionProcess, currentRole, linkData/*, linkDataInProcess*/);
+                //         if (warning != null)
+                //             lsWarning.Add(warning);
+                //     }
+                // }
             }
 
             return Task.FromResult(lsWarning);
