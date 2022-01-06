@@ -27,6 +27,7 @@ using VErp.Services.Master.Model.Activity;
 using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Model.WebPush;
 using VErp.Services.Master.Service.Users;
+using static VErp.Services.Master.Model.WebPush.AngularPushNotification;
 using NotificationEntity = ActivityLogDB.Notification;
 
 namespace VErp.Services.Master.Service.Activity.Implement
@@ -336,7 +337,10 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
             _activityLogContext.Notification.AddRange(lsNewNotification);
             await _activityLogContext.SaveChangesAsync();
+            
 
+            var actionUrl = !string.IsNullOrWhiteSpace(_appSetting.WebPush.ActionUrl)
+                && (_appSetting.WebPush.ActionUrl.StartsWith("http://") || _appSetting.WebPush.ActionUrl.StartsWith("https://")) ? $"{_appSetting.WebPush.ActionUrl}redirect/{model.ObjectTypeId}/{model.ObjectId}/{model.BillTypeId}" : "";
             foreach (var sub in querySub)
             {
                 var subUserId = sub.UserId;
@@ -352,7 +356,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                             Title = "VERP Thông Báo",
                             Body = log.Message,
                             NotifyData = model,
-                            // Actions = new NotificationAction[] { new NotificationAction("https://test-app.verp.vn/", "Xem") },
+                            Actions = !string.IsNullOrWhiteSpace(actionUrl) ? new NotificationAction[] { new NotificationAction(actionUrl, "Xem") } : new NotificationAction[] {},
                             Icon = "https://verp.vn/pic/Settings/log_63712_637654394979921899.png"
                         }.ToPushMessage();
 
