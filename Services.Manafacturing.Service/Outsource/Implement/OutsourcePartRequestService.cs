@@ -36,18 +36,21 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly IProductBomHelperService _productBomHelperService;
 
         public OutsourcePartRequestService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourcePartRequestService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , IProductBomHelperService productBomHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _productBomHelperService = productBomHelperService;
         }
 
         public async Task<long> CreateOutsourcePartRequest(OutsourcePartRequestModel model)
@@ -55,6 +58,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x=>x.ProductionOrderDetailId == model.ProductionOrderDetailId)?.ProductId;
+                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x=> x.IsIgnoreStep == false).Select(x=>x.ProductId).ToList();
+
                 // Cấu hình sinh mã
                 var ctx = await GenerateOutsouceRequestCode(null, model);
 
@@ -68,6 +74,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var requestDetails = new List<OutsourcePartRequestDetail>();
                 foreach (var element in model.Detail)
                 {
+                    if(!boms.Contains(element.ProductId))
+                        throw new BadRequestException(OutsourceErrorCode.NotFoundPartInBom, "Không tìm thấy chi tiết gia công có trong BOM của mặt hàng");
+
                     element.OutsourcePartRequestId = request.OutsourcePartRequestId;
                     var entity = _mapper.Map<OutsourcePartRequestDetail>(element);
                     requestDetails.Add(entity);
@@ -146,6 +155,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 if (request == null)
                     throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công có mã là {OutsourcePartRequestId}");
 
+                var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x => x.ProductionOrderDetailId == model.ProductionOrderDetailId)?.ProductId;
+                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).ToList();
+                
                 var details = _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => x.OutsourcePartRequestId == OutsourcePartRequestId).ToList();
 
                 // update order
@@ -167,7 +179,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .AsQueryable()
                     .ProjectTo<OutsourcePartRequestDetail>(_mapper.ConfigurationProvider)
                     .ToList();
-                newRequestDetails.ForEach(x => x.OutsourcePartRequestId = request.OutsourcePartRequestId);
+                newRequestDetails.ForEach(x => {
+                    if (!boms.Contains(x.ProductId))
+                        throw new BadRequestException(OutsourceErrorCode.NotFoundPartInBom, "Không tìm thấy chi tiết gia công có trong BOM của mặt hàng");
+                    x.OutsourcePartRequestId = request.OutsourcePartRequestId;
+                });
 
                 await _manufacturingDBContext.OutsourcePartRequestDetail.AddRangeAsync(newRequestDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
