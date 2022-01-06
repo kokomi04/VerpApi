@@ -66,9 +66,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.AddressEng).HasMaxLength(128);
+
                 entity.Property(e => e.CompanyName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.CompanyNameEng).HasMaxLength(128);
 
                 entity.Property(e => e.CreatedTime).HasColumnType("datetime");
 
