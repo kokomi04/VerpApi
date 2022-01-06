@@ -16,6 +16,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     public interface IProductBomHelperService
     {
         Task<IList<InternalProductElementModel>> GetElements(int[] productIds);
+        Task<IList<ProductBomBaseSimple>> GetBOM(int productId);
     }
 
     public class ProductBomHelperService : IProductBomHelperService
@@ -30,6 +31,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<InternalProductElementModel>> GetElements(int[] productIds)
         {
             return await _httpCrossService.Post<IList<InternalProductElementModel>>($"api/internal/InternalProductBom/products", productIds);
+        }
+
+        public async Task<IList<ProductBomBaseSimple>> GetBOM(int productId)
+        {
+            return await _httpCrossService.Get<IList<ProductBomBaseSimple>>($"api/internal/InternalProductBom/products/{productId}");
         }
     }
 }
