@@ -201,4 +201,7 @@
   <data name="ImportConsumDuplicateSamePartInSameGroup" xml:space="preserve">
     <value>Duplicate parts have same consumption material and group. Consumption materials: {0}</value>
   </data>
+  <data name="CanNotUpdateUnitProductWhichInUsed" xml:space="preserve">
+    <value>Can not update primary unit of product "{0}" that has been had reference data</value>
+  </data>
 </root>

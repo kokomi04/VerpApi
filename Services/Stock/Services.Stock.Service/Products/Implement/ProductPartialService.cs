@@ -124,6 +124,25 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
                 }
 
+                /*
+                if (productInfo.UnitId != model.UnitId)
+                {
+                    var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                    var checkParams = new[]
+                    {
+                            new SqlParameter("@ProductId",productId),
+                            isInUsed
+                        };
+
+                    await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+                    if (isInUsed.Value as bool? == true)
+                    {
+                        throw CanNotUpdateUnitProductWhichInUsed.BadRequestFormat(model.ProductCode);
+                    }
+                }
+                */
+
                 if (model.IsMaterials == false && model.IsProduct == false && model.IsProductSemi == false)
                 {
                     model.IsProduct = true;

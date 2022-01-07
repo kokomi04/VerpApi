@@ -201,4 +201,7 @@
   <data name="ImportConsumDuplicateSamePartInSameGroup" xml:space="preserve">
     <value>Xuất hiện chi tiết sử dụng có mã trùng nhau cùng sử dụng vật liệu tiêu hao trong cùng 1 nhóm. Các vật liệu tiêu hao: {0}</value>
   </data>
+  <data name="CanNotUpdateUnitProductWhichInUsed" xml:space="preserve">
+    <value>Không thể thay đổi đơn vị tính mặt hàng "{0}" do mặt hàng đã vào dữ liệu</value>
+  </data>
 </root>
