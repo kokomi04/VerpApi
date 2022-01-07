@@ -26,6 +26,21 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHumanResourceService.GetProductionHumanResources(productionOrderId);
         }
 
+        [HttpGet]
+        [Route("department/{departmentId}")]
+        public async Task<IList<ProductionHumanResourceModel>> GetProductionHumanResourceByDepartment([FromRoute] int departmentId, [FromQuery]long startDate, [FromQuery] long endDate)
+        {
+            return await _productionHumanResourceService.GetProductionHumanResourceByDepartment(departmentId, startDate, endDate);
+        }
+
+        [HttpGet]
+        [Route("department/{departmentId}/productionOrderInfo")]
+        public async Task<IList<UnFinishProductionInfo>> GetUnFinishProductionInfo([FromRoute] int departmentId, [FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionHumanResourceService.GetUnFinishProductionInfo(departmentId, startDate, endDate);
+        }
+
+
         [HttpPost]
         [Route("{productionOrderId}")]
         public async Task<ProductionHumanResourceModel> CreateProductionHumanResource([FromRoute] long productionOrderId, [FromBody] ProductionHumanResourceInputModel data)
@@ -38,6 +53,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResource([FromRoute] long productionOrderId, [FromBody] IList<ProductionHumanResourceInputModel> data)
         {
             return await _productionHumanResourceService.CreateMultipleProductionHumanResource(productionOrderId, data);
+        }
+
+        [HttpPost]
+        [Route("multiple/department/{departmentId}")]
+        public async Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResource([FromRoute] int departmentId, [FromQuery] long startDate, [FromQuery] long endDate, [FromBody] IList<ProductionHumanResourceInputModel> data)
+        {
+            return await _productionHumanResourceService.CreateMultipleProductionHumanResourceByDepartment(departmentId, startDate, endDate, data);
         }
 
         [HttpDelete]
