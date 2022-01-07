@@ -27,6 +27,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal OvertimeWorkDay { get; set; }
         public int DepartmentId { get; set; }
         public long ProductionStepId { get; set; }
+        public long ProductionOrderId { get; set; }
+        public string ProductionStepTitle { get; set; }
+        public string ProductionOrderCode { get; set; }
         public long? Date { get; set; }
         public string Note { get; set; }
         public virtual void Mapping(Profile profile)

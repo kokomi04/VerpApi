@@ -18,5 +18,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResource(long productionOrderId, IList<ProductionHumanResourceInputModel> data);
         Task<bool> DeleteProductionHumanResource(long productionHumanResourceId);
 
+        Task<IList<ProductionHumanResourceModel>> GetProductionHumanResourceByDepartment(int departmentId, long startDate, long endDate);
+        Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResourceByDepartment(int departmentId, long startDate, long endDate, IList<ProductionHumanResourceInputModel> data);
+
+        Task<IList<UnFinishProductionInfo>> GetUnFinishProductionInfo(int departmentId, long startDate, long endDate);
     }
 }
