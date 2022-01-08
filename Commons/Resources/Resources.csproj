@@ -362,6 +362,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>CustomerActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Customer\CustomerCateActivityLogMessageLog.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CustomerCateActivityLogMessageLog.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\Customer\CustomerValidationMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -903,6 +908,10 @@
     <EmbeddedResource Update="Organization\Customer\CustomerActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>CustomerActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Customer\CustomerCateActivityLogMessageLog.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CustomerCateActivityLogMessageLog.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\Customer\CustomerValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

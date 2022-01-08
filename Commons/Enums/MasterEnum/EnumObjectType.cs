@@ -54,6 +54,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Customer = 17,
 
+        [Description("Danh mục đối tác")]
+        CustomerCate = 170,
+
         [Description("BOM")]
         ProductBom = 18,
 

@@ -5,9 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Customer;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Customer;
 
 namespace VErp.Services.Organization.Service.Customer.Implement
@@ -16,10 +21,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
     {
         private readonly OrganizationDBContext organizationDBContext;
         private readonly IMapper mapper;
-        public CustomerCateService(OrganizationDBContext organizationDBContext, IMapper mapper)
+        private readonly ObjectActivityLogFacade _customerActivityLog;
+
+        public CustomerCateService(OrganizationDBContext organizationDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
             this.organizationDBContext = organizationDBContext;
             this.mapper = mapper;
+            _customerActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.CustomerCate);
         }
 
         public async Task<bool> DeleteCustomerCate(int customerCateId)
@@ -31,6 +39,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
             info.IsDeleted = true;
             await organizationDBContext.SaveChangesAsync();
+
+            await _customerActivityLog.LogBuilder(() => CustomerCateActivityLogMessageLog.Delete)
+               .MessageResourceFormatDatas(info.CustomerCateCode)
+               .ObjectId(info.CustomerCateId)
+               .JsonData(info.JsonSerialize())
+               .CreateLog();
+
             return true;
         }
 
@@ -60,6 +75,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
             mapper.Map(customerCate, info);
             await organizationDBContext.SaveChangesAsync();
+
+            await _customerActivityLog.LogBuilder(() => CustomerCateActivityLogMessageLog.Update)
+              .MessageResourceFormatDatas(info.CustomerCateCode)
+              .ObjectId(info.CustomerCateId)
+              .JsonData(customerCate.JsonSerialize())
+              .CreateLog();
+
             return true;
         }
 
@@ -68,6 +90,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var info = mapper.Map<CustomerCate>(customerCate);
             await organizationDBContext.CustomerCate.AddAsync(info);
             await organizationDBContext.SaveChangesAsync();
+
+            await _customerActivityLog.LogBuilder(() => CustomerCateActivityLogMessageLog.Create)
+              .MessageResourceFormatDatas(info.CustomerCateCode)
+              .ObjectId(info.CustomerCateId)
+              .JsonData(customerCate.JsonSerialize())
+              .CreateLog();
+
             return info.CustomerCateId;
         }
     }
