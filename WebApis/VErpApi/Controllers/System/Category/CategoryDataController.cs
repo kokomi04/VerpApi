@@ -24,6 +24,8 @@ using VErp.Commons.Library.Model;
 
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using static VErp.Commons.Constants.CurrencyCateConstants;
+using System.Linq;
 
 namespace VErpApi.Controllers.System.Category
 {
@@ -129,6 +131,24 @@ namespace VErpApi.Controllers.System.Category
             }
             mapping.FileName = file.FileName;
             return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
+
+        [GlobalApi]
+        [VErpAction(EnumActionType.View)]
+        [Route("primaryCurrency")]
+        public async Task<NonCamelCaseDictionary> PrimaryCurrency()
+        {
+            var clause = new SingleClause()
+            {
+                DataType = EnumDataType.Boolean,
+                FieldName = "IsPrimary",
+                Operator = EnumOperator.Equal,
+                Value = true
+            };
+            var data = await _categoryDataService.GetCategoryRows(CurrencyCategoryCode, null, clause, null, null, 1, 1, null, true);
+            return data?.List?.FirstOrDefault();
         }
     }
 }
