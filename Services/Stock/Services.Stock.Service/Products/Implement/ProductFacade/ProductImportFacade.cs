@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -366,7 +368,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     foreach (var row in newProducts)
                     {
                         var newProduct = new Product();
-                        ParseProductInfoEntity(newProduct, row);
+                        await ParseProductInfoEntity(newProduct, row);
 
                         _stockContext.Product.Add(newProduct);
                         productsMap.Add(row, newProduct);
@@ -376,7 +378,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     {
                         if (updateProducts.Count > 0)
                         {
-                            UpdateProduct(productsMap, updateProducts, existsProduct);
+                            await UpdateProduct(productsMap, updateProducts, existsProduct);
                         }
                     }
 
@@ -420,7 +422,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private void UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        private async Task UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
         {
 
             var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
@@ -439,7 +441,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
 
-                ParseProductInfoEntity(existedProduct, row);
+                await ParseProductInfoEntity(existedProduct, row);
 
                 productsMap.Add(row, existedProduct);
 
@@ -447,7 +449,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private void ParseProductInfoEntity(Product product, ProductImportModel row)
+        private async Task ParseProductInfoEntity(Product product, ProductImportModel row)
         {
 
             var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
@@ -456,6 +458,28 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //product.UpdateIfAvaiable(p => p.CustomerId, customerByCodes, row.CustomerCode.NormalizeAsInternalName());
             //product.UpdateIfAvaiable(p => p.CustomerId, customerByNames, row.CustomerName.NormalizeAsInternalName());
 
+            var oldUnitId = product.UnitId;
+
+            product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
+
+            /*
+            if (product.ProductId > 0 && product.UnitId != oldUnitId)
+            {
+                var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                var checkParams = new[]
+                {
+                            new SqlParameter("@ProductId",product.ProductId),
+                            isInUsed
+                        };
+
+                await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+                if (isInUsed.Value as bool? == true)
+                {
+                    throw CanNotUpdateUnitProductWhichInUsed.BadRequestFormat(product.ProductCode);
+                }
+            }
+            */
 
             product.UpdateIfAvaiable(p => p.ProductCode, row.ProductCode);
 
@@ -488,7 +512,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //product.BarcodeStandardId = null;
             product.UpdateIfAvaiable(p => p.Barcode, row.Barcode);
 
-            product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
+
 
             product.UpdateIfAvaiable(p => p.EstimatePrice, row.EstimatePrice);
 
@@ -604,6 +628,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     }
                     else
                     {
+                        existedItem.UpdateIfAvaiable(v => v.ProductUnitConversionName, pu.ProductUnitConversionName);
                         existedItem.UpdateIfAvaiable(v => v.DecimalPlace, pu.UploadDecimalPlace);
                     }
 

@@ -362,6 +362,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             //}
 
+
             long? oldMainImageFileId = 0L;
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -378,7 +379,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         throw new BadRequestException(ProductErrorCode.ProductNotFound);
                     }
 
+                    
+                    /*
+                    if (productInfo.UnitId != req.UnitId)
+                    {
+                        var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                        var checkParams = new[]
+                        {
+                            new SqlParameter("@ProductId",productId),
+                            isInUsed
+                        };
 
+                        await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+                        if (isInUsed.Value as bool? == true)
+                        {
+                            throw CanNotUpdateUnitProductWhichInUsed.BadRequestFormat(req.ProductCode);
+                        }
+                    }*/
 
                     var unitConverions = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 

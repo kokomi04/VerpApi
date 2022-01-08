@@ -19,7 +19,7 @@ namespace Verp.Resources.Stock.Product {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class ProductValidationMessage {
@@ -66,6 +66,15 @@ namespace Verp.Resources.Stock.Product {
         public static string CanNotDeleteProductWhichInUsed {
             get {
                 return ResourceManager.GetString("CanNotDeleteProductWhichInUsed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không thể thay đổi đơn vị tính mặt hàng &quot;{0}&quot; do mặt hàng đã vào dữ liệu.
+        /// </summary>
+        public static string CanNotUpdateUnitProductWhichInUsed {
+            get {
+                return ResourceManager.GetString("CanNotUpdateUnitProductWhichInUsed", resourceCulture);
             }
         }
         
