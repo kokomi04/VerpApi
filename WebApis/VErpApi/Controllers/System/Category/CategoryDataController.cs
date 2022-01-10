@@ -136,8 +136,8 @@ namespace VErpApi.Controllers.System.Category
 
 
         [GlobalApi]
-        [VErpAction(EnumActionType.View)]
         [Route("primaryCurrency")]
+        [HttpGet]
         public async Task<NonCamelCaseDictionary> PrimaryCurrency()
         {
             var clause = new SingleClause()
