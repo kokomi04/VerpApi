@@ -59,7 +59,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             try
             {
                 var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x=>x.ProductionOrderDetailId == model.ProductionOrderDetailId)?.ProductId;
-                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x=> x.IsIgnoreStep == false).Select(x=>x.ProductId).ToList();
+                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x=> x.IsIgnoreStep.HasValue == false || x.IsIgnoreStep == false).Select(x=>x.ProductId).ToList();
 
                 // Cấu hình sinh mã
                 var ctx = await GenerateOutsouceRequestCode(null, model);
@@ -156,7 +156,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công có mã là {OutsourcePartRequestId}");
 
                 var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x => x.ProductionOrderDetailId == model.ProductionOrderDetailId)?.ProductId;
-                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).ToList();
+                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep.HasValue == false || x.IsIgnoreStep == false).Select(x => x.ProductId).ToList();
                 
                 var details = _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => x.OutsourcePartRequestId == OutsourcePartRequestId).ToList();
 
