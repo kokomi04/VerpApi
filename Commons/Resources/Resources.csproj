@@ -587,6 +587,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Stock\Product\ProductPurityCalcActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductPurityCalcActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Stock\Product\ProductValidationMessage.Designer.cs">
       <DependentUpon>ProductValidationMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -1092,6 +1097,10 @@
     <EmbeddedResource Update="Stock\Product\ProductImport\ProductBomImportValidationMessage.resx">
       <LastGenOutput>ProductBomImportValidationMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\ProductPurityCalcActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductPurityCalcActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ProductValidationMessage.resx">
       <LastGenOutput>ProductValidationMessage.Designer.cs</LastGenOutput>

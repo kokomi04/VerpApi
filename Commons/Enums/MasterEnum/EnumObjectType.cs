@@ -20,8 +20,13 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductCate = 4,
         [Description("Loại mặt hàng")]
         ProductType = 5,
-        [Description("Mặt hàng")]
+
+        [Description("Mặt hàng")]        
         Product = 6,
+
+        [Description("Tính khối lượng tinh")]
+        ProductPurityCalc = 611,
+
         [Description("Đơn vị tính")]
         Unit = 7,
         [Description("Cấu hình barcode")]

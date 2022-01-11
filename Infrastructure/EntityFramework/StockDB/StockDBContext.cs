@@ -42,6 +42,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<ProductMaterialsConsumption> ProductMaterialsConsumption { get; set; }
         public virtual DbSet<ProductMaterialsConsumptionGroup> ProductMaterialsConsumptionGroup { get; set; }
         public virtual DbSet<ProductProperty> ProductProperty { get; set; }
+        public virtual DbSet<ProductPurityCalc> ProductPurityCalc { get; set; }
         public virtual DbSet<ProductStockInfo> ProductStockInfo { get; set; }
         public virtual DbSet<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual DbSet<ProductType> ProductType { get; set; }
@@ -742,6 +743,13 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasForeignKey(d => d.RootProductId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductProperty_RootProduct");
+            });
+
+            modelBuilder.Entity<ProductPurityCalc>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
             });
 
             modelBuilder.Entity<ProductStockInfo>(entity =>
