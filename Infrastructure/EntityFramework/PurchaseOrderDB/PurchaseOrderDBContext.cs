@@ -50,6 +50,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }
         public virtual DbSet<PurchaseOrderFile> PurchaseOrderFile { get; set; }
         public virtual DbSet<PurchaseOrderMaterials> PurchaseOrderMaterials { get; set; }
+        public virtual DbSet<PurchaseOrderOutsourceMapping> PurchaseOrderOutsourceMapping { get; set; }
         public virtual DbSet<PurchaseOrderTracked> PurchaseOrderTracked { get; set; }
         public virtual DbSet<PurchasingRequest> PurchasingRequest { get; set; }
         public virtual DbSet<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
@@ -630,6 +631,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchaseOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchaseOrderMaterials_PurchaseOrder");
+            });
+
+            modelBuilder.Entity<PurchaseOrderOutsourceMapping>(entity =>
+            {
+                entity.Property(e => e.OrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<PurchaseOrderTracked>(entity =>
