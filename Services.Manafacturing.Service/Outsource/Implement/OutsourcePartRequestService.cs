@@ -58,9 +58,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x=>x.ProductionOrderDetailId == model.ProductionOrderDetailId)?.ProductId;
-                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x=> x.IsIgnoreStep == false).Select(x=>x.ProductId).ToList();
-
+                int? productId = 0;
+                IList<int> partInBoms = new int[] {};
+                if(model.ProductionOrderDetailId.HasValue)
+                {
+                    productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x => x.ProductionOrderDetailId == model.ProductionOrderDetailId.GetValueOrDefault())?.ProductId;
+                    partInBoms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).ToList();
+                }
+                
                 // Cấu hình sinh mã
                 var ctx = await GenerateOutsouceRequestCode(null, model);
 
@@ -74,7 +79,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var requestDetails = new List<OutsourcePartRequestDetail>();
                 foreach (var element in model.Detail)
                 {
-                    if(!boms.Contains(element.ProductId))
+                    if(model.ProductionOrderDetailId.HasValue && !partInBoms.Contains(element.ProductId))
                         throw new BadRequestException(OutsourceErrorCode.NotFoundPartInBom, "Không tìm thấy chi tiết gia công có trong BOM của mặt hàng");
 
                     element.OutsourcePartRequestId = request.OutsourcePartRequestId;
@@ -155,9 +160,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 if (request == null)
                     throw new BadRequestException(OutsourceErrorCode.NotFoundRequest, $"Không tìm thấy yêu cầu gia công có mã là {OutsourcePartRequestId}");
 
-                var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x => x.ProductionOrderDetailId == model.ProductionOrderDetailId)?.ProductId;
-                var boms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).ToList();
-                
+                int? productId = 0;
+                IList<int> partInBoms = new int[] { };
+                if (model.ProductionOrderDetailId.HasValue)
+                {
+                    productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x => x.ProductionOrderDetailId == model.ProductionOrderDetailId.GetValueOrDefault())?.ProductId;
+                    partInBoms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).ToList();
+                }
+
                 var details = _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => x.OutsourcePartRequestId == OutsourcePartRequestId).ToList();
 
                 // update order
@@ -180,7 +190,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .ProjectTo<OutsourcePartRequestDetail>(_mapper.ConfigurationProvider)
                     .ToList();
                 newRequestDetails.ForEach(x => {
-                    if (!boms.Contains(x.ProductId))
+                    if (model.ProductionOrderDetailId.HasValue && !partInBoms.Contains(x.ProductId))
                         throw new BadRequestException(OutsourceErrorCode.NotFoundPartInBom, "Không tìm thấy chi tiết gia công có trong BOM của mặt hàng");
                     x.OutsourcePartRequestId = request.OutsourcePartRequestId;
                 });
