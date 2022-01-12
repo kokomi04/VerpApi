@@ -90,6 +90,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Quantitative = productInfo.Quantitative,
                 QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)productInfo.QuantitativeUnitTypeId,
 
+                ProductPurity = productInfo.ProductPurity,
+
                 Specification = extraInfo.Specification,
 
                 EstimatePrice = productInfo.EstimatePrice,
@@ -194,6 +196,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 productInfo.Quantitative = model.Quantitative;
                 productInfo.QuantitativeUnitTypeId = (int?)model.QuantitativeUnitTypeId;
+
+                productInfo.ProductPurity = model.ProductPurity;
 
                 extraInfo.Specification = model.Specification;
 

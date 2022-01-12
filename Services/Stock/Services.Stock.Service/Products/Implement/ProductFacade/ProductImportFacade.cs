@@ -86,9 +86,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                .GroupBy(c => c.Name)
                .ToDictionary(c => c.Key, c => (int?)c.First().CustomerId);
 
-            var stockRules = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
-            var timeTypes = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumTimeType>();
-            var quantitativeUnitTypes = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
+            var stockRules = EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
+            var timeTypes = EnumExtensions.GetEnumMembers<EnumTimeType>();
+            var quantitativeUnitTypes = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
@@ -535,6 +535,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             product.UpdateIfAvaiable(p => p.Quantitative, row.Quantitative);
 
             product.UpdateIfAvaiable(p => p.QuantitativeUnitTypeId, (int?)row.QuantitativeUnitTypeId);
+
+            product.UpdateIfAvaiable(p => p.ProductPurity, row.ProductPurity);
 
             product.UpdateIfAvaiable(p => p.IsProductSemi, row.IsProductSemi);
 

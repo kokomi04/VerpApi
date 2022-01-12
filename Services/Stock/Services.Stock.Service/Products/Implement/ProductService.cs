@@ -842,6 +842,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.PackingMethod,
                   p.Quantitative,
                   p.QuantitativeUnitTypeId,
+
+                  p.ProductPurity,
+
                   p.Measurement,
                   p.NetWeight,
                   p.GrossWeight,
@@ -943,13 +946,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     //CustomerId = item.CustomerId,
                     PackingMethod = item.PackingMethod,
                     Quantitative = item.Quantitative,
+                    QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)item.QuantitativeUnitTypeId,
+                    ProductPurity = item.ProductPurity,
 
                     PackingQuantitative = item.PackingQuantitative,
                     PackingHeight = item.PackingHeight,
                     PackingLong = item.PackingLong,
                     PackingWidth = item.PackingWidth,
 
-                    QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)item.QuantitativeUnitTypeId,
                     Measurement = item.Measurement,
                     NetWeight = item.NetWeight,
                     GrossWeight = item.GrossWeight,

@@ -213,6 +213,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 case nameof(ProductImportModel.QuantitativeUnitTypeId):
                     return (EnumDataType.Text, product.QuantitativeUnitTypeId?.GetEnumDescription());
 
+                case nameof(ProductImportModel.ProductPurity):
+                    return (EnumDataType.Decimal, product.ProductPurity);
+
                 case nameof(ProductImportModel.PackingQuantitative):
                     return (EnumDataType.Decimal, product.PackingQuantitative);
                 case nameof(ProductImportModel.PackingHeight):
