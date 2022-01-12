@@ -68,9 +68,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return true;
         }
 
-        public async Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByPurchaseOrderId(long purchaseOrderDetailIdId)
+        public async Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByPurchaseOrderId(long purchaseOrderDetailId)
         {
-            return await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == purchaseOrderDetailIdId)
+            return await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == purchaseOrderDetailId)
             .ProjectTo<PurchaseOrderOutsourceMappingModel>(_mapper.ConfigurationProvider)
             .ToListAsync();
         }

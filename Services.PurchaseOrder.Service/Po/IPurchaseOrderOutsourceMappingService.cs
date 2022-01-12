@@ -9,7 +9,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<long> AddPurchaseOrderOutsourceMapping(PurchaseOrderOutsourceMappingModel model);
         Task<bool> DeletePurchaseOrderOutsourceMapping(long purchaseOrderOutsourceMappingId);
         Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByProductionOrderCode(string productionOrderCode);
-        Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByPurchaseOrderId(long purchaseOrderDetailIdId);
+        Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByPurchaseOrderId(long purchaseOrderDetailId);
         Task<bool> ImplicitAddPurchaseOrderOutsourceMappingFromManufacturing(long outsourcePartRequestId, IList<PurchaseOrderOutsourceMappingModel> models);
         Task<bool> UpdatePurchaseOrderOutsourceMapping(PurchaseOrderOutsourceMappingModel model, long purchaseOrderOutsourceMappingId);
     }

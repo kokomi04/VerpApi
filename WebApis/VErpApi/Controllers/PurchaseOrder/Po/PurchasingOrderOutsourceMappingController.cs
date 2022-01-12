@@ -57,9 +57,9 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpGet]
         [Route("byPurchaseOrderDetailId")]
-        public async Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByPurchaseOrderDetailId([FromQuery] long purchaseOrderDetailIdId)
+        public async Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByPurchaseOrderDetailId([FromQuery] long purchaseOrderDetailId)
         {
-            return await _purchaseOrderService.GetAllByPurchaseOrderId(purchaseOrderDetailIdId);
+            return await _purchaseOrderService.GetAllByPurchaseOrderId(purchaseOrderDetailId);
         }
 
         [HttpPut]
