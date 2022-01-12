@@ -340,5 +340,16 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService.SendMailNotifyCheckAndCensor(purchaseOrderId, mailCode, mailTo).ConfigureAwait(true);
         }
+
+        /// <summary>
+        /// Tổng hợp những chi tiết của PO gia công đã/chưa phân bổ
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AggregatePurchaseOrderOutsourcePart")]
+        public async Task<IList<PurchaseOrderOutsourcePartAllocate>> GetAllPurchaseOrderOutsourcePart()
+        {
+            return await _purchaseOrderService.GetAllPurchaseOrderOutsourcePart();
+        }
     }
 }

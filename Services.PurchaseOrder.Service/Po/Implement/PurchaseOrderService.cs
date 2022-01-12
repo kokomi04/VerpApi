@@ -1391,6 +1391,42 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 );
         }
 
+        public async Task<IList<PurchaseOrderOutsourcePartAllocate>> GetAllPurchaseOrderOutsourcePart()
+        {
+            var query1 = from p in _purchaseOrderDBContext.PurchaseOrder
+                         join pd in _purchaseOrderDBContext.PurchaseOrderDetail on p.PurchaseOrderId equals pd.PurchaseOrderId
+                         where p.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart && pd.OutsourceRequestId.HasValue == false
+                         select new
+                         {
+                             p.PurchaseOrderId,
+                             p.PurchaseOrderCode,
+                             pd.ProductId,
+                             pd.PrimaryQuantity,
+                             pd.PurchaseOrderDetailId
+                         };
+            var query2 = _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.GroupBy(x => new { x.PurchaseOrderDetailId, x.ProductId })
+                        .Select(x => new
+                        {
+                            PurchaseOrderDetailId = x.Key.PurchaseOrderDetailId,
+                            ProductId = x.Key.ProductId,
+                            PrimaryQuantityAllocated = x.Sum(x => x.Quantity)
+                        });
+
+            var query = from q1 in query1
+                        join q2 in query2 on q1.PurchaseOrderDetailId equals q2.PurchaseOrderDetailId into g
+                        from q2 in g.DefaultIfEmpty()
+                        select new PurchaseOrderOutsourcePartAllocate
+                        {
+                            PurchaseOrderId = q1.PurchaseOrderId,
+                            PurchaseOrderCode = q1.PurchaseOrderCode,
+                            ProductId = q1.ProductId,
+                            PrimaryQuantity = q1.PrimaryQuantity,
+                            PurchaseOrderDetailId = q1.PurchaseOrderDetailId,
+                            PrimaryQuantityAllocated = q2.PrimaryQuantityAllocated
+                        };
+            return await query.ToListAsync();
+        }
+
 
         private async Task<Enum> ValidatePoModelInput(long? poId, PurchaseOrderInput model)
         {
@@ -1615,6 +1651,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             public int ProductId { get; set; }
             public int CustomerId { get; set; }
         }
+
+
 
 
         protected async Task<long[]> GetAllOutsourceRequestIdInPurchaseOrder(long purchaseOrderId)
