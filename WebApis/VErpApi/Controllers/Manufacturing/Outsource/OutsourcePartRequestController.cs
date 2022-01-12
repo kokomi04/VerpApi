@@ -32,9 +32,10 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             [FromQuery] int size,
             [FromQuery] long fromDate,
             [FromQuery] long toDate,
+            [FromQuery] long? productionOrderId,
             [FromBody] Clause filters = null)
         {
-            return await _outsourcePartRequestService.Search(keyword, page, size,fromDate, toDate, filters);
+            return await _outsourcePartRequestService.Search(keyword, page, size,fromDate, toDate, productionOrderId, filters);
         }
 
         [HttpGet]

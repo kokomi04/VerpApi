@@ -211,7 +211,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        public async Task<PageData<OutsourcePartRequestSearchModel>> Search(string keyword, int page, int size, long fromDate, long toDate, Clause filters = null)
+        public async Task<PageData<OutsourcePartRequestSearchModel>> Search(string keyword, int page, int size, long fromDate, long toDate, long? productionOrderId, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim().ToLower();
 
@@ -230,7 +230,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                             r.CreatedDatetimeUtc,
                             r.MarkInvalid,
                             r.OutsourcePartRequestStatusId,
-                            po.ProductionOrderId,
+                            ProductionOrderId = r.ProductionOrderDetailId.HasValue == false ? po.ProductionOrderId : r.ProductionOrderId.GetValueOrDefault(),
                             po.ProductionOrderCode,
                             pod.OrderCode,
                             RootProductId = pod.ProductId,
@@ -255,6 +255,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                             || x.RootProductName.Contains(keyword)
                         );
             }
+
+            if (productionOrderId.HasValue)
+                query = query.Where(x => x.ProductionOrderId == productionOrderId);
 
             if(fromDate > 0 && toDate > 0)
             {
