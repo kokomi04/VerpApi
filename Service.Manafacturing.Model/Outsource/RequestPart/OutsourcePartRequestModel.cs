@@ -14,7 +14,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     {
         public long OutsourcePartRequestId { get; set; }
         public string OutsourcePartRequestCode { get; set; }
-        public long ProductionOrderDetailId { get; set; }
+        public long? ProductionOrderDetailId { get; set; }
         public EnumOutsourceRequestStatusType OutsourcePartRequestStatusId { get; set; } = EnumOutsourceRequestStatusType.Unprocessed;
 
         public IList<OutsourcePartRequestDetailModel> Detail { get; set; }
