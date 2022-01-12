@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
         [HttpPost]
-        [Route("{id}")]
+        [Route("")]
         public Task<int> Create([FromBody] ProductPurityCalcModel model)
         {
             return _productPurityCalcService.Create(model);
