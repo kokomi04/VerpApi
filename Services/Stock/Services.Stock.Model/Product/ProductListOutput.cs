@@ -46,6 +46,8 @@ namespace VErp.Services.Stock.Model.Product
 
         public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }   
 
+        public decimal? ProductPurity { get; set; }
+
         public decimal? Measurement { get; set; }
 
         public decimal? NetWeight { get; set; }

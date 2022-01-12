@@ -109,6 +109,9 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Đơn vị Định lượng(g/m2, g/m3)", GroupName = "Thông số")]
         public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
 
+        [Display(Name = "Khối lượng tinh", GroupName = "Thông số")]
+        public decimal? ProductPurity { get; set; }
+
         [Display(Name = "Dài (mm)", GroupName = "Thông số")]
         public decimal? Long { get; set; }
 
