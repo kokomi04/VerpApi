@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
         public bool MarkInvalid { get; set; }
         public int OutsourcePartRequestStatusId { get; set; }
+        public long? ProductionOrderId { get; set; }
 
         public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
         public virtual ICollection<OutsourcePartRequestDetail> OutsourcePartRequestDetail { get; set; }

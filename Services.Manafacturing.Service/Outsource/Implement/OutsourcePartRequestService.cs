@@ -112,7 +112,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             var enrichData = await (from p in _manufacturingDBContext.ProductionOrder
                                     join d in _manufacturingDBContext.ProductionOrderDetail on p.ProductionOrderId equals d.ProductionOrderId
-                                    where request.ProductionOrderDetailId == d.ProductionOrderDetailId
+                                    where request.ProductionOrderDetailId == d.ProductionOrderDetailId || request.ProductionOrderId == p.ProductionOrderId
                                     select new
                                     {
                                         p.ProductionOrderId,
@@ -139,7 +139,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             rs.Detail = details;
             rs.ProductionOrderCode = enrichData?.ProductionOrderCode;
             rs.RootProductId = enrichData?.ProductId;
-            rs.ProductionOrderId = enrichData?.ProductionOrderId;
+            rs.ProductionOrderId = rs.ProductionOrderId.HasValue ? rs.ProductionOrderId : enrichData?.ProductionOrderId;
             rs.RootProductQuantity = enrichData?.Quantity;
 
             return rs;

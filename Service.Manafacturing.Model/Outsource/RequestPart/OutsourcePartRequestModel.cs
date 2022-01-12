@@ -24,6 +24,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
         public decimal? RootProductQuantity { get; set; }
 
         public long OutsourcePartRequestDate { get; set; }
+        
 
         public void Mapping(Profile profile)
         {

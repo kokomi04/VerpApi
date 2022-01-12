@@ -635,9 +635,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<PurchaseOrderOutsourceMapping>(entity =>
             {
-                entity.Property(e => e.OrderCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
 
                 entity.Property(e => e.ProductionOrderCode)
                     .IsRequired()
