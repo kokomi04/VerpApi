@@ -566,8 +566,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 item.ProductionOrderDetailId = 0;
                 item.ProductionOrderId = productionOrder.ProductionOrderId;
+
                 // Tạo mới
                 var entity = _mapper.Map<ProductionOrderDetail>(item);
+                entity.ProductionProcessVersion = await _productHelperService.GetProductionProcessVersion(entity.ProductId);
+                
                 if (monthPlanId.HasValue && item.SortOrder.HasValue) extraPlans.Add((entity, item.SortOrder.Value));
                 _manufacturingDBContext.ProductionOrderDetail.Add(entity);
             }

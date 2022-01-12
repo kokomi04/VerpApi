@@ -134,7 +134,13 @@ namespace ObjectDefineAlter
                     var objName = AddToDefines(objectDefines, db, dataTable.Rows[i]);
 
                     var refDbName = dataTable.Rows[i]["RefDbName"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(refDbName))
+                    {
+                        refDbName = db;
+                    }
+
                     var refSchema = dataTable.Rows[i]["RefSchema"]?.ToString();
+
                     var refName = dataTable.Rows[i]["RefName"]?.ToString();
 
                     var refObjName = NormalizeObjectName(refDbName, refSchema, refName);

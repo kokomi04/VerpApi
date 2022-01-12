@@ -1087,8 +1087,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     productionOrder.IsUpdateQuantity = false;
                 }
+
+                // Kiểm tra nếu quy trình đã thực hiện phân công
                 // Cập nhật trạng thái thay đổi quy trình LSX cho phân công
-                productionOrder.IsUpdateProcessForAssignment = true;
+                if(await CheckHasAssignment(productionOrder.ProductionOrderId))
+                {
+                    productionOrder.IsUpdateProcessForAssignment = true;
+                }
 
                 // Lấy danh sách công đoạn hiện tại của lệnh
                 var currentProductionStepIds = _manufacturingDBContext.ProductionStep
@@ -1107,6 +1112,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Where(h => h.ProductionOrderId == containerId)
                     .ToList();
 
+                var humanResources = _manufacturingDBContext.ProductionHumanResource
+                    .Where(hr => hr.ProductionOrderId == containerId)
+                    .ToList();
+
                 foreach (var oldProductionAssignment in deletedProductionStepAssignments)
                 {
                     // Xóa bàn giao liên quan tới phân công bị xóa
@@ -1118,7 +1127,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
 
                     // Xóa khai báo nhân công
-                    // TODO
+                    var deleteHumanResources = humanResources
+                        .Where(hr => hr.ProductionStepId == oldProductionAssignment.ProductionStepId && hr.DepartmentId == oldProductionAssignment.DepartmentId)
+                        .ToList();
+
+                    _manufacturingDBContext.ProductionHumanResource.RemoveRange(deleteHumanResources);
+
 
                     // Xóa chi tiết phân công
                     oldProductionAssignment.ProductionAssignmentDetail.Clear();
