@@ -345,7 +345,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// Tổng hợp những chi tiết của PO gia công đã/chưa phân bổ
         /// </summary>
         /// <returns></returns>
-        [HttpPost]
+        [HttpGet]
         [Route("AggregatePurchaseOrderOutsourcePart")]
         public async Task<IList<PurchaseOrderOutsourcePartAllocate>> GetAllPurchaseOrderOutsourcePart()
         {
