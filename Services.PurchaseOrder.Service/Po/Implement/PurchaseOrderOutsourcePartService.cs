@@ -124,9 +124,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 if (existedItem != null) return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
             }
 
-            var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false);
-            if (notExistsOutsourcePartId)
-                return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
+            // var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false);
+            // if (notExistsOutsourcePartId)
+            //     return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
 
             var arrOutsourcePartId = model.Details.Select(x => x.OutsourceRequestId.Value).ToArray();
             var refOutsources = await GetOutsourcePartRequest(arrOutsourcePartId, string.Empty, null);
