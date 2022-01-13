@@ -41,25 +41,51 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 mapper)
         {
         }
+
+        protected class CalcQuantityProcessedOfOutsourcePart
+        {
+            public long OutsourceRequestId { get; set; }
+            public long ProductId { get; set; }
+            public decimal? TotalQuantity { get; set; }
+        }
+
         public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] outsourcePartRequestId, string productionOrderCode, int? productId)
         {
+            
             var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
 
             if(outsourcePartRequestId != null && outsourcePartRequestId.Length > 0 )
                 queryRefOutsourcePart = queryRefOutsourcePart.Where(x => outsourcePartRequestId.Contains(x.OutsourcePartRequestId));
 
-            var calculatorTotalQuantityByOutsourcePart = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
-                                                          join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourcePart } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
-                                                          group d by new { d.OutsourceRequestId, d.ProductId } into g
-                                                          select new
-                                                          {
-                                                              g.Key.OutsourceRequestId,
-                                                              g.Key.ProductId,
-                                                              TotalQuantity = (decimal?)g.Sum(x => x.PrimaryQuantity)
-                                                          });
+
+
+            var calculatorTotalQuantityByOutsourcePart = from v in (from d in _purchaseOrderDBContext.PurchaseOrderDetail
+                                                                    join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourcePart } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
+                                                                    group d by new { d.OutsourceRequestId, d.ProductId } into g
+                                                                    select new CalcQuantityProcessedOfOutsourcePart
+                                                                    {
+                                                                        OutsourceRequestId = g.Key.OutsourceRequestId.GetValueOrDefault(),
+                                                                        ProductId = g.Key.ProductId,
+                                                                        TotalQuantity = (decimal?)g.Sum(x => x.PrimaryQuantity)
+                                                                    }).Concat((from m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping
+                                                                               group m by new { m.OutsourcePartRequestId, m.ProductId } into g
+                                                                               select new CalcQuantityProcessedOfOutsourcePart
+                                                                               {
+                                                                                   OutsourceRequestId = g.Key.OutsourcePartRequestId,
+                                                                                   ProductId = g.Key.ProductId,
+                                                                                   TotalQuantity = (decimal?)g.Sum(x => x.Quantity)
+                                                                               })).AsQueryable()
+                                                         group v by new { v.OutsourceRequestId, v.ProductId } into g
+                                                         select new CalcQuantityProcessedOfOutsourcePart
+                                                         {
+                                                             OutsourceRequestId = g.Key.OutsourceRequestId,
+                                                             ProductId = g.Key.ProductId,
+                                                             TotalQuantity = (decimal?)g.Sum(x => x.TotalQuantity)
+                                                         };
+
 
             var query = (from o in queryRefOutsourcePart
-                                 join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId.GetValueOrDefault(), c.ProductId } into gc
+                                 join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId, ProductId = (int) c.ProductId } into gc
                                  from c in gc.DefaultIfEmpty()
                                  where c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
                                  select new RefOutsourcePartRequestModel
