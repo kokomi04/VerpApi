@@ -357,10 +357,10 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("EnrichDataForPurchaseOrderOutsourcePart")]
-        public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart()
+        [Route("{purchaseOrderId}/EnrichDataForPurchaseOrderOutsourcePart")]
+        public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart([FromRoute] long purchaseOrderId)
         {
-            return await _purchaseOrderService.EnrichDataForPurchaseOrderOutsourcePart();
+            return await _purchaseOrderService.EnrichDataForPurchaseOrderOutsourcePart(purchaseOrderId);
         }
     }
 }

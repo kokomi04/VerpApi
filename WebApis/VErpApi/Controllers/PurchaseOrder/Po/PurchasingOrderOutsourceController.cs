@@ -136,9 +136,9 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("outsourcePart/request")]
-        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest([FromQuery]string productionOrderCode,[FromQuery] int? productId)
+        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest([FromQuery]string productionOrderCode,[FromQuery] int? productId, [FromQuery] bool ignoreOutsourceAllocateCompeleted = false)
         {
-            return await _purchaseOrderOutsourcePartService.GetOutsourcePartRequest(null, productionOrderCode, productId);
+            return await _purchaseOrderOutsourcePartService.GetOutsourcePartRequest(null, productionOrderCode, productId, ignoreOutsourceAllocateCompeleted);
         }
 
         /// <summary>
