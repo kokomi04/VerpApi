@@ -15,9 +15,9 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<DataResultModel> FixExchangeRateDetail(long fromDate, long toDate, int currency, string accountNumber, string partnerId);
 
-        Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate);
+        Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate, int currency);
 
-        Task<bool> DeletedFixExchangeRate(long fromDate, long toDate);
+        Task<bool> DeletedFixExchangeRate(long fromDate, long toDate, int currency);
 
         Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type,
             bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
