@@ -1438,32 +1438,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             p.PurchaseOrderId,
                             pd.PurchaseOrderDetailId,
                             OutsourceRequestId = pd.OutsourceRequestId.HasValue ? pd.OutsourceRequestId.GetValueOrDefault() : m.OutsourcePartRequestId,
-                            ProductionOrderCode = pd.OutsourceRequestId.HasValue ? pd.ProductionOrderCode : m.ProductionOrderCode
+                            ProductionOrderCode = pd.OutsourceRequestId.HasValue ? pd.ProductionOrderCode : m.ProductionOrderCode,
                         };
 
             var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
 
 
             var query = from v in queryRefPurchaseOrderOutsource
-                        join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId
-                        select new {
-                            v.PurchaseOrderId,
-                            v.PurchaseOrderDetailId,
-                            v.OutsourceRequestId,
-                            v.ProductionOrderCode,
-                            OutsourceRequestCode = r.OutsourcePartRequestCode
-                        };
-            var data = (await query.ToListAsync())
-            .GroupBy(x=> new {x.PurchaseOrderId, x.PurchaseOrderDetailId})
-            .Select(x=> new EnrichDataPurchaseOrderOutsourcePart
-            {
-                PurchaseOrderId = x.Key.PurchaseOrderId,
-                PurchaseOrderDetailId = x.Key.PurchaseOrderDetailId,
-                OutsourceRequestId =  x.Select(x=>x.OutsourceRequestId).Distinct().ToArray(),
-                ProductionOrderCode = string.Join(", ", x.Select(x => x.ProductionOrderCode).Distinct().ToArray()),
-                OutsourceRequestCode = string.Join(", ", x.Select(x => x.OutsourceRequestCode).Distinct().ToArray()),
-            }).ToList();
+                        join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId into g
+                        from r in g.DefaultIfEmpty()
+                        select new EnrichDataPurchaseOrderOutsourcePart
+                        {
 
+                            PurchaseOrderId = v.PurchaseOrderId,
+                            PurchaseOrderDetailId = v.PurchaseOrderDetailId,
+                            OutsourceRequestId = v.OutsourceRequestId,
+                            ProductionOrderCode = v.ProductionOrderCode,
+                            OutsourceRequestCode = r.OutsourcePartRequestCode,
+                            ProductionOrderId = r.ProductionOrderId
+                        };
+            var data = await query.ToListAsync();
             return data;
         }
 
