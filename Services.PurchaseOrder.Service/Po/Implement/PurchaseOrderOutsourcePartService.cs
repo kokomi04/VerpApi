@@ -49,7 +49,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             public decimal? TotalQuantity { get; set; }
         }
 
-        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] outsourcePartRequestId, string productionOrderCode, int? productId)
+        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] outsourcePartRequestId, string productionOrderCode, int? productId, bool ignoreOutsourceAllocateCompeleted = false)
         {
             
             var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
@@ -87,7 +87,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             var query = (from o in queryRefOutsourcePart
                                  join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId, ProductId = (int) c.ProductId } into gc
                                  from c in gc.DefaultIfEmpty()
-                                 where c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
+                                 where ignoreOutsourceAllocateCompeleted == false ? true :  c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
                                  select new RefOutsourcePartRequestModel
                                  {
                                      ProductId = o.ProductId,
@@ -101,6 +101,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                                      ProductionOrderDetailId = o.ProductionOrderDetailId,
                                      RootProductId = o.RootProductId
                                  });
+
+            
 
             if (!string.IsNullOrWhiteSpace(productionOrderCode))
                 query = query.Where(x => x.ProductionOrderCode == productionOrderCode);

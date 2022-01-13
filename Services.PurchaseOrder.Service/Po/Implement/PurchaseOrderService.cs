@@ -1427,13 +1427,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return await query.ToListAsync();
         }
 
-        public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart()
+        public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart(long purchaseOrderId)
         {
             var queryRefPurchaseOrderOutsource = from p in _purchaseOrderDBContext.PurchaseOrder
                         join pd in _purchaseOrderDBContext.PurchaseOrderDetail on p.PurchaseOrderId equals pd.PurchaseOrderId
                         join m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping on pd.PurchaseOrderDetailId equals m.PurchaseOrderDetailId into gm
                         from m in gm.DefaultIfEmpty()
-                        where p.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart
+                        where p.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart && p.PurchaseOrderId == purchaseOrderId
                         select new {
                             p.PurchaseOrderId,
                             pd.PurchaseOrderDetailId,
