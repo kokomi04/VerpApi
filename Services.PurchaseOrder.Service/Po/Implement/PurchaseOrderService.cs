@@ -647,7 +647,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         IntoMoney = d.IntoMoney,
 
                         ExchangedMoney = d.ExchangedMoney,
-                        SortOrder = d.SortOrder
+                        SortOrder = d.SortOrder,
+                        OutsourceRequestId = d.OutsourceRequestId,
+                        ProductionStepLinkDataId = d.ProductionStepLinkDataId
                     };
                 }).ToList(),
                 Excess = excess.OrderBy(e => e.SortOrder).ToList(),
