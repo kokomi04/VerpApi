@@ -1427,6 +1427,45 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return await query.ToListAsync();
         }
 
+        public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart()
+        {
+            var queryRefPurchaseOrderOutsource = from p in _purchaseOrderDBContext.PurchaseOrder
+                        join pd in _purchaseOrderDBContext.PurchaseOrderDetail on p.PurchaseOrderId equals pd.PurchaseOrderId
+                        join m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping on pd.PurchaseOrderDetailId equals m.PurchaseOrderDetailId into gm
+                        from m in gm.DefaultIfEmpty()
+                        where p.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart
+                        select new {
+                            p.PurchaseOrderId,
+                            pd.PurchaseOrderDetailId,
+                            OutsourceRequestId = pd.OutsourceRequestId.HasValue ? pd.OutsourceRequestId.GetValueOrDefault() : m.OutsourcePartRequestId,
+                            ProductionOrderCode = pd.OutsourceRequestId.HasValue ? pd.ProductionOrderCode : m.ProductionOrderCode
+                        };
+
+            var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
+
+
+            var query = from v in queryRefPurchaseOrderOutsource
+                        join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId
+                        select new {
+                            v.PurchaseOrderId,
+                            v.PurchaseOrderDetailId,
+                            v.OutsourceRequestId,
+                            v.ProductionOrderCode,
+                            OutsourceRequestCode = r.OutsourcePartRequestCode
+                        };
+            var data = (await query.ToListAsync())
+            .GroupBy(x=> new {x.PurchaseOrderId, x.PurchaseOrderDetailId})
+            .Select(x=> new EnrichDataPurchaseOrderOutsourcePart
+            {
+                PurchaseOrderId = x.Key.PurchaseOrderId,
+                PurchaseOrderDetailId = x.Key.PurchaseOrderDetailId,
+                OutsourceRequestId =  x.Select(x=>x.OutsourceRequestId).Distinct().ToArray(),
+                ProductionOrderCode = string.Join(", ", x.Select(x => x.ProductionOrderCode).Distinct().ToArray()),
+                OutsourceRequestCode = string.Join(", ", x.Select(x => x.OutsourceRequestCode).Distinct().ToArray()),
+            }).ToList();
+
+            return data;
+        }
 
         private async Task<Enum> ValidatePoModelInput(long? poId, PurchaseOrderInput model)
         {

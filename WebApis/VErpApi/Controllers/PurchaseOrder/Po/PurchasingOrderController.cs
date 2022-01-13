@@ -351,5 +351,16 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchaseOrderService.GetAllPurchaseOrderOutsourcePart();
         }
+
+        /// <summary>
+        /// Get thông tin bổ sung cho PO gia công chi tiết (mã YCGC, mã LSX)
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("EnrichDataForPurchaseOrderOutsourcePart")]
+        public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart()
+        {
+            return await _purchaseOrderService.EnrichDataForPurchaseOrderOutsourcePart();
+        }
     }
 }
