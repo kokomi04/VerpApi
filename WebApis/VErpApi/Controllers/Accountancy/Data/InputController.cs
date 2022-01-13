@@ -182,16 +182,16 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CheckExistedFixExchangeRate")]
-        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency)
         {
-            return await _calcBillService.CheckExistedFixExchangeRate(fromDate, toDate);
+            return await _calcBillService.CheckExistedFixExchangeRate(fromDate, toDate, currency);
         }
 
         [HttpDelete]
         [Route("DeletedFixExchangeRate")]
-        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency)
         {
-            return await _calcBillService.DeletedFixExchangeRate(fromDate, toDate);
+            return await _calcBillService.DeletedFixExchangeRate(fromDate, toDate, currency);
         }
 
         [HttpGet]

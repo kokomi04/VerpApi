@@ -136,13 +136,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-        public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate)
+        public async Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate, int currency)
         {
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             var sqlParams = new SqlParameter[]
             {
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Currency", currency),
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_CheckExistedFixExchangeRate", sqlParams, true);
@@ -150,13 +151,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (result.Value as bool?).GetValueOrDefault();
         }
 
-        public async Task<bool> DeletedFixExchangeRate(long fromDate, long toDate)
+        public async Task<bool> DeletedFixExchangeRate(long fromDate, long toDate, int currency)
         {
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             SqlParameter[] sqlParams = new SqlParameter[]
             {
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Currency", currency),
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeleteFixExchangeRate", sqlParams, true);

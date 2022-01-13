@@ -5,32 +5,24 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Verp.Cache.RedisCache;
-using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Commons.Enums.Manafacturing;
-using Microsoft.Data.SqlClient;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Services.Manafacturing.Model.ProductionStep;
-using VErp.Services.Manafacturing.Model.ProductionHandover;
-using VErp.Commons.Constants;
-using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
+using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
-    public class ProductionAssignmentService : IProductionAssignmentService
+    public class ProductionAssignmentService : StatusProcessService, IProductionAssignmentService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -43,7 +35,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             , ILogger<ProductionAssignmentService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOrganizationHelperService organizationHelperService)
+            , IOrganizationHelperService organizationHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -380,6 +372,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Update reset process status
                 productionOrder.IsResetProductionProcess = true;
 
+                // Cập nhật trạng thái cho lệnh và phân công
+                await UpdateFullAssignedProgressStatus(productionOrderId);
+
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
@@ -613,6 +608,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Update reset process status
                 productionOrder.IsResetProductionProcess = true;
 
+                // Cập nhật trạng thái cho lệnh và phân công
+                await UpdateFullAssignedProgressStatus(productionOrderId);
+
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionStepId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
@@ -625,6 +623,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw;
             }
         }
+
 
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
         {
