@@ -142,9 +142,9 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CalcFixExchangeRate")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate, [FromQuery] string accoutantNumber)
         {
-            return await _calcBillService.CalcFixExchangeRate(toDate, currency, exchangeRate);
+            return await _calcBillService.CalcFixExchangeRate(toDate, currency, exchangeRate, accoutantNumber);
         }
 
         [HttpGet]
@@ -182,16 +182,16 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CheckExistedFixExchangeRate")]
-        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency)
+        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accoutantNumber)
         {
-            return await _calcBillService.CheckExistedFixExchangeRate(fromDate, toDate, currency);
+            return await _calcBillService.CheckExistedFixExchangeRate(fromDate, toDate, currency, accoutantNumber);
         }
 
         [HttpDelete]
         [Route("DeletedFixExchangeRate")]
-        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency)
+        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accoutantNumber)
         {
-            return await _calcBillService.DeletedFixExchangeRate(fromDate, toDate, currency);
+            return await _calcBillService.DeletedFixExchangeRate(fromDate, toDate, currency, accoutantNumber);
         }
 
         [HttpGet]
