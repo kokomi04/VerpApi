@@ -7,6 +7,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public long PurchaseOrderDetailId { get; set; }
-        public decimal PrimaryQuantityAllocated { get; set; }
+        public decimal? PrimaryQuantityAllocated { get; set; }
     }
 }
