@@ -1439,16 +1439,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         select new {
                             p.PurchaseOrderId,
                             pd.PurchaseOrderDetailId,
-                            OutsourceRequestId = pd.OutsourceRequestId.HasValue ? pd.OutsourceRequestId.GetValueOrDefault() : m.OutsourcePartRequestId,
-                            ProductionOrderCode = pd.OutsourceRequestId.HasValue ? pd.ProductionOrderCode : m.ProductionOrderCode,
+                            OutsourceRequestId = pd.OutsourceRequestId.HasValue ? pd.OutsourceRequestId.GetValueOrDefault() : m == null ? 0 : m.OutsourcePartRequestId,
+                            ProductionOrderCode = pd.OutsourceRequestId.HasValue ? pd.ProductionOrderCode : m == null ? string.Empty : m.ProductionOrderCode,
                         };
 
             var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
 
-
             var query = from v in queryRefPurchaseOrderOutsource
-                        join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId into g
-                        from r in g.DefaultIfEmpty()
+                        join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId
                         select new EnrichDataPurchaseOrderOutsourcePart
                         {
 
@@ -1457,7 +1455,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             OutsourceRequestId = v.OutsourceRequestId,
                             ProductionOrderCode = v.ProductionOrderCode,
                             OutsourceRequestCode = r.OutsourcePartRequestCode,
-                            ProductionOrderId = r.ProductionOrderId
+                            ProductionOrderId = r.ProductionOrderId 
                         };
             var data = await query.ToListAsync();
             return data;
