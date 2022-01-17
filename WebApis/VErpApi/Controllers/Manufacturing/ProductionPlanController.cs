@@ -11,6 +11,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Service.ProductionPlan;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
+using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -52,6 +53,13 @@ namespace VErpApi.Controllers.Manufacturing
 
             return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
 
+        }
+
+        [HttpPost]
+        [Route("workload")]
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan([FromBody] IList<long> productionOrderIds)
+        {
+            return await _productionPlanService.GetWorkloadPlan(productionOrderIds);
         }
     }
 }
