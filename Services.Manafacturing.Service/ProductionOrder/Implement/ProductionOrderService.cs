@@ -797,6 +797,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 // Xóa chi tiết
                 foreach (var item in oldDetail)
                 {
+                    if (_manufacturingDBContext.OutsourcePartRequest.Any(x => x.ProductionOrderDetailId == item.ProductionOrderDetailId))
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại đơn gia công chi tiết của mặt hàng bị xóa bỏ. Phải xóa yêu cầu gia công liên quan trước.");
+
                     item.IsDeleted = true;
                 }
 

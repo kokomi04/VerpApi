@@ -217,10 +217,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             var query = from r in _manufacturingDBContext.OutsourcePartRequest
                         join rd in _manufacturingDBContext.OutsourcePartRequestDetail on r.OutsourcePartRequestId equals rd.OutsourcePartRequestId
-                        join pod in _manufacturingDBContext.ProductionOrderDetail on r.ProductionOrderDetailId equals pod.ProductionOrderDetailId
+                        join pod in _manufacturingDBContext.ProductionOrderDetail on r.ProductionOrderDetailId equals pod.ProductionOrderDetailId into gpod
+                        from pod in gpod.DefaultIfEmpty()
                         join p1 in _manufacturingDBContext.RefProduct on pod.ProductId equals p1.ProductId into gp1
                         from p1 in gp1.DefaultIfEmpty()
-                        join po in _manufacturingDBContext.ProductionOrder on pod.ProductionOrderId equals po.ProductionOrderId
+                        join po in _manufacturingDBContext.ProductionOrder on r.ProductionOrderId equals po.ProductionOrderId
                         join p2 in _manufacturingDBContext.RefProduct on rd.ProductId equals p2.ProductId into gp2
                         from p2 in gp2.DefaultIfEmpty()
                         select new
@@ -230,10 +231,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                             r.CreatedDatetimeUtc,
                             r.MarkInvalid,
                             r.OutsourcePartRequestStatusId,
-                            ProductionOrderId = r.ProductionOrderDetailId.HasValue == false ? po.ProductionOrderId : r.ProductionOrderId.GetValueOrDefault(),
+                            ProductionOrderId = po.ProductionOrderId,
                             po.ProductionOrderCode,
-                            pod.OrderCode,
-                            RootProductId = pod.ProductId,
+                            OrderCode = r.ProductionOrderDetailId.HasValue ?  pod.OrderCode : string.Empty,
+                            RootProductId = r.ProductionOrderDetailId.HasValue ? pod.ProductId : 0,
                             RootProductCode = p1.ProductCode,
                             RootProductName = p1.ProductName,
                             rd.ProductId,
@@ -377,8 +378,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId)
         {
             var data = await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
-                                .Include(x => x.ProductionOrderDetail)
-                                .Where(x => x.ProductionOrderDetail.ProductionOrderId == productionOrderId)
+                                .Where(x => x.ProductionOrderId == productionOrderId)
                                 .ProjectTo<OutsourcePartRequestOutput>(_mapper.ConfigurationProvider)
                                 .ToListAsync();
             return data;
@@ -454,22 +454,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GenerateOutsouceRequestCode(long? outsourcePartRequestId, OutsourcePartRequestModel model)
-        {
-            model.OutsourcePartRequestCode = (model.OutsourcePartRequestCode ?? "").Trim();
-
-            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
-
-            var code = await ctx
-                .SetConfig(EnumObjectType.OutsourceRequest)
-                .SetConfigData(outsourcePartRequestId ?? 0, DateTime.UtcNow.GetUnix())
-                .TryValidateAndGenerateCode(_manufacturingDBContext.OutsourcePartRequest, model.OutsourcePartRequestCode, (s, code) => s.OutsourcePartRequestId != outsourcePartRequestId && s.OutsourcePartRequestCode == code);
-
-            model.OutsourcePartRequestCode = code;
-
-            return ctx;
-        }
-
         public async Task<IList<MaterialsForProductOutsource>> GetMaterialsForProductOutsource(long outsourcePartRequestId, long[] productId)
         {
             var outsourceDetails = await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
@@ -481,7 +465,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             .ToListAsync();
 
             var productionOrderId = await _manufacturingDBContext.OutsourcePartRequest.Where(x => x.OutsourcePartRequestId == outsourcePartRequestId)
-            .Select(x => x.ProductionOrderDetail.ProductionOrderId)
+            .Select(x => x.ProductionOrderId)
             .FirstOrDefaultAsync();
 
             var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
@@ -576,6 +560,22 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             }
 
             return data;
+        }
+
+        private async Task<GenerateCodeContext> GenerateOutsouceRequestCode(long? outsourcePartRequestId, OutsourcePartRequestModel model)
+        {
+            model.OutsourcePartRequestCode = (model.OutsourcePartRequestCode ?? "").Trim();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.OutsourceRequest)
+                .SetConfigData(outsourcePartRequestId ?? 0, DateTime.UtcNow.GetUnix())
+                .TryValidateAndGenerateCode(_manufacturingDBContext.OutsourcePartRequest, model.OutsourcePartRequestCode, (s, code) => s.OutsourcePartRequestId != outsourcePartRequestId && s.OutsourcePartRequestCode == code);
+
+            model.OutsourcePartRequestCode = code;
+
+            return ctx;
         }
 
         private IEnumerable<long> TracedStepStoreMaterials(long? currentStepId, IEnumerable<ProductionStepLinkModel> lsStepLink)
