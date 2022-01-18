@@ -65,9 +65,9 @@ namespace VErpApi.Controllers.Stock.Inventory
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("types/{inventoryTypeId}/GetByIds")]
-        public async Task<IList<InventoryRequirementOutputModel>> GetByIds([FromRoute] EnumInventoryType inventoryType, [FromBody] IList<long> inventoryRequirementIds)
+        public async Task<IList<InventoryRequirementOutputModel>> GetByIds([FromRoute] EnumInventoryType inventoryTypeId, [FromBody] IList<long> inventoryRequirementIds)
         {
-            return await _inventoryRequirementService.GetRequirements(inventoryType, inventoryRequirementIds);
+            return await _inventoryRequirementService.GetRequirements(inventoryTypeId, inventoryRequirementIds);
         }
 
         [HttpPost]
