@@ -9,6 +9,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
@@ -21,51 +22,97 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly ICurrentContextService _currentContext;
         private readonly ObjectActivityLogFacade _poActivityLog;
         private readonly IMapper _mapper;
+        private readonly IManufacturingHelperService _manufacturingHelperService;
+        private readonly ILogger _logger;
+
         public PurchaseOrderOutsourceMappingService(
             PurchaseOrderDBContext purchaseOrderDBContext
            , ILogger<PurchaseOrderOutsourceMappingService> logger
            , IActivityLogService activityLogService
            , ICurrentContextService currentContext
            , IPurchasingSuggestService purchasingSuggestService
-           , IMapper mapper)
+           , IMapper mapper, IManufacturingHelperService manufacturingHelperService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
             _currentContext = currentContext;
             _mapper = mapper;
+            _manufacturingHelperService = manufacturingHelperService;
+            _logger = logger;
         }
 
         public async Task<long> AddPurchaseOrderOutsourceMapping(PurchaseOrderOutsourceMappingModel model)
         {
-            var entity = _mapper.Map<PurchaseOrderOutsourceMapping>(model);
-            await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddAsync(entity);
-            await _purchaseOrderDBContext.SaveChangesAsync();
+            var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = _mapper.Map<PurchaseOrderOutsourceMapping>(model);
+                await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddAsync(entity);
+                await _purchaseOrderDBContext.SaveChangesAsync();
 
-            return entity.PurchaseOrderOutsourceMappingId;
+                await trans.CommitAsync();
+
+                await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(new[] { model.OutsourcePartRequestId });
+
+                return entity.PurchaseOrderOutsourceMappingId; 
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError("PurchaseOrderOutsourceMappingService.AddPurchaseOrderOutsourceMapping", ex);
+                throw;
+            }
         }
 
         public async Task<bool> UpdatePurchaseOrderOutsourceMapping(PurchaseOrderOutsourceMappingModel model, long purchaseOrderOutsourceMappingId)
         {
-            var entity = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.FirstOrDefaultAsync(x => x.PurchaseOrderOutsourceMappingId == purchaseOrderOutsourceMappingId);
-            if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.FirstOrDefaultAsync(x => x.PurchaseOrderOutsourceMappingId == purchaseOrderOutsourceMappingId);
+                if (entity == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            _mapper.Map(model, entity);
-            await _purchaseOrderDBContext.SaveChangesAsync();
+                _mapper.Map(model, entity);
+                await _purchaseOrderDBContext.SaveChangesAsync();
 
-            return true;
+                await trans.CommitAsync();
+
+                await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(new[] { entity.OutsourcePartRequestId });
+
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError("PurchaseOrderOutsourceMappingService.UpdatePurchaseOrderOutsourceMapping", ex);
+                throw;
+            }
         }
 
         public async Task<bool> DeletePurchaseOrderOutsourceMapping(long purchaseOrderOutsourceMappingId)
         {
-            var entity = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.FirstOrDefaultAsync(x => x.PurchaseOrderOutsourceMappingId == purchaseOrderOutsourceMappingId);
-            if (entity == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var entity = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.FirstOrDefaultAsync(x => x.PurchaseOrderOutsourceMappingId == purchaseOrderOutsourceMappingId);
+                if (entity == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            entity.IsDeleted = true;
-            await _purchaseOrderDBContext.SaveChangesAsync();
+                entity.IsDeleted = true;
+                await _purchaseOrderDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
 
-            return true;
+                await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(new[] { entity.OutsourcePartRequestId });
+
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError("PurchaseOrderOutsourceMappingService.DeletePurchaseOrderOutsourceMapping", ex);
+                throw;
+            }
         }
 
         public async Task<IList<PurchaseOrderOutsourceMappingModel>> GetAllByPurchaseOrderId(long purchaseOrderDetailId)
