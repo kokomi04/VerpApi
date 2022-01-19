@@ -11,55 +11,24 @@ using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Stock
-{
-    /// <summary>
-    /// I - Nhap xuat kho
-    /// </summary>
+{  
     public interface IInventoryService
     {
-        /// <summary>
-        /// Lấy danh sách phiếu nhập / xuất kho
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="customerId"></param>
-        /// <param name="accountancyAccountNumber"></param>
-        /// <param name="stockId"></param>
-        /// <param name="isApproved"></param>
-        /// <param name="type"></param>
-        /// <param name="beginTime"></param>
-        /// <param name="endTime"></param>
-        /// <param name="isExistedInputBill"></param>
-        /// <param name="mappingFunctionKeys"></param>
-        /// <param name="sortBy"></param>
-        /// <param name="asc"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null);
+        Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null);
 
-
-        /// <summary>
-        /// Lấy thông tin của phiếu nhập xuất
-        /// </summary>
-        /// <param name="inventoryId">ID phiếu</param>
-        /// <returns></returns>
         Task<InventoryOutput> InventoryInfo(long inventoryId);
-
 
         Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId);
 
         CategoryNameModel GetInventoryDetailFieldDataForMapping();
 
         Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model);
-              
-        
+                      
         CategoryNameModel FieldsForParse(EnumInventoryType inventoryTypeId);
 
         IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId);
 
-        Task<bool> SendMailNotifyCensor(long inventoryId, string mailCode, string[] mailTo);
-
-        Task<bool> SentToCensor (long inventoryId);
-        Task<bool> Reject (long inventoryId);
+        Task<bool> SendMailNotifyCensor(long inventoryId, string mailCode, string[] mailTo);      
+        
     }
 }

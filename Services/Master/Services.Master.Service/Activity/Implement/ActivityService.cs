@@ -320,7 +320,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return results;
         }
 
-        private async Task<bool> AddNotification(NotificationAdditionalModel model, int userId, ActivityInput log)
+        private async Task AddNotification(NotificationAdditionalModel model, int userId, ActivityInput log)
         {
             var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && userId != x.UserId);
             if (model.BillTypeId.HasValue)
@@ -337,44 +337,53 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
             _activityLogContext.Notification.AddRange(lsNewNotification);
             await _activityLogContext.SaveChangesAsync();
-            
 
-            var actionUrl = !string.IsNullOrWhiteSpace(_appSetting.WebPush.ActionUrl)
-                && (_appSetting.WebPush.ActionUrl.StartsWith("http://") || _appSetting.WebPush.ActionUrl.StartsWith("https://")) ? $"{_appSetting.WebPush.ActionUrl}redirect/{model.ObjectTypeId}/{model.ObjectId}/{model.BillTypeId}" : "";
-            foreach (var sub in querySub)
+            await PushNotification(lsSubscription, log.Message, model);
+        }
+
+        private async Task PushNotification(IList<SubscriptionModel> lsSubscription, string message, NotificationAdditionalModel data)
+        {
+            try
             {
-                var subUserId = sub.UserId;
-                if (_principalBroadcaster.IsUserConnected(subUserId.ToString()))
-                    await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(new[] { subUserId.ToString() })).BroadcastMessage();
-                else if (_appSetting.WebPush != null && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey) && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PrivateKey))
+                var actionUrl = !string.IsNullOrWhiteSpace(_appSetting.WebPush.ActionUrl)
+                    && (_appSetting.WebPush.ActionUrl.StartsWith("http://") || _appSetting.WebPush.ActionUrl.StartsWith("https://")) ? $"{_appSetting.WebPush.ActionUrl}redirect/{data.ObjectTypeId}/{data.ObjectId}/{data.BillTypeId}" : "";
+                foreach (var sub in lsSubscription)
                 {
-                    var pushSubscriptions = await _activityLogContext.PushSubscription.AsNoTracking().Where(x => x.UserId == subUserId).ToListAsync();
-                    foreach (var pushSubscription in pushSubscriptions)
+                    var subUserId = sub.UserId;
+                    if (_principalBroadcaster.IsUserConnected(subUserId.ToString()))
+                        await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(new[] { subUserId.ToString() })).BroadcastMessage();
+                    else if (_appSetting.WebPush != null && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey) && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PrivateKey))
                     {
-                        PushMessage notification = new AngularPushNotification
+                        var pushSubscriptions = await _activityLogContext.PushSubscription.AsNoTracking().Where(x => x.UserId == subUserId).ToListAsync();
+                        foreach (var pushSubscription in pushSubscriptions)
                         {
-                            Title = "VERP Thông Báo",
-                            Body = log.Message,
-                            NotifyData = model,
-                            Actions = !string.IsNullOrWhiteSpace(actionUrl) ? new NotificationAction[] { new NotificationAction(actionUrl, "Xem") } : new NotificationAction[] {},
-                            Icon = "https://verp.vn/pic/Settings/log_63712_637654394979921899.png"
-                        }.ToPushMessage();
+                            PushMessage notification = new AngularPushNotification
+                            {
+                                Title = "VERP Thông Báo",
+                                Body = message,
+                                NotifyData = data,
+                                Actions = !string.IsNullOrWhiteSpace(actionUrl) ? new NotificationAction[] { new NotificationAction(actionUrl, "Xem") } : new NotificationAction[] { },
+                                Icon = "https://verp.vn/pic/Settings/log_63712_637654394979921899.png"
+                            }.ToPushMessage();
 
-                        var keys = new Dictionary<string, string>();
-                        keys.Add("auth", pushSubscription.Auth);
-                        keys.Add("p256dh", pushSubscription.P256dh);
+                            var keys = new Dictionary<string, string>();
+                            keys.Add("auth", pushSubscription.Auth);
+                            keys.Add("p256dh", pushSubscription.P256dh);
 
-                        // Fire-and-forget 
-                        await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
-                        {
-                            Endpoint = pushSubscription.Endpoint,
-                            Keys = keys,
-                        }, notification);
+                            // Fire-and-forget 
+                            await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
+                            {
+                                Endpoint = pushSubscription.Endpoint,
+                                Keys = keys,
+                            }, notification);
+                        }
                     }
                 }
             }
-
-            return true;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AddNotification");
+            }
         }
     }
 }

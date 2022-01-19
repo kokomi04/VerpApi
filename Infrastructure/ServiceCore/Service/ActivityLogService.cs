@@ -189,7 +189,18 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             var formatData = ParseActivityLogData(data);
 
-            var message = messageResourceFormatData.Length > 0 ? string.Format(messageFormat, formatData) : messageFormat;
+            var message = messageFormat;
+
+            try
+            {
+                if (messageResourceFormatData.Length > 0)
+                    message = string.Format(messageFormat, formatData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Log activity format");
+            }
+
 
             return await CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, data.JsonSerialize(), billTypeId);
         }

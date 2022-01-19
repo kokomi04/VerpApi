@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public Inventory()
         {
             InventoryDetail = new HashSet<InventoryDetail>();
+            InverseRefInventory = new HashSet<Inventory>();
         }
 
         public long InventoryId { get; set; }
@@ -37,14 +38,17 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
         public bool IsApproved { get; set; }
         public bool IsOpening { get; set; }
-        public string AccountancyAccountNumber { get; set; }
+        //public string AccountancyAccountNumber { get; set; }
         public int? DepartmentId { get; set; }
         public int InventoryActionId { get; set; }
         public int InventoryStatusId { get; set; }
         public DateTime? CheckedDatetimeUtc { get; set; }
         public int? CheckedByUserId { get; set; }
+        public long? RefInventoryId { get; set; }
 
+        public virtual Inventory RefInventory { get; set; }
         public virtual Stock Stock { get; set; }
         public virtual ICollection<InventoryDetail> InventoryDetail { get; set; }
+        public virtual ICollection<Inventory> InverseRefInventory { get; set; }
     }
 }

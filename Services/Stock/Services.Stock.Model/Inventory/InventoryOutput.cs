@@ -47,7 +47,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long CreatedDatetimeUtc { set; get; }
         public long UpdatedDatetimeUtc { set; get; }
         public bool IsApproved { set; get; }
-        public string AccountancyAccountNumber { get; set; }
+        //public string AccountancyAccountNumber { get; set; }
         public int? DepartmentId { get; set; }
         public StockOutput StockOutput { get; set; }
         public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
@@ -56,8 +56,12 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public IList<MappingInputBillModel> InputBills { get; set; }
         public int? CensorByUserId { get; set; }
-        public int InventoryActionId {get;set;}
+        public EnumInventoryAction InventoryActionId {get;set;}
         public int InventoryStatusId { get; set; }
+
+        public long? RefInventoryId { get; set; }
+        public string RefInventoryCode { get; set; }
+        public int? RefStockId { get; set; }
     }
 
     public class MappingInputBillModel

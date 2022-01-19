@@ -132,6 +132,21 @@
   <data name="Reject" xml:space="preserve">
     <value>Refuse to approve output inventory {0}</value>
   </data>
+  <data name="RotationApprove" xml:space="preserve">
+    <value>Approved inventory rotation "{0}" to "{1}"</value>
+  </data>
+  <data name="RotationCreate" xml:space="preserve">
+    <value>Create inventory rotation "{0}" to "{1}"</value>
+  </data>
+  <data name="RotationDelete" xml:space="preserve">
+    <value>Deleted inventory rotation "{0}" to "{1}"</value>
+  </data>
+  <data name="RotationReject" xml:space="preserve">
+    <value>Rejected inventory rotation "{0}" to "{1}"</value>
+  </data>
+  <data name="RotationWaitToCensor" xml:space="preserve">
+    <value>Sent to censor inventory rotation "{0}" to "{1}"</value>
+  </data>
   <data name="Update" xml:space="preserve">
     <value>Updated output inventory "{0}"</value>
   </data>

@@ -45,6 +45,9 @@ using System.Data;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.Stock.Inventory.Abstract;
+using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
+using static Verp.Resources.Stock.InventoryProcess.InventoryBillOutputMessage;
+using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -100,10 +103,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, string accountancyAccountNumber, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null)
+        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null)
         {
             keyword = keyword?.Trim();
-            accountancyAccountNumber = accountancyAccountNumber?.Trim();
 
             var inventoryQuery = _stockDbContext.Inventory.AsNoTracking().AsQueryable();
 
@@ -129,7 +131,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryQuery = inventoryQuery.Where(q => q.Date <= endDate);
             }
 
-            if(inventoryActionId.HasValue)
+            if (inventoryActionId.HasValue)
             {
                 inventoryQuery = inventoryQuery.Where(q => q.InventoryActionId == inventoryActionId);
             }
@@ -190,10 +192,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryQuery = inventoryQuery.Where(q => q.CustomerId == customerId);
             }
 
-            if (!string.IsNullOrWhiteSpace(accountancyAccountNumber))
-            {
-                inventoryQuery = inventoryQuery.Where(q => q.AccountancyAccountNumber.StartsWith(accountancyAccountNumber));
-            }
+            //if (!string.IsNullOrWhiteSpace(accountancyAccountNumber))
+            //{
+            //    inventoryQuery = inventoryQuery.Where(q => q.AccountancyAccountNumber.StartsWith(accountancyAccountNumber));
+            //}
 
             //IQueryable<VMappingOusideImportObject> mappingObjectQuery = null;
 
@@ -292,7 +294,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillDate = item.BillDate.HasValue ? item.BillDate.Value.GetUnix() : (long?)null,
                     TotalMoney = item.TotalMoney,
                     IsApproved = item.IsApproved,
-                    AccountancyAccountNumber = item.AccountancyAccountNumber,
+                    //AccountancyAccountNumber = item.AccountancyAccountNumber,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,
                     UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
@@ -330,7 +332,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             InputType_Title = m.InputTypeTitle
 
                         }).ToList(),
-                    InventoryActionId = item.InventoryActionId,
+                    InventoryActionId = (EnumInventoryAction)item.InventoryActionId,
                     InventoryStatusId = item.InventoryStatusId
                 });
 
@@ -347,6 +349,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams);
                 }
+
 
                 #region Get inventory details
                 var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().OrderBy(s => s.SortOrder).ThenBy(s => s.CreatedDatetimeUtc).ToListAsync();
@@ -509,6 +512,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                          InputType_Title = m.InputTypeTitle
                      }).ToList();
 
+
+
+
                 var inventoryOutput = new InventoryOutput()
                 {
                     InventoryId = inventoryObj.InventoryId,
@@ -527,7 +533,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillDate = inventoryObj.BillDate.GetUnix(),
                     TotalMoney = inventoryObj.TotalMoney,
                     IsApproved = inventoryObj.IsApproved,
-                    AccountancyAccountNumber = inventoryObj.AccountancyAccountNumber,
+                    //AccountancyAccountNumber = inventoryObj.AccountancyAccountNumber,
                     CreatedByUserId = inventoryObj.CreatedByUserId,
                     UpdatedByUserId = inventoryObj.UpdatedByUserId,
                     DepartmentId = inventoryObj.DepartmentId,
@@ -543,8 +549,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     FileList = attachedFiles,
                     InputBills = mappingObjects,
                     InventoryStatusId = inventoryObj.InventoryStatusId,
-                    InventoryActionId = inventoryObj.InventoryActionId
+                    InventoryActionId = (EnumInventoryAction)inventoryObj.InventoryActionId
                 };
+
+                if (inventoryObj.RefInventoryId.HasValue)
+                {
+                    var refInfo = _stockDbContext.Inventory.AsNoTracking().FirstOrDefault(q => q.InventoryId == inventoryObj.RefInventoryId);
+                    inventoryOutput.RefInventoryId = refInfo?.InventoryId;
+                    inventoryOutput.RefInventoryCode = refInfo?.InventoryCode;
+                    inventoryOutput.RefStockId = refInfo?.StockId;
+                }
+
+
+
                 return inventoryOutput;
             }
             catch (Exception ex)
@@ -629,12 +646,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             throw new BadRequestException("No products found!");
                         }
+
+                        if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                        {
+                            throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+                        }
+
                         inventoryData.InventoryCode = model.InventoryCode;
                         //foreach (var item in inventoryData)
                         {
                             genCodeContexts.Add(await GenerateInventoryCode(model.InventoryTypeId, inventoryData, baseValueChains));
 
-                            inventoryId = await _inventoryBillInputService.AddInventoryInputDB(inventoryData);
+                            inventoryId = (await _inventoryBillInputService.AddInventoryInputDB(inventoryData)).InventoryId;
                             insertedData.Add(inventoryId, (inventoryData.InventoryCode, inventoryData));
                         }
                     }
@@ -645,12 +668,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             throw new BadRequestException("No products found!");
                         }
+
+                        if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                        {
+                            throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
+                        }
+
+
                         inventoryData.InventoryCode = model.InventoryCode;
                         //foreach (var item in inventoryData)
                         {
                             genCodeContexts.Add(await GenerateInventoryCode(model.InventoryTypeId, inventoryData, baseValueChains));
 
-                            inventoryId = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
+                            inventoryId = (await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData)).InventoryId;
                             insertedData.Add(inventoryId, (inventoryData.InventoryCode, inventoryData));
                         }
 
@@ -712,52 +742,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return sendSuccess;
         }
 
-        public async Task<bool> SentToCensor(long inventoryId)
-        {
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-            {
-                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
-                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
 
-                if (info.InventoryStatusId != (int)EnumInventoryStatus.Draff && info.InventoryStatusId != (int) EnumInventoryStatus.Reject)
-                {
-                    throw new BadRequestException(InventoryErrorCode.InventoryNotDraffYet);
-                }
-
-                info.InventoryStatusId = (int)EnumInventoryStatus.WaitToCensor;
-
-                await _stockDbContext.SaveChangesAsync();
-
-                trans.Commit();
-
-                return true;
-            }
-        }
-
-        public async Task<bool> Reject(long inventoryId)
-        {
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
-            {
-                var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
-                if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
-
-                if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor)
-                {
-                    throw new BadRequestException(InventoryErrorCode.InventoryNotSentToCensorYet);
-                }
-
-                info.IsApproved = false;
-
-                info.InventoryStatusId = (int)EnumInventoryStatus.Reject;
-                info.CensorDatetimeUtc = DateTime.UtcNow;
-                info.CensorByUserId = _currentContextService.UserId;
-
-                await _stockDbContext.SaveChangesAsync();
-
-                trans.Commit();
-              
-                return true;
-            }
-        }
     }
 }

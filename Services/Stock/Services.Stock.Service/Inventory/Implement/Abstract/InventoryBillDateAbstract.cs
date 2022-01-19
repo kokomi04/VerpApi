@@ -19,8 +19,13 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
         {
             _stockDbContext = stockDbContext;
         }
+
+        private readonly HashSet<ValidateBillDate> _validateCaches = new HashSet<ValidateBillDate>();
         protected async Task ValidateBill(DateTime? billDate, DateTime? oldDate)
         {
+            var validated = new ValidateBillDate() { BillDate = billDate, OldDate = oldDate };
+            if (_validateCaches.Contains(validated)) return;
+
             if (billDate != null || oldDate != null)
             {
 
@@ -44,6 +49,33 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
 
                 if (!(result.Value as bool?).GetValueOrDefault())
                     throw BillDateLocked.BadRequest();
+            }
+
+            _validateCaches.Add(validated);
+        }
+
+        private struct ValidateBillDate
+        {
+            public DateTime? BillDate;
+            public DateTime? OldDate;
+            public static bool operator ==(ValidateBillDate c1, ValidateBillDate c2)
+            {
+                return c1.BillDate == c2.BillDate && c1.OldDate == c2.OldDate;
+            }
+
+            public static bool operator !=(ValidateBillDate c1, ValidateBillDate c2)
+            {
+                return c1.BillDate != c2.BillDate || c1.OldDate != c2.OldDate;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return this == (ValidateBillDate)obj;
+            }
+
+            public override int GetHashCode()
+            {
+                return base.GetHashCode();
             }
         }
     }

@@ -52,8 +52,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// </summary>
         /// <param name="keyword">Từ khóa</param>
         /// <param name="customerId">ID khách hàng</param>
-        /// <param name="productIds">Danh sách ID mặt hàng</param>
-        /// <param name="accountancyAccountNumber">Tài khoản kế toán</param>
+        /// <param name="productIds">Danh sách ID mặt hàng</param>        
         /// <param name="stockId">ID kho</param>
         /// <param name="inventoryStatusId">Trạng thái</param>
         /// <param name="type">Loại (1: Nhập kho, 2: Xuất kho)</param>
@@ -68,12 +67,12 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] string accountancyAccountNumber, [FromQuery] int stockId, [FromQuery] int? inventoryStatusId, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? inventoryActionId)
+        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] int stockId, [FromQuery] int? inventoryStatusId, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? inventoryActionId)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, customerId, productIds, accountancyAccountNumber, stockId, inventoryStatusId, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size, inventoryActionId).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, productIds, stockId, inventoryStatusId, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size, inventoryActionId).ConfigureAwait(true);
         }
 
 

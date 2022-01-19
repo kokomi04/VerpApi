@@ -130,12 +130,27 @@
     <value>Nhập từ excel phiếu xuất kho "{0}"</value>
   </data>
   <data name="Reject" xml:space="preserve">
-    <value>Từ chối duyệt phiếu nhập kho {0}</value>
+    <value>Từ chối duyệt phiếu xuất kho {0}</value>
+  </data>
+  <data name="RotationApprove" xml:space="preserve">
+    <value>Duyệt phiếu luân chuyển xuất kho "{0}" sang "{1}"</value>
+  </data>
+  <data name="RotationCreate" xml:space="preserve">
+    <value>Tạo luân chuyển kho "{0}" sang "{1}"</value>
+  </data>
+  <data name="RotationDelete" xml:space="preserve">
+    <value>Xóa phiếu luân chuyển xuất kho "{0}" sang "{1}"</value>
+  </data>
+  <data name="RotationReject" xml:space="preserve">
+    <value>Từ chối phiếu luân chuyển xuất kho "{0}" sang "{1}"</value>
+  </data>
+  <data name="RotationWaitToCensor" xml:space="preserve">
+    <value>Gửi duyệt phiếu luân chuyển xuất kho "{0}" sang "{1}"</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhật phiếu nhập kho "{0}"</value>
+    <value>Cập nhật phiếu xuất kho "{0}"</value>
   </data>
   <data name="WaitToCensor" xml:space="preserve">
-    <value>Gửi duyệt phiếu nhập kho {0}</value>
+    <value>Gửi duyệt phiếu xuất kho {0}</value>
   </data>
 </root>

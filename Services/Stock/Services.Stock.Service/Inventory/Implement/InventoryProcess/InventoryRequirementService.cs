@@ -68,9 +68,6 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _invRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
         }
 
-
-
-
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool? hasInventory, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();

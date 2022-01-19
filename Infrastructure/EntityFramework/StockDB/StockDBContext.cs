@@ -97,7 +97,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.HasIndex(e => new { e.SubsidiaryId, e.IsDeleted, e.IsApproved }, "IX_Inventory_IsApproved");
 
-                entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
+                //entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
 
                 entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
@@ -123,11 +123,18 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.InventoryStatusId).HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.RefInventoryId).HasComment("Thẻ kho luân chuyển liên quan");
+
                 entity.Property(e => e.Shipper).HasMaxLength(128);
 
                 entity.Property(e => e.TotalMoney).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.RefInventory)
+                    .WithMany(p => p.InverseRefInventory)
+                    .HasForeignKey(d => d.RefInventoryId)
+                    .HasConstraintName("FK_Inventory_Inventory");
 
                 entity.HasOne(d => d.Stock)
                     .WithMany(p => p.Inventory)

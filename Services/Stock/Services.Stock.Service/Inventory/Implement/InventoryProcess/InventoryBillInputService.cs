@@ -42,7 +42,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
         private readonly ObjectActivityLogFacade _invInputActivityLog;
+        private readonly ObjectActivityLogFacade _invOutActivityLog;
         private readonly ObjectActivityLogFacade _packageActivityLog;
+        private readonly IActivityLogService _activityLogService;
         private readonly INotificationFactoryService _notificationFactoryService;
 
         public InventoryBillInputService(
@@ -54,7 +56,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoverHelperService
+            , IProductionHandoverHelperService productionHandoverHelperService            
             , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
 
@@ -62,8 +64,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _currentContextService = currentContextService;
             _productService = productService;
             _invInputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryInput);
-
-            _packageActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Package); ;
+            _invOutActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
+            _packageActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Package);
+            _activityLogService = activityLogService;
             _notificationFactoryService = notificationFactoryService;
         }
 
@@ -73,39 +76,45 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Import);
         }
 
-        /// <summary>
-        /// Thêm mới phiếu nhập kho
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
+
         public async Task<long> AddInventoryInput(InventoryInModel req)
         {
+            if (req.InventoryActionId == EnumInventoryAction.Rotation)
+            {
+                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+            }
+
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
             {
                 var ctx = await GenerateInventoryCode(EnumInventoryType.Input, req);
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var inventoryId = await AddInventoryInputDB(req);
+                    var invInput = await AddInventoryInputDB(req);
                     await trans.CommitAsync();
 
                     await ctx.ConfirmCode();
 
                     await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Create)
                        .MessageResourceFormatDatas(req.InventoryCode)
-                       .ObjectId(inventoryId)
+                       .ObjectId(invInput.InventoryId)
                        .JsonData(req.JsonSerialize())
                        .CreateLog();
 
 
-                    return inventoryId;
+                    return invInput.InventoryId;
                 }
             }
 
         }
 
-        public async Task<long> AddInventoryInputDB(InventoryInModel req)
+        public async Task<InventoryEntity> AddInventoryInputDB(InventoryInModel req)
         {
+            //if (req.InventoryActionId == EnumInventoryAction.Rotation)
+            //{
+            //    throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+            //}
+
             if (req == null || req.InProducts.Count == 0)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
@@ -153,12 +162,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillSerial = req.BillSerial,
                     BillDate = req.BillDate?.UnixToDateTime(),
                     TotalMoney = totalMoney,
-                    AccountancyAccountNumber = req.AccountancyAccountNumber,
+                    //AccountancyAccountNumber = req.AccountancyAccountNumber,
                     CreatedByUserId = _currentContextService.UserId,
                     UpdatedByUserId = _currentContextService.UserId,
                     IsApproved = false,
                     DepartmentId = req.DepartmentId,
-                    InventoryActionId = req.InventoryActionId,
+                    InventoryActionId = (int)req.InventoryActionId,
                     InventoryStatusId = (int)EnumInventoryStatus.Draff
                 };
                 await _stockDbContext.AddAsync(inventoryObj);
@@ -190,12 +199,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         _asyncRunner.RunAsync<IFileService>(f => f.FileAssignToObject(EnumObjectType.InventoryInput, inventoryObj.InventoryId, fileId));
                     }
                 }
-                return inventoryObj.InventoryId;
+                return inventoryObj;
             }
         }
-
-
-
 
 
         /// <summary>
@@ -209,6 +215,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (inventoryId <= 0)
             {
                 throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+            }
+
+            if (req.InventoryActionId == EnumInventoryAction.Rotation)
+            {
+                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
             }
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
@@ -237,6 +248,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
                         }
 
+                        if (inventoryObj.InventoryActionId == (int)EnumInventoryAction.Rotation)
+                        {
+                            throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+                        }
+
                         if (inventoryObj.StockId != req.StockId)
                         {
                             trans.Rollback();
@@ -261,9 +277,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
                         // Validate nếu thông tin nhập kho tạo từ phiếu yêu cầu => không cho phép thêm/sửa mặt hàng
-                        if(inventoryDetails.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
+                        if (inventoryDetails.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
                         {
-                            if(validate.Data.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId)))
+                            if (validate.Data.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId)))
                             {
                                 throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
                             }
@@ -315,7 +331,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .JsonData(req.JsonSerialize())
                             .CreateLog();
 
-                        
+
                     }
                     catch (Exception ex)
                     {
@@ -354,11 +370,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.BillCode = req.BillCode;
             inventoryObj.BillSerial = req.BillSerial;
             inventoryObj.BillDate = req.BillDate?.UnixToDateTime();
-            inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
+            //inventoryObj.AccountancyAccountNumber = req.AccountancyAccountNumber;
             inventoryObj.UpdatedByUserId = _currentContextService.UserId;
             inventoryObj.TotalMoney = totalMoney;
             inventoryObj.DepartmentId = req.DepartmentId;
-            inventoryObj.InventoryActionId = req.InventoryActionId;
+            inventoryObj.InventoryActionId = (int)req.InventoryActionId;
 
             if (inventoryObj.InventoryStatusId != (int)EnumInventoryStatus.Censored)
                 inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Draff;
@@ -379,6 +395,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
             }
 
+
+            if (inventoryObj.InventoryActionId == (int)EnumInventoryAction.Rotation)
+            {
+                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+            }
+
+
             if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Input)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
@@ -386,38 +409,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {
-                //reload inventory after lock
-                inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
-
-                if (inventoryObj.IsApproved)
-                {
-                    /*Khong duoc phep xoa phieu nhap da duyet (Cần xóa theo lưu đồ, flow)*/
-                    throw new BadRequestException(InventoryErrorCode.NotSupportedYet);
-
-                    //var processResult = await RollBackInventoryInput(inventoryObj);
-                    //if (!Equals(processResult, GeneralCode.Success))
-                    //{
-                    //    trans.Rollback();
-                    //    return GeneralCode.InvalidParams;
-                    //}
-                }
-
-                await ValidateInventoryConfig(null, inventoryObj.Date);
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
                     {
-                        inventoryObj.IsDeleted = true;
-                        //inventoryObj.IsApproved = false;
+                        //reload inventory after lock
+                        inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
 
-                        var inventoryDetails = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryId).ToListAsync();
-                        foreach (var item in inventoryDetails)
-                        {
-                            item.IsDeleted = true;
-                        }
+                        await DeleteInventoryInputDb(inventoryObj);
 
-                        await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
 
@@ -427,7 +428,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                           .JsonData(inventoryObj.JsonSerialize())
                           .CreateLog();
 
-                        
 
                         return true;
                     }
@@ -439,6 +439,36 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                 }
             }
+        }
+
+        public async Task DeleteInventoryInputDb(InventoryEntity inventoryObj)
+        {
+            if (inventoryObj.IsApproved)
+            {
+                /*Khong duoc phep xoa phieu nhap da duyet (Cần xóa theo lưu đồ, flow)*/
+                throw new BadRequestException(InventoryErrorCode.NotSupportedYet);
+
+                //var processResult = await RollBackInventoryInput(inventoryObj);
+                //if (!Equals(processResult, GeneralCode.Success))
+                //{
+                //    trans.Rollback();
+                //    return GeneralCode.InvalidParams;
+                //}
+            }
+
+            await ValidateInventoryConfig(null, inventoryObj.Date);
+
+
+            inventoryObj.IsDeleted = true;
+            //inventoryObj.IsApproved = false;
+
+            var inventoryDetails = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryObj.InventoryId).ToListAsync();
+            foreach (var item in inventoryDetails)
+            {
+                item.IsDeleted = true;
+            }
+
+            await _stockDbContext.SaveChangesAsync();
         }
 
 
@@ -461,6 +491,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
             }
+
+
+            if (inventoryObj.InventoryActionId == (int)EnumInventoryAction.Rotation)
+            {
+                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+            }
+
+
             if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Input)
             {
                 throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
@@ -477,35 +515,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //reload after lock
                         inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
 
-                        if (inventoryObj.InventoryStatusId == (int) EnumInventoryStatus.Censored)
-                        {
-                            trans.Rollback();
-                            throw new BadRequestException(InventoryErrorCode.InventoryAlreadyApproved);
-                        }
+                        await ApproveInventoryInputDb(inventoryObj);
 
-                        inventoryObj.IsApproved = true;
-                        inventoryObj.InventoryStatusId = (int) EnumInventoryStatus.Censored;
-                        //inventoryObj.UpdatedByUserId = currentUserId;
-                        //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
-                        inventoryObj.CensorByUserId = _currentContextService.UserId;
-                        inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
-
-                        await _stockDbContext.SaveChangesAsync();
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
-
-                        var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails, inventoryObj.InventoryCode);
-
-                        if (!r.IsSuccess())
-                        {
-                            trans.Rollback();
-                            throw new BadRequestException(r);
-                        }
-
-                        await ReCalculateRemainingAfterUpdate(inventoryId);
-
-
-                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished, inventoryObj.InventoryCode);
 
 
                         trans.Commit();
@@ -517,7 +530,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .JsonData(inventoryObj.JsonSerialize())
                         .CreateLog();
 
-                        
+
+                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished, inventoryObj.InventoryCode);
 
                         return true;
                     }
@@ -531,12 +545,49 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
+        public async Task ApproveInventoryInputDb(InventoryEntity inventoryObj)
+        {
+            if (inventoryObj.InventoryStatusId == (int)EnumInventoryStatus.Censored)
+            {
+
+                throw new BadRequestException(InventoryErrorCode.InventoryAlreadyApproved);
+            }
+
+            inventoryObj.IsApproved = true;
+            inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Censored;
+            //inventoryObj.UpdatedByUserId = currentUserId;
+            //inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+            inventoryObj.CensorByUserId = _currentContextService.UserId;
+            inventoryObj.CensorDatetimeUtc = DateTime.UtcNow;
+
+            await _stockDbContext.SaveChangesAsync();
+
+            var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).ToList();
+
+            var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails, inventoryObj.InventoryCode);
+
+            if (!r.IsSuccess())
+            {
+
+                throw new BadRequestException(r);
+            }
+
+            await ReCalculateRemainingAfterUpdate(inventoryObj.InventoryId);
+        }
+
         public async Task<bool> SentToCensor(long inventoryId)
         {
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
                 if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+
+                if (info.InventoryActionId == (int)EnumInventoryAction.Rotation)
+                {
+                    throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+                }
+
 
                 if (info.InventoryStatusId != (int)EnumInventoryStatus.Draff && info.InventoryStatusId != (int)EnumInventoryStatus.Reject)
                 {
@@ -570,7 +621,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ObjectTypeId = (int)EnumObjectType.InventoryInput
                 });
 
-                
+
 
                 return true;
             }
@@ -582,6 +633,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 var info = await _stockDbContext.Inventory.FirstOrDefaultAsync(d => d.InventoryId == inventoryId);
                 if (info == null) throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+
+
+                if (info.InventoryActionId == (int)EnumInventoryAction.Rotation)
+                {
+                    throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+                }
+
 
                 if (info.InventoryStatusId != (int)EnumInventoryStatus.WaitToCensor)
                 {
@@ -604,7 +662,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .JsonData(info.JsonSerialize())
                         .CreateLog();
 
-                
+
                 return true;
             }
         }
@@ -751,9 +809,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var inventoryDetailList = new List<InventoryDetail>(req.InProducts.Count);
             foreach (var detail in req.InProducts)
             {
-                if ((int)EnumInventoryAction.InputOfMaterial == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.POCode))
+                if (EnumInventoryAction.InputOfMaterial == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.POCode))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Nhập kho vật tư bắt buộc phải có mã đơn mua hàng");
-                else if ((int)EnumInventoryAction.InputOfProduct == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.ProductionOrderCode))
+                else if (EnumInventoryAction.InputOfProduct == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.ProductionOrderCode))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Nhập kho thành phẩm bắt buộc phải có mã lệnh sản xuất");
 
                 productInfos.TryGetValue(detail.ProductId, out var productInfo);

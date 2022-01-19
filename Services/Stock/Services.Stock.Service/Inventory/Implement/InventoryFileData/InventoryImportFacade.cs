@@ -226,7 +226,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 BillDate = _model.IssuedDate,
                 FileIdList = null,
                 InProducts = newInventoryInputModel,
-                AccountancyAccountNumber = _model.AccountancyAccountNumber
+                //AccountancyAccountNumber = _model.AccountancyAccountNumber
             };
 
             return newInventory;
@@ -364,7 +364,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 BillDate = _model.IssuedDate,
                 FileIdList = null,
                 OutProducts = newInventoryOutProductModel,
-                AccountancyAccountNumber = _model.AccountancyAccountNumber
+               // AccountancyAccountNumber = _model.AccountancyAccountNumber
             };
 
             return newInventory;
