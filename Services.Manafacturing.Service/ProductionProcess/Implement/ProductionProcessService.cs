@@ -919,6 +919,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (containerTypeId == EnumContainerType.Product)
+                {
+                    var product = await _productHelperService.GetProduct((int)containerId);
+
+                    var arrOutputProductionStepLinkDataId = req.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepLinkDataId)
+                                                                                           .Where(x => x.Count() == 1)
+                                                                                           .SelectMany(x => x)
+                                                                                           .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
+                                                                                           .Select(x => x.ProductionStepLinkDataId);
+                    var finalProductionLinkData = req.ProductionStepLinkDatas.Where(x => arrOutputProductionStepLinkDataId.Contains(x.ProductionStepLinkDataId) && x.ObjectId == product.ProductId && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                                                                             .FirstOrDefault();
+                    if(finalProductionLinkData != null && product.Coefficient != finalProductionLinkData.QuantityOrigin)
+                    {
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Số lượng đầu ra của mặt hàng trong quy trình không bằng sơ số sản phẩm");
+                    }
+                }
+
                 await UpdateProductionProcessManual(containerTypeId, containerId, req);
 
                 if (containerTypeId == EnumContainerType.Product)
