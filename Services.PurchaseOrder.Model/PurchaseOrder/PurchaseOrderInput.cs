@@ -79,6 +79,8 @@ namespace VErp.Services.PurchaseOrder.Model
         // decimal? ExchangeRate { get; set; }
         decimal? ExchangedMoney { get; set; }
         int? SortOrder { get; set; }
+
+        bool IsSubCalculation { get; set; }
     }
 
     public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
@@ -114,6 +116,10 @@ namespace VErp.Services.PurchaseOrder.Model
         // public decimal? ExchangeRate { get; set; }
         public decimal? ExchangedMoney { get; set; }
         public int? SortOrder { get; set; }
+
+        public bool IsSubCalculation { get; set; }
+
+        public IList<PurchaseOrderDetailSubCalculationModel> SubCalculations { get; set; }
 
     }
 

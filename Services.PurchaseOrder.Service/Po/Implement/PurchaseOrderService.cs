@@ -560,7 +560,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
-            var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
+            var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId)
+            .Include(x=>x.PurchaseOrderDetailSubCalculation)
+            .ToListAsync();
 
             var poAssignmentDetailIds = details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
             var purchasingSuggestDetailIds = details.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
@@ -649,11 +651,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         ExchangedMoney = d.ExchangedMoney,
                         SortOrder = d.SortOrder,
                         OutsourceRequestId = d.OutsourceRequestId,
-                        ProductionStepLinkDataId = d.ProductionStepLinkDataId
+                        ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                        SubCalculations = d.PurchaseOrderDetailSubCalculation.Select(s => new PurchaseOrderDetailSubCalculationModel
+                        {
+                            PrimaryQuantity = s.PrimaryQuantity,
+                            ProductBomId = s.ProductBomId,
+                            PurchaseOrderDetailId = s.PurchaseOrderDetailId,
+                            PrimaryUnitPrice = s.PrimaryUnitPrice,
+                        }).ToList()
                     };
                 }).ToList(),
                 Excess = excess.OrderBy(e => e.SortOrder).ToList(),
-                Materials = materials.OrderBy(m => m.SortOrder).ToList()
+                Materials = materials.OrderBy(m => m.SortOrder).ToList(),
+                
             };
         }
 
@@ -718,54 +728,60 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.AddAsync(po);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var poDetails = model.Details.Select(d =>
+                var sortOrder = 1;
+                foreach (var item in model.Details)
                 {
-                    var assignmentDetail = poAssignmentDetails.FirstOrDefault(a => a.PoAssignmentDetailId == d.PoAssignmentDetailId);
+                    var assignmentDetail = poAssignmentDetails.FirstOrDefault(a => a.PoAssignmentDetailId == item.PoAssignmentDetailId);
 
-                    return new PurchaseOrderDetail()
+                    var eDetail =  new PurchaseOrderDetail()
                     {
                         PurchaseOrderId = po.PurchaseOrderId,
 
-                        PurchasingSuggestDetailId = d.PurchasingSuggestDetailId.HasValue ?
-                                                    d.PurchasingSuggestDetailId :
+                        PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
+                                                    item.PurchasingSuggestDetailId :
                                                     assignmentDetail?.PurchasingSuggestDetailId,
 
-                        PoAssignmentDetailId = d.PoAssignmentDetailId,
+                        PoAssignmentDetailId = item.PoAssignmentDetailId,
 
-                        ProductId = d.ProductId,
+                        ProductId = item.ProductId,
 
-                        ProviderProductName = d.ProviderProductName,
-                        PrimaryQuantity = d.PrimaryQuantity,
-                        PrimaryUnitPrice = d.PrimaryUnitPrice,
+                        ProviderProductName = item.ProviderProductName,
+                        PrimaryQuantity = item.PrimaryQuantity,
+                        PrimaryUnitPrice = item.PrimaryUnitPrice,
 
-                        ProductUnitConversionId = d.ProductUnitConversionId,
-                        ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                        ProductUnitConversionPrice = d.ProductUnitConversionPrice,
+                        ProductUnitConversionId = item.ProductUnitConversionId,
+                        ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
+                        ProductUnitConversionPrice = item.ProductUnitConversionPrice,
 
-                        PoProviderPricingCode = d.PoProviderPricingCode,
+                        PoProviderPricingCode = item.PoProviderPricingCode,
 
-                        OrderCode = d.OrderCode,
-                        ProductionOrderCode = d.ProductionOrderCode,
-                        Description = d.Description,
+                        OrderCode = item.OrderCode,
+                        ProductionOrderCode = item.ProductionOrderCode,
+                        Description = item.Description,
                         CreatedDatetimeUtc = DateTime.UtcNow,
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                         IsDeleted = false,
                         DeletedDatetimeUtc = null,
-                        IntoMoney = d.IntoMoney,
+                        IntoMoney = item.IntoMoney,
 
-                        ExchangedMoney = d.ExchangedMoney,
-                        SortOrder = d.SortOrder
+                        ExchangedMoney = item.ExchangedMoney,
+                        SortOrder = sortOrder
                     };
-                }).ToList();
 
-                var sortOrder = 1;
-                foreach (var item in poDetails)
-                {
-                    item.SortOrder = sortOrder++;
+                    await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
+
+                    var arrEntitySubCalculation = item.SubCalculations.Select(x=> new PurchaseOrderDetailSubCalculation
+                    {
+                        PrimaryQuantity = x.PrimaryQuantity,
+                        ProductBomId = x.ProductBomId,
+                        PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
+                        PrimaryUnitPrice = x.PrimaryUnitPrice,
+                    });
+
+                    await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
+
+                    sortOrder++;
                 }
-
-                await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
-
 
                 if (model.FileIds?.Count > 0)
                 {
@@ -873,7 +889,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 var details = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
 
-                var newDetails = new List<PurchaseOrderDetail>();
 
                 foreach (var item in model.Details)
                 {
@@ -886,8 +901,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         if (item.PurchaseOrderDetailId == detail.PurchaseOrderDetailId)
                         {
                             found = true;
-
-
 
                             detail.PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
                                                         item.PurchasingSuggestDetailId :
@@ -911,6 +924,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.IntoMoney = item.IntoMoney;
                             detail.ExchangedMoney = item.ExchangedMoney;
                             detail.SortOrder = item.SortOrder;
+
+                            var arrEntitySubCalculation = _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.Where(x=>x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
+                            foreach (var sub in arrEntitySubCalculation)
+                            {
+                                var mSub = item.SubCalculations.FirstOrDefault(x=>x.PurchaseOrderDetailSubCalculationId == sub.PurchaseOrderDetailSubCalculationId);
+                                if(mSub != null)
+                                    _mapper.Map(mSub, sub);
+                                else sub.IsDeleted = true;
+                            }
+                            var arrNewEntitySubCalculation = item.SubCalculations.Where(x=>x.PurchaseOrderDetailSubCalculationId <= 0)
+                            .Select(x => new PurchaseOrderDetailSubCalculation
+                            {
+                                PrimaryQuantity = x.PrimaryQuantity,
+                                ProductBomId = x.ProductBomId,
+                                PurchaseOrderDetailId = detail.PurchaseOrderDetailId,
+                                PrimaryUnitPrice = x.PrimaryUnitPrice,
+                            });
+                            await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrNewEntitySubCalculation);
                             
                             break;
                         }
@@ -918,7 +949,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (!found)
                     {
-                        newDetails.Add(new PurchaseOrderDetail()
+                        var eDetail = new PurchaseOrderDetail()
                         {
                             PurchaseOrderId = info.PurchaseOrderId,
 
@@ -935,7 +966,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                             ProductUnitConversionPrice = item.ProductUnitConversionPrice,
 
-                            PoProviderPricingCode=item.PoProviderPricingCode,
+                            PoProviderPricingCode = item.PoProviderPricingCode,
                             OrderCode = item.OrderCode,
                             ProductionOrderCode = item.ProductionOrderCode,
                             Description = item.Description,
@@ -946,7 +977,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             IntoMoney = item.IntoMoney,
                             ExchangedMoney = item.ExchangedMoney,
                             SortOrder = item.SortOrder
+                        };
+
+                        await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
+
+                        var arrEntitySubCalculation = item.SubCalculations.Select(x => new PurchaseOrderDetailSubCalculation
+                        {
+                            PrimaryQuantity = x.PrimaryQuantity,
+                            ProductBomId = x.ProductBomId,
+                            PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
+                            PrimaryUnitPrice = x.PrimaryUnitPrice,
                         });
+
+                        await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
                     }
                 }
 
@@ -959,8 +1002,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     detail.IsDeleted = true;
                     detail.DeletedDatetimeUtc = DateTime.UtcNow;
                 }
-
-                await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(newDetails);
 
                 var oldFiles = await _purchaseOrderDBContext.PurchaseOrderFile.Where(f => f.PurchaseOrderId == info.PurchaseOrderId).ToListAsync();
 
@@ -1025,6 +1066,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     item.IsDeleted = true;
                     item.DeletedDatetimeUtc = DateTime.UtcNow;
+
+                    var SubCalculations = await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.Where(d => d.PurchaseOrderDetailId == item.PurchaseOrderDetailId).ToListAsync();
+                    SubCalculations.ForEach(x => x.IsDeleted = true);
                 }
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
