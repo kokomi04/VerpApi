@@ -461,7 +461,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             var oldUnitId = product.UnitId;
 
             product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
-
+            await Task.CompletedTask;
             /*
             if (product.ProductId > 0 && product.UnitId != oldUnitId)
             {

@@ -32,7 +32,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Nhập kho thành phẩm")]
         InputOfProduct = 4,
         [Description("Nhập kho vật tư")]
-        InputOfMaterial = 5
+        InputOfMaterial = 5,
+
+        [Description("Luân chuyển kho")]
+        Rotation = 6
     }
 
     public enum EnumInventoryStatus 

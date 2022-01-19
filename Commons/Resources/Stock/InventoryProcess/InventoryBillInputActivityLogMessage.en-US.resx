@@ -127,7 +127,7 @@
     <value>Created package {0} from input inventory "{1}"</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Deleted output inventory "{0}"</value>
+    <value>Deleted input inventory "{0}"</value>
   </data>
   <data name="DeleteCauseByNoProduct" xml:space="preserve">
     <value>Deleted the inventory "{0}" cause by no product</value>
@@ -143,6 +143,9 @@
   </data>
   <data name="UpdateAndApprove" xml:space="preserve">
     <value>Updated and approved the input inventory "{0}"</value>
+  </data>
+  <data name="UpdatedCauseByRefInvInput" xml:space="preserve">
+    <value>Reference updated "{0}" by inventory input "{1}"</value>
   </data>
   <data name="WaitToCensor" xml:space="preserve">
     <value>Send for approval of input inventory {0}</value>

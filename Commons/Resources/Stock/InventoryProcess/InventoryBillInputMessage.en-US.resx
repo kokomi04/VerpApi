@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CannotUpdateInvInputRotation" xml:space="preserve">
+    <value>Can not update inventory input from rotation inventory</value>
+  </data>
   <data name="PuConversionError" xml:space="preserve">
     <value>Can not convert the unit "{0}" of product "{1}". Check the convert expression</value>
   </data>

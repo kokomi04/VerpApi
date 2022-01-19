@@ -19,7 +19,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class InventoryBillOutputActivityMessage {
@@ -97,7 +97,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Từ chối duyệt phiếu nhập kho {0}.
+        ///   Looks up a localized string similar to Từ chối duyệt phiếu xuất kho {0}.
         /// </summary>
         public static string Reject {
             get {
@@ -106,7 +106,52 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật phiếu nhập kho &quot;{0}&quot;.
+        ///   Looks up a localized string similar to Duyệt phiếu luân chuyển xuất kho &quot;{0}&quot; sang &quot;{1}&quot;.
+        /// </summary>
+        public static string RotationApprove {
+            get {
+                return ResourceManager.GetString("RotationApprove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tạo luân chuyển kho &quot;{0}&quot; sang &quot;{1}&quot;.
+        /// </summary>
+        public static string RotationCreate {
+            get {
+                return ResourceManager.GetString("RotationCreate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Xóa phiếu luân chuyển xuất kho &quot;{0}&quot; sang &quot;{1}&quot;.
+        /// </summary>
+        public static string RotationDelete {
+            get {
+                return ResourceManager.GetString("RotationDelete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Từ chối phiếu luân chuyển xuất kho &quot;{0}&quot; sang &quot;{1}&quot;.
+        /// </summary>
+        public static string RotationReject {
+            get {
+                return ResourceManager.GetString("RotationReject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Gửi duyệt phiếu luân chuyển xuất kho &quot;{0}&quot; sang &quot;{1}&quot;.
+        /// </summary>
+        public static string RotationWaitToCensor {
+            get {
+                return ResourceManager.GetString("RotationWaitToCensor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật phiếu xuất kho &quot;{0}&quot;.
         /// </summary>
         public static string Update {
             get {
@@ -115,7 +160,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Gửi duyệt phiếu nhập kho {0}.
+        ///   Looks up a localized string similar to Gửi duyệt phiếu xuất kho {0}.
         /// </summary>
         public static string WaitToCensor {
             get {

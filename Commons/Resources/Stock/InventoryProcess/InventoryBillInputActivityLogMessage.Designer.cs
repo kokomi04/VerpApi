@@ -19,7 +19,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class InventoryBillInputActivityLogMessage {
@@ -133,11 +133,20 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật &amp; duyệt phiếu nhập kho đã duyệ &quot;{0}&quot;.
+        ///   Looks up a localized string similar to Cập nhật &amp; duyệt phiếu nhập kho đã duyệt &quot;{0}&quot;.
         /// </summary>
         public static string UpdateAndApprove {
             get {
                 return ResourceManager.GetString("UpdateAndApprove", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật lan truyền &quot;{0}&quot; khi cập nhật phiếu nhập &quot;{1}&quot;.
+        /// </summary>
+        public static string UpdatedCauseByRefInvInput {
+            get {
+                return ResourceManager.GetString("UpdatedCauseByRefInvInput", resourceCulture);
             }
         }
         

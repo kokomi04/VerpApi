@@ -142,7 +142,10 @@
     <value>Cập nhật phiếu nhập kho "{0}"</value>
   </data>
   <data name="UpdateAndApprove" xml:space="preserve">
-    <value>Cập nhật &amp; duyệt phiếu nhập kho đã duyệ "{0}"</value>
+    <value>Cập nhật &amp; duyệt phiếu nhập kho đã duyệt "{0}"</value>
+  </data>
+  <data name="UpdatedCauseByRefInvInput" xml:space="preserve">
+    <value>Cập nhật lan truyền "{0}" khi cập nhật phiếu nhập "{1}"</value>
   </data>
   <data name="WaitToCensor" xml:space="preserve">
     <value>Gửi duyệt phiếu nhập kho {0}</value>
