@@ -249,5 +249,26 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             return await _calcBillService.DeletedDepreciation(fromDate, toDate, accountNumber);
         }
+
+        [HttpGet]
+        [Route("CalcPrepaidExpense")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CalcPrepaidExpense(fromDate, toDate, accountNumber);
+        }
+
+        [HttpGet]
+        [Route("CheckExistedPrepaidExpense")]
+        public async Task<bool> CheckExistedPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CheckExistedPrepaidExpense(fromDate, toDate, accountNumber);
+        }
+
+        [HttpDelete]
+        [Route("DeletedPrepaidExpense")]
+        public async Task<bool> DeletedPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.DeletedPrepaidExpense(fromDate, toDate, accountNumber);
+        }
     }
 }
