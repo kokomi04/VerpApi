@@ -43,5 +43,11 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> CheckExistedDepreciation(long fromDate, long toDate, string accountNumber);
 
         Task<bool> DeletedDepreciation(long fromDate, long toDate, string accountNumber);
+
+        Task<ICollection<NonCamelCaseDictionary>> CalcPrepaidExpense(long fromDate, long toDate, string accountNumber);
+
+        Task<bool> CheckExistedPrepaidExpense(long fromDate, long toDate, string accountNumber);
+
+        Task<bool> DeletedPrepaidExpense(long fromDate, long toDate, string accountNumber);
     }
 }

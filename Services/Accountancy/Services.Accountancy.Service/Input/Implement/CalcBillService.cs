@@ -293,5 +293,49 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (result.Value as bool?).GetValueOrDefault();
         }
 
+
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcPrepaidExpense(long fromDate, long toDate, string accountNumber)
+        {
+            SqlParameter[] sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@SoTK", accountNumber),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime())
+            };
+
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcPrepaidExpense", sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
+        public async Task<bool> CheckExistedPrepaidExpense(long fromDate, long toDate, string accountNumber)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@SoTK", accountNumber),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_CheckExistedPrepaidExpense", sqlParams, true);
+
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+        public async Task<bool> DeletedPrepaidExpense(long fromDate, long toDate, string accountNumber)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@SoTK", accountNumber),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                result
+            };
+            await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeletePrepaidExpense", sqlParams, true);
+
+            return (result.Value as bool?).GetValueOrDefault();
+        }
     }
 }
