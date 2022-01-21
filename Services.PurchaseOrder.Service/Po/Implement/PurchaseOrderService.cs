@@ -658,7 +658,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductBomId = s.ProductBomId,
                             PurchaseOrderDetailId = s.PurchaseOrderDetailId,
                             PrimaryUnitPrice = s.PrimaryUnitPrice,
-                        }).ToList()
+                        }).ToList(),
+                        IsSubCalculation = d.IsSubCalculation
                     };
                 }).ToList(),
                 Excess = excess.OrderBy(e => e.SortOrder).ToList(),
