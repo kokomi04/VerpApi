@@ -489,5 +489,49 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 return true;
             }
         }
+
+
+
+        public async Task<ProductProcessModel> ProcessInfo(int productId)
+        {
+            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            var productCustomers = await _stockContext.ProductCustomer.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+
+            return new ProductProcessModel()
+            {
+              Coefficient = productInfo.Coefficient
+            };
+        }
+
+        public async Task<bool> UpdateProcessInfo(int productId, ProductProcessModel model)
+        {
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
+                var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                if (productInfo == null)
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                productInfo.Coefficient = model.Coefficient;
+
+
+                await _stockContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProcessInfo)
+                   .MessageResourceFormatDatas(productInfo.ProductCode)
+                   .ObjectId(productId)
+                   .JsonData(model.JsonSerialize())
+                   .CreateLog();
+                return true;
+            }
+        }
     }
 }
