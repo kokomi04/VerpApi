@@ -17,8 +17,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         {
         }
 
+        public virtual DbSet<AbsenceTypeSymbol> AbsenceTypeSymbol { get; set; }
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
         public virtual DbSet<Calendar> Calendar { get; set; }
+        public virtual DbSet<CountedSymbol> CountedSymbol { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
@@ -59,6 +61,21 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
+            modelBuilder.Entity<AbsenceTypeSymbol>(entity =>
+            {
+                entity.Property(e => e.SymbolCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TypeSymbolCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TypeSymbolDescription)
+                    .IsRequired()
+                    .HasMaxLength(256);
+            });
 
             modelBuilder.Entity<BusinessInfo>(entity =>
             {
@@ -104,6 +121,17 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasMaxLength(25);
 
                 entity.Property(e => e.CalendarName).HasMaxLength(64);
+            });
+
+            modelBuilder.Entity<CountedSymbol>(entity =>
+            {
+                entity.Property(e => e.SymbolCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.SymbolDescription)
+                    .IsRequired()
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<Customer>(entity =>
