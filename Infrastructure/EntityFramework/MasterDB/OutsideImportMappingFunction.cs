@@ -35,6 +35,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string JsCodeBeforeDataMapped { get; set; }
         public string JsCodeAfterDataMapped { get; set; }
         public string JsCodeAfterTargetBillCreated { get; set; }
+        public string JsCodeVisible { get; set; }
 
         public virtual ICollection<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual ICollection<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
