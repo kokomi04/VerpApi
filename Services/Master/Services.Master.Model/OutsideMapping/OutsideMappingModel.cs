@@ -21,6 +21,8 @@ namespace VErp.Services.Master.Model.OutsideMapping
         public string SourceDetailsPropertyName { get; set; }
         public string DestinationDetailsPropertyName { get; set; }
         public string ObjectIdFieldName { get; set; }
+
+        public string JsCodeVisible { get; set; }
     }
     public class OutsideMappingModelList : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
     {
