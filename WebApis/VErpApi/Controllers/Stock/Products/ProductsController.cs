@@ -190,7 +190,7 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
 
-        [HttpGet]
+        [HttpPut]
         [Route("{productId}/ProcessInfo")]
         public async Task<bool> ProcessInfo([FromRoute] int productId, [FromBody] ProductProcessModel model)
         {
