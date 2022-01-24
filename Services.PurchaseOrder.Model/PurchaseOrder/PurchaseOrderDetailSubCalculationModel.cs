@@ -10,5 +10,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public long ProductBomId { get; set; }
         public decimal PrimaryUnitPrice { get; set; }
         public decimal PrimaryQuantity { get; set; }
+        public int? UnitConversionId { get; set; }
     }
 }
