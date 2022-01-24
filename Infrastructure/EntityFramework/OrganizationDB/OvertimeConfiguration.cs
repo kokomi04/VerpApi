@@ -20,8 +20,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int HolidayLevel { get; set; }
         public bool IsHolidayLevel { get; set; }
         public long MinsAfterWork { get; set; }
+        public long IsMinsAfterWork { get; set; }
         public long MinsBeforeWork { get; set; }
+        public long IsMinsBeforeWork { get; set; }
         public int TotalHourWillCountShift { get; set; }
+        public int IsTotalHourWillCountShift { get; set; }
         public long MinsReachesBeforeWork { get; set; }
         public long MinsReachesAfterWork { get; set; }
         public long MinsBonusWhenMinsReachesBeforeWork { get; set; }
