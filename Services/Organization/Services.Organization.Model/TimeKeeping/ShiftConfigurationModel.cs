@@ -50,6 +50,7 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => m.EndTimeOutRecord.TotalMinutes))
             .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => m.EndTimeOnRecord.TotalMinutes))
             .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => m.StartTimeOutRecord.TotalMinutes))
+            .ForMember(m => m.OvertimeConfiguration, v => v.Ignore())
             .ReverseMap()
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.UnixToDateTime()))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.UnixToDateTime()))
@@ -58,7 +59,8 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.StartTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.StartTimeOnRecord)))
             .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.EndTimeOutRecord)))
             .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.EndTimeOnRecord)))
-            .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.StartTimeOutRecord)));
+            .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.StartTimeOutRecord)))
+            .ForMember(m => m.OvertimeConfiguration, v => v.Ignore());
         }
     }
 }
