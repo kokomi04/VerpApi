@@ -774,6 +774,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
 
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+
                     var arrEntitySubCalculation = item.SubCalculations.Select(x=> new PurchaseOrderDetailSubCalculation
                     {
                         PrimaryQuantity = x.PrimaryQuantity,
@@ -784,6 +786,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     });
 
                     await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
 
                     sortOrder++;
                 }
@@ -949,6 +952,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 UnitConversionId = x.UnitConversionId
                             });
                             await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrNewEntitySubCalculation);
+                            await _purchaseOrderDBContext.SaveChangesAsync();
                             
                             break;
                         }
@@ -987,6 +991,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         };
 
                         await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
+                        await _purchaseOrderDBContext.SaveChangesAsync();
 
                         var arrEntitySubCalculation = item.SubCalculations.Select(x => new PurchaseOrderDetailSubCalculation
                         {
@@ -997,6 +1002,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         });
 
                         await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
+                        await _purchaseOrderDBContext.SaveChangesAsync();
                     }
                 }
 
