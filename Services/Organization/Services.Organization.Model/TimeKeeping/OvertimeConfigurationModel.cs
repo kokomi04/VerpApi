@@ -9,7 +9,6 @@ namespace Services.Organization.Model.TimeKeeping
     public class OvertimeConfigurationModel : IMapFrom<OvertimeConfiguration>
     {
         public int OvertimeConfigurationId { get; set; }
-        public int ShiftConfigurationId { get; set; }
         public int OvertimeLevel { get; set; }
         public bool IsOvertimeLevel { get; set; }
         public int WeekendLevel { get; set; }
