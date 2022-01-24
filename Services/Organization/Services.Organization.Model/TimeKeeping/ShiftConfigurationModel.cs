@@ -26,6 +26,17 @@ namespace Services.Organization.Model.TimeKeeping
         public long MinsWithoutTimeOut { get; set; }
         public int PositionOnReport { get; set; }
 
+        public bool IsSubtractionForLate { get; set; }
+        public bool IsSubtractionForEarly { get; set; }
+        public long MinsAllowToLate { get; set; }
+        public long MinsAllowToEarly { get; set; }
+        public bool IsCalculationForLate { get; set; }
+        public bool IsCalculationForEarly { get; set; }
+        public long MinsRoundForLate { get; set; }
+        public long MinsRoundForEarly { get; set; }
+        public bool IsRoundBackForLate { get; set; }
+        public bool IsRoundBackForEarly { get; set; }
+
         public OvertimeConfigurationModel OvertimeConfiguration { get; set; }
 
         public void Mapping(Profile profile)
