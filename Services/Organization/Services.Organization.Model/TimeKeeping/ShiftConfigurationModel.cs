@@ -10,9 +10,10 @@ namespace Services.Organization.Model.TimeKeeping
     public class ShiftConfigurationModel : IMapFrom<ShiftConfiguration>
     {
         public int ShiftConfigurationId { get; set; }
+        public int? OvertimeConfigurationId { get; set; }
         public string ShiftCode { get; set; }
-        public long BeginDate { get; set; }
-        public long EndDate { get; set; }
+        public double BeginDate { get; set; }
+        public double EndDate { get; set; }
         public int NumberOfTransition { get; set; }
         public double LunchTimeStart { get; set; }
         public double LunchTimeFinish { get; set; }
@@ -42,24 +43,24 @@ namespace Services.Organization.Model.TimeKeeping
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ShiftConfiguration, ShiftConfigurationModel>()
-            .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.GetUnix()))
-            .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
-            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => m.LunchTimeStart.TotalMinutes))
-            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => m.LunchTimeFinish.TotalMinutes))
-            .ForMember(m => m.StartTimeOnRecord, v => v.MapFrom(m => m.StartTimeOnRecord.TotalMinutes))
-            .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => m.EndTimeOutRecord.TotalMinutes))
-            .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => m.EndTimeOnRecord.TotalMinutes))
-            .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => m.StartTimeOutRecord.TotalMinutes))
+            .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.TotalSeconds))
+            .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.TotalSeconds))
+            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => m.LunchTimeStart.TotalSeconds))
+            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => m.LunchTimeFinish.TotalSeconds))
+            .ForMember(m => m.StartTimeOnRecord, v => v.MapFrom(m => m.StartTimeOnRecord.TotalSeconds))
+            .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => m.EndTimeOutRecord.TotalSeconds))
+            .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => m.EndTimeOnRecord.TotalSeconds))
+            .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => m.StartTimeOutRecord.TotalSeconds))
             .ForMember(m => m.OvertimeConfiguration, v => v.Ignore())
             .ReverseMap()
-            .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.UnixToDateTime()))
-            .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.UnixToDateTime()))
-            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => TimeSpan.FromMinutes(m.LunchTimeStart)))
-            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => TimeSpan.FromMinutes(m.LunchTimeFinish)))
-            .ForMember(m => m.StartTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.StartTimeOnRecord)))
-            .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.EndTimeOutRecord)))
-            .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.EndTimeOnRecord)))
-            .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromMinutes(m.StartTimeOutRecord)))
+            .ForMember(m => m.BeginDate, v => v.MapFrom(m => TimeSpan.FromSeconds(m.BeginDate)))
+            .ForMember(m => m.EndDate, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndDate)))
+            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => TimeSpan.FromSeconds(m.LunchTimeStart)))
+            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => TimeSpan.FromSeconds(m.LunchTimeFinish)))
+            .ForMember(m => m.StartTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.StartTimeOnRecord)))
+            .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeOutRecord)))
+            .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeOnRecord)))
+            .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.StartTimeOutRecord)))
             .ForMember(m => m.OvertimeConfiguration, v => v.Ignore());
         }
     }

@@ -10,8 +10,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int ShiftConfigurationId { get; set; }
         public int? OvertimeConfigurationId { get; set; }
         public string ShiftCode { get; set; }
-        public DateTime BeginDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public TimeSpan BeginDate { get; set; }
+        public TimeSpan EndDate { get; set; }
         public int NumberOfTransition { get; set; }
         public TimeSpan LunchTimeStart { get; set; }
         public TimeSpan LunchTimeFinish { get; set; }

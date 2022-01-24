@@ -56,13 +56,18 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var shiftConfiguration = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(x => x.ShiftConfigurationId == shiftConfigurationId);
             if (shiftConfiguration == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
-            var overtimeConfiguration = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(x => x.OvertimeConfigurationId == shiftConfiguration.OvertimeConfigurationId);
-
-            model.ShiftConfigurationId = shiftConfigurationId;
-            _mapper.Map(model, shiftConfiguration);
+            var overtimeConfiguration = await _organizationDBContext.OvertimeConfiguration.FirstOrDefaultAsync(x => x.OvertimeConfigurationId == shiftConfiguration.OvertimeConfigurationId);
 
             if (overtimeConfiguration != null)
+            {
+                model.OvertimeConfigurationId = overtimeConfiguration.OvertimeConfigurationId;
+                model.OvertimeConfiguration.OvertimeConfigurationId = overtimeConfiguration.OvertimeConfigurationId;
                 _mapper.Map(model.OvertimeConfiguration, overtimeConfiguration);
+            }
+
+            model.ShiftConfigurationId = shiftConfigurationId;
+
+            _mapper.Map(model, shiftConfiguration);
 
             await _organizationDBContext.SaveChangesAsync();
 
@@ -75,7 +80,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (shiftConfiguration == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            var overtimeConfiguration = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(x => x.OvertimeConfigurationId == shiftConfiguration.OvertimeConfigurationId);
+            var overtimeConfiguration = await _organizationDBContext.OvertimeConfiguration.FirstOrDefaultAsync(x => x.OvertimeConfigurationId == shiftConfiguration.OvertimeConfigurationId);
             
             shiftConfiguration.IsDeleted = true;
 
