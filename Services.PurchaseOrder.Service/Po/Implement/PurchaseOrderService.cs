@@ -987,7 +987,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             DeletedDatetimeUtc = null,
                             IntoMoney = item.IntoMoney,
                             ExchangedMoney = item.ExchangedMoney,
-                            SortOrder = item.SortOrder
+                            SortOrder = item.SortOrder,
+                            IsSubCalculation = item.IsSubCalculation
                         };
 
                         await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
@@ -999,6 +1000,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductBomId = x.ProductBomId,
                             PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
                             PrimaryUnitPrice = x.PrimaryUnitPrice,
+                            UnitConversionId = x.UnitConversionId
                         });
 
                         await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
