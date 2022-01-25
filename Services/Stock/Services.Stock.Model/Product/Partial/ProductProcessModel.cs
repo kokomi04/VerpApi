@@ -6,6 +6,6 @@ namespace VErp.Services.Stock.Model.Product.Partial
 {
     public class ProductProcessModel
     {
-        public int Coefficient { get; set; }
+        public decimal Coefficient { get; set; }
     }
 }
