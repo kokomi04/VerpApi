@@ -60,7 +60,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? Quantitative { get; set; }
         public int? QuantitativeUnitTypeId { get; set; }
         public bool IsProductSemi { get; set; }
-        public int Coefficient { get; set; }
+        public decimal Coefficient { get; set; }
         public bool? IsProduct { get; set; }
         public string Color { get; set; }
         public bool? IsMaterials { get; set; }

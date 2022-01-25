@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Model.Product
         public bool? IsMaterials { get; set; }
 
         [Display(Name = "Cơ số sản phẩm", GroupName = "TT Sản xuất")]
-        public int? Coefficient { get; set; }
+        public decimal? Coefficient { get; set; }
 
 
 

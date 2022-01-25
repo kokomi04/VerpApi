@@ -20,7 +20,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<IList<InternalProductListOutput>> GetByIds(IList<int> productIds);
         Task<IList<ProductTypeOutput>> GetAllProductType();
 
-        Task<bool> UpdateProductCoefficientManual(int productId, int coefficient);
+        Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient);
         Task<ProductModel> GetProduct(int productId);
 
         Task<IEnumerable<ProductMaterialsConsumptionSimpleModel>> GetProductMaterialsConsumptions(int[] productIds);
@@ -191,7 +191,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return lst.List;
         }
 
-        public async Task<bool> UpdateProductCoefficientManual(int productId, int coefficient)
+        public async Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient)
         {
             return await _httpCrossService.Put<bool>($"api/internal/InternalProduct/{productId}/coefficient?coefficient={coefficient}", new { });
         }

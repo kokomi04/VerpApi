@@ -1159,7 +1159,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<bool> UpdateProductCoefficientManual(int productId, int coefficient)
+        public async Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient)
         {
             var product = await _stockDbContext.Product.FirstOrDefaultAsync(x => x.ProductId == productId);
             if (product == null)
