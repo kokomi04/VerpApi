@@ -34,7 +34,7 @@ namespace VErp.Services.Stock.Service.Products
         CategoryNameModel GetFieldMappings();
         Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
 
-        Task<bool> UpdateProductCoefficientManual(int productId, int coefficient);
+        Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient);
 
         Task<int> CopyProduct(ProductModel req, int sourceProductId);
         Task<int> CopyProductBom(int sourceProductId, int destProductId);
