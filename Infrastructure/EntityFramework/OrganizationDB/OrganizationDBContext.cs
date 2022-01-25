@@ -50,10 +50,13 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<OvertimeConfiguration> OvertimeConfiguration { get; set; }
         public virtual DbSet<ShiftConfiguration> ShiftConfiguration { get; set; }
+        public virtual DbSet<SplitHour> SplitHour { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
         public virtual DbSet<SystemParameter> SystemParameter { get; set; }
         public virtual DbSet<TimeSheet> TimeSheet { get; set; }
+        public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
+        public virtual DbSet<WorkSchedule> WorkSchedule { get; set; }
         public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
         public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
 
@@ -594,6 +597,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_ShiftConfiguration_OvertimeConfiguration");
             });
 
+            modelBuilder.Entity<SplitHour>(entity =>
+            {
+                entity.HasOne(d => d.TimeSortConfiguration)
+                    .WithMany(p => p.SplitHour)
+                    .HasForeignKey(d => d.TimeSortConfigurationId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SplitHour_SplitHour");
+            });
+
             modelBuilder.Entity<Subsidiary>(entity =>
             {
                 entity.Property(e => e.Address).HasMaxLength(128);
@@ -640,11 +652,42 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Date).HasColumnType("date");
             });
 
+            modelBuilder.Entity<TimeSortConfiguration>(entity =>
+            {
+                entity.Property(e => e.TimeSortConfigurationId).ValueGeneratedNever();
+
+                entity.Property(e => e.TimeSortCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TimeSortDescription)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.UpdatedByUserId)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .IsFixedLength(true);
+            });
+
             modelBuilder.Entity<UserData>(entity =>
             {
                 entity.HasKey(e => new { e.UserId, e.DataKey });
 
                 entity.Property(e => e.DataKey).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<WorkSchedule>(entity =>
+            {
+                entity.Property(e => e.IsAbsenceForHoliday).HasColumnName("isAbsenceForHoliday");
+
+                entity.Property(e => e.IsAbsenceForSunday).HasColumnName("isAbsenceForSunday");
+
+                entity.HasOne(d => d.TimeSortConfiguration)
+                    .WithMany(p => p.WorkSchedule)
+                    .HasForeignKey(d => d.TimeSortConfigurationId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkSchedule_TimeSortConfiguration");
             });
 
             modelBuilder.Entity<WorkingHourInfo>(entity =>
