@@ -6,6 +6,7 @@ namespace Services.Organization.Model.TimeKeeping
     public class WorkScheduleModel : IMapFrom<WorkSchedule>
     {
         public int WorkScheduleId { get; set; }
+        public string WorkScheduleTitle { get; set; }
         public bool IsAbsenceForSaturday { get; set; }
         public bool IsAbsenceForSunday { get; set; }
         public bool IsAbsenceForHoliday { get; set; }
