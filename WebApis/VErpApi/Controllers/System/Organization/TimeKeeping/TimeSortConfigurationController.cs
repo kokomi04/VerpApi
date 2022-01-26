@@ -1,15 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
-using Services.Organization.Model.SystemParameter;
 using Services.Organization.Model.TimeKeeping;
-using Services.Organization.Service.Parameter;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.TimeKeeping;
 
 namespace VErpApi.Controllers.System.Organization
@@ -32,10 +26,10 @@ namespace VErpApi.Controllers.System.Organization
         }
         
         [HttpDelete]
-        [Route("{shiftConfigurationId}")]
-        public async Task<bool> DeleteTimeSortConfiguration([FromRoute]int shiftConfigurationId)
+        [Route("{timeSortConfigurationId}")]
+        public async Task<bool> DeleteTimeSortConfiguration([FromRoute]int timeSortConfigurationId)
         {
-            return await _timeSortConfigurationService.DeleteTimeSortConfiguration(shiftConfigurationId);
+            return await _timeSortConfigurationService.DeleteTimeSortConfiguration(timeSortConfigurationId);
         }
         
         [HttpGet]
@@ -46,17 +40,17 @@ namespace VErpApi.Controllers.System.Organization
         }
         
         [HttpGet]
-        [Route("{shiftConfigurationId}")]
-        public async Task<TimeSortConfigurationModel> GetTimeSortConfiguration([FromRoute]int shiftConfigurationId)
+        [Route("{timeSortConfigurationId}")]
+        public async Task<TimeSortConfigurationModel> GetTimeSortConfiguration([FromRoute]int timeSortConfigurationId)
         {
-            return await _timeSortConfigurationService.GetTimeSortConfiguration(shiftConfigurationId);
+            return await _timeSortConfigurationService.GetTimeSortConfiguration(timeSortConfigurationId);
         }
         
         [HttpPut]
-        [Route("{shiftConfigurationId}")]
-        public async Task<bool> UpdateTimeSortConfiguration([FromRoute] int shiftConfigurationId, [FromBody]TimeSortConfigurationModel model)
+        [Route("{timeSortConfigurationId}")]
+        public async Task<bool> UpdateTimeSortConfiguration([FromRoute] int timeSortConfigurationId, [FromBody]TimeSortConfigurationModel model)
         {
-            return await _timeSortConfigurationService.UpdateTimeSortConfiguration(shiftConfigurationId, model);
+            return await _timeSortConfigurationService.UpdateTimeSortConfiguration(timeSortConfigurationId, model);
 
         }
     }
