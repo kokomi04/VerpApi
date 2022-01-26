@@ -1,15 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
-using Services.Organization.Model.SystemParameter;
 using Services.Organization.Model.TimeKeeping;
-using Services.Organization.Service.Parameter;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.TimeKeeping;
 
 namespace VErpApi.Controllers.System.Organization
@@ -32,10 +26,10 @@ namespace VErpApi.Controllers.System.Organization
         }
         
         [HttpDelete]
-        [Route("{shiftConfigurationId}")]
-        public async Task<bool> DeleteWorkSchedule([FromRoute]int shiftConfigurationId)
+        [Route("{workScheduleId}")]
+        public async Task<bool> DeleteWorkSchedule([FromRoute]int workScheduleId)
         {
-            return await _workScheduleService.DeleteWorkSchedule(shiftConfigurationId);
+            return await _workScheduleService.DeleteWorkSchedule(workScheduleId);
         }
         
         [HttpGet]
@@ -46,17 +40,17 @@ namespace VErpApi.Controllers.System.Organization
         }
         
         [HttpGet]
-        [Route("{shiftConfigurationId}")]
-        public async Task<WorkScheduleModel> GetWorkSchedule([FromRoute]int shiftConfigurationId)
+        [Route("{workScheduleId}")]
+        public async Task<WorkScheduleModel> GetWorkSchedule([FromRoute]int workScheduleId)
         {
-            return await _workScheduleService.GetWorkSchedule(shiftConfigurationId);
+            return await _workScheduleService.GetWorkSchedule(workScheduleId);
         }
         
         [HttpPut]
-        [Route("{shiftConfigurationId}")]
-        public async Task<bool> UpdateWorkSchedule([FromRoute] int shiftConfigurationId, [FromBody]WorkScheduleModel model)
+        [Route("{workScheduleId}")]
+        public async Task<bool> UpdateWorkSchedule([FromRoute] int workScheduleId, [FromBody]WorkScheduleModel model)
         {
-            return await _workScheduleService.UpdateWorkSchedule(shiftConfigurationId, model);
+            return await _workScheduleService.UpdateWorkSchedule(workScheduleId, model);
 
         }
     }
