@@ -8,6 +8,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     public partial class WorkSchedule
     {
         public int WorkScheduleId { get; set; }
+        public string WorkScheduleTitle { get; set; }
         public bool IsAbsenceForSaturday { get; set; }
         public bool IsAbsenceForSunday { get; set; }
         public bool IsAbsenceForHoliday { get; set; }
