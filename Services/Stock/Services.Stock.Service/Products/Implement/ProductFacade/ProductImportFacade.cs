@@ -292,6 +292,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .Include(p => p.ProductStockInfo)
                 .Include(p => p.ProductCustomer)
                 .Include(p => p.ProductUnitConversion)
+                .Include(p => p.ProductStockValidation)
                 .ToListAsync();
 
             var existsProductCodes = existsProduct.Select(p => p.ProductCode).Distinct().ToHashSet();
