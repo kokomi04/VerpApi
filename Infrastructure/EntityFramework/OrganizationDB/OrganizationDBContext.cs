@@ -654,8 +654,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<TimeSortConfiguration>(entity =>
             {
-                entity.Property(e => e.TimeSortConfigurationId).ValueGeneratedNever();
-
                 entity.Property(e => e.TimeSortCode)
                     .IsRequired()
                     .HasMaxLength(50);
@@ -663,11 +661,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.TimeSortDescription)
                     .IsRequired()
                     .HasMaxLength(50);
-
-                entity.Property(e => e.UpdatedByUserId)
-                    .IsRequired()
-                    .HasMaxLength(10)
-                    .IsFixedLength(true);
             });
 
             modelBuilder.Entity<UserData>(entity =>
@@ -682,6 +675,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.IsAbsenceForHoliday).HasColumnName("isAbsenceForHoliday");
 
                 entity.Property(e => e.IsAbsenceForSunday).HasColumnName("isAbsenceForSunday");
+
+                entity.Property(e => e.WorkScheduleTitle)
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
 
                 entity.HasOne(d => d.TimeSortConfiguration)
                     .WithMany(p => p.WorkSchedule)

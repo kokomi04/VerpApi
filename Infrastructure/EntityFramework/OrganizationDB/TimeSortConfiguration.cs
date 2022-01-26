@@ -29,8 +29,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
-        public int UpdatedDatetimeUtc { get; set; }
-        public string UpdatedByUserId { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ICollection<SplitHour> SplitHour { get; set; }
