@@ -65,14 +65,29 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="size">Số bản ghi/trang</param>
         /// <param name="inventoryActionId">Hành động</param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerId, [FromQuery] IList<int> productIds, [FromQuery] int stockId, [FromQuery] int? inventoryStatusId, [FromQuery] EnumInventoryType? type, [FromQuery] long? beginTime, [FromQuery] long? endTime, [FromQuery] bool? isExistedInputBill, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? inventoryActionId)
+        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword,
+            [FromQuery] int? customerId,
+            [FromQuery] IList<int> productIds, 
+            [FromQuery] int stockId,
+            [FromQuery] int? inventoryStatusId, 
+            [FromQuery] EnumInventoryType? type, 
+            [FromQuery] long? beginTime, 
+            [FromQuery] long? endTime, 
+            [FromQuery] bool? isExistedInputBill, 
+            [FromQuery] string sortBy,
+            [FromQuery] bool asc,
+            [FromQuery] int page, 
+            [FromQuery] int size, 
+            [FromQuery] int? inventoryActionId,
+            [FromBody] Clause filters = null)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, customerId, productIds, stockId, inventoryStatusId, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size, inventoryActionId).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, productIds, stockId, inventoryStatusId, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size, inventoryActionId, filters).ConfigureAwait(true);
         }
 
 
