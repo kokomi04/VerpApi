@@ -1375,10 +1375,34 @@ namespace VErp.Commons.Library
 
                     if (!value.IsNullObject())
                     {
+                        var lst = new List<object>();
+                        foreach (var v in targetValue as IEnumerable)
+                        {
+                            lst.Add(v);
+                        }
+
                         foreach (var newVal in value as IEnumerable)
                         {
-                            targetValue = (targetValue as IEnumerable).Cast<object>().Concat(new[] { newVal });
+                            if (!lst.Contains(newVal))
+                                lst.Add(newVal);
                         }
+
+                        Type baseType;
+                        if (prop.PropertyType.IsGenericType)
+                        {
+                            baseType = prop.PropertyType.GenericTypeArguments[0];
+                        }
+                        else
+                        {
+                            baseType = prop.PropertyType.GetElementType();
+                        }
+
+                        var newArray = Array.CreateInstance(baseType, lst.Count);
+                        for (int i = 0; i < lst.Count; i++)
+                        {
+                            newArray.SetValue(lst[i], i);
+                        }
+                        targetValue = newArray;                        
                     }
 
                     prop.SetValue(target, targetValue, null);
