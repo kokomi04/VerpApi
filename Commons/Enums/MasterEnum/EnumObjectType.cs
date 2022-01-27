@@ -21,7 +21,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Loại mặt hàng")]
         ProductType = 5,
 
-        [Description("Mặt hàng")]        
+        [Description("Mặt hàng")]
         Product = 6,
 
         [Description("Tính khối lượng tinh")]
@@ -346,6 +346,13 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Lịch tăng ca của bộ phận")]
         DepartmentOverHour = 604,
+
+
+        [Description("Cấu hình nghỉ phép")]
+        LeaveConfig = 60501,
+
+        [Description("Đơn nghỉ phép")]
+        LeaveBill = 60502,
 
         [Description("Nhóm chứng từ hành chính nhân sự")]
         HrTypeGroup = 1036,

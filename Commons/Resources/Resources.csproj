@@ -392,6 +392,16 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>HrDataValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Leave\LeaveActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LeaveActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Leave\LeaveConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LeaveConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -941,6 +951,14 @@
     <EmbeddedResource Update="Organization\HrDataValidationMessage.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>HrDataValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Leave\LeaveActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>LeaveActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Leave\LeaveConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>LeaveConfigActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

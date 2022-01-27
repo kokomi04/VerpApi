@@ -44,6 +44,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<HrTypeGroup> HrTypeGroup { get; set; }
         public virtual DbSet<HrTypeView> HrTypeView { get; set; }
         public virtual DbSet<HrTypeViewField> HrTypeViewField { get; set; }
+        public virtual DbSet<Leave> Leave { get; set; }
+        public virtual DbSet<LeaveConfig> LeaveConfig { get; set; }
+        public virtual DbSet<LeaveConfigRole> LeaveConfigRole { get; set; }
+        public virtual DbSet<LeaveConfigSeniority> LeaveConfigSeniority { get; set; }
+        public virtual DbSet<LeaveConfigValidation> LeaveConfigValidation { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
@@ -337,6 +342,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Phone).HasMaxLength(64);
 
                 entity.Property(e => e.UserStatusId).HasDefaultValueSql("((1))");
+
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.Employee)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .HasConstraintName("FK_Employee_LeaveConfig");
             });
 
             modelBuilder.Entity<EmployeeDepartmentMapping>(entity =>
@@ -541,6 +551,85 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.HrTypeViewId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_HrTypeViewField_HrTypeView");
+            });
+
+            modelBuilder.Entity<Leave>(entity =>
+            {
+                entity.HasComment("Đơn xin nghỉ phép");
+
+                entity.Property(e => e.LeaveId).ValueGeneratedNever();
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.TotalDays).HasColumnType("decimal(4, 1)");
+
+                entity.HasOne(d => d.AbsenceTypeSymbol)
+                    .WithMany(p => p.Leave)
+                    .HasForeignKey(d => d.AbsenceTypeSymbolId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Leave_AbsenceTypeSymbol");
+
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.Leave)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Leave_LeaveConfig");
+            });
+
+            modelBuilder.Entity<LeaveConfig>(entity =>
+            {
+                entity.HasComment("");
+
+                entity.Property(e => e.AdvanceDays).HasComment("Số ngày được ứng trước");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.MaxAyear)
+                    .HasColumnName("MaxAYear")
+                    .HasComment("Số ngày phép tối đa 1 năm");
+
+                entity.Property(e => e.MonthRate)
+                    .HasColumnType("decimal(4, 1)")
+                    .HasComment("1 tháng làm việc được cho mấy ngày phép");
+
+                entity.Property(e => e.OldYearAppliedToDate).HasComment("Phép năm cũ sẽ áp dụng đến ngày tháng nào");
+
+                entity.Property(e => e.OldYearTransferMax).HasComment("Số phép tối đa mà năm cũ chuyển sang");
+
+                entity.Property(e => e.SeniorityMonthOfYear).HasComment("Bắt đầu tính thâm niên từ tháng mấy của năm");
+
+                entity.Property(e => e.SeniorityMonthsStart).HasComment("Làm đến tháng thứ mấy thì bắt đầu tính thâm niên");
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<LeaveConfigRole>(entity =>
+            {
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.LeaveConfigRole)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_LeaveConfigRole_LeaveConfig");
+            });
+
+            modelBuilder.Entity<LeaveConfigSeniority>(entity =>
+            {
+                entity.HasKey(e => new { e.LeaveConfigId, e.Months });
+            });
+
+            modelBuilder.Entity<LeaveConfigValidation>(entity =>
+            {
+                entity.HasKey(e => new { e.LeaveConfigId, e.TotalDays });
+
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.LeaveConfigValidation)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_LeaveConfigValidation_LeaveConfig");
             });
 
             modelBuilder.Entity<ObjectProcessObject>(entity =>

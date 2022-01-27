@@ -47,6 +47,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return await query.BatchUpdateAsync(updateExpression, null, cancellationToken);
         }
 
+        public static async Task<int> DeleteByBatch<T>(this IQueryable<T> query, CancellationToken cancellationToken = default) where T : class
+        {
+            return await query.BatchDeleteAsync(cancellationToken);
+        }
 
     }
 }
