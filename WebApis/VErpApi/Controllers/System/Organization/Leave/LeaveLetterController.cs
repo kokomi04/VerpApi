@@ -51,10 +51,11 @@ namespace VErpApi.Controllers.System.Organization.Leave
 
         [HttpGet("role")]
         public Task<PageData<LeaveModel>> Role(
+            [FromQuery] int? userId,
             [FromQuery] string keyword, [FromQuery] int? leaveConfigId, [FromQuery] int? absenceTypeSymbolId, [FromQuery] EnumLeaveStatus? leaveStatusId,
             [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] int page, [FromQuery] int size, [FromQuery] string sortBy, [FromQuery] bool asc)
         {
-            return _leaveLetterService.Get(null, _currentContextService.UserId, keyword, leaveConfigId, absenceTypeSymbolId, leaveStatusId, fromDate, toDate, page, size, sortBy, asc);
+            return _leaveLetterService.Get(userId, _currentContextService.UserId, keyword, leaveConfigId, absenceTypeSymbolId, leaveStatusId, fromDate, toDate, page, size, sortBy, asc);
         }
 
         [HttpGet("{leaveId}")]
