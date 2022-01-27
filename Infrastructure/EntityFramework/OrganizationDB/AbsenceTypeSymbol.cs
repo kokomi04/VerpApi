@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class AbsenceTypeSymbol
     {
+        public AbsenceTypeSymbol()
+        {
+            Leave = new HashSet<Leave>();
+        }
+
         public int AbsenceTypeSymbolId { get; set; }
         public string TypeSymbolCode { get; set; }
         public string TypeSymbolDescription { get; set; }
@@ -17,5 +22,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+
+        public virtual ICollection<Leave> Leave { get; set; }
     }
 }

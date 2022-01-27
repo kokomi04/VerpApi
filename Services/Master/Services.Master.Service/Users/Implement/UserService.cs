@@ -209,6 +209,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Email = em.Email,
                 GenderId = (EnumGender?)em.GenderId,
                 Phone = em.Phone,
+                LeaveConfigId = em.LeaveConfigId,
                 AvatarFileId = em.AvatarFileId,
                 IsDeveloper = _appSetting.Developer?.IsDeveloper(ur.UserName, sb.SubsidiaryCode)
             };
@@ -218,7 +219,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             return user;
         }
 
-      
+
         public async Task<bool> DeleteUser(int userId)
         {
             var userInfo = await GetUserFullInfo(userId);
@@ -318,7 +319,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Address = em.Address,
                 Email = em.Email,
                 GenderId = (EnumGender?)em.GenderId,
-                Phone = em.Phone
+                Phone = em.Phone,
+                LeaveConfigId = em.LeaveConfigId
             })
             .ToList();
 
@@ -351,7 +353,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                            Address = e.Address,
                            Email = e.Email,
                            GenderId = (EnumGender?)e.GenderId,
-                           Phone = e.Phone
+                           Phone = e.Phone,
+                           LeaveConfigId = e.LeaveConfigId,
                        }).ToList();
 
             await EnrichDepartments(lst);
@@ -382,7 +385,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                            Address = e.Address,
                            Email = e.Email,
                            GenderId = (EnumGender?)e.GenderId,
-                           Phone = e.Phone
+                           Phone = e.Phone,
+                           LeaveConfigId = e.LeaveConfigId,
                        }).ToList();
 
             await EnrichDepartments(lst);
@@ -578,7 +582,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                         Address = em.Address,
                         Email = em.Email,
                         GenderId = (EnumGender?)em.GenderId,
-                        Phone = em.Phone
+                        Phone = em.Phone,
+                        LeaveConfigId = em.LeaveConfigId,
                     });
 
                     if (!string.IsNullOrWhiteSpace(keyword))
@@ -1018,6 +1023,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 SubsidiaryId = _currentContextService.SubsidiaryId,
                 EmployeeTypeId = (int)employeeTypeId,
                 UserStatusId = (int)e.UserStatusId,
+                LeaveConfigId = e.LeaveConfigId
             }).ToList();
             await _organizationContext.Employee.AddRangeAsync(employees);
             await _organizationContext.SaveChangesAsync();
@@ -1079,7 +1085,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             employee.Phone = req.Phone;
             employee.AvatarFileId = req.AvatarFileId;
             employee.UserStatusId = (int)req.UserStatusId;
-
+            employee.LeaveConfigId = req.LeaveConfigId;
             await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
