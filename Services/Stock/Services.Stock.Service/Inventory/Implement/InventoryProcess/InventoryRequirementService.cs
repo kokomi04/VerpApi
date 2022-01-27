@@ -98,7 +98,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   CensorDatetimeUtc = ir.CensorDatetimeUtc,
                                                   CensorStatus = ir.CensorStatus,
                                                   StockName = @as != null ? @as.StockName : "",
-                                                  ProductId = ird.ProductId
+                                                  ProductId = ird.ProductId,
+                                                  InventoryRequirementDetailId = ird.InventoryRequirementDetailId,
                                               };
 
             var inventoryAsQuery = from id in _stockDbContext.InventoryDetail
@@ -142,7 +143,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                             ProductName = p.ProductName,
                             StockName = ir.StockName,
                             ProductTitle = $"{p.ProductCode} / {p.ProductName}",
-                            ProductId = ir.ProductId
+                            ProductId = ir.ProductId,
+                            InventoryRequirementDetailId = ir.InventoryRequirementDetailId,
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -184,6 +186,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     StockName = x.StockName,
                     ProductTitle = x.ProductTitle,
                     ProductId = x.ProductId,
+                    InventoryRequirementDetailId = x.InventoryRequirementDetailId,
                     InventoryInfo = new List<InventorySimpleInfo>(),
                 }).ToList();
 
