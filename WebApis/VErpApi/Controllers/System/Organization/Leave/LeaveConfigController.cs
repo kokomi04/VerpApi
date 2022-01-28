@@ -18,7 +18,7 @@ using VErp.Services.Organization.Model.Leave;
 
 namespace VErpApi.Controllers.System.Organization.Leave
 {
-    [Route("api/Leave/config")]
+    [Route("api/organization/Leave/config")]
     public class LeaveConfigController : VErpBaseController
     {
         private readonly ILeaveConfigService _leaveConfigService;

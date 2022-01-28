@@ -20,7 +20,7 @@ using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.System.Organization.Leave
 {
-    [Route("api/Leave/letter")]
+    [Route("api/organization/Leave/letter")]
     public class LeaveLetterController : VErpBaseController
     {
         private readonly ILeaveLetterService _leaveLetterService;

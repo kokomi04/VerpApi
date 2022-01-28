@@ -53,7 +53,7 @@ namespace VErp.Services.Organization.Service.Leave
         {
             var info = _mapper.Map<LeaveConfig>(model);
 
-            var roles = _mapper.Map<List<LeaveConfigRole>>(model.Roles);
+            var roles = _mapper.Map<List<LeaveConfigRole>>(model.Roles.SelectMany(r => r.ToRoleUserModel()));
 
             var seniorities = _mapper.Map<List<LeaveConfigSeniority>>(model.Seniorities);
 
@@ -95,6 +95,7 @@ namespace VErp.Services.Organization.Service.Leave
                 await _organizationDBContext.LeaveConfigValidation.AddRangeAsync(valications);
             }
 
+            await _organizationDBContext.SaveChangesAsync();
 
             await trans.CommitAsync();
 
@@ -122,6 +123,7 @@ namespace VErp.Services.Organization.Service.Leave
 
             info.IsDeleted = true;
 
+            await _organizationDBContext.SaveChangesAsync();
 
             await trans.CommitAsync();
 
@@ -152,7 +154,14 @@ namespace VErp.Services.Organization.Service.Leave
             var seniorities = await _organizationDBContext.LeaveConfigSeniority.Where(c => c.LeaveConfigId == leaveConfigId).ToListAsync();
             var validation = await _organizationDBContext.LeaveConfigValidation.Where(c => c.LeaveConfigId == leaveConfigId).ToListAsync();
 
-            model.Roles = _mapper.Map<List<LeaveConfigRoleModel>>(roles);
+            var roleUsers = _mapper.Map<List<LeaveConfigRoleUserModel>>(roles);
+
+            model.Roles = roleUsers.GroupBy(u => u.LeaveRoleTypeId).Select(u => new LeaveConfigRoleModel()
+            {
+                LeaveRoleTypeId = u.Key,
+                UserIds = u.Select(i => i.UserId).ToList()
+            }).ToList();
+
             model.Seniorities = _mapper.Map<List<LeaveConfigSeniorityModel>>(seniorities);
             model.Validations = _mapper.Map<List<LeaveConfigValidationModel>>(validation);
             return model;
@@ -173,7 +182,7 @@ namespace VErp.Services.Organization.Service.Leave
             model.LeaveConfigId = leaveConfigId;
 
 
-            var roles = _mapper.Map<List<LeaveConfigRole>>(model.Roles);
+            var roles = _mapper.Map<List<LeaveConfigRole>>(model.Roles.SelectMany(r => r.ToRoleUserModel()));
 
             var seniorities = _mapper.Map<List<LeaveConfigSeniority>>(model.Seniorities);
 
@@ -200,7 +209,7 @@ namespace VErp.Services.Organization.Service.Leave
 
 
             if (roles != null)
-            {              
+            {
                 foreach (var r in roles)
                 {
                     r.LeaveConfigId = info.LeaveConfigId;
@@ -229,6 +238,7 @@ namespace VErp.Services.Organization.Service.Leave
                 await _organizationDBContext.LeaveConfigValidation.AddRangeAsync(valications);
             }
 
+            await _organizationDBContext.SaveChangesAsync();
 
             await trans.CommitAsync();
 
