@@ -403,7 +403,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Add);
+                var result = await ProcessActionAsync(voucherTypeId, voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Add);
                 if (result.Code != 0)
                 {
                     if (string.IsNullOrWhiteSpace(result.Message))
@@ -431,7 +431,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await CreateBillVersion(voucherTypeId, billInfo, data, generateTypeLastValues);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Add);
+                await ProcessActionAsync(voucherTypeId, voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Add);
 
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
@@ -630,7 +630,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action, long voucherBillId = 0)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(int voucherTypeId, string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action, long voucherBillId = 0)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -640,6 +640,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
+                    new SqlParameter("@VoucherTypeId", voucherTypeId),
                     resultParam,
                     messageParam,
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" },
@@ -1101,7 +1102,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Update, billInfo.FId);
+                var result = await ProcessActionAsync(voucherTypeId, voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Update, billInfo.FId);
                 if (result.Code != 0)
                 {
                     if (string.IsNullOrWhiteSpace(result.Message))
@@ -1125,7 +1126,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Update);
+                await ProcessActionAsync(voucherTypeId, voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Update);
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -1419,7 +1420,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Delete, billInfo.FId);
+                var result = await ProcessActionAsync(voucherTypeId, voucherTypeInfo.BeforeSaveActionExec, data, voucherFields, EnumActionType.Delete, billInfo.FId);
 
                 if (result.Code != 0)
                 {
@@ -1441,7 +1442,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Delete);
+                await ProcessActionAsync(voucherTypeId, voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Delete);
 
                 //await _outsideImportMappingService.MappingObjectDelete(billInfo.FId);
 
@@ -2209,7 +2210,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        await ProcessActionAsync(voucherType.BeforeSaveActionExec, bill, voucherFields, EnumActionType.Add);
+                        await ProcessActionAsync(voucherTypeId, voucherType.BeforeSaveActionExec, bill, voucherFields, EnumActionType.Add);
 
                         var billInfo = new VoucherBill()
                         {
@@ -2226,7 +2227,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         await CreateBillVersion(voucherTypeId, billInfo, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(voucherType.AfterSaveActionExec, bill, voucherFields, EnumActionType.Add);
+                        await ProcessActionAsync(voucherTypeId, voucherType.AfterSaveActionExec, bill, voucherFields, EnumActionType.Add);
                     }
 
                     await ConfirmCustomGenCode(generateTypeLastValues);
