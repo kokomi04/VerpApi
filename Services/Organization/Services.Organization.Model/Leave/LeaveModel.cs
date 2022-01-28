@@ -51,4 +51,17 @@ namespace VErp.Services.Organization.Model.Leave
 
     }
 
+    public class LeaveByYearModel
+    {
+        public LeaveCountModel ThisYear { get; set; }
+        public LeaveCountModel LastYear { get; set; }
+    }
+
+    public class LeaveCountModel
+    {
+
+        public decimal Counted { get; set; }
+        public decimal NoneCounted { get; set; }
+    }
+
 }
