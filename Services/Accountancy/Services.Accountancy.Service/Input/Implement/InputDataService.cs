@@ -423,7 +423,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Add);
+                var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Add);
 
                 if (result.Code != 0)
                 {
@@ -452,7 +452,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await CreateBillVersion(inputTypeId, billInfo, data, generateTypeLastValues);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
                 {
@@ -652,7 +652,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action, long inputValueBillId = 0)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(int inputTypeId, string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action, long inputValueBillId = 0)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -663,6 +663,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     new SqlParameter("@BillF_Id", inputValueBillId),
+                      new SqlParameter("@InputTypeId", inputTypeId),
                     resultParam,
                     messageParam,
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" }
@@ -1133,7 +1134,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
+                var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
                 if (result.Code != 0)
                 {
                     if (string.IsNullOrWhiteSpace(result.Message))
@@ -1163,7 +1164,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -1461,7 +1462,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1472,7 +1473,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
 
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
 
@@ -2203,7 +2204,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
                         if (result.Code != 0)
                         {
                             if (string.IsNullOrWhiteSpace(result.Message))
@@ -2230,7 +2231,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CreateBillVersion(inputTypeId, billInfo, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, bill, inputFields, EnumActionType.Add);
                     }
 
 
@@ -2291,7 +2292,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (billInfo == null) throw BillNotFound.BadRequest();
 
                         // Before saving action (SQL)
-                        var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
+                        var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
                         if (result.Code != 0)
                         {
                             if (string.IsNullOrWhiteSpace(result.Message))
@@ -2311,7 +2312,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await _accountancyDBContext.SaveChangesAsync();
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
+                        await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
                     }
 
                     await ConfirmCustomGenCode(generateTypeLastValues);
