@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class VoucherType
     {
         public VoucherType()
         {
-            VoucherAction = new HashSet<VoucherAction>();
+            //VoucherAction = new HashSet<VoucherAction>();
             VoucherArea = new HashSet<VoucherArea>();
             VoucherAreaField = new HashSet<VoucherAreaField>();
             VoucherBill = new HashSet<VoucherBill>();
@@ -32,9 +34,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
         public string AfterUpdateRowsJsAction { get; set; }
+        public bool IsHide { get; set; }
 
         public virtual VoucherTypeGroup VoucherTypeGroup { get; set; }
-        public virtual ICollection<VoucherAction> VoucherAction { get; set; }
+       // public virtual ICollection<VoucherAction> VoucherAction { get; set; }
         public virtual ICollection<VoucherArea> VoucherArea { get; set; }
         public virtual ICollection<VoucherAreaField> VoucherAreaField { get; set; }
         public virtual ICollection<VoucherBill> VoucherBill { get; set; }

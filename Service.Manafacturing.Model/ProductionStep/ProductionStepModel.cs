@@ -1,20 +1,18 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using ProductionStepEnity = VErp.Infrastructure.EF.ManufacturingDB.ProductionStep;
+using ProductionStepEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionStep;
 
 
 namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
-    public class ProductionStepModel : IMapFrom<ProductionStepEnity>
+    public class ProductionStepModel : IMapFrom<ProductionStepEntity>
     {
         public long ProductionStepId { get; set; }
         public int? StepId { get; set; }
         public string Title { get; set; }
+        public string Description { get; set; }
         public long? ParentId { get; set; }
         public string ParentCode { get; set; }
         public EnumProductionProcess.EnumContainerType ContainerTypeId { get; set; }
@@ -33,8 +31,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionStepEnity, ProductionStepModel>()
+            profile.CreateMap<ProductionStepEntity, ProductionStepModel>()
                 .ForMember(m => m.Title, a => a.MapFrom(s => string.IsNullOrEmpty(s.Title) ? s.Step == null ? null : s.Step.StepName : s.Title))
+                .ForMember(m => m.Description, a => a.MapFrom(s => s.Step == null ? null : s.Step.Description))
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
                 .ForMember(m => m.UnitId, a => a.MapFrom(s => s.StepId.HasValue? s.Step.UnitId : 0))
@@ -50,7 +49,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public List<ProductionStepLinkDataInfo> ProductionStepLinkDatas { get; set; }
         public new void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionStepEnity, ProductionStepInfo>()
+            profile.CreateMap<ProductionStepEntity, ProductionStepInfo>()
                 .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))
                 .ForMember(m => m.Title, a => a.MapFrom(s => string.IsNullOrEmpty(s.Title) ? s.Step == null ? null : s.Step.StepName : s.Title))
                 .ForMember(m => m.UnitId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.UnitId : 0))
@@ -63,7 +62,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         }
     }
 
-    public class PorductionStepSortOrderModel
+    public class ProductionStepSortOrderModel
     {
         public long ProductionStepId { get; set; }
         public int SortOrder { get; set; }

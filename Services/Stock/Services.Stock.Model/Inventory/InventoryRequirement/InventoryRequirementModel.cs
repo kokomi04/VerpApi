@@ -25,7 +25,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string BillForm { get; set; }
         public string BillCode { get; set; }
         public string BillSerial { get; set; }
-        public long BillDate { get; set; }
+        public long? BillDate { get; set; }
         public int? ModuleTypeId { get; set; }
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
@@ -39,11 +39,15 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public long? CensorDatetimeUtc { get; set; }
         public EnumInventoryRequirementStatus CensorStatus { get; set; }
         public int ProductId { get; set; }
+        public long InventoryRequirementDetailId { get; set; }
         public string ProductTitle { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
         public string StockName { get; set; }
         public long? OutsourceStepRequestId { get; set; }
+
+        public IList<InventorySimpleInfo> InventoryInfo { set; get; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementDetail, InventoryRequirementListModel>()
@@ -65,7 +69,6 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.CensorByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CensorByUserId))
                 .ForMember(dest => dest.CensorDatetimeUtc, otp => otp.MapFrom(source => source.InventoryRequirement.CensorDatetimeUtc.GetUnix()))
                 .ForMember(dest => dest.CensorStatus, otp => otp.MapFrom(source => (EnumInventoryRequirementStatus)source.InventoryRequirement.CensorStatus))
-                .ForMember(dest => dest.CensorByUserId, otp => otp.MapFrom(source => source.InventoryRequirement.CensorByUserId))
                 .ForMember(dest => dest.ProductCode, otp => otp.MapFrom(source => source.Product.ProductCode))
                 .ForMember(dest => dest.ProductName, otp => otp.MapFrom(source => source.Product.ProductName))
                 .ForMember(dest => dest.ProductTitle, otp => otp.MapFrom(source => $"{source.Product.ProductCode} / {source.Product.ProductName}"))

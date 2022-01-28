@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class ProductCustomer
@@ -9,6 +11,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int ProductId { get; set; }
         public int? CustomerId { get; set; }
         public string CustomerProductCode { get; set; }
+        public string CustomerProductName { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

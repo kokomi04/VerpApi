@@ -16,7 +16,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
     public partial class PurchaseOrderDBContext
     {
         protected DbSet<MaterialCalcProductOrderGroup> _materialCalcProductOrderGroup { get; set; }
-
+        protected DbSet<PropertyCalcProductOrderGroup> _propertyCalcProductOrderGroup { get; set; }
         public virtual IQueryable<MaterialCalcProductOrderGroup> MaterialCalcProductOrderGroup
         {
             get
@@ -26,8 +26,24 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 return _materialCalcProductOrderGroup.FromSqlRaw(sql);
             }
         }
-    }
+        public virtual IQueryable<PropertyCalcProductOrderGroup> PropertyCalcProductOrderGroup
+        {
+            get
+            {
+                var sql = $"SELECT PropertyCalcProductId, STRING_AGG(OrderCode,',') OrderCodes, SUM(OrderProductQuantity) TotalOrderProductQuantity FROM dbo.PropertyCalcProductOrder GROUP BY PropertyCalcProductId";
 
+                return _propertyCalcProductOrderGroup.FromSqlRaw(sql);
+            }
+        }
+    }
+    public class PropertyCalcProductOrderGroup
+    {
+        [Key]
+        public long PropertyCalcProductId { get; set; }
+        public string OrderCodes { get; set; }
+        public decimal? TotalOrderProductQuantity { get; set; }
+
+    }
     public class MaterialCalcProductOrderGroup
     {
         [Key]

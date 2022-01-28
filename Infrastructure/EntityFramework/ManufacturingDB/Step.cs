@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class Step
@@ -20,6 +22,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public decimal ShrinkageRate { get; set; }
         public int HandoverTypeId { get; set; }
         public bool IsHide { get; set; }
+        public string Description { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -27,6 +30,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public decimal? Productivity { get; set; }
 
         public virtual StepGroup StepGroup { get; set; }
         public virtual ICollection<ProductionStep> ProductionStep { get; set; }

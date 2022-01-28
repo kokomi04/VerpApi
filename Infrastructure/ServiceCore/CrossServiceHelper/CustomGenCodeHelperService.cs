@@ -27,7 +27,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> MapObjectCustomGenCode(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, Dictionary<long, int> objectCustomGenCodes);
 
         Task<CustomGenCodeOutputModel> CurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date);
-        Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date);
+        Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string parentCode, long? date);
         //Task<bool> ConfirmCode(int? customGenCodeId, string baseValue);
         Task<bool> ConfirmCode(CustomGenCodeBaseValueModel lastBaseValue);
 
@@ -109,7 +109,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Get<CustomGenCodeOutputModel>($"api/internal/InternalCustomGenCode/currentConfig", queries);
         }
 
-        public async Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date)
+        public async Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string parentCode, long? date)
         {
             //if(_appSetting.GrpcInternal?.Address?.Contains("https") == true)
             //{
@@ -132,7 +132,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 customGenCodeId,
                 lastValue,
                 fId,
-                code,
+                code = parentCode,
                 date
             };
             return await _httpCrossService.Get<CustomCodeGeneratedModel>($"api/internal/InternalCustomGenCode/generateCode", queries);
@@ -162,7 +162,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public GenerateCodeContext CreateGenerateCodeContext(Dictionary<string, int> baseValueChains = null)
         {
-            return new GenerateCodeContext(this, _currentContextService);
+            return new GenerateCodeContext(this, _currentContextService, baseValueChains);
         }
 
     }
@@ -236,11 +236,11 @@ public class GenerateCodeConfig
     /// </summary>
     /// <param name="fId">ID of current object</param>
     /// <param name="date">%DATE(xxx)%</param>
-    /// <param name="refCode">%CODE%</param>
+    /// <param name="parentCode">%CODE%</param>
     /// <returns></returns>
-    public GenerateCodeConfigData SetConfigData(long fId, long? date = null, string refCode = "")
+    public GenerateCodeConfigData SetConfigData(long fId, long? date = null, string parentCode = "")
     {
-        RefCode = refCode;
+        RefCode = parentCode;
         FId = fId;
         Date = date;
         return new GenerateCodeConfigData(this);
@@ -263,15 +263,16 @@ public class GenerateCodeConfigData
     /// <param name="query">DbSet<Entity></param>
     /// <param name="currentCode">currentCode</param>
     /// <param name="checkExisted">expression to check if code/ generated code had been existed</param>
+    /// <param name="checkExistedFormat">Raw sql to check if code/ generated code had been existed</param>
     /// <returns></returns>
-    public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
+    public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class
     {
         TSource existedItem;
 
         if (!string.IsNullOrWhiteSpace(currentCode))
         {
 
-            existedItem = await GetExistedItem(query, currentCode, checkExisted);
+            existedItem = await GetExistedItem(query, currentCode, checkExisted, checkExistedFormat);
             if (existedItem != null) throw new BadRequestException(GeneralCode.ItemCodeExisted);
             return currentCode;
         }
@@ -306,8 +307,11 @@ public class GenerateCodeConfigData
             do
             {
                 code = (await customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, fId, refCode, date))?.CustomCode;
-                existedItem = await GetExistedItem(query, code, checkExisted);
-
+                existedItem = await GetExistedItem(query, code, checkExisted, checkExistedFormat);
+                if (existedItem != null)
+                {
+                    await configOption.Ctx.ConfirmCode();
+                }
                 lastValue++;
 
                 if (baseValueChains != null)
@@ -333,8 +337,13 @@ public class GenerateCodeConfigData
 
     }
 
-    private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
+    private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat) where TSource : class
     {
+        if (checkExistedFormat != null)
+        {
+            return checkExistedFormat.Invoke(code);
+        }
+
         var entityParameter = Expression.Parameter(typeof(TSource), "p");
 
         //Expression<Func<string>> codeFunction = () => code;

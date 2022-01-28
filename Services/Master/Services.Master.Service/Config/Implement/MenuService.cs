@@ -17,6 +17,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Master.Service.RolePermission;
 using VErp.Services.Master.Service.Users;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Config.Menu;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -24,9 +26,9 @@ namespace VErp.Services.Master.Service.Config.Implement
     {
         private readonly MasterDBContext _masterDbContext;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IUserService _userService;
+        private readonly ObjectActivityLogFacade _menuActivityLog;
 
         public MenuService(MasterDBContext masterDbContext
             , ILogger<MenuService> logger
@@ -38,10 +40,9 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             _masterDbContext = masterDbContext;
             _logger = logger;
-            _activityLogService = activityLogService;
             _currentContextService = currentContextService;
             _userService = userService;
-
+            _menuActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Menu);
         }
 
         public async Task<ICollection<MenuOutputModel>> GetMeMenuList()
@@ -49,53 +50,41 @@ namespace VErp.Services.Master.Service.Config.Implement
             var lstMenu = new List<MenuOutputModel>();
             var lstPermissions = await _userService.GetMePermission();
             var moduleIds = lstPermissions.Select(p => p.ModuleId).ToList();
-            foreach (var item in await _masterDbContext.Menu.Where(m => m.ModuleId <= 0
-                || lstPermissions.Any(p => p.ModuleId == m.ModuleId && (m.ObjectTypeId == 0 || m.ObjectTypeId == p.ObjectTypeId && m.ObjectId == p.ObjectId))
-            ).OrderBy(m => m.SortOrder).ToListAsync())
+
+            var menus = _masterDbContext.Menu.ToList();
+
+            var permissionMenus = menus.Where(m => m.ModuleId <= 0
+                || lstPermissions.Any(p => p.ModuleId == m.ModuleId && (m.ObjectTypeId == 0 || m.ObjectTypeId == p.ObjectTypeId && m.ObjectId == p.ObjectId)));
+
+            foreach (var item in permissionMenus)
             {
-                var info = new MenuOutputModel()
-                {
-                    MenuId = item.MenuId,
-                    ParentId = item.ParentId,
-                    IsDisabled = item.IsDisabled,
-                    ModuleId = item.ModuleId,
-                    ObjectTypeId = item.ObjectTypeId,
-                    ObjectId = item.ObjectId,
-                    MenuName = item.MenuName,
-                    Url = item.Url,
-                    Icon = item.Icon,
-                    Param = item.Param,
-                    SortOrder = item.SortOrder,
-                    IsGroup = item.IsGroup,
-                    IsAlwaysShowTopMenu = item.IsAlwaysShowTopMenu
-                };
+                if (lstMenu.Any(m => m.MenuId == item.MenuId) || menus.Any(m => m.ParentId == item.MenuId)) continue;
+
+                var info = EntityToModel(item);
                 lstMenu.Add(info);
+
+                var parentId = info.ParentId;
+                while (parentId > 0)
+                {
+                    var parent = menus.FirstOrDefault(m => m.MenuId == parentId);
+                    parentId = parent?.ParentId ?? 0;
+                    if (parent != null && !lstMenu.Any(m => m.MenuId == parent.MenuId))
+                    {
+                        lstMenu.Add(EntityToModel(parent));
+                    }
+                }
             }
-            return lstMenu;
+            return lstMenu.OrderBy(m => m.SortOrder).ToList();
         }
+
+
 
         public async Task<ICollection<MenuOutputModel>> GetList()
         {
             var lstMenu = new List<MenuOutputModel>();
             foreach (var item in await _masterDbContext.Menu.OrderBy(m => m.SortOrder).ToListAsync())
             {
-                var info = new MenuOutputModel()
-                {
-                    MenuId = item.MenuId,
-                    ParentId = item.ParentId,
-                    IsDisabled = item.IsDisabled,
-                    ModuleId = item.ModuleId,
-                    ObjectTypeId = item.ObjectTypeId,
-                    ObjectId = item.ObjectId,
-                    MenuName = item.MenuName,
-                    Url = item.Url,
-                    Icon = item.Icon,
-                    Param = item.Param,
-                    SortOrder = item.SortOrder,
-                    IsGroup = item.IsGroup,
-                    IsAlwaysShowTopMenu = item.IsAlwaysShowTopMenu
-                };
-                lstMenu.Add(info);
+                lstMenu.Add(EntityToModel(item));
             }
             return lstMenu;
         }
@@ -123,9 +112,15 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.IsGroup = model.IsGroup;
             obj.IsAlwaysShowTopMenu = model.IsAlwaysShowTopMenu;
             obj.UpdatedDatetimeUtc = DateTime.UtcNow;
-            await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Cập nhật menu {obj.MenuName} ", model.JsonSerialize());
 
             await _masterDbContext.SaveChangesAsync();
+
+            await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Update)
+              .MessageResourceFormatDatas(obj.MenuName)
+              .ObjectId(menuId)
+              .JsonData(model.JsonSerialize())
+              .CreateLog();
+
             return true;
 
         }
@@ -143,7 +138,13 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.UpdatedByUserId = _currentContextService.UserId;
             obj.DeletedDatetimeUtc = DateTime.UtcNow;
             await _masterDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.Menu, menuId, $"Xoá menu {obj.MenuName} ", obj.JsonSerialize());
+
+            await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Update)
+            .MessageResourceFormatDatas(obj.MenuName)
+            .ObjectId(menuId)
+            .JsonData(obj.JsonSerialize())
+            .CreateLog();
+
             return true;
         }
 
@@ -173,7 +174,12 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext.Menu.Add(entity);
             await _masterDbContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Menu, entity.MenuId, $"Thêm mới menu {entity.MenuName} ", model.JsonSerialize());
+            await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Create)
+            .MessageResourceFormatDatas(entity.MenuName)
+            .ObjectId(entity.MenuId)
+            .JsonData(model.JsonSerialize())
+            .CreateLog();
+
 
             return entity.MenuId;
         }
@@ -185,6 +191,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound);
             }
+            return EntityToModel(obj);
+        }
+
+        private MenuOutputModel EntityToModel(Menu obj)
+        {
             return new MenuOutputModel()
             {
                 MenuId = obj.MenuId,

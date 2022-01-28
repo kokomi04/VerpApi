@@ -17,6 +17,8 @@ using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Commons.Library.Model;
+using VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade;
 
 namespace VErpApi.Controllers.PurchaseOrder.Data
 {
@@ -26,20 +28,36 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
     public class VoucherController : VErpBaseController
     {
         private readonly IVoucherDataService _voucherDataService;
+        private readonly IVoucherDataExportFacadeService _voucherDataExportFacadeService;
 
-        public VoucherController(IVoucherDataService voucherDataService)
+        public VoucherController(IVoucherDataService voucherDataService, IVoucherDataExportFacadeService voucherDataExportFacadeService)
         {
             _voucherDataService = voucherDataService;
+            _voucherDataExportFacadeService = voucherDataExportFacadeService;
         }
 
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{voucherTypeId}/Search")]
-        public async Task<PageDataTable> GetVoucherBills([FromRoute] int voucherTypeId, [FromBody] VoucherTypeBillsRequestModel request)
+        public async Task<PageDataTable> GetVoucherBills([FromRoute] int voucherTypeId, [FromBody] VoucherTypeBillsFilterPagingModel request)
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _voucherDataService.GetVoucherBills(voucherTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _voucherDataService.GetVoucherBills(voucherTypeId, false, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{voucherTypeId}/Export")]
+        public async Task<IActionResult> ExportList([FromRoute] int voucherTypeId, [FromBody] VoucherTypeBillsExportModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _voucherDataExportFacadeService.Export(voucherTypeId, req);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
         [HttpGet]
@@ -90,9 +108,17 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
             return await _voucherDataService.DeleteVoucherBill(voucherTypeId, fId).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("{voucherTypeId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int voucherTypeId, [FromQuery] int? areaId = null)
+        {
+            return await _voucherDataService.GetFieldDataForMapping(voucherTypeId, areaId);
+        }
+
+
         [HttpPost]
         [Route("{voucherTypeId}/importFromMapping")]
-        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] ImportBillExelMapping mapping, IFormFile file)
+        public async Task<bool> ImportVoucherBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
@@ -136,9 +162,17 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpPost("OrderByCodes")]
         [VErpAction(EnumActionType.View)]
-        public async Task<IList<NonCamelCaseDictionary>> OrderByCodes([FromBody] IList<string> orderCodes)
+        public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes([FromBody] IList<string> orderCodes)
         {
             return await _voucherDataService.OrderByCodes(orderCodes);
+        }
+
+        [HttpPost("OrderRowsByCodes")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        public async Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes([FromBody] IList<string> orderCodes)
+        {
+            return await _voucherDataService.OrderRowsByCodes(orderCodes);
         }
     }
 }

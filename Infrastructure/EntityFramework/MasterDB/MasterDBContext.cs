@@ -2,6 +2,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class MasterDBContext : DbContext
@@ -25,16 +27,25 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Category> Category { get; set; }
         public virtual DbSet<CategoryField> CategoryField { get; set; }
         public virtual DbSet<CategoryGroup> CategoryGroup { get; set; }
+        public virtual DbSet<CategoryView> CategoryView { get; set; }
+        public virtual DbSet<CategoryViewField> CategoryViewField { get; set; }
         public virtual DbSet<Config> Config { get; set; }
+        public virtual DbSet<CurrencyConvert> CurrencyConvert { get; set; }
         public virtual DbSet<CustomGenCode> CustomGenCode { get; set; }
         public virtual DbSet<CustomGenCodeValue> CustomGenCodeValue { get; set; }
         public virtual DbSet<DataConfig> DataConfig { get; set; }
+        public virtual DbSet<EmailConfiguration> EmailConfiguration { get; set; }
+        public virtual DbSet<FileConfiguration> FileConfiguration { get; set; }
         public virtual DbSet<Guide> Guide { get; set; }
+        public virtual DbSet<GuideCate> GuideCate { get; set; }
+        public virtual DbSet<I18nLanguage> I18nLanguage { get; set; }
+        public virtual DbSet<MailTemplate> MailTemplate { get; set; }
         public virtual DbSet<Menu> Menu { get; set; }
         public virtual DbSet<Method> Method { get; set; }
         public virtual DbSet<Module> Module { get; set; }
         public virtual DbSet<ModuleApiEndpointMapping> ModuleApiEndpointMapping { get; set; }
         public virtual DbSet<ModuleGroup> ModuleGroup { get; set; }
+        public virtual DbSet<Notification> Notification { get; set; }
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigStandardMapping> ObjectPrintConfigStandardMapping { get; set; }
@@ -45,9 +56,11 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
         public virtual DbSet<PrintConfigCustom> PrintConfigCustom { get; set; }
         public virtual DbSet<PrintConfigStandard> PrintConfigStandard { get; set; }
+        public virtual DbSet<ReuseContent> ReuseContent { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
         public virtual DbSet<RolePermission> RolePermission { get; set; }
+        public virtual DbSet<Subscription> Subscription { get; set; }
         public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<User> User { get; set; }
 
@@ -56,6 +69,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
             modelBuilder.Entity<Action>(entity =>
             {
                 entity.Property(e => e.ActionId).ValueGeneratedNever();
@@ -70,6 +85,8 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionButtonCode)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.IconName).HasMaxLength(25);
 
@@ -140,7 +157,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Category>(entity =>
             {
-                entity.HasIndex(e => e.CategoryCode)
+                entity.HasIndex(e => e.CategoryCode, "IX_Category_CategoryCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
@@ -173,8 +190,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<CategoryField>(entity =>
             {
-                entity.HasIndex(e => e.CategoryId)
-                    .HasName("IDX_CategoryId");
+                entity.HasIndex(e => e.CategoryId, "IDX_CategoryId");
 
                 entity.Property(e => e.CategoryFieldName)
                     .IsRequired()
@@ -230,6 +246,50 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
+            modelBuilder.Entity<CategoryView>(entity =>
+            {
+                entity.Property(e => e.CategoryViewName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.Category)
+                    .WithMany(p => p.CategoryView)
+                    .HasForeignKey(d => d.CategoryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_FK_ReportTypeView_ReportTypeView_Category");
+            });
+
+            modelBuilder.Entity<CategoryViewField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.HelpText).HasMaxLength(512);
+
+                entity.Property(e => e.ParamerterName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefFilters).HasMaxLength(512);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.CategoryView)
+                    .WithMany(p => p.CategoryViewField)
+                    .HasForeignKey(d => d.CategoryViewId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_CategoryViewField_CategoryView");
+            });
+
             modelBuilder.Entity<Config>(entity =>
             {
                 entity.Property(e => e.ConfigId).ValueGeneratedNever();
@@ -241,6 +301,19 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Description)
                     .IsRequired()
                     .HasMaxLength(512);
+            });
+
+            modelBuilder.Entity<CurrencyConvert>(entity =>
+            {
+                entity.Property(e => e.FromCurrency)
+                    .IsRequired()
+                    .HasMaxLength(16);
+
+                entity.Property(e => e.Rate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.ToCurrency)
+                    .IsRequired()
+                    .HasMaxLength(16);
             });
 
             modelBuilder.Entity<CustomGenCode>(entity =>
@@ -280,7 +353,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Seperator)
                     .HasMaxLength(1)
                     .IsUnicode(false)
-                    .IsFixedLength();
+                    .IsFixedLength(true);
 
                 entity.Property(e => e.Suffix)
                     .HasMaxLength(32)
@@ -329,12 +402,27 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .HasComment("");
             });
 
+            modelBuilder.Entity<EmailConfiguration>(entity =>
+            {
+                entity.Property(e => e.IsSsl)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.MailFrom)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.Password)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.SmtpHost)
+                    .IsRequired()
+                    .HasMaxLength(256);
+            });
+
             modelBuilder.Entity<Guide>(entity =>
             {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
                 entity.Property(e => e.Description).IsRequired();
 
                 entity.Property(e => e.GuideCode)
@@ -345,8 +433,37 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Title)
                     .IsRequired()
                     .HasMaxLength(255);
+            });
 
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
+            modelBuilder.Entity<GuideCate>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(512);
+            });
+
+            modelBuilder.Entity<I18nLanguage>(entity =>
+            {
+                entity.Property(e => e.En).HasMaxLength(1024);
+
+                entity.Property(e => e.Key)
+                    .HasMaxLength(1024)
+                    .UseCollation("SQL_Latin1_General_CP1_CS_AS");
+
+                entity.Property(e => e.Vi).HasMaxLength(1024);
+            });
+
+            modelBuilder.Entity<MailTemplate>(entity =>
+            {
+                entity.Property(e => e.Content).IsRequired();
+
+                entity.Property(e => e.TemplateCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<Menu>(entity =>
@@ -495,8 +612,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<OutsideImportMappingFunction>(entity =>
             {
-                entity.HasIndex(e => e.FunctionName)
-                    .HasName("IX_AccountancyOutsiteMappingFunction")
+                entity.HasIndex(e => e.FunctionName, "IX_AccountancyOutsiteMappingFunction")
                     .IsUnique();
 
                 entity.Property(e => e.Description).HasMaxLength(512);
@@ -556,6 +672,13 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Title).HasMaxLength(255);
             });
 
+            modelBuilder.Entity<ReuseContent>(entity =>
+            {
+                entity.Property(e => e.Key).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.Property(e => e.ChildrenRoleIds).HasMaxLength(1024);
@@ -613,10 +736,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<Unit>(entity =>
             {
-                entity.HasIndex(e => new { e.UnitName, e.SubsidiaryId })
-                    .HasName("IX_Unit_UnitName")
+                entity.HasIndex(e => new { e.UnitName, e.SubsidiaryId }, "IX_Unit_UnitName")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
 
                 entity.Property(e => e.UnitName)
                     .IsRequired()
@@ -627,6 +751,10 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<User>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.UserName }, "IX_User_UserName")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0) AND [UserName]<>'' AND [UserName] IS NOT NULL)");
+
                 entity.Property(e => e.UserId).ValueGeneratedNever();
 
                 entity.Property(e => e.AccessFailedCount).HasComment("");

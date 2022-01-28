@@ -67,7 +67,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{containerTypeId}/{containerId}/productionStep")]
-        public async Task<IList<ProductionStepSimpleModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
+        public async Task<IList<InternalProductionStepSimpleModel>> GetAllProductionStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] int containerId)
         {
             return await _productionProcessService.GetAllProductionStep(containerTypeId, containerId);
         }
@@ -123,7 +123,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("productionStep/updateSortOrder")]
-        public async Task<bool> UpdateProductionStepSortOrder([FromBody] IList<PorductionStepSortOrderModel> req)
+        public async Task<bool> UpdateProductionStepSortOrder([FromBody] IList<ProductionStepSortOrderModel> req)
         {
             return await _productionProcessService.UpdateProductionStepSortOrder(req);
         }
@@ -138,6 +138,22 @@ namespace VErpApi.Controllers.Manufacturing
             //    await _productionProcessService.UpdateMarkInvalidOutsourcePartRequest(containerId);
             //    await _productionProcessService.UpdateMarkInvalidOutsourceStepRequest(containerId);
             //}
+            return rs;
+        }
+
+        [HttpPut]
+        [Route("{productionOrderId}/dismissUpdateQuantity")]
+        public async Task<bool> DismissUpdateQuantity([FromRoute] long productionOrderId)
+        {
+            var rs = await _productionProcessService.DismissUpdateQuantity(productionOrderId);
+            return rs;
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/hasAssignment")]
+        public async Task<bool> CheckHasAssignment([FromRoute] long productionOrderId)
+        {
+            var rs = await _productionProcessService.CheckHasAssignment(productionOrderId);
             return rs;
         }
 
@@ -157,12 +173,14 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("productionStepLinkDataRole/getInOutOfListProductionStep")]
         public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
         {
-           return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
+            return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
         }
 
         /// <summary>
         /// Gom nhóm các công đoạn có mối qua hệ với nhau
         /// </summary>
+        /// <param name="containerTypeId"></param>
+        /// <param name="containerId"></param>
         /// <param name="productionOrderId">Mã lệnh sản xuất</param>
         /// <returns></returns>
         [HttpPost]
@@ -193,7 +211,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{containerTypeId}/{containerId}/productionProcessOutsourceStep")]
-        public async Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep([FromRoute]EnumContainerType containerTypeId, [FromRoute]  long containerId, [FromBody] long[] productionStepIds)
+        public async Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] long[] productionStepIds)
         {
             return await _productionProcessService.GetProductionProcessOutsourceStep(containerTypeId, containerId, productionStepIds);
         }
@@ -201,6 +219,8 @@ namespace VErpApi.Controllers.Manufacturing
         /// <summary>
         /// Trả về các nhóm đầu vào, đầu ra gia công
         /// </summary>
+        /// <param name="containerTypeId"></param>
+        /// <param name="containerId"></param>
         /// <param name="productionOrderId">Mã lệnh sản xuất</param>
         /// <returns></returns>
         [HttpPost]

@@ -80,6 +80,12 @@ namespace Verp.Cache.RedisCache
 
             }
         }
+
+        public static string GetLockStockKeyKey(long stockTakePeriodId)
+        {
+            return $"STOCK_TAKE_PERIOD_LOCK_{stockTakePeriodId}";
+        }
+
         public static string GetLockReportKey(int reportTypeId)
         {
             return $"REPORT_LOCK_{reportTypeId}";
@@ -95,6 +101,10 @@ namespace Verp.Cache.RedisCache
         {
             return $"PRODUCTION_ORDER_LOCK_{productOrderId}";
         }
+        public static string GetLockCuttingWorkSheet(long propertyCalcId)
+        {
+            return $"CUTTING_WORK_SHEET_LOCK_{propertyCalcId}";
+        }
 
         public static string GetLockInputTypeKey(int inputTypeId)
         {
@@ -104,6 +114,11 @@ namespace Verp.Cache.RedisCache
         public static string GetLockVoucherTypeKey(int voucherTypeId)
         {
             return $"VOUCHERTYPE_LOCK_{voucherTypeId}";
+        }
+
+        public static string GetLockHrTypeKey(int hrTypeId)
+        {
+            return $"HRTYPE_LOCK_{hrTypeId}";
         }
 
         public static string GetLockStockResourceKey(int stockId)

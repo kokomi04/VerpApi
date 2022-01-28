@@ -20,7 +20,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<BusinessInfoModel> BusinessInfo();
         Task<IList<DepartmentSimpleModel>> GetDepartmentSimples(int[] departmentId);
         Task<IList<DepartmentSimpleModel>> GetAllDepartmentSimples();
-
+        Task<IList<DepartmentCalendarSimpleModel>> GetListDepartmentCalendar(long startDate, long endDate, int[] departmentIds);
+        Task<IList<HrTypeSimpleModel>> GetHrTypeSimpleList();
     }
 
 
@@ -44,6 +45,10 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<BasicCustomerListModel>> AllCustomers()
         {
             return (await _httpCrossService.Post<PageData<BasicCustomerListModel>>($"api/internal/InternalCustomer", new { }))?.List;
+        }
+        public async Task<IList<DepartmentCalendarSimpleModel>> GetListDepartmentCalendar(long startDate, long endDate, int[] departmentIds)
+        {
+            return await _httpCrossService.Post<IList<DepartmentCalendarSimpleModel>>($"api/internal/InternalDepartmentCalendar/multiple?startDate={startDate}&endDate={endDate}", departmentIds);
         }
 
         public async Task<BaseCustomerModel> CustomerInfo(int customerId)
@@ -101,6 +106,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<DepartmentSimpleModel>> GetAllDepartmentSimples()
         {
             return (await _httpCrossService.Post<PageData<DepartmentSimpleModel>>($"api/internal/InternalDepartment", new { })).List;
+        }
+
+        public async Task<IList<HrTypeSimpleModel>> GetHrTypeSimpleList()
+        {
+            return await _httpCrossService.Get<List<HrTypeSimpleModel>>($"api/internal/InternalHrType/simpleList");
         }
     }
 }

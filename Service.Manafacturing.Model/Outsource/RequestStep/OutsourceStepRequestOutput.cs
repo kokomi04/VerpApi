@@ -19,8 +19,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public int OutsourceStepRequestStatusId { get; set; }
         public OutsourceStepSetting Setting { get; set; }
 
-        public ICollection<OutsourceStepRequestDetailOutput> DetailInputs { get; set; }
+        public ICollection<OutsourceStepRequestDetailOutput> DetailOutputs { get; set; }
         public ICollection<long> ProductionStepIds { get; set; }
+        public List<OutsourceStepRequestDetailOutput> DetailInputs { get; set; }
     }
 
     public class OutsourceStepRequestDetailOutput
@@ -30,5 +31,16 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public decimal TotalOutsourceOrderQuantity { get; set; }
         public int RoleType { get; set; }
         public string ProductionStepTitle { get; set; }
+
+        public string PurchaseOrderCode { get; set; }
+        public string PurchaseOrderId { get; set; }
     }
+
+    public class OutsourceStepRequestMaterialsConsumption {
+        public long OutsourceStepRequestId {get;set;}
+        public long ProductId {get;set;}
+        public decimal Quantity {get;set;}
+    }
+
+   
 }

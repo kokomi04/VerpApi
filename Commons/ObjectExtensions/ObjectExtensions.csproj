@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>VErp.Commons.ObjectExtensions</RootNamespace>
+    <AssemblyName>VErp.Commons.ObjectExtensions</AssemblyName>
+  </PropertyGroup>
+
+</Project>

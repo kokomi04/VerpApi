@@ -31,22 +31,27 @@ using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Master.Service.Category;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library.Model;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using static Verp.Resources.Master.Category.CategoryDataValidationMessage;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Category;
 
 namespace VErp.Services.Accountancy.Service.Category
 {
     public class CategoryDataService : ICategoryDataService
     {
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
-        private readonly MasterDBContext _accountancyContext;
+        private readonly MasterDBContext _masterContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IDataProtectionProvider _protectionProvider;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly ObjectActivityLogFacade _categoryDataActivityLog;
 
-        public CategoryDataService(MasterDBContext accountancyContext
+        public CategoryDataService(MasterDBContext masterContext
             , IOptions<AppSetting> appSetting
             , ILogger<CategoryDataService> logger
             , IActivityLogService activityLogService
@@ -58,20 +63,51 @@ namespace VErp.Services.Accountancy.Service.Category
             )
         {
             _logger = logger;
-            _activityLogService = activityLogService;
-            _accountancyContext = accountancyContext;
+            _masterContext = masterContext;
             _appSetting = appSetting.Value;
             _mapper = mapper;
             _currentContextService = currentContextService;
             _protectionProvider = protectionProvider;
             _customGenCodeHelperService = customGenCodeHelperService;
             _httpCategoryHelperService = httpCategoryHelperService;
+
+            _categoryDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.CategoryData);
         }
 
+
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, Dictionary<string, string> data, Dictionary<string, EnumDataType> fields, EnumActionType action)
+        {
+            List<NonCamelCaseDictionary> resultData = null;
+            var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
+            var messageParam = new SqlParameter("@Message", DBNull.Value) { DbType = DbType.String, Direction = ParameterDirection.Output, Size = 128 };
+            if (!string.IsNullOrEmpty(script))
+            {
+                var parammeters = new List<SqlParameter>() {
+                    new SqlParameter("@Action", (int)action),
+                    resultParam,
+                    messageParam
+                };
+                foreach (var field in fields)
+                {
+                    data.TryGetValue(field.Key, out var celValue);
+                    parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
+                }
+                resultData = (await _masterContext.QueryDataTable(script, parammeters)).ConvertData();
+            }
+            return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
+        }
         public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            using var trans = await _masterContext.Database.BeginTransactionAsync();
+            var r = await AddCategoryRowToDb(categoryId, data);
+            await trans.CommitAsync();
+            return r;
+        }
+
+        public async Task<int> AddCategoryRowToDb(int categoryId, Dictionary<string, string> data)
+        {           
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -91,11 +127,14 @@ namespace VErp.Services.Accountancy.Service.Category
             await CheckParentRowAsync(data, category);
 
             // Lấy thông tin field
-            var categoryFields = _accountancyContext.CategoryField
+            var categoryFields = _masterContext.CategoryField
                 .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
                 .ToList();
 
-            await FillGenerateColumn(null, category.CategoryCode, categoryFields, data);
+            var genCodeContexts = new List<GenerateCodeContext>();
+            var baseValueChains = new Dictionary<string, int>();
+
+            await FillGenerateColumn(genCodeContexts, baseValueChains, categoryId, category.CategoryCode, categoryFields, data);
 
             var requiredFields = categoryFields.Where(f => !f.AutoIncrement && f.IsRequired);
             var uniqueFields = categoryFields.Where(f => !f.AutoIncrement && f.IsUnique);
@@ -110,12 +149,28 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check value
             CheckValue(data, categoryFields);
 
+            // Before saving action (SQL)
+
+
+            var fieldParam = _masterContext.CategoryField
+                .Where(f => category.CategoryId == f.CategoryId)
+                .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
+            var result = await ProcessActionAsync(category.BeforeSaveAction, data, fieldParam, EnumActionType.Add);
+
+            if (result.Code != 0)
+            {
+                if (string.IsNullOrWhiteSpace(result.Message))
+                    throw ProcessActionResultErrorCode.BadRequestFormat(result.Code);
+
+                throw result.Message.BadRequest();
+            }
+
             // Insert data
             var dataTable = new DataTable(category.CategoryCode);
 
             if (category.IsTreeView)
             {
-                dataTable.Columns.Add("ParentId", typeof(int));
+                dataTable.Columns.Add(CategoryFieldConstants.ParentId, typeof(int));
             }
             dataTable.Columns.Add("CreatedByUserId", typeof(int));
             dataTable.Columns.Add("CreatedDatetimeUtc", typeof(DateTime));
@@ -126,7 +181,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in categoryFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
 
                 dataTable.Columns.Add(field.CategoryFieldName, ((EnumDataType)field.DataTypeId).GetColumnDataType());
             }
@@ -134,14 +189,14 @@ namespace VErp.Services.Accountancy.Service.Category
             var dataRow = dataTable.NewRow();
             if (category.IsTreeView)
             {
-                data.TryGetValue("ParentId", out string value);
+                data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    dataRow["ParentId"] = int.Parse(value);
+                    dataRow[CategoryFieldConstants.ParentId] = int.Parse(value);
                 }
                 else
                 {
-                    dataRow["ParentId"] = DBNull.Value;
+                    dataRow[CategoryFieldConstants.ParentId] = DBNull.Value;
                 }
             }
             dataRow["CreatedByUserId"] = _currentContextService.UserId;
@@ -153,7 +208,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in categoryFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
                 data.TryGetValue(field.CategoryFieldName, out string value);
                 dataRow[field.CategoryFieldName] = ((EnumDataType)field.DataTypeId).GetSqlValue(value);
 
@@ -164,17 +219,33 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             dataTable.Rows.Add(dataRow);
 
-            var id = await _accountancyContext.InsertDataTable(dataTable);
+            var id = await _masterContext.InsertDataTable(dataTable);
+
+            // After saving action (SQL)
+            await ProcessActionAsync(category.AfterSaveAction, data, fieldParam, EnumActionType.Add);
 
             await _customGenCodeHelperService.ConfirmCode(CustomGenCodeBaseValue);
 
-            await _activityLogService.CreateLog(EnumObjectType.Category, id, $"Thêm mới dữ liệu danh mục {id}", data.JsonSerialize());
+          
+            foreach (var item in genCodeContexts)
+            {
+                await item.ConfirmCode();
+            }
+
+
+            await _categoryDataActivityLog.LogBuilder(() => CategoryDataActivityLogMessage.Create)
+              .MessageResourceFormatDatas(id)
+              .BillTypeId(category.CategoryId)
+              .ObjectId(id)
+              .JsonData(data.JsonSerialize())
+              .CreateLog();
+
             return (int)id;
         }
 
         public async Task<int> UpdateCategoryRow(int categoryId, int fId, Dictionary<string, string> data)
         {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -189,7 +260,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
 
-            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != "F_Id").ToList();
+            var categoryFields = _masterContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != CategoryFieldConstants.F_Id).ToList();
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
 
@@ -197,11 +268,14 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check parent row
             if (category.IsTreeView)
             {
-                categoryRow.TryGetValue("ParentId", out object oParent);
+                categoryRow.TryGetValue(CategoryFieldConstants.ParentId, out object oParent);
                 string cParent = oParent?.ToString() ?? string.Empty;
-                data.TryGetValue("ParentId", out string uParent);
+                data.TryGetValue(CategoryFieldConstants.ParentId, out string uParent);
                 uParent ??= string.Empty;
-                if (isParentChange = cParent != uParent)
+
+                isParentChange = cParent != uParent;
+
+                if (!string.IsNullOrWhiteSpace(uParent) && isParentChange)
                 {
                     await CheckParentRowAsync(data, category, fId);
                 }
@@ -211,8 +285,10 @@ namespace VErp.Services.Accountancy.Service.Category
             List<CategoryField> updateFields = new List<CategoryField>();
             foreach (CategoryField categoryField in categoryFields)
             {
-                var currentValue = categoryRow[categoryField.CategoryFieldName].ToString();
-                var updateValue = data[categoryField.CategoryFieldName];
+                if (!data.ContainsKey(categoryField.CategoryFieldName)) continue;
+
+                categoryRow.TryGetValue(categoryField.CategoryFieldName, out var currentValue);
+                data.TryGetValue(categoryField.CategoryFieldName, out var updateValue);
                 if (currentValue != updateValue)
                 {
                     updateFields.Add(categoryField);
@@ -236,19 +312,32 @@ namespace VErp.Services.Accountancy.Service.Category
             // Check value
             CheckValue(data, categoryFields);
 
+            var fieldParam = _masterContext.CategoryField
+                .Where(f => category.CategoryId == f.CategoryId)
+                .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
+            var result = await ProcessActionAsync(category.BeforeSaveAction, data, fieldParam, EnumActionType.Update);
+
+            if (result.Code != 0)
+            {
+                if (string.IsNullOrWhiteSpace(result.Message))
+                    throw ProcessActionResultErrorCode.BadRequestFormat(result.Code);
+
+                throw result.Message.BadRequest();
+            }
+
             // Update data
             var dataTable = new DataTable(category.CategoryCode);
 
             if (isParentChange)
             {
-                dataTable.Columns.Add("ParentId", typeof(int));
+                dataTable.Columns.Add(CategoryFieldConstants.ParentId, typeof(int));
             }
             dataTable.Columns.Add("UpdatedByUserId", typeof(int));
             dataTable.Columns.Add("UpdatedDatetimeUtc", typeof(DateTime));
 
             foreach (var field in updateFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
                 dataTable.Columns.Add(field.CategoryFieldName, ((EnumDataType)field.DataTypeId).GetColumnDataType());
             }
 
@@ -256,14 +345,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (isParentChange)
             {
-                data.TryGetValue("ParentId", out string value);
+                data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    dataRow["ParentId"] = int.Parse(value);
+                    dataRow[CategoryFieldConstants.ParentId] = int.Parse(value);
                 }
                 else
                 {
-                    dataRow["ParentId"] = DBNull.Value;
+                    dataRow[CategoryFieldConstants.ParentId] = DBNull.Value;
                 }
             }
 
@@ -272,7 +361,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in updateFields)
             {
-                if (field.CategoryFieldName == "F_Id") continue;
+                if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
                 data.TryGetValue(field.CategoryFieldName, out string value);
                 dataRow[field.CategoryFieldName] = ((EnumDataType)field.DataTypeId).GetSqlValue(value);
 
@@ -283,50 +372,54 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             dataTable.Rows.Add(dataRow);
 
-            int numberChange = await _accountancyContext.UpdateCategoryData(dataTable, fId);
+            int numberChange = await _masterContext.UpdateCategoryData(dataTable, fId);
 
             await _customGenCodeHelperService.ConfirmCode(CustomGenCodeBaseValue);
 
-            await _activityLogService.CreateLog(EnumObjectType.Category, fId, $"Cập nhật dữ liệu danh mục {fId}", data.JsonSerialize());
+            // After saving action (SQL)
+            await ProcessActionAsync(category.AfterSaveAction, data, fieldParam, EnumActionType.Update);
+
+            await _categoryDataActivityLog.LogBuilder(() => CategoryDataActivityLogMessage.Update)
+             .MessageResourceFormatDatas(fId)
+             .BillTypeId(category.CategoryId)
+             .ObjectId(fId)
+             .JsonData(data.JsonSerialize())
+             .CreateLog();
+
             return numberChange;
         }
 
-
         private CustomGenCodeBaseValueModel CustomGenCodeBaseValue = null;
 
-        private async Task FillGenerateColumn(long? fId, string code, ICollection<CategoryField> fields, Dictionary<string, string> data)
+        private async Task FillGenerateColumn(List<GenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, Dictionary<string, string> data)
         {
+            var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
+
+            long? ngayCtValue = null;
+            if (long.TryParse(ngayCt, out var v))
+            {
+                ngayCtValue = v;
+            }
+
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
             {
                 if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullObject()))
                 {
                     try
                     {
-                        var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
 
-                        long? ngayCtValue = null;
-                        if (long.TryParse(ngayCt, out var v))
-                        {
-                            ngayCtValue = v;
-                        }
+                        var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
-                        var currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId, fId, code, ngayCtValue);
+                        var code = await ctx
+                            .SetConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId)
+                            .SetConfigData(categoryId, ngayCtValue, categoryCode)
+                            .TryValidateAndGenerateCode(null, value, null, (code) =>
+                            {
+                                return new NonCamelCaseDictionary();
+                            });
 
-                        if (currentConfig == null)
-                        {
-                            throw new BadRequestException(GeneralCode.ItemNotFound, "Thiết định cấu hình sinh mã null " + field.Title);
-                        }
-
-                        var generatedCode = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, fId, code, ngayCtValue);
-
-                        if (generatedCode == null)
-                        {
-                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
-                        }
-
-                        CustomGenCodeBaseValue = currentConfig.CurrentLastValue;
-
-                        value = generatedCode.CustomCode;
+                        value = code;
+                        ctxs.Add(ctx);
 
                         if (!data.ContainsKey(field.CategoryFieldName))
                         {
@@ -336,10 +429,6 @@ namespace VErp.Services.Accountancy.Service.Category
                         {
                             data[field.CategoryFieldName] = value;
                         }
-                    }
-                    catch (BadRequestException badRequest)
-                    {
-                        throw new BadRequestException(badRequest.Code, "Cấu hình sinh mã " + field.Title + " => " + badRequest.Message);
                     }
                     catch (Exception)
                     {
@@ -351,7 +440,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         public async Task<int> DeleteCategoryRow(int categoryId, int fId)
         {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -371,25 +460,25 @@ namespace VErp.Services.Accountancy.Service.Category
             if (category.IsTreeView)
             {
                 var existSql = $"SELECT [{tableName}].F_Id as Total FROM {tableName} WHERE [{tableName}].ParentId = {fId};";
-                var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                var result = await _masterContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
                 {
-                    throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                    throw new BadRequestException(CategoryErrorCode.HadSomeDataRelatedToThisValue);
                 }
             }
 
             // Get row
-            var categoryFields = _accountancyContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
+            var categoryFields = _masterContext.CategoryField.Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
 
             var fieldNames = categoryFields.Select(f => f.CategoryFieldName).ToList();
 
             // Category refer fields
-            var referToFields = _accountancyContext.CategoryField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
+            var referToFields = _masterContext.CategoryField.Where(f => f.RefTableCode == category.CategoryCode && fieldNames.Contains(f.RefTableField)).ToList();
             var referToCategoryIds = referToFields.Select(f => f.CategoryId).Distinct().ToList();
-            var referToCategories = _accountancyContext.Category.Where(c => referToCategoryIds.Contains(c.CategoryId)).ToList();
+            var referToCategories = _masterContext.Category.Where(c => referToCategoryIds.Contains(c.CategoryId)).ToList();
 
             // Check reference
             foreach (var field in categoryFields)
@@ -406,17 +495,17 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     var referToValue = new SqlParameter("@RefValue", value?.ToString());
                     var existSql = $"SELECT F_Id FROM [dbo].{referToTable} WHERE {referToField.CategoryFieldName} = @RefValue;";
-                    var result = await _accountancyContext.QueryDataTable(existSql, new[] { referToValue });
+                    var result = await _masterContext.QueryDataTable(existSql, new[] { referToValue });
                     isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
-                        throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                        throw new BadRequestException(CategoryErrorCode.HadSomeDataRelatedToThisValue);
                     }
                 }
 
                 // TODO
                 isExisted = await _httpCategoryHelperService.CheckReferFromCategory(category.CategoryCode, fieldNames, categoryRow);
-                if (isExisted) throw new BadRequestException(CategoryErrorCode.RelationshipAlreadyExisted);
+                if (isExisted) throw new BadRequestException(CategoryErrorCode.HadSomeDataRelatedToThisValue);
 
             }
             // Delete data
@@ -431,8 +520,16 @@ namespace VErp.Services.Accountancy.Service.Category
             dataRow["DeletedDatetimeUtc"] = DateTime.UtcNow;
 
             dataTable.Rows.Add(dataRow);
-            int numberChange = await _accountancyContext.UpdateCategoryData(dataTable, fId);
-            await _activityLogService.CreateLog(EnumObjectType.Category, fId, $"Xóa dòng dữ liệu {fId}", categoryRow.JsonSerialize());
+            int numberChange = await _masterContext.UpdateCategoryData(dataTable, fId);
+
+
+            await _categoryDataActivityLog.LogBuilder(() => CategoryDataActivityLogMessage.Delete)
+             .MessageResourceFormatDatas(fId)
+             .BillTypeId(category.CategoryId)
+             .ObjectId(fId)
+             .JsonData(categoryRow.JsonSerialize())
+             .CreateLog();
+
             return numberChange;
         }
 
@@ -488,7 +585,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         existSql += $" AND {whereCondition.ToString()}";
                     }
                     sqlParams.Add(new SqlParameter(paramName, valueItem));
-                    var result = await _accountancyContext.QueryDataTable(existSql, sqlParams.ToArray());
+                    var result = await _masterContext.QueryDataTable(existSql, sqlParams.ToArray());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (!isExisted)
                     {
@@ -513,7 +610,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         existSql += $" AND F_Id != {fId}";
                     }
-                    var result = await _accountancyContext.QueryDataTable(existSql, sqlParams.ToArray());
+                    var result = await _masterContext.QueryDataTable(existSql, sqlParams.ToArray());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
@@ -540,8 +637,8 @@ namespace VErp.Services.Accountancy.Service.Category
                 {
                     string regex = ((EnumDataType)field.DataTypeId).GetRegex();
                     if ((field.DataSize > 0 && valueItem.Length > field.DataSize)
-                        || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(valueItem, regex))
-                        || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem, field.RegularExpression)))
+                        || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(valueItem.NormalizeAsInternalName(), regex))
+                        || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(valueItem.NormalizeAsInternalName(), field.RegularExpression)))
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryValueInValid, new string[] { field.Title });
                     }
@@ -551,7 +648,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private async Task CheckParentRowAsync(Dictionary<string, string> data, CategoryEntity category, int? categoryRowId = null)
         {
-            data.TryGetValue("ParentId", out string value);
+            data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
             int parentId = 0;
             if (!string.IsNullOrEmpty(value))
             {
@@ -565,7 +662,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 var existSql = $"SELECT F_Id FROM v{category.CategoryCode} WHERE F_Id = {parentId}";
 
-                var result = await _accountancyContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                var result = await _masterContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
                 bool isExist = result != null && result.Rows.Count > 0;
                 if (!isExist)
                 {
@@ -576,14 +673,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
         public async Task<NonCamelCaseDictionary> GetCategoryRow(int categoryId, int fId)
         {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
 
-            var fields = (from f in _accountancyContext.CategoryField
-                          join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+            var fields = (from f in _masterContext.CategoryField
+                          join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                           where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
             return await GetCategoryRowInfo(category, fields, fId);
@@ -591,14 +688,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
         public async Task<NonCamelCaseDictionary> GetCategoryRow(string categoryCode, int fId)
         {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
 
-            var fields = (from f in _accountancyContext.CategoryField
-                          join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+            var fields = (from f in _masterContext.CategoryField
+                          join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                           where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
             return await GetCategoryRowInfo(category, fields, fId);
@@ -611,7 +708,7 @@ namespace VErp.Services.Accountancy.Service.Category
             dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
-            var currentData = await _accountancyContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
+            var currentData = await _masterContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
             var categoryRow = currentData.ConvertData().FirstOrDefault();
             if (categoryRow == null)
             {
@@ -630,7 +727,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             StringBuilder sql = new StringBuilder();
             sql.Append($"SELECT [{tableName}].F_Id,");
-            foreach (var field in fields.Where(f => f.CategoryFieldName != "F_Id" && f.CategoryFieldName != "ParentId"))
+            foreach (var field in fields.Where(f => f.CategoryFieldName != CategoryFieldConstants.F_Id && f.CategoryFieldName != CategoryFieldConstants.ParentId))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
                 if (((EnumFormType)field.FormTypeId).IsJoinForm()
@@ -652,9 +749,20 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        {
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
+            if (category == null)
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
+            }
+            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
+        }
+
+
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
+            var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -664,9 +772,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
+            keyword = (keyword ?? "").Trim();
 
-            var fields = (from f in _accountancyContext.CategoryField
-                          join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+            var fields = (from f in _masterContext.CategoryField
+                          join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                           where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
                           select f).ToList();
 
@@ -749,7 +858,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 totalSql.Append($" WHERE {whereCondition}");
             }
 
-            var countTable = await _accountancyContext.QueryDataTable(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var countTable = await _masterContext.QueryDataTable(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var total = 0;
             if (countTable != null && countTable.Rows.Count > 0)
             {
@@ -758,18 +867,18 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (!category.IsTreeView)
             {
-                dataSql.Append(string.IsNullOrEmpty(orderBy) ? string.IsNullOrEmpty(category.DefaultOrder)? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY {category.DefaultOrder}" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
+                dataSql.Append(string.IsNullOrEmpty(orderBy) ? string.IsNullOrEmpty(category.DefaultOrder) ? $" ORDER BY [{viewAlias}].F_Id" : $" ORDER BY {category.DefaultOrder}" : $" ORDER BY [{viewAlias}].{orderBy} {(asc ? "" : "DESC")}");
                 if (size > 0)
                 {
                     dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
                 }
             }
-            var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var data = await _masterContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var lstData = data.ConvertData();
 
             if (category.IsTreeView)
             {
-                var allData = await _accountancyContext.QueryDataTable(allDataSql.ToString(), Array.Empty<SqlParameter>());
+                var allData = await _masterContext.QueryDataTable(allDataSql.ToString(), Array.Empty<SqlParameter>());
                 var lstAll = allData.ConvertData();
 
                 AddParents(ref lstData, lstAll);
@@ -786,37 +895,36 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)
         {
-            List<NonCamelCaseDictionary> result = new List<NonCamelCaseDictionary>();
 
-            var ids = categoryRows.Select(r => (int)r["F_Id"]).ToList();
-            var parentIds = categoryRows.Where(r => r["ParentId"] != DBNull.Value).Select(r => (int)r["ParentId"]).Where(id => !ids.Contains(id)).ToList();
+            var ids = categoryRows.Select(r => (int)r[CategoryFieldConstants.F_Id]).ToList();
+            var parentIds = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
             while (parentIds.Count > 0)
             {
-                var parents = lstAll.Where(r => parentIds.Contains((int)r["F_Id"])).ToList();
+                var parents = lstAll.Where(r => parentIds.Contains((int)r[CategoryFieldConstants.F_Id])).ToList();
                 foreach (var parent in parents)
                 {
                     parent["IsDisable"] = true;
                     categoryRows.Add(parent);
-                    ids.Add((int)parent["F_Id"]);
+                    ids.Add((int)parent[CategoryFieldConstants.F_Id]);
                 }
-                parentIds = parents.Where(r => r["ParentId"] != DBNull.Value).Select(r => (int)r["ParentId"]).Where(id => !ids.Contains(id)).ToList();
+                parentIds = parents.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
             }
         }
 
         private List<NonCamelCaseDictionary> SortCategoryRows(List<NonCamelCaseDictionary> categoryRows)
         {
             int level = 0;
-            categoryRows = categoryRows.OrderBy(r => (int)r["F_Id"]).ToList();
+            categoryRows = categoryRows.OrderBy(r => (int)r[CategoryFieldConstants.F_Id]).ToList();
             List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
 
-            var items = categoryRows.Where(r => r["ParentId"] == DBNull.Value || !categoryRows.Any(p => (int)p["F_Id"] == (int)r["ParentId"])).ToList();
-            categoryRows = categoryRows.Where(r => r["ParentId"] != DBNull.Value && categoryRows.Any(p => (int)p["F_Id"] == (int)r["ParentId"])).ToList();
+            var items = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] == DBNull.Value || !categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
+            categoryRows = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
 
             foreach (var item in items)
             {
                 item["CategoryRowLevel"] = level;
                 nodes.Add(item);
-                nodes.AddRange(GetChilds(ref categoryRows, (int)item["F_Id"], level));
+                nodes.AddRange(GetChilds(ref categoryRows, (int)item[CategoryFieldConstants.F_Id], level));
             }
 
             return nodes;
@@ -826,13 +934,13 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             level++;
             List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
-            var items = categoryRows.Where(r => r["ParentId"] != DBNull.Value && (int)r["ParentId"] == categoryRowId).ToList();
-            categoryRows.RemoveAll(r => r["ParentId"] != DBNull.Value && (int)r["ParentId"] == categoryRowId);
+            var items = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && (int)r[CategoryFieldConstants.ParentId] == categoryRowId).ToList();
+            categoryRows.RemoveAll(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && (int)r[CategoryFieldConstants.ParentId] == categoryRowId);
             foreach (var item in items)
             {
                 item["CategoryRowLevel"] = level;
                 nodes.Add(item);
-                nodes.AddRange(GetChilds(ref categoryRows, (int)item["F_Id"], level));
+                nodes.AddRange(GetChilds(ref categoryRows, (int)item[CategoryFieldConstants.F_Id], level));
             }
             return nodes;
         }
@@ -877,10 +985,10 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var group in groupByCodes)
             {
-                var category = _accountancyContext.Category.First(c => c.CategoryCode == group.Key.CategoryCode);
+                var category = _masterContext.Category.First(c => c.CategoryCode == group.Key.CategoryCode);
 
-                var fields = (from f in _accountancyContext.CategoryField
-                              join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
+                var fields = (from f in _masterContext.CategoryField
+                              join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                               where c.CategoryCode == category.CategoryCode
                               select f).ToList();
 
@@ -930,7 +1038,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         }
                     }
 
-                    var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+                    var data = await _masterContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
                     var lst = data.ConvertData();
 
                     foreach (var item in groupByFilter)
@@ -940,6 +1048,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         {
                             titles.Add(new MapObjectOutputModel
                             {
+                                CategoryTitle = item.CategoryTitle,
                                 CategoryCode = item.CategoryCode,
                                 Filters = item.Filters,
                                 CategoryFieldName = item.CategoryFieldName,
@@ -954,392 +1063,14 @@ namespace VErp.Services.Accountancy.Service.Category
             return titles;
         }
 
-        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, CategoryImportExelMapping mapping, Stream stream)
+        public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExcelMapping mapping, Stream stream)
         {
-            var category = _accountancyContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
-
-            if (category == null)
-            {
-                throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
-            }
-
-            if (category.IsReadonly)
-            {
-                throw new BadRequestException(CategoryErrorCode.CategoryReadOnly);
-            }
-
-            if (category.IsOutSideData)
-            {
-                throw new BadRequestException(CategoryErrorCode.CategoryIsOutSideData);
-            }
-
-            var reader = new ExcelReader(stream);
-
-            // Lấy thông tin field
-            var categoryFields = _accountancyContext.CategoryField
-                .AsNoTracking()
-                .Where(f => categoryId == f.CategoryId)
-                .ToList();
-
-
-            var refCategoryCodes = categoryFields.Select(f => f.RefTableCode).ToList();
-
-            var refCategoryFields = (await (from f in _accountancyContext.CategoryField
-                                            join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                                            where refCategoryCodes.Contains(c.CategoryCode)
-                                            select new
-                                            {
-                                                f.CategoryFieldName,
-                                                c.CategoryCode
-                                            }
-                                    ).ToListAsync())
-                                    .GroupBy(f => f.CategoryCode)
-                                    .ToDictionary(f => f.Key, f => f.ToList());
-
-
-            var inputFieldCount = categoryFields
-                .Where(f => !f.IsHidden && !f.AutoIncrement)
-                .Where(f => f.CategoryFieldName != AccountantConstants.F_IDENTITY).Count();
-
-
-            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-
-            var rowDatas = new List<List<CategoryImportExcelRowData>>();
-
-            var refCategoryDatasToQuery = new List<CategoryQueryRequest>();
-            for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
-            {
-                var row = data.Rows[rowIndx];
-
-                var rowData = new List<CategoryImportExcelRowData>();
-                bool isIgnoreRow = false;
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
-                {
-                    var mappingField = mapping.MappingFields[fieldIndx];
-
-                    string value = null;
-                    if (row.ContainsKey(mappingField.Column))
-                        value = row[mappingField.Column]?.ToString();
-
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
-                    {
-                        isIgnoreRow = true;
-                        continue;
-                    }
-
-                    var field = categoryFields.FirstOrDefault(f => f.CategoryFieldName == mappingField.FieldName);
-
-                    if (field == null && mappingField.FieldName != AccountantConstants.PARENT_ID_FIELD_NAME && !string.IsNullOrWhiteSpace(mappingField.FieldName)) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
-
-                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
-                    {
-                        if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value}, dòng {rowIndx + mapping.FromRow}, trường {field.Title} sang kiểu ngày tháng");
-                        value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
-                    }
-
-
-                    rowData.Add(new CategoryImportExcelRowData()
-                    {
-                        FieldMapping = mappingField,
-                        FieldConfig = field,
-                        CellValue = value
-                    });
-
-
-                    //collect ref data by category and it 's field data for query
-
-                    if (!string.IsNullOrWhiteSpace(field?.RefTableCode) && !string.IsNullOrWhiteSpace(mappingField.RefFieldName))
-                    {
-                        if (!refCategoryFields.ContainsKey(field.RefTableCode))
-                        {
-                            throw new BadRequestException(GeneralCode.ItemNotFound, $"{field.RefTableCode}");
-                        }
-
-                        if (refCategoryFields[field.RefTableCode].FirstOrDefault(f => f.CategoryFieldName == mappingField.RefFieldName) == null)
-                        {
-                            throw new BadRequestException(GeneralCode.ItemNotFound, $"{mappingField.RefFieldName}");
-                        }
-
-                        var refCategoryToQuery = refCategoryDatasToQuery.FirstOrDefault(r => r.CategoryCode == field.RefTableCode);
-                        if (refCategoryToQuery == null)
-                        {
-                            refCategoryToQuery = new CategoryQueryRequest()
-                            {
-                                CategoryCode = field.RefTableCode,
-                                FieldQuery = new Dictionary<string, HashSet<string>>()
-                            };
-
-                            refCategoryDatasToQuery.Add(refCategoryToQuery);
-                        }
-
-                        if (!refCategoryToQuery.FieldQuery.TryGetValue(mappingField.RefFieldName, out var refValue))
-                        {
-                            refValue = new HashSet<string>();
-                            refCategoryToQuery.FieldQuery.Add(mappingField.RefFieldName, refValue);
-                        }
-
-                        if (!refValue.Contains(value))
-                            refValue.Add(value);
-                    }
-                }
-
-                if (!isIgnoreRow)
-                    rowDatas.Add(rowData);
-            }
-
-
-            var refCategoriesData = await GetRefCategoryDataByMultiField(refCategoryDatasToQuery);
-
-            using (var trans = await _accountancyContext.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    var insertedData = new Dictionary<int, Dictionary<string, object>>();
-
-                    var parentMappingData = new Dictionary<int, CategoryParentData>();
-
-                    // Insert data
-                    foreach (var rowData in rowDatas)
-                    {
-                        var rowInput = new Dictionary<string, string>();
-
-                        var parentValue = "";
-                        var parentRefFieldName = "";
-
-                        foreach (var cellData in rowData)
-                        {
-                            if (string.IsNullOrWhiteSpace(cellData.FieldMapping.FieldName) || string.IsNullOrWhiteSpace(cellData.CellValue)) continue;
-
-                            var isParentField = cellData.FieldMapping.FieldName == AccountantConstants.PARENT_ID_FIELD_NAME;
-                            var isRefFieldMapping = !string.IsNullOrWhiteSpace(cellData.FieldMapping.RefFieldName);
-
-                            if (isParentField)
-                            {
-                                if (isRefFieldMapping)
-                                {
-                                    parentValue = cellData.CellValue;
-                                    parentRefFieldName = cellData.FieldMapping.RefFieldName;
-                                }
-                                else
-                                {
-                                    rowInput.Add(cellData.FieldMapping.FieldName, cellData.CellValue);
-                                }
-                            }
-                            else
-                            {
-                                var isRefField = !string.IsNullOrWhiteSpace(cellData.FieldConfig.RefTableCode);
-
-                                if (isRefField)
-                                {
-                                    if (string.IsNullOrWhiteSpace(cellData.FieldMapping.RefFieldName))
-                                    {
-                                        cellData.FieldMapping.RefFieldName = cellData.FieldConfig.RefTableField;
-                                    }
-
-                                    var refCategoryRow = refCategoriesData[cellData.FieldConfig.RefTableCode]
-                                        .FirstOrDefault(c => c[cellData.FieldMapping.RefFieldName].ToString() == cellData.CellValue);
-
-                                    if (refCategoryRow != null)
-                                    {
-                                        var refValue = refCategoryRow[cellData.FieldConfig.RefTableField];
-
-                                        rowInput.Add(cellData.FieldMapping.FieldName, ((EnumDataType)cellData.FieldConfig.DataTypeId).GetSqlValue(refValue).ToString());
-                                    }
-                                    else
-                                    {
-                                        throw new BadRequestException(GeneralCode.InvalidParams, $"Giá trị {cellData.CellValue} không tìm thấy trong danh mục");
-                                    }
-                                }
-                                else
-                                {
-                                    rowInput.Add(cellData.FieldMapping.FieldName, cellData.CellValue);
-                                }
-
-                            }
-                        }
-
-                        var result = await AddCategoryRow(categoryId, rowInput);
-
-                        if (!string.IsNullOrWhiteSpace(parentValue))
-                        {
-                            parentMappingData.Add(result, new CategoryParentData()
-                            {
-                                ParentFieldName = parentRefFieldName,
-                                ParentValue = parentValue
-                            });
-                        }
-                    }
-
-
-                    // Insert relationship
-                    if (category.IsTreeView)
-                    {
-
-                        var parentDataQuery = new CategoryQueryRequest()
-                        {
-                            CategoryCode = category.CategoryCode,
-                            FieldQuery = new Dictionary<string, HashSet<string>>()
-                        };
-
-                        foreach (var parentMapping in parentMappingData)
-                        {
-                            if (!parentDataQuery.FieldQuery.TryGetValue(parentMapping.Value.ParentFieldName, out var refValues))
-                            {
-                                refValues = new HashSet<string>();
-                                parentDataQuery.FieldQuery.Add(parentMapping.Value.ParentFieldName, refValues);
-                            }
-
-                            if (!refValues.Contains(parentMapping.Value.ParentValue))
-                            {
-                                refValues.Add(parentMapping.Value.ParentValue.ToString());
-                            }
-                        }
-
-                        var parentData = await GetRefCategoryDataByMultiField(new[] { parentDataQuery });
-
-                        var sqlUpdateParent = new StringBuilder();
-                        foreach (var row in parentMappingData)
-                        {
-                            var parentRow = parentData.First().Value.FirstOrDefault(f => f[row.Value.ParentFieldName]?.ToString() == row.Value.ParentValue);
-                            if (parentRow == null)
-                            {
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"{category.Title} cha {row.Value.ParentValue} không tìm thấy");
-                            }
-                            if ((int)parentRow[AccountantConstants.F_IDENTITY] != row.Key)
-                            {
-                                sqlUpdateParent.AppendLine($"UPDATE {category.CategoryCode} SET {AccountantConstants.PARENT_ID_FIELD_NAME} = {parentRow[AccountantConstants.F_IDENTITY]} WHERE {AccountantConstants.F_IDENTITY} = {row.Key} ;");
-                            }
-
-                        }
-                        if (sqlUpdateParent.Length > 0)
-                        {
-                            await _accountancyContext.Database.ExecuteSqlRawAsync(sqlUpdateParent.ToString());
-                        }
-                    }
-
-                    trans.Commit();
-                }
-                catch (Exception ex)
-                {
-                    trans.TryRollbackTransaction();
-                    _logger.LogError(ex, "Import");
-                    throw;
-                }
-            }
+            var facade = new CategoryDataImportFacade(categoryId, _masterContext, this, _categoryDataActivityLog, _currentContextService);
+            await facade.ImportData(mapping, stream);
 
             return true;
 
         }
 
-        private async Task<Dictionary<string, List<NonCamelCaseDictionary>>> GetRefCategoryDataByMultiField(IList<CategoryQueryRequest> categoryQueryRequests)
-        {
-            var categoryCodes = categoryQueryRequests.Select(c => c.CategoryCode).ToList();
-            var refCategoryFields = (await (
-                from f in _accountancyContext.CategoryField
-                join c in _accountancyContext.Category on f.CategoryId equals c.CategoryId
-                where categoryCodes.Contains(c.CategoryCode)
-                select new
-                {
-                    c.CategoryId,
-                    c.CategoryCode,
-                    CategoryTitle = c.Title,
-                    c.IsTreeView,
-                    Field = f
-                }).ToListAsync())
-                .GroupBy(c => c.CategoryCode)
-                .ToDictionary(
-                    c => c.Key,
-                    c => c.GroupBy(i => new { i.CategoryId, i.CategoryCode, i.CategoryTitle, i.IsTreeView })
-                    .Select(i => new
-                    {
-                        CategoryInfo = new
-                        {
-                            i.FirstOrDefault().CategoryId,
-                            i.FirstOrDefault().CategoryCode,
-                            i.FirstOrDefault().CategoryTitle,
-                            i.FirstOrDefault().IsTreeView
-                        },
-                        Fields = i.Select(f => f.Field).ToList()
-                    })
-                    .First()
-                );
-
-            var categoriesData = new Dictionary<string, List<NonCamelCaseDictionary>>();
-            foreach (var categoryQuery in categoryQueryRequests)
-            {
-                var categoryCode = categoryQuery.CategoryCode;
-                var view = $"v{categoryCode}";
-
-                refCategoryFields.TryGetValue(categoryCode, out var categoryInfo);
-
-
-                var dataSql = new StringBuilder();
-                var sqlParams = new List<SqlParameter>();
-                dataSql.Append(GetSelect(view, categoryInfo.Fields, categoryInfo.CategoryInfo.IsTreeView));
-
-                dataSql.Append($" FROM {view} WHERE ");
-
-                dataSql.Append($"0 = 1");
-
-                var idx = 0;
-
-                var fieldsFilter = categoryQuery.FieldQuery;
-                foreach (var fieldFilter in fieldsFilter)
-                {
-                    dataSql.Append(" OR ");
-
-                    var field = categoryInfo.Fields.FirstOrDefault(f => f.CategoryFieldName == fieldFilter.Key);
-
-                    var queryValues = fieldFilter.Value.Select(v => ((EnumDataType)field.DataTypeId).GetSqlValue(v)).ToList();
-
-                    if (queryValues.Count > 0)
-                    {
-                        if (queryValues.Count == 1)
-                        {
-                            idx++;
-
-                            var paramName = "@" + fieldFilter.Key + "" + idx;
-
-                            dataSql.Append($"[{fieldFilter.Key}] = {paramName}");
-
-                            sqlParams.Add(new SqlParameter(paramName, fieldFilter.Value.FirstOrDefault()));
-                        }
-                        else
-                        {
-                            var whereIn = new List<string>();
-                            foreach (var v in queryValues)
-                            {
-                                idx++;
-
-                                var paramName = "@" + fieldFilter.Key + "" + idx;
-                                whereIn.Add(paramName);
-                                sqlParams.Add(new SqlParameter(paramName, v));
-                            }
-
-                            dataSql.Append($"[{fieldFilter.Key}] IN ({string.Join(",", whereIn)})");
-                        }
-                    }
-                }
-
-                var data = await _accountancyContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
-
-                categoriesData.Add(categoryQuery.CategoryCode, data.ConvertData());
-            }
-
-            return categoriesData;
-        }
-
-        private class CategoryParentData
-        {
-            public string ParentFieldName { get; set; }
-            public string ParentValue { get; set; }
-        }
-
-        private class CategoryQueryRequest
-        {
-            public string CategoryCode { get; set; }
-            public Dictionary<string, HashSet<string>> FieldQuery { get; set; }
-        }
     }
 }

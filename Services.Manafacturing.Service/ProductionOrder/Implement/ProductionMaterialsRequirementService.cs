@@ -207,6 +207,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement(long productionOrderId, string keyword, int page, int size, Clause filters)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var requirements = (await _manufacturingDBContext.ProductionMaterialsRequirement.AsNoTracking()
                .Where(x => x.ProductionOrderId == productionOrderId)
                .ProjectTo<ProductionMaterialsRequirementModel>(_mapper.ConfigurationProvider)

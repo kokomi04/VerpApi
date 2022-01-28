@@ -1,12 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using VErp.Commons.GlobalObject;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
@@ -41,6 +45,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("GetAll")]
+        [GlobalApi]
         public async Task<PageData<StockOutput>> GetAll([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockService.GetAll(keyword, page, size, null);
@@ -55,6 +60,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("")]
+        [GlobalApi]
         public async Task<PageData<StockOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockProductService.StockGetListByPermission(keyword, page, size);
@@ -176,8 +182,24 @@ namespace VErpApi.Controllers.Stock.Stocks
         [Route("{stockId}/StockProducts/{productId}")]
         public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails([FromRoute] int stockId, [FromRoute] int productId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _stockProductService.StockProductPackageDetails(stockId, productId, page, size);
+            return await _stockProductService.StockProductPackageDetails(new[] { stockId }, productId, page, size);
         }
+
+        /// <summary>
+        /// Lấy danh sách kiện của mặt hàng trong kho
+        /// </summary>
+        /// <param name="stockIds"></param>
+        /// <param name="productId"></param>
+        /// <param name="page"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("products/{productId}/Packages")]
+        public async Task<PageData<StockProductPackageDetail>> ProductPackages([FromRoute] int productId, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _stockProductService.StockProductPackageDetails(stockIds, productId, page, size);
+        }
+
 
         [HttpPost]
         [Route("RemainStock")]
@@ -210,14 +232,18 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <param name="stockIds"></param>
         /// <param name="productTypeIds"></param>
         /// <param name="productCateIds"></param>
+        /// <param name="rangeQuantityRemaining">Lọc tồn kho trong khoảng a, b. Luôn luôn có 2 giá trị</param>
+        /// <param name="isMinOrMax">Lọc ngưỡng min hoặc max. Giá trị: null - tất cả; true - ngưỡng min; false - ngưỡng max</param>
         /// <param name="page"></param>
         /// <param name="size"></param>
+        /// <param name="filters"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("GetStockProductQuantityWarning")]
-        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> rangeQuantityRemaining, [FromQuery] bool? isMinOrMax, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
-            return await _stockProductService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, page, size);
+            return await _stockProductService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, rangeQuantityRemaining, isMinOrMax, page, size, filters);
         }
 
         /// <summary>
@@ -270,7 +296,7 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("StockSumaryReportProductUnitConversionQuantity")]
-        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate,  [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<StockSumaryReportForm03Output>> StockSumaryReportProductUnitConversionQuantity([FromQuery] IList<int> stockIds, [FromQuery] string keyword, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int page, [FromQuery] int size)
         {
             return await _stockProductService.StockSumaryReportProductUnitConversionQuantity(keyword, stockIds, productTypeIds, productCateIds, fromDate, toDate, page, size);
         }

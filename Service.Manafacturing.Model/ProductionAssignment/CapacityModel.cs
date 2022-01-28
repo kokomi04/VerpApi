@@ -17,13 +17,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public string StepName { get; set; }
         public string ProductionOrderCode { get; set; }
         public decimal Workload { get; set; }
-        public decimal Productivity { get; set; }
         public decimal OutputQuantity { get; set; }
         public decimal AssingmentQuantity { get; set; }
         public decimal LinkDataQuantity { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
-        public decimal CompletedQuantity { get; set; }
+        //public decimal CompletedQuantity { get; set; }
 
         public virtual ICollection<CapacityDetailModel> CapacityDetail { get; set; }
 
@@ -38,12 +37,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long WorkDate { get; set; }
         public decimal? CapacityPerDay { get; set; }
         public string StepName { get; set; }
+        public decimal Productivity { get; set; }
         public string ProductionOrderCode { get; set; }
     }
 
     public class ProductivityModel
     {
-        public decimal Quantity { get; set; }
+        public decimal ProductivityPerPerson { get; set; }
         public int UnitId { get; set; }
     }
 }

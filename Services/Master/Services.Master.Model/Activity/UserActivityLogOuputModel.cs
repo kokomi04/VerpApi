@@ -18,9 +18,15 @@ namespace VErp.Services.Master.Model.Activity
         public EnumMessageType MessageTypeId { set; get; }
 
         public string Message { set; get; }
+        //public string MessageResourceName { set; get; }
+        //public string MessageResourceFormatData { get; set; }
 
         public long CreatedDatetimeUtc { set; get; }
-
+        public string IpAddress { get; set; }
+        public long UserActivityLogId { get; set; }
+        public int ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
+        public int? BillTypeId { get; set; }
     }
 
 

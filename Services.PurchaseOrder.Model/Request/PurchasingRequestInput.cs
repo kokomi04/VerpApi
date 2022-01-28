@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-
 namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchasingRequestInput : IMapFrom<PurchasingRequest>
@@ -30,15 +32,25 @@ namespace VErp.Services.PurchaseOrder.Model
 
     public class PurchasingRequestInputDetail : IMapFrom<PurchasingRequestDetail>
     {
+        public PurchasingRequestInputDetail()
+        {
+
+        }
         public int ProductId { get; set; }
+        [Required(ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityRequired))]
+        [GreaterThan(0, ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityInvalid))]
         public decimal PrimaryQuantity { get; set; }
         public int ProductUnitConversionId { get; set; }
+        [Required(ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityRequired))]
+        [GreaterThan(0, ErrorMessageResourceType = typeof(PurchasingRequestMessage), ErrorMessageResourceName = nameof(PurchasingRequestMessage.QuantityInvalid))]
         public decimal ProductUnitConversionQuantity { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
 
         public int OriginalProductId { get; set; }
+
+        public int? SortOrder { get; set; }        
 
         public IMappingExpression<T, PurchasingRequestDetail> MappingBase<T>(Profile profile) where T : PurchasingRequestInputDetail
             => profile.CreateMap<PurchasingRequestDetail, T>()
@@ -50,5 +62,5 @@ namespace VErp.Services.PurchaseOrder.Model
 
     }
 
-   
+
 }

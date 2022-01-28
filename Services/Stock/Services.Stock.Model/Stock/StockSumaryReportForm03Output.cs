@@ -10,6 +10,7 @@ namespace VErp.Services.Stock.Model.Stock
         public int ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
+        public int UnitId { get; set; }
         public int? ProductUnitConversionId { get; set; }
         public string ProductUnitConversionName { get; set; }
         public decimal? StartPrimaryRemaing { get; set; }
@@ -29,7 +30,7 @@ namespace VErp.Services.Stock.Model.Stock
         public int ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
-        //public int UnitId { get; set; }
+        public int UnitId { get; set; }
 
         //public string UnitName { get; set; }
 
@@ -52,7 +53,7 @@ namespace VErp.Services.Stock.Model.Stock
         public int ProductId { get; set; }
 
 
-        public int UnitId { get; set; }
+        //public int UnitId { get; set; }
         public decimal PrimaryQuantityBefore { get; set; }
         public decimal PrimaryQuantityInput { get; set; }
         public decimal PrimaryQuantityOutput { get; set; }

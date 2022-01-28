@@ -2,6 +2,7 @@
 using Autofac.Extensions.DependencyInjection;
 using Elastic.Apm.NetCoreAll;
 using HealthChecks.UI.Client;
+using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -15,10 +16,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -32,6 +36,9 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
+using VErp.Commons.Library;
+using VErp.Infrastructure.ApiCore.BackgroundTasks;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.ApiCore.Middleware;
@@ -72,11 +79,11 @@ namespace VErp.Infrastructure.ApiCore
             {
                 options.AddPolicy("CorsPolicy",
                     builder => builder
-                    .SetIsOriginAllowed((host) => true)
+                    // .AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
-                    //.AllowCredentials()
-                    .AllowAnyOrigin()
+                    .SetIsOriginAllowed((host) => true)
+                    // .AllowCredentials()
                     .WithExposedHeaders("Content-Disposition")
                     );
             })
@@ -89,6 +96,8 @@ namespace VErp.Infrastructure.ApiCore
                   EncryptionAlgorithm = EncryptionAlgorithm.AES_256_GCM,
                   ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
               });
+
+            services.AddHostedService<SyncApiEndpointService>();
 
             services.AddControllers(options =>
             {
@@ -145,6 +154,10 @@ namespace VErp.Infrastructure.ApiCore
             {
                 options.Interceptors.Add<GrpcServerLoggerInterceptor>();
             });
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            services.AddSignalR();
         }
 
         protected void ConfigReadWriteDBContext(IServiceCollection services)
@@ -184,6 +197,8 @@ namespace VErp.Infrastructure.ApiCore
 
         protected void ConfigureBase(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, bool isIdentiy)
         {
+
+            app.UseMiddleware<CultureInfoMiddleware>();
             app.UseMiddleware<RequestLogMiddleware>();
 
             loggerFactory.AddSerilog();
@@ -204,10 +219,10 @@ namespace VErp.Infrastructure.ApiCore
             ConfigureHelthCheck(app);
 
             //if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseDatabaseErrorPage();
-            }
+            //{
+            //    app.UseDeveloperExceptionPage();
+            //    app.UseDatabaseErrorPage();
+            //}
             //else
             //{
             //    app.UseExceptionHandler("/Home/Error");
@@ -262,7 +277,7 @@ namespace VErp.Infrastructure.ApiCore
                 config.MapControllers();
             });
 
-
+            Utils.LoggerFactory = loggerFactory;
         }
 
         private void ConfigureAuthService(IServiceCollection services)
@@ -287,6 +302,8 @@ namespace VErp.Infrastructure.ApiCore
 
                 options.EnableCaching = false;
                 options.CacheDuration = TimeSpan.FromMinutes(10);
+
+                options.TokenRetriever = CustomTokenRetriever.FromHeaderAndQueryString;
             });
         }
 
@@ -354,6 +371,45 @@ namespace VErp.Infrastructure.ApiCore
             var hcBuilder = services.AddHealthChecks();
             hcBuilder.AddCheck("self", () => HealthCheckResult.Healthy());
             return services;
+        }
+    }
+
+    public class CustomTokenRetriever
+    {
+        internal const string TokenItemsKey = "idsrv4:tokenvalidation:token";
+        // custom token key change it to the one you use for sending the access_token to the server
+        // during websocket handshake
+        internal const string SignalRTokenKey = "signalr_token";
+
+        static Func<HttpRequest, string> AuthHeaderTokenRetriever { get; set; }
+        static Func<HttpRequest, string> QueryStringTokenRetriever { get; set; }
+
+        static CustomTokenRetriever()
+        {
+            AuthHeaderTokenRetriever = TokenRetrieval.FromAuthorizationHeader();
+            QueryStringTokenRetriever = TokenRetrieval.FromQueryString();
+        }
+
+        public static string FromHeaderAndQueryString(HttpRequest request)
+        {
+            var token = AuthHeaderTokenRetriever(request);
+
+            if (string.IsNullOrEmpty(token))
+            {
+                token = QueryStringTokenRetriever(request);
+            }
+
+            if (string.IsNullOrEmpty(token))
+            {
+                token = request.HttpContext.Items[TokenItemsKey] as string;
+            }
+
+            if (string.IsNullOrEmpty(token) && request.Query.TryGetValue(SignalRTokenKey, out StringValues extract))
+            {
+                token = extract.ToString();
+            }
+
+            return token;
         }
     }
 }

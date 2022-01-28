@@ -47,20 +47,30 @@ namespace VErpApi.Controllers.System
         }
 
 
-        /// <summary>
-        /// Lấy danh sách đối tác
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="customerStatusId"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("")]
-        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
+        [HttpPost]
+        [Route("Search")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        public async Task<PageData<CustomerListOutput>> Get([FromQuery] string keyword, [FromQuery] int? customerCateId, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
-            return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size);
+            return await _customerService.GetList(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
         }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("ExportList")]
+        public async Task<IActionResult> ExportList([FromBody] CustomerListExportModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _customerService.ExportList(req.FieldNames, req.Keyword, req.CustomerCateId, req.CustomerIds, req.CustomerStatusId, req.Page, req.Size);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+
 
         /// <summary>
         /// Lấy danh sách khách hàng theo Ids
@@ -96,6 +106,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{customerId}")]
+        [GlobalApi]
         public async Task<CustomerModel> GetCustomerInfo([FromRoute] int customerId)
         {
             return await _customerService.GetCustomerInfo(customerId);
@@ -111,8 +122,7 @@ namespace VErpApi.Controllers.System
         [Route("{customerId}")]
         public async Task<bool> UpdateCustomer([FromRoute] int customerId, [FromBody] CustomerModel customer)
         {
-            var updatedUserId = UserId;
-            return await _customerService.UpdateCustomer(updatedUserId, customerId, customer);
+            return await _customerService.UpdateCustomer(customerId, customer);
         }
 
         /// <summary>

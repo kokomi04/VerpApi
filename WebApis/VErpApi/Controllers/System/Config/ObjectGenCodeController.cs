@@ -33,9 +33,9 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("")]
-        public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes([FromQuery] EnumModuleType? moduleTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _objectGenCodeService.GetObjectGenCodeMappingTypes(keyword, page, size);
+            return await _objectGenCodeService.GetObjectGenCodeMappingTypes(moduleTypeId, keyword, page, size);
         }
 
         [HttpGet("currentConfig")]

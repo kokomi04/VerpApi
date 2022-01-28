@@ -21,7 +21,11 @@ using VErp.Services.Master.Model.Category;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Commons.Library.Model;
+
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using static VErp.Commons.Constants.CurrencyCateConstants;
+using System.Linq;
 
 namespace VErpApi.Controllers.System.Category
 {
@@ -48,6 +52,17 @@ namespace VErpApi.Controllers.System.Category
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
             return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
+        }
+
+
+        [HttpPost]
+        [Route("{categoryCode}/data/Search")]
+        [GlobalApi]
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows([FromRoute] string categoryCode, [FromBody] CategoryFilterModel request)
+        {
+            if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
+
+            return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
 
         [GlobalApi]
@@ -108,13 +123,32 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpPost]
         [Route("{categoryId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] CategoryImportExelMapping mapping, IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int categoryId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
+            mapping.FileName = file.FileName;
             return await _categoryDataService.ImportCategoryRowFromMapping(categoryId, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
+
+        [GlobalApi]
+        [Route("primaryCurrency")]
+        [HttpGet]
+        public async Task<NonCamelCaseDictionary> PrimaryCurrency()
+        {
+            var clause = new SingleClause()
+            {
+                DataType = EnumDataType.Boolean,
+                FieldName = "IsPrimary",
+                Operator = EnumOperator.Equal,
+                Value = true
+            };
+            var data = await _categoryDataService.GetCategoryRows(CurrencyCategoryCode, null, clause, null, null, 1, 1, null, true);
+            return data?.List?.FirstOrDefault();
         }
     }
 }

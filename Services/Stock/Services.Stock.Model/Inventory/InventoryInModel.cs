@@ -10,6 +10,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int StockId { get; set; }
         public string InventoryCode { get; set; }
         public long Date { get; set; }
+        public EnumInventoryAction InventoryActionId { get; set; }
     }
     public class InventoryInModel : InventoryModelBase
     {
@@ -26,7 +27,9 @@ namespace VErp.Services.Stock.Model.Inventory
         public string BillCode { set; get; }
         public string BillSerial { set; get; }
         public long? BillDate { set; get; }
-        public string AccountancyAccountNumber { get; set; }
+        //public string AccountancyAccountNumber { get; set; }
+
+        public int? DepartmentId { get; set; }
         /// <summary>
         /// Id file đính kèm
         /// </summary>
@@ -72,11 +75,10 @@ namespace VErp.Services.Stock.Model.Inventory
         public int SortOrder { get; set; }
         public string Description { get; set; }
 
-        public string AccountancyAccountNumberDu { get; set; }
-        //public long? InventoryRequirementDetailId { get; set; }
+        //public string AccountancyAccountNumberDu { get; set; }
+        public long? InventoryRequirementDetailId { get; set; }
         public string InventoryRequirementCode { get; set; }
 
-        public int? DepartmentId { get; set; }
     }
 
     public class InventoryInProductExtendModel : InventoryInProductModel

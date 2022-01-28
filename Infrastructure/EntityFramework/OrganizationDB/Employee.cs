@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class Employee
@@ -23,7 +25,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public long? AvatarFileId { get; set; }
         public int EmployeeTypeId { get; set; }
         public int UserStatusId { get; set; }
+        public string PartnerId { get; set; }
+        public int? LeaveConfigId { get; set; }
 
+        public virtual LeaveConfig LeaveConfig { get; set; }
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual ICollection<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
     }

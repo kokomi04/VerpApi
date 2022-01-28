@@ -27,6 +27,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string Style { get; set; }
         public string JsVisible { get; set; }
         public int ActionTypeId { get; set; }
+        public EnumActionPosition ActionPositionId { get; set; }
 
 
     }
@@ -36,7 +37,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string SqlAction { get; set; }
     }
 
-    public class BillInfoModel
+    public class BillInfoModel 
     {
         public NonCamelCaseDictionary Info { get; set; }
         public IList<NonCamelCaseDictionary> Rows { get; set; }

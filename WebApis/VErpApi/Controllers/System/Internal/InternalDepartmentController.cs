@@ -10,6 +10,7 @@ using VErp.Services.Organization.Model.Customer;
 using VErp.Services.Organization.Model.Department;
 using VErp.Services.Organization.Service.Customer;
 using VErp.Services.Organization.Service.Department;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.System.Internal
 {

@@ -9,6 +9,8 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Customer;
 using VErp.Services.Organization.Service.Customer;
+using VErp.Commons.GlobalObject;
+
 namespace VErpApi.Controllers.System.Internal
 {
     [Route("api/internal/[controller]")]
@@ -24,9 +26,9 @@ namespace VErpApi.Controllers.System.Internal
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<CustomerListBasicOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CustomerListBasicOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int? customerCateId, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
-            var r = await _customerService.GetList(keyword, customerIds, customerStatusId, page, size, filters);
+            var r = await _customerService.GetList(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
             return (r.List.Select(c => new CustomerListBasicOutput() { CustomerId = c.CustomerId, CustomerCode = c.CustomerCode, CustomerName = c.CustomerName }).ToList(), r.Total);
         }
 

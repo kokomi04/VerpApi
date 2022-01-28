@@ -20,8 +20,13 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductCate = 4,
         [Description("Loại mặt hàng")]
         ProductType = 5,
+
         [Description("Mặt hàng")]
         Product = 6,
+
+        [Description("Tính khối lượng tinh")]
+        ProductPurityCalc = 611,
+
         [Description("Đơn vị tính")]
         Unit = 7,
         [Description("Cấu hình barcode")]
@@ -54,6 +59,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Customer = 17,
 
+        [Description("Danh mục đối tác")]
+        CustomerCate = 170,
+
         [Description("BOM")]
         ProductBom = 18,
 
@@ -81,6 +89,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Đơn đặt hàng")]
         [GenCodeObject]
         PurchaseOrder = 25,
+
+        [Description("Đơn đặt hàng")]
+        [GenCodeObject]
+        PoProviderPricing = 25001,
 
         [Description("Đơn đặt hàng chi tiết")]
         PurchaseOrderDetail = 26,
@@ -118,10 +130,14 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Loại danh mục")]
         Category = 32,
 
+        [Description("Dữ liệu danh mục")]
+        CategoryData = 32001,
+
         [Description("Trường danh mục")]
         CategoryField = 33,
 
-
+        [Description("Bộ lọc danh mục")]
+        CategoryView = 1034,
         //AccountingAccount = 33,
 
 
@@ -162,8 +178,16 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Menu")]
         Menu = 46,
 
+        [Description("Hướng dẫn")]
+        Guide = 46001,
+        [Description("Danh mục hướng dẫn")]
+        GuideCate = 46002,
+
         [Description("Thiết lập sinh mã đối tượng")]
         ObjectCustomGenCodeMapping = 47,
+
+        [Description("Thiết lập ánh xạ các chứng từ")]
+        OutsideImportMappingFunction = 47001,
 
         [Description("Thông số hệ thống")]
         SystemParameter = 48,
@@ -172,14 +196,25 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chứng từ bán hàng")]
         VoucherBill = 49,
 
-        [Description("Cấu hình in")]
-        PrintConfig = 50,
+        [Description("Cấu hình phiếu in mặc định")]
+        PrintConfigStandard = 50001,
+
+        [Description("Cấu hình phiếu in tùy chỉnh")]
+        PrintConfigCustom = 50002,
 
         [Description("CSDL")]
         StorageDabase = 51,
 
         [Description("Thiết lập dữ liệu (Chốt sổ)")]
         DataConfig = 52,
+
+
+        [Description("Cấu hình nhà cung cấp hóa đơn điện tử")]
+        ElectronicInvoiceProvider = 53000,
+        [Description("Cấu hình mapping các trường dữ liệu hóa đơn điện tử")]
+        ElectronicInvoiceMapping = 53001,
+        [Description("Nhà cung cấp dịch vụ HDDT Easy invoice")]
+        EasyInvoiceProvider = 53003,
 
         [Description("Loại chứng từ bán hàng")]
         VoucherType = 53,
@@ -201,6 +236,8 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Trường dữ liệu vùng chứng từ bán hàng")]
         VoucherAreaField = 59,
+
+
 
         [Description("Công đoạn sản xuất")]
         ProductionStep = 60,
@@ -225,6 +262,10 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductionProcess = 74,
         [Description("Bàn giao công đoạn / Yêu cầu xuất kho")]
         ProductionHandover = 75,
+        [Description("Lịch sử sản xuất")]
+        ProductionHistory = 76,
+        [Description("Nhân công sản xuất")]
+        ProductionHumanResource = 79,
 
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,
@@ -253,11 +294,100 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductSemiConversion = 323,
         [Description("Quy trình sản xuất mẫu")]
         ProductionProcessMold = 324,
+        [Description("Nhóm vật tư tiêu hao")]
+        ConsumptionGroup = 325,
 
 
         [Description("Kế hoạch sản xuất")]
         ProductionPlan = 400,
+        [Description("Thuộc tính sản phầm")]
+        Property = 401,
+        [Description("Tính toán nhu cầu VT có thuộc tính đặc biệt của đơn hàng")]
+        PropertyCalc = 402,
 
 
+        [Description("Nội dung thường xuyên sử dụng")]
+        ReuseContent = 501,
+        [Description("Cập nhật tiến độ đơn hàng gia công")]
+        PurchaseOrderTracked = 1035,
+
+        [Description("Công thức tính giá mặt hàng")]
+        ProductPriceConfig = 550,
+
+        [Description("Phiên bản tính giá mặt hàng")]
+        ProductPriceConfigVersion = 551,
+
+        [Description("Tính giá mặt hàng")]
+        ProductPriceInfo = 552,
+
+        [Description("Kỳ kiểm kê")]
+        [GenCodeObject]
+        StockTakePeriod = 553,
+
+        [Description("Phiếu kiểm kê")]
+        [GenCodeObject]
+        StockTake = 554,
+
+        [Description("Phiếu xử lý kiểm kê")]
+        [GenCodeObject]
+        StockTakeAcceptanceCertificate = 555,
+
+        [Description("Lịch làm việc")]
+        Calendar = 600,
+
+        [Description("Lịch nghỉ")]
+        DayOffCalendar = 601,
+
+        [Description("Lịch làm việc")]
+        DepartmentCalendar = 602,
+
+        [Description("Lịch nghỉ của bộ phận")]
+        DepartmentDayOffCalendar = 603,
+
+        [Description("Lịch tăng ca của bộ phận")]
+        DepartmentOverHour = 604,
+
+
+        [Description("Cấu hình nghỉ phép")]
+        LeaveConfig = 60501,
+
+        [Description("Đơn nghỉ phép")]
+        LeaveBill = 60502,
+
+        [Description("Nhóm chứng từ hành chính nhân sự")]
+        HrTypeGroup = 1036,
+
+        [Description("Loại chứng từ hành chính nhân sự")]
+        HrType = 1037,
+
+        [Description("Cấu hình chứng từ hành chính nhân sự")]
+        HrTypeGlobalSetting = 1038,
+        [Description("Trường dữ liệu vùng chứng từ hành chính nhân sự")]
+        HrAreaField = 1039,
+
+        [Description("Dòng chứng từ hành chính nhân sự")]
+        HrTypeRow = 1040,
+
+        [Description("Bộ lọc chứng từ hành chính nhân sự")]
+        HrTypeView = 1041,
+
+        [Description("Chứng từ hành chính nhân sự")]
+        HrBill = 1042,
+
+        [Description("Dữ liệu nháp")]
+        DraftData = 1043,
+
+        [Description("Thông tin thêm kế hoạch")]
+        ProductionPlanExtraInfo = 1044,
+
+        [Description("Phân bổ vật tư sản xuất")]
+        MaterialAllocation = 1045,
+        [Description("Cấu hình mail")]
+        EmailConfiguration = 53004,
+        [Description("Mẫu gửi mail")]
+        MailTemplate = 53005,
+        [Description("Cấu hình upload file")]
+        FileConfiguration = 53006,
+        Notification = 53007
     }
 }

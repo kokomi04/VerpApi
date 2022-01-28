@@ -88,6 +88,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<PageData<ProductionStepCollectionSearch>> SearchProductionStepCollection(string keyword, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+            
             var collections = await _manufacturingDBContext.ProductionStepCollection.AsNoTracking()
                 .OrderByDescending(x => x.Frequence).ThenBy(x => x.ProductionStepCollectionId)
                 .ProjectTo<ProductionStepCollectionSearch>(_mapper.ConfigurationProvider)

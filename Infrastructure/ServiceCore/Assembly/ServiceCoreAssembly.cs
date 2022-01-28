@@ -3,9 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
+using Verp.Cache.Caching;
+using Verp.Cache.MemCache;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.ServiceCore.SignalR;
 
 namespace VErp.Infrastructure.ServiceCore
 {
@@ -14,7 +17,8 @@ namespace VErp.Infrastructure.ServiceCore
         public static Assembly Assembly => typeof(ServiceCoreAssembly).Assembly;
         public static IServiceCollection AddServiceCoreDependency(this IServiceCollection services)
         {
-            services.AddHttpClient<IHttpCrossService, HttpCrossService>();
+            services.AddHttpClient<IHttpClientFactoryService, HttpClientFactoryService>();
+            services.AddTransient<IHttpCrossService, HttpCrossService>();
 
             services.AddSingleton<IAsyncRunnerService, AsyncRunnerService>();
 
@@ -40,6 +44,16 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddScoped<ICurrentContextFactory, CurrentContextFactory>();
             services.AddScoped<IDocOpenXmlService, DocOpenXmlService>();
             services.AddScoped(di => di.GetRequiredService<ICurrentContextFactory>().GetCurrentContext());
+
+            services.AddMemoryCache();
+            services.AddScoped<ICachingService, MemCacheCachingService>();
+            services.AddScoped<IAuthDataCacheService, AuthDataCacheService>();
+
+            services.AddScoped<IMailFactoryService, MailFactoryService>();
+            services.AddScoped<INotificationFactoryService, NotificationFactoryService>();
+
+            services.AddSingleton<IPrincipalBroadcasterService, PrincipalBroadcasterService>();
+
             return services;
         }
     }

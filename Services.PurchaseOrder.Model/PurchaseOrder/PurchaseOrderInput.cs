@@ -2,21 +2,25 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchaseOrderInput
     {
-        public int CustomerId { get; set; }        
+        public int CustomerId { get; set; }
         public IList<long> FileIds { get; set; }
 
         [Required(ErrorMessage = "")]
         [MinLength(1, ErrorMessage = "Vui lòng chọn mặt hàng")]
         public IList<PurchaseOrderInputDetail> Details { get; set; }
 
+        public IList<PurchaseOrderExcessModel> Excess { get; set; }
+        public IList<PurchaseOrderMaterialsModel> Materials { get; set; }
+
         public long Date { get; set; }
 
-      
+
         public string PurchaseOrderCode { get; set; }
 
         [MaxLength(512)]
@@ -32,6 +36,16 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal DeliveryFee { get; set; }
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
+        public string PoDescription { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
+
+        public long? PropertyCalcId { get; set; }
+
+        public long? CurrencyId { get; set; }
+        public decimal? ExchangeRate { get; set; }
+
+        public EnumPurchasingOrderType PurchaseOrderType {get;set;}
     }
 
     public interface IPurchaseOrderInputDetail
@@ -49,13 +63,24 @@ namespace VErp.Services.PurchaseOrder.Model
         decimal ProductUnitConversionQuantity { get; set; }
         decimal ProductUnitConversionPrice { get; set; }
 
-        decimal? TaxInPercent { get; set; }
-        decimal? TaxInMoney { get; set; }
+        // decimal? TaxInPercent { get; set; }
+        // decimal? TaxInMoney { get; set; }
 
+        string PoProviderPricingCode { get; set; }
         string OrderCode { get; set; }
         string ProductionOrderCode { get; set; }
 
         string Description { get; set; }
+
+        decimal? IntoMoney { get; set; }
+        // decimal? IntoAfterTaxMoney { get; set; }
+
+        // string CurrencyCode { get; set; }
+        // decimal? ExchangeRate { get; set; }
+        decimal? ExchangedMoney { get; set; }
+        int? SortOrder { get; set; }
+
+        bool IsSubCalculation { get; set; }
     }
 
     public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
@@ -72,19 +97,30 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionPrice { get; set; }
 
-        public decimal? TaxInPercent { get; set; }
-        public decimal? TaxInMoney { get; set; }
+        // public decimal? TaxInPercent { get; set; }
+        // public decimal? TaxInMoney { get; set; }
+
+        public string PoProviderPricingCode { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
 
         public string Description { get; set; }
 
+        public long? OutsourceRequestId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
 
-    }
+        public decimal? IntoMoney { get; set; }
+        // public decimal? IntoAfterTaxMoney { get; set; }
 
-    public class PurchaseOrderExcelParseDetail : PurchaseOrderInputDetail
-    {
-        public decimal Money { get; set; }
+        // public string CurrencyCode { get; set; }
+        // public decimal? ExchangeRate { get; set; }
+        public decimal? ExchangedMoney { get; set; }
+        public int? SortOrder { get; set; }
+
+        public bool IsSubCalculation { get; set; }
+
+        public IList<PurchaseOrderDetailSubCalculationModel> SubCalculations { get; set; }
+
     }
 
     public class DeliveryDestinationModel

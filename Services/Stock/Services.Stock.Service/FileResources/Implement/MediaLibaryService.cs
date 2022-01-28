@@ -86,7 +86,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "CreateSubdirectory");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể tạo thư mục");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể tạo thư mục");
             }
         }
 
@@ -99,7 +99,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GetDirectoryStructure");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể lấy danh sách thư mục");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể lấy danh sách thư mục");
             }
         }
 
@@ -107,6 +107,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         {
             try
             {
+                keyWord = (keyWord ?? "").Trim();
+
                 var rootDirectory = GenerateRootPath();
                 var ls = new List<VisualFile>();
 
@@ -154,7 +156,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "GetVisualFiles");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể lấy danh sách file");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể lấy danh sách file");
             }
         }
 
@@ -176,7 +178,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "UploadFile");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể upload file");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể upload file");
             }
         }
 
@@ -217,7 +219,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "DeleteFile");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể xóa file");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể xóa file");
             }
 
         }
@@ -259,7 +261,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "DeletedDirectory");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể xóa thư mục");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể xóa thư mục");
             }
 
         }
@@ -285,7 +287,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "CopyDirectory");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể copy thư mục");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể copy thư mục");
             }
 
         }
@@ -293,7 +295,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         public bool MoveDirectory(string pathSource, string pathDest)
         {
             if (pathDest.Contains(pathSource) || pathSource.Equals(pathDest))
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Khổng thể di chuyển folder vào chính nó");
+                throw new BadRequestException(GeneralCode.InternalError, "Khổng thể di chuyển folder vào chính nó");
             if (string.IsNullOrWhiteSpace(pathSource))
                 throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
 
@@ -313,7 +315,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "MoveDirectory");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể di chuyển thư mục");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể di chuyển thư mục");
             }
         }
 
@@ -336,7 +338,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "RenameDirectory");
-                throw new BadRequestException(MediaLibraryErrorCode.GeneralError, "Lỗi! Không thể đổi tên thư mục");
+                throw new BadRequestException(GeneralCode.InternalError, "Lỗi! Không thể đổi tên thư mục");
             }
 
         }

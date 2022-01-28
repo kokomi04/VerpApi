@@ -30,6 +30,8 @@ namespace VErp.Services.Accountancy.Model.Input
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
         public string AfterUpdateRowsJsAction { get; set; }
+        public bool IsOpenning { get; set; }
+        public bool IsHide { get; set; }
 
         //public MenuStyleModel MenuStyle { get; set; }
     }

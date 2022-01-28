@@ -4,8 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 
@@ -40,7 +42,9 @@ namespace VErp.Infrastructure.ApiCore.Middleware
 
                     await _next(context);
 
-                    if (context.Response.ContentType != null && context.Response.ContentType.Contains("json") && !context.Request.Path.ToString().Contains("connect/introspect") && new[] { "POST", "PUT", "DELETE" }.Contains(context.Request.Method))
+                    if (context.Response.ContentType != null && context.Response.ContentType.Contains("json") && !context.Request.Path.ToString().Contains("connect/introspect")
+                        && (new[] { "POST", "PUT", "DELETE" }.Contains(context.Request.Method) || context.Response.StatusCode != (int)HttpStatusCode.OK)
+                        )
                     {
                         memStream.Position = 0;
                         var responseBody = new StreamReader(memStream).ReadToEnd();
@@ -51,6 +55,7 @@ namespace VErp.Infrastructure.ApiCore.Middleware
                         var log = new
                         {
                             Response = responseBody,
+                            XHeaders = context.Request.Headers?.Where(h => h.Key?.ToLower()?.StartsWith('x') == true),
                             ResponseCode = context.Response.StatusCode.ToString(),
                             IsSuccessStatusCode = (context.Response.StatusCode == 200 || context.Response.StatusCode == 201),
                             Status = context.Response.StatusCode

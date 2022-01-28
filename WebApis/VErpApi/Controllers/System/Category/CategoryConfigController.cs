@@ -60,6 +60,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpPost]
         [Route("categoryFieldsByCodes")]
+        [GlobalApi]
         public async Task<List<CategoryFieldReferModel>> GetCategoryFieldsByCodes([FromBody] string[] categoryCodes)
         {
             return await _categoryConfigService.GetCategoryFieldsByCodes(categoryCodes);
@@ -118,6 +119,7 @@ namespace VErpApi.Controllers.System.Category
 
         [HttpGet]
         [Route("categoryfieldsByCode")]
+        [GlobalApi]
         public async Task<PageData<CategoryFieldModel>> GetCategoryFieldsByCode([FromQuery] string categoryCode, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _categoryConfigService.GetCategoryFieldsByCode(categoryCode, keyword, page, size);
@@ -186,6 +188,34 @@ namespace VErpApi.Controllers.System.Category
         public PageData<ModuleTypeModel> GetModuleTypes([FromQuery] int page, [FromQuery] int size)
         {
             return _categoryConfigService.GetModuleTypes(page, size);
+        }
+
+        [HttpGet]
+        [Route("{categoryId}/ViewInfo")]
+        [GlobalApi]
+        public async Task<CategoryViewModel> CategoryViewInfo([FromRoute] int categoryId)
+        {
+            return await _categoryConfigService
+                .CategoryViewGetInfo(categoryId)
+                .ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("config/{categoryId}/ViewInfo")]
+        public async Task<CategoryViewModel> CategoryViewInfoConfig([FromRoute] int categoryId)
+        {
+            return await _categoryConfigService
+                .CategoryViewGetInfo(categoryId, true)
+                .ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{categoryId}/ViewInfo")]
+        public async Task<bool> ViewInfoUpdate([FromRoute] int categoryId, [FromBody] CategoryViewModel model)
+        {
+            return await _categoryConfigService
+                .CategoryViewUpdate(categoryId, model)
+                .ConfigureAwait(true);
         }
     }
 }

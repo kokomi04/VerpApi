@@ -15,29 +15,24 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Stock.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {
     public class ProductCateService : IProductCateService
     {
         private readonly StockDBContext _stockContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _productCateActivityLog;
+
         public ProductCateService(
             StockDBContext stockContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<ProductCateService> logger
             , IActivityLogService activityLogService
-            , ICurrentContextService currentContextService
             )
         {
             _stockContext = stockContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _currentContextService = currentContextService;
+           
+            _productCateActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductCate);
         }
 
         public async Task<int> AddProductCate(ProductCateInput req)
@@ -64,7 +59,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             }
 
             if (req.IsDefault && _stockContext.ProductCate.Any(pc => pc.IsDefault))
-                throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép chọn tối đa môt loại danh mục mặt hàng là mặc định");
+                throw new BadRequestException(GeneralCode.InvalidParams, ProductCateValidationMessage.OnlyOneProductCateDefaultWasSetSametime);
 
             var productCate = new ProductCate()
             {
@@ -83,7 +78,14 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await UpdateSortOrder(productCate);
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Thêm mới danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
+            
+
+            await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Create)
+              .MessageResourceFormatDatas(productCate.ProductCateName)
+              .ObjectId(productCate.ProductCateId)
+              .JsonData(req.JsonSerialize())
+              .CreateLog();
+
 
             return productCate.ProductCateId;
         }
@@ -116,8 +118,12 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             await _stockContext.SaveChangesAsync();
 
             await UpdateSortOrder(productCate);
-
-            await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Xóa danh mục sản phẩm {productCate.ProductCateName}", productCate.JsonSerialize());
+           
+            await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Delete)
+             .MessageResourceFormatDatas(productCate.ProductCateName)
+             .ObjectId(productCate.ProductCateId)
+             .JsonData(productCate.JsonSerialize())
+             .CreateLog();
 
             return true;
         }
@@ -143,17 +149,23 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             return productCate;
         }
 
-        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, Clause filters = null)
+        public async Task<PageData<ProductCateOutput>> GetList(string keyword, int page, int size, string orderBy, bool asc, Clause filters = null)
         {
-            var query = (from c in _stockContext.ProductCate select c);
+            var query = _stockContext.ProductCate.Include(c => c.ParentProductCate).AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                query = from c in query
-                        where c.ProductCateName.Contains(keyword)
-                        select c;
+                query = query.Where(c => c.ProductCateName.Contains(keyword));
             }
             query = query.InternalFilter(filters);
             var total = await query.CountAsync();
+            if (string.IsNullOrEmpty(orderBy))
+            {
+                query = query.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder);
+            }
+            else
+            {
+                query = query.InternalOrderBy(orderBy, asc);
+            }
 
             var lst = query.Select(c => new ProductCateOutput()
             {
@@ -164,12 +176,11 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
                 IsDefault = c.IsDefault
             });
 
-            lst = lst.OrderByDescending(c => c.IsDefault).ThenBy(c => c.SortOrder);
 
             if (size > 0)
             {
                 lst = lst.Skip((page - 1) * size).Take(size);
-            }           
+            }
 
             return (await lst.ToListAsync(), total);
         }
@@ -201,7 +212,11 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await UpdateSortOrder(productCate);
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductCate, productCate.ProductCateId, $"Cập nhật danh mục sản phẩm {productCate.ProductCateName}", req.JsonSerialize());
+            await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Update)
+           .MessageResourceFormatDatas(productCate.ProductCateName)
+           .ObjectId(productCate.ProductCateId)
+           .JsonData(req.JsonSerialize())
+           .CreateLog();
 
             return true;
         }

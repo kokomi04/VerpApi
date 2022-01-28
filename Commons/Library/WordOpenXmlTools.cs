@@ -106,7 +106,9 @@ namespace VErp.Commons.Library
             if (string.IsNullOrWhiteSpace(executablePath))
             {
                 string path = Path.Combine(puppeteerSetting?.Path, product == Product.Chrome? "chrome" : "firefox");
+#pragma warning disable CS0618 // Type or member is obsolete
                 int version = !string.IsNullOrWhiteSpace(puppeteerSetting?.Version) ? int.Parse(puppeteerSetting?.Version, CultureInfo.CurrentCulture.NumberFormat) : BrowserFetcher.DefaultRevision;
+#pragma warning restore CS0618 // Type or member is obsolete
                 string host = puppeteerSetting?.Host;
 
                 var dirPath = new DirectoryInfo(path);
@@ -121,8 +123,12 @@ namespace VErp.Commons.Library
                 };
 
                 var browserFetcher = new BrowserFetcher(option);
+#pragma warning disable CS0618 // Type or member is obsolete
                 await browserFetcher.DownloadAsync(version);
+#pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
                 executablePath = browserFetcher.GetExecutablePath(version);
+#pragma warning restore CS0618 // Type or member is obsolete
             }
 
 

@@ -16,6 +16,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<IList<StepSimpleInfo>> GetStepByArrayId(int[] arrayId);
         Task<IList<StepSimpleInfo>> GetSteps();
         Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId);
+        Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId);
+        Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId);
     }
     public class ManufacturingHelperService: IManufacturingHelperService
     {
@@ -45,6 +47,16 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<StepSimpleInfo>> GetSteps()
         {
             return await _httpCrossService.Get<IList<StepSimpleInfo>>($"api/internal/InternalManufacturing/steps");
+        }
+
+        public async Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId)
+        {
+            return await _httpCrossService.Put<bool>($"api/internal/InternalManufacturing/outsourceRequest/Part/Status", outsourcePartRequestId);
+        }
+      
+        public async Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId)
+        {
+            return await _httpCrossService.Put<bool>($"api/internal/InternalManufacturing/outsourceRequest/Step/Status", outsourceStepRequestId);
         }
     }
 }

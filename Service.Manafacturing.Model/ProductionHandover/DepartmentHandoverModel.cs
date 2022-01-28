@@ -15,20 +15,17 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
     {
         public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
-        public string OrderCode { get; set; }
         public long ProductionStepId { get; set; }
+        public string ProductionStepName { get; set; }
         public long GroupId { get; set; }
-        public string GroupTitle { get; set; }
-        public string StepName { get; set; }
-        public string ProductTitle { get; set; }
-
+        public int StepId { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
-        public string Material { get; set; }
         public string InOutType { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
-        public string ProductQuantity { get; set; }
         public EnumAssignedProgressStatus AssignedProgressStatus { get; set; }
         public void Mapping(Profile profile)
         {
@@ -43,34 +40,32 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
     {
         public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
-        public string OrderCode { get; set; }
         public long ProductionStepId { get; set; }
-        public string GroupTitle { get; set; }
-        public string StepName { get; set; }
-        public string ProductTitle { get; set; }
-
+        public string ProductionStepName { get; set; }
+        public long GroupId { get; set; }
+        public int StepId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string Material { get; set; }
         public string InOutType { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
-
         public int AssignedProgressStatus { get; set; }
-        public string ProductQuantity { get; set; }
     }
-
 
     public class DepartmentHandoverDetailModel
     {
+        public long ProductionStepId { get; set; }
+        public int DepartmentId { get; set; }
         public IList<StepInOutData> InputDatas { get; set; }
         public IList<StepInOutData> OutputDatas { get; set; }
-        public IList<ProductionAssignmentModel> Assignments { get; set; }
+        public IList<ProductionAssignmentModel> AdjacentAssignments { get; set; }
         public DepartmentHandoverDetailModel()
         {
             InputDatas = new List<StepInOutData>();
             OutputDatas = new List<StepInOutData>();
-            Assignments = new List<ProductionAssignmentModel>();
+            AdjacentAssignments = new List<ProductionAssignmentModel>();
         }
     }
 

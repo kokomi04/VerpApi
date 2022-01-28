@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class ProductMaterialsConsumption
@@ -12,6 +14,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal Quantity { get; set; }
         public int? StepId { get; set; }
         public int? DepartmentId { get; set; }
+        public string Description { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
         public bool IsDeleted { get; set; }

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Print;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -18,9 +19,11 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.PrintConfig;
+using static Verp.Resources.Master.Print.PrintConfigCustomValidationMessage;
 
 namespace VErp.Services.Master.Service.PrintConfig.Implement
 {
@@ -30,7 +33,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         private readonly AppSetting _appSetting;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _printConfigCustomActivityLog;
         private readonly IMapper _mapper;
         private readonly IDocOpenXmlService _docOpenXmlService;
 
@@ -45,12 +48,12 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         {
             _docOpenXmlService = docOpenXmlService;
             _masterDBContext = accountancyDBContext;
-            _activityLogService = activityLogService;
             _appSetting = appSetting.Value;
             _logger = logger;
             _mapper = mapper;
 
             _uploadTemplate = new UploadTemplatePrintConfigFacade().SetAppSetting(_appSetting);
+            _printConfigCustomActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PrintConfigCustom);
         }
 
         public async Task<int> AddPrintConfigCustom(PrintConfigCustomModel model, IFormFile file)
@@ -60,7 +63,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             {
                 if (file != null)
                 {
-                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, file);
+                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfigCustom, EnumFileType.Document, file);
                     model.TemplateFileName = fileInfo.FileName;
                     model.TemplateFilePath = fileInfo.FilePath;
                     model.ContentType = fileInfo.ContentType;
@@ -70,9 +73,13 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 await _masterDBContext.PrintConfigCustom.AddAsync(config);
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigCustomId, $"Thêm cấu hình phiếu in chứng từ {config.PrintConfigName} ", model.JsonSerialize());
-
                 await trans.CommitAsync();
+
+                await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Create)
+                 .MessageResourceFormatDatas(config.PrintConfigName)
+                 .ObjectId(config.PrintConfigCustomId)
+                 .JsonData(model.JsonSerialize())
+                 .CreateLog();
 
                 return config.PrintConfigCustomId;
             }
@@ -100,9 +107,14 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, config.PrintConfigCustomId, $"Xóa cấu hình phiếu in chứng từ {config.PrintConfigName}", config.JsonSerialize());
-
+              
                 await trans.CommitAsync();
+
+                await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Delete)
+                .MessageResourceFormatDatas(config.PrintConfigName)
+                .ObjectId(config.PrintConfigCustomId)
+                .JsonData(config.JsonSerialize())
+                .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -126,6 +138,8 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         public async Task<PageData<PrintConfigCustomModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc)
         {
+            keyword = (keyword ?? "").Trim();
+
             var query = _masterDBContext.PrintConfigCustom.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -154,7 +168,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 if (file != null)
                 {
-                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfig, EnumFileType.Document, file);
+                    var fileInfo = await _uploadTemplate.Upload(EnumObjectType.PrintConfigCustom, EnumFileType.Document, file);
                     model.TemplateFilePath = fileInfo.FilePath;
                     model.TemplateFileName = fileInfo.FileName;
                     model.ContentType = fileInfo.ContentType;
@@ -164,8 +178,13 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await _masterDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, printConfigId, $"Cập nhật cấu hình phiếu in chứng từ {model.PrintConfigName}", model.JsonSerialize());
                 
+                await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Update)
+                .MessageResourceFormatDatas(config.PrintConfigName)
+                .ObjectId(config.PrintConfigCustomId)
+                .JsonData(model.JsonSerialize())
+                .CreateLog();
+
                 await trans.CommitAsync();
                 return true;
             }
@@ -183,11 +202,11 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 .Where(p => p.PrintConfigCustomId == printConfigId)
                 .FirstOrDefaultAsync();
 
-            if (printConfig == null) 
+            if (printConfig == null)
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
             if (string.IsNullOrWhiteSpace(printConfig.TemplateFilePath))
-                throw new BadRequestException(InputErrorCode.PrintConfigNotFound, "Chưa có file template cấu hình phiếu in");
+                throw TemplateFilePathIsEmpty.BadRequest(InputErrorCode.PrintConfigNotFound);
 
             if (!_uploadTemplate.ExistsFile(printConfig.TemplateFilePath))
                 throw new BadRequestException(FileErrorCode.FileNotFound);
@@ -201,10 +220,10 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 .Where(p => p.PrintConfigCustomId == printConfigId)
                 .FirstOrDefaultAsync();
 
-            if (printConfig == null) 
+            if (printConfig == null)
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
-            if (string.IsNullOrWhiteSpace(printConfig.TemplateFilePath)) 
+            if (string.IsNullOrWhiteSpace(printConfig.TemplateFilePath))
                 throw new BadRequestException(FileErrorCode.FileNotFound);
 
             try
@@ -216,7 +235,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                     FilePath = printConfig.TemplateFilePath
                 };
 
-                if(!isDoc)
+                if (!isDoc)
                 {
                     var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
 
@@ -225,11 +244,11 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 var filePath = await _docOpenXmlService.GenerateWordFromTemplate(fileInfo, templateModel.JsonSerialize(), _masterDBContext);
                 return (File.OpenRead(filePath), "", fileInfo.FileName);
-                
+
             }
             catch (Exception ex)
             {
-                throw new BadRequestException(InputErrorCode.DoNotGeneratePrintTemplate, ex.Message);
+                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
             }
         }
 
@@ -242,14 +261,14 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             if (printConfig == null)
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
             if (!printConfig.PrintConfigStandardId.HasValue || printConfig.PrintConfigStandardId.Value <= 0)
-                throw new BadRequestException(GeneralCode.InternalError, "Phiếu in không có bản gốc");
+                throw PrintConfigStandardEmpty.BadRequest(GeneralCode.InternalError);
 
             var source = await _masterDBContext.PrintConfigStandard
                 .Where(x => x.PrintConfigStandardId == printConfig.PrintConfigStandardId)
                 .ProjectTo<PrintConfigRollbackModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
-            if(source == null)
-                throw new BadRequestException(GeneralCode.InternalError, "Không tìm thấy bản gốc của phiếu in.");
+            if (source == null)
+                throw PrintConfigStandardNotFound.BadRequest(GeneralCode.InternalError);
 
             var destProperties = printConfig.GetType().GetProperties();
             foreach (var destProperty in destProperties)
@@ -262,8 +281,12 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             }
 
             await _masterDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.InputType, printConfigId, $"Rollback cấu hình phiếu in chứng từ {printConfig.PrintConfigName}", printConfig.JsonSerialize());
+     
+            await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Delete)
+            .MessageResourceFormatDatas(printConfig.PrintConfigName)
+            .ObjectId(printConfig.PrintConfigCustomId)
+            .JsonData(printConfig.JsonSerialize())
+            .CreateLog();
 
             return true;
         }

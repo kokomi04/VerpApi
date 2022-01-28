@@ -28,17 +28,22 @@ using VErp.Services.Master.Model.CategoryConfig;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using Microsoft.AspNetCore.DataProtection;
+using static Verp.Resources.Master.Category.CategoryConfigValidationMessage;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Master.Category;
 
 namespace VErp.Services.Master.Service.Category
 {
     public class CategoryConfigService : ICategoryConfigService
     {
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterContext;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly IDataProtectionProvider _protectionProvider;
+        private readonly ObjectActivityLogFacade _categoryConfigActivityLog;
 
         public CategoryConfigService(MasterDBContext accountancyContext
             , IOptions<AppSetting> appSetting
@@ -46,21 +51,24 @@ namespace VErp.Services.Master.Service.Category
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICategoryHelperService httpCategoryHelperService
+            , IDataProtectionProvider protectionProvider
             )
         {
             _logger = logger;
-            _activityLogService = activityLogService;
             _masterContext = accountancyContext;
             _appSetting = appSetting.Value;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
+            _protectionProvider = protectionProvider;
+
+            _categoryConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Category);
         }
 
         #region Category
 
         public async Task<IList<CategoryFullModel>> GetAllCategoryConfig()
         {
-            var v =  await _masterContext.Category
+            var v = await _masterContext.Category
                .Include(c => c.OutSideDataConfig)
                .ThenInclude(o => o.OutsideDataFieldConfig)
                .Include(c => c.CategoryField)
@@ -192,7 +200,13 @@ namespace VErp.Services.Master.Service.Category
                     });
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Thêm danh mục {category.Title}", data.JsonSerialize());
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Create)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
+
                 return category.CategoryId;
             }
             catch (Exception)
@@ -277,12 +291,12 @@ namespace VErp.Services.Master.Service.Category
                     if (data.IsTreeView)
                     {
                         // Create ParentId Field
-                        await _masterContext.AddColumn(data.CategoryCode, "ParentId", EnumDataType.Int, -1, 0, null, true);
+                        await _masterContext.AddColumn(data.CategoryCode, CategoryFieldConstants.ParentId, EnumDataType.Int, -1, 0, null, true);
                     }
                     else
                     {
                         // Drop ParentId Field
-                        await _masterContext.DeleteColumn(data.CategoryCode, "ParentId");
+                        await _masterContext.DeleteColumn(data.CategoryCode, CategoryFieldConstants.ParentId);
                     }
 
                 }
@@ -296,6 +310,15 @@ namespace VErp.Services.Master.Service.Category
                 category.MenuId = data.MenuId;
                 category.ParentTitle = data.ParentTitle;
                 category.DefaultOrder = data.DefaultOrder;
+
+                category.PreLoadAction = data.PreLoadAction;
+                category.PostLoadAction = data.PostLoadAction;
+                category.AfterLoadAction = data.AfterLoadAction;
+                category.BeforeSubmitAction = data.BeforeSubmitAction;
+                category.BeforeSaveAction = data.BeforeSaveAction;
+                category.AfterSaveAction = data.AfterSaveAction;
+                category.IsHide = data.IsHide;
+
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
@@ -358,7 +381,15 @@ namespace VErp.Services.Master.Service.Category
                         new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
                     });
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Cập nhật danh mục {category.Title}", data.JsonSerialize());
+
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(data.JsonSerialize())
+                  .CreateLog();
+
+
                 return true;
             }
             catch (Exception)
@@ -414,7 +445,13 @@ namespace VErp.Services.Master.Service.Category
 
                 await _masterContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, category.CategoryId, $"Xóa danh mục {category.Title}", category.JsonSerialize());
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Update)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(category.JsonSerialize())
+                  .CreateLog();
+
                 return true;
             }
             catch (Exception)
@@ -481,7 +518,7 @@ namespace VErp.Services.Master.Service.Category
         {
             if (!((EnumDataType)categoryField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)categoryField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
+                throw CannotConvertSqlDataType.BadRequestFormat(((EnumDataType)categoryField.DataTypeId).GetEnumDescription(), ((EnumDataType)data.DataTypeId).GetEnumDescription());
             }
             categoryField.CategoryFieldName = data.CategoryFieldName;
             categoryField.Title = data.Title;
@@ -503,6 +540,7 @@ namespace VErp.Services.Master.Service.Category
             categoryField.RefTableCode = data.RefTableCode;
             categoryField.RefTableField = data.RefTableField;
             categoryField.RefTableTitle = data.RefTableTitle;
+            categoryField.IsImage = data.IsImage;
         }
 
         private void ValidateCategoryField(CategoryFieldModel data, CategoryField categoryField = null, int? categoryFieldId = null)
@@ -548,7 +586,7 @@ namespace VErp.Services.Master.Service.Category
                                            select f).FirstOrDefault();
                 if (sourceCategoryField == null)
                 {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu liên kết {refTable}.{refField}");
+                    throw RefFieldNotFound.BadRequestFormat($"{refTable}.{refField}");
                 }
                 data.DataTypeId = sourceCategoryField.DataTypeId;
                 data.DataSize = sourceCategoryField.DataSize;
@@ -583,7 +621,8 @@ namespace VErp.Services.Master.Service.Category
                 {
                     CategoryCode = c.CategoryCode,
                     CategoryFieldName = f.CategoryFieldName,
-                    Title = f.Title
+                    Title = f.Title,
+                    CategoryTitle = c.Title
                 }).ToListAsync();
 
             return lst;
@@ -689,7 +728,15 @@ namespace VErp.Services.Master.Service.Category
                     });
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryId, $"Cập nhật nhiều trường dữ liệu", fields.JsonSerialize());
+
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.UpdateFileds)
+                  .MessageResourceFormatDatas(category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(fields.JsonSerialize())
+                  .CreateLog();
+
+
                 return true;
             }
             catch (Exception)
@@ -748,7 +795,13 @@ namespace VErp.Services.Master.Service.Category
                     });
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.Category, categoryField.CategoryFieldId, $"Xóa trường dữ liệu {categoryField.Title}", categoryField.JsonSerialize());
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.DeleteField)
+                  .MessageResourceFormatDatas(categoryField.Title, category.Title)
+                  .ObjectId(category.CategoryId)
+                  .JsonData(categoryField.JsonSerialize())
+                  .CreateLog();
+
                 return true;
             }
             catch (Exception)
@@ -761,16 +814,25 @@ namespace VErp.Services.Master.Service.Category
 
         public async Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames)
         {
-            return await (from f in _masterContext.CategoryField
-                          join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                          where categoryCodes.Contains(c.CategoryCode) && fieldNames.Contains(f.CategoryFieldName)
-                          select new ReferFieldModel
-                          {
-                              CategoryCode = c.CategoryCode,
-                              CategoryFieldName = f.CategoryFieldName,
-                              DataTypeId = f.DataTypeId,
-                              DataSize = f.DataSize
-                          }).ToListAsync();
+            var query = from f in _masterContext.CategoryField
+                        join c in _masterContext.Category on f.CategoryId equals c.CategoryId
+                        where categoryCodes.Contains(c.CategoryCode)
+                        select new ReferFieldModel
+                        {
+                            IsHidden = f.IsHidden,
+                            CategoryCode = c.CategoryCode,
+                            CategoryTitle = c.Title,
+                            CategoryFieldName = f.CategoryFieldName,
+                            CategoryFieldTitle = f.Title,
+                            DataTypeId = f.DataTypeId,
+                            DataSize = f.DataSize
+                        };
+            if (fieldNames?.Count > 0)
+            {
+                query = query.Where(f => fieldNames.Contains(f.CategoryFieldName));
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping(int categoryId)
@@ -791,7 +853,7 @@ namespace VErp.Services.Master.Service.Category
 
             var result = new CategoryNameModel()
             {
-                CategoryId = category.CategoryId,
+                //CategoryId = category.CategoryId,
                 CategoryCode = category.CategoryCode,
                 CategoryTitle = category.Title,
                 IsTreeView = category.IsTreeView,
@@ -836,37 +898,41 @@ namespace VErp.Services.Master.Service.Category
                     .First()
                 );
 
+
             foreach (var field in fields)
             {
                 var fileData = new CategoryFieldNameModel()
                 {
-                    CategoryFieldId = field.CategoryFieldId,
+                    ///CategoryFieldId = field.CategoryFieldId,
                     FieldName = field.CategoryFieldName,
-                    FieldTitle = field.Title,
-                    RefCategory = null
+                    FieldTitle = GetTitleCategoryField(field),
+                    RefCategory = null,
+                    IsRequired = field.IsRequired
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
                 {
                     if (!refCategoryFields.TryGetValue(field.RefTableCode, out var refCategory))
                     {
-                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Danh mục liên kết {field.RefTableCode} không tìm thấy!");
+                        throw RefTableNotFound.BadRequestFormat(field.RefTableCode);
                     }
+
 
                     fileData.RefCategory = new CategoryNameModel()
                     {
-                        CategoryId = refCategory.CategoryInfo.CategoryId,
+                        //CategoryId = refCategory.CategoryInfo.CategoryId,
                         CategoryCode = refCategory.CategoryInfo.CategoryCode,
                         CategoryTitle = refCategory.CategoryInfo.CategoryTitle,
                         IsTreeView = refCategory.CategoryInfo.IsTreeView,
 
-                        Fields = refCategory.Fields
+                        Fields = GetRefFields(refCategory.Fields)
                         .Select(f => new CategoryFieldNameModel()
                         {
-                            CategoryFieldId = f.CategoryFieldId,
+                            //CategoryFieldId = f.CategoryFieldId,
                             FieldName = f.CategoryFieldName,
-                            FieldTitle = f.Title,
-                            RefCategory = null
+                            FieldTitle = GetTitleCategoryField(f),
+                            RefCategory = null,
+                            IsRequired = f.IsRequired
                         }).ToList()
                     };
                 }
@@ -874,7 +940,51 @@ namespace VErp.Services.Master.Service.Category
                 result.Fields.Add(fileData);
             }
 
+
+            if (result.IsTreeView)
+            {
+                var parentRef = result.DeepClone();
+
+                var refFileds = GetRefFields(fields)
+                    .Select(f => f.CategoryFieldName)
+                    .ToList();
+
+                parentRef.Fields = parentRef.Fields.Where(f => refFileds.Contains(f.FieldName)).ToList();
+
+                result.Fields.Insert(0, new CategoryFieldNameModel()
+                {
+                    //CategoryFieldId = CategoryFieldConstants.ParentId_FiledId,
+                    FieldName = CategoryFieldConstants.ParentId,
+                    FieldTitle = category.Title + " cha",
+                    IsRequired = false,
+                    RefCategory = parentRef,
+                });
+            }
+
+            result.Fields.Add(new CategoryFieldNameModel
+            {
+                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
+                FieldTitle = "Cột kiểm tra",
+            });
+
             return result;
+        }
+
+        private IList<CategoryField> GetRefFields(IList<CategoryField> fields)
+        {
+            return fields.Where(x => string.IsNullOrWhiteSpace(x.RefTableCode) && !x.IsHidden && x.DataTypeId != (int)EnumDataType.Boolean && !((EnumDataType)x.DataTypeId).IsTimeType())
+                 .ToList();
+        }
+
+        private string GetTitleCategoryField(CategoryField field)
+        {
+            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
+            if (rangeValue.Length > 0)
+            {
+                return $"{field.Title} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
+            }
+
+            return field.Title;
         }
 
         public PageData<DataTypeModel> GetDataTypes(int page, int size)
@@ -919,7 +1029,8 @@ namespace VErp.Services.Master.Service.Category
             {
                 Value = (int)m.Enum,
                 Title = m.Description,
-                ParamNumber = m.Enum.GetParamNumber()
+                ParamNumber = m.Enum.GetParamNumber(),
+                AllowedDataType = m.Enum.GetAllowedDataType()
             }).ToList();
             int total = operators.Count;
             if (size > 0)
@@ -971,7 +1082,7 @@ namespace VErp.Services.Master.Service.Category
 
         public async Task<IList<CategoryListModel>> GetDynamicCates()
         {
-            return await _masterContext.Category.Where(c => !c.IsOutSideData)
+            return await _masterContext.Category.Where(c => !c.IsOutSideData && c.IsHide == false)
                 .Select(c => new CategoryListModel()
                 {
                     CategoryId = c.CategoryId,
@@ -982,5 +1093,140 @@ namespace VErp.Services.Master.Service.Category
 
         }
 
+        public async Task<CategoryViewModel> CategoryViewGetInfo(int categoryId, bool isConfig = false)
+        {
+            var info = await _masterContext.CategoryView
+                .AsNoTracking()
+                .Where(t => t.CategoryId == categoryId)
+                .ProjectTo<CategoryViewModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+
+            if (info == null)
+            {
+                return new CategoryViewModel()
+                {
+                    Fields = new List<CategoryViewFieldModel>(),
+                    IsDefault = true,
+                    CategoryViewName = "Lọc dữ liệu"
+                };
+            }
+
+            var fields = await _masterContext.CategoryViewField.AsNoTracking()
+                .Where(t => t.CategoryViewId == info.CategoryViewId)
+                .OrderBy(f => f.SortOrder)
+                .ProjectTo<CategoryViewFieldModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            if (!isConfig)
+            {
+                var protector = _protectionProvider.CreateProtector(_appSetting.ExtraFilterEncryptPepper);
+
+                foreach (var field in fields)
+                {
+                    if (!string.IsNullOrEmpty(field.ExtraFilter))
+                    {
+                        field.ExtraFilter = protector.Protect(field.ExtraFilter);
+                    }
+                }
+            }
+
+            info.Fields = fields.OrderBy(f => f.SortOrder).ToList();
+
+            return info;
+        }
+
+
+        public async Task<bool> CategoryViewUpdate(int categoryId, CategoryViewModel model)
+        {
+            var CategoryInfo = await _masterContext.Category.FirstOrDefaultAsync(t => t.CategoryId == categoryId);
+            if (CategoryInfo == null) throw CategoryNotFound.BadRequest();
+
+            var info = await _masterContext.CategoryView.FirstOrDefaultAsync(v => v.CategoryId == categoryId);
+
+            if (info == null)
+            {
+                return await CategoryViewCreate(categoryId, model);
+            }
+
+            using var trans = await _masterContext.Database.BeginTransactionAsync();
+            try
+            {
+
+                _mapper.Map(model, info);
+
+                var oldFields = await _masterContext.CategoryViewField.Where(f => f.CategoryViewId == info.CategoryViewId).ToListAsync();
+
+                _masterContext.CategoryViewField.RemoveRange(oldFields);
+
+                await CategoryViewFieldAddRange(info.CategoryViewId, model.Fields);
+
+                await _masterContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.UpdateFilter)
+                  .MessageResourceFormatDatas(info.CategoryViewName, CategoryInfo.Title)
+                  .ObjectId(categoryId)
+                  .JsonData(model.JsonSerialize())
+                  .CreateLog();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "CategoryViewUpdate");
+                throw;
+            }
+        }
+
+        private async Task<bool> CategoryViewCreate(int categoryId, CategoryViewModel model)
+        {
+            using var trans = await _masterContext.Database.BeginTransactionAsync();
+            try
+            {
+                var categoryInfo = await _masterContext.Category.FirstOrDefaultAsync(t => t.CategoryId == categoryId);
+                if (categoryInfo == null) throw CategoryNotFound.BadRequest();
+
+                var info = _mapper.Map<CategoryView>(model);
+
+                info.CategoryId = categoryId;
+
+                await _masterContext.CategoryView.AddAsync(info);
+                await _masterContext.SaveChangesAsync();
+
+                await CategoryViewFieldAddRange(info.CategoryViewId, model.Fields);
+
+                await _masterContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+
+                await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.CreateFilter)
+                  .MessageResourceFormatDatas(info.CategoryViewName, categoryInfo.Title)
+                  .ObjectId(categoryId)
+                  .JsonData(model.JsonSerialize())
+                  .CreateLog();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.TryRollbackTransactionAsync();
+                _logger.LogError(ex, "CategoryViewCreate");
+                throw;
+            }
+
+        }
+
+        private async Task CategoryViewFieldAddRange(int categoryViewId, IList<CategoryViewFieldModel> fieldModels)
+        {
+            var fields = fieldModels.Select(f => _mapper.Map<CategoryViewField>(f)).ToList();
+            foreach (var f in fields)
+            {
+                f.CategoryViewId = categoryViewId;
+            }
+            await _masterContext.CategoryViewField.AddRangeAsync(fields);
+        }
     }
 }

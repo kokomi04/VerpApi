@@ -36,7 +36,15 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         public void OnException(ExceptionContext context)
         {
-            _logger.LogError(context.Exception, context.Exception.Message);
+            if (context.Exception is BadRequestException)
+            {
+
+                _logger.LogWarning(context.Exception, context.Exception.Message);
+            }
+            else
+            {
+                _logger.LogError(context.Exception, context.Exception.Message);
+            }
 
             var (response, statusCode) = Handler(context.Exception, _appSetting);
 

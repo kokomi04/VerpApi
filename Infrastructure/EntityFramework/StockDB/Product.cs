@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class Product
@@ -13,8 +15,14 @@ namespace VErp.Infrastructure.EF.StockDB
             ProductBomChildProduct = new HashSet<ProductBom>();
             ProductBomProduct = new HashSet<ProductBom>();
             ProductCustomer = new HashSet<ProductCustomer>();
+            ProductIgnoreStepProduct = new HashSet<ProductIgnoreStep>();
+            ProductIgnoreStepRootProduct = new HashSet<ProductIgnoreStep>();
+            ProductMaterialProduct = new HashSet<ProductMaterial>();
+            ProductMaterialRootProduct = new HashSet<ProductMaterial>();
             ProductMaterialsConsumptionMaterialsConsumption = new HashSet<ProductMaterialsConsumption>();
             ProductMaterialsConsumptionProduct = new HashSet<ProductMaterialsConsumption>();
+            ProductPropertyProduct = new HashSet<ProductProperty>();
+            ProductPropertyRootProduct = new HashSet<ProductProperty>();
             ProductStockValidation = new HashSet<ProductStockValidation>();
             ProductUnitConversion = new HashSet<ProductUnitConversion>();
         }
@@ -47,15 +55,21 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? GrossWeight { get; set; }
         public decimal? Measurement { get; set; }
         public decimal? LoadAbility { get; set; }
-        public string ProductDescription { get; set; }
+        public string SellDescription { get; set; }
         public string ProductNameEng { get; set; }
         public decimal? Quantitative { get; set; }
         public int? QuantitativeUnitTypeId { get; set; }
         public bool IsProductSemi { get; set; }
-        public int Coefficient { get; set; }
+        public decimal Coefficient { get; set; }
         public bool? IsProduct { get; set; }
         public string Color { get; set; }
         public bool? IsMaterials { get; set; }
+        public decimal? PackingQuantitative { get; set; }
+        public decimal? PackingWidth { get; set; }
+        public decimal? PackingLong { get; set; }
+        public decimal? PackingHeight { get; set; }
+        public long? ProductionProcessVersion { get; set; }
+        public decimal? ProductPurity { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }
@@ -67,8 +81,14 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual ICollection<ProductBom> ProductBomChildProduct { get; set; }
         public virtual ICollection<ProductBom> ProductBomProduct { get; set; }
         public virtual ICollection<ProductCustomer> ProductCustomer { get; set; }
+        public virtual ICollection<ProductIgnoreStep> ProductIgnoreStepProduct { get; set; }
+        public virtual ICollection<ProductIgnoreStep> ProductIgnoreStepRootProduct { get; set; }
+        public virtual ICollection<ProductMaterial> ProductMaterialProduct { get; set; }
+        public virtual ICollection<ProductMaterial> ProductMaterialRootProduct { get; set; }
         public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionMaterialsConsumption { get; set; }
         public virtual ICollection<ProductMaterialsConsumption> ProductMaterialsConsumptionProduct { get; set; }
+        public virtual ICollection<ProductProperty> ProductPropertyProduct { get; set; }
+        public virtual ICollection<ProductProperty> ProductPropertyRootProduct { get; set; }
         public virtual ICollection<ProductStockValidation> ProductStockValidation { get; set; }
         public virtual ICollection<ProductUnitConversion> ProductUnitConversion { get; set; }
     }

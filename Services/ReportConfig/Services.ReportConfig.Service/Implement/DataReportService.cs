@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -115,20 +116,50 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (string.IsNullOrWhiteSpace(param)) continue;
 
                     var paramName = param.Trim().ToLower();
-
-                    if (filters.ContainsKey(paramName))
+                    if (filterFiled.FormTypeId == EnumFormType.MultiSelect)
                     {
-                        value = filters[paramName];
-                        if (!value.IsNullObject())
+                        if (filters.ContainsKey(paramName))
                         {
-                            if (AccountantConstants.TIME_TYPES.Contains(filterFiled.DataTypeId))
-                            {
-                                value = Convert.ToInt64(value);
-                            }
+                            value = filters[paramName];
+
+                        }
+                        switch (filterFiled.DataTypeId)
+                        {
+                            case EnumDataType.Int:
+                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
+                                break;
+                            case EnumDataType.BigInt:
+                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
+                                break;
+                            case EnumDataType.Text:
+                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
+                                break;
+                            default:
+                                break;
                         }
                     }
-                    sqlParams.Add(new SqlParameter($"@{paramName}", filterFiled.DataTypeId.GetSqlValue(value)));
+                    else
+                    {
+                        if (filters.ContainsKey(paramName))
+                        {
+                            value = filters[paramName];
+                            if (!value.IsNullObject())
+                            {
+                                if (filterFiled.DataTypeId.IsTimeType())
+                                {
+                                    value = Convert.ToInt64(value);
+                                }
+                            }
+                        }
+                        sqlParams.Add(new SqlParameter($"@{paramName}", filterFiled.DataTypeId.GetSqlValue(value)));
+                    }
                 }
+            }
+
+            if (reportInfo.IsDbPaging.HasValue && reportInfo.IsDbPaging.Value)
+            {
+                sqlParams.Add(new SqlParameter("@Page", page));
+                sqlParams.Add(new SqlParameter("@Size", size));
             }
 
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
@@ -194,7 +225,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
 
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, IList<SqlParameter> sqlParams)
         {
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
@@ -337,7 +368,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             bscRows = await CastBscAlias(reportInfo, filterCondition, columns, bscRows, sqlParams, orderByFieldName, asc);
 
             //Totals
-            var totals = new NonCamelCaseDictionary();
+            var totals = new NonCamelCaseDictionary<decimal>();
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
             foreach (var column in calSumColumns)
@@ -354,7 +385,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var column in calSumColumns)
                     {
                         var colData = row[column.Alias];
-                        if (!colData.IsNullObject())
+                        if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
                         {
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                         }
@@ -447,7 +478,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
@@ -464,7 +495,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     sql = sql.TSqlAppendCondition(filterCondition);
                 }
             }
-            
+
 
             string orderBy = reportInfo?.OrderBy ?? "";
 
@@ -485,7 +516,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var table = await _dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
-            var totals = new NonCamelCaseDictionary();
+            var totals = new NonCamelCaseDictionary<decimal>();
 
             var data = table.ConvertData();
 
@@ -499,80 +530,99 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 totals.Add(column.Alias, 0M);
             }
 
-            var groupColumAlias = columns.Where(c => c.IsGroupRow).Select(c => c.Alias).ToHashSet();
-            var isSumByGroup = groupColumAlias.Count > 0;
-            var groupTokenSums = new GroupTokenSum();
+            var groupLevel1Alias = columns.Where(c => c.IsGroupRow).Select(c => c.Alias).ToHashSet();
+            var isSumByGroup = groupLevel1Alias.Count > 0;
 
-            for (var i = 0; i < data.Count; i++)
+            var totalRecord = 0;
+            var pagedData = new List<NonCamelCaseDictionary>();
+
+
+            Action<NonCamelCaseDictionary, ReportColumnModel> calcSum = (NonCamelCaseDictionary row, ReportColumnModel column) =>
             {
-                var row = data[i];
+                var colData = row[column.Alias];
 
-                if (row != null)
+                if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
                 {
-                    if (isSumByGroup)
+                    var decimalValue = Convert.ToDecimal(colData);
+
+                    totals[column.Alias] += decimalValue;
+                }
+            };
+
+
+            if (isSumByGroup)
+            {
+                var groupLevel1 = data.GroupBy(row => string.Join("|", groupLevel1Alias.Select(columnAlias => row[columnAlias])));
+
+                totalRecord = groupLevel1.Count();
+
+                var groupLevel2Alias = columns.Where(c => c.isGroupRowLevel2).Select(c => c.Alias).ToHashSet();
+
+                foreach (var g1 in groupLevel1)
+                {
+                    var groupLevel2 = g1.GroupBy(row => string.Join("|", groupLevel2Alias.Select(columnAlias => row[columnAlias])));
+                    foreach (var column in calSumColumns)
                     {
-                        string token = string.Join("|", groupColumAlias.Select(columnAlias => row[columnAlias]));
-                        if (!groupTokenSums.TryGetValue(token, out var groupTokenSum))
+                        if (groupLevel1Alias.Contains(column.Alias))
                         {
-                            groupTokenSum = new ColumnGroupHasBeenSum();
-                            groupTokenSums.Add(token, groupTokenSum);
+                            calcSum(g1.First(), column);
                         }
-
-                        foreach (var column in calSumColumns)
+                        else if (groupLevel2Alias.Contains(column.Alias))
                         {
-                            var colData = row[column.Alias];
-
-                            if (!colData.IsNullObject())
+                            foreach (var g2 in groupLevel2)
                             {
-                                var decimalValue = Convert.ToDecimal(colData);
-                                if (!groupColumAlias.Contains(column.Alias))
-                                {
-                                    totals[column.Alias] = (decimal)totals[column.Alias] + decimalValue;
-                                }
-                                else
-                                {
-                                    if (!groupTokenSum.Contains(column.Alias))
-                                    {
-                                        totals[column.Alias] = (decimal)totals[column.Alias] + decimalValue;
-                                        groupTokenSum.Add(column.Alias);
-                                    }
-                                }
-
+                                calcSum(g2.First(), column);
                             }
                         }
-
-                    }
-                    else
-                    {
-                        foreach (var column in calSumColumns)
+                        else
                         {
-                            var colData = row[column.Alias];
-
-                            if (!colData.IsNullObject())
+                            foreach (var row in g1)
                             {
-                                totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(row[column.Alias]);
+                                calcSum(row, column);
                             }
                         }
                     }
                 }
 
+
+                pagedData = groupLevel1.Skip((page - 1) * size).Take(size).SelectMany(g => g).ToList();
+            }
+            else
+            {
+                totalRecord = data.Count;
+                
+                foreach (var row in data)
+                {
+                    foreach (var column in calSumColumns)
+                    {
+                        calcSum(row, column);
+                    }
+                }
+
+                pagedData = data.Skip((page - 1) * size).Take(size).ToList();
+
             }
 
-            var pagedData = size > 0 ? data.Skip((page - 1) * size).Take(size).ToList() : data;
+            //var total = data.Count;
+            if (reportInfo.IsDbPaging.HasValue && reportInfo.IsDbPaging.Value && data.Count > 0 && data[0].ContainsKey("TotalRecord"))
+            {
+                totalRecord = Convert.ToInt32(data[0]["TotalRecord"]);
+            }
 
-            return (new PageDataTable() { List = pagedData, Total = data.Count }, totals);
+            pagedData = size > 0 && (!reportInfo.IsDbPaging.HasValue || !reportInfo.IsDbPaging.Value) ? pagedData : data;
 
+            return (new PageDataTable() { List = pagedData, Total = totalRecord }, totals);
         }
 
-        class ColumnGroupHasBeenSum : HashSet<string>
-        {
+        //class ColumnGroupHasBeenSum : HashSet<string>
+        //{
 
-        }
+        //}
 
-        class GroupTokenSum : Dictionary<string, ColumnGroupHasBeenSum>
-        {
+        //class GroupTokenSum : Dictionary<string, ColumnGroupHasBeenSum>
+        //{
 
-        }
+        //}
 
         //private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         //{
@@ -656,11 +706,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         //}
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
+        private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByView(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
-            var totals = new NonCamelCaseDictionary();
+            var totals = new NonCamelCaseDictionary<decimal>();
             if (string.IsNullOrWhiteSpace(reportInfo.MainView))
             {
                 reportInfo.MainView = "_tk";
@@ -706,7 +756,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             foreach (var column in columns.Where(c => c.IsCalcSum))
             {
-                totalSql.Append($", SUM({column.Alias}) AS {column.Alias}");
+                if (string.IsNullOrWhiteSpace(column.CalcSumConditionCol))
+                {
+                    totalSql.Append($", SUM({column.Alias}) AS {column.Alias}");
+                }
+                else
+                {
+                    totalSql.Append($", SUM(CASE WHEN {column.CalcSumConditionCol} = 1 THEN {column.Alias} ELSE NULL END) AS {column.Alias}");
+                }
             }
             totalSql.Append($" FROM {view}");
             if (!string.IsNullOrEmpty(filterCondition))
@@ -721,7 +778,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var column in columns.Where(c => c.IsCalcSum))
                 {
-                    totals.Add(column.Alias, table.Rows[0][column.Alias]);
+                    var v = table.Rows[0][column.Alias].IsNullObject() ? 0 : Convert.ToDecimal(table.Rows[0][column.Alias]);
+                    totals.Add(column.Alias, v);
                 }
             }
 
@@ -836,6 +894,28 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return selectSql.ToString();
         }
 
+        private bool IsCalcSum(NonCamelCaseDictionary row, string CalcSumConditionCol)
+        {
+            if (string.IsNullOrWhiteSpace(CalcSumConditionCol) || !row.ContainsKey(CalcSumConditionCol)) return true;
+
+            if (row[CalcSumConditionCol] is bool calc)
+            {
+                return calc;
+            }
+
+            if (row[CalcSumConditionCol] is int calcNum)
+            {
+                return calcNum != 0;
+            }
+
+            if (row[CalcSumConditionCol] is long calcNumLong)
+            {
+                return calcNumLong != 0;
+            }
+
+            return !row[CalcSumConditionCol].IsNullObject();
+        }
+
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
         {
 
@@ -858,7 +938,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             catch (Exception ex)
             {
-                throw new BadRequestException(ReportErrorCode.CanNotGenerateReportAsDoc, ex.Message);
+                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
             }
         }
 

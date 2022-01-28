@@ -14,6 +14,7 @@ namespace VErp.Services.Master.Model.Guide
     public class GuideModelOutput: IMapFrom<GuideEnity>
     {
         public int GuideId { get; set; }
+        public int? GuideCateId { get; set; }
         public string GuideCode { get; set; }
         public string Title { get; set; }
         public int SortOrder { get; set; }

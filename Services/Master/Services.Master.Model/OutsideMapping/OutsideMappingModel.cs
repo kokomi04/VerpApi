@@ -21,6 +21,8 @@ namespace VErp.Services.Master.Model.OutsideMapping
         public string SourceDetailsPropertyName { get; set; }
         public string DestinationDetailsPropertyName { get; set; }
         public string ObjectIdFieldName { get; set; }
+
+        public string JsCodeVisible { get; set; }
     }
     public class OutsideMappingModelList : OutsideMappingModelBase, IMapFrom<OutsideImportMappingFunction>
     {
@@ -42,6 +44,12 @@ namespace VErp.Services.Master.Model.OutsideMapping
         {
             FieldMappings = new List<OutsiteMappingModel>();
         }
+
+        public string JsCodeAfterSourceDataLoaded { get; set; }
+        public string JsCodeBeforeDataMapped { get; set; }
+        public string JsCodeAfterDataMapped { get; set; }
+        public string JsCodeAfterTargetBillCreated { get; set; }
+
         public IList<OutsiteMappingModel> FieldMappings { get; set; }
 
         public void Mapping(Profile profile)

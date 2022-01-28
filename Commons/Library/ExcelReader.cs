@@ -12,6 +12,7 @@ using NPOI.SS.Formula;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
@@ -20,8 +21,8 @@ namespace VErp.Commons.Library
 {
     public class ExcelReader
     {
-        private IWorkbook hssfwb;
-        private DataFormatter dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);
+        private IWorkbook _hssfwb;
+        private DataFormatter _dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);
 
         public ExcelReader(string filePath) : this(new FileStream(filePath, FileMode.Open, FileAccess.Read))
         {
@@ -31,7 +32,7 @@ namespace VErp.Commons.Library
         public ExcelReader(Stream file)
         {
             //hssfwb = WorkbookFactory.Create(file);// new XSSFWorkbook(file);
-            hssfwb = new XSSFWorkbook(file);
+            _hssfwb = new XSSFWorkbook(file);
             file.Close();
         }
 
@@ -77,7 +78,7 @@ namespace VErp.Commons.Library
         public string[][] ReadFile(int collumnLength, int sheetAt = 0, int startRow = 0, int startCollumn = 0)
         {
             List<string[]> data = new List<string[]>();
-            ISheet sheet = hssfwb.GetSheetAt(sheetAt);
+            ISheet sheet = _hssfwb.GetSheetAt(sheetAt);
             int rowIdx = startRow;
             IRow row;
             while ((row = sheet.GetRow(rowIdx)) != null)
@@ -106,14 +107,15 @@ namespace VErp.Commons.Library
         }
 
 
-        public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
+
+        public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null)
         {
             var sheetDatas = new List<ExcelSheetDataModel>();
 
             //hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateAll();
             try
             {
-                BaseFormulaEvaluator.EvaluateAllFormulaCells(hssfwb);
+                BaseFormulaEvaluator.EvaluateAllFormulaCells(_hssfwb);
             }
             catch (Exception)
             {
@@ -133,11 +135,12 @@ namespace VErp.Commons.Library
             var fromRowIndex = fromRow - 1;
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
 
+            var titleRowIndex = titleRow.HasValue && titleRow > 0 ? fromRowIndex > 0 ? titleRow.Value - 1 : fromRowIndex - 1 : 0;
 
-            for (int i = 0; i < hssfwb.NumberOfSheets; i++)
+            for (int i = 0; i < _hssfwb.NumberOfSheets; i++)
             {
 
-                var sheet = hssfwb.GetSheetAt(i);
+                var sheet = _hssfwb.GetSheetAt(i);
 
                 var sName = (sheet.SheetName ?? "").Trim();
                 sheetName = (sheetName ?? "").Trim();
@@ -205,7 +208,7 @@ namespace VErp.Commons.Library
                 }
 
                 var continuousRowEmpty = 0;
-                for (int row = fromRowIndex; row < maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
+                for (int row = fromRowIndex; row < fromRowIndex + maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
 
                     var rowData = new NonCamelCaseDictionary<string>();
@@ -213,13 +216,20 @@ namespace VErp.Commons.Library
                     {
                         continuousRowEmpty++;
                         //continue;
-                        if (continuousRowEmpty > 100) break;
+                        if (continuousRowEmpty > 1000)
+                        {
+                            break;
+                        }
                     }
                     else
                     {
-                        if (continuousRowEmpty > 100) break;
+                        if (continuousRowEmpty > 1000)
+                        {
+                            break;
+                        }
 
                         var continuousColumnEmpty = 0;
+                        var isRowEmpty = true;
                         foreach (var col in sheet.GetRow(row).Cells)
                         {
 
@@ -251,25 +261,36 @@ namespace VErp.Commons.Library
 
                             try
                             {
-                                rowData.Add(columnName, GetCellString(cell));
+                                rowData.Add(columnName, GetCellString(cell)?.Trim()?.Trim('\''));
                             }
-                            catch
+                            catch (Exception)
                             {
-                                rowData.Add(columnName, cell.StringCellValue.ToString());
+                                rowData.Add(columnName, cell.StringCellValue.ToString()?.Trim()?.Trim('\''));
 
                             }
                             if (string.IsNullOrWhiteSpace(rowData[columnName]))
                             {
                                 continuousColumnEmpty++;
-                                continuousRowEmpty++;
-                                if (continuousColumnEmpty > 100) break;
+                                if (continuousColumnEmpty > 100)
+                                {
+                                    break;
+                                }
                             }
                             else
                             {
-                                continuousRowEmpty = 0;
+                                isRowEmpty = false;
                                 continuousColumnEmpty = 0;
                             }
 
+                        }
+
+                        if (isRowEmpty)
+                        {
+                            continuousRowEmpty++;
+                        }
+                        else
+                        {
+                            continuousRowEmpty = 0;
                         }
                     }
 
@@ -316,7 +337,7 @@ namespace VErp.Commons.Library
                     if (row.ContainsKey(mappingField.Column))
                         value = row[mappingField.Column]?.ToString();
 
-                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                    if (string.IsNullOrWhiteSpace(value) && mappingField.IsIgnoredIfEmpty)
                     {
                         isIgnoreRow = true;
                         continue;
@@ -368,13 +389,24 @@ namespace VErp.Commons.Library
 
                 var row = data.Rows[rowIndx];
 
-                bool isIgnoreRow = false;
-                var entityInfo = Activator.CreateInstance<T>();
+                //bool isIgnoreRow = false;
 
-                for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count && !isIgnoreRow; fieldIndx++)
+
+                var checkFieldsMapping = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty || f.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
+
+                if (checkFieldsMapping.Any(f => string.IsNullOrWhiteSpace(row[f.Column])))
                 {
+                    continue;
+                }
 
-                    var mappingField = mapping.MappingFields[fieldIndx];
+
+                var entityInfo = Activator.CreateInstance<T>();
+                //for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count; fieldIndx++)//&& !isIgnoreRow
+                //{
+
+                //    var mappingField = mapping.MappingFields[fieldIndx];
+                foreach (var mappingField in mapping.MappingFields.Where(f => f.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty).ToList())//&& !isIgnoreRow
+                {
 
                     var fieldDisplay = "";
                     try
@@ -383,13 +415,17 @@ namespace VErp.Commons.Library
                         if (row.ContainsKey(mappingField.Column))
                             value = row[mappingField.Column]?.ToString();
 
-                        if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
-                        {
-                            isIgnoreRow = true;
-                            break;
-                        }
+                        //if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
+                        //{
+                        //    isIgnoreRow = true;
+                        //    break;
+                        //}
 
                         var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+                        if (field == null)
+                        {
+                            field = fields.FirstOrDefault(f => mappingField.FieldName.StartsWith(f.Name));
+                        }
 
                         if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
 
@@ -399,7 +435,7 @@ namespace VErp.Commons.Library
 
                         if (OnAssignProperty != null)
                         {
-                            if (!OnAssignProperty(entityInfo, field.Name, value))
+                            if (!OnAssignProperty(entityInfo, mappingField.FieldName, value))
                             {
                                 if (!string.IsNullOrWhiteSpace(value))
                                     field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
@@ -418,27 +454,27 @@ namespace VErp.Commons.Library
 
                 }
 
-                if (!isIgnoreRow)
+                //if (!isIgnoreRow)
+                //{
+                var context = new ValidationContext(entityInfo);
+                ICollection<ValidationResult> results = new List<ValidationResult>();
+                bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
+                if (!isValid)
                 {
-                    var context = new ValidationContext(entityInfo);
-                    ICollection<ValidationResult> results = new List<ValidationResult>();
-                    bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
-                    if (!isValid)
-                    {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {mapping.FromRow + rowIndx}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
-                    }
-
-                    if (entityInfo is MappingDataRowAbstract entity)
-                    {
-                        entity.RowNumber = mapping.FromRow + rowIndx;
-                    }
-                    lstData.Add(entityInfo);
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {mapping.FromRow + rowIndx}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
                 }
 
+                if (entityInfo is MappingDataRowAbstract entity)
+                {
+                    entity.RowNumber = mapping.FromRow + rowIndx;
+                }
+                lstData.Add(entityInfo);
+                //}
             }
 
             return lstData;
         }
+
 
         private string GetCellString(ICell cell)
         {
@@ -473,7 +509,16 @@ namespace VErp.Commons.Library
                 case CellType.Numeric:
                     if (DateUtil.IsCellDateFormatted(cell))
                     {
-                        return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        try
+                        {
+                            return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                        }
+                        catch (Exception)
+                        {
+
+                            return Convert.ToDecimal(cell.NumericCellValue).ToString();
+                        }
+
                         //try
                         //{
                         //    return cell.DateCellValue.ToString();
@@ -489,7 +534,7 @@ namespace VErp.Commons.Library
                     }
             }
 
-            return dataFormatter.FormatCellValue(cell);
+            return _dataFormatter.FormatCellValue(cell);
             // return cell.StringCellValue?.Trim();
 
         }

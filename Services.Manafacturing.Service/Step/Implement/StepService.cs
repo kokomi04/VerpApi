@@ -16,7 +16,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Step;
-using StepEnity = VErp.Infrastructure.EF.ManufacturingDB.Step;
+using StepEntity = VErp.Infrastructure.EF.ManufacturingDB.Step;
 
 namespace VErp.Services.Manafacturing.Service.Step.Implement
 {
@@ -40,10 +40,13 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<int> CreateStep(StepModel req)
         {
+            if (req.StepGroupId == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thuộc nhóm nào.");
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var entity = _mapper.Map<StepEnity>(req);
+                var entity = _mapper.Map<StepEntity>(req);
                 await _manufacturingDBContext.Step.AddAsync(entity);
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -78,7 +81,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 if (step == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound);
                 if (step.ProductionStep.Count > 0)
-                    throw new BadRequestException(GeneralCode.GeneralError, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
 
                 step.IsDeleted = true;
                 stepDetail.ForEach(x => { x.IsDeleted = true; });
@@ -100,6 +103,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<PageData<StepModel>> GetListStep(string keyWord, int page, int size)
         {
+            keyWord = (keyWord ?? "").Trim();
+
             var query = _manufacturingDBContext.Step.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyWord))
@@ -139,6 +144,9 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<bool> UpdateStep(int stepId, StepModel req)
         {
+            if (req.StepGroupId == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn chưa thuộc nhóm nào.");
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {

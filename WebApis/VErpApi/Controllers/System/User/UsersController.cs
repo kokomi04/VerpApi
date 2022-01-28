@@ -9,6 +9,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -43,26 +44,18 @@ namespace VErpApi.Controllers.System
             _fileService = fileService;
         }
 
-        /// <summary>
-        /// Tìm kiếm user
-        /// </summary>
-        /// <param name="keyword">Từ khóa</param>
-        /// <param name="page">Trang hiện tại</param>
-        /// <param name="size">Kích thước trang</param>
-        /// <returns>
-        /// </returns>
         [HttpGet]
         [GlobalApi]
         [Route("")]
-        public async Task<PageData<UserInfoOutput>> Get([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<UserInfoOutput>> Get([FromQuery] string keyword, [FromQuery] IList<int> userIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _userService.GetList(keyword, page, size).ConfigureAwait(true);
+            return await _userService.GetList(keyword, userIds, page, size).ConfigureAwait(true);
         }
 
         [HttpGet]
         [GlobalApi]
         [Route("Departments/{departmentId}")]
-        public async Task<IList<UserBasicInfoOutput>> GetByDepartment([FromRoute]int departmentId)
+        public async Task<IList<UserBasicInfoOutput>> GetByDepartment([FromRoute] int departmentId)
         {
             return await _userService.GetBasicInfoByDepartment(departmentId).ConfigureAwait(true);
         }
@@ -78,6 +71,19 @@ namespace VErpApi.Controllers.System
         public async Task<IList<UserInfoOutput>> GetListByUserIds([FromBody] IList<int> userIds)
         {
             return await _userService.GetListByUserIds(userIds).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Lấy danh sách users theo roles
+        /// </summary>
+        /// <param name="roles"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [GlobalApi]
+        [Route("GetListByRoles")]
+        public async Task<IList<UserInfoOutput>> GetListByRoles([FromBody] IList<int> roles)
+        {
+            return await _userService.GetListByRoleIds(roles).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -100,6 +106,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpGet]
         [Route("{userId}")]
+        [GlobalApi]
         public async Task<UserInfoOutput> UserInfo([FromRoute] int userId)
         {
             return await _userService.GetInfo(userId).ConfigureAwait(true);
@@ -172,7 +179,7 @@ namespace VErpApi.Controllers.System
         {
             return await _fileService.Upload(EnumObjectType.UserAndEmployee, EnumFileType.Image, string.Empty, file).ConfigureAwait(true);
         }
-      
+
 
         [HttpGet]
         [Route("fieldDataForMapping")]

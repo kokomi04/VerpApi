@@ -18,6 +18,8 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Organization.Subsidiary;
 
 namespace Services.Organization.Service.Department.Implement
 {
@@ -30,6 +32,8 @@ namespace Services.Organization.Service.Department.Implement
         private readonly ICurrentContextService _currentContext;
 
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _subsidiaryActivityLog;
+
 
         public SubsidiaryService(UnAuthorizeOrganizationContext unAuthorizeOrganizationContext
             , IActivityLogService activityLogService
@@ -44,6 +48,7 @@ namespace Services.Organization.Service.Department.Implement
             _logger = logger;
             _currentContext = currentContext;
             _mapper = mapper;
+            _subsidiaryActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Subsidiary);
         }
 
         public async Task<PageData<SubsidiaryOutput>> GetList(string keyword, int page, int size, Clause filters = null)
@@ -107,7 +112,11 @@ namespace Services.Organization.Service.Department.Implement
             await _unAuthorizeOrganizationContext.Subsidiary.AddAsync(info);
             await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Thêm cty con/chi nhánh {info.SubsidiaryCode}", data.JsonSerialize());
+            await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Create)
+                .MessageResourceFormatDatas(info.SubsidiaryCode)
+                .ObjectId(info.SubsidiaryId)
+                .JsonData(data.JsonSerialize())
+                .CreateLog();
 
             return info.SubsidiaryId;
         }
@@ -158,7 +167,12 @@ namespace Services.Organization.Service.Department.Implement
 
             await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Cập nhật cty con/chi nhánh {info.SubsidiaryCode}", data.JsonSerialize());
+            
+            await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Update)
+              .MessageResourceFormatDatas(info.SubsidiaryCode)
+              .ObjectId(info.SubsidiaryId)
+              .JsonData(data.JsonSerialize())
+              .CreateLog();
 
             return true;
         }
@@ -196,7 +210,12 @@ namespace Services.Organization.Service.Department.Implement
 
             await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.Subsidiary, info.SubsidiaryId, $"Xóa cty con/chi nhánh {info.SubsidiaryCode}", new { subsidiaryId }.JsonSerialize());
+            
+            await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Delete)
+              .MessageResourceFormatDatas(info.SubsidiaryCode)
+              .ObjectId(info.SubsidiaryId)
+              .JsonData(info.JsonSerialize())
+              .CreateLog();
 
             return true;
         }

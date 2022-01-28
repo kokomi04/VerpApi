@@ -25,6 +25,10 @@ namespace VErp.Services.PurchaseOrder.Model
         public bool? IsChecked { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
+        public string PoDescription { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? TaxInMoney { get; set; }
+
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public int? CheckedByUserId { get; set; }
@@ -34,18 +38,29 @@ namespace VErp.Services.PurchaseOrder.Model
         public long UpdatedDatetimeUtc { get; set; }
         public long? CensorDatetimeUtc { get; set; }
         public long? CheckedDatetimeUtc { get; set; }
+
+        public int PurchaseOrderType { get; set; }
+        public long? DeliveryDate { get; set; }
+
+        public long? PropertyCalcId { get; set; }
+
+        public long? CurrencyId { get; set; }
+        public decimal? ExchangeRate { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
     {
         public string PaymentInfo { get; set; }
 
-        public long? DeliveryDate { get; set; }
+        //public long? DeliveryDate { get; set; }
         public int? DeliveryUserId { get; set; }
         public int? DeliveryCustomerId { get; set; }
 
         public IList<long> FileIds { get; set; }
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
+
+        public IList<PurchaseOrderExcessModel> Excess {get;set;}
+        public IList<PurchaseOrderMaterialsModel> Materials {get;set;}
     }
 
     public class PurchaseOrderOutputDetail : PurchaseOrderInputDetail
@@ -71,15 +86,26 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal ProductUnitConversionPrice { get; set; }
 
 
-        public decimal? TaxInPercent { get; set; }
-        public decimal? TaxInMoney { get; set; }
+        // public decimal? TaxInMoney { get; set; }
+        public string PoProviderPricingCode { get; set; } 
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }
+        public int? SortOrder { get; set; }
 
         public PoAssignmentDetailInfo PoAssignmentDetail { get; set; }
         public PurchasingSuggestDetailInfo PurchasingSuggestDetail { get; set; }
+        public string CreatorFullName { get; set; }
+        public string CheckerFullName { get; set; }
+        public string CensorFullName { get; set; }
 
+        public decimal? IntoMoney { get; set; }
+        // public decimal? IntoAfterTaxMoney { get; set; }
+
+        // public string CurrencyCode { get; set; }
+        // public decimal? ExchangeRate { get; set; }
+        public decimal? ExchangedMoney { get; set; }
+        public bool IsSubCalculation { get; set; }
     }
 
 }

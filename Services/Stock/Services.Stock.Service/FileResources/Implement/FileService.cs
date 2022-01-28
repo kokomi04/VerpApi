@@ -22,6 +22,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
+using VErp.Commons.ObjectExtensions.Extensions;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -79,6 +80,15 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".xlsx" , EnumFileType.Document },
             { ".csv" , EnumFileType.Document },
         };
+
+        private static readonly Dictionary<string, EnumFileType> ImageFileExtensionTypes = new Dictionary<string, EnumFileType>()
+        {
+            { ".jpg", EnumFileType.Image },
+            { ".jpeg", EnumFileType.Image },
+            { ".bmp", EnumFileType.Image },
+            { ".png"  , EnumFileType.Image },
+        };
+
 
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
         {
@@ -254,7 +264,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         }
 
 
-        public IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null)
+        public IList<ExcelSheetDataModel> ParseExcel(IFormFile file, string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null)
         {
 
             var (validate, fileTypeId) = ValidateUploadFile(file);
@@ -267,12 +277,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             if (!new[] { ".xlsx" }.Contains(ext))
             {
-                throw new BadRequestException(FileErrorCode.InvalidFileExtension,"Hệ thống chỉ hỗ trợ file *.xlsx");
+                throw new BadRequestException(FileErrorCode.InvalidFileExtension, "Hệ thống chỉ hỗ trợ file *.xlsx");
             }
 
             var reader = new ExcelReader(file.OpenReadStream());
 
-            return reader.ReadSheets(sheetName, fromRow, toRow, maxrows);
+            return reader.ReadSheets(sheetName, fromRow, toRow, maxrows, titleRow);
         }
 
         public async Task<bool> GenerateThumbnail(long fileId)
@@ -286,6 +296,11 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var filePath = GetPhysicalFilePath(fileInfo.FilePath);
             var fileName = Path.GetFileNameWithoutExtension(filePath);
+            var ext = Path.GetExtension(fileName).ToLower();
+            if (!ImageFileExtensionTypes.ContainsKey(ext))
+            {
+                return false;
+            }
 
             var relDirectory = fileInfo.FilePath.Substring(0, fileInfo.FilePath.LastIndexOf('/'));
             relDirectory = "/" + relDirectory.Trim('/') + "/thumbs";
@@ -508,7 +523,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private string GenerateFileUrl(long fileId, string filePath, string contentType)
         {
-            var fileName = Path.GetFileName(filePath).Replace('?', ' ').Replace('#', ' ').Replace(" ", "");
+            var fileName = Path.GetFileName(filePath).NormalizeAsUrlRouteParam();// Path.GetFileName(filePath).Replace('?', ' ').Replace('#', ' ').Replace(" ", "");
             var data = $"{fileId}|{filePath}|{contentType}|{DateTime.UtcNow.GetUnix()}";
             return _appSetting.ServiceUrls.FileService.Endpoint.TrimEnd('/') + $"/filestorage/view/{fileName}?fileKey=" + data.EncryptFileKey(_dataProtectionProvider, _appSetting);
         }

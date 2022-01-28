@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class RefProduct
@@ -33,7 +35,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? GrossWeight { get; set; }
         public decimal? Measurement { get; set; }
         public decimal? LoadAbility { get; set; }
-        public string ProductDescription { get; set; }
+        public string SellDescription { get; set; }
         public string ProductNameEng { get; set; }
         public decimal? Quantitative { get; set; }
         public int? QuantitativeUnitTypeId { get; set; }

@@ -12,6 +12,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -37,6 +38,20 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.CreateProductionOrder(req);
         }
 
+        [HttpPost]
+        [Route("order-product")]
+        public async Task<IList<OrderProductInfo>> GetOrderProductInfo([FromBody] IList<long> productionOderIds)
+        {
+            return await _productionOrderService.GetOrderProductInfo(productionOderIds);
+        }
+
+        [HttpPost]
+        [Route("multiple/month-plan/{monthPlanId}")]
+        public async Task<int> CreateMultipleProductionOrder([FromRoute] int monthPlanId, [FromBody] ProductionOrderInputModel[] req)
+        {
+            return await _productionOrderService.CreateMultipleProductionOrder(monthPlanId, req);
+        }
+
         [HttpPut]
         [Route("{productionOrderId}")]
         public async Task<ProductionOrderInputModel> UpdateProductionOrder([FromRoute] long productionOrderId, [FromBody] ProductionOrderInputModel req)
@@ -44,13 +59,46 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.UpdateProductionOrder(productionOrderId, req);
         }
 
+
+        [HttpPut]
+        [Route("{productionOrderDetailId}/note")]
+        public async Task<bool> EditNote([FromRoute] long productionOrderDetailId, [FromQuery] string note)
+        {
+            return await _productionOrderService.EditNote(productionOrderDetailId, note);
+        }
+
+        [HttpPut]
+        [Route("update-datetime")]
+        public async Task<bool> EditDate([FromBody] UpdateDatetimeModel data)
+        {
+            return await _productionOrderService.EditDate(data.ProductionOrderDetailIds, data.StartDate, data.PlanEndDate, data.EndDate);
+        }
+
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("Search")]
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(
+            [FromQuery] string keyword,
+            [FromQuery] int page,
+            [FromQuery] int size,
+            [FromQuery] string orderByFieldName,
+            [FromQuery] bool asc,
+            [FromQuery] long fromDate,
+            [FromQuery] long toDate,
+            [FromQuery] bool? hasNewProductionProcessVersion,
+            [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, filters);
+            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate,hasNewProductionProcessVersion, filters);
         }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByCodes")]
+        public async Task<IList<ProductionOrderListModel>> GetProductionOrders([FromBody] IList<string> productionOrderCodes)
+        {
+            return await _productionOrderService.GetProductionOrdersByCodes(productionOrderCodes);
+        }
+
 
         [HttpGet]
         [Route("{productionOrderId}")]
@@ -58,6 +106,16 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.GetProductionOrder(productionOrderId);
         }
+
+
+        [HttpGet]
+        [Route("GetProductionHistoryByOrder")]
+        public async Task<IList<ProductionOrderDetailByOrder>> GetProductionHistoryByOrder([FromQuery] IList<int> productIds, [FromQuery] IList<string> orderCodes)
+        {
+            return await _productionOrderService
+                .GetProductionHistoryByOrder(orderCodes, productIds);
+        }
+
 
         [HttpGet]
         [Route("order/{orderId}")]
@@ -72,6 +130,7 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.DeleteProductionOrder(productionOrderId);
         }
+
 
         [HttpGet]
         [Route("detail/{productionOrderDetailId}")]
@@ -122,5 +181,32 @@ namespace VErpApi.Controllers.Manufacturing
             return await _validateProductionOrderService.ValidateProductionOrder(productionOrderId);
         }
 
+        [HttpGet]
+        [Route("capacity")]
+        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionOrderService.GetProductionCapacity(startDate, endDate);
+        }
+
+        [HttpGet]
+        [Route("configuration")]
+        public async Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration()
+        {
+            return await _productionOrderService.GetProductionOrderConfiguration();
+        }
+
+        [HttpPut]
+        [Route("configuration")]
+        public async Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model)
+        {
+            return await _productionOrderService.UpdateProductionOrderConfiguration(model);
+        }
+
+        [HttpPut]
+        [Route("{productionOrderId}/productionProcessVersion")]
+        public async Task<bool> UpdateProductionProcessVersion([FromRoute]long productionOrderId, [FromQuery] int productId)
+        {
+            return await _productionOrderService.UpdateProductionProcessVersion(productionOrderId, productId);
+        }
     }
 }

@@ -13,6 +13,10 @@ namespace VErp.Commons.GlobalObject
         RoleInfo RoleInfo { get; }
         int? TimeZoneOffset { get; }
         bool IsDeveloper { get; }
+        string Language { get; }
+        string IpAddress { get; }
+        string Domain { get; }
+        int ModuleId {get;}
     }
 
     public static class CurrentContextServiceExtensions

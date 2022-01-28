@@ -28,18 +28,20 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly IActionButtonHelperService _actionButtonHelperService;
-
+        private readonly ICurrentContextService _currentContextService;
         public VoucherActionService(PurchaseOrderDBContext purchaseOrderDBContext
             , IActivityLogService activityLogService
             , IMapper mapper
             , IRoleHelperService roleHelperService
             , IActionButtonHelperService actionButtonHelperService
+            , ICurrentContextService currentContextService
             ) : base(actionButtonHelperService, EnumObjectType.VoucherType)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _activityLogService = activityLogService;
             _mapper = mapper;
             _actionButtonHelperService = actionButtonHelperService;
+            _currentContextService = currentContextService;
         }
 
         protected override async Task<string> GetObjectTitle(int objectId)
@@ -76,6 +78,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     messageParam,
                     new SqlParameter("@VoucherTypeId", voucherTypeId),
                     new SqlParameter("@VoucherBill_F_Id", voucherBillId),
+                    new SqlParameter("@UserId", _currentContextService.UserId),
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
                 };
                 var resultData = await _purchaseOrderDBContext.QueryDataTable(action.SqlAction, parammeters);
@@ -92,7 +95,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return result;
         }
 
-
+        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

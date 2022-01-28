@@ -7,7 +7,7 @@ namespace VErp.Commons.Library.Model
 {
     public class CategoryNameModel
     {
-        public int CategoryId { get; set; }
+        //public int CategoryId { get; set; }
         public string CategoryCode { get; set; }
         public string CategoryTitle { get; set; }
         public bool IsTreeView { get; set; }
@@ -19,11 +19,13 @@ namespace VErp.Commons.Library.Model
         //optional
         public string GroupName { get; set; }
 
-        public int CategoryFieldId { get; set; }
+        //public int CategoryFieldId { get; set; }
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
         public bool IsRequired { get; set; }
         public int? Type { get; set; }
+
+        public EnumDataType? DataTypeId { get; set; }
         public CategoryNameModel RefCategory { get; set; }
     }
 
@@ -39,6 +41,13 @@ namespace VErp.Commons.Library.Model
     public class FieldDataIgnoreAttribute : Attribute
     {
         public FieldDataIgnoreAttribute()
+        {
+        }
+    }
+
+    public class FieldDataIgnoreExportAttribute : Attribute
+    {
+        public FieldDataIgnoreExportAttribute()
         {
         }
     }

@@ -6,12 +6,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Print;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Config;
@@ -24,28 +27,31 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterDbContext;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
 
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
+        private readonly IOrganizationHelperService _organizationHelperService;
 
         private readonly ICurrentContextService _currentContextService;
 
+        private readonly ObjectActivityLogFacade _objectPrintConfigActivityLog;
+
         public ObjectPrintConfigService(MasterDBContext masterDbContext
             , ILogger<ObjectGenCodeService> logger
-            , IActivityLogService activityLogService
             , IInputTypeHelperService inputTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IMapper mapper
-            , ICurrentContextService currentContextService)
+            , IActivityLogService activityLogService
+            , ICurrentContextService currentContextService, IOrganizationHelperService organizationHelperService)
         {
             _masterDbContext = masterDbContext;
             _mapper = mapper;
             _logger = logger;
-            _activityLogService = activityLogService;
             _inputTypeHelperService = inputTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _currentContextService = currentContextService;
+            _objectPrintConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
+            _organizationHelperService = organizationHelperService;
         }
 
         public async Task<ObjectPrintConfig> GetObjectPrintConfigMapping(EnumObjectType objectTypeId, int objectId)
@@ -69,6 +75,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await MapObjectPrintConfigStandard(mapping);
 
                 await trans.CommitAsync();
+
+
+                await _objectPrintConfigActivityLog.LogBuilder(() => ObjectPrintConfigActivityLogMessage.MapingObjectPrintConfigs)      
+                 .ObjectType(mapping.ObjectTypeId)
+                 .ObjectId(mapping.ObjectId)
+                 .JsonData(mapping.JsonSerialize())
+                 .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -81,7 +95,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task MapObjectPrintConfigCustom(ObjectPrintConfig mapping)
+        private async Task MapObjectPrintConfigCustom(ObjectPrintConfig mapping)
         {
             var mappingModels = mapping.PrintConfigIds
                 .Select(printConfigId => new ObjectPrintConfigMappingModel
@@ -105,7 +119,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         }
 
-        public async Task MapObjectPrintConfigStandard(ObjectPrintConfig mapping)
+        private async Task MapObjectPrintConfigStandard(ObjectPrintConfig mapping)
         {
             if (_currentContextService.IsDeveloper)
             {
@@ -141,7 +155,8 @@ namespace VErp.Services.Master.Service.Config.Implement
         private IList<PrintConfigCustom> _printConfigs;
         public async Task<PageData<ObjectPrintConfigSearch>> GetObjectPrintConfigSearch(string keyword, int page, int size)
         {
-            keyword = keyword?.ToLower();
+            keyword = (keyword?? "").Trim().ToLower();
+
             _objectPrintConfigMappings = await _masterDbContext.ObjectPrintConfigMapping.AsNoTracking().ToListAsync();
             _printConfigs = await _masterDbContext.PrintConfigCustom.AsNoTracking().ToListAsync();
 
@@ -149,11 +164,13 @@ namespace VErp.Services.Master.Service.Config.Implement
 
 
             var vourcherTask = VourcherMappingTypeModels();
+            var hrTask = HrMappingTypeModels();
             var inputTask = InputMappingTypeModels();
             var manufactureTask = ManufactureMappingTypeModels();
 
             result.AddRange(await vourcherTask);
             result.AddRange(await inputTask);
+            result.AddRange(await hrTask);
             result.AddRange(manufactureTask);
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -222,6 +239,26 @@ namespace VErp.Services.Master.Service.Config.Implement
                          objectTypeId: EnumObjectType.VoucherType,
                          objectId: voucherType.VoucherTypeId,
                          objectTitle: voucherType.Title
+                         )
+                     );
+            }
+
+            return result;
+        }
+
+        private async Task<IList<ObjectPrintConfigSearch>> HrMappingTypeModels()
+        {
+            var hrTypes = _organizationHelperService.GetHrTypeSimpleList();
+
+            var result = new List<ObjectPrintConfigSearch>();
+            foreach (var hrType in await hrTypes)
+            {
+                result.Add(
+                         GetObjectPrintConfigSearch(
+                         moduleTypeId: EnumModuleType.Organization,
+                         objectTypeId: EnumObjectType.HrType,
+                         objectId: hrType.HrTypeId,
+                         objectTitle: hrType.Title
                          )
                      );
             }

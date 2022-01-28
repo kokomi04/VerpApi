@@ -28,9 +28,11 @@ namespace VErp.Services.Stock.Model.Stock
 
         public decimal TotalPrimaryQuantityRemaining { set; get; }
 
-        public List<StockProductQuantity> StockProductQuantityList { set; get; }
+        // public List<StockProductQuantity> StockProductQuantityList { set; get; }
         public long? MainImageFileId { get; set; }
         public int DecimalPlace { get; set; }
+        public bool IsReachMin { get; set; }
+        public bool IsReachMax { get; set; }
     }
 
     public class StockProductQuantity

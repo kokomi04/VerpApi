@@ -1,11 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -16,7 +19,9 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Services.Stock.Model.Product;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 {
@@ -27,11 +32,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private StockDBContext _stockContext;
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
-        public ProductImportFacade(StockDBContext stockContext, MasterDBContext masterDBContext, IOrganizationHelperService organizationHelperService)
+        private ObjectActivityLogFacade _productActivityLog;
+
+        public ProductImportFacade(StockDBContext stockContext, MasterDBContext masterDBContext, IOrganizationHelperService organizationHelperService, ObjectActivityLogFacade productActivityLog)
         {
             _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _organizationHelperService = organizationHelperService;
+            _productActivityLog = productActivityLog;
         }
 
 
@@ -100,7 +108,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     case nameof(ProductImportModel.StockIds):
                         var stockNames = value.Split(",");
                         var stockIds = stockNames.Where(s => stocks.ContainsKey(s)).Select(s => stocks[s]).ToList();
-                        if (stockIds.Count != stockNames.Length) throw new BadRequestException(GeneralCode.InvalidParams, $"Danh sách kho {value} không đúng");
+                        if (stockIds.Count != stockNames.Length) throw StockNameNotFound.BadRequestFormat(value);
                         if (stockIds.Count > 0) entity.StockIds = stockIds;
                         return true;
                     case nameof(ProductImportModel.QuantitativeUnitTypeId):
@@ -109,21 +117,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         return true;
 
                     case nameof(ProductImportModel.IsProduct):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.IsProduct = true;
                         }
                         else entity.IsProduct = false;
                         return true;
                     case nameof(ProductImportModel.IsProductSemi):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.IsProductSemi = true;
                         }
                         else entity.IsProductSemi = false;
                         return true;
                     case nameof(ProductImportModel.IsMaterials):
-                        if (value.NormalizeAsInternalName().Equals("Có".NormalizeAsInternalName()))
+                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
                             entity.IsMaterials = true;
                         }
@@ -154,8 +162,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                             if (!customerByCodes.ContainsKey(code))
                             {
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy khách hàng có mã {value} trong hệ thống!");
+                                throw CustomerWithCodeNotFound.BadRequestFormat(value);
                             }
+                            entity.CustomerId = customerByCodes[code].Value;
                         }
 
                         return false;
@@ -166,8 +175,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                             if (!customerByNames.ContainsKey(code))
                             {
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy khách hàng có tên {value} trong hệ thống!");
+                                throw CustomerWithNameNotFound.BadRequestFormat(value);
                             }
+
+                            entity.CustomerId = customerByNames[code].Value;
                         }
 
                         return false;
@@ -180,7 +191,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 {
                     if (int.TryParse(value, out var v) && v < 0 || v > 12)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, $"Độ chính xác {value} không đúng, độ chính xác phải >=0 và <=12");
+                        throw PuDecimalPlaceNotValid.BadRequestFormat(value, 0, 12);
                     }
                 }
 
@@ -208,19 +219,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     includeUnits.Add(new Unit
                     {
                         UnitName = row.Unit,
-                        UnitStatusId = (int)EnumUnitStatus.Using
+                        UnitStatusId = (int)EnumUnitStatus.Using,
+                        DecimalPlace = row.DecimalPlaceDefault.GetValueOrDefault()
+
                     });
                 }
                 for (int suffix = 2; suffix <= 5; suffix++)
                 {
                     var unitText = $"{productUnitConversionNamePropPrefix}0{suffix}";
+                    var decimalPlaceText = $"{productUnitDecimalPlacePropPrefix}0{suffix}";
                     var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
+                    var decimalPlace = (int?)typeInfo.GetProperty(decimalPlaceText).GetValue(row);
                     if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == unit.NormalizeAsInternalName()))
                     {
                         includeUnits.Add(new Unit
                         {
                             UnitName = unit,
-                            UnitStatusId = (int)EnumUnitStatus.Using
+                            UnitStatusId = (int)EnumUnitStatus.Using,
+                            DecimalPlace = decimalPlace.GetValueOrDefault()
                         });
                     }
                 }
@@ -276,6 +292,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .Include(p => p.ProductStockInfo)
                 .Include(p => p.ProductCustomer)
                 .Include(p => p.ProductUnitConversion)
+                .Include(p => p.ProductStockValidation)
                 .ToListAsync();
 
             var existsProductCodes = existsProduct.Select(p => p.ProductCode).Distinct().ToHashSet();
@@ -284,9 +301,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             if (mapping.ImportDuplicateOptionId == null || mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
             {
                 if (dupCodes.Count > 0)
-                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Tồn tại nhiều mặt hàng {string.Join(",", dupCodes)} trong file import");
+                    throw ImportMultipleProductsFound.BadRequestFormat(string.Join(",", dupCodes));
                 if (existsProductCodes.Count > 0)
-                    throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng {string.Join(",", existsProductCodes)} đã tồn tại trong hệ thống");
+                    throw ProductCodeAlreadyExisted.BadRequestFormat(string.Join(",", existsProductCodes));
             }
             //else
             //{
@@ -309,33 +326,33 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 var rowNumber = "";
                 if (p is MappingDataRowAbstract entity)
                 {
-                    rowNumber = ", dòng " + entity.RowNumber;
+                    rowNumber = ",  " + ImportRowTitle + entity.RowNumber;
                 }
 
-                if(p.IsMaterials == false && p.IsProduct == false && p.IsProductSemi == false)
+                if (p.IsMaterials == false && p.IsProduct == false && p.IsProductSemi == false)
                 {
                     p.IsProduct = true;
                 }
 
-                if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
-                {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
-                }
+                //if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
+                //{
+                //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
+                //}
 
+                var productCodeRowTitle = p.ProductCode + " " + rowNumber;
                 if (defaultCateId == null && string.IsNullOrWhiteSpace(p.ProductCate))
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
+                    throw ImportNeedProductCateForProduct.BadRequestFormat(productCodeRowTitle);
                 }
 
                 if (string.IsNullOrWhiteSpace(p.Unit))
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần định nghĩa đơn vị tính cho mặt hàng {p.ProductCode} {rowNumber}");
+                    throw UnitOfProductNotFound.BadRequestFormat(productCodeRowTitle);
                 }
 
                 if (string.IsNullOrWhiteSpace(p.ProductName))
                 {
-
-                    throw new BadRequestException(ProductErrorCode.ProductNameEmpty, $"Yêu cầu tên mặt hàng có mã {p.ProductCode} {rowNumber}");
+                    throw ProductNameOfCodeEmpty.BadRequestFormat(productCodeRowTitle);
                 }
             });
             var updateProducts = data.Where(x => existsProductCodes.Contains(x.ProductCode?.ToLower()))
@@ -346,26 +363,57 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
-
-                foreach (var row in newProducts)
+                using (var logBatch = _productActivityLog.BeginBatchLog())
                 {
-                    var newProduct = new Product();
-                    ParseProductInfoEntity(newProduct, row);
-
-                    _stockContext.Product.Add(newProduct);
-                }
-
-                if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
-                {
-                    if (updateProducts.Count > 0)
+                    var productsMap = new Dictionary<ProductImportModel, Product>();
+                    foreach (var row in newProducts)
                     {
-                        UpdateProduct(updateProducts, existsProduct);
-                    }
-                }
+                        var newProduct = new Product();
+                        await ParseProductInfoEntity(newProduct, row);
 
-                _stockContext.SaveChanges();
-                trans.Commit();
-                return data.Count > 0;
+                        _stockContext.Product.Add(newProduct);
+                        productsMap.Add(row, newProduct);
+                    }
+
+                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                    {
+                        if (updateProducts.Count > 0)
+                        {
+                            await UpdateProduct(productsMap, updateProducts, existsProduct);
+                        }
+                    }
+
+                    _stockContext.SaveChanges();
+
+                    foreach (var row in newProducts)
+                    {
+
+                        await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportNew)
+                              .MessageResourceFormatDatas(row.ProductCode)
+                              .ObjectId(productsMap[row].ProductId)
+                              .JsonData(row.JsonSerialize())
+                              .CreateLog();
+
+                    }
+
+                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                    {
+                        foreach (var row in updateProducts)
+                        {
+
+                            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
+                                  .MessageResourceFormatDatas(row.ProductCode)
+                                  .ObjectId(productsMap[row].ProductId)
+                                  .JsonData(row.JsonSerialize())
+                                  .CreateLog();
+
+                        }
+                    }
+
+                    await trans.CommitAsync();
+                    await logBatch.CommitAsync();
+                    return data.Count > 0;
+                }
             }
             catch (Exception)
             {
@@ -375,7 +423,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private void UpdateProduct(IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        private async Task UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
         {
 
             var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
@@ -394,20 +442,45 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
 
-                ParseProductInfoEntity(existedProduct, row);
+                await ParseProductInfoEntity(existedProduct, row);
+
+                productsMap.Add(row, existedProduct);
+
             }
 
         }
 
-        private void ParseProductInfoEntity(Product product, ProductImportModel row)
+        private async Task ParseProductInfoEntity(Product product, ProductImportModel row)
         {
 
             var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
             var cateName = row.ProductCate.NormalizeAsInternalName();
 
-            product.UpdateIfAvaiable(p => p.CustomerId, customerByCodes, row.CustomerCode.NormalizeAsInternalName());
-            product.UpdateIfAvaiable(p => p.CustomerId, customerByNames, row.CustomerName.NormalizeAsInternalName());
+            //product.UpdateIfAvaiable(p => p.CustomerId, customerByCodes, row.CustomerCode.NormalizeAsInternalName());
+            //product.UpdateIfAvaiable(p => p.CustomerId, customerByNames, row.CustomerName.NormalizeAsInternalName());
 
+            var oldUnitId = product.UnitId;
+
+            product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
+            await Task.CompletedTask;
+            /*
+            if (product.ProductId > 0 && product.UnitId != oldUnitId)
+            {
+                var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                var checkParams = new[]
+                {
+                            new SqlParameter("@ProductId",product.ProductId),
+                            isInUsed
+                        };
+
+                await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+                if (isInUsed.Value as bool? == true)
+                {
+                    throw CanNotUpdateUnitProductWhichInUsed.BadRequestFormat(product.ProductCode);
+                }
+            }
+            */
 
             product.UpdateIfAvaiable(p => p.ProductCode, row.ProductCode);
 
@@ -417,6 +490,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 product.ProductInternalName = row.ProductName.NormalizeAsInternalName();
             }
 
+            product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductNameEng);
+            product.UpdateIfAvaiable(p => p.Color, row.Color);
+          
             //product.IsCanBuy = row.IsCanBuy ?? true;
             //product.IsCanSell = row.IsCanSell ?? true;
             //product.MainImageFileId = null;
@@ -437,7 +513,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //product.BarcodeStandardId = null;
             product.UpdateIfAvaiable(p => p.Barcode, row.Barcode);
 
-            product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
+
 
             product.UpdateIfAvaiable(p => p.EstimatePrice, row.EstimatePrice);
 
@@ -461,9 +537,16 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.QuantitativeUnitTypeId, (int?)row.QuantitativeUnitTypeId);
 
+            product.UpdateIfAvaiable(p => p.ProductPurity, row.ProductPurity);
+
             product.UpdateIfAvaiable(p => p.IsProductSemi, row.IsProductSemi);
 
             product.UpdateIfAvaiable(p => p.IsProduct, row.IsProduct);
+
+            product.UpdateIfAvaiable(p => p.PackingQuantitative, row.PackingQuantitative);
+            product.UpdateIfAvaiable(p => p.PackingHeight, row.PackingHeight);
+            product.UpdateIfAvaiable(p => p.PackingLong, row.PackingLong);
+            product.UpdateIfAvaiable(p => p.PackingWidth, row.PackingWidth);
 
             if (product.ProductId == 0)
             {
@@ -502,6 +585,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             product.UpdateIfAvaiable(p => p.ProductStockInfo.AmountWarningMax, row.AmountWarningMax);
             product.UpdateIfAvaiable(p => p.ProductStockInfo.ExpireTimeTypeId, (int?)row.ExpireTimeTypeId);
             product.UpdateIfAvaiable(p => p.ProductStockInfo.ExpireTimeAmount, row.ExpireTimeAmount);
+            product.UpdateIfAvaiable(p => p.ProductStockInfo.DescriptionToStock, row.DescriptionToStock);
 
             var stockValidations = ParseProductStockValidations(row, product.ProductId);
             foreach (var newStock in stockValidations)
@@ -516,7 +600,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     //existedItem.UpdateIfAvaiable(v=>v.StockId)
                 }
             }
-            var productCustomers = ParseProductCustomers(row, product.ProductId, product.CustomerId);
+            var productCustomers = ParseProductCustomers(row, product.ProductId);
             foreach (var productCustomer in productCustomers)
             {
                 var existedItem = product.ProductCustomer.FirstOrDefault(s => s.CustomerId == productCustomer.CustomerId);
@@ -527,6 +611,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 else
                 {
                     existedItem.UpdateIfAvaiable(v => v.CustomerProductCode, productCustomer.CustomerProductCode);
+                    existedItem.UpdateIfAvaiable(v => v.CustomerProductName, productCustomer.CustomerProductName);
                 }
             }
 
@@ -546,6 +631,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     }
                     else
                     {
+                        existedItem.UpdateIfAvaiable(v => v.ProductUnitConversionName, pu.ProductUnitConversionName);
                         existedItem.UpdateIfAvaiable(v => v.DecimalPlace, pu.UploadDecimalPlace);
                     }
 
@@ -580,7 +666,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private IList<ProductCustomer> ParseProductCustomers(ProductImportModel row, int productId, int? customerId)
+        private IList<ProductCustomer> ParseProductCustomers(ProductImportModel row, int productId)
         {
             return string.IsNullOrWhiteSpace(row.CustomerProductCode) ? new List<ProductCustomer>() :
                 new List<ProductCustomer>()
@@ -588,8 +674,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                            new ProductCustomer()
                            {
                                ProductId = productId,
-                               CustomerId = customerId,
-                               CustomerProductCode = row.CustomerProductCode
+                               CustomerId = row.CustomerId,
+                               CustomerProductCode = row.CustomerProductCode,
+                               CustomerProductName = row.CustomerProductName
                            }
                 };
 
@@ -597,6 +684,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         private IList<ProductUnitConversionUpdate> ParsePuConverions(ProductImportModel row, int productId)
         {
+            var defaultDecPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault : null;
+
             var lstUnitConverions = new List<ProductUnitConversionUpdate>(){
                             new ProductUnitConversionUpdate()
                             {
@@ -604,11 +693,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 ProductUnitConversionName = row.Unit,
                                 SecondaryUnitId =row.Unit.IsNullObject()?0: units[row.Unit.NormalizeAsInternalName()],
                                 FactorExpression = "1",
-                                ConversionDescription = "Mặc định",
+                                ConversionDescription = "Default",
                                 IsDefault = true,
                                 IsFreeStyle = false,
-                                DecimalPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault??DECIMAL_PLACE_DEFAULT : DECIMAL_PLACE_DEFAULT,
-                                UploadDecimalPlace=null
+                                DecimalPlace = defaultDecPlace??DECIMAL_PLACE_DEFAULT,
+                                UploadDecimalPlace= defaultDecPlace
                             }
                         };
 
@@ -628,13 +717,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
                         if (!(eval > 0))
                         {
-                            throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, $"Biểu thức chuyển đổi {exp} của mặt hàng {row.ProductCode} không đúng");
+                            throw PuConversionExpressionInvalid.BadRequestFormat(exp, row.ProductCode);
                         }
                     }
                     catch (Exception)
                     {
-
-                        throw new BadRequestException(ProductErrorCode.InvalidUnitConversionExpression, $"Lỗi không thể tính toán biểu thức đơn vị chuyển đổi {exp}  của mặt hàng {row.ProductCode}");
+                        throw PuConversionExpressionError.BadRequestFormat(exp, row.ProductCode);
                     }
 
                     lstUnitConverions.Add(new ProductUnitConversionUpdate()

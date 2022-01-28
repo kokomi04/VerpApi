@@ -19,6 +19,7 @@ using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
 using VErp.Services.Stock.Service.Stock;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Stock.Internal
 {
@@ -48,6 +49,13 @@ namespace VErpApi.Controllers.Stock.Internal
             return await _productService.ProductInfo(productId);
         }
 
+        [HttpPost]
+        [Route("GetByIds")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<ProductListOutput>> GetByIds([FromBody] IList<int> productIds)
+        {
+            return (await _productService.GetListByIds(productIds)).ToList();
+        }
 
         [HttpPost]
         [Route("validateProductUnitConversion")]
@@ -73,9 +81,23 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [HttpPut]
         [Route("{productId}/coefficient")]
-        public async Task<bool> UpdateProductCoefficientManual([FromRoute] int productId, [FromQuery] int coefficient)
+        public async Task<bool> UpdateProductCoefficientManual([FromRoute] int productId, [FromQuery] decimal coefficient)
         {
             return await _productService.UpdateProductCoefficientManual(productId, coefficient);
+        }
+
+        [HttpPut]
+        [Route("{productId}/productionProcessVersion")]
+        public async Task<bool> UpdateProductionProcessVersion([FromRoute] int productId)
+        {
+            return await _productService.UpdateProductionProcessVersion(productId);
+        }
+
+        [HttpGet]
+        [Route("{productId}/productionProcessVersion")]
+        public async Task<long> GetProductionProcessVersion([FromRoute] int productId)
+        {
+            return await _productService.GetProductionProcessVersion(productId);
         }
     }
 }

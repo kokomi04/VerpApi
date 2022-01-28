@@ -91,6 +91,8 @@ namespace VErp.Services.Accountant.Service.Category.Implement
                 }
             }
             // search
+            keyword = (keyword ?? "").Trim();
+            
             if (!string.IsNullOrEmpty(keyword))
             {
                 query = query.Where(r => r.CategoryRowValue.Any(rv => !string.IsNullOrEmpty(rv.Value) && rv.Value.Contains(keyword)));

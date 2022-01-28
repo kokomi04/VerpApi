@@ -19,6 +19,10 @@ using System.Security.Principal;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.EF.OrganizationDB;
 using Microsoft.Extensions.DependencyInjection;
+using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
+using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
+using Verp.Cache.Caching;
+using System.Threading.Tasks;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -27,11 +31,13 @@ namespace VErp.Infrastructure.ServiceCore.Service
     public class CurrentContextFactory : ICurrentContextFactory
     {
         private ICurrentContextService _currentContext;
+
         private bool _used = false;
 
         public CurrentContextFactory(HttpCurrentContextService currentContext)
         {
             _currentContext = currentContext;
+
         }
 
         public void SetCurrentContext(ICurrentContextService currentContext)
@@ -55,12 +61,15 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public class HttpCurrentContextService : ICurrentContextService
     {
+
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly Func<UnAuthorizeMasterDBContext> _masterDBContext;
         private readonly Func<UnAuthorizeOrganizationContext> _organizationDBContext;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ICachingService _cachingService;
+        private IAuthDataCacheService _authDataCacheService;
 
         private int _userId = 0;
         private string _userName = "";
@@ -70,6 +79,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private IList<int> _stockIds;
         //private IList<int> _roleIds;
         private RoleInfo _roleInfo;
+        private string _language;
+
+        private string _ipAddress;
+        private string _domain;
+        private int _moduleId;
 
         public HttpCurrentContextService(
             IOptions<AppSetting> appSetting
@@ -77,7 +91,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
             , IHttpContextAccessor httpContextAccessor
             , Func<UnAuthorizeMasterDBContext> masterDBContext
             , Func<UnAuthorizeOrganizationContext> organizationDBContext
-           , IServiceScopeFactory serviceScopeFactory
+            , IServiceScopeFactory serviceScopeFactory
+            , ICachingService cachingService
+            , IAuthDataCacheService authDataCacheService
             )
         {
             _appSetting = appSetting.Value;
@@ -86,14 +102,31 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _masterDBContext = masterDBContext;
             _organizationDBContext = organizationDBContext;
             _serviceScopeFactory = serviceScopeFactory;
-            CrossServiceLogin();
+            _cachingService = cachingService;
+            _authDataCacheService = authDataCacheService;
+            try
+            {
+                CrossServiceLogin();
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
 
         private void CrossServiceLogin()
         {
-            var httpContext = _httpContextAccessor?.HttpContext;
-            if (httpContext == null) return;
+            HttpContext httpContext;
+            try
+            {
+                httpContext = _httpContextAccessor?.HttpContext;
+                if (httpContext == null) return;
+            }
+            catch (Exception)
+            {
+                return;
+            }
 
             var headers = httpContext.Request.Headers;
             headers.TryGetValue(Headers.CrossServiceKey, out var crossServiceKeys);
@@ -104,7 +137,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
             var userId = 0;
             var action = EnumActionType.View;
-          
+
             if (headers.TryGetValue(Headers.UserId, out var strUserId))
             {
                 userId = int.Parse(strUserId);
@@ -119,7 +152,15 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 _subsidiaryId = int.Parse(strSubsidiaryId);
             }
+            if (headers.TryGetValue(Headers.Language, out var language))
+            {
+                _language = language;
+            }
 
+            if (headers.TryGetValue(Headers.XForwardedFor, out var xForwardedFor))
+            {
+                _ipAddress = xForwardedFor;
+            }
 
             if (userId > 0)
             {
@@ -165,7 +206,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 if (!string.IsNullOrEmpty(_userName)) return _userName;
 
-                var userInfo = _masterDBContext().User.AsNoTracking().FirstOrDefault(u => u.UserId == _userId);
+                var userInfo = _authDataCacheService.UserInfo(_userId).GetAwaiter().GetResult();
+
                 if (userInfo != null)
                 {
                     _userName = userInfo.UserName;
@@ -249,28 +291,34 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 var masterDBContext = _masterDBContext();
 
-                var userInfo = masterDBContext.User.AsNoTracking().First(u => u.UserId == UserId);
-                var roleInfo = (
-                    from r in masterDBContext.Role
-                    where r.RoleId == userInfo.RoleId
-                    select new
-                    {
-                        r.RoleId,
-                        r.IsDataPermissionInheritOnStock,
-                        r.IsModulePermissionInherit,
-                        r.ChildrenRoleIds,
-                        r.RoleName
-                    }
-                   )
-                   .First();
 
-                _roleInfo = new RoleInfo(
-                    roleInfo.RoleId,
-                    roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
-                    roleInfo.IsDataPermissionInheritOnStock,
-                    roleInfo.IsModulePermissionInherit,
-                    roleInfo.RoleName
-                );
+                var userInfo = _authDataCacheService.UserInfo(_userId).GetAwaiter().GetResult();
+
+
+                _roleInfo = TryGetSet(RoleInfoCacheKey(userInfo.RoleId ?? 0), () =>
+                  {
+                      var roleInfo = (
+                     from r in masterDBContext.Role
+                     where r.RoleId == userInfo.RoleId
+                     select new
+                     {
+                         r.RoleId,
+                         r.IsDataPermissionInheritOnStock,
+                         r.IsModulePermissionInherit,
+                         r.ChildrenRoleIds,
+                         r.RoleName
+                     }
+                    )
+                    .First();
+
+                      return new RoleInfo(
+                          roleInfo.RoleId,
+                          roleInfo.ChildrenRoleIds?.Split(',')?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => int.Parse(c)).ToList(),
+                          roleInfo.IsDataPermissionInheritOnStock,
+                          roleInfo.IsModulePermissionInherit,
+                          roleInfo.RoleName
+                      );
+                  });
 
                 return _roleInfo;
             }
@@ -290,24 +338,27 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 }
                 var roleInfo = RoleInfo;
 
-                var roleIds = new List<int>();
-                roleIds.Add(roleInfo.RoleId);
-                if (roleInfo.IsDataPermissionInheritOnStock && roleInfo.ChildrenRoleIds?.Count > 0)
+                _stockIds = TryGetSet(RoleStockPermissionCacheKey(roleInfo.RoleId), () =>
                 {
-                    roleIds.AddRange(roleInfo.ChildrenRoleIds);
-                }
+                    var roleIds = new List<int>();
+                    roleIds.Add(roleInfo.RoleId);
+                    if (roleInfo.IsDataPermissionInheritOnStock && roleInfo.ChildrenRoleIds?.Count > 0)
+                    {
+                        roleIds.AddRange(roleInfo.ChildrenRoleIds);
+                    }
 
-                using (var scope = _serviceScopeFactory.CreateScope())
-                {
-                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
 
-                    _stockIds = masterDBContext.RoleDataPermission
-                    .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && roleIds.Contains(d.RoleId))
-                    .Select(d => d.ObjectId)
-                    .ToList()
-                    .Select(d => (int)d)
-                    .ToArray();
-                }
+                        return masterDBContext.RoleDataPermission
+                        .Where(d => d.ObjectTypeId == (int)EnumObjectType.Stock && roleIds.Contains(d.RoleId))
+                        .Select(d => d.ObjectId)
+                        .ToList()
+                        .Select(d => (int)d)
+                        .ToArray();
+                    }
+                });
 
                 return _stockIds;
             }
@@ -317,13 +368,90 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             get
             {
+                var _isDev = TryGetSetLong(RoleStockPermissionCacheKey(UserName, SubsidiaryId), () =>
+                {
+                    var subdiaryInfo = _organizationDBContext().Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
 
-                var subdiaryInfo = _organizationDBContext().Subsidiary.FirstOrDefault(s => s.SubsidiaryId == SubsidiaryId);
+                    if (subdiaryInfo == null) return false;
 
-                if (subdiaryInfo == null) return false;
+                    return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
+                });
 
-                return _appSetting.Developer?.IsDeveloper(UserName, subdiaryInfo.SubsidiaryCode) == true;
+                return _isDev;
             }
+        }
+
+        public string Language
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_language))
+                    return _language;
+
+                var languages = new StringValues();
+                _httpContextAccessor.HttpContext?.Request.Headers.TryGetValue(Headers.Language, out languages);
+
+                if (languages.Count == 0)
+                {
+                    return "";
+                }
+                _language = languages.ToString();
+                return _language;
+            }
+        }
+
+
+        public string IpAddress
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_ipAddress))
+                    return _ipAddress;
+
+                _ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+
+                return _ipAddress;
+            }
+        }
+
+        public string Domain
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_domain))
+                    return _domain;
+
+                _domain = $"{_httpContextAccessor.HttpContext.Request.Scheme}://{_httpContextAccessor.HttpContext.Request.Host}";
+
+                return _domain;
+            }
+        }
+
+        public int ModuleId
+        {
+            get
+            {
+                if (_moduleId > 0)
+                    return _moduleId;
+
+                _httpContextAccessor.HttpContext.Request.Headers.TryGetValue(Headers.Module, out var moduleIds);
+
+                if (moduleIds.Count == 0) return 0;
+
+                _moduleId = int.Parse(moduleIds[0]);
+                return _moduleId;
+            }
+        }
+
+        private T TryGetSet<T>(string key, Func<T> queryData)
+        {
+            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
+        }
+
+
+        private T TryGetSetLong<T>(string key, Func<T> queryData)
+        {
+            return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT, queryData);
         }
     }
 
@@ -336,13 +464,16 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 currentContextService.RoleInfo,
                 currentContextService.StockIds,
                 currentContextService.SubsidiaryId,
-                currentContextService.TimeZoneOffset
+                currentContextService.TimeZoneOffset,
+                currentContextService.Language,
+                currentContextService.IpAddress,
+                currentContextService.Domain
         )
         {
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset)
+        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language, string ipAddress, string domain)
         {
             UserId = userId;
             SubsidiaryId = subsidiaryId;
@@ -350,6 +481,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
             RoleInfo = roleInfo == null ? null : roleInfo.JsonSerialize().JsonDeserialize<RoleInfo>();
             StockIds = stockIds == null ? null : stockIds.JsonSerialize().JsonDeserialize<List<int>>();
             TimeZoneOffset = timeZoneOffset;
+            Language = language;
+            IpAddress = ipAddress;
+            Domain = domain;
         }
 
         public void SetSubsidiaryId(int subsidiaryId)
@@ -364,5 +498,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
         public RoleInfo RoleInfo { get; }
         public int? TimeZoneOffset { get; }
         public bool IsDeveloper { get; } = false;
+        public string Language { get; }
+        public string IpAddress { get; }
+        public string Domain { get; }
+        public int ModuleId { get; }
     }
 }

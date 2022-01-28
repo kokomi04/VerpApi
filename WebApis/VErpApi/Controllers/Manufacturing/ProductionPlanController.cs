@@ -11,6 +11,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Service.ProductionPlan;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
+using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -42,6 +43,23 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> DeleteProductionPlan([FromBody] long productionOrderId)
         {
             return await _productionPlanService.DeleteProductionPlan(productionOrderId);
+        }
+
+        [HttpPost]
+        [Route("export")]
+        public async Task<FileStreamResult> ProductionPlanExport([FromQuery] long startDate, [FromQuery] long endDate, [FromBody] ProductionPlanExportModel data)
+        {
+            var (stream, fileName, contentType) = await _productionPlanService.ProductionPlanExport(startDate, endDate, data);
+
+            return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
+
+        }
+
+        [HttpPost]
+        [Route("workload")]
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan([FromBody] IList<long> productionOrderIds)
+        {
+            return await _productionPlanService.GetWorkloadPlan(productionOrderIds);
         }
     }
 }

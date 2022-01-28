@@ -37,6 +37,8 @@ using VErp.Services.Stock.Model;
 using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 using VErp.Commons.Library;
+using VErp.Services.Master.Service.Webpush;
+using Lib.Net.Http.WebPush;
 
 namespace VErp.WebApis.VErpApi
 {
@@ -66,7 +68,7 @@ namespace VErp.WebApis.VErpApi
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
             _cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
-
+            
             services
                 .AddIdentityServer()
                 .AddSigningCredential(_cert)
@@ -101,6 +103,9 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureAutoMaper(services);
 
+            services.AddHttpClient<PushServiceClient>();
+            // services.AddHostedService<WebPushNotificationsProducer>();
+
             return BuildService(services);
         }
         private static void ConfigureBussinessService(IServiceCollection services)
@@ -129,7 +134,8 @@ namespace VErp.WebApis.VErpApi
             profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(ManufacturingModelAssembly.Assembly);
-
+            profile.ApplyMappingsFromAssembly(GlobalObjectAssembly.Assembly);
+            profile.ApplyMappingsFromAssembly(ServiceCoreAssembly.Assembly);
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }
@@ -146,23 +152,24 @@ namespace VErp.WebApis.VErpApi
             ConfigureBase(app, env, loggerFactory, true);
 
             app.UseEndpointsGrpcService(GrpcServiceAssembly.Assembly);
+            app.UseSignalRHubEndpoints(ServiceCoreAssembly.Assembly);
 
             app.UseSwagger()
               .UseSwaggerUI(c =>
               {
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/system/swagger.json", "SYSTEM.API V1");
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/system/swagger.json", "SYSTEM.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/stock/swagger.json", "STOCK.API V1");
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/stock/swagger.json", "STOCK.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/accountant/swagger.json", "ACCOUNTANT.API V1");
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/accountant/swagger.json", "ACCOUNTANT.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/accountancy/swagger.json", "ACCOUNTANTCY.API V1");
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/accountancy/swagger.json", "ACCOUNTANTCY.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/report/swagger.json", "REPORT.API V1");
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/report/swagger.json", "REPORT.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/manufacturing/swagger.json", "MANUFACTURING.API V1");
+                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/manufacturing/swagger.json", "MANUFACTURING.API V1");
 
                   c.OAuthClientId("web");
                   c.OAuthClientSecret("secretWeb");

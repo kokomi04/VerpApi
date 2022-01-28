@@ -25,28 +25,36 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal? Width { get; set; }
         public decimal? Height { get; set; }
         public string PackingMethod { get; set; }
-        public int? CustomerId { get; set; }
+        //public int? CustomerId { get; set; }
         public decimal? NetWeight { get; set; }
         public decimal? GrossWeight { get; set; }
         public decimal? Measurement { get; set; }
         public decimal? LoadAbility { get; set; }
-        public string ProductDescription { get; set; }
+        public string SellDescription { get; set; }
         public string ProductNameEng { get; set; }
 
         public decimal? Quantitative { get; set; }
         public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
+        public decimal? ProductPurity { get; set; }
 
         public bool IsProductSemi { get; set; }
         public bool? IsProduct { get; set; }
         public bool? IsMaterials { get; set; }
-        public int Coefficient { get; set; }
+        public decimal Coefficient { get; set; }
         public string Color { get; set; }
+
+        public decimal? PackingQuantitative { get; set; }
+        public decimal? PackingWidth { get; set; }
+        public decimal? PackingLong { get; set; }
+        public decimal? PackingHeight { get; set; }
+
+        public long? ProductionProcessVersion { get; set; }
+
 
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
         public ProductModelExtra Extra { get; set; }
         public ProductModelStock StockInfo { get; set; }
-
-
+        public string UnitName { get; set; }
 
         public class ProductModelExtra
         {
@@ -79,8 +87,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public class ProductModelUnitConversion
         {
             public int ProductUnitConversionId { get; set; }
-            [Required(ErrorMessage = "Vui lòng nhập quy cách đơn vị chuyển đổi")]
-            [MaxLength(128, ErrorMessage = "Quy cách đơn vị chuyển đổi quá dài")]
             public string ProductUnitConversionName { get; set; }
             public int SecondaryUnitId { get; set; }
             public bool IsDefault { get; set; }
@@ -94,6 +100,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         {
             public int? CustomerId { get; set; }
             public string CustomerProductCode { get; set; }
+            public string CustomerProductName { get; set; }
         }
     }
 

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionOrderDetail
@@ -26,6 +28,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
         public string OrderCode { get; set; }
         public string PartnerId { get; set; }
+        public long? ProductionProcessVersion { get; set; }
 
         public virtual ProductionOrder ProductionOrder { get; set; }
         public virtual ICollection<OutsourcePartRequest> OutsourcePartRequest { get; set; }

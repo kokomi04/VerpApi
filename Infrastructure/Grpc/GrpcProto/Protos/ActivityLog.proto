@@ -13,6 +13,8 @@ message ActivityInput {
     string Message = 6;
     string Data = 7;
     int32 SubsidiaryId = 8;
+    string MessageResourceName = 9;
+    string MessageResourceFormatData = 10;
 }
 
 message ActivityResponses {

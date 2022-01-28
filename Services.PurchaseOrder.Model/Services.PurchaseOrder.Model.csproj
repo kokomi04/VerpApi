@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\Commons\Library\Library.csproj" />
+    <ProjectReference Include="..\Commons\Resources\Resources.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
   </ItemGroup>
 

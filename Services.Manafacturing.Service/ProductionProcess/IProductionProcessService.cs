@@ -14,6 +14,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
     public interface IProductionProcessService
     {
+        Task<bool> CheckHasAssignment(long productionOrderId);
+        Task<bool> DismissUpdateQuantity(long productionOrderId);
         Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
         Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId);
 
@@ -28,7 +30,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<bool> MergeProductionStep(int productionOrderId, IList<long> productionStepIds);
         //Task<bool> GenerateProductionStepMapping(int containerId, List<ProductionStepLinkModel> req);
 
-        Task<bool> UpdateProductionStepSortOrder(IList<PorductionStepSortOrderModel> req);
+        Task<bool> UpdateProductionStepSortOrder(IList<ProductionStepSortOrderModel> req);
 
         //ProductionStepRoleClient
         Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model);
@@ -48,7 +50,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         //Task<bool> UpdateMarkInvalidOutsourcePartRequest(long productionOrderId);
         //Task<bool> UpdateMarkInvalidOutsourceStepRequest(long productionOrderId);
 
-        Task<IList<ProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId);
+        Task<IList<InternalProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId);
 
         Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep(EnumContainerType containerType, long containerId, long[] productionStepIds);
     }

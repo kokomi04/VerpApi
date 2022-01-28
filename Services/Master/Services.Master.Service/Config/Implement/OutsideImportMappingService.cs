@@ -7,14 +7,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.OutsideImportMapping;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.OutsideMapping;
+using static Verp.Resources.Master.Config.OutsideImportMapping.OutsideImportMappingValidationMessage;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -22,14 +27,20 @@ namespace VErp.Services.Master.Service.Config.Implement
     {
         private MasterDBContext _masterDBContext;
         private IMapper _mapper;
-        public OutsideImportMappingService(MasterDBContext masterDBContext, IMapper mapper)
+
+        private readonly ObjectActivityLogFacade _outsideImportMappingActivityLog;
+
+        public OutsideImportMappingService(MasterDBContext masterDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
             _masterDBContext = masterDBContext;
             _mapper = mapper;
+            _outsideImportMappingActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.OutsideImportMappingFunction);
         }
 
         public async Task<PageData<OutsideMappingModelList>> GetList(string keyword, int page, int size)
         {
+            keyword = (keyword ?? "").Trim();
+
             var query = _masterDBContext.OutsideImportMappingFunction.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -53,14 +64,14 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<int> CreateImportMapping(OutsideMappingModel model)
         {
             var existedFunction = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == model.MappingFunctionKey);
-            if (existedFunction != null) throw new BadRequestException(GeneralCode.InvalidParams, "Định danh chức năng đã tồn tại");
+            if (existedFunction != null) throw MappingFunctionKeyAlreadyExisted.BadRequest();
 
             using (var trans = await _masterDBContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     var functionInfo = _mapper.Map<OutsideImportMappingFunction>(model);
-                    await _masterDBContext.AddAsync(functionInfo);
+                    await _masterDBContext.OutsideImportMappingFunction.AddAsync(functionInfo);
                     await _masterDBContext.SaveChangesAsync();
 
                     var mappings = new List<OutsideImportMapping>();
@@ -77,9 +88,15 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                     await trans.CommitAsync();
 
+                    await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Create)
+                        .MessageResourceFormatDatas(model.FunctionName)
+                         .ObjectId(functionInfo.OutsideImportMappingFunctionId)
+                         .JsonData(model.JsonSerialize())
+                         .CreateLog();
+
                     return functionInfo.OutsideImportMappingFunctionId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.TryRollbackTransactionAsync();
                     throw;
@@ -104,7 +121,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private async Task<OutsideMappingModel> GetInfo(OutsideImportMappingFunction functionInfo)
         {
-            if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
+            if (functionInfo == null) throw MappingFunctionNotFound.BadRequest();
 
             var data = _mapper.Map<OutsideMappingModel>(functionInfo);
 
@@ -123,11 +140,11 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<bool> UpdateImportMapping(int outsideImportMappingFunctionId, OutsideMappingModel model)
         {
             var existedFunction = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId != outsideImportMappingFunctionId && f.MappingFunctionKey == model.MappingFunctionKey);
-            if (existedFunction != null) throw new BadRequestException(GeneralCode.InvalidParams, "Định danh chức năng đã tồn tại");
+            if (existedFunction != null) throw MappingFunctionKeyAlreadyExisted.BadRequest();
 
             var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
 
-            if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
+            if (functionInfo == null) throw MappingFunctionNotFound.BadRequest();
 
             using (var trans = await _masterDBContext.Database.BeginTransactionAsync())
             {
@@ -154,6 +171,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                     await trans.CommitAsync();
 
+                    await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Update)
+                      .MessageResourceFormatDatas(model.FunctionName)
+                      .ObjectId(outsideImportMappingFunctionId)
+                      .JsonData(model.JsonSerialize())
+                      .CreateLog();
+
                     return true;
                 }
                 catch (Exception)
@@ -168,7 +191,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.OutsideImportMappingFunctionId == outsideImportMappingFunctionId);
 
-            if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
+            if (functionInfo == null) throw MappingFunctionNotFound.BadRequest();
 
             using (var trans = await _masterDBContext.Database.BeginTransactionAsync())
             {
@@ -186,6 +209,12 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                     await trans.CommitAsync();
 
+                    await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Delete)
+                      .MessageResourceFormatDatas(functionInfo.FunctionName)
+                      .ObjectId(outsideImportMappingFunctionId)
+                      .JsonData(functionInfo.JsonSerialize())
+                      .CreateLog();
+
                     return true;
                 }
                 catch (Exception)
@@ -200,7 +229,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<OutsideImportMappingObjectModel> MappingObjectInfo(string mappingFunctionKey, string objectId)
         {
             var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
-            if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
+            if (functionInfo == null) throw MappingFunctionNotFound.BadRequest();
 
             var mappingObject = await _masterDBContext.OutsideImportMappingObject.FirstOrDefaultAsync(m => m.OutsideImportMappingFunctionId == functionInfo.OutsideImportMappingFunctionId && m.SourceId == objectId);
 
@@ -219,7 +248,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<bool> MappingObjectCreate(string mappingFunctionKey, string objectId, EnumObjectType billObjectTypeId, long billFId)
         {
             var functionInfo = await _masterDBContext.OutsideImportMappingFunction.FirstOrDefaultAsync(f => f.MappingFunctionKey == mappingFunctionKey);
-            if (functionInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy cấu hình của chức năng trong hệ thống!");
+            if (functionInfo == null) throw MappingFunctionNotFound.BadRequest();
 
             await _masterDBContext.OutsideImportMappingObject.AddAsync(new OutsideImportMappingObject()
             {
@@ -230,6 +259,19 @@ namespace VErp.Services.Master.Service.Config.Implement
             });
 
             await _masterDBContext.SaveChangesAsync();
+
+            await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.CreateMappingObject)
+                  .MessageResourceFormatDatas(functionInfo.FunctionName, billObjectTypeId.GetEnumDescription())
+                  .ObjectId(functionInfo.OutsideImportMappingFunctionId)
+                  .JsonData(new
+                  {
+                      mappingFunctionKey,
+                      objectId,
+                      billObjectTypeId,
+                      billFId
+                  }.JsonSerialize())
+                  .CreateLog();
+
             return true;
         }
 
@@ -238,6 +280,17 @@ namespace VErp.Services.Master.Service.Config.Implement
             var data = _masterDBContext.OutsideImportMappingObject.Where(m => m.BillObjectTypeId == (int)billObjectTypeId && m.InputBillFId == billFId);
             _masterDBContext.OutsideImportMappingObject.RemoveRange(data);
             await _masterDBContext.SaveChangesAsync();
+
+            await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.DeleteMappingObject)
+                .MessageResourceFormatDatas(billObjectTypeId.GetEnumDescription())
+                .ObjectType(billObjectTypeId)
+                .ObjectId(billFId)
+                .JsonData(new
+                {
+                    billObjectTypeId,
+                    billFId
+                }.JsonSerialize())
+                .CreateLog();
             return true;
         }
     }

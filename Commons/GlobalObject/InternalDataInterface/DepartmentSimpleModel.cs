@@ -14,6 +14,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Required(ErrorMessage = "Vui lòng nhập tên tên bộ phận")]
         [MaxLength(128, ErrorMessage = "Tên bộ phận quá dài")]
         public string DepartmentName { get; set; }
-        public decimal? WorkingHoursPerDay { get; set; }
+        [Required(ErrorMessage = "Vui lòng nhập số người trong bộ phận")]
+        public int NumberOfPerson { get; set; }
     }
 }

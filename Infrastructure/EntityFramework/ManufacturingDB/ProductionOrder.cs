@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionOrder
@@ -31,7 +33,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime Date { get; set; }
         public bool IsInvalid { get; set; }
         public bool IsResetProductionProcess { get; set; }
-
+        public bool? InvalidPlan { get; set; }
+        public DateTime? PlanEndDate { get; set; }
+        public bool? IsUpdateQuantity { get; set; }
+        public bool? IsUpdateProcessForAssignment { get; set; }
         public virtual ICollection<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual ICollection<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
         public virtual ICollection<ProductionOrderAttachment> ProductionOrderAttachment { get; set; }

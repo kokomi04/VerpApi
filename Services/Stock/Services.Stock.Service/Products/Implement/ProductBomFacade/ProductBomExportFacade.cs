@@ -16,6 +16,7 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 {
@@ -24,16 +25,22 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private StockDBContext _stockDbContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-        private int maxColumnIndex = 14;
+
+        const int START_PROP_COLUMN_INDEX = 16;
+
+        private int maxColumnIndex;
 
         private IList<int> productIds;
         private readonly IList<StepSimpleInfo> steps;
+        private readonly IList<PropertyModel> _productBomProperties;
 
-        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds, IList<StepSimpleInfo> steps)
+        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds, IList<StepSimpleInfo> steps, IList<PropertyModel> productBomProperties)
         {
             _stockDbContext = stockDbContext;
             this.productIds = productIds;
             this.steps = steps;
+            _productBomProperties = productBomProperties;
+            maxColumnIndex = 15 + productBomProperties.Count;
         }
 
 
@@ -74,6 +81,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return (stream, fileName, contentType);
         }
 
+
+
+
         private async Task<string> WriteTable()
         {
             currentRow = 1;
@@ -105,13 +115,23 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             sheet.EnsureCell(fRow, 11).SetCellValue($"Tổng SL");
 
-            sheet.EnsureCell(fRow, 12).SetCellValue($"Là nguyên liệu");
+            sheet.EnsureCell(fRow, 12).SetCellValue($"Mô tả");
 
-            sheet.EnsureCell(fRow, 13).SetCellValue($"Cộng đoạn vào");
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Là nguyên liệu");
 
-            sheet.EnsureCell(fRow, 14).SetCellValue($"Công đoạn ra");
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Cộng đoạn vào");
 
+            sheet.EnsureCell(fRow, 15).SetCellValue($"Công đoạn ra");
 
+            
+
+            var col = START_PROP_COLUMN_INDEX;
+
+            foreach (var p in _productBomProperties)
+            {
+                sheet.EnsureCell(fRow, col).SetCellValue(p.PropertyName);
+                col++;
+            }
 
             for (var i = fRow; i <= sRow; i++)
             {
@@ -147,6 +167,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
 
             var productMaterial = (await _stockDbContext.ProductMaterial.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().Select(m => m.ProductId).Distinct().ToListAsync()).ToHashSet();
+
+            var productBomProperties = await _stockDbContext.ProductProperty.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().ToListAsync();
 
             var productInfos = (await (
                 from p in _stockDbContext.Product
@@ -212,15 +234,31 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Wastage));
                 sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(totalQuantity));
 
+                sheet.EnsureCell(currentRow, 12).SetCellValue(item.Description);
+
+
                 if (productMaterial.Contains(item.ChildProductId ?? 0))
                 {
-                    sheet.EnsureCell(currentRow, 12).SetCellValue("Có");
-                    sheet.EnsureCell(currentRow, 12).CellStyle.Alignment = HorizontalAlignment.Center;
+                    sheet.EnsureCell(currentRow, 13).SetCellValue("Có");
+                    sheet.EnsureCell(currentRow, 13).CellStyle.Alignment = HorizontalAlignment.Center;
                     //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
                 }
 
-                sheet.EnsureCell(currentRow, 13).SetCellValue(GetStepName(item.InputStepId));
-                sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.OutputStepId));
+                sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.InputStepId));
+                sheet.EnsureCell(currentRow, 15).SetCellValue(GetStepName(item.OutputStepId));
+
+                var col = START_PROP_COLUMN_INDEX;
+
+                foreach (var p in _productBomProperties)
+                {
+                    if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId))
+                    {
+                        sheet.EnsureCell(currentRow, col).SetCellValue("Có");
+                        sheet.EnsureCell(currentRow, col).CellStyle.Alignment = HorizontalAlignment.Center;
+                    }
+
+                    col++;
+                }
 
                 currentRow++;
                 stt++;

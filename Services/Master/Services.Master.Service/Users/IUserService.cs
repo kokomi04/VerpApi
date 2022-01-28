@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
@@ -22,7 +24,7 @@ namespace VErp.Services.Master.Service.Users
         Task<bool> UpdateUser(int userId, UserInfoInput req);
         Task<bool> ChangeUserPassword(int userId, UserChangepasswordInput req);
         Task<bool> DeleteUser(int userId);
-        Task<PageData<UserInfoOutput>> GetList(string keyword, int page, int size, Clause filters = null);
+        Task<PageData<UserInfoOutput>> GetList(string keyword, IList<int> userIds, int page, int size, Clause filters = null);
         Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
         Task<IList<UserBasicInfoOutput>> GetBasicInfoByDepartment(int departmentId);
         Task<IList<RolePermissionModel>> GetMePermission();
@@ -39,6 +41,7 @@ namespace VErp.Services.Master.Service.Users
         Task<PageData<UserInfoOutput>> GetListByModuleId(int currentUserId, int moduleId, string keyword, int pageIndex, int pageSize);
 
         Task<IList<UserInfoOutput>> GetListByUserIds(IList<int> userIds);
+        Task<IList<UserInfoOutput>> GetListByRoleIds(IList<int> roles);
         CategoryNameModel GetFieldDataForMapping();
         Task<bool> ImportUserFromMapping(ImportExcelMapping mapping, Stream stream);
       

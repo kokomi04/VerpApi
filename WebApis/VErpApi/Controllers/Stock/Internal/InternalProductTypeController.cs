@@ -19,6 +19,7 @@ using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
 using VErp.Services.Stock.Service.Stock;
+using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Stock.Internal
 {

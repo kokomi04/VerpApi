@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchaseOrder
@@ -8,7 +10,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public PurchaseOrder()
         {
             PurchaseOrderDetail = new HashSet<PurchaseOrderDetail>();
+            PurchaseOrderExcess = new HashSet<PurchaseOrderExcess>();
             PurchaseOrderFile = new HashSet<PurchaseOrderFile>();
+            PurchaseOrderMaterials = new HashSet<PurchaseOrderMaterials>();
+            PurchaseOrderTracked = new HashSet<PurchaseOrderTracked>();
         }
 
         public long PurchaseOrderId { get; set; }
@@ -30,6 +35,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal TotalMoney { get; set; }
         public bool? IsApproved { get; set; }
         public bool? IsChecked { get; set; }
+        public string PoDescription { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public int? CheckedByUserId { get; set; }
@@ -40,8 +46,17 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime? CensorDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int PurchaseOrderType { get; set; }
+        public long? PropertyCalcId { get; set; }
+        public decimal? TaxInPercent { get; set; }
+        public decimal? ExchangeRate { get; set; }
+        public long? CurrencyId { get; set; }
+        public decimal? TaxInMoney { get; set; }
 
         public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
+        public virtual ICollection<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }
         public virtual ICollection<PurchaseOrderFile> PurchaseOrderFile { get; set; }
+        public virtual ICollection<PurchaseOrderMaterials> PurchaseOrderMaterials { get; set; }
+        public virtual ICollection<PurchaseOrderTracked> PurchaseOrderTracked { get; set; }
     }
 }

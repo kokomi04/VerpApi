@@ -9,6 +9,9 @@ namespace VErp.Services.Organization.Model.Customer
 {
     public class CustomerModel : BaseCustomerModel, IMapFrom<BaseCustomerImportModel>
     {
+        public int CustomerId { get; set; }
+        public new string CustomerCode { get; set; }
+
         public CustomerModel()
         {
             Contacts = new List<CustomerContactModel>();

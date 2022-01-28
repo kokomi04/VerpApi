@@ -27,6 +27,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> DeleteActionButton(int objectId, int inputActionId);
 
         Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data);
+
+        Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data); 
     }
 
     public abstract class ActionButtonHelperServiceAbstract : IActionButtonHelper
@@ -79,6 +81,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         protected abstract Task<string> GetObjectTitle(int objectId);
 
         public abstract Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data);
+        public abstract Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data);
     }
 
     public interface IActionButtonHelperService
@@ -155,7 +158,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 objectId,
                 objectTitle
             };
-            return await _httpCrossService.Detete<bool>($"api/internal/InternalActionButton/{actionButtonId}", data);
+            return await _httpCrossService.Deleted<bool>($"api/internal/InternalActionButton/{actionButtonId}", data);
         }
 
         public async Task<bool> DeleteActionButtonsByType(EnumObjectType objectTypeId, int objectId, string objectTitle)
@@ -166,7 +169,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 objectId,
                 objectTitle
             };
-            return await _httpCrossService.Detete<bool>($"api/internal/InternalActionButton/DeleteByType", data);
+            return await _httpCrossService.Deleted<bool>($"api/internal/InternalActionButton/DeleteByType", data);
         }
     }
 }

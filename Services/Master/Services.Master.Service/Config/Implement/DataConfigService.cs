@@ -5,9 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.DataConfig;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Config;
 
@@ -18,14 +21,15 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterDbContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _dataConfigActivityLog;
+
 
         public DataConfigService(MasterDBContext masterDbContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
         {
             _masterDbContext = masterDbContext;
             _currentContextService = currentContextService;
             _mapper = mapper;
-            _activityLogService = activityLogService;
+            _dataConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DataConfig);
         }
 
         public async Task<DataConfigModel> GetConfig()
@@ -53,7 +57,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             await _masterDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.DataConfig, info.SubsidiaryId, $"Cập nhật thiết lập xuất/nhập kho", req.JsonSerialize());
+
+            await _dataConfigActivityLog.LogBuilder(() => DataConfigActivityLogMessage.Update)
+               .ObjectId(info.SubsidiaryId)
+               .JsonData(req.JsonSerialize())
+               .CreateLog();
 
             return true;
         }

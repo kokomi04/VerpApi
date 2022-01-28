@@ -40,7 +40,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
         public bool? IsImage { get; set; }
-
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
         public ControlStructureModel Structure { get; set; }
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
@@ -105,6 +108,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public string ReferenceUrl { get; set; }
         public bool IsBatchSelect { get; set; }
         public string OnClick { get; set; }
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
         public bool Compare(InputAreaField curField)
         {
             return !curField.IsDeleted &&
@@ -136,8 +143,12 @@ namespace VErp.Services.Accountancy.Model.Input
                 RequireFilters == curField.RequireFilters &&
                 ReferenceUrl == curField.ReferenceUrl &&
                 IsBatchSelect == curField.IsBatchSelect &&
-                OnClick == curField.OnClick;
-        }
+                OnClick == curField.OnClick &&
+                CustomButtonHtml == curField.CustomButtonHtml &&
+                CustomButtonOnClick == curField.CustomButtonOnClick &&
+                MouseEnter == curField.MouseEnter &&
+                MouseLeave == curField.MouseLeave;
+    }
     }
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel, IFieldExecData
@@ -158,5 +169,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public string OnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.OnClick), InputField);
 
         public string ReferenceUrlExec => execCodeCombine.GetExecCode(nameof(IFieldData.ReferenceUrl), InputField);
+
+        public string MouseEnterExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseEnter), InputField);
+        public string MouseLeaveExec => execCodeCombine.GetExecCode(nameof(IFieldData.MouseLeave), InputField);
+        public string CustomButtonOnClickExec => execCodeCombine.GetExecCode(nameof(IFieldData.CustomButtonOnClick), InputField);
     }
 }

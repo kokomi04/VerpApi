@@ -30,18 +30,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly IActionButtonHelperService _actionButtonHelperService;
+        private readonly ICurrentContextService _currentContextService;
 
         public InputActionService(AccountancyDBContext accountancyDBContext
             , IActivityLogService activityLogService
             , IMapper mapper
             , IRoleHelperService roleHelperService
             , IActionButtonHelperService actionButtonHelperService
+            , ICurrentContextService currentContextService
             ) : base(actionButtonHelperService, EnumObjectType.InputType)
         {
             _accountancyDBContext = accountancyDBContext;
             _activityLogService = activityLogService;
             _mapper = mapper;
             _actionButtonHelperService = actionButtonHelperService;
+            _currentContextService = currentContextService;
         }
 
         protected override async Task<string> GetObjectTitle(int objectId)
@@ -76,7 +79,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     resultParam,
                     messageParam,
                     new SqlParameter("@InputTypeId", action.ObjectId),
-                    new SqlParameter("@InputBill_F_Id", inputBillId)
+                    new SqlParameter("@InputBill_F_Id", inputBillId),
+                    new SqlParameter("@UserId", _currentContextService.UserId)
                 };
 
                 DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
@@ -96,7 +100,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-
+        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

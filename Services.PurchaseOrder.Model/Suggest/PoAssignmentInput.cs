@@ -44,6 +44,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public decimal? TaxInPercent { get; set; }
         public decimal? TaxInMoney { get; set; }
+        public int? SortOrder { get; set; }
 
         //output
         public int? ProductId { get; set; }

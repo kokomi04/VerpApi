@@ -25,6 +25,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? FromPackageId { set; get; }
 
         public long? ToPackageId { set; get; }
+        public string ToPackageCode { get; set; }
         public string FromPackageCode { get; set; }
         public int? PackageOptionId { set; get; }
 
@@ -49,9 +50,9 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public ProductUnitConversion ProductUnitConversion { set; get; }
 
-        public string AccountancyAccountNumberDu { get; set; }
+        //public string AccountancyAccountNumberDu { get; set; }
         public string InventoryRequirementCode { get; set; }
-        public int? DepartmentId { get; set; }
+        public long? InventoryRequirementDetailId { get; set; }
         //public IList<InventoryRequirementSimpleInfo> InventoryRequirementInfo { set; get; }
 
         public InventoryDetailOutput()

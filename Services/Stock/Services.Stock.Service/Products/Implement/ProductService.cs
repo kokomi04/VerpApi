@@ -1,20 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
@@ -23,17 +19,17 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 using System.IO;
-using System.Reflection;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
-using System.Text;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using AutoMapper;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
-using VErp.Services.Stock.Model.Product.Partial;
+using VErp.Infrastructure.ServiceCore.Facade;
+using static Verp.Resources.Stock.Product.ProductValidationMessage;
+using Verp.Resources.Stock.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -43,30 +39,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private readonly StockDBContext _stockDbContext;
         private readonly MasterDBContext _masterDBContext;
-        private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
         private readonly IUnitService _unitService;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IFileService _fileService;
         private readonly IAsyncRunnerService _asyncRunner;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
         private readonly IMapper _mapper;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IBarcodeConfigHelperService _barcodeConfigHelperService;
+        private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductService(
             StockDBContext stockContext
             , MasterDBContext masterDBContext
-            , IOptions<AppSetting> appSetting
             , ILogger<ProductService> logger
             , IUnitService unitService
             , IActivityLogService activityLogService
-            , IFileService fileService
             , IAsyncRunnerService asyncRunner
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , ICurrentContextService currentContextService
             , IManufacturingHelperService manufacturingHelperService
             , IMapper mapper
             , IOrganizationHelperService organizationHelperService
@@ -74,18 +64,43 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             _masterDBContext = masterDBContext;
             _stockDbContext = stockContext;
-            _appSetting = appSetting.Value;
             _logger = logger;
             _unitService = unitService;
-            _activityLogService = activityLogService;
-            _fileService = fileService;
             _asyncRunner = asyncRunner;
             _customGenCodeHelperService = customGenCodeHelperService;
-            _currentContextService = currentContextService;
             _manufacturingHelperService = manufacturingHelperService;
             _mapper = mapper;
             _organizationHelperService = organizationHelperService;
             _barcodeConfigHelperService = barcodeConfigHelperService;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
+        }
+
+        public async Task<bool> UpdateProductionProcessVersion(int productId)
+        {
+            var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            if (!productInfo.ProductionProcessVersion.HasValue)
+                productInfo.ProductionProcessVersion = 1;
+            else productInfo.ProductionProcessVersion += 1;
+
+            await _stockDbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<long> GetProductionProcessVersion(int productId)
+        {
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            return productInfo.ProductionProcessVersion.GetValueOrDefault();
         }
 
         public async Task<int> AddProduct(ProductModel req)
@@ -97,10 +112,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 var productId = await AddProductToDb(req);
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
 
                 //await ConfirmProductCode(customGenCode);
                 await ctx.ConfirmCode();
+
+                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Create)
+                      .MessageResourceFormatDatas(req.ProductCode)
+                      .ObjectId(productId)
+                      .JsonData(req.JsonSerialize())
+                      .CreateLog();
 
                 return productId;
             }
@@ -120,11 +140,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 var defaultProductCate = _stockDbContext.ProductCate.FirstOrDefault(c => c.IsDefault);
                 if (defaultProductCate == null)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Danh mục mặt hàng mặc định không tồn tại");
+                    throw DefaultProductCateNotFound.BadRequest();
+
                 var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
                 if (unitInfo == null)
                 {
-                    throw new BadRequestException(UnitErrorCode.UnitNotFound, $"Mặt hàng {req.ProductCode}, đơn vị tính không tìm thấy ");
+                    throw UnitOfProductNotFound.BadRequestFormat(req.ProductCode);
                 }
 
                 var productInfo = new Product()
@@ -177,10 +198,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _stockDbContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Thêm mới chi tiết mặt hàng {req.ProductName}", req.JsonSerialize());
+
                 await ctx.ConfirmCode();// ConfirmProductCode(customGenCode);
                 req.ProductCode = productInfo.ProductCode;
                 req.ProductId = productInfo.ProductId;
+
+
+                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CreateProductPart)
+                      .MessageResourceFormatDatas(req.ProductCode)
+                      .ObjectId(productInfo.ProductId)
+                      .JsonData(req.JsonSerialize())
+                      .CreateLog();
                 return req;
             }
         }
@@ -197,14 +225,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productExisted = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductCode == req.ProductCode);//|| p.ProductName == req.ProductName
             if (productExisted != null)
             {
-                //if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)
-                throw new BadRequestException(ProductErrorCode.ProductCodeAlreadyExisted, $"Mã mặt hàng \"{req.ProductCode}\" đã tồn tại");
+                //if (string.Compare(productExisted.ProductCode, req.ProductCode, StringComparison.OrdinalIgnoreCase) == 0)                
                 //throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted, $"Tên mặt hàng \"{req.ProductName}\" đã tồn tại");
+                throw ProductCodeAlreadyExisted.BadRequestFormat(req.ProductCode);
             }
 
             if (!await _stockDbContext.ProductCate.AnyAsync(c => c.ProductCateId == req.ProductCateId))
             {
-                throw new BadRequestException(ProductErrorCode.ProductCateInvalid, $"Danh mục mặt hàng không đúng");
+                throw ProductCateNotFound.BadRequest();
             }
 
             //if (!await _stockContext.ProductType.AnyAsync(c => c.ProductTypeId == req.ProductTypeId))
@@ -249,7 +277,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var unitInfo = await _unitService.GetUnitInfo(req.UnitId);
             if (unitInfo == null)
             {
-                throw new BadRequestException(UnitErrorCode.UnitNotFound, $"Mặt hàng {req.ProductCode}, đơn vị tính không tìm thấy ");
+                throw UnitOfProductNotFound.BadRequestFormat(req.ProductCode);
             }
 
             var lstUnitConverions = req.StockInfo?.UnitConversions?
@@ -334,6 +362,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             //    throw new BadRequestException(ProductErrorCode.ProductNameAlreadyExisted);
             //}
 
+
             long? oldMainImageFileId = 0L;
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -350,7 +379,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         throw new BadRequestException(ProductErrorCode.ProductNotFound);
                     }
 
+                    
+                    /*
+                    if (productInfo.UnitId != req.UnitId)
+                    {
+                        var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                        var checkParams = new[]
+                        {
+                            new SqlParameter("@ProductId",productId),
+                            isInUsed
+                        };
 
+                        await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+                        if (isInUsed.Value as bool? == true)
+                        {
+                            throw CanNotUpdateUnitProductWhichInUsed.BadRequestFormat(req.ProductCode);
+                        }
+                    }*/
 
                     var unitConverions = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
@@ -389,6 +435,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     //Update
 
                     //Productinfo
+                    req.ProductionProcessVersion = productInfo.ProductionProcessVersion;
+
                     _mapper.Map(req, productInfo);
 
                     productInfo.ProductInternalName = req.ProductName.NormalizeAsInternalName();
@@ -462,7 +510,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     if (req.ProductCustomers.GroupBy(c => c.CustomerId).Any(g => g.Count() > 1))
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại nhiều hơn 1 thiết lập cho 1 khách hàng!");
+                        throw ExistMoreSameCustomerProduct.BadRequest();
                     }
 
                     var removeProductCustomers = productCustomers.Where(c => !req.ProductCustomers.Select(c1 => c.CustomerId).Contains(c.CustomerId));
@@ -486,10 +534,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-
-                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Cập nhật mặt hàng {productInfo.ProductName}", req.JsonSerialize());
-
                     await ctx.ConfirmCode();// ConfirmProductCode(customGenCode);
+
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Update)
+                          .MessageResourceFormatDatas(req.ProductCode)
+                          .ObjectId(productInfo.ProductId)
+                          .JsonData(req.JsonSerialize())
+                          .CreateLog();
                 }
                 catch (Exception)
                 {
@@ -630,7 +681,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             if (isInUsed.Value as bool? == true)
             {
-                throw new BadRequestException(ProductErrorCode.ProductInUsed, "Không thể xóa mặt hàng do mặt hàng đang được sử dụng");
+                throw CanNotDeleteProductWhichInUsed.BadRequest(ProductErrorCode.ProductInUsed);
             }
 
             var productExtra = await _stockDbContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -658,7 +709,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     productStockInfo.IsDeleted = true;
 
-                    foreach(var p in productBoms)
+                    foreach (var p in productBoms)
                     {
                         p.IsDeleted = true;
                     }
@@ -677,8 +728,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _stockDbContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.Product, productInfo.ProductId, $"Xóa mặt hàng {productInfo.ProductName}", productInfo.JsonSerialize());
 
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Delete)
+                          .MessageResourceFormatDatas(productInfo.ProductCode)
+                          .ObjectId(productInfo.ProductId)
+                          .JsonData(productInfo.JsonSerialize())
+                          .CreateLog();
                     return true;
                 }
                 catch (Exception)
@@ -709,7 +764,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, IList<int> productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
             keyword = (keyword ?? "").Trim();
             productName = (productName ?? "").Trim();
@@ -738,8 +793,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(x => x.IsMaterials == isMaterials.Value);
             }
 
-
-            products = products.InternalFilter(filters);
             if (!string.IsNullOrWhiteSpace(productName))
             {
                 products = products.Where(p => p.ProductInternalName == productInternalName);
@@ -763,6 +816,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.ProductId,
                   p.ProductCode,
                   p.ProductName,
+                  p.ProductNameEng,
                   p.MainImageFileId,
                   p.ProductTypeId,
                   ProductTypeCode = pt == null ? null : pt.IdentityCode,
@@ -782,21 +836,36 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.Height,
                   p.Long,
                   p.Width,
-                  p.CustomerId,
+                  p.CreatedDatetimeUtc,
+                  //p.CustomerId,
 
                   p.PackingMethod,
                   p.Quantitative,
                   p.QuantitativeUnitTypeId,
+
+                  p.ProductPurity,
+
                   p.Measurement,
                   p.NetWeight,
                   p.GrossWeight,
                   p.LoadAbility,
+
+                  p.PackingQuantitative,
+                  p.PackingWidth,
+                  p.PackingHeight,
+                  p.PackingLong,
+
                   s.StockOutputRuleId,
                   s.AmountWarningMin,
                   s.AmountWarningMax,
                   s.ExpireTimeAmount,
                   s.ExpireTimeTypeId,
+
+                  s.DescriptionToStock,
+
+                  p.Color
               });
+
 
             if (productTypeIds != null && productTypeIds.Length > 0)
             {
@@ -806,7 +875,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         select p;
             }
 
-            if (productCateIds != null && productCateIds.Length > 0)
+            if (productCateIds != null && productCateIds.Count > 0)
             {
                 query = from p in query
                         where productCateIds.Contains(p.ProductCateId)
@@ -820,15 +889,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         c.ProductCode.Contains(keyword)
                         || c.Barcode.Contains(keyword)
                         || c.ProductName.Contains(keyword)
+                        || c.ProductNameEng.Contains(keyword)
                         || c.ProductTypeName.Contains(keyword)
                         || c.ProductCateName.Contains(keyword)
                         || c.Specification.Contains(keyword)
                         || c.Description.Contains(keyword)
+                        || c.DescriptionToStock.Contains(keyword)
                         select c;
             }
+            query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
-            var lstData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
+            var lstData = await query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var unitIds = lstData.Select(p => p.UnitId).ToList();
             var unitInfos = await _unitService.GetListByIds(unitIds);
@@ -843,6 +915,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             foreach (var item in lstData)
             {
                 productUnitConverions.TryGetValue(item.ProductId, out var pus);
+                var puDefault = pus.FirstOrDefault(p => p.IsDefault);
+
                 var barcodeConfigId = item.BarcodeConfigId ?? 0;
                 barCodeConfigs.TryGetValue(barcodeConfigId, out var barcodeConfig);
                 var product = new ProductListOutput()
@@ -850,6 +924,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductId = item.ProductId,
                     ProductCode = item.ProductCode,
                     ProductName = item.ProductName,
+                    ProductNameEng = item.ProductNameEng,
                     BarcodeConfigName = barcodeConfig?.Name,
                     Barcode = item.Barcode,
                     MainImageFileId = item.MainImageFileId,
@@ -868,10 +943,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Long = item.Long,
                     Width = item.Width,
                     Height = item.Height,
-                    CustomerId = item.CustomerId,
+                    //CustomerId = item.CustomerId,
                     PackingMethod = item.PackingMethod,
                     Quantitative = item.Quantitative,
                     QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)item.QuantitativeUnitTypeId,
+                    ProductPurity = item.ProductPurity,
+
+                    PackingQuantitative = item.PackingQuantitative,
+                    PackingHeight = item.PackingHeight,
+                    PackingLong = item.PackingLong,
+                    PackingWidth = item.PackingWidth,
+
                     Measurement = item.Measurement,
                     NetWeight = item.NetWeight,
                     GrossWeight = item.GrossWeight,
@@ -881,9 +963,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     AmountWarningMax = item.AmountWarningMax,
                     ExpireTimeAmount = item.ExpireTimeAmount,
                     ExpireTimeTypeId = (EnumTimeType?)item.ExpireTimeTypeId,
-                    DecimalPlace = pus.FirstOrDefault(p => p.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
+                    DescriptionToStock = item.DescriptionToStock,
+                    DecimalPlace = puDefault?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
+                    UnitName = puDefault?.ProductUnitConversionName,
                     ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
-                    Description = item.Description
+                    Description = item.Description,
+                    Color = item.Color
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -898,10 +983,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> ExportList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
             var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
-            var bomExport = new ProductExportFacade(_stockDbContext);
+            var bomExport = new ProductExportFacade(_stockDbContext, fieldNames);
             return await bomExport.Export(lst.List);
         }
 
@@ -925,9 +1010,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         StockId = q.StockId,
                         ProductId = q.ProductId,
                         PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.Round(),
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
                         ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.Round()
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
                     }).ToList();
             }
 
@@ -1011,7 +1096,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService)
+            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog)
                    .ImportProductFromMapping(mapping, stream);
 
         }
@@ -1020,9 +1105,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var result = new CategoryNameModel()
             {
-                CategoryId = 1,
+                //CategoryId = 1,
                 CategoryCode = "Product",
-                CategoryTitle = "Mặt hàng",
+                CategoryTitle = ProductImportAsCateTitle,
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
@@ -1050,10 +1135,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 {
                     try
                     {
-                        var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
-                        if (!(eval > 0))
+                        if (!unitConversion.IsDefault)
                         {
-                            return ProductErrorCode.InvalidUnitConversionExpression;
+                            var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
+                            if (!(eval > 0))
+                            {
+                                return ProductErrorCode.InvalidUnitConversionExpression;
+                            }
+                        }
+                        else
+                        {
+                            unitConversion.FactorExpression = "1";
                         }
                     }
                     catch (Exception)
@@ -1067,7 +1159,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<bool> UpdateProductCoefficientManual(int productId, int coefficient)
+        public async Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient)
         {
             var product = await _stockDbContext.Product.FirstOrDefaultAsync(x => x.ProductId == productId);
             if (product == null)
@@ -1098,12 +1190,20 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _stockDbContext.ExecuteStoreProcedure("asp_CopySourceProductIntoDestinationProduct", parammeters);
 
-                    await _activityLogService.CreateLog(EnumObjectType.Product, productId, $"Thêm mới mặt hàng {req.ProductName}", req.JsonSerialize());
-                    await ctx.ConfirmCode();
 
                     await trans.CommitAsync();
 
+                    await ctx.ConfirmCode();
+
+
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Create)
+                          .MessageResourceFormatDatas(req.ProductCode)
+                          .ObjectId(productId)
+                          .JsonData(req.JsonSerialize())
+                          .CreateLog();
+
                     await _manufacturingHelperService.CopyProductionProcess(EnumContainerType.Product, sourceProductId, productId);
+
                     return productId;
                 }
                 catch (Exception ex)
@@ -1122,6 +1222,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 try
                 {
+                    var sourceProduct = await _stockDbContext.Product.Where(p => p.ProductId == sourceProductId).FirstOrDefaultAsync();
+
+                    var desProduct = await _stockDbContext.Product.Where(p => p.ProductId == destProductId).FirstOrDefaultAsync();
+
+                    if (sourceProduct == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                    if (desProduct == null) throw GeneralCode.ItemNotFound.BadRequest();
 
                     var parammeters = new[]
                     {
@@ -1131,9 +1238,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _stockDbContext.ExecuteStoreProcedure("asp_CopyProductBom", parammeters);
 
-                    await _activityLogService.CreateLog(EnumObjectType.Product, destProductId, $"Sao chép BOM từ MH {sourceProductId} sang MH {destProductId}", destProductId.JsonSerialize());
+                    //await _activityLogService.CreateLog(EnumObjectType.Product, destProductId, $"Sao chép BOM từ MH {sourceProductId} sang MH {destProductId}", destProductId.JsonSerialize());
 
                     await trans.CommitAsync();
+
+                    var bom = await _stockDbContext.ProductBom.Where(b => b.ProductId == destProductId).ToListAsync();
+
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CopyBom)
+                        .MessageResourceFormatDatas(sourceProduct.ProductCode, desProduct.ProductCode)
+                        .ObjectId(destProductId)
+                        .JsonData(bom.JsonSerialize())
+                        .CreateLog();
+
                     return destProductId;
                 }
                 catch (Exception ex)
@@ -1152,6 +1268,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 try
                 {
+                    var sourceProduct = await _stockDbContext.Product.Where(p => p.ProductId == sourceProductId).FirstOrDefaultAsync();
+
+                    var desProduct = await _stockDbContext.Product.Where(p => p.ProductId == destProductId).FirstOrDefaultAsync();
+
+                    if (sourceProduct == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                    if (desProduct == null) throw GeneralCode.ItemNotFound.BadRequest();
 
                     var parammeters = new[]
                     {
@@ -1161,9 +1284,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     await _stockDbContext.ExecuteStoreProcedure("asp_CopyProductMaterialConsumption", parammeters);
 
-                    await _activityLogService.CreateLog(EnumObjectType.Product, destProductId, $"Sao chép vật tư tiêu hao từ MH {sourceProductId} sang MH {destProductId}", destProductId.JsonSerialize());
+                    //await _activityLogService.CreateLog(EnumObjectType.Product, destProductId, $"Sao chép vật tư tiêu hao từ MH {sourceProductId} sang MH {destProductId}", destProductId.JsonSerialize());
 
                     await trans.CommitAsync();
+
+                    var consum = await _stockDbContext.ProductMaterialsConsumption.Where(b => b.ProductId == destProductId).ToListAsync();
+
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CopyConsumption)
+                        .MessageResourceFormatDatas(sourceProduct.ProductCode, desProduct.ProductCode)
+                        .ObjectId(destProductId)
+                        .JsonData(consum.JsonSerialize())
+                        .CreateLog();
+
                     return destProductId;
                 }
                 catch (Exception ex)

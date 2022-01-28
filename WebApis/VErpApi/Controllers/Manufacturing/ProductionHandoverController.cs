@@ -36,16 +36,18 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}")]
-        public async Task<DepartmentHandoverDetailModel> GetDepartmentHandoverDetail([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] long departmentId)
+        public async Task<Dictionary<long, DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId)
         {
-            return await _productionHandoverService.GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
+            var lstDetail = await _productionHandoverService.GetDepartmentHandoverDetail(productionOrderId, productionStepId, departmentId);
+            var group = lstDetail.GroupBy(d => d.ProductionStepId).ToDictionary(g => g.Key, g => g.First());
+            return group;
         }
 
         [HttpPost]
         [Route("DepartmentHandover/{departmentId}")]
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters = null)
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int? stepId, [FromQuery] int? productId, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate)
         {
-            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, filters);
+            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate, stepId, productId);
         }
 
         [HttpGet]
@@ -67,6 +69,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<ProductionHandoverModel> CreateStatictic([FromRoute] long productionOrderId, [FromBody] ProductionHandoverInputModel data)
         {
             return await _productionHandoverService.CreateStatictic(productionOrderId, data);
+        }
+
+        [HttpPost]
+        [Route("statictic/multiple/{productionOrderId}")]
+        public async Task<IList<ProductionHandoverModel>> CreateMultipleStatictic([FromRoute] long productionOrderId, [FromBody] IList<ProductionHandoverInputModel> data)
+        {
+            return await _productionHandoverService.CreateMultipleStatictic(productionOrderId, data);
         }
 
         [HttpDelete]

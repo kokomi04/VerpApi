@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.AccountancyDB
 {
     public partial class InputField
@@ -39,6 +41,10 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public string OnClick { get; set; }
         public string ReferenceUrl { get; set; }
         public bool? IsImage { get; set; }
+        public string MouseEnter { get; set; }
+        public string MouseLeave { get; set; }
+        public string CustomButtonHtml { get; set; }
+        public string CustomButtonOnClick { get; set; }
 
         public virtual ICollection<InputAreaField> InputAreaField { get; set; }
     }

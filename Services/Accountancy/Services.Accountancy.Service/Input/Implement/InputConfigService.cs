@@ -169,7 +169,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList()
         {
-            var inputTypes = await _accountancyDBContext.InputType.ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
+            var inputTypes = await _accountancyDBContext.InputType.Where(x => !x.IsHide).ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
             var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.InputType, null)).OrderBy(t => t.SortOrder).ToList()
                 .GroupBy(a => a.ObjectId)
@@ -303,6 +303,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     BeforeSaveAction = sourceInput.BeforeSaveAction,
                     AfterSaveAction = sourceInput.AfterSaveAction,
                     AfterUpdateRowsJsAction = sourceInput.AfterUpdateRowsJsAction,
+                    IsOpenning = sourceInput.IsOpenning
                 };
                 await _accountancyDBContext.InputType.AddAsync(cloneType);
                 await _accountancyDBContext.SaveChangesAsync();
@@ -350,7 +351,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             OnBlur = field.OnBlur,
                             OnChange = field.OnChange,
                             AutoFocus = field.AutoFocus,
-                            Column = field.Column
+                            Column = field.Column,
+                            CustomButtonHtml = field.CustomButtonHtml,
+                            CustomButtonOnClick = field.CustomButtonOnClick,
+                            MouseEnter = field.MouseEnter,
+                            MouseLeave = field.MouseLeave
                         };
                         await _accountancyDBContext.InputAreaField.AddAsync(cloneField);
                     }
@@ -413,7 +418,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.BeforeSaveAction = data.BeforeSaveAction;
                 inputType.AfterSaveAction = data.AfterSaveAction;
                 inputType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
-
+                inputType.IsOpenning = data.IsOpenning;
+                inputType.IsHide = data.IsHide;
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -1017,7 +1023,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 data.DataTypeId = EnumDataType.Text;
                 data.DataSize = -1;
             }
-            if (!AccountantConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
+            if (!DataTypeConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {
                 data.RefTableField = null;
                 if (data.FormTypeId != EnumFormType.Input)
@@ -1147,6 +1153,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.ReferenceUrl = field.ReferenceUrl;
                         curField.IsBatchSelect = field.IsBatchSelect;
                         curField.OnClick = field.OnClick;
+
+                        curField.CustomButtonHtml = field.CustomButtonHtml;
+                        curField.CustomButtonOnClick = field.CustomButtonOnClick;
+                        curField.MouseEnter = field.MouseEnter;
+                        curField.MouseLeave = field.MouseLeave;
                     }
                 }
 
@@ -1264,7 +1275,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             bool isUsed = _accountancyDBContext.InputAreaField.Any(af => af.InputFieldId == inputFieldId);
             if (isUsed)
             {
-                throw new BadRequestException(InputErrorCode.InputFieldIsUsed);
+                throw new BadRequestException(InputErrorCode.InputFieldIsUse);
             }
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try

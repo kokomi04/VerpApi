@@ -45,27 +45,31 @@ namespace VErp.Services.Stock.Model.Inventory
 
         //public DateTime UpdatedDatetimeUtc { set; get; }
         public long CreatedDatetimeUtc { set; get; }
-
         public long UpdatedDatetimeUtc { set; get; }
-
-
         public bool IsApproved { set; get; }
-
-        public string AccountancyAccountNumber { get; set; }
-
+        //public string AccountancyAccountNumber { get; set; }
+        public int? DepartmentId { get; set; }
         public StockOutput StockOutput { get; set; }
         public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
 
         public IList<FileToDownloadInfo> FileList { set; get; }
 
         public IList<MappingInputBillModel> InputBills { get; set; }
+        public int? CensorByUserId { get; set; }
+        public EnumInventoryAction InventoryActionId {get;set;}
+        public int InventoryStatusId { get; set; }
+
+        public long? RefInventoryId { get; set; }
+        public string RefInventoryCode { get; set; }
+        public int? RefStockId { get; set; }
     }
 
     public class MappingInputBillModel
     {
-        public string MappingFunctionKey { get; set; }
+        //public string MappingFunctionKey { get; set; }
         public int InputTypeId { get; set; }
-        public string SourceId { get; set; }
+        public string InputType_Title { get; set; }
+        //public string SourceId { get; set; }
         public long InputBillFId { get; set; }
         public EnumObjectType BillObjectTypeId { get; set; }
     }

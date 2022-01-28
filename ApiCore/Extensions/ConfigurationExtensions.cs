@@ -2,12 +2,15 @@
 using Grpc.AspNetCore.ClientFactory;
 using Grpc.Net.ClientFactory;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Linq;
 using System.Reflection;
+using VErp.Commons.GlobalObject.Attributes;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -112,10 +115,18 @@ namespace VErp.Infrastructure.ApiCore.Extensions
 
         public static void ConfigActivityLogContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
-            services.AddDbContext<ActivityLogDBContext>((option) =>
+            services.AddDbContext<ActivityLogDBContext, ActivityLogDBRestrictionContext>((option) =>
             {
                 option.UseSqlServer(databaseConnections.ActivityLogDatabase);
             }, ServiceLifetime.Scoped);
+
+
+            services.AddDbContext<UnAuthorizActivityLogDBContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.ActivityLogDatabase);
+            }, ServiceLifetime.Transient);
+
+            services.AddSingleton<Func<UnAuthorizActivityLogDBContext>>(option => () => option.GetService<UnAuthorizActivityLogDBContext>());
         }
 
         public static IApplicationBuilder UseEndpointsGrpcService(this IApplicationBuilder app, Assembly assembly)
@@ -139,6 +150,35 @@ namespace VErp.Infrastructure.ApiCore.Extensions
                 var method = typeof(GrpcEndpointRouteBuilderExtensions).GetMethod("MapGrpcService")
                     .MakeGenericMethod(type);
                 method?.Invoke(null, new[] { builder });
+            }
+        }
+
+        public static IApplicationBuilder UseSignalRHubEndpoints(this IApplicationBuilder app, Assembly assembly)
+        {
+            app.UseEndpoints(opt =>
+            {
+                AddSignalRHub(opt, assembly, "SignalRHub", (options) =>{
+                });
+            });
+
+            return app;
+        }
+
+        public static void AddSignalRHub(IEndpointRouteBuilder builder, Assembly assembly, string surfix, Action<HttpConnectionDispatcherOptions> configureOptions)
+        {
+            var types = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.Name.EndsWith(surfix))
+            .ToArray();
+
+            foreach (var type in types)
+            {
+                var attributes = (PatternHubAttribute[])type.GetCustomAttributes(typeof(PatternHubAttribute), false);
+
+                var pattern = "/signalr/hubs/" + (attributes.Length > 0 ? attributes[0].Pattern.ToLower() : type.Name.Replace(surfix, "").ToLower());
+
+                var method = typeof(HubEndpointRouteBuilderExtensions).GetMethod("MapHub", new Type[] {typeof(IEndpointRouteBuilder), typeof(string), typeof (Action<HttpConnectionDispatcherOptions>)})
+                    .MakeGenericMethod(type);
+                method?.Invoke(null, new object[] { builder, pattern, configureOptions });
             }
         }
 

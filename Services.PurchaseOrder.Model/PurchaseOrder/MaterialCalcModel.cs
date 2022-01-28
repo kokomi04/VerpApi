@@ -20,13 +20,14 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 
     public class MaterialCalcListModel : MaterialCalcBasicModel
     {
+        public long RowNumber { get; set; }
         public int ProductId { get; set; }
         public string ProductCode { get; set; }
         public string productName { get; set; }
         public string OrderCodes { get; set; }
         public decimal? TotalOrderProductQuantity { get; set; }
 
-        public bool IsPurchasingRequestCreated { get; set; }
+        public bool IsPurchasingRequestCreated { get { return PurchasingRequestId > 0;  } }
         public long? PurchasingRequestId { get; set; }
         public string PurchasingRequestCode { get; set; }
     }

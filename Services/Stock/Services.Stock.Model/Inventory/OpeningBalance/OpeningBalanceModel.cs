@@ -56,8 +56,8 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         [Display(Name = "Tài khoản kế toán", GroupName = "Thẻ Kho")]
         public string AccountancyAccountNumber { set; get; }
 
-        [Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
-        public string AccountancyAccountNumberDu { set; get; }
+        //[Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
+        //public string AccountancyAccountNumberDu { set; get; }
 
         [Display(Name = "Mã kiện (Bỏ chọn nếu là mặc định)", GroupName = "Thẻ Kho")]
 

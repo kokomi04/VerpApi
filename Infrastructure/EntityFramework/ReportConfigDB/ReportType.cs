@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.ReportConfigDB
 {
     public partial class ReportType
@@ -49,6 +51,8 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public string BscConfig { get; set; }
         public string HeadPrint { get; set; }
         public long? TemplateFileId { get; set; }
+        public string GroupTitleSql { get; set; }
+        public bool? IsDbPaging { get; set; }
 
         public virtual ReportTypeGroup ReportTypeGroup { get; set; }
         public virtual ICollection<ReportTypeView> ReportTypeView { get; set; }

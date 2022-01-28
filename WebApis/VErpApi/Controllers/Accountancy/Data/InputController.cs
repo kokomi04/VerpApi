@@ -18,6 +18,8 @@ using System.IO;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Commons.Library.Model;
+using VErp.Services.Accountancy.Service.Input.Implement.Facade;
 
 namespace VErpApi.Controllers.Accountancy.Data
 {
@@ -28,11 +30,13 @@ namespace VErpApi.Controllers.Accountancy.Data
     {
         private readonly IInputDataService _inputDataService;
         private readonly ICalcBillService _calcBillService;
+        private readonly IInpuDataExportFacadeService _inpuDataExportFacadeService;
 
-        public InputController(IInputDataService inputDataService, ICalcBillService calcBillService)
+        public InputController(IInputDataService inputDataService, ICalcBillService calcBillService, IInpuDataExportFacadeService inpuDataExportFacadeService)
         {
             _inputDataService = inputDataService;
             _calcBillService = calcBillService;
+            _inpuDataExportFacadeService = inpuDataExportFacadeService;
         }
 
 
@@ -43,8 +47,24 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.GetBills(inputTypeId, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _inputDataService.GetBills(inputTypeId, false, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/Export")]
+        public async Task<IActionResult> ExportList([FromRoute] int inputTypeId, [FromBody] InputTypeBillsExporttFilterModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _inpuDataExportFacadeService.Export(inputTypeId, req);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+
 
         [HttpGet]
         [Route("{inputTypeId}/{fId}")]
@@ -94,9 +114,16 @@ namespace VErpApi.Controllers.Accountancy.Data
             return await _inputDataService.DeleteBill(inputTypeId, fId).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("{inputTypeId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId, [FromQuery] int? areaId)
+        {
+            return await _inputDataService.GetFieldDataForMapping(inputTypeId, areaId);
+        }
+
         [HttpPost]
         [Route("{inputTypeId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportBillExelMapping mapping, IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
@@ -115,9 +142,9 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CalcFixExchangeRate")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate)
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate, [FromQuery] string accoutantNumber)
         {
-            return await _calcBillService.CalcFixExchangeRate(toDate, currency, exchangeRate);
+            return await _calcBillService.CalcFixExchangeRate(toDate, currency, exchangeRate, accoutantNumber);
         }
 
         [HttpGet]
@@ -155,16 +182,16 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CheckExistedFixExchangeRate")]
-        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accoutantNumber)
         {
-            return await _calcBillService.CheckExistedFixExchangeRate(fromDate, toDate);
+            return await _calcBillService.CheckExistedFixExchangeRate(fromDate, toDate, currency, accoutantNumber);
         }
 
         [HttpDelete]
         [Route("DeletedFixExchangeRate")]
-        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accoutantNumber)
         {
-            return await _calcBillService.DeletedFixExchangeRate(fromDate, toDate);
+            return await _calcBillService.DeletedFixExchangeRate(fromDate, toDate, currency, accoutantNumber);
         }
 
         [HttpGet]
@@ -221,6 +248,27 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<bool> DeletedDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
         {
             return await _calcBillService.DeletedDepreciation(fromDate, toDate, accountNumber);
+        }
+
+        [HttpGet]
+        [Route("CalcPrepaidExpense")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CalcPrepaidExpense(fromDate, toDate, accountNumber);
+        }
+
+        [HttpGet]
+        [Route("CheckExistedPrepaidExpense")]
+        public async Task<bool> CheckExistedPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.CheckExistedPrepaidExpense(fromDate, toDate, accountNumber);
+        }
+
+        [HttpDelete]
+        [Route("DeletedPrepaidExpense")]
+        public async Task<bool> DeletedPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        {
+            return await _calcBillService.DeletedPrepaidExpense(fromDate, toDate, accountNumber);
         }
     }
 }

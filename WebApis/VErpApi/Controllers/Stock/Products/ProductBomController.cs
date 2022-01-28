@@ -16,6 +16,7 @@ using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Bom;
 using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.Products;
 
@@ -33,6 +34,7 @@ namespace VErpApi.Controllers.Stock.Products
         [HttpPost]
         [Route("ByProductIds")]
         [VErpAction(EnumActionType.View)]
+        [GlobalApi]
         public async Task<IDictionary<int, IList<ProductBomOutput>>> ByProductIds([FromBody] IList<int> productIds)
         {
             return await _productBomService.GetBoms(productIds);
@@ -41,6 +43,7 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpGet]
         [Route("{productId}")]
+        [GlobalApi]
         public async Task<IList<ProductBomOutput>> GetBOM([FromRoute] int productId)
         {
             return await _productBomService.GetBom(productId);
@@ -58,7 +61,14 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<bool> Update([FromRoute] int productId, [FromBody] ProductBomModel model)
         {
             if (model == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productBomService.Update(productId, model.ProductBoms, model.ProductMaterials, model.IsCleanOldMaterial);
+            var updateModel = new ProductBomUpdateInfoModel()
+            {
+                BomInfo = new ProductBomUpdateInfo(model.ProductBoms),
+                MaterialsInfo = new ProductBomMaterialUpdateInfo(model.ProductMaterials, model.IsCleanOldMaterial),
+                PropertiesInfo = new ProductBomPropertyUpdateInfo(model.ProductProperties, model.IsCleanOldProperties),
+                IgnoreStepInfo = new ProductBomIgnoreStepUpdateInfo(model.ProductIgnoreSteps, model.IsCleanOldIgnoreStep)
+            };
+            return await _productBomService.Update(productId, updateModel);
         }
 
         [HttpPost]
@@ -74,21 +84,34 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpGet]
         [Route("fieldDataForMapping")]
-        public CategoryNameModel GetCustomerFieldDataForMapping()
+        public async Task<CategoryNameModel> GetBomFieldDataForMapping()
         {
-            return _productBomService.GetCustomerFieldDataForMapping();
+            return await _productBomService.GetBomFieldDataForMapping();
         }
 
         [HttpPost]
         [Route("importFromMapping")]
         public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
+            if (file == null || mapping == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
+            mapping.FileName = file.FileName;
+            return await _productBomService.ImportBomFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("previewFromMapping")]
+        public async Task<IList<ProductBomByProduct>> PreviewFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
-            return await _productBomService.ImportBomFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
+            return await _productBomService.PreviewBomFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

@@ -19,11 +19,13 @@ namespace Verp.Services.ReportConfig.Model
         public bool? IsArray { get; set; }
         public bool? IsRepeat { get; set; }
         public bool IsCalcSum { get; set; }
+        public string CalcSumConditionCol { get; set; }
         public bool IsHidden { get; set; }
         public string RowSpan { get; set; }
         public string ColSpan { get; set; }
         public bool IsGroup { get; set; }
         public bool IsGroupRow { get; set; }
+        public bool isGroupRowLevel2 { get; set; }
         public string VAlign { get; set; }
         public string HAlign { get; set; }
         public bool IsColGroup { get; set; }
@@ -37,6 +39,11 @@ namespace Verp.Services.ReportConfig.Model
         public EnumReportDetailTarget? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
+
+        public EnumReportDetailOpenType? HeaderOpenTypeId { get; set; }
+        public EnumReportDetailTarget? HeaderTargetId { get; set; }
+        public int? HeaderReportId { get; set; }
+        public string HeaderReportParams { get; set; }
 
     }
 }

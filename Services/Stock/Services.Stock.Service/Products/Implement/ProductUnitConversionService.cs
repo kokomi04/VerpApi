@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
@@ -24,24 +26,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
     {
         private readonly StockDBContext _stockDbContext;
         private readonly MasterDBContext _masterDBContext;
-        private readonly AppSetting _appSetting;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IUnitService _unitService;
 
-        public ProductUnitConversionService(StockDBContext stockContext, MasterDBContext masterDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<ProductUnitConversionService> logger
-            , IActivityLogService activityLogService
-            , IUnitService unitService
-        )
+        public ProductUnitConversionService(StockDBContext stockContext, MasterDBContext masterDBContext)
         {
             _stockDbContext = stockContext;
             _masterDBContext = masterDBContext;
-            _appSetting = appSetting.Value;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _unitService = unitService;
         }
 
         public async Task<PageData<ProductUnitConversionOutput>> GetList(int productId, int page = 0, int size = 0)
@@ -59,7 +48,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var unitList = await _masterDBContext.Unit.AsNoTracking().Where(q => secondUnitIdList.Contains(q.UnitId)).ToListAsync();
 
-            var resultFromDb = new List<VErp.Infrastructure.EF.StockDB.ProductUnitConversion>(total);
+            var resultFromDb = new List<ProductUnitConversion>(total);
             if (page > 0 && size > 0)
                 resultFromDb = query.AsNoTracking().Skip((page - 1) * size).Take(size).ToList();
             else
@@ -121,6 +110,49 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
 
             return (pagedData, total);
+
+        }
+
+        public async Task<IList<ProductUnitConversionByProductOutput>> GetByInStockProducts(IList<int> productIds, int stockId, long unixDate)
+        {
+
+            if (productIds == null || productIds.Count == 0 || stockId == 0 || unixDate == 0)
+                return new List<ProductUnitConversionByProductOutput>();
+
+            var date = unixDate.UnixToDateTime();
+
+            var inStockProducts = (from id in _stockDbContext.InventoryDetail
+                                   join i in _stockDbContext.Inventory on id.InventoryId equals i.InventoryId
+                                   where i.IsDeleted == false
+                                   && id.IsDeleted == false
+                                   && i.IsApproved == true
+                                   && i.Date <= date
+                                   && i.StockId == stockId
+                                   && productIds.Contains(id.ProductId)
+                                   select new
+                                   {
+                                       id.ProductId,
+                                       id.ProductUnitConversionId
+                                   })
+                                   .Distinct();
+
+            var result = await (from r in inStockProducts
+                                join c in _stockDbContext.ProductUnitConversion on new { r.ProductId, r.ProductUnitConversionId } equals new { c.ProductId, c.ProductUnitConversionId }
+                                select new ProductUnitConversionByProductOutput()
+                                {
+                                    ProductId = c.ProductId,
+                                    ProductUnitConversionId = c.ProductUnitConversionId,
+                                    ProductUnitConversionName = c.ProductUnitConversionName,
+                                    SecondaryUnitId = c.SecondaryUnitId,
+                                    FactorExpression = c.FactorExpression,
+                                    ConversionDescription = c.ConversionDescription,
+                                    IsFreeStyle = c.IsFreeStyle,
+                                    IsDefault = c.IsDefault,
+                                    DecimalPlace = c.DecimalPlace
+                                })
+                                .ToListAsync();
+
+            return result;
 
         }
     }

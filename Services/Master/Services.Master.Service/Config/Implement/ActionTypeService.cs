@@ -5,12 +5,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionType;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
+using static Verp.Resources.Master.Config.ActionType.ActionTypeValidationMessage;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -18,8 +21,8 @@ namespace VErp.Services.Master.Service.Config.Implement
     {
         private readonly MasterDBContext _masterDbContext;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _actionTypeActivityLog;
 
         public ActionTypeService(MasterDBContext masterDbContext
             , ILogger<ActionTypeService> logger
@@ -29,8 +32,8 @@ namespace VErp.Services.Master.Service.Config.Implement
         {
             _masterDbContext = masterDbContext;
             _logger = logger;
-            _activityLogService = activityLogService;
             _currentContextService = currentContextService;
+            _actionTypeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ActionType);
 
         }
         public async Task<int> Create(ActionType model)
@@ -38,7 +41,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             var lstActionTypes = await GetList();
             if (lstActionTypes.Any(t => t.ActionTypeName.NormalizeAsInternalName().Equals(model.ActionTypeName.NormalizeAsInternalName(), StringComparison.OrdinalIgnoreCase)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Tên Action đã tồn tại, vui lòng chọn tên khác");
+                throw ActionTypeNameAlreadyExisted.BadRequest();
             }
             var existedActionTypeIds = lstActionTypes.Select(a => a.ActionTypeId).ToHashSet();
             var newActionTypeId = 0;
@@ -53,13 +56,18 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
             if (newActionTypeId == 0)
             {
-                throw new BadRequestException(GeneralCode.NotYetSupported, $"Không thể thêm action");
+                throw ActionTypeIdOverflow.BadRequest();
             }
             model.ActionTypeId = newActionTypeId;
             _masterDbContext.ActionType.Add(model);
             await _masterDbContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ActionType, newActionTypeId, $"Thêm action {model.ActionTypeName}", model.JsonSerialize());
+
+            await _actionTypeActivityLog.LogBuilder(() => ActionTypeActivityLogMessage.Create)
+            .MessageResourceFormatDatas(model.ActionTypeName)
+            .ObjectId(newActionTypeId)
+            .JsonData(model.JsonSerialize())
+            .CreateLog();
 
             return newActionTypeId;
         }
@@ -69,18 +77,23 @@ namespace VErp.Services.Master.Service.Config.Implement
             var info = await _masterDbContext.ActionType.FirstOrDefaultAsync(a => a.ActionTypeId == actionTypeId);
             if (info == null)
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy action");
+                throw ActionTypeNotFound.BadRequest();
             }
 
             if (!info.IsEditable)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Action mặc định không thể xóa");
+                throw CannotDeleteDefaultActionType.BadRequest();
             }
 
             _masterDbContext.ActionType.Remove(info);
             await _masterDbContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ActionType, actionTypeId, $"Xóa action {info.ActionTypeName}", info.JsonSerialize());
+            await _actionTypeActivityLog.LogBuilder(() => ActionTypeActivityLogMessage.Delete)
+             .MessageResourceFormatDatas(info.ActionTypeName)
+             .ObjectId(actionTypeId)
+             .JsonData(info.JsonSerialize())
+             .CreateLog();
+
             return true;
         }
 
@@ -94,24 +107,30 @@ namespace VErp.Services.Master.Service.Config.Implement
             var lstActionTypes = await GetList();
             if (lstActionTypes.Any(t => t.ActionTypeId != actionTypeId && t.ActionTypeName.NormalizeAsInternalName().Equals(model.ActionTypeName.NormalizeAsInternalName(), StringComparison.OrdinalIgnoreCase)))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Tên Action đã tồn tại, vui lòng chọn tên khác");
+                throw ActionTypeNameAlreadyExisted.BadRequest();
             }
 
             model.ActionTypeId = actionTypeId;
             var info = await _masterDbContext.ActionType.FirstOrDefaultAsync(a => a.ActionTypeId == actionTypeId);
             if (info == null)
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy action");
+                throw ActionTypeNotFound.BadRequest();
             }
 
             if (!info.IsEditable)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Action mặc định không thể xóa");
+                throw CannotUpdateDefaultActionType.BadRequest();
             }
             _masterDbContext.ActionType.Attach(model);
             model.IsEditable = true;
             await _masterDbContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.ActionType, actionTypeId, $"Cập nhật action {info.ActionTypeName}", info.JsonSerialize());
+
+            await _actionTypeActivityLog.LogBuilder(() => ActionTypeActivityLogMessage.Update)
+               .MessageResourceFormatDatas(info.ActionTypeName)
+               .ObjectId(actionTypeId)
+               .JsonData(info.JsonSerialize())
+               .CreateLog();
+
             return true;
         }
     }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchasingRequest
@@ -33,8 +35,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? OrderDetailRequestQuantity { get; set; }
         public long? ProductionOrderId { get; set; }
         public long? MaterialCalcId { get; set; }
+        public long? PropertyCalcId { get; set; }
 
         public virtual MaterialCalc MaterialCalc { get; set; }
+        public virtual PropertyCalc PropertyCalc { get; set; }
         public virtual ICollection<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
     }
 }

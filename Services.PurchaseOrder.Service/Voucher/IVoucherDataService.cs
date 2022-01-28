@@ -6,15 +6,17 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
+using static VErp.Services.PurchaseOrder.Service.Voucher.Implement.VoucherDataService;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher
 {
     public interface IVoucherDataService
     {
-        Task<PageDataTable> GetVoucherBills(int inputTypeId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetVoucherBills(int inputTypeId, bool isMultiRow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         //Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
 
@@ -28,7 +30,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<bool> DeleteVoucherBill(int inputTypeId, long inputValueBillId);
 
-        Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportBillExelMapping mapping, Stream stream);
+        Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId = null);
+
+        Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null);
+
+        Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 
         Task<(MemoryStream Stream, string FileName)> ExportVoucherBill(int inputTypeId, long fId);
 
@@ -40,7 +46,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<PageDataTable> OrderDetailByPurchasingRequest(string keyword, long? fromDate, long? toDate, bool? isCreatedPurchasingRequest, int page, int size);
 
-        Task<IList<NonCamelCaseDictionary>> OrderByCodes(IList<string> orderCodes);
+        Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IList<string> orderCodes);
+
+        Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes(IList<string> orderCodes);
 
         Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds);
     }

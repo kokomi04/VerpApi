@@ -20,16 +20,26 @@ namespace VErpApi.Controllers.Manufacturing.Internal
     public class InternalProductionHandoverController : CrossServiceBaseController
     {
         private readonly IProductionHandoverService _productionHandoverService;
-        public InternalProductionHandoverController(IProductionHandoverService productionHandoverService)
+        private readonly IMaterialAllocationService _materialAllocationService;
+
+        public InternalProductionHandoverController(IProductionHandoverService productionHandoverService, IMaterialAllocationService materialAllocationService)
         {
             _productionHandoverService = productionHandoverService;
+            _materialAllocationService = materialAllocationService;
         }
 
         [HttpPut]
-        [Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}/status")]
-        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId, [FromBody] IList<ProductionInventoryRequirementEntity> inventories)
+        [Route("status")]
+        public async Task<bool> ChangeAssignedProgressStatus([FromBody] ProgressStatusInputModel data)
         {
-            return await _productionHandoverService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId, inventories);
+            return await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
+        }
+
+        [HttpPut]
+        [Route("ignore-allocation")]
+        public async Task<bool> UpdateIgnoreAllocation([FromBody] string[] productionOrderCodes)
+        {
+            return await _materialAllocationService.UpdateIgnoreAllocation(productionOrderCodes);
         }
     }
 }

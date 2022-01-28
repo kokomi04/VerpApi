@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class Customer
@@ -38,7 +40,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public decimal? LoanLimitation { get; set; }
         public int LoanBeginningTypeId { get; set; }
         public int? LoanManagerUserId { get; set; }
+        public string PartnerId { get; set; }
+        public int? CustomerCateId { get; set; }
 
+        public virtual CustomerCate CustomerCate { get; set; }
         public virtual ICollection<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual ICollection<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual ICollection<CustomerContact> CustomerContact { get; set; }

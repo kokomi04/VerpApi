@@ -50,6 +50,7 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpGet]
+        [GlobalApi]
         [Route("{menuId}")]
         public async Task<MenuOutputModel> Get([FromRoute] int menuId)
         {

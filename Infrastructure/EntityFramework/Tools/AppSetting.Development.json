@@ -7,14 +7,14 @@
     "InternalCrossServiceKey": "4db1464b-0956-4327-8aba-2271f03395b9"
   },
   "Identity": {
-    "Endpoint": "http://103.21.149.106:8001"
+    "Endpoint": "http://localhost:8001"
   },
   "ServiceUrls": {
     "ApiService": {
-      "Endpoint": "http://103.21.149.106:8001"
+      "Endpoint": "http://localhost:8001"
     },
     "FileService": {
-      "Endpoint": "http://103.21.149.106:8001"
+      "Endpoint": "http://localhost:8001"
     }
   },
   "ElasticApm": {
@@ -23,7 +23,7 @@
     "ServiceName": "Verp-Api"
   },
   "GrpcInternal": {
-    "Address": "http://103.21.149.106:8001"
+    "Address": "http://localhost:8001"
   },
   "BackupStorage": {
     "FileBackupFolder": "C:/usr/resources/"

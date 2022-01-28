@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+#nullable disable
+
 namespace VErp.Infrastructure.EF.StockDB
 {
     public partial class InventoryDetail
@@ -37,12 +39,10 @@ namespace VErp.Infrastructure.EF.StockDB
         public int? SortOrder { get; set; }
         public decimal? PrimaryQuantityRemaning { get; set; }
         public decimal? ProductUnitConversionQuantityRemaning { get; set; }
-        public string AccountancyAccountNumberDu { get; set; }
         public long? InventoryRequirementDetailId { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public string InventoryRequirementCode { get; set; }
-        public int? DepartmentId { get; set; }
 
         public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }

@@ -49,7 +49,14 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateProductionAssignment([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromBody] ProductionAssignmentInputModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productionAssignmentService.UpdateProductionAssignment(productionOrderId, productionStepId, data.ProductionAssignments, data.ProductionStepWorkInfo, data.DepartmentTimeTable);
+            return await _productionAssignmentService.UpdateProductionAssignment(productionOrderId, productionStepId, data.ProductionAssignments, data.ProductionStepWorkInfo);
+        }
+
+        [HttpPut]
+        [Route("productionOrder/{productionOrderId}/dismissWarning")]
+        public async Task<bool> DismissUpdateWarning([FromRoute] long productionOrderId)
+        {
+            return await _productionAssignmentService.DismissUpdateWarning(productionOrderId);
         }
 
         [HttpPut]
@@ -67,18 +74,18 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId, status);
         }
 
-        [HttpPost]
-        [Route("DepartmentTimeTable")]
-        public async Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable([FromBody] int[] departmentIds, [FromQuery] long startDate, [FromQuery] long endDate)
-        {
-            return await _productionAssignmentService.GetDepartmentTimeTable(departmentIds, startDate, endDate);
-        }
+        //[HttpPost]
+        //[Route("DepartmentTimeTable")]
+        //public async Task<IList<DepartmentTimeTableModel>> GetDepartmentTimeTable([FromBody] int[] departmentIds, [FromQuery] long startDate, [FromQuery] long endDate)
+        //{
+        //    return await _productionAssignmentService.GetDepartmentTimeTable(departmentIds, startDate, endDate);
+        //}
 
         [HttpGet]
         [Route("departments/{departmentId}")]
-        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] long? productionOrderId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc)
+        public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment([FromRoute] int departmentId, [FromQuery] string keyword, [FromQuery] long? productionOrderId, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, long? fromDate, long? toDate)
         {
-            return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, productionOrderId, page, size, orderByFieldName, asc);
+            return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, keyword, productionOrderId, page, size, orderByFieldName, asc, fromDate, toDate);
         }
 
         //[HttpGet]

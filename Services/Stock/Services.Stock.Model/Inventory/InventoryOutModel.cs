@@ -17,15 +17,23 @@ namespace VErp.Services.Stock.Model.Inventory
         public string BillCode { set; get; }
         public string BillSerial { set; get; }
         public long? BillDate { set; get; }
-
+        public int? DepartmentId { get; set; }
         /// <summary>
         /// Id file đính kèm
         /// </summary>
         public IList<long> FileIdList { set; get; }
 
         public IList<InventoryOutProductModel> OutProducts { set; get; }
-        public string AccountancyAccountNumber { get; set; }
+        //public string AccountancyAccountNumber { get; set; }
     }
+
+
+    public class InventoryOutRotationModel : InventoryOutModel
+    {
+        public int ToStockId { get; set; }
+        public string ToInventoryCode { get; set; }
+    }
+
 
     public class InventoryOutProductModel
     {
@@ -58,9 +66,8 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public int SortOrder { get; set; }
         public string Description { get; set; }
-        public string AccountancyAccountNumberDu { get; set; }
+        //public string AccountancyAccountNumberDu { get; set; }
+        public long? InventoryRequirementDetailId { get; set; }
         public string InventoryRequirementCode { set; get; }
-
-        public int? DepartmentId { get; set; }
     }
 }
