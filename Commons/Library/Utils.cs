@@ -260,6 +260,11 @@ namespace VErp.Commons.Library
             return UnixToDateTime((long?)unixTime, timezoneOffset).Value;
         }
 
+        public static DateTime UtcToTimeZone(this DateTime datetime, int? timezoneOffset)
+        {
+            return datetime.AddMinutes(-timezoneOffset ?? 0);
+        }
+
         public static decimal Eval(string expression)
         {
             try
@@ -1402,7 +1407,7 @@ namespace VErp.Commons.Library
                         {
                             newArray.SetValue(lst[i], i);
                         }
-                        targetValue = newArray;                        
+                        targetValue = newArray;
                     }
 
                     prop.SetValue(target, targetValue, null);

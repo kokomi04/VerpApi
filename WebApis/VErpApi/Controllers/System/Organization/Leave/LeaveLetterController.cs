@@ -64,6 +64,18 @@ namespace VErpApi.Controllers.System.Organization.Leave
             return _leaveLetterService.Info(leaveId);
         }
 
+        [HttpGet("me/Total")]
+        public Task<LeaveByYearModel> TotalbyUser()
+        {
+            return _leaveLetterService.TotalByUser(_currentContextService.UserId);
+        }
+
+        [HttpGet("TotalbyUser")]
+        public Task<LeaveByYearModel> TotalbyUser([FromQuery] int userId)
+        {
+            return _leaveLetterService.TotalByUser(userId);
+        }
+
         [HttpPost("")]
         public Task<long> Create([FromBody] LeaveModel model)
         {
