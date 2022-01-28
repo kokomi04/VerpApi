@@ -217,6 +217,11 @@ namespace VErp.Services.Organization.Service.Leave
             var total = await query.CountAsync();
             if (size > 0)
             {
+                if (string.IsNullOrWhiteSpace(sortBy))
+                {
+                    sortBy = nameof(LeaveLetter.CreatedDatetimeUtc);
+                }
+
                 query = query.SortByFieldName(sortBy, asc);
                 query = query.Skip((page - 1) * size).Take(size);
             }
@@ -283,7 +288,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
@@ -318,7 +323,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
@@ -353,7 +358,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
@@ -388,7 +393,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
