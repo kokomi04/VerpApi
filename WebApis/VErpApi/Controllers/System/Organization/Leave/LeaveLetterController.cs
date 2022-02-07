@@ -82,7 +82,7 @@ namespace VErpApi.Controllers.System.Organization.Leave
             return _leaveLetterService.Create(model);
         }
 
-        [HttpGet("{leaveId}")]
+        [HttpPut("{leaveId}")]
         public Task<bool> Update([FromRoute] long leaveId, [FromBody] LeaveModel model)
         {
             return _leaveLetterService.Update(leaveId, model);
