@@ -17,6 +17,7 @@ using VErp.Services.Organization.Service.Leave;
 using VErp.Services.Organization.Model.Leave;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Enums.StandardEnum;
 
 namespace VErpApi.Controllers.System.Organization.Leave
 {
@@ -62,6 +63,12 @@ namespace VErpApi.Controllers.System.Organization.Leave
         public Task<LeaveModel> Info([FromRoute] long leaveId)
         {
             return _leaveLetterService.Info(leaveId);
+        }
+
+        [HttpGet("InfoByOwnerOrRole/{leaveId}")]
+        public Task<LeaveModel> InfoByOwnerOrRole([FromRoute] long leaveId)
+        {
+            return _leaveLetterService.InfoByOwnerOrRole(leaveId);
         }
 
         [HttpGet("me/Total")]
