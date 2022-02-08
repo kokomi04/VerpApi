@@ -1452,6 +1452,45 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 );
         }
 
+        public async Task<bool> RemoveOutsourcePart(long[] arrPurchaseOrderId, long outsourcePartRequestId)
+        {
+            var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var purchaseOrderId in arrPurchaseOrderId)
+                {
+                    var po = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(x => x.PurchaseOrderId == purchaseOrderId);
+                    if (po == null || po.PurchaseOrderType != (int)EnumPurchasingOrderType.OutsourcePart)
+                        throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+
+                    var poDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(x => x.PurchaseOrderId == purchaseOrderId).ToListAsync();
+
+                    var arrPoDetailIdWithOutOutsourceRequestId = poDetails.Where(x => x.OutsourceRequestId.HasValue == false).Select(x => x.PurchaseOrderDetailId).ToList();
+                    var arrMapping = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => arrPoDetailIdWithOutOutsourceRequestId.Contains(x.PurchaseOrderDetailId) && x.OutsourcePartRequestId == outsourcePartRequestId).ToListAsync();
+                    
+                    arrMapping.ForEach(x => x.IsDeleted = true);
+
+                    foreach (var d in poDetails.Where(x => x.OutsourceRequestId == outsourcePartRequestId))
+                    {
+                        d.OutsourceRequestId = null;
+                        d.ProductionOrderCode = string.Empty;
+                    }
+
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+                }
+                
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw ex;
+            }
+        }
+        
+
         public async Task<IList<PurchaseOrderOutsourcePartAllocate>> GetAllPurchaseOrderOutsourcePart()
         {
             var query1 = from p in _purchaseOrderDBContext.PurchaseOrder
@@ -1485,7 +1524,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             PurchaseOrderDetailId = q1.PurchaseOrderDetailId,
                             PrimaryQuantityAllocated = q2.PrimaryQuantityAllocated
                         };
-            return await query.ToListAsync();
+            return await query.Where(x => x.PrimaryQuantity > x.PrimaryQuantityAllocated.GetValueOrDefault()).ToListAsync();
         }
 
         public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart(long purchaseOrderId)

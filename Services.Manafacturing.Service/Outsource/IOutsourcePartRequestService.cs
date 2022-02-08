@@ -20,6 +20,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId);
         Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId);
         Task<IList<MaterialsForProductOutsource>> GetMaterialsForProductOutsource(long outsourcePartRequestId, long[] productId);
+        Task<bool> CheckHasPurchaseOrder(long outsourcePartRequestId);
 
     }
 }
