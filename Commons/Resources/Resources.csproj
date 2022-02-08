@@ -402,6 +402,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>LeaveConfigActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Leave\LeaveLetterValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LeaveLetterValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -974,6 +979,10 @@
     <EmbeddedResource Update="Organization\Leave\LeaveConfigActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>LeaveConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Leave\LeaveLetterValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>LeaveLetterValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

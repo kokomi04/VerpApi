@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ServiceCore.Model
 {

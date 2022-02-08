@@ -32,16 +32,16 @@ namespace VErp.Services.Organization.Model.Leave
         public long? OldYearAppliedToDate { get; set; }
         public bool IsDefault { get; set; }
 
-        public void CreateMapping<T>(Profile profile) where T : LeaveConfigListModel =>
-          profile.CreateMap<T, LeaveConfig>()
-          .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.UnixToDateTime()))
-          .ReverseMap()
-          .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.GetUnix()));
+        //public void CreateMapping<T>(Profile profile) where T : LeaveConfigListModel =>
+        //  profile.CreateMap<T, LeaveConfig>()
+        //  .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.UnixToDateTime()))
+        //  .ReverseMap()
+        //  .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.GetUnix()));
 
-        public virtual void Mapping(Profile profile) => CreateMapping<LeaveConfigListModel>(profile);
+        //public virtual void Mapping(Profile profile) => CreateMapping<LeaveConfigListModel>(profile);
     }
 
-    public class LeaveConfigModel : LeaveConfigListModel
+    public class LeaveConfigModel : LeaveConfigListModel, IMapFrom<LeaveConfig>
     {
         private IList<LeaveConfigRoleModel> _roles;
 
@@ -90,7 +90,7 @@ namespace VErp.Services.Organization.Model.Leave
             }
         }
 
-        public override void Mapping(Profile profile) => CreateMapping<LeaveConfigModel>(profile);
+        //public override void Mapping(Profile profile) => CreateMapping<LeaveConfigModel>(profile);
     }
 
     public class LeaveConfigRoleUserModel : IMapFrom<LeaveConfigRole>

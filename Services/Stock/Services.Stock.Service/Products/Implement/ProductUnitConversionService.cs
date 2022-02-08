@@ -1,24 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Activity;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Service.FileResources;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
