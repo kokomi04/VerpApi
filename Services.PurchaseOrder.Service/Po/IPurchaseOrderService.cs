@@ -49,5 +49,7 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<IList<PurchaseOrderOutsourcePartAllocate>> GetAllPurchaseOrderOutsourcePart();
         Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart(long purchaseOrderId);
+
+        Task<bool> RemoveOutsourcePart(long[] arrPurchaseOrderId, long outsourcePartRequestId);
     }
 }

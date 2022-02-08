@@ -37,13 +37,15 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductBomHelperService _productBomHelperService;
+        private readonly IPurchaseOrderHelperService _purchaseOrderHelperService;
+
 
         public OutsourcePartRequestService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourcePartRequestService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductBomHelperService productBomHelperService)
+            , IProductBomHelperService productBomHelperService, IPurchaseOrderHelperService purchaseOrderHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -51,6 +53,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _productBomHelperService = productBomHelperService;
+            _purchaseOrderHelperService = purchaseOrderHelperService;
         }
 
         public async Task<long> CreateOutsourcePartRequest(OutsourcePartRequestModel model)
@@ -68,7 +71,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 else
                 {
                    var arrProductId = _manufacturingDBContext.ProductionOrderDetail.Where(x => x.ProductionOrderId == model.ProductionOrderId).Select(x=>x.ProductId).ToArray();
-                    partInBoms = (await _productBomHelperService.GetBOMs(arrProductId)).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
+                    partInBoms = (await _productBomHelperService.GetBOMs(arrProductId)).Values.SelectMany(x => x).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
                 }
                 
                 // Cấu hình sinh mã
@@ -175,7 +178,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 else
                 {
                     var arrProductId = _manufacturingDBContext.ProductionOrderDetail.Where(x => x.ProductionOrderId == model.ProductionOrderId).Select(x => x.ProductId).ToArray();
-                    partInBoms = (await _productBomHelperService.GetBOMs(arrProductId)).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
+                    partInBoms = (await _productBomHelperService.GetBOMs(arrProductId)).Values.SelectMany(x => x).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
                 }
 
                 var details = _manufacturingDBContext.OutsourcePartRequestDetail.Where(x => x.OutsourcePartRequestId == OutsourcePartRequestId).ToList();
@@ -322,6 +325,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return (lst, total);
         }
 
+        public async Task<bool> CheckHasPurchaseOrder(long outsourcePartRequestId)
+        {
+            return await _manufacturingDBContext.RefOutsourcePartOrder.AnyAsync(x => x.OutsourceRequestId == outsourcePartRequestId);
+        }
+
         public async Task<bool> DeletedOutsourcePartRequest(long outsourcePartRequestId)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -331,10 +339,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 if (order == null)
                     throw new BadRequestException(OutsourceErrorCode.NotFoundRequest);
 
-                var hasPurchaseOrder = await _manufacturingDBContext.RefOutsourcePartOrder.AnyAsync(x=>x.OutsourceRequestId == outsourcePartRequestId);
-                if(hasPurchaseOrder)
-                    throw new BadRequestException(OutsourceErrorCode.HasPurchaseOrder);
+                var arrPurchaseOrderId = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => x.OutsourceRequestId == outsourcePartRequestId)
+                                                                                            .Select(x => x.PurchaseOrderId)
+                                                                                            .ToArrayAsync();
 
+                await _purchaseOrderHelperService.RemoveOutsourcePart(arrPurchaseOrderId, outsourcePartRequestId);
+                                                                                                
                 /*
               var details = await _manufacturingDBContext.OutsourcePartRequestDetail
                   .Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId)

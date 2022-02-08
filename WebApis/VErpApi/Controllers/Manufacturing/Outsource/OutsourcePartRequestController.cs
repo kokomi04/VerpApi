@@ -92,5 +92,12 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         {
             return await _outsourcePartRequestService.GetMaterialsForProductOutsource(outsourcePartRequestId, productId);
         }
+
+        [HttpGet]
+        [Route("{outsourcePartRequestId}/hasPurchaseOrder")]
+        public async Task<bool> CheckHasPurchaseOrder([FromRoute] long outsourcePartRequestId)
+        {
+            return await _outsourcePartRequestService.CheckHasPurchaseOrder(outsourcePartRequestId);
+        }
     }
 }
