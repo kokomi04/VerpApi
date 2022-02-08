@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
@@ -8,7 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.TimeKeeping;
 
@@ -60,5 +65,25 @@ namespace VErpApi.Controllers.System.Organization
             return await _timeSheetService.UpdateTimeSheet(timeSheetId, model);
 
         }
+
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        {
+            return await _timeSheetService.GetFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _timeSheetService.ImportTimeSheetFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
     }
 }

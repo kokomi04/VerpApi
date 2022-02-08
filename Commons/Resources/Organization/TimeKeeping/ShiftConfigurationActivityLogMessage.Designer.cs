@@ -22,21 +22,21 @@ namespace Verp.Resources.Organization.TimeKeeping {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class ShiftConfigurationActivityLogMessage {
+    internal class ShiftConfigurationActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public ShiftConfigurationActivityLogMessage() {
+        internal ShiftConfigurationActivityLogMessage() {
         }
         
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        public static global::System.Resources.ResourceManager ResourceManager {
+        internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.TimeKeeping.ShiftConfigurationActivityLogMessage", typeof(ShiftConfigurationActivityLogMessage).Assembly);
@@ -51,7 +51,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        public static global::System.Globalization.CultureInfo Culture {
+        internal static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -63,7 +63,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Khai báo ca làm việc với mã {0}.
         /// </summary>
-        public static string CreateShiftConfiguration {
+        internal static string CreateShiftConfiguration {
             get {
                 return ResourceManager.GetString("CreateShiftConfiguration", resourceCulture);
             }
@@ -72,7 +72,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Xóa ca làm việc với mã {0}.
         /// </summary>
-        public static string DeleteShiftConfiguration {
+        internal static string DeleteShiftConfiguration {
             get {
                 return ResourceManager.GetString("DeleteShiftConfiguration", resourceCulture);
             }
@@ -81,7 +81,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Cập nhật ca làm việc với mã {0}.
         /// </summary>
-        public static string UpdateShiftConfiguration {
+        internal static string UpdateShiftConfiguration {
             get {
                 return ResourceManager.GetString("UpdateShiftConfiguration", resourceCulture);
             }
