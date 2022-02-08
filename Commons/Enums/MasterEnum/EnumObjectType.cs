@@ -388,6 +388,12 @@ namespace VErp.Commons.Enums.MasterEnum
         MailTemplate = 53005,
         [Description("Cấu hình upload file")]
         FileConfiguration = 53006,
-        Notification = 53007
+        Notification = 53007,
+        [Description("Thiết lập thông số sắp xếp giờ")]
+        TimeSortConfiguration = 53008,
+        [Description("Thiết lập lịch trình làm việc")]
+        WorkSchedule = 53009,
+        [Description("Thiết lập ca làm việc")]
+        ShiftConfiguration = 53010
     }
 }

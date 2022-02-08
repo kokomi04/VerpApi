@@ -26,7 +26,11 @@ namespace VErp.Services.Organization.Service.Leave
     {
         Task<PageData<LeaveModel>> Get(int? userId, int? roleUserId, string keyword, int? leaveConfigId, int? absenceTypeSymbolId, EnumLeaveStatus? leaveStatusId, long? fromDate, long? toDate, int page, int size, string sortBy, bool asc);
 
+        Task<LeaveByYearModel> TotalByUser(int userId);
+
         Task<LeaveModel> Info(long leaveId);
+
+        Task<LeaveModel> InfoByOwnerOrRole(long leaveId);
 
         Task<long> Create(LeaveModel model);
 
@@ -217,6 +221,11 @@ namespace VErp.Services.Organization.Service.Leave
             var total = await query.CountAsync();
             if (size > 0)
             {
+                if (string.IsNullOrWhiteSpace(sortBy))
+                {
+                    sortBy = nameof(LeaveLetter.CreatedDatetimeUtc);
+                }
+
                 query = query.SortByFieldName(sortBy, asc);
                 query = query.Skip((page - 1) * size).Take(size);
             }
@@ -226,11 +235,70 @@ namespace VErp.Services.Organization.Service.Leave
             return (_mapper.Map<List<LeaveModel>>(lst), total);
         }
 
+        public async Task<LeaveByYearModel> TotalByUser(int userId)
+        {
+            var query = from l in _organizationDBContext.Leave
+                        join c in _organizationDBContext.AbsenceTypeSymbol on l.AbsenceTypeSymbolId equals c.AbsenceTypeSymbolId
+                        where l.UserId == userId &&
+                        (l.LeaveStatusId == (int)EnumLeaveStatus.CheckAccepted || l.LeaveStatusId == (int)EnumLeaveStatus.CensorApproved)
+                        && l.DateStart > DateTime.UtcNow.AddYears(-2)
+                        select new
+                        {
+                            l.DateStart,
+                            c.IsCounted,
+                            l.TotalDays
+                        };
+
+            var lst = await query.ToListAsync();
+
+            var lastYearData = lst.Where(d => d.DateStart.UtcToTimeZone(_currentContextService.TimeZoneOffset).Year == DateTime.UtcNow.AddYears(-1).UtcToTimeZone(_currentContextService.TimeZoneOffset).Year).ToList();
+
+            var lhisYearData = lst.Where(d => d.DateStart.UtcToTimeZone(_currentContextService.TimeZoneOffset).Year == DateTime.UtcNow.AddYears(-1).UtcToTimeZone(_currentContextService.TimeZoneOffset).Year).ToList();
+
+            return new LeaveByYearModel()
+            {
+                LastYear = new LeaveCountModel()
+                {
+                    NoneCounted = lastYearData.Where(d => !d.IsCounted).Sum(d => d.TotalDays),
+                    Counted = lastYearData.Where(d => d.IsCounted).Sum(d => d.TotalDays),
+                },
+                ThisYear = new LeaveCountModel()
+                {
+                    NoneCounted = lhisYearData.Where(d => !d.IsCounted).Sum(d => d.TotalDays),
+                    Counted = lhisYearData.Where(d => d.IsCounted).Sum(d => d.TotalDays),
+                }
+            };
+        }
+
+
+
         public async Task<LeaveModel> Info(long leaveId)
         {
             var info = await _organizationDBContext.Leave.FirstOrDefaultAsync(l => l.LeaveId == leaveId);
             if (info == null) throw GeneralCode.ItemNotFound.BadRequest();
 
+            return _mapper.Map<LeaveModel>(info);
+        }
+
+        public async Task<LeaveModel> InfoByOwnerOrRole(long leaveId)
+        {
+
+            var info = await _organizationDBContext.Leave.FirstOrDefaultAsync(l => l.LeaveId == leaveId);
+            if (info == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+            if (info.UserId != _currentContextService.UserId)
+            {
+                var userInfo = (await _userHelperService.GetByIds(new[] { info.UserId ?? 0 })).FirstOrDefault();
+                if (userInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                var cfg = await GetLeaveConfig(userInfo);
+
+                if (!await _organizationDBContext.LeaveConfigRole.Where(r => r.LeaveConfigId == cfg.LeaveConfigId && r.UserId == _currentContextService.UserId).AnyAsync())
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+
+            }
             return _mapper.Map<LeaveModel>(info);
         }
 
@@ -283,7 +351,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
@@ -318,7 +386,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Check && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
@@ -353,7 +421,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
@@ -388,7 +456,7 @@ namespace VErp.Services.Organization.Service.Leave
             }
 
             var cfg = await GetLeaveConfig(userInfo);
-            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserId == _currentContextService.UserId) != true)
+            if (cfg.Roles?.Any(r => r.LeaveRoleTypeId == EnumLeaveRoleType.Censor && r.UserIds.Contains(_currentContextService.UserId)) != true)
             {
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();

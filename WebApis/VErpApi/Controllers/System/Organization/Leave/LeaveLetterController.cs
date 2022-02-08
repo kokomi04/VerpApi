@@ -17,10 +17,11 @@ using VErp.Services.Organization.Service.Leave;
 using VErp.Services.Organization.Model.Leave;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Enums.StandardEnum;
 
 namespace VErpApi.Controllers.System.Organization.Leave
 {
-    [Route("api/Leave/letter")]
+    [Route("api/organization/Leave/letter")]
     public class LeaveLetterController : VErpBaseController
     {
         private readonly ILeaveLetterService _leaveLetterService;
@@ -64,13 +65,31 @@ namespace VErpApi.Controllers.System.Organization.Leave
             return _leaveLetterService.Info(leaveId);
         }
 
+        [HttpGet("InfoByOwnerOrRole/{leaveId}")]
+        public Task<LeaveModel> InfoByOwnerOrRole([FromRoute] long leaveId)
+        {
+            return _leaveLetterService.InfoByOwnerOrRole(leaveId);
+        }
+
+        [HttpGet("me/Total")]
+        public Task<LeaveByYearModel> TotalbyUser()
+        {
+            return _leaveLetterService.TotalByUser(_currentContextService.UserId);
+        }
+
+        [HttpGet("TotalbyUser")]
+        public Task<LeaveByYearModel> TotalbyUser([FromQuery] int userId)
+        {
+            return _leaveLetterService.TotalByUser(userId);
+        }
+
         [HttpPost("")]
         public Task<long> Create([FromBody] LeaveModel model)
         {
             return _leaveLetterService.Create(model);
         }
 
-        [HttpGet("{leaveId}")]
+        [HttpPut("{leaveId}")]
         public Task<bool> Update([FromRoute] long leaveId, [FromBody] LeaveModel model)
         {
             return _leaveLetterService.Update(leaveId, model);

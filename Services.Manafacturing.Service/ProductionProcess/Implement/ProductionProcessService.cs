@@ -923,12 +923,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     var product = await _productHelperService.GetProduct((int)containerId);
 
-                    var arrOutputProductionStepLinkDataId = req.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepLinkDataId)
+                    var arrOutputProductionStepLinkDataCode = req.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepLinkDataCode)
                                                                                            .Where(x => x.Count() == 1)
                                                                                            .SelectMany(x => x)
                                                                                            .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output)
-                                                                                           .Select(x => x.ProductionStepLinkDataId);
-                    var finalProductionLinkData = req.ProductionStepLinkDatas.Where(x => arrOutputProductionStepLinkDataId.Contains(x.ProductionStepLinkDataId) && x.ObjectId == product.ProductId && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+                                                                                           .Select(x => x.ProductionStepLinkDataCode);
+                    var finalProductionLinkData = req.ProductionStepLinkDatas.Where(x => arrOutputProductionStepLinkDataCode.Contains(x.ProductionStepLinkDataCode) && x.ObjectId == product.ProductId && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
                                                                              .FirstOrDefault();
                     if(finalProductionLinkData != null && product.Coefficient != finalProductionLinkData.QuantityOrigin)
                     {

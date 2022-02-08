@@ -5,9 +5,14 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using Verp.Resources.Organization.TimeKeeping;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
 {
@@ -24,11 +29,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _shiftActivityLog;
 
-        public ShiftConfigurationService(OrganizationDBContext organizationDBContext, IMapper mapper)
+        public ShiftConfigurationService(OrganizationDBContext organizationDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
+            _shiftActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ShiftConfiguration);
         }
 
         public async Task<int> AddShiftConfiguration(ShiftConfigurationModel model)
@@ -47,6 +54,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 entity.OvertimeConfigurationId = overtimeEntity.OvertimeConfigurationId;
                 await _organizationDBContext.SaveChangesAsync();
             }
+
+            await _shiftActivityLog.LogBuilder(() => ShiftConfigurationActivityLogMessage.CreateShiftConfiguration)
+                      .MessageResourceFormatDatas(entity.ShiftCode)
+                      .ObjectId(entity.ShiftConfigurationId)
+                      .JsonData(model.JsonSerialize())
+                      .CreateLog();
 
             return entity.ShiftConfigurationId;
         }
@@ -71,6 +84,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             await _organizationDBContext.SaveChangesAsync();
 
+            await _shiftActivityLog.LogBuilder(() => ShiftConfigurationActivityLogMessage.UpdateShiftConfiguration)
+                      .MessageResourceFormatDatas(shiftConfiguration.ShiftCode)
+                      .ObjectId(shiftConfiguration.ShiftConfigurationId)
+                      .JsonData(model.JsonSerialize())
+                      .CreateLog();
+
             return true;
         }
 
@@ -87,6 +106,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if(overtimeConfiguration != null) overtimeConfiguration.IsDeleted = true;
 
             await _organizationDBContext.SaveChangesAsync();
+
+            await _shiftActivityLog.LogBuilder(() => ShiftConfigurationActivityLogMessage.DeleteShiftConfiguration)
+                     .MessageResourceFormatDatas(shiftConfiguration.ShiftCode)
+                     .ObjectId(shiftConfiguration.ShiftConfigurationId)
+                     .CreateLog();
 
             return true;
         }

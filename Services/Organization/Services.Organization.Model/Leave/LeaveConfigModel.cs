@@ -32,11 +32,13 @@ namespace VErp.Services.Organization.Model.Leave
         public long? OldYearAppliedToDate { get; set; }
         public bool IsDefault { get; set; }
 
-        public void Mapping(Profile profile) =>
-            profile.CreateMap<LeaveConfigListModel, LeaveConfig>()
-            .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.UnixToDateTime()))
-            .ReverseMap()
-            .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.GetUnix()));
+        public void CreateMapping<T>(Profile profile) where T : LeaveConfigListModel =>
+          profile.CreateMap<T, LeaveConfig>()
+          .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.UnixToDateTime()))
+          .ReverseMap()
+          .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.GetUnix()));
+
+        public virtual void Mapping(Profile profile) => CreateMapping<LeaveConfigListModel>(profile);
     }
 
     public class LeaveConfigModel : LeaveConfigListModel
@@ -47,7 +49,7 @@ namespace VErp.Services.Organization.Model.Leave
         {
             get
             {
-                return _roles?.GroupBy(r => new { r.LeaveRoleTypeId, r.UserId })?.Select(g => g.First())?.ToList();
+                return _roles?.GroupBy(r => r.LeaveRoleTypeId)?.Select(g => g.First())?.ToList();
 
             }
             set
@@ -87,18 +89,36 @@ namespace VErp.Services.Organization.Model.Leave
                 _validations = value;
             }
         }
+
+        public override void Mapping(Profile profile) => CreateMapping<LeaveConfigModel>(profile);
     }
 
-    public class LeaveConfigRoleModel : IMapFrom<LeaveConfigRole>
+    public class LeaveConfigRoleUserModel : IMapFrom<LeaveConfigRole>
     {
         public int UserId { get; set; }
         public EnumLeaveRoleType LeaveRoleTypeId { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<LeaveConfigRoleModel, LeaveConfigRole>()
+            profile.CreateMap<LeaveConfigRoleUserModel, LeaveConfigRole>()
                 .ForMember(d => d.LeaveRoleTypeId, s => s.MapFrom(m => (int)m.LeaveRoleTypeId))
                 .ReverseMap()
                 .ForMember(d => d.LeaveRoleTypeId, s => s.MapFrom(m => (EnumLeaveRoleType)m.LeaveRoleTypeId));
+        }
+
+    }
+
+    public class LeaveConfigRoleModel
+    {
+        public IList<int> UserIds { get; set; }
+        public EnumLeaveRoleType LeaveRoleTypeId { get; set; }
+
+        public IList<LeaveConfigRoleUserModel> ToRoleUserModel()
+        {
+            return UserIds?.Distinct()?.Select(u => new LeaveConfigRoleUserModel
+            {
+                LeaveRoleTypeId = this.LeaveRoleTypeId,
+                UserId = u
+            }).ToList();
         }
 
     }

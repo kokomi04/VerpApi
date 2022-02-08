@@ -297,7 +297,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             if (userIds?.Count > 0)
             {
-                users = users.Where(u => userIds.Contains(u.UserId));
+                employees = employees.Where(u => userIds.Contains(u.UserId));
             }
 
             var total = await employees.CountAsync();
