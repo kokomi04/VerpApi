@@ -19,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Leave;
 using LeaveLetter = VErp.Infrastructure.EF.OrganizationDB.Leave;
+using static Verp.Resources.Organization.Leave.LeaveLetterValidationMessage;
 
 namespace VErp.Services.Organization.Service.Leave
 {
@@ -112,11 +113,10 @@ namespace VErp.Services.Organization.Service.Leave
                     //TODO send notification
                 }
 
-                var daysFromCreateToStart = (int)DateTime.UtcNow.Subtract(model.DateStart.UnixToDateTime().Value).TotalDays;
+                var daysFromCreateToStart = (int)Math.Ceiling(model.DateStart.UnixToDateTime().Value.Subtract(DateTime.UtcNow).TotalDays);
                 if (daysFromCreateToStart < validation.MinDaysFromCreateToStart)
                 {
-                    //TODO validation messsage
-                    throw GeneralCode.InvalidParams.BadRequest();
+                    throw MinDaysFromCreateToStartInvalid.BadRequestFormat(validation.TotalDays, validation.MinDaysFromCreateToStart);
                 }
             }
         }
