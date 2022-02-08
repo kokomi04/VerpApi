@@ -30,6 +30,8 @@ namespace VErp.Services.Organization.Service.Leave
 
         Task<LeaveModel> Info(long leaveId);
 
+        Task<LeaveModel> InfoByOwnerOrRole(long leaveId);
+
         Task<long> Create(LeaveModel model);
 
         Task<bool> Update(long leaveId, LeaveModel model);
@@ -275,6 +277,28 @@ namespace VErp.Services.Organization.Service.Leave
             var info = await _organizationDBContext.Leave.FirstOrDefaultAsync(l => l.LeaveId == leaveId);
             if (info == null) throw GeneralCode.ItemNotFound.BadRequest();
 
+            return _mapper.Map<LeaveModel>(info);
+        }
+
+        public async Task<LeaveModel> InfoByOwnerOrRole(long leaveId)
+        {
+
+            var info = await _organizationDBContext.Leave.FirstOrDefaultAsync(l => l.LeaveId == leaveId);
+            if (info == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+            if (info.UserId != _currentContextService.UserId)
+            {
+                var userInfo = (await _userHelperService.GetByIds(new[] { info.UserId ?? 0 })).FirstOrDefault();
+                if (userInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                var cfg = await GetLeaveConfig(userInfo);
+
+                if (!await _organizationDBContext.LeaveConfigRole.Where(r => r.LeaveConfigId == cfg.LeaveConfigId && r.UserId == _currentContextService.UserId).AnyAsync())
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+
+            }
             return _mapper.Map<LeaveModel>(info);
         }
 
