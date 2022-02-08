@@ -5,9 +5,14 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using Verp.Resources.Organization.TimeKeeping;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
 {
@@ -24,11 +29,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _timeSortActivityLog;
 
-        public TimeSortConfigurationService(OrganizationDBContext organizationDBContext, IMapper mapper)
+        public TimeSortConfigurationService(OrganizationDBContext organizationDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
+            _timeSortActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.TimeSortConfiguration);
         }
 
         public async Task<int> AddTimeSortConfiguration(TimeSortConfigurationModel model)
@@ -50,6 +57,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await _organizationDBContext.SplitHour.AddRangeAsync(arrSplitHourEntity);
                 await _organizationDBContext.SaveChangesAsync();
             }
+
+            await _timeSortActivityLog.LogBuilder(() => TimeSortConfigurationActivityLogMessage.CreateTimeSortConfiguration)
+                      .MessageResourceFormatDatas(entity.TimeSortCode)
+                      .ObjectId(entity.TimeSortConfigurationId)
+                      .JsonData(model.JsonSerialize())
+                      .CreateLog();
 
             return entity.TimeSortConfigurationId;
         }
@@ -84,6 +97,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             await _organizationDBContext.SaveChangesAsync();
 
+            await _timeSortActivityLog.LogBuilder(() => TimeSortConfigurationActivityLogMessage.UpdateTimeSortConfiguration)
+                     .MessageResourceFormatDatas(timeSortConfiguration.TimeSortCode)
+                     .ObjectId(timeSortConfiguration.TimeSortConfigurationId)
+                     .JsonData(model.JsonSerialize())
+                     .CreateLog();
+
             return true;
         }
 
@@ -102,6 +121,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             arrSplitHour.ForEach(x => x.IsDeleted = true);
 
             await _organizationDBContext.SaveChangesAsync();
+
+            await _timeSortActivityLog.LogBuilder(() => TimeSortConfigurationActivityLogMessage.DeleteTimeSortConfiguration)
+                     .MessageResourceFormatDatas(timeSortConfiguration.TimeSortCode)
+                     .ObjectId(timeSortConfiguration.TimeSortConfigurationId)
+                     .CreateLog();
 
             return true;
         }

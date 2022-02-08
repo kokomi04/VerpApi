@@ -84,7 +84,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 CountedSymbolId = x.CountedSymbolId,
                 IsHide = x.IsHide,
                 SymbolCode = x.SymbolCode,
-                SymbolDescription = x.SymbolDescription
+                SymbolDescription = x.SymbolDescription,
+                CountedSymbolType = x.CountedSymbolType
             }).ToListAsync();
         }
     }

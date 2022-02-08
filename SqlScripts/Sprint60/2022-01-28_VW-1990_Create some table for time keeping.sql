@@ -87,6 +87,7 @@ CREATE TABLE [dbo].[AbsenceTypeSymbol](
 
 CREATE TABLE [dbo].[CountedSymbol](
 	[CountedSymbolId] [int] IDENTITY(1,1) NOT NULL,
+	[CountedSymbolType] [int] NOT NULL,
 	[SymbolCode] [nvarchar](50) NOT NULL,
 	[SymbolDescription] [nvarchar](256) NOT NULL,
 	[IsHide] [bit] NOT NULL,
