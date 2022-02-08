@@ -22,7 +22,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class WorkScheduleActivityLogMessage {
+    public class WorkScheduleActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -36,7 +36,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.TimeKeeping.WorkScheduleActivityLogMessage", typeof(WorkScheduleActivityLogMessage).Assembly);
@@ -51,7 +51,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -63,7 +63,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Khai báo ca làm việc với tiêu đề{0}.
         /// </summary>
-        internal static string CreateWorkSchedule {
+        public static string CreateWorkSchedule {
             get {
                 return ResourceManager.GetString("CreateWorkSchedule", resourceCulture);
             }
@@ -72,7 +72,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Xóa ca làm việc với tiêu đề {0}.
         /// </summary>
-        internal static string DeleteWorkSchedule {
+        public static string DeleteWorkSchedule {
             get {
                 return ResourceManager.GetString("DeleteWorkSchedule", resourceCulture);
             }
@@ -81,7 +81,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Cập nhật ca làm việc với tiêu đề {0}.
         /// </summary>
-        internal static string UpdateWorkSchedule {
+        public static string UpdateWorkSchedule {
             get {
                 return ResourceManager.GetString("UpdateWorkSchedule", resourceCulture);
             }

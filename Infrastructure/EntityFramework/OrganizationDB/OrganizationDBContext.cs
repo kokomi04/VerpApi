@@ -557,8 +557,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             {
                 entity.HasComment("Đơn xin nghỉ phép");
 
-                entity.Property(e => e.LeaveId).ValueGeneratedNever();
-
                 entity.Property(e => e.Description).HasMaxLength(1024);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
