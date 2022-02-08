@@ -5,9 +5,14 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using Verp.Resources.Organization.TimeKeeping;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
 {
@@ -24,11 +29,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
+        private readonly ObjectActivityLogFacade _workScheduleActivityLog;
 
-        public WorkScheduleService(OrganizationDBContext organizationDBContext, IMapper mapper)
+        public WorkScheduleService(OrganizationDBContext organizationDBContext, IMapper mapper, IActivityLogService activityLogService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
+            _workScheduleActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.WorkSchedule);
         }
 
         public async Task<int> AddWorkSchedule(WorkScheduleModel model)
@@ -37,6 +44,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             await _organizationDBContext.WorkSchedule.AddAsync(entity);
             await _organizationDBContext.SaveChangesAsync();
+
+            await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.CreateWorkSchedule)
+                      .MessageResourceFormatDatas(entity.WorkScheduleTitle)
+                      .ObjectId(entity.WorkScheduleId)
+                      .JsonData(model.JsonSerialize())
+                      .CreateLog();
 
             return entity.WorkScheduleId;
         }
@@ -53,6 +66,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             await _organizationDBContext.SaveChangesAsync();
 
+            await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.UpdateWorkSchedule)
+                     .MessageResourceFormatDatas(workSchedule.WorkScheduleTitle)
+                     .ObjectId(workSchedule.WorkScheduleId)
+                     .JsonData(model.JsonSerialize())
+                     .CreateLog();
+
             return true;
         }
 
@@ -65,6 +84,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             workSchedule.IsDeleted = true;
 
             await _organizationDBContext.SaveChangesAsync();
+
+            await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.DeleteWorkSchedule)
+                     .MessageResourceFormatDatas(workSchedule.WorkScheduleTitle)
+                     .ObjectId(workSchedule.WorkScheduleId)
+                     .CreateLog();
 
             return true;
         }

@@ -407,6 +407,21 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>SystemParameterActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\TimeKeeping\ShiftConfigurationActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ShiftConfigurationActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\TimeKeeping\TimeSortConfigurationActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>TimeSortConfigurationActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>WorkScheduleActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="PurchaseOrder\Assignment\PoAssignmentActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -953,6 +968,30 @@
     <EmbeddedResource Update="Organization\SystemParameter\SystemParameterActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>SystemParameterActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\ShiftConfigurationActivityLogMessage.en-Us.resx">
+      <LastGenOutput>ShiftConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\ShiftConfigurationActivityLogMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ShiftConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\TimeSortConfigurationActivityLogMessage.en-Us.resx">
+      <LastGenOutput>TimeSortConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\TimeSortConfigurationActivityLogMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>TimeSortConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.en-Us.resx">
+      <LastGenOutput>WorkScheduleActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>WorkScheduleActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Assignment\PoAssignmentActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
