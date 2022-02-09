@@ -53,8 +53,8 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         public decimal Factor { set; get; }
 
 
-        [Display(Name = "Tài khoản kế toán", GroupName = "Thẻ Kho")]
-        public string AccountancyAccountNumber { set; get; }
+        //[Display(Name = "Tài khoản kế toán", GroupName = "Thẻ Kho")]
+        //public string AccountancyAccountNumber { set; get; }
 
         //[Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
         //public string AccountancyAccountNumberDu { set; get; }

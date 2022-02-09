@@ -959,6 +959,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 packageRemaining[fromPackageInfo.PackageId] = packageRemaining[fromPackageInfo.PackageId].SubDecimal(primaryQualtity);
 
 
+
+                if (detail.ProductUnitConversionPrice == 0)
+                {
+                    detail.ProductUnitConversionPrice = detail.PrimaryQuantity * detail.UnitPrice / detail.ProductUnitConversionQuantity;
+                }
+
+                if (detail.UnitPrice == 0)
+                {
+                    detail.UnitPrice = detail.ProductUnitConversionQuantity * detail.ProductUnitConversionPrice / detail.PrimaryQuantity;
+                }
+
                 inventoryDetailList.Add(new InventoryDetail
                 {
                     InventoryId = inventory.InventoryId,
