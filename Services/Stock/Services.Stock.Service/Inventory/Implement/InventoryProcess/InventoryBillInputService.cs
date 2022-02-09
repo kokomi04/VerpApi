@@ -906,6 +906,16 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         break;
                 }
 
+                if (detail.ProductUnitConversionPrice == 0)
+                {
+                    detail.ProductUnitConversionPrice = detail.PrimaryQuantity * detail.UnitPrice / detail.ProductUnitConversionQuantity;
+                }
+
+                if (detail.UnitPrice == 0)
+                {
+                    detail.UnitPrice = detail.ProductUnitConversionQuantity * detail.ProductUnitConversionPrice / detail.PrimaryQuantity;
+                }
+
                 inventoryDetailList.Add(new InventoryDetail
                 {
                     InventoryDetailId = isApproved ? detail.InventoryDetailId ?? 0 : 0,
