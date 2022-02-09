@@ -32,7 +32,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public int? ProductMaterialsConsumptionGroupId { get; set; }
     }
 
-    public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
+    public class InventoryRequirementListModel : InventoryRequirementBaseModel//, IMapFrom<InventoryRequirementDetail>
     {
         public long InventoryRequirementId { get; set; }
         public int? CensorByUserId { get; set; }
@@ -48,6 +48,12 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
 
         public IList<InventorySimpleInfo> InventoryInfo { set; get; }
 
+        public decimal PrimaryQuantityRemaining { get; set; }
+        public decimal InventoryQuantity { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+        public decimal? ProductUnitConversionQuantity { get; set; }
+
+        /*
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementDetail, InventoryRequirementListModel>()
@@ -72,8 +78,11 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.ProductCode, otp => otp.MapFrom(source => source.Product.ProductCode))
                 .ForMember(dest => dest.ProductName, otp => otp.MapFrom(source => source.Product.ProductName))
                 .ForMember(dest => dest.ProductTitle, otp => otp.MapFrom(source => $"{source.Product.ProductCode} / {source.Product.ProductName}"))
-                .ForMember(dest => dest.StockName, otp => otp.MapFrom(source => source.AssignStock.StockName));
-        }
+                .ForMember(dest => dest.StockName, otp => otp.MapFrom(source => source.AssignStock.StockName))
+                .ForMember(dest => dest.OutsourceStepRequestId, otp => otp.MapFrom(source => source.OutsourceStepRequestId))                
+                .ForMember(dest => dest.PrimaryQuantity, otp => otp.MapFrom(source => source.PrimaryQuantity))
+                .ForMember(dest => dest.ProductUnitConversionQuantity, otp => otp.MapFrom(source => source.ProductUnitConversionQuantity));
+        }*/
     }
 
     public class InventoryRequirementInputModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementEntity>

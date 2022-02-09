@@ -72,10 +72,31 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         {
             keyword = (keyword ?? "").Trim();
 
+            var sumInvs = from ird in _stockDbContext.InventoryRequirementDetail
+                          join invd in _stockDbContext.InventoryDetail on ird.InventoryRequirementDetailId equals invd.InventoryRequirementDetailId into invds
+                          from invd in invds.DefaultIfEmpty()
+                          group invd by ird.InventoryRequirementDetailId into d
+                          select new
+                          {
+                              InventoryRequirementDetailId = d.Key,
+                              InventoryQuantity = d.Sum(v => v.PrimaryQuantity)
+                          };
+
+            var remainings = from sp in _stockDbContext.StockProduct           
+                             group sp by sp.ProductId into d
+                             select new
+                             {
+                                 ProductId = d.Key,
+                                 PrimaryQuantityRemaining = d.Sum(v => v.PrimaryQuantityRemaining)
+                             };
+
             var inventoryRequirementAsQuery = from ird in _stockDbContext.InventoryRequirementDetail
+                                              join s in sumInvs on ird.InventoryRequirementDetailId equals s.InventoryRequirementDetailId                                              
                                               join ir in _stockDbContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
                                               join @as in _stockDbContext.Stock on ird.AssignStockId equals @as.StockId into @asAlias
                                               from @as in @asAlias.DefaultIfEmpty()
+                                              join r in remainings on ird.ProductId equals r.ProductId into rs
+                                              from r in rs.DefaultIfEmpty()
                                               where ir.InventoryTypeId == (int)inventoryType
                                               select new
                                               {
@@ -100,6 +121,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   StockName = @as != null ? @as.StockName : "",
                                                   ProductId = ird.ProductId,
                                                   InventoryRequirementDetailId = ird.InventoryRequirementDetailId,
+
+                                                  ird.PrimaryQuantity,
+                                                  ird.ProductUnitConversionQuantity,
+                                                  s.InventoryQuantity,
+                                                  r.PrimaryQuantityRemaining
                                               };
 
             var inventoryAsQuery = from id in _stockDbContext.InventoryDetail
@@ -145,6 +171,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                             ProductTitle = $"{p.ProductCode} / {p.ProductName}",
                             ProductId = ir.ProductId,
                             InventoryRequirementDetailId = ir.InventoryRequirementDetailId,
+
+                            ir.PrimaryQuantity,
+                            ir.ProductUnitConversionQuantity,
+                            ir.InventoryQuantity,
+                            ir.PrimaryQuantityRemaining
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -188,6 +219,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     ProductId = x.ProductId,
                     InventoryRequirementDetailId = x.InventoryRequirementDetailId,
                     InventoryInfo = new List<InventorySimpleInfo>(),
+                    PrimaryQuantityRemaining = x.PrimaryQuantityRemaining,
+                    InventoryQuantity = x.InventoryQuantity,
+                    PrimaryQuantity = x.PrimaryQuantity,
+                    ProductUnitConversionQuantity = x.ProductUnitConversionQuantity
+
                 }).ToList();
 
             var lsInventoryRequirementCode = lst.Select(x => x.InventoryRequirementCode).ToArray();
