@@ -344,7 +344,7 @@ namespace VErp.Services.Organization.Service.Leave
             var userInfo = (await _userHelperService.GetByIds(new[] { info.UserId ?? 0 })).FirstOrDefault();
             if (userInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
 
-            if (info.LeaveStatusId != (int)EnumLeaveStatus.New || info.LeaveStatusId != (int)EnumLeaveStatus.CheckRejected)
+            if (info.LeaveStatusId != (int)EnumLeaveStatus.New && info.LeaveStatusId != (int)EnumLeaveStatus.CheckRejected)
             {
                 throw GeneralCode.InvalidParams.BadRequest();
 
@@ -414,7 +414,7 @@ namespace VErp.Services.Organization.Service.Leave
             var userInfo = (await _userHelperService.GetByIds(new[] { info.UserId ?? 0 })).FirstOrDefault();
             if (userInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
 
-            if (info.LeaveStatusId != (int)EnumLeaveStatus.CheckAccepted || info.LeaveStatusId != (int)EnumLeaveStatus.CensorRejected)
+            if (info.LeaveStatusId != (int)EnumLeaveStatus.CheckAccepted && info.LeaveStatusId != (int)EnumLeaveStatus.CensorRejected)
             {
                 throw GeneralCode.InvalidParams.BadRequest();
 
