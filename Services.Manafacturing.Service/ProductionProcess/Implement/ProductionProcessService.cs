@@ -1670,7 +1670,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<IList<InternalProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
-                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId && s.IsGroup == false && s.IsFinish == false && s.StepId.HasValue)
+                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId && s.IsGroup == true && s.IsFinish == false && s.StepId.HasValue)
                 .Include(s => s.Step)
                 .Include(x => x.ProductionStepLinkDataRole)
                 .ThenInclude(r => r.ProductionStepLinkData)
