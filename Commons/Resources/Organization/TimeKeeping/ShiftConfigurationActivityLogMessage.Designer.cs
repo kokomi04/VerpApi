@@ -22,7 +22,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class ShiftConfigurationActivityLogMessage {
+    public class ShiftConfigurationActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -63,7 +63,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Khai báo ca làm việc với mã {0}.
         /// </summary>
-        internal static string CreateShiftConfiguration {
+        public static string CreateShiftConfiguration {
             get {
                 return ResourceManager.GetString("CreateShiftConfiguration", resourceCulture);
             }
@@ -72,7 +72,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Xóa ca làm việc với mã {0}.
         /// </summary>
-        internal static string DeleteShiftConfiguration {
+        public static string DeleteShiftConfiguration {
             get {
                 return ResourceManager.GetString("DeleteShiftConfiguration", resourceCulture);
             }
@@ -81,7 +81,7 @@ namespace Verp.Resources.Organization.TimeKeeping {
         /// <summary>
         ///   Looks up a localized string similar to Cập nhật ca làm việc với mã {0}.
         /// </summary>
-        internal static string UpdateShiftConfiguration {
+        public static string UpdateShiftConfiguration {
             get {
                 return ResourceManager.GetString("UpdateShiftConfiguration", resourceCulture);
             }
