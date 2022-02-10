@@ -49,6 +49,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Package = 14,
 
+        [Description("Thuộc tính kiện")]
+        [GenCodeObject]
+        PackageCustomProperty = 14001,
+
         [Description("Sản phẩm kho")]
         StockProduct = 15,
 

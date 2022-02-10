@@ -29,6 +29,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<InventoryRequirementFile> InventoryRequirementFile { get; set; }
         public virtual DbSet<Location> Location { get; set; }
         public virtual DbSet<Package> Package { get; set; }
+        public virtual DbSet<PackageCustomProperty> PackageCustomProperty { get; set; }
         public virtual DbSet<PackageOperation> PackageOperation { get; set; }
         public virtual DbSet<PackageRef> PackageRef { get; set; }
         public virtual DbSet<Product> Product { get; set; }
@@ -461,6 +462,13 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasConstraintName("FK_Package_Stock");
             });
 
+            modelBuilder.Entity<PackageCustomProperty>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
             modelBuilder.Entity<PackageRef>(entity =>
             {
                 entity.HasKey(e => new { e.PackageId, e.RefPackageId });
@@ -506,6 +514,7 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.Barcode).HasMaxLength(128);
 
                 entity.Property(e => e.Coefficient)
+                    .HasColumnType("decimal(32, 12)")
                     .HasDefaultValueSql("((1))")
                     .HasComment("Cơ số sản phẩm");
 

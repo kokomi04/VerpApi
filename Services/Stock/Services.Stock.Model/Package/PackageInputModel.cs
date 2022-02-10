@@ -46,5 +46,8 @@ namespace VErp.Services.Stock.Model.Package
 
 
         //public virtual Location Location { get; set; }
+
+
+        public IDictionary<int, object> CustomPropertyValue { get; set; }
     }
 }

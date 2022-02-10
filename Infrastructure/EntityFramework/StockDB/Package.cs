@@ -40,6 +40,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Pocode { get; set; }
+        public string CustomPropertyValue { get; set; }
 
         public virtual Location Location { get; set; }
         public virtual ProductUnitConversion ProductUnitConversion { get; set; }
