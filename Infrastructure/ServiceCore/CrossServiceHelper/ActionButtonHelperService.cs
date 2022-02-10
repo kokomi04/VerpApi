@@ -26,7 +26,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         Task<bool> DeleteActionButton(int objectId, int inputActionId);
 
-        Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data);
+        Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data, string note = null);
 
         Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data); 
     }
@@ -80,7 +80,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         protected abstract Task<string> GetObjectTitle(int objectId);
 
-        public abstract Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data);
+        public abstract Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data, string note = null);
         public abstract Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data);
     }
 

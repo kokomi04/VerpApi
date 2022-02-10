@@ -95,7 +95,7 @@ namespace VErp.Services.Master.Service.Category.Implement
             return result;
         }
 
-        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
+        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data, string note = null)
         {
             throw new NotImplementedException();
         }

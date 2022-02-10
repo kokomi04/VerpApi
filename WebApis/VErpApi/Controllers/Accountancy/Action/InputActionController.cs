@@ -67,9 +67,9 @@ namespace VErpApi.Controllers.Accountancy.Action
         [Route("{inputTypeId}/{inputBillId}/Exec/{inputActionId}")]
         [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
         [ActionButtonDataApi("inputActionId")]
-        public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputTypeId, [FromRoute] int inputActionId, [FromRoute] long inputBillId, [FromBody] BillInfoModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputTypeId, [FromRoute] int inputActionId, [FromRoute] long inputBillId, [FromBody] BillInfoActionModel data)
         {
-            return await _inputActionService.ExecActionButton(inputTypeId, inputActionId, inputBillId, data).ConfigureAwait(true);
+            return await _inputActionService.ExecActionButton(inputTypeId, inputActionId, inputBillId, data.Data, data.Note).ConfigureAwait(true);
         }
     }
 }

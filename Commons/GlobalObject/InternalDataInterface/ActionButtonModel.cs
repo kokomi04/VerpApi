@@ -44,6 +44,12 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public OutsideImportMappingData OutsideImportMappingData { get; set; }
     }
 
+    public class BillInfoActionModel
+    {
+        public BillInfoModel Data { get; set; }
+        public string Note { get; set; }
+    }
+
     public class OutsideImportMappingData
     {
         public string MappingFunctionKey { get; set; }
