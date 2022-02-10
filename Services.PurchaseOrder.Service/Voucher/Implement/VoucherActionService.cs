@@ -55,7 +55,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return info.Title;
         }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data, string note = null)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
         {
             var voucherTypeId = objectId;
             var voucherActionId = inputActionId;
@@ -97,11 +97,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
 
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
-            var logMessage = $"{action.Title} chứng từ {billCode}. ";
-            if (!string.IsNullOrEmpty(note))
-            {
-                logMessage += note;
-            }
+            var logMessage = $"{action.Title} {billCode}. ";
 
             await _voucherDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, voucherTypeId);
 

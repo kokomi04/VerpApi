@@ -65,9 +65,9 @@ namespace VErpApi.Controllers.PurchaseOrder.Action
         [Route("{voucherTypeId}/{voucherBillId}/Exec/{voucherActionId}")]
         [ObjectDataApi(EnumObjectType.VoucherType, "voucherTypeId")]
         [ActionButtonDataApi("voucherActionId")]
-        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherTypeId, [FromRoute] int voucherActionId, [FromRoute] long voucherBillId, [FromBody] BillInfoActionModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecVoucherAction([FromRoute] int voucherTypeId, [FromRoute] int voucherActionId, [FromRoute] long voucherBillId, [FromBody] BillInfoModel data)
         {
-            return await _voucherActionService.ExecActionButton(voucherTypeId, voucherActionId, voucherBillId, data.Data, data.Note).ConfigureAwait(true);
+            return await _voucherActionService.ExecActionButton(voucherTypeId, voucherActionId, voucherBillId, data).ConfigureAwait(true);
         }
     }
 }
