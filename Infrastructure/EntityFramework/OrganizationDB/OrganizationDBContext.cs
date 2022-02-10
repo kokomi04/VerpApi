@@ -18,6 +18,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         }
 
         public virtual DbSet<AbsenceTypeSymbol> AbsenceTypeSymbol { get; set; }
+        public virtual DbSet<ArrangeShift> ArrangeShift { get; set; }
+        public virtual DbSet<ArrangeShiftItem> ArrangeShiftItem { get; set; }
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
         public virtual DbSet<Calendar> Calendar { get; set; }
         public virtual DbSet<CountedSymbol> CountedSymbol { get; set; }
@@ -85,6 +87,34 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.TypeSymbolDescription)
                     .IsRequired()
                     .HasMaxLength(256);
+            });
+
+            modelBuilder.Entity<ArrangeShift>(entity =>
+            {
+                entity.HasOne(d => d.WorkSchedule)
+                    .WithMany(p => p.ArrangeShift)
+                    .HasForeignKey(d => d.WorkScheduleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ArrangeShift_WorkSchedule");
+            });
+
+            modelBuilder.Entity<ArrangeShiftItem>(entity =>
+            {
+                entity.HasOne(d => d.ArrangeShift)
+                    .WithMany(p => p.ArrangeShiftItem)
+                    .HasForeignKey(d => d.ArrangeShiftId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ArrangeShiftItem_ArrangeShift");
+
+                entity.HasOne(d => d.ParentArrangeShiftItem)
+                    .WithMany(p => p.InverseParentArrangeShiftItem)
+                    .HasForeignKey(d => d.ParentArrangeShiftItemId)
+                    .HasConstraintName("FK_ArrangeShiftItem_ArrangeShiftItem");
+
+                entity.HasOne(d => d.ShiftConfiguration)
+                    .WithMany(p => p.ArrangeShiftItem)
+                    .HasForeignKey(d => d.ShiftConfigurationId)
+                    .HasConstraintName("FK_ArrangeShiftItem_ShiftConfiguration");
             });
 
             modelBuilder.Entity<BusinessInfo>(entity =>
@@ -556,8 +586,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             modelBuilder.Entity<Leave>(entity =>
             {
                 entity.HasComment("Đơn xin nghỉ phép");
-
-                entity.Property(e => e.LeaveId).ValueGeneratedNever();
 
                 entity.Property(e => e.Description).HasMaxLength(1024);
 

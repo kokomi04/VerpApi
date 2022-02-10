@@ -40,57 +40,160 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<int> AddWorkSchedule(WorkScheduleModel model)
         {
-            var entity = _mapper.Map<WorkSchedule>(model);
+            var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
+            {
 
-            await _organizationDBContext.WorkSchedule.AddAsync(entity);
-            await _organizationDBContext.SaveChangesAsync();
+                var entity = _mapper.Map<WorkSchedule>(model);
 
-            await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.CreateWorkSchedule)
-                      .MessageResourceFormatDatas(entity.WorkScheduleTitle)
-                      .ObjectId(entity.WorkScheduleId)
-                      .JsonData(model.JsonSerialize())
-                      .CreateLog();
+                await _organizationDBContext.WorkSchedule.AddAsync(entity);
+                await _organizationDBContext.SaveChangesAsync();
+                await AddArrangeShift(model.ArrangeShifts, entity.WorkScheduleId);
 
-            return entity.WorkScheduleId;
+                await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.CreateWorkSchedule)
+                          .MessageResourceFormatDatas(entity.WorkScheduleTitle)
+                          .ObjectId(entity.WorkScheduleId)
+                          .JsonData(model.JsonSerialize())
+                          .CreateLog();
+
+                await trans.CommitAsync();
+
+                return entity.WorkScheduleId;
+
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw ex;
+            }
+        }
+
+        private async Task AddArrangeShift(IList<ArrangeShiftModel> arrangeShifts, int workScheduleId)
+        {
+            if (arrangeShifts.Count > 0)
+            {
+                foreach (var arrangeShift in arrangeShifts)
+                {
+                    var eArrangeShift = _mapper.Map<ArrangeShift>(arrangeShift);
+                    eArrangeShift.WorkScheduleId = workScheduleId;
+
+                    await _organizationDBContext.ArrangeShift.AddAsync(eArrangeShift);
+
+                    if (arrangeShift.Items.Count > 0)
+                    {
+                        await AddEntityWithInner<ArrangeShiftItemModel, ArrangeShiftItem>(arrangeShift.Items, new[] { eArrangeShift.ArrangeShiftId });
+                    }
+                }
+            }
+        }
+
+        private async Task AddEntityWithInner<T, E>(IList<T> items, int[] refForeginKeyId, bool ignoreInner = false) where E : class where T : class, IRefForeginKey, IInnerBySelf<T>
+        {
+            var dataSet = _organizationDBContext.Set<E>();
+
+            foreach (var item in items)
+            {
+                item.SetRefForeginKey(refForeginKeyId);
+
+                var eItem = _mapper.Map<E>(item);
+
+                await dataSet.AddAsync(eItem);
+                await _organizationDBContext.SaveChangesAsync();
+
+                if (!ignoreInner && item.HasInner())
+                {
+                    var innerRefForeginKeyId = refForeginKeyId.ToList();
+                    innerRefForeginKeyId.Add((_mapper.Map<T>(eItem).GetPrimaryKey()));
+
+                    await AddEntityWithInner<T, E>(item.GetInner(), innerRefForeginKeyId.ToArray(), ignoreInner = true);
+                }
+
+                await _organizationDBContext.SaveChangesAsync();
+            }
+
+            await Task.CompletedTask;
         }
 
         public async Task<bool> UpdateWorkSchedule(int workScheduleId, WorkScheduleModel model)
         {
-            var workSchedule = await _organizationDBContext.WorkSchedule.FirstOrDefaultAsync(x => x.WorkScheduleId == workScheduleId);
-            if (workSchedule == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var workSchedule = await _organizationDBContext.WorkSchedule.FirstOrDefaultAsync(x => x.WorkScheduleId == workScheduleId);
+                if (workSchedule == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            model.WorkScheduleId = workScheduleId;
+                var arrOldArrangeShifts = await _organizationDBContext.ArrangeShift.Where(x => x.WorkScheduleId == workSchedule.WorkScheduleId).ToListAsync();
+                var arrOldArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == false).ToListAsync();
+                var arrOldInnerArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == true).ToListAsync();
 
-            _mapper.Map(model, workSchedule);
+                _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldInnerArrangeShiftItems);
+                _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldArrangeShiftItems);
+                _organizationDBContext.ArrangeShift.RemoveRange(arrOldArrangeShifts);
 
-            await _organizationDBContext.SaveChangesAsync();
+                await _organizationDBContext.SaveChangesAsync();
 
-            await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.UpdateWorkSchedule)
-                     .MessageResourceFormatDatas(workSchedule.WorkScheduleTitle)
-                     .ObjectId(workSchedule.WorkScheduleId)
-                     .JsonData(model.JsonSerialize())
-                     .CreateLog();
+                model.WorkScheduleId = workScheduleId;
 
-            return true;
+                _mapper.Map(model, workSchedule);
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await AddArrangeShift(model.ArrangeShifts, model.WorkScheduleId);
+
+                await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.UpdateWorkSchedule)
+                         .MessageResourceFormatDatas(workSchedule.WorkScheduleTitle)
+                         .ObjectId(workSchedule.WorkScheduleId)
+                         .JsonData(model.JsonSerialize())
+                         .CreateLog();
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw ex;
+            }
         }
 
         public async Task<bool> DeleteWorkSchedule(int workScheduleId)
         {
-            var workSchedule = await _organizationDBContext.WorkSchedule.FirstOrDefaultAsync(x => x.WorkScheduleId == workScheduleId);
-            if (workSchedule == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+            var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var workSchedule = await _organizationDBContext.WorkSchedule.FirstOrDefaultAsync(x => x.WorkScheduleId == workScheduleId);
+                if (workSchedule == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            workSchedule.IsDeleted = true;
+                var arrOldArrangeShifts = await _organizationDBContext.ArrangeShift.Where(x => x.WorkScheduleId == workSchedule.WorkScheduleId).ToListAsync();
+                var arrOldArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == false).ToListAsync();
+                var arrOldInnerArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == true).ToListAsync();
 
-            await _organizationDBContext.SaveChangesAsync();
+                _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldInnerArrangeShiftItems);
+                _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldArrangeShiftItems);
+                _organizationDBContext.ArrangeShift.RemoveRange(arrOldArrangeShifts);
 
-            await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.DeleteWorkSchedule)
-                     .MessageResourceFormatDatas(workSchedule.WorkScheduleTitle)
-                     .ObjectId(workSchedule.WorkScheduleId)
-                     .CreateLog();
+                await _organizationDBContext.SaveChangesAsync();
 
-            return true;
+                workSchedule.IsDeleted = true;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.DeleteWorkSchedule)
+                         .MessageResourceFormatDatas(workSchedule.WorkScheduleTitle)
+                         .ObjectId(workSchedule.WorkScheduleId)
+                         .CreateLog();
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw ex;
+            }
+
         }
 
         public async Task<WorkScheduleModel> GetWorkSchedule(int workScheduleId)

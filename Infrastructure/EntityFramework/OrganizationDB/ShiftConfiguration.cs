@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class ShiftConfiguration
     {
+        public ShiftConfiguration()
+        {
+            ArrangeShiftItem = new HashSet<ArrangeShiftItem>();
+        }
+
         public int ShiftConfigurationId { get; set; }
         public int? OvertimeConfigurationId { get; set; }
         public string ShiftCode { get; set; }
@@ -42,5 +47,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual OvertimeConfiguration OvertimeConfiguration { get; set; }
+        public virtual ICollection<ArrangeShiftItem> ArrangeShiftItem { get; set; }
     }
 }
