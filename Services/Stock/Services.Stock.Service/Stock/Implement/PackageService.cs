@@ -66,6 +66,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             obj.Pocode = req.POCode;
             obj.ProductionOrderCode = req.ProductionOrderCode;
 
+            obj.CustomPropertyValue = req.CustomPropertyValue?.JsonSerialize();
+
             await _stockDbContext.SaveChangesAsync();
 
 
@@ -83,23 +85,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (req == null || req.ToPackages == null || req.ToPackages.Count == 0 || req.ToPackages.Any(p => p.ProductUnitConversionQuantity <= 0))
                 throw new BadRequestException(GeneralCode.InvalidParams);
 
-            var packageInfo = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
-            if (packageInfo == null)
+            var origin = await _stockDbContext.Package.FirstOrDefaultAsync(p => p.PackageId == packageId);
+            if (origin == null)
                 throw new BadRequestException(PackageErrorCode.PackageNotFound);
 
-            if (packageInfo.ProductUnitConversionWaitting > 0 || packageInfo.PrimaryQuantityWaiting > 0)
+            if (origin.ProductUnitConversionWaitting > 0 || origin.PrimaryQuantityWaiting > 0)
                 throw new BadRequestException(PackageErrorCode.HasSomeQualtityWaitingForApproved);
 
-            ProductUnitConversion unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == packageInfo.ProductUnitConversionId);
+            ProductUnitConversion unitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductUnitConversionId == origin.ProductUnitConversionId);
 
             if (unitConversionInfo == null)
                 throw new BadRequestException(ProductUnitConversionErrorCode.ProductUnitConversionNotFound);
 
-            var defaulUnitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductId == packageInfo.ProductId && c.IsDefault);
+            var defaulUnitConversionInfo = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(c => c.ProductId == origin.ProductId && c.IsDefault);
 
 
             var totalSecondaryInput = req.ToPackages.Sum(p => p.ProductUnitConversionQuantity);
-            if (totalSecondaryInput > packageInfo.ProductUnitConversionRemaining)
+            if (totalSecondaryInput > origin.ProductUnitConversionRemaining)
                 throw new BadRequestException(PackageErrorCode.QualtityOfProductInPackageNotEnough);
 
             var newPackages = new List<PackageModel>();
@@ -133,7 +135,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         FactorExpression = unitConversionInfo.FactorExpression,
 
-                        FactorExpressionRate = packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining
+                        FactorExpressionRate = origin.ProductUnitConversionRemaining / origin.PrimaryQuantityRemaining
                     };
 
                     //var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining, package.PrimaryQuantity, defaulUnitConversionInfo?.DecimalPlace ?? 11);
@@ -146,7 +148,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                     else
                     {
-                        _logger.LogWarning($"Wrong priQuantity input data: PrimaryQuantity={package.PrimaryQuantity}, FactorExpression={packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={package.ProductUnitConversionQuantity}, evalData={priQuantity}");
+                        _logger.LogWarning($"Wrong priQuantity input data: PrimaryQuantity={package.PrimaryQuantity}, FactorExpression={origin.ProductUnitConversionRemaining / origin.PrimaryQuantityRemaining}, ProductUnitConversionQuantity={package.ProductUnitConversionQuantity}, evalData={priQuantity}");
                         throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError);
                     }
 
@@ -163,21 +165,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 {
                     PackageCode = package.PackageCode,
                     LocationId = package.LocationId,
-                    StockId = packageInfo.StockId,
-                    ProductId = packageInfo.ProductId,
-                    Date = packageInfo.Date,
-                    ExpiryTime = packageInfo.ExpiryTime,
-                    Description = packageInfo.Description,
-                    ProductUnitConversionId = packageInfo.ProductUnitConversionId,
+                    StockId = origin.StockId,
+                    ProductId = origin.ProductId,
+                    Date = origin.Date,
+                    ExpiryTime = origin.ExpiryTime,
+                    Description = origin.Description,
+                    ProductUnitConversionId = origin.ProductUnitConversionId,
                     PrimaryQuantityWaiting = 0,
                     PrimaryQuantityRemaining = qualtityInPrimaryUnit,
                     ProductUnitConversionWaitting = 0,
                     ProductUnitConversionRemaining = package.ProductUnitConversionQuantity,
-                    PackageTypeId = (int)EnumPackageType.Custom
+                    PackageTypeId = (int)EnumPackageType.Custom,
+                    CustomPropertyValue = origin.CustomPropertyValue
                 });
 
-                packageInfo.PrimaryQuantityRemaining = packageInfo.PrimaryQuantityRemaining.SubDecimal(qualtityInPrimaryUnit);
-                packageInfo.ProductUnitConversionRemaining = packageInfo.ProductUnitConversionRemaining.SubDecimal(package.ProductUnitConversionQuantity);
+                origin.PrimaryQuantityRemaining = origin.PrimaryQuantityRemaining.SubDecimal(qualtityInPrimaryUnit);
+                origin.ProductUnitConversionRemaining = origin.ProductUnitConversionRemaining.SubDecimal(package.ProductUnitConversionQuantity);
 
             }
 
@@ -207,15 +210,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                 await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Split)
-                  .MessageResourceFormatDatas(packageInfo.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
-                  .ObjectId(packageInfo.PackageId)
+                  .MessageResourceFormatDatas(origin.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
+                  .ObjectId(origin.PackageId)
                   .JsonData(new { req, packageRefs }.JsonSerialize())
                   .CreateLog();
 
                 foreach (var newPackage in newPackages)
                 {
                     await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Split)
-                      .MessageResourceFormatDatas(packageInfo.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
+                      .MessageResourceFormatDatas(origin.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
                       .ObjectId(newPackage.PackageId)
                       .JsonData(new { req, packageRefs, newPackage }.JsonSerialize())
                       .CreateLog();
@@ -273,9 +276,39 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
+            var customValues = fromPackages[0].CustomPropertyValue?.JsonDeserialize<Dictionary<int, object>>();
+            if (customValues == null) customValues = new Dictionary<int, object>();
+
+            for (var i = 1; i < fromPackages.Count; i++)
+            {
+                var fromCustomValues = fromPackages[1].CustomPropertyValue?.JsonDeserialize<Dictionary<int, object>>();
+                if (fromCustomValues != null)
+                {
+                    foreach (var v in fromCustomValues)
+                    {
+                        var propId = v.Key;
+                        var existedValue = customValues.ContainsKey(propId) ? customValues[propId] : null;
+                        if (v.Value != null && !v.Value.IsNullObject())
+                        {
+                            if (!customValues.ContainsKey(propId))
+                            {
+                                customValues.Add(propId, v.Value);
+                            }
+                            else
+                            {
+                                if (existedValue?.ToString() != v.Value?.ToString())
+                                {
+                                    customValues.Remove(propId);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
+
                 var newPackage = new PackageModel()
                 {
                     PackageCode = req.PackageCode,
@@ -290,7 +323,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PrimaryQuantityRemaining = fromPackages.Sum(p => p.PrimaryQuantityRemaining),
                     ProductUnitConversionWaitting = 0,
                     ProductUnitConversionRemaining = fromPackages.Sum(p => p.ProductUnitConversionRemaining),
-                    PackageTypeId = (int)EnumPackageType.Custom
+                    PackageTypeId = (int)EnumPackageType.Custom,
+                    CustomPropertyValue = customValues?.JsonSerialize()
                 };
                 await _stockDbContext.AddAsync(newPackage);
                 await _stockDbContext.SaveChangesAsync();
@@ -381,7 +415,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 PrimaryQuantityRemaining = obj.PrimaryQuantityRemaining,
                 ProductUnitConversionWaitting = obj.ProductUnitConversionWaitting,
                 ProductUnitConversionRemaining = obj.ProductUnitConversionRemaining,
-
+                CustomPropertyValue = obj.CustomPropertyValue?.JsonDeserialize<Dictionary<int, object>>(),
                 LocationOutputModel = locationOutputModel
             };
             return packageOutputModel;
@@ -456,7 +490,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     POCode = item.Package.Pocode,
                     ProductionOrderCode = item.Package.ProductionOrderCode,
-                    OrderCode = item.Package.OrderCode
+                    OrderCode = item.Package.OrderCode,
+
+                    CustomPropertyValue = item.Package.CustomPropertyValue?.JsonDeserialize<Dictionary<int, object>>(),
                 };
                 resultList.Add(model);
             }
@@ -493,7 +529,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 packpages = packpages.Where(p => productIds.Contains(p.ProductId));
             }
 
-            
+
 
             if (stockIds?.Count > 0)
             {
@@ -556,6 +592,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             POCode = pk.Pocode,
                             pk.OrderCode,
                             ProductionOrderCode = pk.ProductionOrderCode,
+
+                            pk.CustomPropertyValue
                         };
             if (isTwoUnit.HasValue)
             {
@@ -618,7 +656,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     POCode = item.POCode,
                     OrderCode = item.OrderCode,
-                    ProductionOrderCode = item.ProductionOrderCode
+                    ProductionOrderCode = item.ProductionOrderCode,
+
+                    CustomPropertyValue = item.CustomPropertyValue?.JsonDeserialize<Dictionary<int, object>>(),
                 });
 
             }

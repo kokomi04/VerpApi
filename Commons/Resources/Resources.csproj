@@ -597,6 +597,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Stock\Package\PackageCustomPropertyActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PackageCustomPropertyActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Stock\Product\ConsumptionGroupActivityLogMessage.Designer.cs">
       <DependentUpon>ConsumptionGroupActivityLogMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -1147,6 +1152,10 @@
     <EmbeddedResource Update="Stock\Location\LocationActivityLogMessage.resx">
       <LastGenOutput>LocationActivityLogMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Package\PackageCustomPropertyActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PackageCustomPropertyActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ConsumptionGroupActivityLogMessage.resx">
       <LastGenOutput>ConsumptionGroupActivityLogMessage.Designer.cs</LastGenOutput>
