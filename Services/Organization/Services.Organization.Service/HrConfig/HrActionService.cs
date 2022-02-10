@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -15,6 +15,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.HrConfig
@@ -24,7 +25,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
     }
 
-    public class HrActionService: ActionButtonHelperServiceAbstract, IHrActionService
+    public class HrActionService : ActionButtonHelperServiceAbstract, IHrActionService
     {
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
@@ -32,12 +33,12 @@ namespace VErp.Services.Organization.Service.HrConfig
         private readonly OrganizationDBContext _organizationDBContext;
 
         private readonly IActionButtonHelperService _actionButtonHelperService;
-
+        private readonly ObjectActivityLogFacade _hrDataActivityLog;
         public HrActionService(
             ILogger<HrActionService> logger,
             IActivityLogService activityLogService,
             IMapper mapper,
-            IActionButtonHelperService actionButtonHelperService, 
+            IActionButtonHelperService actionButtonHelperService,
             OrganizationDBContext organizationDBContext)
             : base(actionButtonHelperService, EnumObjectType.HrType)
         {
@@ -46,6 +47,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             _mapper = mapper;
             _actionButtonHelperService = actionButtonHelperService;
             _organizationDBContext = organizationDBContext;
+            _hrDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrBill);
         }
 
         protected override async Task<string> GetObjectTitle(int objectId)
@@ -55,7 +57,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return info.Title;
         }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int hrActionId, long billId, BillInfoModel data)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int hrActionId, long billId, BillInfoModel data, string note = null)
         {
             var hrTypeId = objectId;
             var hrBillId = billId;
@@ -80,7 +82,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     resultParam,
                     messageParam,
                     new SqlParameter("@HrTypeId", action.ObjectId),
-                    new SqlParameter("@HrBill_F_Id", hrBillId)
+                    new SqlParameter("@HrBill_F_Id", hrBillId),
                 };
 
                 // DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
@@ -96,6 +98,15 @@ namespace VErp.Services.Organization.Service.HrConfig
                 var message = messageParam.Value as string;
                 throw new BadRequestException(GeneralCode.InvalidParams, message);
             }
+
+            var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
+            var logMessage = $"{action.Title} chứng từ {billCode}. ";
+            if (!string.IsNullOrEmpty(note))
+            {
+                logMessage += note;
+            }
+
+            await _hrDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, hrTypeId);
 
             return result;
         }

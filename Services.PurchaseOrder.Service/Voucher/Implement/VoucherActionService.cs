@@ -19,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -29,6 +30,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly IActionButtonHelperService _actionButtonHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _voucherDataActivityLog;
+
         public VoucherActionService(PurchaseOrderDBContext purchaseOrderDBContext
             , IActivityLogService activityLogService
             , IMapper mapper
@@ -42,6 +45,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _mapper = mapper;
             _actionButtonHelperService = actionButtonHelperService;
             _currentContextService = currentContextService;
+            _voucherDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherBill);
         }
 
         protected override async Task<string> GetObjectTitle(int objectId)
@@ -51,7 +55,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return info.Title;
         }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data, string note = null)
         {
             var voucherTypeId = objectId;
             var voucherActionId = inputActionId;
@@ -91,6 +95,15 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 var message = messageParam.Value as string;
                 throw new BadRequestException(GeneralCode.InvalidParams, message);
             }
+
+            var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
+            var logMessage = $"{action.Title} chứng từ {billCode}. ";
+            if (!string.IsNullOrEmpty(note))
+            {
+                logMessage += note;
+            }
+
+            await _voucherDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, voucherTypeId);
 
             return result;
         }
