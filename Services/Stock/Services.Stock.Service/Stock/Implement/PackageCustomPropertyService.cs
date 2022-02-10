@@ -108,7 +108,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             model.PackageCustomPropertyId = info.PackageCustomPropertyId;
             _mapper.Map(model, info);
-            info.IsDeleted = true;
 
             await _stockDbContext.SaveChangesAsync();
 
