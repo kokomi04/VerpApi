@@ -57,7 +57,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return info.Title;
         }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int hrActionId, long billId, BillInfoModel data, string note = null)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int hrActionId, long billId, BillInfoModel data)
         {
             var hrTypeId = objectId;
             var hrBillId = billId;
@@ -100,12 +100,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
 
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
-            var logMessage = $"{action.Title} chứng từ {billCode}. ";
-            if (!string.IsNullOrEmpty(note))
-            {
-                logMessage += note;
-            }
-
+            var logMessage = $"{action.Title} {billCode}. ";
+         
             await _hrDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, hrTypeId);
 
             return result;

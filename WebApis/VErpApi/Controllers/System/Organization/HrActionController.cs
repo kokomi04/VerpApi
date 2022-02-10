@@ -59,9 +59,9 @@ namespace VErpApi.Controllers.System
         [Route("{hrTypeId}/{hrBillId}/Exec/{hrActionId}")]
         [ObjectDataApi(EnumObjectType.HrType, "hrTypeId")]
         [ActionButtonDataApi("hrActionId")]
-        public async Task<List<NonCamelCaseDictionary>> ExecHrAction([FromRoute] int hrTypeId, [FromRoute] int hrActionId, [FromRoute] long hrBillId, [FromBody] BillInfoActionModel data)
+        public async Task<List<NonCamelCaseDictionary>> ExecHrAction([FromRoute] int hrTypeId, [FromRoute] int hrActionId, [FromRoute] long hrBillId, [FromBody] BillInfoModel data)
         {
-            return await _hrActionService.ExecActionButton(hrTypeId, hrActionId, hrBillId, data.Data, data.Note).ConfigureAwait(true);
+            return await _hrActionService.ExecActionButton(hrTypeId, hrActionId, hrBillId, data).ConfigureAwait(true);
         }
     }
 }
