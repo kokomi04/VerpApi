@@ -32,7 +32,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public int? ProductMaterialsConsumptionGroupId { get; set; }
     }
 
-    public class InventoryRequirementListModel : InventoryRequirementBaseModel//, IMapFrom<InventoryRequirementDetail>
+    public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
     {
         public long InventoryRequirementId { get; set; }
         public int? CensorByUserId { get; set; }
@@ -53,7 +53,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public decimal PrimaryQuantity { get; set; }
         public decimal? ProductUnitConversionQuantity { get; set; }
 
-        /*
+        
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementDetail, InventoryRequirementListModel>()
@@ -82,7 +82,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.OutsourceStepRequestId, otp => otp.MapFrom(source => source.OutsourceStepRequestId))                
                 .ForMember(dest => dest.PrimaryQuantity, otp => otp.MapFrom(source => source.PrimaryQuantity))
                 .ForMember(dest => dest.ProductUnitConversionQuantity, otp => otp.MapFrom(source => source.ProductUnitConversionQuantity));
-        }*/
+        }
     }
 
     public class InventoryRequirementInputModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementEntity>
@@ -125,6 +125,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
             InventoryRequirementFile = new List<InventoryRequirementFileOutputModel>();
             InventoryRequirementDetail = new List<InventoryRequirementDetailOutputModel>();
         }
+
 
         public new void Mapping(Profile profile)
         {
