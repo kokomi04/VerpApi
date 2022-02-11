@@ -797,6 +797,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductId = x.ProductId,
                             Quantity = x.Quantity,
                             ProductionOrderCode = x.ProductionOrderCode,
+                            PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId
                         });
                         await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(eOutsourceMappings);
                         await _purchaseOrderDBContext.SaveChangesAsync();
