@@ -30,14 +30,18 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
+
+        public int? CensorByUserId { get; set; }
+        public long? CensorDatetimeUtc { get; set; }
+        public EnumInventoryRequirementStatus CensorStatus { get; set; }
+        public long InventoryRequirementId { get; set; }
+
     }
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
     {
-        public long InventoryRequirementId { get; set; }
-        public int? CensorByUserId { get; set; }
-        public long? CensorDatetimeUtc { get; set; }
-        public EnumInventoryRequirementStatus CensorStatus { get; set; }
+       
+      
         public int ProductId { get; set; }
         public long InventoryRequirementDetailId { get; set; }
         public string ProductTitle { get; set; }
@@ -115,7 +119,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string ObjectId { get; set; }
     }
 
-    public class InventoryRequirementOutputModel : InventoryRequirementListModel
+    public class InventoryRequirementOutputModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementEntity>
     {
         public virtual ICollection<InventoryRequirementDetailOutputModel> InventoryRequirementDetail { get; set; }
         public virtual ICollection<InventoryRequirementFileOutputModel> InventoryRequirementFile { get; set; }
@@ -127,7 +131,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         }
 
 
-        public new void Mapping(Profile profile)
+        public void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementEntity, InventoryRequirementOutputModel>()
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))
