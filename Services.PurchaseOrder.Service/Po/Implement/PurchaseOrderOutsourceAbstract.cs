@@ -110,45 +110,54 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.AddAsync(po);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
-                    var poDetails = model.Details.Select(d =>
+                    var sortOrder = 1;
+                    foreach (var detail in model.Details)
                     {
-
-                        return new PurchaseOrderDetail()
+                        var entityDetail = new PurchaseOrderDetail()
                         {
                             PurchaseOrderId = po.PurchaseOrderId,
 
-                            ProductId = d.ProductId,
+                            ProductId = detail.ProductId,
 
-                            ProviderProductName = d.ProviderProductName,
-                            PrimaryQuantity = d.PrimaryQuantity,
-                            PrimaryUnitPrice = d.PrimaryUnitPrice,
+                            ProviderProductName = detail.ProviderProductName,
+                            PrimaryQuantity = detail.PrimaryQuantity,
+                            PrimaryUnitPrice = detail.PrimaryUnitPrice,
 
-                            ProductUnitConversionId = d.ProductUnitConversionId,
-                            ProductUnitConversionQuantity = d.ProductUnitConversionQuantity,
-                            ProductUnitConversionPrice = d.ProductUnitConversionPrice,
+                            ProductUnitConversionId = detail.ProductUnitConversionId,
+                            ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity,
+                            ProductUnitConversionPrice = detail.ProductUnitConversionPrice,
 
-                            PoProviderPricingCode = d.PoProviderPricingCode,
-                            OrderCode = d.OrderCode,
-                            ProductionOrderCode = d.ProductionOrderCode,
-                            Description = d.Description,
+                            PoProviderPricingCode = detail.PoProviderPricingCode,
+                            OrderCode = detail.OrderCode,
+                            ProductionOrderCode = detail.ProductionOrderCode,
+                            Description = detail.Description,
 
-                            OutsourceRequestId = d.OutsourceRequestId,
-                            ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-                            IntoMoney = d.IntoMoney,
+                            OutsourceRequestId = detail.OutsourceRequestId,
+                            ProductionStepLinkDataId = detail.ProductionStepLinkDataId,
+                            IntoMoney = detail.IntoMoney,
 
-                            ExchangedMoney = d.ExchangedMoney,
-                            SortOrder = d.SortOrder
+                            ExchangedMoney = detail.ExchangedMoney,
+                            SortOrder = sortOrder++
                         };
-                    }).ToList();
 
-                    var sortOrder = 1;
-                    foreach (var item in poDetails)
-                    {
-                        item.SortOrder = sortOrder++;
+                        await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(entityDetail);
+                        await _purchaseOrderDBContext.SaveChangesAsync();
+
+                        if(detail.OutsourceMappings.Count > 0)
+                        {
+                            var eOutsourceMappings = detail.OutsourceMappings.Select(x=> new PurchaseOrderOutsourceMapping
+                            {
+                                OrderCode = x.OrderCode,
+                                OutsourcePartRequestId = x.OutsourcePartRequestId,
+                                ProductId = x.ProductId,
+                                Quantity = x.Quantity,
+                                ProductionOrderCode = x.ProductionOrderCode,
+                                PurchaseOrderDetailId = entityDetail.PurchaseOrderDetailId,
+                            });
+                            await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(eOutsourceMappings);
+                            await _purchaseOrderDBContext.SaveChangesAsync();
+                        }
                     }
-
-                    await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(poDetails);
-
 
                     if (model.FileIds?.Count > 0)
                     {

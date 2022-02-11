@@ -50,18 +50,29 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             if (arrOutsourceStepId != null && arrOutsourceStepId.Length > 0)
                 queryRefOutsourceStep = queryRefOutsourceStep.Where(x => arrOutsourceStepId.Contains(x.OutsourceStepRequestId));
-
-            var calculatorTotalQuantityByOutsourceStep = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
-                                                          join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourceStep } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
-                                                          group d by new { d.OutsourceRequestId, d.ProductionStepLinkDataId } into g
-                                                          select new 
-                                                          {
-                                                              g.Key.OutsourceRequestId,
-                                                              g.Key.ProductionStepLinkDataId,
-                                                              TotalQuantity = (decimal?)g.Sum(x => x.PrimaryQuantity)
-                                                          });
+            
+            // var calculatorTotalQuantityByOutsourceStep = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
+            //                                               join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourceStep } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
+            //                                               group d by new { d.OutsourceRequestId, d.ProductionStepLinkDataId } into g
+            //                                               select new 
+            //                                               {
+            //                                                   g.Key.OutsourceRequestId,
+            //                                                   g.Key.ProductionStepLinkDataId,
+            //                                                   TotalQuantity = (decimal?)g.Sum(x => x.PrimaryQuantity)
+            //                                               });
+            var calculatorTotalQuantityByOutsourceStep = from m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping
+                                                         join pod in _purchaseOrderDBContext.PurchaseOrderDetail on m.PurchaseOrderDetailId equals pod.PurchaseOrderDetailId
+                                                         join po in _purchaseOrderDBContext.PurchaseOrder on pod.PurchaseOrderId equals po.PurchaseOrderId
+                                                         where po.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep
+                                                         group m by new { m.OutsourcePartRequestId, m.ProductionStepLinkDataId } into g
+                                                         select new
+                                                         {
+                                                             OutsourceRequestId = g.Key.OutsourcePartRequestId,
+                                                             ProductionStepLinkDataId = g.Key.ProductionStepLinkDataId,
+                                                             TotalQuantity = (decimal?)g.Sum(x => x.Quantity)
+                                                         };
             var results = await (from o in queryRefOutsourceStep
-                                 join c in calculatorTotalQuantityByOutsourceStep on new { o.OutsourceStepRequestId, o.ProductionStepLinkDataId } equals new { OutsourceStepRequestId = c.OutsourceRequestId.GetValueOrDefault(), ProductionStepLinkDataId = c.ProductionStepLinkDataId.GetValueOrDefault() } into gc
+                                 join c in calculatorTotalQuantityByOutsourceStep on new { o.OutsourceStepRequestId, o.ProductionStepLinkDataId } equals new { OutsourceStepRequestId = c.OutsourceRequestId, ProductionStepLinkDataId = c.ProductionStepLinkDataId.GetValueOrDefault() } into gc
                                  from c in gc.DefaultIfEmpty()
                                  where c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
                                  select new RefOutsourceStepRequestModel

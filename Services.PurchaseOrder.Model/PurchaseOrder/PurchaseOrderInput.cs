@@ -120,6 +120,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public bool IsSubCalculation { get; set; }
 
         public IList<PurchaseOrderDetailSubCalculationModel> SubCalculations { get; set; }
+        public IList<PurchaseOrderOutsourceMappingModel> OutsourceMappings { get; set; }
 
     }
 

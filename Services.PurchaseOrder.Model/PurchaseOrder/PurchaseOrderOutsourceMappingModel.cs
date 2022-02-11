@@ -12,5 +12,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public string ProductionOrderCode { get; set; }
         public string OrderCode { get; set; }
         public long OutsourcePartRequestId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
     }
 }

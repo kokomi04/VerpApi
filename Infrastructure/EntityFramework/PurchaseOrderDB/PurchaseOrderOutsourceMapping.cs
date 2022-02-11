@@ -20,5 +20,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
     }
 }

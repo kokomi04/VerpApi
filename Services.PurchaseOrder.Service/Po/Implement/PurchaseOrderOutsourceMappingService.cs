@@ -151,7 +151,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                         ProductId = x.ProductId,
                                         Quantity = x.Quantity,
                                         OutsourcePartRequestId = x.OutsourcePartRequestId,
-                                        ProductionOrderCode = x.ProductionOrderCode
+                                        ProductionOrderCode = x.ProductionOrderCode,
+                                        ProductionStepLinkDataId = x.ProductionStepLinkDataId
                                     }).ToList();
 
             await _purchaseOrderDBContext.AddRangeAsync(nEntities);

@@ -869,11 +869,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.ProductionOrderCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(38, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(38, 12)");
             });
 
             modelBuilder.Entity<RefOutsourceStepRequest>(entity =>
