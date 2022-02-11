@@ -52,6 +52,10 @@ namespace Services.Organization.Model.TimeKeeping
 
     public class ArrangeShiftItemModel : IMapFrom<ArrangeShiftItem>, IRefForeginKey, IInnerBySelf<ArrangeShiftItemModel>
     {
+        public ArrangeShiftItemModel()
+        {
+            InnerItems = new List<ArrangeShiftItemModel>();
+        }
         public int ArrangeShiftItemId { get; set; }
         public int ArrangeShiftId { get; set; }
         public int? ShiftConfigurationId { get; set; }
