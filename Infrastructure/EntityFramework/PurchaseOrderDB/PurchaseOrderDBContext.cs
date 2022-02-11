@@ -64,6 +64,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<RefOutsourceStepRequest> RefOutsourceStepRequest { get; set; }
         public virtual DbSet<RefProduct> RefProduct { get; set; }
         //public virtual DbSet<VoucherAction> VoucherAction { get; set; }
+        public virtual DbSet<RefProductionOrder> RefProductionOrder { get; set; }
         public virtual DbSet<VoucherArea> VoucherArea { get; set; }
         public virtual DbSet<VoucherAreaField> VoucherAreaField { get; set; }
         public virtual DbSet<VoucherBill> VoucherBill { get; set; }
@@ -934,6 +935,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
+            });
+
+            modelBuilder.Entity<RefProductionOrder>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefProductionOrder");
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderId).ValueGeneratedOnAdd();
             });
 
             //modelBuilder.Entity<VoucherAction>(entity =>

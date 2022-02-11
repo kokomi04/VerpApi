@@ -1542,13 +1542,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return await query.Where(x => x.PrimaryQuantity > x.PrimaryQuantityAllocated.GetValueOrDefault()).ToListAsync();
         }
 
-        public async Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart(long purchaseOrderId)
+        public async Task<IList<EnrichDataPurchaseOrderAllocate>> EnrichDataForPurchaseOrderAllocate(long purchaseOrderId)
         {
+            var purchaseOrder = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(x=>x.PurchaseOrderId == purchaseOrderId);
+            if(purchaseOrder == null) return new List<EnrichDataPurchaseOrderAllocate>();
+
             var queryRefPurchaseOrderOutsource = from p in _purchaseOrderDBContext.PurchaseOrder
                         join pd in _purchaseOrderDBContext.PurchaseOrderDetail on p.PurchaseOrderId equals pd.PurchaseOrderId
                         join m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping on pd.PurchaseOrderDetailId equals m.PurchaseOrderDetailId into gm
                         from m in gm.DefaultIfEmpty()
-                        where p.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart && p.PurchaseOrderId == purchaseOrderId
+                        where p.PurchaseOrderId == purchaseOrderId
                         select new {
                             p.PurchaseOrderId,
                             pd.PurchaseOrderDetailId,
@@ -1556,21 +1559,60 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             ProductionOrderCode = pd.OutsourceRequestId.HasValue ? pd.ProductionOrderCode : m == null ? string.Empty : m.ProductionOrderCode,
                         };
 
-            var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
+            var data = new List<EnrichDataPurchaseOrderAllocate>();
 
-            var query = from v in queryRefPurchaseOrderOutsource
-                        join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId
-                        select new EnrichDataPurchaseOrderOutsourcePart
-                        {
+            if (purchaseOrder.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart)
+            {
+                var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
 
-                            PurchaseOrderId = v.PurchaseOrderId,
-                            PurchaseOrderDetailId = v.PurchaseOrderDetailId,
-                            OutsourceRequestId = v.OutsourceRequestId,
-                            ProductionOrderCode = v.ProductionOrderCode,
-                            OutsourceRequestCode = r.OutsourcePartRequestCode,
-                            ProductionOrderId = r.ProductionOrderId 
-                        };
-            var data = await query.ToListAsync();
+                var query = from v in queryRefPurchaseOrderOutsource
+                            join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId
+                            select new EnrichDataPurchaseOrderAllocate
+                            {
+
+                                PurchaseOrderId = v.PurchaseOrderId,
+                                PurchaseOrderDetailId = v.PurchaseOrderDetailId,
+                                OutsourceRequestId = v.OutsourceRequestId,
+                                ProductionOrderCode = v.ProductionOrderCode,
+                                OutsourceRequestCode = r.OutsourcePartRequestCode,
+                                ProductionOrderId = r.ProductionOrderId
+                            };
+                data = await query.ToListAsync();
+            }
+            else if (purchaseOrder.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep)
+            {
+                var queryRefOutsourceStep = _purchaseOrderDBContext.RefOutsourceStepRequest.AsQueryable();
+
+                var query = from v in queryRefPurchaseOrderOutsource
+                            join r in queryRefOutsourceStep on v.OutsourceRequestId equals r.OutsourceStepRequestId
+                            select new EnrichDataPurchaseOrderAllocate
+                            {
+
+                                PurchaseOrderId = v.PurchaseOrderId,
+                                PurchaseOrderDetailId = v.PurchaseOrderDetailId,
+                                OutsourceRequestId = v.OutsourceRequestId,
+                                ProductionOrderCode = v.ProductionOrderCode,
+                                OutsourceRequestCode = r.OutsourceStepRequestCode,
+                                ProductionOrderId = r.ProductionOrderId
+                            };
+                data =  await query.ToListAsync();
+            }else
+            {
+                var queryRefProductionOrder = _purchaseOrderDBContext.RefProductionOrder.AsQueryable();
+
+                var query = from v in queryRefPurchaseOrderOutsource
+                            join r in queryRefProductionOrder on v.ProductionOrderCode equals r.ProductionOrderCode
+                            select new EnrichDataPurchaseOrderAllocate
+                            {
+
+                                PurchaseOrderId = v.PurchaseOrderId,
+                                PurchaseOrderDetailId = v.PurchaseOrderDetailId,
+                                ProductionOrderCode = v.ProductionOrderCode,
+                                ProductionOrderId = r.ProductionOrderId
+                            };
+                data = await query.ToListAsync();
+            }
+
             return data;
         }
 
