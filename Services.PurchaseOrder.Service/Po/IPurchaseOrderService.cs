@@ -48,7 +48,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo);
 
         Task<IList<PurchaseOrderOutsourcePartAllocate>> GetAllPurchaseOrderOutsourcePart();
-        Task<IList<EnrichDataPurchaseOrderOutsourcePart>> EnrichDataForPurchaseOrderOutsourcePart(long purchaseOrderId);
+        Task<IList<EnrichDataPurchaseOrderAllocate>> EnrichDataForPurchaseOrderAllocate(long purchaseOrderId);
 
         Task<bool> RemoveOutsourcePart(long[] arrPurchaseOrderId, long outsourcePartRequestId);
     }
