@@ -1020,6 +1020,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
                         await _purchaseOrderDBContext.SaveChangesAsync();
+
+                        if (item.OutsourceMappings.Count > 0)
+                        {
+                            var eOutsourceMappings = item.OutsourceMappings.Select(x => new PurchaseOrderOutsourceMapping
+                            {
+                                OrderCode = x.OrderCode,
+                                OutsourcePartRequestId = 0,
+                                ProductId = x.ProductId,
+                                Quantity = x.Quantity,
+                                ProductionOrderCode = x.ProductionOrderCode,
+                                PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId
+                            });
+                            await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(eOutsourceMappings);
+                            await _purchaseOrderDBContext.SaveChangesAsync();
+                        }
                     }
                 }
 
