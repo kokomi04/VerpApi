@@ -75,13 +75,13 @@ namespace VErpApi.Controllers.System.Organization
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        public async Task<bool> ImportFromMapping([FromQuery] int month, [FromQuery] int year, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _timeSheetService.ImportTimeSheetFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
+            return await _timeSheetService.ImportTimeSheetFromMapping(month, year, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
 
