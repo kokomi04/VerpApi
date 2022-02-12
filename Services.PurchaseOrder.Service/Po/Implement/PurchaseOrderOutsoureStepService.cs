@@ -136,38 +136,39 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 if (existedItem != null) return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
             }
 
-            var notExistsOutsourceStepId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false || x.ProductionStepLinkDataId.HasValue == false);
-            if (notExistsOutsourceStepId)
-                return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
+            // var notExistsOutsourceStepId = model.Details.Any(x => x.OutsourceMappings.Any(y => y.OutsourcePartRequestId <= 0 || y.ProductionStepLinkDataId.HasValue == false));
+            // if (notExistsOutsourceStepId)
+            //     return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
 
-            var arrOutsourceStepId = model.Details.Select(x => x.OutsourceRequestId.Value).ToArray();
-            var refOutsources = await GetOutsourceStepRequest(arrOutsourceStepId);
+            // var arrOutsourceStepId = model.Details.SelectMany(x => x.OutsourceMappings).Select(x => x.OutsourcePartRequestId).Distinct().ToArray();
+            // var refOutsources = await GetOutsourceStepRequest(arrOutsourceStepId);
 
-            var isPrimaryQuanityGreaterThanQuantityRequirment = (from d in model.Details.Where(d => d.PurchaseOrderDetailId.HasValue == false)
-                                                                 join r in refOutsources on new { OutsourceRequestId = d.OutsourceRequestId.Value, ProductionStepLinkDataId = d.ProductionStepLinkDataId.Value } equals new { OutsourceRequestId = r.OutsourceStepRequestId, r.ProductionStepLinkDataId }
-                                                                 select new
-                                                                 {
-                                                                     d.PrimaryQuantity,
-                                                                     QuantityRequirement = r.Quantity - r.QuantityProcessed
-                                                                 }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
+            // var isPrimaryQuantityGreaterThanQuantityRequirement = (from d in model.Details.Where(d => d.PurchaseOrderDetailId.HasValue == false).SelectMany(x => x.OutsourceMappings)
+            //                                                      join r in refOutsources on new { OutsourceRequestId = d.OutsourcePartRequestId, ProductionStepLinkDataId = d.ProductionStepLinkDataId.Value } equals new { OutsourceRequestId = r.OutsourceStepRequestId, r.ProductionStepLinkDataId }
+            //                                                      select new
+            //                                                      {
+            //                                                          PrimaryQuantity = d.Quantity,
+            //                                                          QuantityRequirement = r.Quantity - r.QuantityProcessed
+            //                                                      }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
 
-            if (poId.HasValue)
-            {
-                var arrDetailId = model.Details.Where(d => d.PurchaseOrderDetailId > 0).Select(d => d.PurchaseOrderDetailId).Distinct().ToArray();
-                var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => arrDetailId.Contains(d.PurchaseOrderDetailId)).ToListAsync();
+            // if (poId.HasValue)
+            // {
+            //     var arrDetailId = model.Details.Where(d => d.PurchaseOrderDetailId > 0).Select(d => d.PurchaseOrderDetailId).Distinct().ToArray();
+            //     var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => arrDetailId.Contains(d.PurchaseOrderDetailId)).ToListAsync();
+            //     var allocates  = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(d => arrDetailId.Contains(d.PurchaseOrderDetailId)).ToListAsync();
 
-                isPrimaryQuanityGreaterThanQuantityRequirment = (from d in model.Details.Where(d => d.PurchaseOrderDetailId.HasValue == true)
-                                                                 join o in details on d.PurchaseOrderDetailId equals o.PurchaseOrderDetailId
-                                                                 join r in refOutsources on new { OutsourceRequestId = d.OutsourceRequestId.Value, ProductionStepLinkDataId = d.ProductionStepLinkDataId.Value } equals new { OutsourceRequestId = r.OutsourceStepRequestId, r.ProductionStepLinkDataId }
-                                                                 select new
-                                                                 {
-                                                                     d.PrimaryQuantity,
-                                                                     QuantityRequirement = r.Quantity - r.QuantityProcessed + o.PrimaryQuantity
-                                                                 }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
-            }
+            //     isPrimaryQuantityGreaterThanQuantityRequirement = (from d in allocates
+            //                                                      join o in details on d.PurchaseOrderDetailId equals o.PurchaseOrderDetailId
+            //                                                      join r in refOutsources on new { OutsourceRequestId = d.OutsourcePartRequestId, ProductionStepLinkDataId = d.ProductionStepLinkDataId.Value } equals new { OutsourceRequestId = r.OutsourceStepRequestId, r.ProductionStepLinkDataId }
+            //                                                      select new
+            //                                                      {
+            //                                                          PrimaryQuantity = d.Quantity,
+            //                                                          QuantityRequirement = r.Quantity - r.QuantityProcessed + o.PrimaryQuantity
+            //                                                      }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
+            // }
 
-            if (isPrimaryQuanityGreaterThanQuantityRequirment)
-                return PurchaseOrderErrorCode.PrimaryQuanityGreaterThanQuantityRequirment;
+            // if (isPrimaryQuantityGreaterThanQuantityRequirement)
+            //     return PurchaseOrderErrorCode.PrimaryQuanityGreaterThanQuantityRequirment;
 
             return GeneralCode.Success;
         }

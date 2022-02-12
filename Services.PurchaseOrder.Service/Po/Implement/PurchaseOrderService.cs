@@ -565,6 +565,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             .ToListAsync();
 
             var poAssignmentDetailIds = details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
+            // var purchaseOrderDetailIds = details.Select(d => d.PurchaseOrderDetailId).ToList();
             var purchasingSuggestDetailIds = details.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
 
             var assignmentDetails = (await _purchasingSuggestService.PoAssignmentDetailInfos(poAssignmentDetailIds))
@@ -578,6 +579,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var excess = await _purchaseOrderDBContext.PurchaseOrderExcess.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderExcessModel>(_mapper.ConfigurationProvider).ToListAsync();
             var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderMaterialsModel>(_mapper.ConfigurationProvider).ToListAsync();
 
+            // var allocates = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x=> purchaseOrderDetailIds.Contains(x.PurchaseOrderDetailId)).ToListAsync();
+            
+            
             return new PurchaseOrderOutput()
             {
                 PurchaseOrderId = info.PurchaseOrderId,
@@ -661,7 +665,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             PurchaseOrderDetailSubCalculationId = s.PurchaseOrderDetailSubCalculationId,
                             UnitConversionId = s.UnitConversionId
                         }).ToList(),
-                        IsSubCalculation = d.IsSubCalculation
+                        IsSubCalculation = d.IsSubCalculation,
+                        // OutsourceMappings = info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep ? allocates.Where(x => x.PurchaseOrderDetailId == d.PurchaseOrderDetailId).Select(x => new PurchaseOrderOutsourceMappingModel
+                        // {
+                        //     OrderCode = x.OrderCode,
+                        //     OutsourcePartRequestId = x.OutsourcePartRequestId,
+                        //     ProductId = x.ProductId,
+                        //     ProductionOrderCode = x.ProductionOrderCode,
+                        //     ProductionStepLinkDataId = x.ProductionStepLinkDataId,
+                        //     PurchaseOrderOutsourceMappingId = x.PurchaseOrderOutsourceMappingId,
+                        //     PurchaseOrderDetailId = x.PurchaseOrderDetailId,
+                        // }).ToList() : new List<PurchaseOrderOutsourceMappingModel>(),
                     };
                 }).ToList(),
                 Excess = excess.OrderBy(e => e.SortOrder).ToList(),
