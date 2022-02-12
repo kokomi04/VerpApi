@@ -61,6 +61,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
         public virtual DbSet<SystemParameter> SystemParameter { get; set; }
         public virtual DbSet<TimeSheet> TimeSheet { get; set; }
+        public virtual DbSet<TimeSheetDetail> TimeSheetDetail { get; set; }
         public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
         public virtual DbSet<WorkSchedule> WorkSchedule { get; set; }
@@ -766,7 +767,20 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<TimeSheet>(entity =>
             {
+                entity.Property(e => e.Note)
+                    .IsRequired()
+                    .HasMaxLength(1024);
+            });
+
+            modelBuilder.Entity<TimeSheetDetail>(entity =>
+            {
                 entity.Property(e => e.Date).HasColumnType("date");
+
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetDetail)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetDetail_TimeSheet");
             });
 
             modelBuilder.Entity<TimeSortConfiguration>(entity =>

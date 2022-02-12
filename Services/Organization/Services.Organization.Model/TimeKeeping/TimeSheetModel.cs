@@ -13,39 +13,139 @@ namespace Services.Organization.Model.TimeKeeping
 {
     public class TimeSheetModel : IMapFrom<TimeSheet>
     {
+        public TimeSheetModel()
+        {
+            TimeSheetDetails = new List<TimeSheetDetailModel>();
+        }
+
         public long TimeSheetId { get; set; }
-        public long EmployeeId { get; set; }
-        public long Date { get; set; }
-        public double TimeIn { get; set; }
-        public double TimeOut { get; set; }
+        public int Month { get; set; }
+        public int Year { get; set; }
+        public string Note { get; set; }
+        public bool IsApprove { get; set; }
+
+        public IList<TimeSheetDetailModel> TimeSheetDetails { get; set; }
+
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<TimeSheetModel, TimeSheet>()
-            .ForMember(m=>m.Date, v=>v.MapFrom(m=>m.Date.UnixToDateTime()))
-            .ForMember(m=>m.TimeIn, v=>v.MapFrom(m=>TimeSpan.FromSeconds(m.TimeIn)))
-            .ForMember(m => m.TimeOut, v => v.MapFrom(m => TimeSpan.FromSeconds(m.TimeOut)))
+            profile.CreateMap<TimeSheet, TimeSheetModel>()
+            .ForMember(m => m.TimeSheetDetails, v => v.MapFrom(m => m.TimeSheetDetail))
             .ReverseMap()
-            .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()))
-            .ForMember(m => m.TimeIn, v => v.MapFrom(m => m.TimeIn.TotalSeconds))
-            .ForMember(m => m.TimeOut, v => v.MapFrom(m => m.TimeOut.TotalSeconds));
+            .ForMember(m => m.TimeSheetDetail, v => v.Ignore());
         }
     }
 
     public class TimeSheetImportFieldModel
     {
         [Required(ErrorMessage = "Vui lòng nhập thông tin nhân viên")]
-        [Display(Name = "Nhân viên", GroupName = "TT nhân viên")]
-        public long EmployeeId { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập ngày chấm công")]
-        [Display(Name = "Ngày", GroupName = "TT chấm công")]
-        public long Date { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập giờ vào")]
-        [Display(Name = "Giờ vào", GroupName = "TT chấm công")]
-        public double TimeIn { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập giờ ra")]
-        [Display(Name = "Giờ ra", GroupName = "TT chấm công")]
-        public double TimeOut { get; set; }
+        [Display(Name = "Mã nhân viên", GroupName = "TT chấm công")]
+        public string EmployeeCode { get; set; }
+        
+        [Display(Name = "Tên nhân viên", GroupName = "TT chấm công")]
+        public string EmployeeName { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 1", GroupName = "TT chấm công")]
+        public string TimeKeepingDay1 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 2", GroupName = "TT chấm công")]
+        public string TimeKeepingDay2 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 3", GroupName = "TT chấm công")]
+        public string TimeKeepingDay3 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 4", GroupName = "TT chấm công")]
+        public string TimeKeepingDay4 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 5", GroupName = "TT chấm công")]
+        public string TimeKeepingDay5 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 6", GroupName = "TT chấm công")]
+        public string TimeKeepingDay6 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 7", GroupName = "TT chấm công")]
+        public string TimeKeepingDay7 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 8", GroupName = "TT chấm công")]
+        public string TimeKeepingDay8 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 9", GroupName = "TT chấm công")]
+        public string TimeKeepingDay9 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 10", GroupName = "TT chấm công")]
+        public string TimeKeepingDay10 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 11", GroupName = "TT chấm công")]
+        public string TimeKeepingDay11 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 12", GroupName = "TT chấm công")]
+        public string TimeKeepingDay12 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 13", GroupName = "TT chấm công")]
+        public string TimeKeepingDay13 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 14", GroupName = "TT chấm công")]
+        public string TimeKeepingDay14 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 15", GroupName = "TT chấm công")]
+        public string TimeKeepingDay15 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 16", GroupName = "TT chấm công")]
+        public string TimeKeepingDay16 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 17", GroupName = "TT chấm công")]
+        public string TimeKeepingDay17 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 18", GroupName = "TT chấm công")]
+        public string TimeKeepingDay18 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 19", GroupName = "TT chấm công")]
+        public string TimeKeepingDay19 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 20", GroupName = "TT chấm công")]
+        public string TimeKeepingDay20 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 21", GroupName = "TT chấm công")]
+        public string TimeKeepingDay21 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 22", GroupName = "TT chấm công")]
+        public string TimeKeepingDay22 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 23", GroupName = "TT chấm công")]
+        public string TimeKeepingDay23 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 24", GroupName = "TT chấm công")]
+        public string TimeKeepingDay24 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 25", GroupName = "TT chấm công")]
+        public string TimeKeepingDay25 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 26", GroupName = "TT chấm công")]
+        public string TimeKeepingDay26 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 27", GroupName = "TT chấm công")]
+        public string TimeKeepingDay27 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 28", GroupName = "TT chấm công")]
+        public string TimeKeepingDay28 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 29", GroupName = "TT chấm công")]
+        public string TimeKeepingDay29 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 30", GroupName = "TT chấm công")]
+        public string TimeKeepingDay30 { get; set; }
+        
+        [Display(Name = "Thời gian chấm công ngày 31", GroupName = "TT chấm công")]
+        public string TimeKeepingDay31 { get; set; }
+        
+        [Display(Name = "Tổng thời gian(phút) làm thêm", GroupName = "TT chấm công")]
+        public long MinsOvertime { get; set; }
+        
+        [Display(Name = "Tổng thời gian(phút) về muộn", GroupName = "TT chấm công")]
+        public long MinsLate { get; set; }
+        
+        [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "TT chấm công")]
+        public long MinsEarly { get; set; }
 
     }
 }
