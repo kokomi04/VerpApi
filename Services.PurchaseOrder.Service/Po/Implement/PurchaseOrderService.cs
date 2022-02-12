@@ -939,6 +939,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             found = true;
 
+                            var allocateQuantity = (await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x=>x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToListAsync()).Sum(x=>x.Quantity);
+
+                            if(item.PrimaryQuantity < allocateQuantity)
+                                throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
+
                             detail.PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
                                                         item.PurchasingSuggestDetailId :
                                                         assignmentDetail?.PurchasingSuggestDetailId;
@@ -989,6 +994,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (!found)
                     {
+                        var allocateQuantity = item.OutsourceMappings.Sum(x => x.Quantity);
+
+                        if (item.PrimaryQuantity < allocateQuantity)
+                            throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
+
                         var eDetail = new PurchaseOrderDetail()
                         {
                             PurchaseOrderId = info.PurchaseOrderId,
