@@ -281,8 +281,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     var details = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
 
-                    var newDetails = new List<PurchaseOrderDetail>();
-
                     foreach (var item in model.Details)
                     {
                         var found = false;
@@ -317,7 +315,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         if (!found)
                         {
-                            newDetails.Add(new PurchaseOrderDetail()
+                            var eDetail = new PurchaseOrderDetail()
                             {
                                 PurchaseOrderId = info.PurchaseOrderId,
 
@@ -340,7 +338,26 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 ExchangedMoney = item.ExchangedMoney,
                                 SortOrder = item.SortOrder
-                            });
+                            };
+
+                            await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
+                            await _purchaseOrderDBContext.SaveChangesAsync();
+
+                            if (item.OutsourceMappings.Count > 0)
+                            {
+                                var eOutsourceMappings = item.OutsourceMappings.Select(x => new PurchaseOrderOutsourceMapping
+                                {
+                                    OrderCode = x.OrderCode,
+                                    OutsourcePartRequestId = x.OutsourcePartRequestId,
+                                    ProductId = x.ProductId,
+                                    Quantity = x.Quantity,
+                                    ProductionOrderCode = x.ProductionOrderCode,
+                                    PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
+                                    ProductionStepLinkDataId = x.ProductionStepLinkDataId
+                                });
+                                await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(eOutsourceMappings);
+                                await _purchaseOrderDBContext.SaveChangesAsync();
+                            }
                         }
                     }
 
@@ -352,8 +369,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     {
                         detail.IsDeleted = true;
                     }
-
-                    await _purchaseOrderDBContext.PurchaseOrderDetail.AddRangeAsync(newDetails);
 
                     var oldFiles = await _purchaseOrderDBContext.PurchaseOrderFile.Where(f => f.PurchaseOrderId == info.PurchaseOrderId).ToListAsync();
 
