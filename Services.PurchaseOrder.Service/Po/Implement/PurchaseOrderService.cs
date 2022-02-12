@@ -1586,16 +1586,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var purchaseOrder = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(x=>x.PurchaseOrderId == purchaseOrderId);
             if(purchaseOrder == null) return new List<EnrichDataPurchaseOrderAllocate>();
 
-            var queryRefPurchaseOrderOutsource = from p in _purchaseOrderDBContext.PurchaseOrder
-                        join pd in _purchaseOrderDBContext.PurchaseOrderDetail on p.PurchaseOrderId equals pd.PurchaseOrderId
+            var queryRefPurchaseOrderOutsource = from pd in _purchaseOrderDBContext.PurchaseOrderDetail
                         join m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping on pd.PurchaseOrderDetailId equals m.PurchaseOrderDetailId into gm
                         from m in gm.DefaultIfEmpty()
-                        where p.PurchaseOrderId == purchaseOrderId
+                        where pd.PurchaseOrderId == purchaseOrderId
                         select new {
-                            p.PurchaseOrderId,
+                            m.PurchaseOrderOutsourceMappingId,
+                            pd.PurchaseOrderId,
                             pd.PurchaseOrderDetailId,
-                            OutsourceRequestId = pd.OutsourceRequestId.HasValue ? pd.OutsourceRequestId.GetValueOrDefault() : m == null ? 0 : m.OutsourcePartRequestId,
-                            ProductionOrderCode = pd.OutsourceRequestId.HasValue ? pd.ProductionOrderCode : m == null ? string.Empty : m.ProductionOrderCode,
+                            OutsourceRequestId =  m.OutsourcePartRequestId,
+                            ProductionOrderCode = m.ProductionOrderCode,
                         };
 
             var data = new List<EnrichDataPurchaseOrderAllocate>();
@@ -1608,7 +1608,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             join r in queryRefOutsourcePart on v.OutsourceRequestId equals r.OutsourcePartRequestId
                             select new EnrichDataPurchaseOrderAllocate
                             {
-
+                                PurchaseOrderOutsourceMappingId = v.PurchaseOrderOutsourceMappingId,
                                 PurchaseOrderId = v.PurchaseOrderId,
                                 PurchaseOrderDetailId = v.PurchaseOrderDetailId,
                                 OutsourceRequestId = v.OutsourceRequestId,
@@ -1626,7 +1626,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             join r in queryRefOutsourceStep on v.OutsourceRequestId equals r.OutsourceStepRequestId
                             select new EnrichDataPurchaseOrderAllocate
                             {
-
+                                PurchaseOrderOutsourceMappingId = v.PurchaseOrderOutsourceMappingId,
                                 PurchaseOrderId = v.PurchaseOrderId,
                                 PurchaseOrderDetailId = v.PurchaseOrderDetailId,
                                 OutsourceRequestId = v.OutsourceRequestId,
@@ -1643,7 +1643,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             join r in queryRefProductionOrder on v.ProductionOrderCode equals r.ProductionOrderCode
                             select new EnrichDataPurchaseOrderAllocate
                             {
-
+                                PurchaseOrderOutsourceMappingId = v.PurchaseOrderOutsourceMappingId,
                                 PurchaseOrderId = v.PurchaseOrderId,
                                 PurchaseOrderDetailId = v.PurchaseOrderDetailId,
                                 ProductionOrderCode = v.ProductionOrderCode,

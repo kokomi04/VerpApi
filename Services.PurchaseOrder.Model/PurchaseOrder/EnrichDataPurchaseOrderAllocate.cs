@@ -8,6 +8,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public long? ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
         public string OutsourceRequestCode { get; set; }
+        public long PurchaseOrderOutsourceMappingId { get; set; }
     }
 
 }
