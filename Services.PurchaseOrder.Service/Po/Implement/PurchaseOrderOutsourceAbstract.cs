@@ -311,6 +311,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.SortOrder = item.SortOrder;
                                 break;
                             }
+
+                            if (info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep && item.OutsourceMappings.Count > 0)
+                            {
+                                var allocate = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.FirstOrDefaultAsync(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId);
+                                allocate.Quantity = detail.PrimaryQuantity;
+                                await _purchaseOrderDBContext.SaveChangesAsync();
+                            }
                         }
 
                         if (!found)
