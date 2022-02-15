@@ -9,6 +9,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     {
         public TimeSheet()
         {
+            TimeSheetAggregate = new HashSet<TimeSheetAggregate>();
+            TimeSheetDayOff = new HashSet<TimeSheetDayOff>();
             TimeSheetDetail = new HashSet<TimeSheetDetail>();
         }
 
@@ -24,6 +26,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
 
+        public virtual ICollection<TimeSheetAggregate> TimeSheetAggregate { get; set; }
+        public virtual ICollection<TimeSheetDayOff> TimeSheetDayOff { get; set; }
         public virtual ICollection<TimeSheetDetail> TimeSheetDetail { get; set; }
     }
 }

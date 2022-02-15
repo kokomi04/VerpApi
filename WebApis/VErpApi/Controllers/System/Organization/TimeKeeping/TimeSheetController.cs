@@ -38,10 +38,10 @@ namespace VErpApi.Controllers.System.Organization
         }
         
         [HttpDelete]
-        [Route("{timeSheetId}")]
-        public async Task<bool> DeleteTimeSheet([FromRoute]long timeSheetId)
+        [Route("{year}/{month}")]
+        public async Task<bool> DeleteTimeSheet([FromRoute] int year, [FromRoute] int month)
         {
-            return await _timeSheetService.DeleteTimeSheet(timeSheetId);
+            return await _timeSheetService.DeleteTimeSheet(year, month);
         }
         
         [HttpGet]
@@ -52,17 +52,17 @@ namespace VErpApi.Controllers.System.Organization
         }
         
         [HttpGet]
-        [Route("{timeSheetId}")]
-        public async Task<TimeSheetModel> GetTimeSheet([FromRoute]long timeSheetId)
+        [Route("{year}/{month}")]
+        public async Task<TimeSheetModel> GetTimeSheet([FromRoute]int year, [FromRoute] int month)
         {
-            return await _timeSheetService.GetTimeSheet(timeSheetId);
+            return await _timeSheetService.GetTimeSheet(year, month);
         }
         
         [HttpPut]
-        [Route("{timeSheetId}")]
-        public async Task<bool> UpdateTimeSheet([FromRoute] long timeSheetId, [FromBody]TimeSheetModel model)
+        [Route("{year}/{month}")]
+        public async Task<bool> UpdateTimeSheet([FromRoute] int year, [FromRoute] int month, [FromBody]TimeSheetModel model)
         {
-            return await _timeSheetService.UpdateTimeSheet(timeSheetId, model);
+            return await _timeSheetService.UpdateTimeSheet(year, month, model);
 
         }
 

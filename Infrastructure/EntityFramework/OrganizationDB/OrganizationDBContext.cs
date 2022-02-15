@@ -61,6 +61,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
         public virtual DbSet<SystemParameter> SystemParameter { get; set; }
         public virtual DbSet<TimeSheet> TimeSheet { get; set; }
+        public virtual DbSet<TimeSheetAggregate> TimeSheetAggregate { get; set; }
+        public virtual DbSet<TimeSheetDayOff> TimeSheetDayOff { get; set; }
         public virtual DbSet<TimeSheetDetail> TimeSheetDetail { get; set; }
         public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
@@ -770,6 +772,24 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Note)
                     .IsRequired()
                     .HasMaxLength(1024);
+            });
+
+            modelBuilder.Entity<TimeSheetAggregate>(entity =>
+            {
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetAggregate)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetAggregate_TimeSheet");
+            });
+
+            modelBuilder.Entity<TimeSheetDayOff>(entity =>
+            {
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetDayOff)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetDayOff_TimeSheetDayOff");
             });
 
             modelBuilder.Entity<TimeSheetDetail>(entity =>
