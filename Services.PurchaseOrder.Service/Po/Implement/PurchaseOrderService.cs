@@ -1608,8 +1608,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if(purchaseOrder == null) return new List<EnrichDataPurchaseOrderAllocate>();
 
             var queryRefPurchaseOrderOutsource = from pd in _purchaseOrderDBContext.PurchaseOrderDetail
-                        join m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping on pd.PurchaseOrderDetailId equals m.PurchaseOrderDetailId into gm
-                        from m in gm.DefaultIfEmpty()
+                        join m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping on pd.PurchaseOrderDetailId equals m.PurchaseOrderDetailId 
                         where pd.PurchaseOrderId == purchaseOrderId
                         select new {
                             m.PurchaseOrderOutsourceMappingId,
