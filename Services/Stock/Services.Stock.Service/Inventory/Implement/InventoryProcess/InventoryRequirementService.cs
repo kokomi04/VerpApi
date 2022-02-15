@@ -82,7 +82,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                               InventoryQuantity = d.Sum(v => v.PrimaryQuantity)
                           };
 
-            var remainings = from sp in _stockDbContext.StockProduct           
+            var remainings = from sp in _stockDbContext.StockProduct
                              group sp by sp.ProductId into d
                              select new
                              {
@@ -91,7 +91,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                              };
 
             var inventoryRequirementAsQuery = from ird in _stockDbContext.InventoryRequirementDetail
-                                              join s in sumInvs on ird.InventoryRequirementDetailId equals s.InventoryRequirementDetailId                                              
+                                              join s in sumInvs on ird.InventoryRequirementDetailId equals s.InventoryRequirementDetailId
                                               join ir in _stockDbContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
                                               join @as in _stockDbContext.Stock on ird.AssignStockId equals @as.StockId into @asAlias
                                               from @as in @asAlias.DefaultIfEmpty()
@@ -107,6 +107,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   ProductionStepId = ird.ProductionStepId,
                                                   CreatedByUserId = ir.CreatedByUserId,
                                                   ProductionOrderCode = ird.ProductionOrderCode,
+                                                  ird.OrderCode,
+                                                  ird.Pocode,
+
                                                   Shipper = ir.Shipper,
                                                   CustomerId = ir.CustomerId,
                                                   BillForm = ir.BillForm,
@@ -124,6 +127,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
                                                   ird.PrimaryQuantity,
                                                   ird.ProductUnitConversionQuantity,
+
+
                                                   s.InventoryQuantity,
                                                   r.PrimaryQuantityRemaining
                                               };
@@ -147,30 +152,32 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                         where hasInventory.HasValue == false ? true : hasInventory.Value == false ? !inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId) : inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId)
                         select new
                         {
-                            InventoryRequirementCode = ir.InventoryRequirementCode,
-                            Content = ir.Content,
-                            Date = ir.Date,
+                            ir.InventoryRequirementCode,
+                            ir.Content,
+                            ir.Date,
                             DepartmentId = ir.DepartmentId,
                             ProductionStepId = ir.ProductionStepId,
                             CreatedByUserId = ir.CreatedByUserId,
                             ProductionOrderCode = ir.ProductionOrderCode,
-                            Shipper = ir.Shipper,
-                            CustomerId = ir.CustomerId,
-                            BillForm = ir.BillForm,
-                            BillCode = ir.BillCode,
-                            BillSerial = ir.BillSerial,
-                            BillDate = ir.BillDate,
-                            ModuleTypeId = ir.ModuleTypeId,
-                            InventoryRequirementId = ir.InventoryRequirementId,
-                            CensorByUserId = ir.CensorByUserId,
-                            CensorDatetimeUtc = ir.CensorDatetimeUtc,
-                            CensorStatus = ir.CensorStatus,
-                            ProductCode = p.ProductCode,
-                            ProductName = p.ProductName,
-                            StockName = ir.StockName,
+                            ir.OrderCode,
+                            ir.Pocode,
+                            ir.Shipper,
+                            ir.CustomerId,
+                            ir.BillForm,
+                            ir.BillCode,
+                            ir.BillSerial,
+                            ir.BillDate,
+                            ir.ModuleTypeId,
+                            ir.InventoryRequirementId,
+                            ir.CensorByUserId,
+                            ir.CensorDatetimeUtc,
+                            ir.CensorStatus,
+                            p.ProductCode,
+                            p.ProductName,
+                            ir.StockName,
                             ProductTitle = $"{p.ProductCode} / {p.ProductName}",
-                            ProductId = ir.ProductId,
-                            InventoryRequirementDetailId = ir.InventoryRequirementDetailId,
+                            ir.ProductId,
+                            ir.InventoryRequirementDetailId,
 
                             ir.PrimaryQuantity,
                             ir.ProductUnitConversionQuantity,
@@ -201,6 +208,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     ProductionStepId = x.ProductionStepId,
                     CreatedByUserId = x.CreatedByUserId,
                     ProductionOrderCode = x.ProductionOrderCode,
+                    OrderCode = x.OrderCode,
+                    PoCode = x.Pocode,
                     Shipper = x.Shipper,
                     CustomerId = x.CustomerId,
                     BillForm = x.BillForm,

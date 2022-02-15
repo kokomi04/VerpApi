@@ -19,7 +19,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public int? DepartmentId { get; set; }
         public long? ProductionStepId { get; set; }
         public int CreatedByUserId { get; set; }
-        public string ProductionOrderCode { get; set; }
+
         public string Shipper { get; set; }
         public int? CustomerId { get; set; }
         public string BillForm { get; set; }
@@ -40,8 +40,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
     {
-       
-      
+
+
         public int ProductId { get; set; }
         public long InventoryRequirementDetailId { get; set; }
         public string ProductTitle { get; set; }
@@ -57,7 +57,12 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public decimal PrimaryQuantity { get; set; }
         public decimal? ProductUnitConversionQuantity { get; set; }
 
-        
+        public string OrderCode { get; set; }
+        public string PoCode { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string Description { get; set; }
+
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementDetail, InventoryRequirementListModel>()
@@ -83,7 +88,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.ProductName, otp => otp.MapFrom(source => source.Product.ProductName))
                 .ForMember(dest => dest.ProductTitle, otp => otp.MapFrom(source => $"{source.Product.ProductCode} / {source.Product.ProductName}"))
                 .ForMember(dest => dest.StockName, otp => otp.MapFrom(source => source.AssignStock.StockName))
-                .ForMember(dest => dest.OutsourceStepRequestId, otp => otp.MapFrom(source => source.OutsourceStepRequestId))                
+                .ForMember(dest => dest.OutsourceStepRequestId, otp => otp.MapFrom(source => source.OutsourceStepRequestId))
                 .ForMember(dest => dest.PrimaryQuantity, otp => otp.MapFrom(source => source.PrimaryQuantity))
                 .ForMember(dest => dest.ProductUnitConversionQuantity, otp => otp.MapFrom(source => source.ProductUnitConversionQuantity));
         }
