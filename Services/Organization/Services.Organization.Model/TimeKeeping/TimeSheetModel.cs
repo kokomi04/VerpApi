@@ -16,6 +16,8 @@ namespace Services.Organization.Model.TimeKeeping
         public TimeSheetModel()
         {
             TimeSheetDetails = new List<TimeSheetDetailModel>();
+            TimeSheetAggregates = new List<TimeSheetAggregateModel>();
+            TimeSheetDayOffs = new List<TimeSheetDayOffModel>();
         }
 
         public long TimeSheetId { get; set; }
@@ -25,24 +27,30 @@ namespace Services.Organization.Model.TimeKeeping
         public bool IsApprove { get; set; }
 
         public IList<TimeSheetDetailModel> TimeSheetDetails { get; set; }
+        public IList<TimeSheetAggregateModel> TimeSheetAggregates { get; set; }
+        public IList<TimeSheetDayOffModel> TimeSheetDayOffs { get; set; }
 
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<TimeSheet, TimeSheetModel>()
             .ForMember(m => m.TimeSheetDetails, v => v.MapFrom(m => m.TimeSheetDetail))
+            .ForMember(m => m.TimeSheetDayOffs, v => v.MapFrom(m => m.TimeSheetDayOff))
+            .ForMember(m => m.TimeSheetAggregates, v => v.MapFrom(m => m.TimeSheetAggregate))
             .ReverseMap()
-            .ForMember(m => m.TimeSheetDetail, v => v.Ignore());
+            .ForMember(m => m.TimeSheetDetail, v => v.Ignore())
+            .ForMember(m => m.TimeSheetDayOff, v => v.Ignore())
+            .ForMember(m => m.TimeSheetAggregate, v => v.Ignore());
         }
     }
 
     public class TimeSheetImportFieldModel
     {
         [Required(ErrorMessage = "Vui lòng nhập thông tin nhân viên")]
-        [Display(Name = "Mã nhân viên", GroupName = "TT chấm công")]
+        [Display(Name = "Mã nhân viên", GroupName = "Thông tin nhân viên")]
         public string EmployeeCode { get; set; }
         
-        [Display(Name = "Tên nhân viên", GroupName = "TT chấm công")]
+        [Display(Name = "Tên nhân viên", GroupName = "Thông tin nhân viên")]
         public string EmployeeName { get; set; }
         
         [Display(Name = "Thời gian chấm công ngày 1", GroupName = "TT chấm công")]
@@ -138,14 +146,40 @@ namespace Services.Organization.Model.TimeKeeping
         [Display(Name = "Thời gian chấm công ngày 31", GroupName = "TT chấm công")]
         public string TimeKeepingDay31 { get; set; }
         
-        [Display(Name = "Tổng thời gian(phút) làm thêm", GroupName = "TT chấm công")]
-        public long MinsOvertime { get; set; }
-        
-        [Display(Name = "Tổng thời gian(phút) về muộn", GroupName = "TT chấm công")]
+        [Display(Name = "Tổng thời gian(phút) về muộn", GroupName = "Vào trễ")]
         public long MinsLate { get; set; }
+        [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "Vào trễ")]
+        public int CountedLate { get; set; }
         
-        [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "TT chấm công")]
+        [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "Ra sớm")]
         public long MinsEarly { get; set; }
 
+        [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "Ra sớm")]
+        public int CountedEarly { get; set; }
+
+        
+        [Display(Name = "Ngày công thường", GroupName = "Ngày công")]
+        public int CountedWeekday { get; set; }
+        
+        [Display(Name = "Ngày công cuối tuần", GroupName = "Ngày công")]
+        public int CountedWeekend { get; set; }
+        
+        [Display(Name = "Tổng thời gian(giờ) ngày công thường", GroupName = "Giờ công")]
+        public long CountedWeekdayHour { get; set; }
+        
+        [Display(Name = "Tổng thời gian(giờ) ngày công cuối tuần", GroupName = "Giờ công")]
+        public long CountedWeekendHour { get; set; }
+        
+        [Display(Name = "Tổng thời gian(giờ) làm tăng ca 1", GroupName = "Tăng ca(giờ)")]
+        public long Overtime1 { get; set; }
+        
+        [Display(Name = "Tổng thời gian(giờ) làm tăng ca 2", GroupName = "Tăng ca(giờ)")]
+        public long Overtime2 { get; set; }
+        
+        [Display(Name = "Tổng thời gian(giờ) làm tăng ca 3", GroupName = "Tăng ca(giờ)")]
+        public long Overtime3 { get; set; }
+        
+        [Display(Name = "Tổng số buổi vắng không phép", GroupName = "Vắng KP")]
+        public int CountedAbsence { get; set; }
     }
 }
