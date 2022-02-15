@@ -230,7 +230,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var fields = Utils.GetFieldNameModels<TimeSheetImportFieldModel>().ToList();
 
-            var fieldsAbsenceTypeSymbols = (await _organizationDBContext.AbsenceTypeSymbol.ToListAsync()).Select(x=> new CategoryFieldNameModel
+            var fieldsAbsenceTypeSymbols = (_organizationDBContext.AbsenceTypeSymbol.ToList()).Select(x=> new CategoryFieldNameModel
             {
                 FieldName = x.SymbolCode,
                 FieldTitle = x.TypeSymbolDescription,
