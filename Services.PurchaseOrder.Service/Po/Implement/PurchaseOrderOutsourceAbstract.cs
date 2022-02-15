@@ -314,15 +314,31 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ExchangedMoney = item.ExchangedMoney;
 
                                 detail.SortOrder = item.SortOrder;
+
+                                var arrAllocate = _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
+                                foreach (var allocate in arrAllocate)
+                                {
+                                    var mAllocate = item.OutsourceMappings.FirstOrDefault(x => x.PurchaseOrderOutsourceMappingId == allocate.PurchaseOrderOutsourceMappingId);
+                                    if (mAllocate != null)
+                                        _mapper.Map(mAllocate, allocate);
+                                    else allocate.IsDeleted = true;
+                                }
+                                var arrNewEntityAllocate = item.OutsourceMappings.Where(x => x.PurchaseOrderOutsourceMappingId <= 0)
+                                .Select(x => new PurchaseOrderOutsourceMapping
+                                {
+                                    OrderCode = x.OrderCode,
+                                    OutsourcePartRequestId = x.OutsourcePartRequestId,
+                                    ProductId = x.ProductId,
+                                    Quantity = x.Quantity,
+                                    ProductionOrderCode = x.ProductionOrderCode,
+                                    PurchaseOrderDetailId = detail.PurchaseOrderDetailId
+                                });
+                                await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(arrNewEntityAllocate);
+                                await _purchaseOrderDBContext.SaveChangesAsync();
+
                                 break;
                             }
-
-                            if (info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep && item.OutsourceMappings.Count > 0)
-                            {
-                                var allocate = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.FirstOrDefaultAsync(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId);
-                                allocate.Quantity = detail.PrimaryQuantity;
-                                await _purchaseOrderDBContext.SaveChangesAsync();
-                            }
+                            
                         }
 
                         if (!found)
