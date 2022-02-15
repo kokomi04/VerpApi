@@ -36,11 +36,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.Inventory.StockId));
 
+            var baseValueChains = new Dictionary<string, int>();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+            var genCodeConfig = ctx.SetConfig(EnumObjectType.Package)
+                                .SetConfigData(0);
+
+
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             using var logBatch = _activityLogService.BeginBatchLog();
             try
             {
-                var (affectedInventoryIds, isDeleted) = await ApprovedInputDataUpdateDb(inventoryId, fromDate, toDate, req);
+                var (affectedInventoryIds, isDeleted) = await ApprovedInputDataUpdateDb(inventoryId, fromDate, toDate, req, genCodeConfig);
 
                 trans.Commit();
 
@@ -62,6 +69,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 await logBatch.CommitAsync();
 
+                await ctx.ConfirmCode();
+
                 return true;
             }
             catch (Exception ex)
@@ -72,11 +81,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
+        public async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig)
         {
             await ValidateInventoryCode(inventoryId, req.Inventory.InventoryCode);
 
-            var (affectedInventoryIds, isDeleted) = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req);
+            var (affectedInventoryIds, isDeleted) = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req, genCodeConfig);
 
             foreach (var changedInventoryId in affectedInventoryIds)
             {
@@ -199,7 +208,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data };
         }
 
-        private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
+        private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig)
         {
 
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
@@ -246,7 +255,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (!isDelete)
             {
-                var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.Date, newDetails, inventoryInfo.InventoryCode);
+                var r = await ProcessInventoryInputApprove(inventoryInfo.StockId, inventoryInfo.Date, newDetails, inventoryInfo.InventoryCode, genCodeConfig);
                 if (!r.IsSuccess())
                 {
                     throw new BadRequestException(r);

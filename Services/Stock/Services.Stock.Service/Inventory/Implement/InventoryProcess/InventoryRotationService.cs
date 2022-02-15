@@ -132,9 +132,17 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
             ValidateApprove(inputObj);
 
+            var baseValueChains = new Dictionary<string, int>();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+            var genCodeConfig = ctx.SetConfig(EnumObjectType.Package)
+                                .SetConfigData(0);
+
 
             using (var @lock1 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(outputObj.StockId)))
             using (var @lock2 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId)))
+
+
 
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
@@ -147,7 +155,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
                     inputObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == outputObj.RefInventoryId);
 
-                    await _inventoryBillInputService.ApproveInventoryInputDb(inputObj);
+                    await _inventoryBillInputService.ApproveInventoryInputDb(inputObj, genCodeConfig);
 
 
                     trans.Commit();
@@ -168,6 +176,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
                     await UpdateProductionOrderStatus(intDetails, EnumProductionStatus.Processing, inputObj.InventoryCode);
 
                     await UpdateIgnoreAllocation(intDetails);
+
+                    await ctx.ConfirmCode();
 
                     return true;
                 }
@@ -219,7 +229,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             info.InventoryStatusId = (int)EnumInventoryStatus.WaitToCensor;
 
             await _stockDbContext.SaveChangesAsync();
-          
+
         }
 
         public async Task<bool> Reject(long inventoryId)
@@ -278,7 +288,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
                 throw GeneralCode.InvalidParams.BadRequest();
             }
 
-         
+
             using var @lockOut = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(outputObj.StockId));
             using var @lockIn = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId));
 
@@ -322,14 +332,20 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
                 throw GeneralCode.InvalidParams.BadRequest();
             }
 
+            var baseValueChains = new Dictionary<string, int>();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+            var genCodeConfig = ctx.SetConfig(EnumObjectType.Package)
+                                .SetConfigData(0);
+
             using var @lockOut = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(outputObj.StockId));
-            using var @lockIn = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId));            
+            using var @lockIn = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId));
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
             {
                 await _inventoryBillOutputService.DeleteInventoryOutputDb(outputObj);
 
-                var (affectedInventoryIds, isDeleted) = await _inventoryBillInputService.ApprovedInputDataUpdateDb(outputObj.RefInventoryId.Value, fromDate, toDate, req);
+                var (affectedInventoryIds, isDeleted) = await _inventoryBillInputService.ApprovedInputDataUpdateDb(outputObj.RefInventoryId.Value, fromDate, toDate, req, genCodeConfig);
 
                 if (!isDeleted)
                 {
@@ -339,6 +355,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
                 trans.Commit();
 
                 await AcivitityLog(outputObj, inputObj, () => InventoryBillOutputActivityMessage.RotationDelete);
+                
+                await ctx.ConfirmCode();
 
                 return true;
             }

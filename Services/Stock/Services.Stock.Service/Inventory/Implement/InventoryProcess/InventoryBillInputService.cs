@@ -30,6 +30,7 @@ using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using Microsoft.AspNetCore.SignalR;
 using VErp.Infrastructure.ServiceCore.SignalR;
+using VErp.Services.Stock.Model.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -56,7 +57,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoverHelperService            
+            , IProductionHandoverHelperService productionHandoverHelperService
             , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
         {
 
@@ -508,6 +509,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
             {
+                var baseValueChains = new Dictionary<string, int>();
+
+                var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+                var genCodeConfig = ctx.SetConfig(EnumObjectType.Package)
+                                    .SetConfigData(0);
+
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
@@ -515,7 +523,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //reload after lock
                         inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
 
-                        await ApproveInventoryInputDb(inventoryObj);
+                        await ApproveInventoryInputDb(inventoryObj, genCodeConfig);
 
 
                         var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryId).ToList();
@@ -533,6 +541,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished, inventoryObj.InventoryCode);
 
+                        await ctx.ConfirmCode();
+
                         return true;
                     }
                     catch (Exception ex)
@@ -545,7 +555,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task ApproveInventoryInputDb(InventoryEntity inventoryObj)
+        public async Task ApproveInventoryInputDb(InventoryEntity inventoryObj, GenerateCodeConfigData genCodeConfig)
         {
             if (inventoryObj.InventoryStatusId == (int)EnumInventoryStatus.Censored)
             {
@@ -564,7 +574,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var inventoryDetails = _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).ToList();
 
-            var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails, inventoryObj.InventoryCode);
+            var r = await ProcessInventoryInputApprove(inventoryObj.StockId, inventoryObj.Date, inventoryDetails, inventoryObj.InventoryCode, genCodeConfig);
 
             if (!r.IsSuccess())
             {
@@ -707,10 +717,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #region Private helper method
 
-        private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails, string inventoryCode)
+        private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails, string inventoryCode, GenerateCodeConfigData genCodeConfig)
         {
             var inputTransfer = new List<InventoryDetailToPackage>();
             var billPackages = new List<PackageEntity>();
+
+
+
 
             foreach (var item in inventoryDetails.OrderBy(d => d.InventoryDetailId))
             {
@@ -736,7 +749,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         case EnumPackageOption.Create:
 
-                            var newPackage = await CreateNewPackage(stockId, date, item, inventoryCode);
+                            var newPackage = await CreateNewPackage(stockId, date, item, inventoryCode, genCodeConfig);
                             item.ToPackageId = newPackage.PackageId;
                             break;
 
@@ -752,7 +765,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                              );
                             if (packageInfo == null)
                             {
-                                var createPackage = await CreateNewPackage(stockId, date, item, inventoryCode);
+                                var createPackage = await CreateNewPackage(stockId, date, item, inventoryCode, genCodeConfig);
                                 item.ToPackageId = createPackage.PackageId;
                                 billPackages.Add(createPackage);
                             }
@@ -771,7 +784,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                 else
                 {
-                    var newPackage = await CreateNewPackage(stockId, date, item, inventoryCode);
+                    var newPackage = await CreateNewPackage(stockId, date, item, inventoryCode, genCodeConfig);
 
                     item.ToPackageId = newPackage.PackageId;
                 }
@@ -938,6 +951,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductionOrderCode = detail.ProductionOrderCode,
                     FromPackageId = null,
                     ToPackageId = detail.ToPackageId,
+                    ToPackageInfo = detail.ToPackageInfo?.JsonSerialize(),
                     PackageOptionId = (int)detail.PackageOptionId,
                     SortOrder = detail.SortOrder,
                     Description = detail.Description,
@@ -998,7 +1012,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (ensureDefaultPackage == null)
             {
-                ensureDefaultPackage = new Package()
+                ensureDefaultPackage = new PackageEntity()
                 {
 
                     PackageTypeId = (int)EnumPackageType.Default,
@@ -1030,17 +1044,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return ensureDefaultPackage;
         }
 
-        private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail, string inventoryCode)
+        private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail, string inventoryCode, GenerateCodeConfigData genCodeConfig)
         {
-            var config = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.Package, EnumObjectType.Package, 0, null, null, date.GetUnix());
+            PackageInputModel packageInfo = null;
 
-            var newPackageCodeResult = await _customGenCodeHelperService.GenerateCode(config.CustomGenCodeId, config.CurrentLastValue.LastValue, null, null, date.GetUnix());
+            if (!string.IsNullOrWhiteSpace(detail.ToPackageInfo))
+            {
+                packageInfo = detail.ToPackageInfo.JsonDeserialize<PackageInputModel>();
+            }
 
-            var newPackage = new Package()
+            var packageCode = packageInfo?.PackageCode;
+
+            if (string.IsNullOrWhiteSpace(packageCode))
+            {
+                packageCode = await genCodeConfig.TryValidateAndGenerateCode(_stockDbContext.Inventory, packageCode, null);
+            }
+
+            var newPackage = new PackageEntity()
             {
                 PackageTypeId = (int)EnumPackageType.Custom,
-                PackageCode = newPackageCodeResult?.CustomCode,
-                LocationId = null,
+                PackageCode = packageCode,
+                LocationId = packageInfo?.LocationId,
                 StockId = stockId,
                 ProductId = detail.ProductId,
                 //PrimaryQuantity = detail.PrimaryQuantity,
@@ -1051,13 +1075,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductUnitConversionWaitting = 0,
                 ProductUnitConversionRemaining = detail.ProductUnitConversionQuantity,
                 Date = date,
-                ExpiryTime = null,
-                Description = inventoryCode
+                ExpiryTime = packageInfo?.ExpiryTime.UnixToDateTime(),
+                Description = packageInfo.Description ?? inventoryCode,
+                OrderCode = packageInfo.OrderCode ?? detail.OrderCode,
+                Pocode = packageInfo.POCode ?? detail.Pocode,
+                ProductionOrderCode = packageInfo.ProductionOrderCode ?? detail.ProductionOrderCode,
+                CustomPropertyValue = packageInfo?.CustomPropertyValue?.JsonSerialize()
             };
             await _stockDbContext.Package.AddAsync(newPackage);
             await _stockDbContext.SaveChangesAsync();
 
-            await _customGenCodeHelperService.ConfirmCode(config.CurrentLastValue);
+            // await _customGenCodeHelperService.ConfirmCode(config.CurrentLastValue);
 
             await _packageActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.CreatePackage)
                .MessageResourceFormatDatas(newPackage.PackageCode, inventoryCode)
@@ -1068,6 +1096,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return newPackage;
         }
+
+
 
 
         //private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, long currentInventoryId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)

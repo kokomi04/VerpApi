@@ -64,23 +64,24 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="page">Trang</param>
         /// <param name="size">Số bản ghi/trang</param>
         /// <param name="inventoryActionId">Hành động</param>
+        /// <param name="filters">filters</param>
         /// <returns></returns>
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
         public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword,
             [FromQuery] int? customerId,
-            [FromQuery] IList<int> productIds, 
+            [FromQuery] IList<int> productIds,
             [FromQuery] int stockId,
-            [FromQuery] int? inventoryStatusId, 
-            [FromQuery] EnumInventoryType? type, 
-            [FromQuery] long? beginTime, 
-            [FromQuery] long? endTime, 
-            [FromQuery] bool? isExistedInputBill, 
+            [FromQuery] int? inventoryStatusId,
+            [FromQuery] EnumInventoryType? type,
+            [FromQuery] long? beginTime,
+            [FromQuery] long? endTime,
+            [FromQuery] bool? isExistedInputBill,
             [FromQuery] string sortBy,
             [FromQuery] bool asc,
-            [FromQuery] int page, 
-            [FromQuery] int size, 
+            [FromQuery] int page,
+            [FromQuery] int size,
             [FromQuery] int? inventoryActionId,
             [FromBody] Clause filters = null)
         {
@@ -229,7 +230,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _fileService.Upload(EnumObjectType.InventoryInput, fileTypeId, string.Empty, file);
         }
 
-    
+
         [HttpGet]
         [Route("GetProductListForImport")]
         public async Task<PageData<ProductListOutput>> GetProductListForImport([FromQuery] string keyword, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
@@ -237,7 +238,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryBillInputService.GetProductListForImport(keyword: keyword, productCateIds, stockIdList: stockIdList, page: page, size: size);
         }
 
-    
+
         /*
 
         /// <summary>
@@ -257,6 +258,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         */
 
+        /*
 
         /// <summary>
         /// Xử lý file - Đọc và tạo chứng từ tồn đầu -> tạo phiếu nhập / xuất
@@ -280,7 +282,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             else
                 throw new BadRequestException(GeneralCode.InvalidParams);
 
-        }
+        }*/
 
         [VErpAction(EnumActionType.View)]
         [HttpPost]
@@ -298,16 +300,24 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryBillInputService.ApprovedInputDataUpdate(inventoryId, fromDate, toDate, req);
         }
 
+        //[HttpGet]
+        //[Route("fieldDataForMapping")]
+        //public CategoryNameModel GetInventoryDetailFieldDataForMapping()
+        //{
+        //    return _inventoryService.GetInventoryDetailFieldDataForMapping();
+        //}
+
         [HttpGet]
-        [Route("fieldDataForMapping")]
-        public CategoryNameModel GetInventoryDetailFieldDataForMapping()
+        [Route("inputFieldsForMapping")]
+        public async Task<CategoryNameModel> InputFieldsForMapping()
         {
-            return _inventoryService.GetInventoryDetailFieldDataForMapping();
+            return await _inventoryService.InputFieldsForMapping();
         }
 
+
         [HttpPost]
-        [Route("importFromMapping")]
-        public async Task<long> ImportFromMapping([FromFormString] ImportExcelMappingExtra<InventoryOpeningBalanceModel> data, IFormFile file)
+        [Route("inputImportFromMapping")]
+        public async Task<long> InputImportFromMapping([FromFormString] ImportExcelMappingExtra<InventoryInputImportExtraModel> data, IFormFile file)
         {
             if (data == null) throw GeneralCode.InvalidParams.BadRequest();
             if (file == null)
@@ -315,7 +325,28 @@ namespace VErpApi.Controllers.Stock.Inventory
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             data.Mapping.FileName = file.FileName;
-            return await _inventoryService.InventoryImport(data.Mapping, file.OpenReadStream(), data.Extra).ConfigureAwait(true);
+            return await _inventoryService.InventoryInputImport(data.Mapping, file.OpenReadStream(), data.Extra).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("outputFieldsForMapping")]
+        public CategoryNameModel OutputFieldsForMapping()
+        {
+            return _inventoryService.OutputFieldsForMapping();
+        }
+
+
+        [HttpPost]
+        [Route("outImportFromMapping")]
+        public async Task<long> OutImportFromMapping([FromFormString] ImportExcelMappingExtra<InventoryOutImportyExtraModel> data, IFormFile file)
+        {
+            if (data == null) throw GeneralCode.InvalidParams.BadRequest();
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            data.Mapping.FileName = file.FileName;
+            return await _inventoryService.InventoryOutImport(data.Mapping, file.OpenReadStream(), data.Extra).ConfigureAwait(true);
         }
 
 
@@ -351,10 +382,11 @@ namespace VErpApi.Controllers.Stock.Inventory
             return await _inventoryService.SendMailNotifyCensor(inventoryId, mailCode, mailTo).ConfigureAwait(true);
         }
 
-        
+
         [HttpPut]
         [Route("{inventoryId}/sentToCensor")]
-        public async Task<bool> SentToCensor([FromRoute]long inventoryId, [FromQuery] EnumInventoryType type){
+        public async Task<bool> SentToCensor([FromRoute] long inventoryId, [FromQuery] EnumInventoryType type)
+        {
             switch (type)
             {
                 case EnumInventoryType.Input:
@@ -366,10 +398,10 @@ namespace VErpApi.Controllers.Stock.Inventory
                     throw new BadRequestException(GeneralCode.InvalidParams);
             }
         }
-        
+
         [HttpPut]
         [Route("{inventoryId}/reject")]
-        public async Task<bool> RejectCensored([FromRoute]long inventoryId, [FromQuery] EnumInventoryType type)
+        public async Task<bool> RejectCensored([FromRoute] long inventoryId, [FromQuery] EnumInventoryType type)
         {
             switch (type)
             {

@@ -126,6 +126,12 @@
   <data name="ProductNotFound" xml:space="preserve">
     <value>Không tìm thấy mặt hàng "{0}"</value>
   </data>
+  <data name="ProductPackageWithCodeNotFound" xml:space="preserve">
+    <value>Không tìm thấy kiện "{0}" mặt hàng "{1}"</value>
+  </data>
+  <data name="ProductPackageWithCodeWrongPu" xml:space="preserve">
+    <value>Kiện hàng "{0}" của mặt hàng "{1}" không đúng đơn vị chuyển đổi "{2}"</value>
+  </data>
   <data name="ProductQuantityInvalid" xml:space="preserve">
     <value>Số lượng ở mặt hàng "{0}" không đúng!</value>
   </data>

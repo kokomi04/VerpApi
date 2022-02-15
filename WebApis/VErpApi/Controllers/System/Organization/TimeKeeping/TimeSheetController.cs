@@ -68,9 +68,9 @@ namespace VErpApi.Controllers.System.Organization
 
         [HttpGet]
         [Route("fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        public CategoryNameModel GetFieldDataForMapping()
         {
-            return await _timeSheetService.GetFieldDataForMapping();
+            return _timeSheetService.GetFieldDataForMapping();
         }
 
         [HttpPost]

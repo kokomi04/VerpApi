@@ -27,7 +27,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<bool> UpdateTimeSheet(long timeSheetId, TimeSheetModel model);
 
 
-        Task<CategoryNameModel> GetFieldDataForMapping();
+        CategoryNameModel GetFieldDataForMapping();
 
         Task<bool> ImportTimeSheetFromMapping(ImportExcelMapping mapping, Stream stream);
     }
@@ -106,7 +106,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         }
 
 
-        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        public CategoryNameModel GetFieldDataForMapping()
         {
             var result = new CategoryNameModel()
             {

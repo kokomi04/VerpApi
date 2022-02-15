@@ -1483,10 +1483,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await trans.CommitAsync();
                 return true;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
         

@@ -362,10 +362,70 @@ namespace VErp.Commons.Library
             return rowDatas;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        /// <param name="propertyName"></param>
+        /// <param name="value"></param>
+        /// <returns>true - property is proccessed and not process automatic, false - set automatic</returns>
         public delegate bool AssignPropertyEvent<T>(T entity, string propertyName, string value);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        /// <param name="propertyName"></param>
+        /// <param name="value"></param>
+        /// <param name="refObj"></param>
+        /// <param name="refPropertyName"></param>
+        /// <returns>true - property is proccessed and not process automatic, false - set automatic</returns>
+        public delegate bool AssignPropertyAndRefEvent<T>(T entity, string propertyName, string value, object refObj, string refPropertyName);
+
+
+        public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping)
+        {
+            return ReadSheetEntity(mapping, (AssignPropertyAndRefEvent<T>)null);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="mapping"></param>
+        /// <param name="OnAssignProperty">Set property manual, return true if property has processed manually, false if automatic set</param>
+        /// <returns></returns>
         public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyEvent<T> OnAssignProperty)
         {
+            if (OnAssignProperty == null)
+            {
+                return ReadSheetEntity(mapping, (AssignPropertyAndRefEvent<T>)null);
+            }
+            else
+            {
+                return ReadSheetEntity<T>(mapping, (entity, propertyName, value, refObj, refPropertyName) =>
+                    {
+                        return OnAssignProperty(entity, propertyName, value);
+                    });
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="mapping"></param>
+        /// <param name="OnAssignProperty">Set property manual, return true if property has processed manually, false if automatic set</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="BadRequestException"></exception>
+        public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyAndRefEvent<T> OnAssignProperty)
+        {
             var fields = typeof(T).GetProperties();
+
+            var refTypeFields = new Dictionary<Type, PropertyInfo[]>();
 
             var displayNames = new Dictionary<PropertyInfo, string>();
 
@@ -375,6 +435,22 @@ namespace VErp.Commons.Library
                 if (string.IsNullOrWhiteSpace(displayNames[prop]))
                 {
                     displayNames[prop] = prop.Name;
+                }
+
+
+                if (prop.PropertyType.IsClass() && !refTypeFields.ContainsKey(prop.PropertyType))
+                {
+                    var childFields = prop.PropertyType.GetProperties();
+                    refTypeFields.Add(prop.PropertyType, childFields);
+
+                    foreach (var c in childFields)
+                    {
+                        displayNames.Add(c, c.GetCustomAttributes<DisplayAttribute>().FirstOrDefault()?.Name ?? c.Name);
+                        if (string.IsNullOrWhiteSpace(displayNames[c]))
+                        {
+                            displayNames[c] = c.Name;
+                        }
+                    }
                 }
 
             }
@@ -422,9 +498,11 @@ namespace VErp.Commons.Library
                         //}
 
                         var field = fields.FirstOrDefault(f => f.Name == mappingField.FieldName);
+
                         if (field == null)
                         {
                             field = fields.FirstOrDefault(f => mappingField.FieldName.StartsWith(f.Name));
+
                         }
 
                         if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
@@ -433,18 +511,63 @@ namespace VErp.Commons.Library
 
                         if (string.IsNullOrWhiteSpace(mappingField.FieldName)) continue;
 
+
+                        object refObj = null;
+
+                        PropertyInfo refField = null;
+
+                        var propertyIsClass = field.PropertyType.IsClass();
+                        if (propertyIsClass)
+                        {
+                            var v = field.GetValue(entityInfo, null);
+                            if (v == null)
+                            {
+                                v = Activator.CreateInstance(field.PropertyType);
+                                field.SetValue(entityInfo, v);
+                            }
+
+                            refObj = v;
+
+                            if (string.IsNullOrWhiteSpace(mappingField.RefFieldName))
+                            {
+                                mappingField.RefFieldName = mappingField.FieldName.Substring(field.Name.Length);
+                                if (!string.IsNullOrWhiteSpace(mappingField.RefFieldName))
+                                {
+                                    mappingField.FieldName = field.Name;
+                                }
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(mappingField.RefFieldName))
+                            {
+                                refField = refTypeFields[field.PropertyType].FirstOrDefault(f => f.Name == mappingField.RefFieldName);
+                                if (refField == null)
+                                {
+                                    refField = refTypeFields[field.PropertyType].FirstOrDefault(f => mappingField.RefFieldName.StartsWith(f.Name));
+                                }
+
+                                if (refField == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.RefFieldName} thuộc {mappingField.FieldName}");
+                            }
+                           
+
+                            fieldDisplay += " > " + displayNames[refField];
+                        }
+
+                        var isAutoSet = true;
                         if (OnAssignProperty != null)
                         {
-                            if (!OnAssignProperty(entityInfo, mappingField.FieldName, value))
-                            {
-                                if (!string.IsNullOrWhiteSpace(value))
-                                    field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
-                            }
+                            isAutoSet = !OnAssignProperty(entityInfo, mappingField.FieldName, value, refObj, mappingField.RefFieldName);
                         }
-                        else
+
+                        if (isAutoSet && !string.IsNullOrWhiteSpace(value))
                         {
-                            if (!string.IsNullOrWhiteSpace(value))
+                            if (propertyIsClass)
+                            {
+                                refField.SetValue(refObj, value.ConvertValueByType(refField.PropertyType));
+                            }
+                            else
+                            {
                                 field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
+                            }
                         }
                     }
                     catch (Exception ex)
