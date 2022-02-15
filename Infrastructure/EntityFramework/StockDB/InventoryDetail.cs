@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? ProductUnitConversionPrice { get; set; }
         public long? FromPackageId { get; set; }
         public long? ToPackageId { get; set; }
+        public string ToPackageInfo { get; set; }
         public int? PackageOptionId { get; set; }
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }

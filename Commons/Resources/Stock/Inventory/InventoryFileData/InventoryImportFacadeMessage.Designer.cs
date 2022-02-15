@@ -19,7 +19,7 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class InventoryImportFacadeMessage {
@@ -84,6 +84,24 @@ namespace Verp.Resources.Stock.Inventory.InventoryFileData {
         public static string ProductNotFound {
             get {
                 return ResourceManager.GetString("ProductNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy kiện &quot;{0}&quot; mặt hàng &quot;{1}&quot;.
+        /// </summary>
+        public static string ProductPackageWithCodeNotFound {
+            get {
+                return ResourceManager.GetString("ProductPackageWithCodeNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kiện hàng &quot;{0}&quot; của mặt hàng &quot;{1}&quot; không đúng đơn vị chuyển đổi &quot;{2}&quot;.
+        /// </summary>
+        public static string ProductPackageWithCodeWrongPu {
+            get {
+                return ResourceManager.GetString("ProductPackageWithCodeWrongPu", resourceCulture);
             }
         }
         

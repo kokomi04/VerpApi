@@ -52,6 +52,14 @@ namespace VErp.Commons.Library.Model
         }
     }
 
+    /// <summary>
+    /// Mark object as flat fields, nested object (not ref object)
+    /// </summary>
+    public class FieldDataNestedObjectAttribute : Attribute
+    {
+       
+    }
+
     public abstract class MappingDataRowAbstract
     {
         [FieldDataIgnore]

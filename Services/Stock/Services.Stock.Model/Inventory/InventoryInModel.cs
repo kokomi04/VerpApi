@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Services.Stock.Model.Package;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
@@ -69,6 +70,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public string ProductionOrderCode { get; set; }
 
         public long? ToPackageId { set; get; }
+
+        public PackageInputModel ToPackageInfo { get; set; }
 
         public EnumPackageOption PackageOptionId { set; get; }
 

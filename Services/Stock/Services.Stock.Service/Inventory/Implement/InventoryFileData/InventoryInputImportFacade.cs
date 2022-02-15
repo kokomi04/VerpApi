@@ -19,13 +19,16 @@ using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
+using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Service.Products;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFacadeMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
-    public class InventoryImportFacade
+    public class InventoryInputImportFacade
     {
+        const int DECIMAL_PLACE_DEFAULT = 11;
+
         private Dictionary<string, ProductCate> _productCates = null;
         private Dictionary<string, ProductType> _productTypes = null;
         private Dictionary<string, Unit> _units = null;
@@ -33,8 +36,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private Dictionary<string, Product> _productsByCode = null;
         private Dictionary<string, List<Product>> _productsByName = null;
 
-        private IList<OpeningBalanceModel> _excelModel = null;
-        private InventoryOpeningBalanceModel _model = null;
+        private IList<ImportInvInputModel> _excelModel = null;
+        private InventoryInputImportExtraModel _model = null;
 
         private Dictionary<int, List<ProductUnitConversion>> _productUnitsByProduct = null;
 
@@ -43,19 +46,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private IProductService _productService;
 
 
-        public InventoryImportFacade SetStockDBContext(StockDBContext stockDbContext)
+        public InventoryInputImportFacade SetStockDBContext(StockDBContext stockDbContext)
         {
             _stockDbContext = stockDbContext;
             return this;
         }
 
-        public InventoryImportFacade SetMasterDBContext(MasterDBContext masterDBContext)
+        public InventoryInputImportFacade SetMasterDBContext(MasterDBContext masterDBContext)
         {
             _masterDBContext = masterDBContext;
             return this;
         }
 
-        public InventoryImportFacade SetProductService(IProductService productService)
+        public InventoryInputImportFacade SetProductService(IProductService productService)
         {
             _productService = productService;
             return this;
@@ -64,7 +67,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
 
 
-        public async Task ProcessExcelFile(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model)
+        public async Task ProcessExcelFile(ImportExcelMapping mapping, Stream stream, InventoryInputImportExtraModel model)
         {
             _model = model;
 
@@ -79,9 +82,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             var currentCateName = string.Empty;
             var currentCatePrefixCode = string.Empty;
 
-            _excelModel = reader.ReadSheetEntity<OpeningBalanceModel>(mapping, (entity, propertyName, value) =>
+            var customProps = await _stockDbContext.PackageCustomProperty.ToListAsync();
+            _excelModel = reader.ReadSheetEntity<ImportInvInputModel>(mapping, (entity, propertyName, value, refObj, refProperty) =>
             {
-                if (propertyName == nameof(OpeningBalanceModel.CateName))
+                if (propertyName == nameof(ImportInvInputModel.CateName))
                 {
                     if (!string.IsNullOrWhiteSpace(value))
                     {
@@ -93,7 +97,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     return true;
                 }
 
-                if (propertyName == nameof(OpeningBalanceModel.CatePrefixCode))
+                if (propertyName == nameof(ImportInvInputModel.CatePrefixCode))
                 {
                     if (!string.IsNullOrWhiteSpace(value))
                     {
@@ -105,6 +109,29 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     return true;
                 }
 
+                if (propertyName == nameof(ImportInvInputModel.ToPackgeInfo) && refProperty?.StartsWith(nameof(PackageInputModel.CustomPropertyValue)) == true)
+                {
+                    var packageInfo = (PackageInputModel)refObj;
+                    var customPropertyId = Convert.ToInt32(refProperty.Substring(nameof(PackageInputModel.CustomPropertyValue).Length));
+
+                    var propertyInfo = customProps.FirstOrDefault(p => p.PackageCustomPropertyId == customPropertyId);
+
+                    if (propertyInfo == null) throw GeneralCode.ItemNotFound.BadRequest("Property " + customPropertyId + " was not found!");
+
+                    if (packageInfo.CustomPropertyValue == null)
+                    {
+                        packageInfo.CustomPropertyValue = new Dictionary<int, object>();
+                    }
+
+                    if (!packageInfo.CustomPropertyValue.ContainsKey(customPropertyId))
+                    {
+                        var customValue = value.ConvertValueByType((EnumDataType)propertyInfo.DataTypeId);
+
+                        packageInfo.CustomPropertyValue.Add(customPropertyId, customValue);
+                        return true;
+                    }
+                }
+
                 return false;
             });
 
@@ -114,13 +141,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             await AddMissingProducts();
         }
 
-        public InventoryInModel GetInputInventoryModel()
+        public async Task<InventoryInModel> GetInputInventoryModel()
         {
             var inventoryInputList = new List<InventoryInModel>();
 
             var totalRowCount = _excelModel.Count;
 
             var newInventoryInputModel = new List<InventoryInProductModel>(totalRowCount);
+
 
             foreach (var item in _excelModel)
             {
@@ -138,7 +166,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
                     if (productUnitConversionObj == null)
                     {
+                        //if (_model.CreateNewPuIfNotExists)
+                        //{
+                        //    var factor = item.Factor.ToString();
+
+                        //    var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, factor);
+                        //    if (!(eval > 0))
+                        //    {
+                        //        throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
+                        //    }
+
+                        //    var puInfo = await CreateNewPu(productObj.ProductId, item.Unit2, factor);
+                        //    _productUnitsByProduct[productObj.ProductId].Add(puInfo);
+                        //}
+                        //else
+                        //{
+
                         throw ProductUniConversionNameNotFound.BadRequestFormat(item.Unit2, item.ProductCode);
+                        //}
                     }
                 }
                 else
@@ -150,6 +195,33 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     }
                 }
 
+                var option = EnumPackageOption.NoPackageManager;
+
+                Package packageInfo = null;
+                if (!string.IsNullOrWhiteSpace(item.ToPackgeInfo?.PackageCode))
+                {
+                    packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productObj.ProductId && p.PackageCode == item.ToPackgeInfo.PackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
+
+
+                    if (packageInfo != null)
+                    {
+                        option = EnumPackageOption.Append;
+                    }
+                    else
+                    {
+                        if (_excelModel.Where(e => e.ToPackgeInfo?.PackageCode?.ToLower() == item.ToPackgeInfo?.PackageCode?.ToLower()).Count() > 1)
+                        {
+                            option = EnumPackageOption.CreateMerge;
+                        }
+                        else
+                        {
+                            option = EnumPackageOption.Create;
+                        }
+                    }
+                }
+
+
+
                 newInventoryInputModel.Add(new InventoryInProductModel
                 {
                     ProductId = productObj != null ? productObj.ProductId : 0,
@@ -160,55 +232,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     RefObjectTypeId = null,
                     RefObjectId = null,
                     RefObjectCode = item.CatePrefixCode,
-                    ToPackageId = null,
-                    PackageOptionId = EnumPackageOption.NoPackageManager,
+                    ToPackageId = packageInfo?.PackageId,
+                    ToPackageInfo = item.ToPackgeInfo,
+                    PackageOptionId = option,
+
                     //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                 });
             }
 
 
 
-            //var groupList = newInventoryInputModel.GroupBy(g => g.RefObjectCode).ToList();
-            //var index = 1;
 
-            //foreach (var g in groupList)
+            //foreach (var d in newInventoryInputModel)
             //{
-            //    var details = g.ToList();
-            //    foreach(var d in details)
-            //    {
-            //        d.PackageOptionId = EnumPackageOption.NoPackageManager;
-            //        d.ToPackageId = null;
-            //        d.RefObjectCode = string.Format("PN_TonDau_{0}_{1}_{2}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), d.RefObjectCode);
-            //    }
-
-            //    var newInventory = new InventoryInModel
-            //    {
-            //        StockId = _model.StockId,
-            //        InventoryCode = string.Format("PN_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-            //        Date = _model.IssuedDate,
-            //        Shipper = string.Empty,
-            //        Content = "Nhập tồn kho ban đầu từ excel",
-            //        CustomerId = null,
-            //        Department = string.Empty,
-            //        StockKeeperUserId = null,
-            //        BillCode = string.Empty,
-            //        BillSerial = string.Empty,
-            //        BillDate = _model.IssuedDate,
-            //        FileIdList = null,
-            //        InProducts = details
-            //    };
-
-            //    inventoryInputList.Add(newInventory);
-
-            //    index++;
+            //    d.PackageOptionId = EnumPackageOption.NoPackageManager;
+            //    d.ToPackageId = null;
+            //d.RefObjectCode = string.Format("PN_TonDau_{0}_{1}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), d.RefObjectCode);
             //}
-
-            foreach (var d in newInventoryInputModel)
-            {
-                d.PackageOptionId = EnumPackageOption.NoPackageManager;
-                d.ToPackageId = null;
-                //d.RefObjectCode = string.Format("PN_TonDau_{0}_{1}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"), d.RefObjectCode);
-            }
 
             var newInventory = new InventoryInModel
             {
@@ -232,145 +272,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             return newInventory;
         }
 
-
-        public async Task<InventoryOutModel> GetOutputInventoryModel()
+        /*
+        private async Task<ProductUnitConversion> CreateNewPu(int productId, string name, string expression)
         {
-            var inventoryOutList = new List<InventoryOutModel>();
-
-            var totalRowCount = _excelModel.Count;
-
-            var newInventoryOutProductModel = new List<InventoryOutProductModel>(totalRowCount);
-
-            var productUnitConversionIds = new List<int>();
-            var productIds = new List<int>();
-
-            var productInfoByIds = new Dictionary<int, Product>();
-
-            foreach (var item in _excelModel)
+            var puInfo = new ProductUnitConversion()
             {
-                if (string.IsNullOrWhiteSpace(item.ProductCode)) continue;
-
-                if (item.Qty1 <= 0)
-                    throw ProductQuantityInvalid.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
-
-                var productObj = GetProduct(item);
-
-                ProductUnitConversion productUnitConversionObj = null;
-
-                if (!string.IsNullOrWhiteSpace(item.Unit2))
-                {
-                    productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
-                    if (productUnitConversionObj == null)
-                    {
-                        throw ProductUniConversionNameNotFound.BadRequestFormat(item.Unit2, item.ProductCode);
-                    }
-                }
-                else
-                {
-                    productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
-                    if (productUnitConversionObj == null)
-                    {
-                        throw PuConversionDefaultError.BadRequestFormat(item.ProductCode);
-                    }
-                }
-
-
-                productUnitConversionIds.Add(productUnitConversionObj.ProductUnitConversionId);
-                productIds.Add(productObj.ProductId);
-                if (!productInfoByIds.ContainsKey(productObj.ProductId))
-                {
-                    productInfoByIds.Add(productObj.ProductId, productObj);
-                }
-
-                newInventoryOutProductModel.Add(new InventoryOutProductModel
-                {
-                    ProductId = productObj.ProductId,
-                    ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
-                    PrimaryQuantity = item.Qty1,
-                    ProductUnitConversionQuantity = item.Qty2,
-                    UnitPrice = item.UnitPrice,
-                    RefObjectTypeId = null,
-                    RefObjectId = null,
-                    RefObjectCode = item.CatePrefixCode,
-                    //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
-                });
-            }
-
-            var packages = (await _stockDbContext.Package.AsNoTracking().Where(p => productIds.Contains(p.ProductId) && productUnitConversionIds.Contains(p.ProductUnitConversionId)).ToListAsync())
-                .GroupBy(p => p.ProductId)
-                .ToDictionary(p => p.Key, p => p.ToList());
-
-            foreach (var item in newInventoryOutProductModel)
-            {
-                var packageInfo = packages[item.ProductId]
-                    .Where(p => p.ProductUnitConversionId == item.ProductUnitConversionId)
-                    .OrderByDescending(p => p.PackageTypeId == (int)EnumPackageType.Default)
-                    .FirstOrDefault();
-
-                var productInfo = productInfoByIds[item.ProductId];
-                var puInfo = _productUnitsByProduct[item.ProductId].FirstOrDefault(u => u.ProductUnitConversionId == item.ProductUnitConversionId);
-
-                if (packageInfo == null) throw PuProductPackageNotFound.BadRequestFormat(productInfo.ProductCode, puInfo?.ProductUnitConversionName);
-
-                item.FromPackageId = packageInfo.PackageId;
-            }
-
-            //var groupList = newInventoryOutProductModel.GroupBy(g => g.RefObjectCode).ToList();
-            //var index = 1;
-
-            //foreach (var g in groupList)
-            //{
-            //    var details = g.ToList();
-            //    foreach (var d in details)
-            //    {
-            //        d.RefObjectCode = string.Format("PX_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss"));
-            //    }
-
-            //    var newInventory = new InventoryOutModel
-            //    {
-            //        StockId = _model.StockId,
-            //        InventoryCode = string.Format("PX_TonDau_{0}_{1}", index, DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-            //        Date = _model.IssuedDate,
-            //        Shipper = string.Empty,
-            //        Content = "Xuất kho ban đầu từ excel",
-            //        CustomerId = null,
-            //        Department = string.Empty,
-            //        StockKeeperUserId = null,
-            //        BillCode = string.Empty,
-            //        BillSerial = string.Empty,
-            //        BillDate = _model.IssuedDate,
-            //        FileIdList = null,
-            //        OutProducts = details
-            //    };
-
-            //    inventoryOutList.Add(newInventory);
-
-            //    index++;
-            //}
-
-
-            var newInventory = new InventoryOutModel
-            {
-                StockId = _model.StockId,
-                //InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                Date = _model.IssuedDate,
-                Shipper = string.Empty,
-                Content = "Xuất kho từ excel",
-                CustomerId = null,
-                Department = string.Empty,
-                StockKeeperUserId = null,
-                BillCode = string.Empty,
-                BillSerial = string.Empty,
-                BillDate = _model.IssuedDate,
-                FileIdList = null,
-                OutProducts = newInventoryOutProductModel,
-               // AccountancyAccountNumber = _model.AccountancyAccountNumber
+                ConversionDescription = "Auto created from import",
+                DecimalPlace = DECIMAL_PLACE_DEFAULT,
+                FactorExpression = expression,
+                IsDefault = false,
+                IsFreeStyle = false,
+                ProductId = productId,
+                ProductUnitConversionName = name
             };
 
-            return newInventory;
+            await _stockDbContext.ProductUnitConversion.AddAsync(puInfo);
+            await _stockDbContext.SaveChangesAsync();
+            return puInfo;
         }
-
-        private Product GetProduct(OpeningBalanceModel item)
+        */
+        private Product GetProduct(ImportInvInputModel item)
         {
             var productObj = _productsByCode[item.ProductCode.NormalizeAsInternalName()];
             if (productObj == null)
@@ -544,6 +465,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     })
                     .ToList();
 
+                foreach (var pu in newPus)
+                {
+                    var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
+                    if (!(eval > 0))
+                    {
+                        throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
+                    }
+                }
+
                 await _stockDbContext.ProductUnitConversion.AddRangeAsync(newPus);
                 await _stockDbContext.SaveChangesAsync();
                 _productUnitsByProduct[productInfo.ProductId].AddRange(newPus);
@@ -553,7 +483,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
         }
 
-        private async Task AddProduct(OpeningBalanceModel info, IList<Product> products, HashSet<string> existedProductNormalizeCodes, HashSet<string> existedProductNormalizeNames)
+        private async Task AddProduct(ImportInvInputModel info, IList<Product> products, HashSet<string> existedProductNormalizeCodes, HashSet<string> existedProductNormalizeNames)
         {
             var p = CreateProductModel(info);
             _units.TryGetValue(info.Unit1.NormalizeAsInternalName(), out var unitInfo);
@@ -571,7 +501,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             products.Add(productInfo);
         }
 
-        private ProductModel CreateProductModel(OpeningBalanceModel p)
+        private ProductModel CreateProductModel(ImportInvInputModel p)
         {
             _productTypes.TryGetValue(p.CatePrefixCode.NormalizeAsInternalName(), out var productType);
 

@@ -222,7 +222,7 @@ namespace VErp.Commons.Library
             return JsonConvert.DeserializeObject(obj, type);
         }
 
-       
+
         public static decimal Eval(string expression)
         {
             try
@@ -1190,11 +1190,18 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
         }
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false)
+        public static bool IsClass(this Type type)
+        {
+            bool isPrimitiveType = type.IsPrimitive || type.IsValueType || (type == typeof(string));
+
+            return type.IsClass && !isPrimitiveType;
+        }
+
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "")
         {
             var fields = new List<CategoryFieldNameModel>();
 
-            if (!forExport)
+            if (!forExport && !ignoreCheckField)
             {
                 fields.Add(new CategoryFieldNameModel()
                 {
@@ -1240,38 +1247,60 @@ namespace VErp.Commons.Library
 
                 var isRequired = prop.GetCustomAttribute<RequiredAttribute>();
 
-
-                var fileMapping = new CategoryFieldNameModel()
+                if (prop.GetCustomAttribute<FieldDataNestedObjectAttribute>() != null && prop.PropertyType.IsClass())
                 {
-                    GroupName = groupName,
-                    //CategoryFieldId = prop.Name.GetHashCode(),
-                    FieldName = prop.Name,
-                    FieldTitle = title,
-                    IsRequired = isRequired != null,
-                    Type = type,
-                    RefCategory = null
-                };
-
-                bool isPrimitiveType = prop.PropertyType.IsPrimitive || prop.PropertyType.IsValueType || (prop.PropertyType == typeof(string));
-
-                if (prop.PropertyType.IsClass && !isPrimitiveType)
-                {
-
                     MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
                     MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false });
-
-                    fileMapping.RefCategory = new CategoryNameModel()
+                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name });
+                    foreach (var f in nestedFields)
                     {
-                        CategoryCode = prop.PropertyType.Name,
-                        //CategoryId = prop.PropertyType.Name.GetHashCode(),
-                        CategoryTitle = title,
-                        Fields = childFields
+                        fields.Add(new CategoryFieldNameModel()
+                        {
+                            GroupName = groupName,
+                            //CategoryFieldId = prop.Name.GetHashCode(),
+                            FieldName = f.FieldName,
+                            FieldTitle = f.FieldTitle,
+                            IsRequired = f.IsRequired,
+                            Type = f.Type,
+                            RefCategory = f.RefCategory
+                        });
+                    }
+                }
+                else
+                {
+
+                    var fileMapping = new CategoryFieldNameModel()
+                    {
+                        GroupName = groupName,
+                        //CategoryFieldId = prop.Name.GetHashCode(),
+                        FieldName = preFix + prop.Name,
+                        FieldTitle = title,
+                        IsRequired = isRequired != null,
+                        Type = type,
+                        RefCategory = null
                     };
 
-                }
 
-                fields.Add(fileMapping);
+                    if (prop.PropertyType.IsClass())
+                    {
+
+                        MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
+                        MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
+                        var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, "" });
+
+                        fileMapping.RefCategory = new CategoryNameModel()
+                        {
+                            CategoryCode = prop.PropertyType.Name,
+                            //CategoryId = prop.PropertyType.Name.GetHashCode(),
+                            CategoryTitle = title,
+                            Fields = childFields
+                        };
+
+                    }
+
+                    fields.Add(fileMapping);
+
+                }
             }
 
 

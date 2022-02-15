@@ -586,20 +586,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return await inventoryExport.InventoryInfoExport(inventoryId);
         }
 
-        public CategoryNameModel GetInventoryDetailFieldDataForMapping()
-        {
-            var result = new CategoryNameModel()
-            {
-                //CategoryId = 1,
-                CategoryCode = "Inventory",
-                CategoryTitle = "Inventory",
-                IsTreeView = false,
-                Fields = new List<CategoryFieldNameModel>()
-            };
-            var fields = Utils.GetFieldNameModels<OpeningBalanceModel>();
-            result.Fields = fields;
-            return result;
-        }
 
 
         public CategoryNameModel FieldsForParse(EnumInventoryType inventoryTypeId)
@@ -625,99 +611,155 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return parse.ParseExcel(mapping, stream, inventoryTypeId);
         }
 
-        public async Task<long> InventoryImport(ImportExcelMapping mapping, Stream stream, InventoryOpeningBalanceModel model)
+        public async Task<CategoryNameModel> InputFieldsForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = 1,
+                CategoryCode = "Inventory",
+                CategoryTitle = "Inventory",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = Utils.GetFieldNameModels<ImportInvInputModel>();
+
+
+            var packageField = fields.First(f => f.FieldName.StartsWith(nameof(ImportInvInputModel.ToPackgeInfo)));
+
+            var customProps = await _stockDbContext.PackageCustomProperty.ToListAsync();
+
+            foreach (var p in customProps)
+            {
+                var f = new CategoryFieldNameModel()
+                {
+                    GroupName = packageField.GroupName,
+                    //CategoryFieldId = prop.Name.GetHashCode(),
+                    FieldName = nameof(ImportInvInputModel.ToPackgeInfo) + nameof(PackageInputModel.CustomPropertyValue) + p.PackageCustomPropertyId,
+                    FieldTitle = "(Kiện) - " + p.Title,
+                    IsRequired = false,
+                    Type = null,
+                    RefCategory = null
+                };
+
+                fields.Add(f);
+            }
+
+            result.Fields = fields;
+            return result;
+        }
+
+
+
+        public CategoryNameModel OutputFieldsForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = 1,
+                CategoryCode = "InventoryOutput",
+                CategoryTitle = "InventoryOutput",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = Utils.GetFieldNameModels<ImportInvOutputModel>();
+
+            result.Fields = fields;
+            return result;
+        }
+
+        public async Task<long> InventoryInputImport(ImportExcelMapping mapping, Stream stream, InventoryInputImportExtraModel model)
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(model.StockId)))
             {
-                var insertedData = new Dictionary<long, (string inventoryCode, object data)>();
-
-                var genCodeContexts = new List<GenerateCodeContext>();
                 var baseValueChains = new Dictionary<string, int>();
-                long inventoryId = 0;
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var inventoryExport = new InventoryImportFacade();
+                    var inventoryExport = new InventoryInputImportFacade();
                     inventoryExport.SetProductService(_productService);
                     inventoryExport.SetMasterDBContext(_masterDBContext);
                     inventoryExport.SetStockDBContext(_stockDbContext);
                     await inventoryExport.ProcessExcelFile(mapping, stream, model);
 
-                    if (model.InventoryTypeId == EnumInventoryType.Input)
+                    var inventoryData = await inventoryExport.GetInputInventoryModel();
+                    if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
                     {
-                        var inventoryData = inventoryExport.GetInputInventoryModel();
-                        if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
-                        {
-                            throw new BadRequestException("No products found!");
-                        }
-
-                        if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
-                        {
-                            throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
-                        }
-
-                        inventoryData.InventoryCode = model.InventoryCode;
-                        //foreach (var item in inventoryData)
-                        {
-                            genCodeContexts.Add(await GenerateInventoryCode(model.InventoryTypeId, inventoryData, baseValueChains));
-
-                            inventoryId = (await _inventoryBillInputService.AddInventoryInputDB(inventoryData)).InventoryId;
-                            insertedData.Add(inventoryId, (inventoryData.InventoryCode, inventoryData));
-                        }
+                        throw new BadRequestException("No products found!");
                     }
-                    else
+
+                    if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
                     {
-                        var inventoryData = await inventoryExport.GetOutputInventoryModel();
-                        if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
-                        {
-                            throw new BadRequestException("No products found!");
-                        }
-
-                        if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
-                        {
-                            throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
-                        }
-
-
-                        inventoryData.InventoryCode = model.InventoryCode;
-                        //foreach (var item in inventoryData)
-                        {
-                            genCodeContexts.Add(await GenerateInventoryCode(model.InventoryTypeId, inventoryData, baseValueChains));
-
-                            inventoryId = (await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData)).InventoryId;
-                            insertedData.Add(inventoryId, (inventoryData.InventoryCode, inventoryData));
-                        }
-
+                        throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
                     }
+
+                    inventoryData.InventoryCode = model.InventoryCode;
+
+                    var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
+
+                    var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData);
 
                     await trans.CommitAsync();
+
+                    await ctx.ConfirmCode();
+
+                    await _inventoryBillInputService.ImportedLogBuilder()
+                       .MessageResourceFormatDatas(entity.InventoryCode)
+                       .ObjectId(entity.InventoryId)
+                       .JsonData(inventoryData.JsonSerialize())
+                       .CreateLog();
+
+                    return entity.InventoryId;
                 }
-
-
-                foreach (var item in insertedData)
-                {
-                    await ImportedLogBuilder(model.InventoryTypeId)
-                        .MessageResourceFormatDatas(item.Value.inventoryCode)
-                        .ObjectId(item.Key)
-                        .JsonData(item.Value.data.JsonSerialize())
-                        .CreateLog();
-                }
-
-                foreach (var item in genCodeContexts)
-                {
-                    await item.ConfirmCode();
-                }
-
-                return inventoryId;
             }
         }
 
-        private ObjectActivityLogModelBuilder<string> ImportedLogBuilder(EnumInventoryType inventoryType)
+
+        public async Task<long> InventoryOutImport(ImportExcelMapping mapping, Stream stream, InventoryOutImportyExtraModel model)
         {
-            return inventoryType == EnumInventoryType.Input
-                ? _inventoryBillInputService.ImportedLogBuilder()
-                : _inventoryBillOutputService.ImportedLogBuilder();
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(model.StockId)))
+            {
+
+                var baseValueChains = new Dictionary<string, int>();
+
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                {
+                    var inventoryExport = new InventoryOutImportFacade();
+                    inventoryExport.SetStockDBContext(_stockDbContext);
+                    await inventoryExport.ProcessExcelFile(mapping, stream, model);
+
+
+                    var inventoryData = await inventoryExport.GetOutputInventoryModel();
+                    if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
+                    {
+                        throw new BadRequestException("No products found!");
+                    }
+
+                    if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                    {
+                        throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
+                    }
+
+
+                    inventoryData.InventoryCode = model.InventoryCode;
+
+                    var ctx = await GenerateInventoryCode(EnumInventoryType.Output, inventoryData, baseValueChains);
+
+                    var entity = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
+
+                    await trans.CommitAsync();
+
+                    await ctx.ConfirmCode();
+
+                    await _inventoryBillOutputService.ImportedLogBuilder()
+                        .MessageResourceFormatDatas(inventoryData.InventoryCode)
+                        .ObjectId(entity.InventoryId)
+                        .JsonData(inventoryData.JsonSerialize())
+                        .CreateLog();
+
+                    return entity.InventoryId;
+                }
+            }
         }
+
 
         public async Task<bool> SendMailNotifyCensor(long inventoryId, string mailTemplateCode, string[] mailTo)
         {

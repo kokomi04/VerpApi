@@ -18,18 +18,18 @@ namespace VErp.Services.Stock.Service.Stock
     public interface IInventoryBillInputService
     {
 
-        ObjectActivityLogModelBuilder<string> ImportedLogBuilder();    
+        ObjectActivityLogModelBuilder<string> ImportedLogBuilder();
 
 
         Task<long> AddInventoryInput(InventoryInModel req);
 
         Task<InventoryEntity> AddInventoryInputDB(InventoryInModel req);
-      
+
         Task<bool> UpdateInventoryInput(long inventoryId, InventoryInModel model);
-    
+
         Task<bool> ApproveInventoryInput(long inventoryId);
 
-        Task ApproveInventoryInputDb(InventoryEntity inventoryObj);
+        Task ApproveInventoryInputDb(InventoryEntity inventoryObj, GenerateCodeConfigData genCodeConfig);
 
 
         Task<bool> DeleteInventoryInput(long inventoryId);
@@ -43,7 +43,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
 
-        Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
+        Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig);
 
         Task<bool> SentToCensor(long inventoryId);
 
