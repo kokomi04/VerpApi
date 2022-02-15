@@ -565,7 +565,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             .ToListAsync();
 
             var poAssignmentDetailIds = details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
-            // var purchaseOrderDetailIds = details.Select(d => d.PurchaseOrderDetailId).ToList();
+            var purchaseOrderDetailIds = details.Select(d => d.PurchaseOrderDetailId).ToList();
             var purchasingSuggestDetailIds = details.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
 
             var assignmentDetails = (await _purchasingSuggestService.PoAssignmentDetailInfos(poAssignmentDetailIds))
@@ -579,7 +579,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var excess = await _purchaseOrderDBContext.PurchaseOrderExcess.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderExcessModel>(_mapper.ConfigurationProvider).ToListAsync();
             var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderMaterialsModel>(_mapper.ConfigurationProvider).ToListAsync();
 
-            // var allocates = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x=> purchaseOrderDetailIds.Contains(x.PurchaseOrderDetailId)).ToListAsync();
+            var allocates = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x=> purchaseOrderDetailIds.Contains(x.PurchaseOrderDetailId)).ToListAsync();
             
             
             return new PurchaseOrderOutput()
@@ -666,16 +666,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             UnitConversionId = s.UnitConversionId
                         }).ToList(),
                         IsSubCalculation = d.IsSubCalculation,
-                        // OutsourceMappings = info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep ? allocates.Where(x => x.PurchaseOrderDetailId == d.PurchaseOrderDetailId).Select(x => new PurchaseOrderOutsourceMappingModel
-                        // {
-                        //     OrderCode = x.OrderCode,
-                        //     OutsourcePartRequestId = x.OutsourcePartRequestId,
-                        //     ProductId = x.ProductId,
-                        //     ProductionOrderCode = x.ProductionOrderCode,
-                        //     ProductionStepLinkDataId = x.ProductionStepLinkDataId,
-                        //     PurchaseOrderOutsourceMappingId = x.PurchaseOrderOutsourceMappingId,
-                        //     PurchaseOrderDetailId = x.PurchaseOrderDetailId,
-                        // }).ToList() : new List<PurchaseOrderOutsourceMappingModel>(),
+                        OutsourceMappings = allocates.Where(x => x.PurchaseOrderDetailId == d.PurchaseOrderDetailId).Select(x => new PurchaseOrderOutsourceMappingModel
+                        {
+                            OrderCode = x.OrderCode,
+                            OutsourcePartRequestId = x.OutsourcePartRequestId,
+                            ProductId = x.ProductId,
+                            ProductionOrderCode = x.ProductionOrderCode,
+                            ProductionStepLinkDataId = x.ProductionStepLinkDataId,
+                            PurchaseOrderOutsourceMappingId = x.PurchaseOrderOutsourceMappingId,
+                            PurchaseOrderDetailId = x.PurchaseOrderDetailId,
+                        }).ToList(),
                     };
                 }).ToList(),
                 Excess = excess.OrderBy(e => e.SortOrder).ToList(),
@@ -967,7 +967,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.ExchangedMoney = item.ExchangedMoney;
                             detail.SortOrder = item.SortOrder;
                             detail.IsSubCalculation = item.IsSubCalculation;
-
+                            
                             var arrEntitySubCalculation = _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.Where(x=>x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
                             foreach (var sub in arrEntitySubCalculation)
                             {
@@ -987,7 +987,28 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             });
                             await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrNewEntitySubCalculation);
                             await _purchaseOrderDBContext.SaveChangesAsync();
-                            
+
+
+                            var arrAllocate = _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
+                            foreach (var allocate in arrAllocate)
+                            {
+                                var mAllocate = item.OutsourceMappings.FirstOrDefault(x => x.PurchaseOrderOutsourceMappingId == allocate.PurchaseOrderOutsourceMappingId);
+                                if (mAllocate != null)
+                                    _mapper.Map(mAllocate, allocate);
+                                else allocate.IsDeleted = true;
+                            }
+                            var arrNewEntityAllocate = item.OutsourceMappings.Where(x => x.PurchaseOrderOutsourceMappingId <= 0)
+                            .Select(x => new PurchaseOrderOutsourceMapping
+                            {
+                                OrderCode = x.OrderCode,
+                                OutsourcePartRequestId = 0,
+                                ProductId = x.ProductId,
+                                Quantity = x.Quantity,
+                                ProductionOrderCode = x.ProductionOrderCode,
+                                PurchaseOrderDetailId = detail.PurchaseOrderDetailId
+                            });
+                            await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(arrNewEntityAllocate);
+                            await _purchaseOrderDBContext.SaveChangesAsync();
                             break;
                         }
                     }
@@ -1641,14 +1662,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var queryRefProductionOrder = _purchaseOrderDBContext.RefProductionOrder.AsQueryable();
 
                 var query = from v in queryRefPurchaseOrderOutsource
-                            join r in queryRefProductionOrder on v.ProductionOrderCode equals r.ProductionOrderCode
+                            join r in queryRefProductionOrder on v.ProductionOrderCode equals r.ProductionOrderCode into gr
+                            from r in gr.DefaultIfEmpty()
                             select new EnrichDataPurchaseOrderAllocate
                             {
                                 PurchaseOrderOutsourceMappingId = v.PurchaseOrderOutsourceMappingId,
                                 PurchaseOrderId = v.PurchaseOrderId,
                                 PurchaseOrderDetailId = v.PurchaseOrderDetailId,
                                 ProductionOrderCode = v.ProductionOrderCode,
-                                ProductionOrderId = r.ProductionOrderId
+                                ProductionOrderId =  r.ProductionOrderId
                             };
                 data = await query.ToListAsync();
             }
