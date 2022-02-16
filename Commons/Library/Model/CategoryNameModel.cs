@@ -29,14 +29,14 @@ namespace VErp.Commons.Library.Model
         public CategoryNameModel RefCategory { get; set; }
     }
 
-    public class FieldDataTypeAttribute : Attribute
-    {
-        public int Type { get; private set; }
-        public FieldDataTypeAttribute(int type)
-        {
-            Type = type;
-        }
-    }
+    //public class FieldDataTypeAttribute : Attribute
+    //{
+    //    public int Type { get; private set; }
+    //    public FieldDataTypeAttribute(int type)
+    //    {
+    //        Type = type;
+    //    }
+    //}
 
     public class FieldDataIgnoreAttribute : Attribute
     {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Model.Inventory
@@ -28,6 +29,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public string ToPackageCode { get; set; }
         public string FromPackageCode { get; set; }
         public int? PackageOptionId { set; get; }
+
+        public PackageInputModel ToPackageInfo { get; set; }
 
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }

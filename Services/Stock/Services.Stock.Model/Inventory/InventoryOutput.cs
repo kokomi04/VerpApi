@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.FileResources;
+using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Model.Inventory
@@ -62,6 +63,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? RefInventoryId { get; set; }
         public string RefInventoryCode { get; set; }
         public int? RefStockId { get; set; }
+
+       
     }
 
     public class MappingInputBillModel

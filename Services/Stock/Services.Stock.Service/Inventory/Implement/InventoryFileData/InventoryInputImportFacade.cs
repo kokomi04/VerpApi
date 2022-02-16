@@ -149,7 +149,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             var newInventoryInputModel = new List<InventoryInProductModel>(totalRowCount);
 
-
+            var sortOrder = 1;
             foreach (var item in _excelModel)
             {
                 if (string.IsNullOrWhiteSpace(item.ProductCode)) continue;
@@ -224,6 +224,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 newInventoryInputModel.Add(new InventoryInProductModel
                 {
+                    SortOrder = sortOrder++,
                     ProductId = productObj != null ? productObj.ProductId : 0,
                     ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
                     PrimaryQuantity = item.Qty1,
@@ -293,7 +294,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         */
         private Product GetProduct(ImportInvInputModel item)
         {
-            var productObj = _productsByCode[item.ProductCode.NormalizeAsInternalName()];
+            var pCodeKey = item.ProductCode.NormalizeAsInternalName();
+            Product productObj = null;
+            if (_productsByCode.ContainsKey(pCodeKey))
+                productObj = _productsByCode[pCodeKey];
+
             if (productObj == null)
             {
                 var productbyNames = _productsByName[item.ProductName.NormalizeAsInternalName()];

@@ -87,6 +87,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 return false;
             });
+
+            await LoadData();
+        }
+
+
+        private async Task LoadData()
+        {
+            var products = (await _stockDbContext.Product.AsNoTracking().ToListAsync()).GroupBy(p => p.ProductCode).Select(p => p.First()).ToList();
+
+
+            var existedProductNormalizeCodes = products.Select(c => c.ProductCode.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+            var existedProductNormalizeNames = products.Select(c => c.ProductName.NormalizeAsInternalName()).Distinct().ToHashSet();
+
+
+
+            _productsByCode = products.GroupBy(c => c.ProductCode.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.First());
+
+            var productIds = products.Select(p => p.ProductId).ToList();
+
+            _productUnitsByProduct = (await _stockDbContext.ProductUnitConversion.AsNoTracking().Where(u => productIds.Contains(u.ProductId)).ToListAsync())
+                .GroupBy(pu => pu.ProductId)
+                .ToDictionary(pu => pu.Key, pu => pu.ToList());
+
+            _productsByName = products.GroupBy(c => c.ProductName.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.ToList());
+
         }
 
 
@@ -103,6 +129,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             var productInfoByIds = new Dictionary<int, Product>();
 
+            var sortOrder = 1;
             foreach (var item in _excelModel)
             {
                 if (string.IsNullOrWhiteSpace(item.ProductCode)) continue;
@@ -143,7 +170,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 if (!string.IsNullOrWhiteSpace(item.FromPackageCode))
                 {
                     var packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productObj.ProductId && p.PackageCode == item.FromPackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
-                    
+
                     if (packageInfo == null) throw ProductPackageWithCodeNotFound.BadRequestFormat(item.FromPackageCode, productObj.ProductCode);
 
                     fromPackageId = packageInfo.PackageId;
@@ -162,6 +189,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 newInventoryOutProductModel.Add(new InventoryOutProductModel
                 {
+                    SortOrder = sortOrder++,
                     ProductId = productObj.ProductId,
                     ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
                     PrimaryQuantity = item.Qty1,
@@ -199,7 +227,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
         private Product GetProduct(OpeningBalanceModel item)
         {
-            var productObj = _productsByCode[item.ProductCode.NormalizeAsInternalName()];
+            var pCodeKey = item.ProductCode.NormalizeAsInternalName();
+            Product productObj = null;
+            if (_productsByCode.ContainsKey(pCodeKey))
+                productObj = _productsByCode[pCodeKey];
+
             if (productObj == null)
             {
                 var productbyNames = _productsByName[item.ProductName.NormalizeAsInternalName()];
