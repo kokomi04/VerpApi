@@ -794,8 +794,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<TimeSheetDetail>(entity =>
             {
-                entity.Property(e => e.Date).HasColumnType("date");
-
                 entity.HasOne(d => d.TimeSheet)
                     .WithMany(p => p.TimeSheetDetail)
                     .HasForeignKey(d => d.TimeSheetId)
