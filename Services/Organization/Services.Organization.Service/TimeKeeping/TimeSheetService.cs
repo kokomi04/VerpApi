@@ -46,151 +46,186 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<long> AddTimeSheet(TimeSheetModel model)
         {
-            if(_organizationDBContext.TimeSheet.Any(x=>x.Year == model.Year && x.Month == model.Month))
-                throw new BadRequestException(GeneralCode.ItemCodeExisted);
-                
-            var entity = _mapper.Map<TimeSheet>(model);
+            if (_organizationDBContext.TimeSheet.Any(x => x.Year == model.Year && x.Month == model.Month))
+                throw new BadRequestException(GeneralCode.ItemCodeExisted, $"Đã tồn tại bảng chấm công tháng {model.Month} năm {model.Year}");
 
-            await _organizationDBContext.TimeSheet.AddAsync(entity);
-            await _organizationDBContext.SaveChangesAsync();
-
-            if (model.TimeSheetDetails.Count > 0)
+            var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
             {
-                foreach (var detail in model.TimeSheetDetails)
-                {
-                    if (detail.TimeOut < detail.TimeIn)
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian vào phải nhỏ hơn thời gian ra");
-                    var eDetail = _mapper.Map<TimeSheetDetail>(detail);
-                    eDetail.TimeSheetId = entity.TimeSheetId;
 
-                    await _organizationDBContext.TimeSheetDetail.AddAsync(eDetail);
+                var entity = _mapper.Map<TimeSheet>(model);
+
+                await _organizationDBContext.TimeSheet.AddAsync(entity);
+                await _organizationDBContext.SaveChangesAsync();
+
+                if (model.TimeSheetDetails.Count > 0)
+                {
+                    foreach (var detail in model.TimeSheetDetails)
+                    {
+                        if (detail.TimeOut < detail.TimeIn)
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian vào phải nhỏ hơn thời gian ra");
+                        var eDetail = _mapper.Map<TimeSheetDetail>(detail);
+                        eDetail.TimeSheetId = entity.TimeSheetId;
+
+                        await _organizationDBContext.TimeSheetDetail.AddAsync(eDetail);
+                    }
+
+                    await _organizationDBContext.SaveChangesAsync();
                 }
 
-                await _organizationDBContext.SaveChangesAsync();
-            }
-
-            if(model.TimeSheetDayOffs.Count > 0)
-            {
-                foreach (var dayOff in model.TimeSheetDayOffs)
+                if (model.TimeSheetDayOffs.Count > 0)
                 {
-                    var eDayOff = _mapper.Map<TimeSheetDayOff>(dayOff);
-                    eDayOff.TimeSheetId = entity.TimeSheetId;
+                    foreach (var dayOff in model.TimeSheetDayOffs)
+                    {
+                        var eDayOff = _mapper.Map<TimeSheetDayOff>(dayOff);
+                        eDayOff.TimeSheetId = entity.TimeSheetId;
 
-                    await _organizationDBContext.TimeSheetDayOff.AddAsync(eDayOff);
+                        await _organizationDBContext.TimeSheetDayOff.AddAsync(eDayOff);
+                    }
+
+                    await _organizationDBContext.SaveChangesAsync();
                 }
 
-                await _organizationDBContext.SaveChangesAsync();
-            }
-
-            if (model.TimeSheetAggregates.Count > 0)
-            {
-                foreach (var aggregate in model.TimeSheetAggregates)
+                if (model.TimeSheetAggregates.Count > 0)
                 {
-                    var eAggregate = _mapper.Map<TimeSheetAggregate>(aggregate);
-                    eAggregate.TimeSheetId = entity.TimeSheetId;
+                    foreach (var aggregate in model.TimeSheetAggregates)
+                    {
+                        var eAggregate = _mapper.Map<TimeSheetAggregate>(aggregate);
+                        eAggregate.TimeSheetId = entity.TimeSheetId;
 
-                    await _organizationDBContext.TimeSheetAggregate.AddAsync(eAggregate);
+                        await _organizationDBContext.TimeSheetAggregate.AddAsync(eAggregate);
+                    }
+
+                    await _organizationDBContext.SaveChangesAsync();
                 }
 
-                await _organizationDBContext.SaveChangesAsync();
-            }
+                await trans.CommitAsync();
 
-            return entity.TimeSheetId;
+                return entity.TimeSheetId;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw ex;
+            }
         }
 
         public async Task<bool> UpdateTimeSheet(int year, int month, TimeSheetModel model)
         {
-            var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
-            if (timeSheet == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-            var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
-            var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
-            var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
-
-            model.TimeSheetId = timeSheet.TimeSheetId;
-            _mapper.Map(model, timeSheet);
-
-            foreach (var eDetail in timeSheetDetails)
+            var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
             {
-                var mDetail = model.TimeSheetDetails.FirstOrDefault(x => x.TimeSheetDetailId == eDetail.TimeSheetDetailId);
-                if (mDetail != null)
+                var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
+                if (timeSheet == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
+                    
+                var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+                var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+                var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+
+                model.TimeSheetId = timeSheet.TimeSheetId;
+                _mapper.Map(model, timeSheet);
+
+                foreach (var eDetail in timeSheetDetails)
                 {
-                    if (mDetail.TimeOut < mDetail.TimeIn)
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian vào phải nhỏ hơn thời gian ra");
-                    _mapper.Map(mDetail, eDetail);
+                    var mDetail = model.TimeSheetDetails.FirstOrDefault(x => x.TimeSheetDetailId == eDetail.TimeSheetDetailId);
+                    if (mDetail != null)
+                    {
+                        if (mDetail.TimeOut < mDetail.TimeIn)
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian vào phải nhỏ hơn thời gian ra");
+                        _mapper.Map(mDetail, eDetail);
+                    }
+                    else
+                        eDetail.IsDeleted = true;
                 }
-                else
-                    eDetail.IsDeleted = true;
-            }
 
-            foreach (var detail in model.TimeSheetDetails.Where(x => x.TimeSheetDetailId <= 0))
+                foreach (var detail in model.TimeSheetDetails.Where(x => x.TimeSheetDetailId <= 0))
+                {
+                    if (detail.TimeOut < detail.TimeIn)
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian vào phải nhỏ hơn thời gian ra");
+                    var eDetail = _mapper.Map<TimeSheetDetail>(detail);
+                    eDetail.TimeSheetId = timeSheet.TimeSheetId;
+
+                    await _organizationDBContext.TimeSheetDetail.AddAsync(eDetail);
+                }
+
+
+                foreach (var eAggregate in timeSheetAggregates)
+                {
+                    var mAggregate = model.TimeSheetAggregates.FirstOrDefault(x => x.TimeSheetAggregateId == eAggregate.TimeSheetAggregateId);
+                    if (mAggregate != null)
+                        _mapper.Map(mAggregate, eAggregate);
+                    else
+                        eAggregate.IsDeleted = true;
+                }
+
+                foreach (var aggregate in model.TimeSheetAggregates.Where(x => x.TimeSheetAggregateId <= 0))
+                {
+                    var eAggregate = _mapper.Map<TimeSheetAggregate>(aggregate);
+                    eAggregate.TimeSheetId = timeSheet.TimeSheetId;
+
+                    await _organizationDBContext.TimeSheetAggregate.AddAsync(eAggregate);
+                }
+
+                foreach (var eAggregate in timeSheetDayOffs)
+                {
+                    var mAggregate = model.TimeSheetDayOffs.FirstOrDefault(x => x.TimeSheetDayOffId == eAggregate.TimeSheetDayOffId);
+                    if (mAggregate != null)
+                        _mapper.Map(mAggregate, eAggregate);
+                    else
+                        eAggregate.IsDeleted = true;
+                }
+
+                foreach (var dayOff in model.TimeSheetDayOffs.Where(x => x.TimeSheetDayOffId <= 0))
+                {
+                    var eDayOff = _mapper.Map<TimeSheetDayOff>(dayOff);
+                    eDayOff.TimeSheetId = timeSheet.TimeSheetId;
+
+                    await _organizationDBContext.TimeSheetDayOff.AddAsync(eDayOff);
+                }
+
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                return true;
+
+            }
+            catch (System.Exception ex)
             {
-                if (detail.TimeOut < detail.TimeIn)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian vào phải nhỏ hơn thời gian ra");
-                var eDetail = _mapper.Map<TimeSheetDetail>(detail);
-                eDetail.TimeSheetId = timeSheet.TimeSheetId;
-
-                await _organizationDBContext.TimeSheetDetail.AddAsync(eDetail);
+                await trans.RollbackAsync();
+                throw ex;
             }
-
-
-            foreach (var eAggregate in timeSheetAggregates)
-            {
-                var mAggregate = model.TimeSheetAggregates.FirstOrDefault(x => x.TimeSheetAggregateId == eAggregate.TimeSheetAggregateId);
-                if (mAggregate != null)
-                    _mapper.Map(mAggregate, eAggregate);
-                else
-                    eAggregate.IsDeleted = true;
-            }
-
-            foreach (var aggregate in model.TimeSheetAggregates.Where(x => x.TimeSheetAggregateId <= 0))
-            {
-                var eAggregate = _mapper.Map<TimeSheetAggregate>(aggregate);
-                eAggregate.TimeSheetId = timeSheet.TimeSheetId;
-
-                await _organizationDBContext.TimeSheetAggregate.AddAsync(eAggregate);
-            }
-
-            foreach (var eAggregate in timeSheetDayOffs)
-            {
-                var mAggregate = model.TimeSheetDayOffs.FirstOrDefault(x => x.TimeSheetDayOffId == eAggregate.TimeSheetDayOffId);
-                if (mAggregate != null)
-                    _mapper.Map(mAggregate, eAggregate);
-                else
-                    eAggregate.IsDeleted = true;
-            }
-
-            foreach (var dayOff in model.TimeSheetDayOffs.Where(x => x.TimeSheetDayOffId <= 0))
-            {
-                var eDayOff = _mapper.Map<TimeSheetDayOff>(dayOff);
-                eDayOff.TimeSheetId = timeSheet.TimeSheetId;
-
-                await _organizationDBContext.TimeSheetDayOff.AddAsync(eDayOff);
-            }
-
-
-            await _organizationDBContext.SaveChangesAsync();
-
-            return true;
         }
 
         public async Task<bool> DeleteTimeSheet(int year, int month)
         {
-            var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
-            if (timeSheet == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
-            var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
-            var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
-            var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+            var trans = await _organizationDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
+                if (timeSheet == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
+                var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+                var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+                var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
 
-            timeSheetDayOffs.ForEach(x => x.IsDeleted = true);
-            timeSheetAggregates.ForEach(x => x.IsDeleted = true);
-            timeSheetDetails.ForEach(x => x.IsDeleted = true);
-            timeSheet.IsDeleted = true;
+                timeSheetDayOffs.ForEach(x => x.IsDeleted = true);
+                timeSheetAggregates.ForEach(x => x.IsDeleted = true);
+                timeSheetDetails.ForEach(x => x.IsDeleted = true);
+                timeSheet.IsDeleted = true;
 
-            await _organizationDBContext.SaveChangesAsync();
+                await _organizationDBContext.SaveChangesAsync();
 
-            return true;
+                return true;
+
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw ex;
+            }
         }
 
         public async Task<TimeSheetModel> GetTimeSheet(int year, int month)
@@ -198,11 +233,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var timeSheet = await _organizationDBContext.TimeSheet
             .FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
             if (timeSheet == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound);
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
 
-            var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x=>x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDetailModel>(_mapper.ConfigurationProvider).ToListAsync();
-            var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x=>x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDayOffModel>(_mapper.ConfigurationProvider).ToListAsync();
-            var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x=>x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetAggregateModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDetailModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDayOffModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetAggregateModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             var result = _mapper.Map<TimeSheetModel>(timeSheet);
             result.TimeSheetAggregates = timeSheetAggregates;
@@ -239,7 +274,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var fields = Utils.GetFieldNameModels<TimeSheetImportFieldModel>().ToList();
 
-            var fieldsAbsenceTypeSymbols = (_organizationDBContext.AbsenceTypeSymbol.ToList()).Select(x=> new CategoryFieldNameModel
+            var fieldsAbsenceTypeSymbols = (_organizationDBContext.AbsenceTypeSymbol.ToList()).Select(x => new CategoryFieldNameModel
             {
                 FieldName = x.SymbolCode,
                 FieldTitle = x.TypeSymbolDescription,
@@ -324,7 +359,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         EmployeeId = employee.UserId
                     };
 
-                    var timeSheetAggregate = new TimeSheetAggregateModel{
+                    var timeSheetAggregate = new TimeSheetAggregateModel
+                    {
                         CountedAbsence = rowIn.CountedAbsence,
                         CountedEarly = rowIn.CountedEarly,
                         CountedLate = rowIn.CountedLate,
