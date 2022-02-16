@@ -653,7 +653,7 @@ namespace VErp.Services.Organization.Service.Leave
                     if (totalMonths >= cfg.SeniorityMonthsStart)
                     {
                         var totalYears = (int)Math.Round(totalMonths / 12.0);
-                        seniorityDays += totalYears * (cfg.SeniorityMonthOfYear ?? 0);
+                        seniorityDays += totalYears * (cfg.SeniorityOneYearRate ?? 0);
                     }
                     if (cfg.Seniorities?.Count > 0)
                     {

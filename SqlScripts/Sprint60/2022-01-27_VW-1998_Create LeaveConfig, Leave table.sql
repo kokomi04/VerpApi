@@ -16,7 +16,7 @@ CREATE TABLE [dbo].[LeaveConfig](
 	[MonthRate] [DECIMAL](4, 1) NULL,
 	[MaxAYear] [INT] NULL,
 	[SeniorityMonthsStart] [INT] NULL,
-	[SeniorityMonthOfYear] [INT] NULL,
+	[SeniorityOneYearRate] [INT] NULL,
 	[OldYearTransferMax] [INT] NULL,
 	[OldYearAppliedToDate] [DATETIME2](7) NULL,
 	[IsDefault] [BIT] NOT NULL,
@@ -45,7 +45,7 @@ GO
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Làm đến tháng thứ mấy thì bắt đầu tính thâm niên' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'LeaveConfig', @level2type=N'COLUMN',@level2name=N'SeniorityMonthsStart'
 GO
 
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Bắt đầu tính thâm niên từ tháng mấy của năm' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'LeaveConfig', @level2type=N'COLUMN',@level2name=N'SeniorityMonthOfYear'
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Mỗi năm thâm niên thì được nghỉ bao nhiêu ngày phép' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'LeaveConfig', @level2type=N'COLUMN',@level2name=N'SeniorityOneYearRate'
 GO
 
 EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'Số phép tối đa mà năm cũ chuyển sang' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'TABLE',@level1name=N'LeaveConfig', @level2type=N'COLUMN',@level2name=N'OldYearTransferMax'
