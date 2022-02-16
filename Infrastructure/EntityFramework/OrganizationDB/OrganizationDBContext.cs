@@ -596,6 +596,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.TotalDays).HasColumnType("decimal(4, 1)");
 
+                entity.Property(e => e.TotalDaysLastYearUsed).HasColumnType("decimal(4, 1)");
+
                 entity.HasOne(d => d.AbsenceTypeSymbol)
                     .WithMany(p => p.Leave)
                     .HasForeignKey(d => d.AbsenceTypeSymbolId)
@@ -629,9 +631,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.OldYearTransferMax).HasComment("Số phép tối đa mà năm cũ chuyển sang");
 
-                entity.Property(e => e.SeniorityMonthOfYear).HasComment("Bắt đầu tính thâm niên từ tháng mấy của năm");
-
                 entity.Property(e => e.SeniorityMonthsStart).HasComment("Làm đến tháng thứ mấy thì bắt đầu tính thâm niên");
+
+                entity.Property(e => e.SeniorityOneYearRate).HasComment("Bắt đầu tính thâm niên từ tháng mấy của năm");
 
                 entity.Property(e => e.Title)
                     .IsRequired()

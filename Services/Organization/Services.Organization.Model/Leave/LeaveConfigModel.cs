@@ -27,7 +27,7 @@ namespace VErp.Services.Organization.Model.Leave
         public decimal? MonthRate { get; set; }
         public int? MaxAyear { get; set; }
         public int? SeniorityMonthsStart { get; set; }
-        public int? SeniorityMonthOfYear { get; set; }
+        public int? SeniorityOneYearRate { get; set; }
         public int? OldYearTransferMax { get; set; }
         public long? OldYearAppliedToDate { get; set; }
         public bool IsDefault { get; set; }

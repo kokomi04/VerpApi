@@ -20,6 +20,7 @@ namespace VErp.Services.Organization.Model.Leave
         public long DateEnd { get; set; }
         public bool DateEndIsHalf { get; set; }
         public decimal TotalDays { get; set; }
+        public decimal TotalDaysLastYearUsed { get; set; }
         public long? FileId { get; set; }
         public int AbsenceTypeSymbolId { get; set; }
         public EnumLeaveStatus LeaveStatusId { get; set; }
@@ -66,6 +67,8 @@ namespace VErp.Services.Organization.Model.Leave
 
         public decimal Counted { get; set; }
         public decimal NoneCounted { get; set; }
+
+        public decimal CountedLastYearUsed { get; set; }
     }
 
 }
