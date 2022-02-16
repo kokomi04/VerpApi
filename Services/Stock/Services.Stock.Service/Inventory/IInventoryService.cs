@@ -29,9 +29,13 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<long> InventoryOutImport(ImportExcelMapping mapping, Stream stream, InventoryOutImportyExtraModel model);
 
-        CategoryNameModel FieldsForParse(EnumInventoryType inventoryTypeId);
+        CategoryNameModel OutFieldsForParse();
 
-        IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId);
+        Task<CategoryNameModel> InputFieldsForParse();
+
+        IAsyncEnumerable<InvInputDetailRowValue> InputParseExcel(ImportExcelMapping mapping, Stream stream, int stockId);
+
+        IAsyncEnumerable<InvOutDetailRowValue> OutParseExcel(ImportExcelMapping mapping, Stream stream, int stockId);
 
         Task<bool> SendMailNotifyCensor(long inventoryId, string mailCode, string[] mailTo);
 

@@ -12,50 +12,32 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Products;
-using static VErp.Services.Stock.Model.Inventory.InventoryDetailRowValue;
+using static VErp.Services.Stock.Model.Inventory.InvOutDetailRowValue;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
-    public class InventoryDetailParseFacade
+    public class InvOutDetailParseFacade
     {
         private IProductService productService;
         private StockDBContext stockDbContext;
-        public InventoryDetailParseFacade SetProductService(IProductService productService)
+        public InvOutDetailParseFacade SetProductService(IProductService productService)
         {
             this.productService = productService;
             return this;
         }
 
-        public InventoryDetailParseFacade SetStockDbContext(StockDBContext stockDbContext)
+        public InvOutDetailParseFacade SetStockDbContext(StockDBContext stockDbContext)
         {
             this.stockDbContext = stockDbContext;
             return this;
         }
 
-        public async IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId)
+        public async IAsyncEnumerable<InvOutDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, int stockId)
         {
             var reader = new ExcelReader(stream);
 
-            var rowDatas = reader.ReadSheetEntity<InventoryExcelParseModel>(mapping, (entity, propertyName, value) =>
-            {
-                if (string.IsNullOrWhiteSpace(value)) return true;
-                switch (propertyName)
-                {
-                    case nameof(InventoryExcelParseModel.PackageOptionId):                        
-                        if (value.IsRangeOfAllowValueForBooleanTrueValue())
-                        {
-                            entity.PackageOptionId = EnumPackageOption.Create;
-                        }
-                        else
-                        {
-                            entity.PackageOptionId = EnumPackageOption.NoPackageManager;
-                        }
-                        return true;
-                }
-
-                return false;
-            });
+            var rowDatas = reader.ReadSheetEntity<InventoryOutExcelParseModel>(mapping);
 
 
             var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
@@ -72,9 +54,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             var productIds = productInfos.Select(p => p.ProductId).ToList();
 
-            var packageCodes = rowDatas.SelectMany(r => new[] { r.FromPackageCode, r.ToPackageCode }).Distinct().ToList();
+            var packageCodes = rowDatas.SelectMany(r => new[] { r.FromPackageCode }).Distinct().ToList();
 
-            var productPackages = (await stockDbContext.Package.Where(p => (packageCodes.Contains(p.PackageCode) || p.PackageTypeId == (int)EnumPackageType.Default) && productIds.Contains(p.ProductId)).ToListAsync())
+            var productPackages = (await stockDbContext.Package.Where(p => p.StockId == stockId && (packageCodes.Contains(p.PackageCode) || p.PackageTypeId == (int)EnumPackageType.Default) && productIds.Contains(p.ProductId)).ToListAsync())
                 .GroupBy(p => p.ProductId)
                 .ToDictionary(p => p.Key, p => p.ToList());
 
@@ -108,7 +90,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         throw ProductFoundMoreThanOne.BadRequestFormat(productInfo.Count, $"{item.ProductCode} {item.ProductName}");
                 }
 
-                long? toPackageId = null;
+
                 long? fromPackageId = null;
                 productPackages.TryGetValue(productInfo[0].ProductId.Value, out var packages);
                 if (packages == null)
@@ -128,16 +110,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 }
 
 
-                if (!string.IsNullOrWhiteSpace(item.ToPackageCode))
-                {
-                    packageInfo = packages?.FirstOrDefault(p => p.PackageCode.Equals(item.ToPackageCode, StringComparison.OrdinalIgnoreCase));
-                    if (packageInfo == null)
-                    {
-                        throw PackageCodeOfProductNotFound.BadRequestFormat(item.ToPackageCode, $"{item.ProductCode} {item.ProductName}");
-
-                    }
-                    toPackageId = packageInfo.PackageId;
-                }
 
                 var productUnitConversionId = 0;
                 if (!string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
@@ -162,7 +134,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                     if (pus.Count == 0)
                     {
-                        throw PuConversionOfProductNotFound.BadRequestFormat(item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");                        
+                        throw PuConversionOfProductNotFound.BadRequestFormat(item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");
                     }
                     if (pus.Count > 1)
                     {
@@ -199,7 +171,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
 
 
-                if (inventoryTypeId == EnumInventoryType.Output && packageInfo == null)
+                if (packageInfo == null)
                 {
 
                     packageInfo = packages?.FirstOrDefault(p => p.PackageTypeId == (int)EnumPackageType.Default && p.ProductUnitConversionId == productUnitConversionId);
@@ -225,7 +197,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     };
                 }
 
-                yield return new InventoryDetailRowValue()
+                yield return new InvOutDetailRowValue()
                 {
                     ProductId = productInfo[0].ProductId.Value,
                     ProductCode = productInfo[0].ProductCode,
@@ -249,12 +221,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
                     Description = item.Description,
-                    //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu,
-                    PackageOptionId = item.PackageOptionId,
                     FromPackageId = fromPackageId,
-                    ToPackageId = toPackageId,
                     FromPackageCode = item.FromPackageCode,
-                    ToPackageCode = item.ToPackageCode,
                     PackageInfo = packageOutput
                 };
 

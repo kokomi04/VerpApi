@@ -466,6 +466,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         FromPackageId = detail.FromPackageId,
                         ToPackageId = detail.ToPackageId,
                         ToPackageCode = packageInfo?.PackageCode,
+                        ToPackageInfo = detail.ToPackageInfo?.JsonDeserialize<PackageInputModel>(),
                         FromPackageCode = packageInfo?.PackageCode,
                         PackageOptionId = detail.PackageOptionId,
 
@@ -588,28 +589,80 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public CategoryNameModel FieldsForParse(EnumInventoryType inventoryTypeId)
+        public CategoryNameModel OutFieldsForParse()
         {
             var result = new CategoryNameModel()
             {
                 //CategoryId = 1,
-                CategoryCode = inventoryTypeId == EnumInventoryType.Input ? "Input" : "Output",
-                CategoryTitle = inventoryTypeId == EnumInventoryType.Input ? InventoryAbstractMessage.InventoryInput : InventoryAbstractMessage.InventoryOuput,
+                CategoryCode = "Output",
+                CategoryTitle = InventoryAbstractMessage.InventoryOuput,
                 IsTreeView = false,
-                Fields = Utils.GetFieldNameModels<InventoryExcelParseModel>((int)inventoryTypeId)
+                Fields = Utils.GetFieldNameModels<InventoryOutExcelParseModel>()
             };
             return result;
         }
 
-        public IAsyncEnumerable<InventoryDetailRowValue> ParseExcel(ImportExcelMapping mapping, Stream stream, EnumInventoryType inventoryTypeId)
+
+
+        public async Task<CategoryNameModel> InputFieldsForParse()
         {
-            var parse = new InventoryDetailParseFacade();
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = 1,
+                CategoryCode = "Inventory",
+                CategoryTitle = InventoryAbstractMessage.InventoryInput,
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = Utils.GetFieldNameModels<InventoryInputExcelParseModel>();
+
+
+            var packageField = fields.First(f => f.FieldName.StartsWith(nameof(InventoryInputExcelParseModel.ToPackgeInfo)));
+
+            var customProps = await _stockDbContext.PackageCustomProperty.ToListAsync();
+
+            foreach (var p in customProps)
+            {
+                var f = new CategoryFieldNameModel()
+                {
+                    GroupName = packageField.GroupName,
+                    //CategoryFieldId = prop.Name.GetHashCode(),
+                    FieldName = nameof(ImportInvInputModel.ToPackgeInfo) + nameof(PackageInputModel.CustomPropertyValue) + p.PackageCustomPropertyId,
+                    FieldTitle = "(Kiện) - " + p.Title,
+                    IsRequired = false,
+                    Type = null,
+                    RefCategory = null
+                };
+
+                fields.Add(f);
+            }
+
+            result.Fields = fields;
+            return result;
+        }
+
+
+
+        public IAsyncEnumerable<InvInputDetailRowValue> InputParseExcel(ImportExcelMapping mapping, Stream stream, int stockId)
+        {
+            var parse = new InvInputDetailParseFacade();
 
             parse.SetProductService(_productService)
                 .SetStockDbContext(_stockDbContext);
 
-            return parse.ParseExcel(mapping, stream, inventoryTypeId);
+            return parse.ParseExcel(mapping, stream, stockId);
         }
+
+        public IAsyncEnumerable<InvOutDetailRowValue> OutParseExcel(ImportExcelMapping mapping, Stream stream, int stockId)
+        {
+            var parse = new InvOutDetailParseFacade();
+
+            parse.SetProductService(_productService)
+                .SetStockDbContext(_stockDbContext);
+
+            return parse.ParseExcel(mapping, stream, stockId);
+        }
+
 
         public async Task<CategoryNameModel> InputFieldsForMapping()
         {

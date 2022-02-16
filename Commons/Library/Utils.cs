@@ -1229,15 +1229,15 @@ namespace VErp.Commons.Library
                     title = prop.Name;
                 }
 
-                var types = prop.GetCustomAttributes<FieldDataTypeAttribute>();
-                if (types != null && types.Count() > 0)
-                {
-                    type = types.First().Type;
-                }
-                if (byType.HasValue && type.HasValue && byType.Value != type.Value)
-                {
-                    continue;
-                }
+                //var types = prop.GetCustomAttributes<FieldDataTypeAttribute>();
+                //if (types != null && types.Count() > 0)
+                //{
+                //    type = types.First().Type;
+                //}
+                //if (byType.HasValue && type.HasValue && byType.Value != type.Value)
+                //{
+                //    continue;
+                //}
 
 
                 if (prop.GetCustomAttribute<FieldDataIgnoreAttribute>() != null) continue;

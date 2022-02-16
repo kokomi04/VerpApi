@@ -351,22 +351,42 @@ namespace VErpApi.Controllers.Stock.Inventory
 
 
         [HttpGet]
-        [Route("{inventoryTypeId}/FieldsForParse")]
-        public CategoryNameModel FieldsForParse([FromRoute] EnumInventoryType inventoryTypeId)
+        [Route("InputFieldsForParse")]
+        public async Task<CategoryNameModel> InputFieldsForParse()
         {
-            return _inventoryService.FieldsForParse(inventoryTypeId);
+            return await _inventoryService.InputFieldsForParse();
         }
 
         [HttpPost]
-        [Route("{inventoryTypeId}/ParseExcel")]
-        public IAsyncEnumerable<InventoryDetailRowValue> InputExcelParse([FromRoute] EnumInventoryType inventoryTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        [Route("InputParseExcel")]
+        public IAsyncEnumerable<InvInputDetailRowValue> InputParseExcel([FromFormString] ImportExcelMapping mapping, IFormFile file, [FromQuery] int stockId)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return _inventoryService.ParseExcel(mapping, file.OpenReadStream(), inventoryTypeId);
+            return _inventoryService.InputParseExcel(mapping, file.OpenReadStream(), stockId);
         }
+
+
+        [HttpGet]
+        [Route("OutFieldsForParse")]
+        public CategoryNameModel OutFieldsForParse()
+        {
+            return _inventoryService.OutFieldsForParse();
+        }
+
+        [HttpPost]
+        [Route("OutParseExcel")]
+        public IAsyncEnumerable<InvOutDetailRowValue> OutParseExcel([FromFormString] ImportExcelMapping mapping, IFormFile file, [FromQuery] int stockId)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return _inventoryService.OutParseExcel(mapping, file.OpenReadStream(), stockId);
+        }
+
 
         /// <summary>
         /// Gửi email thông báo duyệt xuất/nhập kho

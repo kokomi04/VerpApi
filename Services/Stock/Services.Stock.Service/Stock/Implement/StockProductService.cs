@@ -367,8 +367,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 from pk in packages
                 join st in _stockContext.Stock on pk.StockId equals st.StockId
                 join p in _stockContext.Product on pk.ProductId equals p.ProductId
-                join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
-                from c in cs.DefaultIfEmpty()
+                //join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
+                //from c in cs.DefaultIfEmpty()
                 join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
                 from l in ls.DefaultIfEmpty()
                 where pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
@@ -381,6 +381,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     pk.OrderCode,
                     pk.ProductionOrderCode,
                     pk.Pocode,
+                    pk.ProductId,
                     LocationId = pk.LocationId,
                     LocationName = l == null ? null : l.Name,
                     Date = pk.Date,
@@ -388,13 +389,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     pk.Description,
                     PrimaryUnitId = p.UnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
-                    SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
+                    //SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
-                    ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
+                    //ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectCode = "",
-                    c.DecimalPlace
+                    //c.DecimalPlace
                 }
                 );
             var total = await query.CountAsync();
@@ -414,32 +415,46 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var lstData = size > 0 ? await query.Skip((page - 1) * size).Take(size).ToListAsync() : await query.ToListAsync();
+            var productIds = lstData.Select(d => d.ProductId).ToList();
+            var pus = await _stockContext.ProductUnitConversion.Where(pu => productIds.Contains(pu.ProductId)).ToListAsync();
 
-            var data = lstData.Select(pk => new StockProductPackageDetail()
-            {
-                PackageId = pk.PackageId,
-                PackageCode = pk.PackageCode,
-                StockId = pk.StockId,
-                StockName = pk.StockName,
-                LocationId = pk.LocationId,
-                LocationName = pk.LocationName,
-                Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
-                ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
-                Description = pk.Description,
-                PrimaryUnitId = pk.PrimaryUnitId,
-                PrimaryQuantity = pk.PrimaryQuantity,
-                SecondaryUnitId = pk.SecondaryUnitId,
-                ProductUnitConversionId = pk.ProductUnitConversionId,
-                ProductUnitConversionName = pk.ProductUnitConversionName,
-                ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
-                PackageTypeId = (EnumPackageType)pk.PackageTypeId,
-                RefObjectId = null,
-                RefObjectCode = "",
-                OrderCode = pk.OrderCode,
-                POCode = pk.Pocode,
-                ProductionOrderCode = pk.ProductionOrderCode,
-                DecimalPlace = pk.DecimalPlace
-            })
+            var data = lstData.Select(pk => {
+                var pu = pus.FirstOrDefault(u => u.ProductId == pk.ProductId && u.ProductUnitConversionId == pk.ProductUnitConversionId);
+                var puDefault = pus.FirstOrDefault(u => u.ProductId == pk.ProductId && u.IsDefault);
+                return new StockProductPackageDetail()
+                {
+                    ProductId = pk.ProductId,
+                    PackageId = pk.PackageId,
+                    PackageCode = pk.PackageCode,
+                    StockId = pk.StockId,
+                    StockName = pk.StockName,
+                    LocationId = pk.LocationId,
+                    LocationName = pk.LocationName,
+                    Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
+                    ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
+                    Description = pk.Description,
+
+                    PrimaryUnitId = pk.PrimaryUnitId,
+                    PrimaryQuantity = pk.PrimaryQuantity,
+                    DefaultUnitConversionId = puDefault.ProductUnitConversionId,
+                    DefaultUnitConversionName = puDefault.ProductUnitConversionId,
+                    DefaultDecimalPlace = puDefault.DecimalPlace,
+
+                    ProductUnitConversionId = pk.ProductUnitConversionId,
+                    ProductUnitConversionName = pu.ProductUnitConversionName,
+                    DecimalPlace = pu.DecimalPlace,
+
+                    ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
+                    
+                    PackageTypeId = (EnumPackageType)pk.PackageTypeId,
+                    RefObjectId = null,
+                    RefObjectCode = "",
+                    OrderCode = pk.OrderCode,
+                    POCode = pk.Pocode,
+                    ProductionOrderCode = pk.ProductionOrderCode,
+                  
+                };
+                })
             .ToList();
 
             return (data, total);
