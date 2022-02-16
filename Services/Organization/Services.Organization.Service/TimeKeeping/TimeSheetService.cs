@@ -118,7 +118,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
                 if (timeSheet == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
-                    
+
                 var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
@@ -207,6 +207,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
                 if (timeSheet == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
+
                 var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
@@ -218,6 +219,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 await _organizationDBContext.SaveChangesAsync();
 
+                await trans.CommitAsync();
+                
                 return true;
 
             }
