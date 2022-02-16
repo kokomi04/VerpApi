@@ -27,10 +27,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<TimeSheetModel> GetTimeSheet(int year, int month);
         Task<bool> UpdateTimeSheet(int year, int month, TimeSheetModel model);
 
-
         CategoryNameModel GetFieldDataForMapping();
 
         Task<bool> ImportTimeSheetFromMapping(int year, int month, ImportExcelMapping mapping, Stream stream);
+
+        Task<bool> ApproveTimeSheet(int year, int month);
     }
 
     public class TimeSheetService : ITimeSheetService
@@ -52,7 +53,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
-
+                model.IsApprove = false;
                 var entity = _mapper.Map<TimeSheet>(model);
 
                 await _organizationDBContext.TimeSheet.AddAsync(entity);
@@ -124,6 +125,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
 
                 model.TimeSheetId = timeSheet.TimeSheetId;
+                model.IsApprove = false;
                 _mapper.Map(model, timeSheet);
 
                 foreach (var eDetail in timeSheetDetails)
@@ -498,5 +500,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return true;
         }
 
+        public async Task<bool> ApproveTimeSheet(int year, int month)
+        {
+            var timeSheet = await _organizationDBContext.TimeSheet
+            .FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
+            if (timeSheet == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
+            
+            timeSheet.IsApprove = true;
+            await _organizationDBContext.SaveChangesAsync();
+            return true;
+        }
     }
 }

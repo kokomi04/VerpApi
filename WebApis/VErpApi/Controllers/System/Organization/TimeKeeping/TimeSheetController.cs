@@ -66,6 +66,14 @@ namespace VErpApi.Controllers.System.Organization
 
         }
 
+        [HttpPut]
+        [Route("{year}/{month}/approve")]
+        public async Task<bool> ApproveTimeSheet([FromRoute] int year, [FromRoute] int month)
+        {
+            return await _timeSheetService.ApproveTimeSheet(year, month);
+
+        }
+
         [HttpGet]
         [Route("fieldDataForMapping")]
         public CategoryNameModel GetFieldDataForMapping()
