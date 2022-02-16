@@ -197,6 +197,19 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
 
             var sb = await _organizationContext.Subsidiary.FirstOrDefaultAsync(e => e.SubsidiaryId == ur.SubsidiaryId);
+            var departments = await (from m in _organizationContext.EmployeeDepartmentMapping
+                                     join d in _organizationContext.Department on m.DepartmentId equals d.DepartmentId
+                                     where m.UserId == userId
+                                     select new
+                                     {
+                                         DepartmentId = d.DepartmentId,
+                                         DepartmentCode = d.DepartmentCode,
+                                         DepartmentName = d.DepartmentName,
+                                         UserDepartmentMappingId = m.UserDepartmentMappingId,
+                                         EffectiveDate = m.EffectiveDate,
+                                         ExpirationDate = m.ExpirationDate
+                                     }).ToListAsync();
+
             var user = new UserInfoOutput
             {
                 UserId = ur.UserId,
@@ -211,7 +224,17 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Phone = em.Phone,
                 LeaveConfigId = em.LeaveConfigId,
                 AvatarFileId = em.AvatarFileId,
-                IsDeveloper = _appSetting.Developer?.IsDeveloper(ur.UserName, sb.SubsidiaryCode)
+                IsDeveloper = _appSetting.Developer?.IsDeveloper(ur.UserName, sb.SubsidiaryCode),
+                Departments = departments.Select(d => new UserDepartmentInfoModel
+                {
+
+                    DepartmentId = d.DepartmentId,
+                    DepartmentCode = d.DepartmentCode,
+                    DepartmentName = d.DepartmentName,
+                    UserDepartmentMappingId = d.UserDepartmentMappingId,
+                    EffectiveDate = d.EffectiveDate.GetUnix(),
+                    ExpirationDate = d.ExpirationDate.GetUnix()
+                }).ToList()
             };
 
             await EnrichDepartments(new[] { user });
