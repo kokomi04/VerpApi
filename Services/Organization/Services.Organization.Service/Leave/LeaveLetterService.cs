@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Leave;
 using VErp.Commons.Enums.MasterEnum;
@@ -119,14 +118,15 @@ namespace VErp.Services.Organization.Service.Leave
                     throw MinDaysFromCreateToStartInvalid.BadRequestFormat(validation.TotalDays, validation.MinDaysFromCreateToStart);
                 }
             }
+
         }
 
+       
         public async Task<long> Create(LeaveModel model)
         {
 
             var info = _mapper.Map<LeaveLetter>(model);
             info.UserId = _currentContextService.UserId;
-
 
             var userInfo = (await _userHelperService.GetByIds(new[] { info.UserId ?? 0 })).FirstOrDefault();
             if (userInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
@@ -135,11 +135,17 @@ namespace VErp.Services.Organization.Service.Leave
 
             Validate(cfg, model);
 
-            info.LeaveConfigId = cfg.LeaveConfigId.Value;
-            info.LeaveStatusId = (int)EnumLeaveStatus.New;
-            await _organizationDBContext.Leave.AddAsync(info);
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                info.LeaveConfigId = cfg.LeaveConfigId.Value;
+                info.LeaveStatusId = (int)EnumLeaveStatus.New;
+                await _organizationDBContext.Leave.AddAsync(info);
+                await _organizationDBContext.SaveChangesAsync();
 
+                await SetTotalUsedByLastYear(cfg, info, userInfo);
+
+                await trans.CommitAsync();
+            }
 
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Create)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
@@ -161,7 +167,6 @@ namespace VErp.Services.Organization.Service.Leave
             info.IsDeleted = true;
 
             await _organizationDBContext.SaveChangesAsync();
-
 
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Create)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
@@ -237,6 +242,10 @@ namespace VErp.Services.Organization.Service.Leave
 
         public async Task<LeaveByYearModel> TotalByUser(int userId)
         {
+            var userInfo = (await _userHelperService.GetByIds(new[] { userId })).FirstOrDefault();
+            if (userInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+
             var query = from l in _organizationDBContext.Leave
                         join c in _organizationDBContext.AbsenceTypeSymbol on l.AbsenceTypeSymbolId equals c.AbsenceTypeSymbolId
                         where l.UserId == userId &&
@@ -244,28 +253,36 @@ namespace VErp.Services.Organization.Service.Leave
                         && l.DateStart > DateTime.UtcNow.AddYears(-2)
                         select new
                         {
-                            l.DateStart,
+                            DateStart = l.DateStart.UtcToTimeZone(_currentContextService.TimeZoneOffset),
+                            DateEnd = l.DateEnd.UtcToTimeZone(_currentContextService.TimeZoneOffset),
                             c.IsCounted,
-                            l.TotalDays
+                            l.TotalDays,
+                            l.TotalDaysLastYearUsed
                         };
 
             var lst = await query.ToListAsync();
 
-            var lastYearData = lst.Where(d => d.DateStart.UtcToTimeZone(_currentContextService.TimeZoneOffset).Year == DateTime.UtcNow.AddYears(-1).UtcToTimeZone(_currentContextService.TimeZoneOffset).Year).ToList();
+            var lastYear = DateTime.UtcNow.AddYears(-1).UtcToTimeZone(_currentContextService.TimeZoneOffset);
 
-            var lhisYearData = lst.Where(d => d.DateStart.UtcToTimeZone(_currentContextService.TimeZoneOffset).Year == DateTime.UtcNow.AddYears(-1).UtcToTimeZone(_currentContextService.TimeZoneOffset).Year).ToList();
+            var now = DateTime.UtcNow.UtcToTimeZone(_currentContextService.TimeZoneOffset);
+
+            var lastYearData = lst.Where(d => d.DateStart.Year == lastYear.Year).ToList();
+
+            var thisYearData = lst.Where(d => d.DateStart.Year == lastYear.Year).ToList();
 
             return new LeaveByYearModel()
             {
                 LastYear = new LeaveCountModel()
                 {
                     NoneCounted = lastYearData.Where(d => !d.IsCounted).Sum(d => d.TotalDays),
-                    Counted = lastYearData.Where(d => d.IsCounted).Sum(d => d.TotalDays),
+                    Counted = lastYearData.Where(d => d.IsCounted).Sum(d => d.TotalDays - d.TotalDaysLastYearUsed),
+                    CountedLastYearUsed = lastYearData.Where(d => d.IsCounted).Sum(d => d.TotalDaysLastYearUsed),
                 },
                 ThisYear = new LeaveCountModel()
                 {
-                    NoneCounted = lhisYearData.Where(d => !d.IsCounted).Sum(d => d.TotalDays),
-                    Counted = lhisYearData.Where(d => d.IsCounted).Sum(d => d.TotalDays),
+                    NoneCounted = thisYearData.Where(d => !d.IsCounted).Sum(d => d.TotalDays),
+                    Counted = thisYearData.Where(d => d.IsCounted).Sum(d => d.TotalDays - d.TotalDaysLastYearUsed),
+                    CountedLastYearUsed = lastYearData.Where(d => d.IsCounted).Sum(d => d.TotalDaysLastYearUsed),
                 }
             };
         }
@@ -322,8 +339,15 @@ namespace VErp.Services.Organization.Service.Leave
                 throw GeneralCode.InvalidParams.BadRequest();
             }
 
-            info.LeaveStatusId = (int)EnumLeaveStatus.New;
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                info.LeaveStatusId = (int)EnumLeaveStatus.New;
+                await _organizationDBContext.SaveChangesAsync();
+
+                await SetTotalUsedByLastYear(cfg, info, userInfo);
+
+                await trans.CommitAsync();
+            }
 
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Update)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
@@ -356,11 +380,20 @@ namespace VErp.Services.Organization.Service.Leave
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
             }
-            info.LeaveConfigId = cfg.LeaveConfigId.Value;
-            info.CheckedByUserId = _currentContextService.UserId;
-            info.LeaveStatusId = (int)EnumLeaveStatus.CheckAccepted;
 
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                info.LeaveConfigId = cfg.LeaveConfigId.Value;
+                info.CheckedByUserId = _currentContextService.UserId;
+                info.LeaveStatusId = (int)EnumLeaveStatus.CheckAccepted;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await SetTotalUsedByLastYear(cfg, info, userInfo);
+
+                await trans.CommitAsync();
+            }
+
 
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Check)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
@@ -391,11 +424,20 @@ namespace VErp.Services.Organization.Service.Leave
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
             }
-            info.LeaveConfigId = cfg.LeaveConfigId.Value;
-            info.CheckedByUserId = _currentContextService.UserId;
-            info.LeaveStatusId = (int)EnumLeaveStatus.CheckRejected;
 
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                info.LeaveConfigId = cfg.LeaveConfigId.Value;
+                info.CheckedByUserId = _currentContextService.UserId;
+                info.LeaveStatusId = (int)EnumLeaveStatus.CheckRejected;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await SetTotalUsedByLastYear(cfg, info, userInfo);
+
+                await trans.CommitAsync();
+            }
+
 
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.CheckReject)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
@@ -426,11 +468,21 @@ namespace VErp.Services.Organization.Service.Leave
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
             }
-            info.LeaveConfigId = cfg.LeaveConfigId.Value;
-            info.CheckedByUserId = _currentContextService.UserId;
-            info.LeaveStatusId = (int)EnumLeaveStatus.CensorApproved;
 
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                info.LeaveConfigId = cfg.LeaveConfigId.Value;
+                info.CheckedByUserId = _currentContextService.UserId;
+                info.LeaveStatusId = (int)EnumLeaveStatus.CensorApproved;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await SetTotalUsedByLastYear(cfg, info, userInfo);
+
+                await trans.CommitAsync();
+            }
+
+
 
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Approve)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
@@ -461,11 +513,20 @@ namespace VErp.Services.Organization.Service.Leave
                 //TODO Validation message
                 throw GeneralCode.Forbidden.BadRequest();
             }
-            info.LeaveConfigId = cfg.LeaveConfigId.Value;
-            info.CheckedByUserId = _currentContextService.UserId;
-            info.LeaveStatusId = (int)EnumLeaveStatus.CensorRejected;
 
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                info.LeaveConfigId = cfg.LeaveConfigId.Value;
+                info.CheckedByUserId = _currentContextService.UserId;
+                info.LeaveStatusId = (int)EnumLeaveStatus.CensorRejected;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await SetTotalUsedByLastYear(cfg, info, userInfo);
+
+                await trans.CommitAsync();
+            }
+
 
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Reject)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
@@ -475,6 +536,148 @@ namespace VErp.Services.Organization.Service.Leave
 
             return true;
         }
+
+
+        private async Task SetTotalUsedByLastYear(LeaveConfigModel cfg, LeaveLetter info, UserInfoOutput user)
+        {
+            var absences = await _organizationDBContext.AbsenceTypeSymbol.ToListAsync();
+
+            await SetTotalUsedByLastYearItem(cfg, info, user, absences);
+
+
+            var notAcceptYet = await (from l in _organizationDBContext.Leave
+                                      join c in _organizationDBContext.AbsenceTypeSymbol on l.AbsenceTypeSymbolId equals c.AbsenceTypeSymbolId
+                                      where l.UserId == info.UserId &&
+                                      (l.LeaveStatusId != (int)EnumLeaveStatus.CheckAccepted && l.LeaveStatusId != (int)EnumLeaveStatus.CensorApproved)
+                                      && l.DateStart > GetLastDateOfLastYear(DateTime.UtcNow)
+                                      select l
+                                      ).ToListAsync();
+            foreach (var item in notAcceptYet)
+            {
+                await SetTotalUsedByLastYearItem(cfg, item, user, absences);
+            }
+
+        }
+
+        private DateTime GetLastDateOfLastYear(DateTime date)
+        {
+            return new DateTime(date.Year - 1, 12, 31, 23, 59, 59);
+        }
+
+        private async Task SetTotalUsedByLastYearItem(LeaveConfigModel cfg, LeaveLetter info, UserInfoOutput user, IList<AbsenceTypeSymbol> absences)
+        {
+            var absenceInfo = absences.FirstOrDefault(a => a.AbsenceTypeSymbolId == info.AbsenceTypeSymbolId);
+            if (absenceInfo != null)
+            {
+                if (!absenceInfo.IsCounted)
+                {
+                    info.TotalDaysLastYearUsed = 0;
+                    await _organizationDBContext.SaveChangesAsync();
+                    return;
+                }
+            }
+
+
+            var nowTimezone = _currentContextService.GetNowInTimeZone();
+
+            var lastDateOfLastYear = GetLastDateOfLastYear(nowTimezone);
+
+            var lastYearMax = GetMaxLeaveDays(lastDateOfLastYear, cfg, user);
+
+            var totalByUser = await TotalByUser(info.UserId.Value);
+
+            var lastYearRemains = lastYearMax - totalByUser.LastYear.Counted;
+            if (lastYearRemains < 0)
+            {
+                lastYearRemains = 0;
+            }
+            if (lastYearRemains > (cfg.OldYearTransferMax ?? 0))
+            {
+                lastYearRemains = cfg.OldYearTransferMax ?? 0;
+            }
+
+            decimal sumTotalDaysLastYearUsed = totalByUser.ThisYear.CountedLastYearUsed;
+            decimal totalDaysLastYearUsed = 0;
+            if (cfg.OldYearAppliedToDate.HasValue)
+            {
+                var lastYearAppliedDate = cfg.OldYearAppliedToDate.Value.UnixToDateTime().Value;
+
+                var lastDateAppliedLastYear = new DateTime(nowTimezone.Year, lastYearAppliedDate.Month, lastYearAppliedDate.Day);
+
+                var dateStart = info.DateStart;
+                var dateEnd = info.DateEnd;
+
+                if (dateStart <= lastDateAppliedLastYear)
+                {
+                    for (var d = dateStart; d <= dateEnd; d = d.AddDays(1))
+                    {
+                        if (d <= lastDateAppliedLastYear && sumTotalDaysLastYearUsed < lastYearRemains)
+                        {
+                            var today = 1M;
+                            if (d.Equals(dateStart) && info.DateStartIsHalf)
+                            {
+                                today -= 0.5M;
+                            }
+
+                            if (d.Equals(dateEnd) && info.DateEndIsHalf)
+                            {
+                                today -= 0.5M;
+                            }
+
+                            totalDaysLastYearUsed += today;
+                        }
+
+
+                    }
+                }
+            }
+
+            info.TotalDaysLastYearUsed = totalDaysLastYearUsed;
+
+            await _organizationDBContext.SaveChangesAsync();
+        }
+
+        private int GetMaxLeaveDays(DateTime date, LeaveConfigModel cfg, UserInfoOutput user)
+        {
+            var seniorityDays = 0;
+            var departments = user.Departments;
+            if (departments?.Count > 0)
+            {
+                var department = departments.OrderBy(d => d.EffectiveDate).FirstOrDefault();
+                var joinDateUnix = department?.EffectiveDate;
+                if (department != null && joinDateUnix.HasValue)
+                {
+                    var joinDateDate = joinDateUnix.UnixToDateTime();
+
+                    var totalMonths = MonthDiff(joinDateDate.Value, date);
+                    if (totalMonths >= cfg.SeniorityMonthsStart)
+                    {
+                        var totalYears = (int)Math.Round(totalMonths / 12.0);
+                        seniorityDays += totalYears * (cfg.SeniorityMonthOfYear ?? 0);
+                    }
+                    if (cfg.Seniorities?.Count > 0)
+                    {
+                        var s = cfg.Seniorities.Where(s => s.Months <= totalMonths).OrderByDescending(s => s.Months).FirstOrDefault();
+                        if (s != null)
+                        {
+                            seniorityDays += s.AdditionDays;
+                        }
+                    }
+                }
+            }
+
+            return (cfg.MaxAyear ?? 0) + seniorityDays;
+        }
+
+        private int MonthDiff(DateTime dateFrom, DateTime dateTo)
+        {
+            var months = 0; ;
+            months = (dateTo.Year - dateFrom.Year) * 12;
+            months -= dateFrom.Month;
+            months += dateTo.Month;
+            return months <= 0 ? 0 : months;
+        }
+
 
     }
 }

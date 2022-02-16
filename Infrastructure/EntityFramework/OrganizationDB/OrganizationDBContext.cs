@@ -563,6 +563,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.TotalDays).HasColumnType("decimal(4, 1)");
 
+                entity.Property(e => e.TotalDaysLastYearUsed).HasColumnType("decimal(4, 1)");
+
                 entity.HasOne(d => d.AbsenceTypeSymbol)
                     .WithMany(p => p.Leave)
                     .HasForeignKey(d => d.AbsenceTypeSymbolId)

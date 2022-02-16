@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime DateEnd { get; set; }
         public bool DateEndIsHalf { get; set; }
         public decimal TotalDays { get; set; }
+        public decimal TotalDaysLastYearUsed { get; set; }
         public long? FileId { get; set; }
         public int AbsenceTypeSymbolId { get; set; }
         public int LeaveStatusId { get; set; }

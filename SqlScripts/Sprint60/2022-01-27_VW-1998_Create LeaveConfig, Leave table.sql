@@ -181,6 +181,7 @@ CREATE TABLE [dbo].[Leave](
 	[DateEnd] [datetime2](7) NOT NULL,
 	[DateEndIsHalf] [bit] NOT NULL,
 	[TotalDays] [decimal](4, 1) NOT NULL,
+	[TotalDaysLastYearUsed] [decimal](4, 1) NOT NULL,	
 	[FileId] [bigint] NULL,
 	[AbsenceTypeSymbolId] [int] NOT NULL,
 	[LeaveStatusId] [int] NOT NULL,
