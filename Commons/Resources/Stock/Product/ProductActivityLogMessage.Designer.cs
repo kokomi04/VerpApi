@@ -196,6 +196,15 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cập nhật TT quy trình sản xuất mặt hàng &quot;{0}&quot;.
+        /// </summary>
+        public static string UpdateProcessInfo {
+            get {
+                return ResourceManager.GetString("UpdateProcessInfo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cập nhật TT bán mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateSellInfo {

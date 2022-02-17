@@ -84,22 +84,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<IList<ProductionScheduleTurnShiftModel>> GetShifts(int departmentId, long productionOrderId, long productionStepId)
+        public async Task<IDictionary<long, List<ProductionScheduleTurnShiftModel>>> GetShifts(int departmentId, long productionOrderId, long[] productionStepIds)
         {
-            var shifts = await _manufacturingDBContext.ProductionScheduleTurnShift.Include(s => s.ProductionScheduleTurnShiftUser).Where(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ProductionOrderId == productionOrderId)
-                  .ToListAsync();
+            var shifts = await _manufacturingDBContext.ProductionScheduleTurnShift
+                .Include(s => s.ProductionScheduleTurnShiftUser)
+                .Where(a => a.DepartmentId == departmentId && productionStepIds.Contains(a.ProductionStepId) && a.ProductionOrderId == productionOrderId)
+                .ToListAsync();
 
-            return shifts.Select(s =>
-            {
-                var shift = _mapper.Map<ProductionScheduleTurnShiftModel>(s);
-                var users = new Dictionary<int, ProductionScheduleTurnShiftUserModel>();
-                foreach (var u in s.ProductionScheduleTurnShiftUser)
+            return shifts
+                .GroupBy(s => s.ProductionStepId)
+                .ToDictionary(g => g.Key, g => g.Select(s =>
                 {
-                    users.Add(u.UserId, _mapper.Map<ProductionScheduleTurnShiftUserModel>(u));
-                }
-                shift.Users = users;
-                return shift;
-            }).ToList();
+                    var shift = _mapper.Map<ProductionScheduleTurnShiftModel>(s);
+                    var users = new Dictionary<int, ProductionScheduleTurnShiftUserModel>();
+                    foreach (var u in s.ProductionScheduleTurnShiftUser)
+                    {
+                        users.Add(u.UserId, _mapper.Map<ProductionScheduleTurnShiftUserModel>(u));
+                    }
+                    shift.Users = users;
+                    return shift;
+                }).ToList());
         }
 
         public async Task<bool> UpdateShift(int departmentId, long productionOrderId, long productionStepId, long productionScheduleTurnShiftId, ProductionScheduleTurnShiftModel model)

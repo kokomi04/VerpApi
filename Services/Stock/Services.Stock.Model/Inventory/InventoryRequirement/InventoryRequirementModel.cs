@@ -19,7 +19,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public int? DepartmentId { get; set; }
         public long? ProductionStepId { get; set; }
         public int CreatedByUserId { get; set; }
-        public string ProductionOrderCode { get; set; }
+
         public string Shipper { get; set; }
         public int? CustomerId { get; set; }
         public string BillForm { get; set; }
@@ -30,15 +30,20 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
+
+        public int? CensorByUserId { get; set; }
+        public long? CensorDatetimeUtc { get; set; }
+        public EnumInventoryRequirementStatus CensorStatus { get; set; }
+        public long InventoryRequirementId { get; set; }
+
     }
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
     {
-        public long InventoryRequirementId { get; set; }
-        public int? CensorByUserId { get; set; }
-        public long? CensorDatetimeUtc { get; set; }
-        public EnumInventoryRequirementStatus CensorStatus { get; set; }
+
+
         public int ProductId { get; set; }
+        public long InventoryRequirementDetailId { get; set; }
         public string ProductTitle { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
@@ -46,6 +51,17 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public long? OutsourceStepRequestId { get; set; }
 
         public IList<InventorySimpleInfo> InventoryInfo { set; get; }
+
+        public decimal PrimaryQuantityRemaining { get; set; }
+        public decimal InventoryQuantity { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+        public decimal? ProductUnitConversionQuantity { get; set; }
+
+        public string OrderCode { get; set; }
+        public string PoCode { get; set; }
+        public string ProductionOrderCode { get; set; }
+        public string Description { get; set; }
+
 
         public void Mapping(Profile profile)
         {
@@ -71,7 +87,10 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.ProductCode, otp => otp.MapFrom(source => source.Product.ProductCode))
                 .ForMember(dest => dest.ProductName, otp => otp.MapFrom(source => source.Product.ProductName))
                 .ForMember(dest => dest.ProductTitle, otp => otp.MapFrom(source => $"{source.Product.ProductCode} / {source.Product.ProductName}"))
-                .ForMember(dest => dest.StockName, otp => otp.MapFrom(source => source.AssignStock.StockName));
+                .ForMember(dest => dest.StockName, otp => otp.MapFrom(source => source.AssignStock.StockName))
+                .ForMember(dest => dest.OutsourceStepRequestId, otp => otp.MapFrom(source => source.OutsourceStepRequestId))
+                .ForMember(dest => dest.PrimaryQuantity, otp => otp.MapFrom(source => source.PrimaryQuantity))
+                .ForMember(dest => dest.ProductUnitConversionQuantity, otp => otp.MapFrom(source => source.ProductUnitConversionQuantity));
         }
     }
 
@@ -105,7 +124,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public string ObjectId { get; set; }
     }
 
-    public class InventoryRequirementOutputModel : InventoryRequirementListModel
+    public class InventoryRequirementOutputModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementEntity>
     {
         public virtual ICollection<InventoryRequirementDetailOutputModel> InventoryRequirementDetail { get; set; }
         public virtual ICollection<InventoryRequirementFileOutputModel> InventoryRequirementFile { get; set; }
@@ -116,7 +135,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
             InventoryRequirementDetail = new List<InventoryRequirementDetailOutputModel>();
         }
 
-        public new void Mapping(Profile profile)
+
+        public void Mapping(Profile profile)
         {
             profile.CreateMap<InventoryRequirementEntity, InventoryRequirementOutputModel>()
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))

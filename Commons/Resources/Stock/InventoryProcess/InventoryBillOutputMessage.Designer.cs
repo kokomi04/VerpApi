@@ -19,7 +19,7 @@ namespace Verp.Resources.Stock.InventoryProcess {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class InventoryBillOutputMessage {
@@ -61,6 +61,15 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Không thể cập nhật phiếu xuất kho từ luân chuyển kho.
+        /// </summary>
+        public static string CannotUpdateInvOutputRotation {
+            get {
+                return ResourceManager.GetString("CannotUpdateInvOutputRotation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Số dư trong kiện &quot;{0}&quot; mặt hàng &quot;{1}&quot; ({2}) &lt;  {3} không đủ để xuất.
         /// </summary>
         public static string NotEnoughBalanceInPackage {
@@ -84,6 +93,24 @@ namespace Verp.Resources.Stock.InventoryProcess {
         public static string NotEnoughBalancePackageQuantityZero {
             get {
                 return ResourceManager.GetString("NotEnoughBalancePackageQuantityZero", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kho xuất và kho nhập phải khác nhau.
+        /// </summary>
+        public static string RotationRequireDiffStock {
+            get {
+                return ResourceManager.GetString("RotationRequireDiffStock", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vui lòng nhập kho xuất.
+        /// </summary>
+        public static string RotationStockIsRequired {
+            get {
+                return ResourceManager.GetString("RotationStockIsRequired", resourceCulture);
             }
         }
     }

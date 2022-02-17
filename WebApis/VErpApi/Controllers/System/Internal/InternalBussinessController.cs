@@ -27,13 +27,15 @@ namespace VErpApi.Controllers.System.Internal
             _businessInfoService = businessInfoService;
         }
 
+        /*
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<CustomerListOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<CustomerListOutput>> Get([FromBody] Clause filters, [FromQuery] string keyword, [FromQuery] int? customerCateId, [FromQuery] IList<int> customerIds, [FromQuery] EnumCustomerStatus? customerStatusId, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _customerService.GetList(keyword, customerIds, customerStatusId, page, size, filters);
+            return await _customerService.GetList(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
         }
+        */
 
         [HttpGet]
         [Route("businessInfo")]

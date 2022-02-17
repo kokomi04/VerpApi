@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 {
     public partial class PurchaseOrderDetail
     {
+        public PurchaseOrderDetail()
+        {
+            PurchaseOrderDetailSubCalculation = new HashSet<PurchaseOrderDetailSubCalculation>();
+        }
+
         public long PurchaseOrderDetailId { get; set; }
         public int SubsidiaryId { get; set; }
         public long PurchaseOrderId { get; set; }
@@ -32,9 +37,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? ExchangedMoney { get; set; }
         public int? SortOrder { get; set; }
         public string PoProviderPricingCode { get; set; }
+        public bool IsSubCalculation { get; set; }
 
         public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
         public virtual PurchaseOrder PurchaseOrder { get; set; }
         public virtual PurchasingSuggestDetail PurchasingSuggestDetail { get; set; }
+        public virtual ICollection<PurchaseOrderDetailSubCalculation> PurchaseOrderDetailSubCalculation { get; set; }
     }
 }

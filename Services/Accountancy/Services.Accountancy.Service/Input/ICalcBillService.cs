@@ -11,13 +11,13 @@ namespace VErp.Services.Accountancy.Service.Input
 {
     public interface ICalcBillService
     {
-        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate);
+        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate, string accoutantNumber);
 
         Task<DataResultModel> FixExchangeRateDetail(long fromDate, long toDate, int currency, string accountNumber, string partnerId);
 
-        Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate);
+        Task<bool> CheckExistedFixExchangeRate(long fromDate, long toDate, int currency, string accoutantNumber);
 
-        Task<bool> DeletedFixExchangeRate(long fromDate, long toDate);
+        Task<bool> DeletedFixExchangeRate(long fromDate, long toDate, int currency, string accoutantNumber);
 
         Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type,
             bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
@@ -43,5 +43,11 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> CheckExistedDepreciation(long fromDate, long toDate, string accountNumber);
 
         Task<bool> DeletedDepreciation(long fromDate, long toDate, string accountNumber);
+
+        Task<ICollection<NonCamelCaseDictionary>> CalcPrepaidExpense(long fromDate, long toDate, string accountNumber);
+
+        Task<bool> CheckExistedPrepaidExpense(long fromDate, long toDate, string accountNumber);
+
+        Task<bool> DeletedPrepaidExpense(long fromDate, long toDate, string accountNumber);
     }
 }

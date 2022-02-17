@@ -11,7 +11,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
 {
     public interface IOutsourcePartRequestService
     {
-        Task<PageData<OutsourcePartRequestSearchModel>> Search(string keyWord, int page, int size, long fromDate, long toDate, Clause filters = null);
+        Task<PageData<OutsourcePartRequestSearchModel>> Search(string keyWord, int page, int size, long fromDate, long toDate, long? productionOrderId, Clause filters = null);
         Task<OutsourcePartRequestModel> GetOutsourcePartRequest(long outsourcePartRequestId = 0);
         Task<long> CreateOutsourcePartRequest(OutsourcePartRequestModel req);
         Task<bool> UpdateOutsourcePartRequest(long outsourcePartRequestId, OutsourcePartRequestModel req);
@@ -20,6 +20,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource
         Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId);
         Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId);
         Task<IList<MaterialsForProductOutsource>> GetMaterialsForProductOutsource(long outsourcePartRequestId, long[] productId);
+        Task<bool> CheckHasPurchaseOrder(long outsourcePartRequestId);
 
     }
 }

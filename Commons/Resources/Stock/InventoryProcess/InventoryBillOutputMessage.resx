@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CannotUpdateInvOutputRotation" xml:space="preserve">
+    <value>Không thể cập nhật phiếu xuất kho từ luân chuyển kho</value>
+  </data>
   <data name="NotEnoughBalanceInPackage" xml:space="preserve">
     <value>Số dư trong kiện "{0}" mặt hàng "{1}" ({2}) &lt;  {3} không đủ để xuất</value>
   </data>
@@ -125,5 +128,11 @@
   </data>
   <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
     <value>Không có số dư trong kiện</value>
+  </data>
+  <data name="RotationRequireDiffStock" xml:space="preserve">
+    <value>Kho xuất và kho nhập phải khác nhau</value>
+  </data>
+  <data name="RotationStockIsRequired" xml:space="preserve">
+    <value>Vui lòng nhập kho xuất</value>
   </data>
 </root>

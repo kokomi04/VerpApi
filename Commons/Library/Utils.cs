@@ -222,43 +222,6 @@ namespace VErp.Commons.Library
             return JsonConvert.DeserializeObject(obj, type);
         }
 
-        public static long GetUnixUtc(this DateTime dateTime, int? timezoneOffset)
-        {
-            dateTime = dateTime.AddMinutes(timezoneOffset ?? 0);
-            return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-        }
-
-        public static long GetUnix(this DateTime dateTime)
-        {
-            return (long)dateTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-        }
-
-        public static long? GetUnix(this DateTime? dateTime)
-        {
-            if (!dateTime.HasValue) return null;
-            return (long)dateTime.Value.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-        }
-
-        public static DateTime? UnixToDateTime(this long unixTime)
-        {
-            return UnixToDateTime((long?)unixTime, null);
-        }
-
-        public static DateTime? UnixToDateTime(this long? unixTime)
-        {
-            return UnixToDateTime(unixTime, null);
-        }
-
-        public static DateTime? UnixToDateTime(this long? unixTime, int? timezoneOffset)
-        {
-            if (unixTime == 0 || !unixTime.HasValue) return null;
-            return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value).AddMinutes(-timezoneOffset ?? 0);
-        }
-
-        public static DateTime UnixToDateTime(this long unixTime, int? timezoneOffset)
-        {
-            return UnixToDateTime((long?)unixTime, timezoneOffset).Value;
-        }
 
         public static decimal Eval(string expression)
         {
@@ -1227,11 +1190,18 @@ namespace VErp.Commons.Library
             return columnName.ToLower().StartsWith(AccountantConstants.THANH_TIEN_NGOAI_TE_PREFIX.ToLower());
         }
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false)
+        public static bool IsClass(this Type type)
+        {
+            bool isPrimitiveType = type.IsPrimitive || type.IsValueType || (type == typeof(string));
+
+            return type.IsClass && !isPrimitiveType;
+        }
+
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "")
         {
             var fields = new List<CategoryFieldNameModel>();
 
-            if (!forExport)
+            if (!forExport && !ignoreCheckField)
             {
                 fields.Add(new CategoryFieldNameModel()
                 {
@@ -1259,15 +1229,15 @@ namespace VErp.Commons.Library
                     title = prop.Name;
                 }
 
-                var types = prop.GetCustomAttributes<FieldDataTypeAttribute>();
-                if (types != null && types.Count() > 0)
-                {
-                    type = types.First().Type;
-                }
-                if (byType.HasValue && type.HasValue && byType.Value != type.Value)
-                {
-                    continue;
-                }
+                //var types = prop.GetCustomAttributes<FieldDataTypeAttribute>();
+                //if (types != null && types.Count() > 0)
+                //{
+                //    type = types.First().Type;
+                //}
+                //if (byType.HasValue && type.HasValue && byType.Value != type.Value)
+                //{
+                //    continue;
+                //}
 
 
                 if (prop.GetCustomAttribute<FieldDataIgnoreAttribute>() != null) continue;
@@ -1277,38 +1247,60 @@ namespace VErp.Commons.Library
 
                 var isRequired = prop.GetCustomAttribute<RequiredAttribute>();
 
-
-                var fileMapping = new CategoryFieldNameModel()
+                if (prop.GetCustomAttribute<FieldDataNestedObjectAttribute>() != null && prop.PropertyType.IsClass())
                 {
-                    GroupName = groupName,
-                    //CategoryFieldId = prop.Name.GetHashCode(),
-                    FieldName = prop.Name,
-                    FieldTitle = title,
-                    IsRequired = isRequired != null,
-                    Type = type,
-                    RefCategory = null
-                };
-
-                bool isPrimitiveType = prop.PropertyType.IsPrimitive || prop.PropertyType.IsValueType || (prop.PropertyType == typeof(string));
-
-                if (prop.PropertyType.IsClass && !isPrimitiveType)
-                {
-
                     MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
                     MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                    var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false });
-
-                    fileMapping.RefCategory = new CategoryNameModel()
+                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name });
+                    foreach (var f in nestedFields)
                     {
-                        CategoryCode = prop.PropertyType.Name,
-                        //CategoryId = prop.PropertyType.Name.GetHashCode(),
-                        CategoryTitle = title,
-                        Fields = childFields
+                        fields.Add(new CategoryFieldNameModel()
+                        {
+                            GroupName = groupName,
+                            //CategoryFieldId = prop.Name.GetHashCode(),
+                            FieldName = f.FieldName,
+                            FieldTitle = f.FieldTitle,
+                            IsRequired = f.IsRequired,
+                            Type = f.Type,
+                            RefCategory = f.RefCategory
+                        });
+                    }
+                }
+                else
+                {
+
+                    var fileMapping = new CategoryFieldNameModel()
+                    {
+                        GroupName = groupName,
+                        //CategoryFieldId = prop.Name.GetHashCode(),
+                        FieldName = preFix + prop.Name,
+                        FieldTitle = title,
+                        IsRequired = isRequired != null,
+                        Type = type,
+                        RefCategory = null
                     };
 
-                }
 
-                fields.Add(fileMapping);
+                    if (prop.PropertyType.IsClass())
+                    {
+
+                        MethodInfo method = typeof(Utils).GetMethod(nameof(Utils.GetFieldNameModels));
+                        MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
+                        var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, "" });
+
+                        fileMapping.RefCategory = new CategoryNameModel()
+                        {
+                            CategoryCode = prop.PropertyType.Name,
+                            //CategoryId = prop.PropertyType.Name.GetHashCode(),
+                            CategoryTitle = title,
+                            Fields = childFields
+                        };
+
+                    }
+
+                    fields.Add(fileMapping);
+
+                }
             }
 
 
@@ -1402,7 +1394,7 @@ namespace VErp.Commons.Library
                         {
                             newArray.SetValue(lst[i], i);
                         }
-                        targetValue = newArray;                        
+                        targetValue = newArray;
                     }
 
                     prop.SetValue(target, targetValue, null);
@@ -1421,7 +1413,7 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static void ValidateCodeSpecialCharactors(this string code)
+        public static void ValidateCodeSpecialCharactors(this string code, string desc = "")
         {
             if (string.IsNullOrEmpty(code))
                 return;
@@ -1429,7 +1421,7 @@ namespace VErp.Commons.Library
             var regEx = new Regex("^([0-9a-zA-Z])(([0-9a-zA-Z_\\.\\,\\/\\-#\\+&])*([0-9a-zA-Z]))*$", RegexOptions.Multiline);
             if (!regEx.IsMatch(code))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\.,/-_#&+)");
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} {desc} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\.,/-_#&+)");
             }
         }
 

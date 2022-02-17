@@ -15,7 +15,7 @@ namespace VErp.Services.Master.Model.Users
         public string Password { get; set; }
         public EnumUserStatus UserStatusId { get; set; }
         public int? RoleId { get; set; }
-
+        public int? LeaveConfigId { get; set; }
         public IList<UserDepartmentMappingModel> Departments { get; set; }
     }
 

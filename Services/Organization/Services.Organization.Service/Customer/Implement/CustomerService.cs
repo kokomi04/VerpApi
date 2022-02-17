@@ -168,9 +168,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var genCodeContexts = new List<GenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
+            var cates = await _organizationContext.CustomerCate.ToListAsync();
+
             foreach (var c in customers)
-                genCodeContexts.Add(await GenerateCustomerCode(null, c, baseValueChains));
-            
+                genCodeContexts.Add(await GenerateCustomerCode(cates, null, c, baseValueChains));
+
             await ValidateCustomerModels(customers);
 
             var (customerEntities, originData, contacts, bankAccounts, attachments) = ConvertToCustomerEntities(customers);
@@ -298,6 +300,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 CustomerName = customerInfo.CustomerName,
                 CustomerCode = customerInfo.CustomerCode,
+                CustomerCateId = customerInfo.CustomerCateId,
                 CustomerTypeId = (EnumCustomerType)customerInfo.CustomerTypeId,
                 Address = customerInfo.Address,
                 TaxIdNo = customerInfo.TaxIdNo,
@@ -336,18 +339,22 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
 
 
-        public async Task<PageData<CustomerListOutput>> GetList(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
+        public async Task<PageData<CustomerListOutput>> GetList(string keyword, int? customerCateId, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
-            var lst = await GetListEntity(keyword, customerIds, customerStatusId, page, size, filters);
+            var lst = await GetListEntity(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
             var lstData = _mapper.Map<List<CustomerListOutput>>(lst.List);
             return (lstData, lst.Total);
         }
 
-        private async Task<PageData<CustomerEntity>> GetListEntity(string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
+        private async Task<PageData<CustomerEntity>> GetListEntity(string keyword, int? customerCateId, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
             var query = _organizationContext.Customer.AsQueryable();
+            if (customerCateId > 0)
+            {
+                query = query.Where(c => c.CustomerCateId == customerCateId);
+            }
             if (customerIds != null && customerIds.Count > 0)
             {
                 query = query.Where(c => customerIds.Contains(c.CustomerId));
@@ -386,9 +393,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, int? customerCateId, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
-            var lst = await GetListEntity(keyword, customerIds, customerStatusId, page, size, filters);
+            var lst = await GetListEntity(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
             var bomExport = new CusomerExportFacade(_organizationContext, _httpCategoryHelperService, _userHelperService, fieldNames);
             return await bomExport.Export(lst.List);
         }
@@ -408,6 +415,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     CustomerId = c.CustomerId,
                     CustomerCode = c.CustomerCode,
                     CustomerName = c.CustomerName,
+                    CustomerCateId = c.CustomerCateId,
                     CustomerTypeId = (EnumCustomerType)c.CustomerTypeId,
                     Address = c.Address,
                     TaxIdNo = c.TaxIdNo,
@@ -477,28 +485,54 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var customerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
 
 
-            customerInfo.LegalRepresentative = data.LegalRepresentative;
-            customerInfo.CustomerCode = data.CustomerCode;
-            customerInfo.CustomerName = data.CustomerName;
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.LegalRepresentative))
+                customerInfo.LegalRepresentative = data.LegalRepresentative;
+
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.CustomerCode))
+                customerInfo.CustomerCode = data.CustomerCode;
+
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.CustomerName))
+                customerInfo.CustomerName = data.CustomerName;
+            if (!igDeleteRef || data.CustomerCateId > 0)
+                customerInfo.CustomerCateId = data.CustomerCateId;
+
             customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
-            customerInfo.Address = data.Address;
-            customerInfo.TaxIdNo = data.TaxIdNo;
-            customerInfo.PhoneNumber = data.PhoneNumber;
-            customerInfo.Website = data.Website;
-            customerInfo.Email = data.Email;
-            customerInfo.Identify = data.Identify;
-            customerInfo.DebtDays = data.DebtDays;
-            customerInfo.DebtLimitation = data.DebtLimitation;
-            customerInfo.DebtBeginningTypeId = (int)data.DebtBeginningTypeId;
-            customerInfo.DebtManagerUserId = data.DebtManagerUserId;
-            customerInfo.LoanDays = data.LoanDays;
-            customerInfo.LoanLimitation = data.LoanLimitation;
+
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Address))
+                customerInfo.Address = data.Address;
+
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.TaxIdNo))
+                customerInfo.TaxIdNo = data.TaxIdNo;
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.PhoneNumber))
+                customerInfo.PhoneNumber = data.PhoneNumber;
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Website))
+                customerInfo.Website = data.Website;
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Email))
+                customerInfo.Email = data.Email;
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Identify))
+                customerInfo.Identify = data.Identify;
+            if (!igDeleteRef || data.DebtDays.HasValue)
+                customerInfo.DebtDays = data.DebtDays;
+            if (!igDeleteRef || data.DebtDays.HasValue)
+                customerInfo.DebtLimitation = data.DebtLimitation;
+            if (!igDeleteRef || data.DebtBeginningTypeId.HasValue)
+                customerInfo.DebtBeginningTypeId = (int)data.DebtBeginningTypeId;
+            if (!igDeleteRef || data.DebtManagerUserId.HasValue)
+                customerInfo.DebtManagerUserId = data.DebtManagerUserId;
+            if (!igDeleteRef || data.LoanDays.HasValue)
+                customerInfo.LoanDays = data.LoanDays;
+            if (!igDeleteRef || data.LoanLimitation.HasValue)
+                customerInfo.LoanLimitation = data.LoanLimitation;
             customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
-            customerInfo.LoanManagerUserId = data.LoanManagerUserId;
-            customerInfo.Description = data.Description;
-            customerInfo.IsActived = data.IsActived;
-            customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
-            customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
+            if (!igDeleteRef || data.LoanManagerUserId.HasValue)
+                customerInfo.LoanManagerUserId = data.LoanManagerUserId;
+            if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Description))
+                customerInfo.Description = data.Description;
+            if (!igDeleteRef || data.IsActived.HasValue)
+                customerInfo.IsActived = data.IsActived.Value;
+            //customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+            if (!igDeleteRef || data.CustomerStatusId.HasValue)
+                customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
 
             if (data.Contacts == null)
             {
@@ -661,6 +695,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
                 throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", existedCustomers.Select(c => c.CustomerName)));
             }
+
+
         }
 
         private (IList<CustomerEntity> customerEntities,
@@ -682,6 +718,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 {
                     CustomerCode = data.CustomerCode,
                     CustomerName = data.CustomerName,
+                    CustomerCateId = data.CustomerCateId,
                     CustomerTypeId = (int)data.CustomerTypeId,
                     Address = data.Address,
                     TaxIdNo = data.TaxIdNo,
@@ -689,7 +726,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     Website = data.Website,
                     Email = data.Email,
                     Description = data.Description,
-                    IsActived = data.IsActived,
+                    IsActived = data.IsActived ?? false,
                     IsDeleted = false,
                     LegalRepresentative = data.LegalRepresentative,
                     CreatedDatetimeUtc = DateTime.UtcNow,
@@ -787,15 +824,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        private async Task<GenerateCodeContext> GenerateCustomerCode(int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
+        private async Task<GenerateCodeContext> GenerateCustomerCode(IList<CustomerCate> cates, int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
         {
             model.CustomerCode = (model.CustomerCode ?? "").Trim();
 
+            var cateInfo = cates.FirstOrDefault(c => c.CustomerCateId == model.CustomerCateId);
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
             var code = await ctx
                 .SetConfig(EnumObjectType.Customer)
-                .SetConfigData(customerId ?? 0)
+                .SetConfigData(customerId ?? 0, null, cateInfo?.CustomerCateCode)
                 .TryValidateAndGenerateCode(_organizationContext.Customer, model.CustomerCode, (s, code) => s.CustomerId != customerId && s.CustomerCode == code);
 
             model.CustomerCode = code;

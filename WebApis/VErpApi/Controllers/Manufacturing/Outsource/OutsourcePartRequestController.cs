@@ -32,9 +32,10 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             [FromQuery] int size,
             [FromQuery] long fromDate,
             [FromQuery] long toDate,
+            [FromQuery] long? productionOrderId,
             [FromBody] Clause filters = null)
         {
-            return await _outsourcePartRequestService.Search(keyword, page, size,fromDate, toDate, filters);
+            return await _outsourcePartRequestService.Search(keyword, page, size,fromDate, toDate, productionOrderId, filters);
         }
 
         [HttpGet]
@@ -90,6 +91,13 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
         public async Task<IList<MaterialsForProductOutsource>> GetMaterialsForProductOutsource([FromRoute] long outsourcePartRequestId, [FromQuery] long[] productId)
         {
             return await _outsourcePartRequestService.GetMaterialsForProductOutsource(outsourcePartRequestId, productId);
+        }
+
+        [HttpGet]
+        [Route("{outsourcePartRequestId}/hasPurchaseOrder")]
+        public async Task<bool> CheckHasPurchaseOrder([FromRoute] long outsourcePartRequestId)
+        {
+            return await _outsourcePartRequestService.CheckHasPurchaseOrder(outsourcePartRequestId);
         }
     }
 }

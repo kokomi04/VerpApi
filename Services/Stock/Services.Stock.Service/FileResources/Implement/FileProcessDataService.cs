@@ -146,6 +146,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         }
 
+        /*
         /// <summary>
         /// Đọc file và cập nhật dữ liệu số dư đầu kỳ theo kho
         /// </summary>
@@ -308,22 +309,22 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return true;
 
         }
-
+        */
         #region Private functions
 
-        private decimal HelperCellGetNumericValue(ICell myCell)
-        {
-            try
-            {
-                var cellValue = myCell.NumericCellValue;
-                decimal ret = Convert.ToDecimal(cellValue);
-                return ret;
-            }
-            catch
-            {
-                return 0;
-            }
-        }
+        //private decimal HelperCellGetNumericValue(ICell myCell)
+        //{
+        //    try
+        //    {
+        //        var cellValue = myCell.NumericCellValue;
+        //        decimal ret = Convert.ToDecimal(cellValue);
+        //        return ret;
+        //    }
+        //    catch
+        //    {
+        //        return 0;
+        //    }
+        //}
 
         private string HelperCellGetStringValue(ICell myCell)
         {
@@ -449,6 +450,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return GeneralCode.InternalError;
 
         }
+        /*
 
         private async Task<Enum> ProcessInventoryInputExcelSheet(List<ISheet> sheetList, InventoryOpeningBalanceModel model, int currentUserId)
         {
@@ -1088,6 +1090,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             }
             return GeneralCode.Success;
         }
+        */
         #endregion
     }
 

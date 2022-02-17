@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -43,6 +44,8 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long? CurrencyId { get; set; }
         public decimal? ExchangeRate { get; set; }
+
+        public EnumPurchasingOrderType PurchaseOrderType {get;set;}
     }
 
     public interface IPurchaseOrderInputDetail
@@ -76,10 +79,16 @@ namespace VErp.Services.PurchaseOrder.Model
         // decimal? ExchangeRate { get; set; }
         decimal? ExchangedMoney { get; set; }
         int? SortOrder { get; set; }
+
+        bool IsSubCalculation { get; set; }
     }
 
     public class PurchaseOrderInputDetail : IPurchaseOrderInputDetail
     {
+        public PurchaseOrderInputDetail()
+        {
+            OutsourceMappings = new List<PurchaseOrderOutsourceMappingModel>();
+        }
         public long? PurchaseOrderDetailId { get; set; }
         public long? PurchasingSuggestDetailId { get; set; }
         public long? PoAssignmentDetailId { get; set; }
@@ -111,6 +120,11 @@ namespace VErp.Services.PurchaseOrder.Model
         // public decimal? ExchangeRate { get; set; }
         public decimal? ExchangedMoney { get; set; }
         public int? SortOrder { get; set; }
+
+        public bool IsSubCalculation { get; set; }
+
+        public IList<PurchaseOrderDetailSubCalculationModel> SubCalculations { get; set; }
+        public IList<PurchaseOrderOutsourceMappingModel> OutsourceMappings { get; set; }
 
     }
 

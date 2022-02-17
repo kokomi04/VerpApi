@@ -105,6 +105,7 @@ namespace VErp.Services.PurchaseOrder.Model
         // public string CurrencyCode { get; set; }
         // public decimal? ExchangeRate { get; set; }
         public decimal? ExchangedMoney { get; set; }
+        public bool IsSubCalculation { get; set; }
     }
 
 }

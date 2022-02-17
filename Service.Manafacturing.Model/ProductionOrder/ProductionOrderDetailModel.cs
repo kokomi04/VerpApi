@@ -16,6 +16,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string Note { get; set; }
         //public int Status { get; set; }
         public long? OutsourcePartRequestId { get; set; }
+
+        public long? ProductionProcessVersion { get; set; }
     }
 
     public class ProductionOrderDetailInputModel : IMapFrom<ProductionOrderDetail>
@@ -59,5 +61,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string Specification { get; set; }
         public bool InvalidPlan { get; set; }
         public string CustomerPO { get; set; }
+        public bool HasNewProductionProcessVersion { get; set; }
     }
 }

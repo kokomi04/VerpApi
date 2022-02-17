@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Services.Stock.Model.Package;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
@@ -10,7 +11,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int StockId { get; set; }
         public string InventoryCode { get; set; }
         public long Date { get; set; }
-        public int InventoryActionId { get; set; }
+        public EnumInventoryAction InventoryActionId { get; set; }
     }
     public class InventoryInModel : InventoryModelBase
     {
@@ -27,7 +28,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public string BillCode { set; get; }
         public string BillSerial { set; get; }
         public long? BillDate { set; get; }
-        public string AccountancyAccountNumber { get; set; }
+        //public string AccountancyAccountNumber { get; set; }
 
         public int? DepartmentId { get; set; }
         /// <summary>
@@ -69,6 +70,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public string ProductionOrderCode { get; set; }
 
         public long? ToPackageId { set; get; }
+
+        public PackageInputModel ToPackageInfo { get; set; }
 
         public EnumPackageOption PackageOptionId { set; get; }
 

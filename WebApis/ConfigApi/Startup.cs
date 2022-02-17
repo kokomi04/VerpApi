@@ -64,13 +64,28 @@ namespace ConfigApi
             //services.AddAutoMapper(typeof(Startup));
 
             var profile = new MappingProfile();
+
+            //profile.CreateMap<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
+            //profile.CreateMap<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
+
+            //profile.CreateMap<DateTime, long>().ConvertUsing(v => v.GetUnix());
+            //profile.CreateMap<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
+
             //profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             //profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);
             profile.ApplyMappingsFromAssembly(AccountancyModelAssembly.Assembly);
             //profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             //profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
 
-            services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
+            services.AddAutoMapper(cfg => {
+                
+                cfg.AddProfile(profile);
+
+
+             
+
+
+            }, this.GetType().Assembly);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)

@@ -75,6 +75,34 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
+        public async Task<bool> UpdateProductionProcessVersion(int productId)
+        {
+            var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            if (!productInfo.ProductionProcessVersion.HasValue)
+                productInfo.ProductionProcessVersion = 1;
+            else productInfo.ProductionProcessVersion += 1;
+
+            await _stockDbContext.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<long> GetProductionProcessVersion(int productId)
+        {
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            return productInfo.ProductionProcessVersion.GetValueOrDefault();
+        }
+
         public async Task<int> AddProduct(ProductModel req)
         {
             //var customGenCode = await GenerateProductCode(null, req);
@@ -407,6 +435,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     //Update
 
                     //Productinfo
+                    req.ProductionProcessVersion = productInfo.ProductionProcessVersion;
+
                     _mapper.Map(req, productInfo);
 
                     productInfo.ProductInternalName = req.ProductName.NormalizeAsInternalName();
@@ -786,6 +816,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.ProductId,
                   p.ProductCode,
                   p.ProductName,
+                  p.ProductNameEng,
                   p.MainImageFileId,
                   p.ProductTypeId,
                   ProductTypeCode = pt == null ? null : pt.IdentityCode,
@@ -811,15 +842,27 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.PackingMethod,
                   p.Quantitative,
                   p.QuantitativeUnitTypeId,
+
+                  p.ProductPurity,
+
                   p.Measurement,
                   p.NetWeight,
                   p.GrossWeight,
                   p.LoadAbility,
+
+                  p.PackingQuantitative,
+                  p.PackingWidth,
+                  p.PackingHeight,
+                  p.PackingLong,
+
                   s.StockOutputRuleId,
                   s.AmountWarningMin,
                   s.AmountWarningMax,
                   s.ExpireTimeAmount,
                   s.ExpireTimeTypeId,
+
+                  s.DescriptionToStock,
+
                   p.Color
               });
 
@@ -846,10 +889,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         c.ProductCode.Contains(keyword)
                         || c.Barcode.Contains(keyword)
                         || c.ProductName.Contains(keyword)
+                        || c.ProductNameEng.Contains(keyword)
                         || c.ProductTypeName.Contains(keyword)
                         || c.ProductCateName.Contains(keyword)
                         || c.Specification.Contains(keyword)
                         || c.Description.Contains(keyword)
+                        || c.DescriptionToStock.Contains(keyword)
                         select c;
             }
             query = query.InternalFilter(filters);
@@ -870,6 +915,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             foreach (var item in lstData)
             {
                 productUnitConverions.TryGetValue(item.ProductId, out var pus);
+                var puDefault = pus.FirstOrDefault(p => p.IsDefault);
+
                 var barcodeConfigId = item.BarcodeConfigId ?? 0;
                 barCodeConfigs.TryGetValue(barcodeConfigId, out var barcodeConfig);
                 var product = new ProductListOutput()
@@ -877,6 +924,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductId = item.ProductId,
                     ProductCode = item.ProductCode,
                     ProductName = item.ProductName,
+                    ProductNameEng = item.ProductNameEng,
                     BarcodeConfigName = barcodeConfig?.Name,
                     Barcode = item.Barcode,
                     MainImageFileId = item.MainImageFileId,
@@ -899,6 +947,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     PackingMethod = item.PackingMethod,
                     Quantitative = item.Quantitative,
                     QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)item.QuantitativeUnitTypeId,
+                    ProductPurity = item.ProductPurity,
+
+                    PackingQuantitative = item.PackingQuantitative,
+                    PackingHeight = item.PackingHeight,
+                    PackingLong = item.PackingLong,
+                    PackingWidth = item.PackingWidth,
+
                     Measurement = item.Measurement,
                     NetWeight = item.NetWeight,
                     GrossWeight = item.GrossWeight,
@@ -908,7 +963,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     AmountWarningMax = item.AmountWarningMax,
                     ExpireTimeAmount = item.ExpireTimeAmount,
                     ExpireTimeTypeId = (EnumTimeType?)item.ExpireTimeTypeId,
-                    DecimalPlace = pus.FirstOrDefault(p => p.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
+                    DescriptionToStock = item.DescriptionToStock,
+                    DecimalPlace = puDefault?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
+                    UnitName = puDefault?.ProductUnitConversionName,
                     ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
                     Description = item.Description,
                     Color = item.Color
@@ -1102,7 +1159,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return GeneralCode.Success;
         }
 
-        public async Task<bool> UpdateProductCoefficientManual(int productId, int coefficient)
+        public async Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient)
         {
             var product = await _stockDbContext.Product.FirstOrDefaultAsync(x => x.ProductId == productId);
             if (product == null)

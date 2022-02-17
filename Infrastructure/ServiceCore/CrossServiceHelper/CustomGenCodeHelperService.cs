@@ -339,6 +339,8 @@ public class GenerateCodeConfigData
 
     private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat) where TSource : class
     {
+        if (checkExisted == null) return null;
+
         if (checkExistedFormat != null)
         {
             return checkExistedFormat.Invoke(code);

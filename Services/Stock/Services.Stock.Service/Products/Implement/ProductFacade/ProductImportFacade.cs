@@ -86,9 +86,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                .GroupBy(c => c.Name)
                .ToDictionary(c => c.Key, c => (int?)c.First().CustomerId);
 
-            var stockRules = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
-            var timeTypes = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumTimeType>();
-            var quantitativeUnitTypes = Commons.Enums.StandardEnum.EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
+            var stockRules = EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
+            var timeTypes = EnumExtensions.GetEnumMembers<EnumTimeType>();
+            var quantitativeUnitTypes = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
             var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
@@ -462,7 +462,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             var oldUnitId = product.UnitId;
 
             product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
-
+            await Task.CompletedTask;
             /*
             if (product.ProductId > 0 && product.UnitId != oldUnitId)
             {
@@ -490,6 +490,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 product.ProductInternalName = row.ProductName.NormalizeAsInternalName();
             }
 
+            product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductNameEng);
+            product.UpdateIfAvaiable(p => p.Color, row.Color);
+          
             //product.IsCanBuy = row.IsCanBuy ?? true;
             //product.IsCanSell = row.IsCanSell ?? true;
             //product.MainImageFileId = null;
@@ -534,9 +537,16 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.QuantitativeUnitTypeId, (int?)row.QuantitativeUnitTypeId);
 
+            product.UpdateIfAvaiable(p => p.ProductPurity, row.ProductPurity);
+
             product.UpdateIfAvaiable(p => p.IsProductSemi, row.IsProductSemi);
 
             product.UpdateIfAvaiable(p => p.IsProduct, row.IsProduct);
+
+            product.UpdateIfAvaiable(p => p.PackingQuantitative, row.PackingQuantitative);
+            product.UpdateIfAvaiable(p => p.PackingHeight, row.PackingHeight);
+            product.UpdateIfAvaiable(p => p.PackingLong, row.PackingLong);
+            product.UpdateIfAvaiable(p => p.PackingWidth, row.PackingWidth);
 
             if (product.ProductId == 0)
             {
@@ -575,6 +585,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             product.UpdateIfAvaiable(p => p.ProductStockInfo.AmountWarningMax, row.AmountWarningMax);
             product.UpdateIfAvaiable(p => p.ProductStockInfo.ExpireTimeTypeId, (int?)row.ExpireTimeTypeId);
             product.UpdateIfAvaiable(p => p.ProductStockInfo.ExpireTimeAmount, row.ExpireTimeAmount);
+            product.UpdateIfAvaiable(p => p.ProductStockInfo.DescriptionToStock, row.DescriptionToStock);
 
             var stockValidations = ParseProductStockValidations(row, product.ProductId);
             foreach (var newStock in stockValidations)

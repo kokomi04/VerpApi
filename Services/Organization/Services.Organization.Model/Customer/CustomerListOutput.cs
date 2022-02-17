@@ -16,7 +16,7 @@ namespace VErp.Services.Organization.Model.Customer
     }
     public class CustomerListOutput : CustomerListBasicOutput, IMapFrom<CustomerEntity>
     {
-
+        public int? CustomerCateId { get; set; }
         public EnumCustomerType CustomerTypeId { get; set; }
         public string Address { get; set; }
         public string TaxIdNo { get; set; }
@@ -50,6 +50,7 @@ namespace VErp.Services.Organization.Model.Customer
     public class CustomerListFilterModel
     {
         public string Keyword { get; set; }
+        public int? CustomerCateId { get; set; }
         public IList<int> CustomerIds { get; set; }
         public EnumCustomerStatus? CustomerStatusId { get; set; }
         public int Page { get; set; }

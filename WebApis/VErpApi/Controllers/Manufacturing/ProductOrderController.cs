@@ -85,9 +85,10 @@ namespace VErpApi.Controllers.Manufacturing
             [FromQuery] bool asc,
             [FromQuery] long fromDate,
             [FromQuery] long toDate,
+            [FromQuery] bool? hasNewProductionProcessVersion,
             [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
+            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate,hasNewProductionProcessVersion, filters);
         }
 
         [HttpPost]
@@ -199,6 +200,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model)
         {
             return await _productionOrderService.UpdateProductionOrderConfiguration(model);
+        }
+
+        [HttpPut]
+        [Route("{productionOrderId}/productionProcessVersion")]
+        public async Task<bool> UpdateProductionProcessVersion([FromRoute]long productionOrderId, [FromQuery] int productId)
+        {
+            return await _productionOrderService.UpdateProductionProcessVersion(productionOrderId, productId);
         }
     }
 }

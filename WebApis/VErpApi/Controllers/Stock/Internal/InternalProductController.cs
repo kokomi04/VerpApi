@@ -81,9 +81,23 @@ namespace VErpApi.Controllers.Stock.Internal
 
         [HttpPut]
         [Route("{productId}/coefficient")]
-        public async Task<bool> UpdateProductCoefficientManual([FromRoute] int productId, [FromQuery] int coefficient)
+        public async Task<bool> UpdateProductCoefficientManual([FromRoute] int productId, [FromQuery] decimal coefficient)
         {
             return await _productService.UpdateProductCoefficientManual(productId, coefficient);
+        }
+
+        [HttpPut]
+        [Route("{productId}/productionProcessVersion")]
+        public async Task<bool> UpdateProductionProcessVersion([FromRoute] int productId)
+        {
+            return await _productService.UpdateProductionProcessVersion(productId);
+        }
+
+        [HttpGet]
+        [Route("{productId}/productionProcessVersion")]
+        public async Task<long> GetProductionProcessVersion([FromRoute] int productId)
+        {
+            return await _productService.GetProductionProcessVersion(productId);
         }
     }
 }

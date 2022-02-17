@@ -21,6 +21,8 @@ using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ServiceCore.Facade;
+using Verp.Resources.Accountancy.InputData;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -31,6 +33,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly IActionButtonHelperService _actionButtonHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ObjectActivityLogFacade _inputDataActivityLog;
 
         public InputActionService(AccountancyDBContext accountancyDBContext
             , IActivityLogService activityLogService
@@ -45,6 +48,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper = mapper;
             _actionButtonHelperService = actionButtonHelperService;
             _currentContextService = currentContextService;
+            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
         }
 
         protected override async Task<string> GetObjectTitle(int objectId)
@@ -96,6 +100,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var message = messageParam.Value as string;
                 throw new BadRequestException(GeneralCode.InvalidParams, message);
             }
+
+            var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
+            var logMessage = $"{action.Title} {billCode}. ";
+
+            await _inputDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, inputTypeId);
 
             return result;
         }

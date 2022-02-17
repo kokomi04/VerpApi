@@ -18,6 +18,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Services.Organization.Model.Customer;
 using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
+using CustomerCate = VErp.Infrastructure.EF.OrganizationDB.CustomerCate;
 using static VErp.Commons.GlobalObject.InternalDataInterface.BaseCustomerImportModelExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
@@ -67,7 +68,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             var userInfos = await _userHelperService.GetByIds(userIds);
             users = userInfos.ToDictionary(u => u.UserId, u => u.FullName);
 
-             var xssfwb = new XSSFWorkbook();
+            var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
 
 
@@ -153,8 +154,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
 
         private IList<int> columnMaxLineLength = new List<int>();
-        private (EnumDataType type, object value) GetProductValue(
+        private (EnumDataType type, object value) GetCustomerValue(
             CustomerEntity customer,
+            IList<CustomerCate> customerCates,
             IList<CustomerContact> customerContacts,
             IList<CustomerBankAccount> customerBanks,
             string fieldName,
@@ -171,6 +173,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         return (EnumDataType.Text, customer.CustomerCode);
                     case nameof(BaseCustomerImportModel.CustomerName):
                         return (EnumDataType.Text, customer.CustomerName);
+                    case nameof(BaseCustomerImportModel.CustomerCateId):
+                        var v = customerCates.FirstOrDefault(c => c.CustomerCateId == customer.CustomerCateId);
+                        return (EnumDataType.Text, v?.Name);
                     case nameof(BaseCustomerImportModel.CustomerTypeId):
                         return (EnumDataType.Text, customer.CustomerTypeId.GetEnumDescription<EnumCustomerType>());
                     case nameof(BaseCustomerImportModel.Address):
@@ -229,7 +234,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                 throw;
             }
-            
+
             return (EnumDataType.Text, "");
 
         }
@@ -366,6 +371,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 }
             }
 
+            var customerCates = await _organizationContext.CustomerCate.ToListAsync();
+
 
             var textStyle = sheet.GetCellStyle(isBorder: true);
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
@@ -388,7 +395,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         bankAccs.TryGetValue(p.CustomerId, out var customerBankAcc);
                         if (customerBankAcc == null) customerBankAcc = new List<CustomerBankAccount>();
 
-                        var v = GetProductValue(p, customerContacts, customerBankAcc, f.FieldName, out var isFormula);
+                        var v = GetCustomerValue(p, customerCates, customerContacts, customerBankAcc, f.FieldName, out var isFormula);
                         switch (v.type)
                         {
                             case EnumDataType.BigInt:

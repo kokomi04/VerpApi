@@ -26,7 +26,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int EmployeeTypeId { get; set; }
         public int UserStatusId { get; set; }
         public string PartnerId { get; set; }
+        public int? LeaveConfigId { get; set; }
 
+        public virtual LeaveConfig LeaveConfig { get; set; }
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual ICollection<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
     }

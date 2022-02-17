@@ -141,6 +141,22 @@ namespace VErpApi.Controllers.Manufacturing
             return rs;
         }
 
+        [HttpPut]
+        [Route("{productionOrderId}/dismissUpdateQuantity")]
+        public async Task<bool> DismissUpdateQuantity([FromRoute] long productionOrderId)
+        {
+            var rs = await _productionProcessService.DismissUpdateQuantity(productionOrderId);
+            return rs;
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/hasAssignment")]
+        public async Task<bool> CheckHasAssignment([FromRoute] long productionOrderId)
+        {
+            var rs = await _productionProcessService.CheckHasAssignment(productionOrderId);
+            return rs;
+        }
+
         [HttpPost]
         [Route("productionStepLinkData/searchByListProductionStepLinkDataId")]
         public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId([FromBody] List<long> lsProductionStepLinkDataId)
@@ -157,7 +173,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("productionStepLinkDataRole/getInOutOfListProductionStep")]
         public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
         {
-           return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
+            return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
         }
 
         /// <summary>
@@ -195,7 +211,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{containerTypeId}/{containerId}/productionProcessOutsourceStep")]
-        public async Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep([FromRoute]EnumContainerType containerTypeId, [FromRoute]  long containerId, [FromBody] long[] productionStepIds)
+        public async Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId, [FromBody] long[] productionStepIds)
         {
             return await _productionProcessService.GetProductionProcessOutsourceStep(containerTypeId, containerId, productionStepIds);
         }

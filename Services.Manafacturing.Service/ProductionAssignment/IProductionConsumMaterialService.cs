@@ -8,7 +8,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 {
     public interface IProductionConsumMaterialService
     {
-        Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials(int departmentId, long productionOrderId, long productionStepId);
+        Task<IDictionary<long, List<ProductionConsumMaterialModel>>> GetConsumMaterials(int departmentId, long productionOrderId, long[] productionStepIds);
         Task<long> CreateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, ProductionConsumMaterialModel model);
         Task<bool> UpdateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, long productionConsumMaterialId, ProductionConsumMaterialModel model);
         Task<bool> DeleteConsumMaterial(int departmentId, long productionOrderId, long productionStepId, long productionConsumMaterialId);

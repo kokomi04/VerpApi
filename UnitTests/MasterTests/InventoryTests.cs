@@ -19,6 +19,7 @@ using VErp.Services.Stock.Service.Products;
 using VErp.Services.Stock.Service.Stock;
 using Xunit;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using VErp.Commons.GlobalObject;
 
 namespace MasterTests
 {

@@ -32,6 +32,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
+        public virtual DbSet<ProductionHistory> ProductionHistory { get; set; }
+        public virtual DbSet<ProductionHumanResource> ProductionHumanResource { get; set; }
         public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
         public virtual DbSet<ProductionMaterialsRequirementDetail> ProductionMaterialsRequirementDetail { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
@@ -310,6 +312,20 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(32, 12)");
             });
 
+            modelBuilder.Entity<ProductionHistory>(entity =>
+            {
+                entity.Property(e => e.OvertimeProductionQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.ProductionQuantity).HasColumnType("decimal(32, 12)");
+            });
+
+            modelBuilder.Entity<ProductionHumanResource>(entity =>
+            {
+                entity.Property(e => e.OfficeWorkDay).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.OvertimeWorkDay).HasColumnType("decimal(32, 12)");
+            });
+
             modelBuilder.Entity<ProductionMaterialsRequirement>(entity =>
             {
                 entity.HasIndex(e => new { e.SubsidiaryId, e.RequirementCode }, "IX_ProductionMaterialsRequirement_RequirementCode")
@@ -583,7 +599,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepLinkDataId, e.ProductionStepId })
                     .HasName("PK_InOutStepMapping");
 
-                entity.Property(e => e.ProductionStepLinkDataGroup).HasMaxLength(50);
+                //entity.Property(e => e.ProductionStepLinkDataGroup).HasMaxLength(50);
 
                 entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment("1: Input\r\n2: Output");
 
@@ -866,9 +882,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18, 5)")
-                    .HasComment("Nang suat/nguoi-may");
+                //entity.Property(e => e.Quantity)
+                //    .HasColumnType("decimal(18, 5)")
+                //    .HasComment("Nang suat/nguoi-may");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 

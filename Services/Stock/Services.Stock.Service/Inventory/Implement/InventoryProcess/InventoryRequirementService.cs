@@ -68,17 +68,35 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _invRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
         }
 
-
-
-
         public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool? hasInventory, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
+            var sumInvs = from ird in _stockDbContext.InventoryRequirementDetail
+                          join invd in _stockDbContext.InventoryDetail on ird.InventoryRequirementDetailId equals invd.InventoryRequirementDetailId into invds
+                          from invd in invds.DefaultIfEmpty()
+                          group invd by ird.InventoryRequirementDetailId into d
+                          select new
+                          {
+                              InventoryRequirementDetailId = d.Key,
+                              InventoryQuantity = d.Sum(v => v.PrimaryQuantity)
+                          };
+
+            var remainings = from sp in _stockDbContext.StockProduct
+                             group sp by sp.ProductId into d
+                             select new
+                             {
+                                 ProductId = d.Key,
+                                 PrimaryQuantityRemaining = d.Sum(v => v.PrimaryQuantityRemaining)
+                             };
+
             var inventoryRequirementAsQuery = from ird in _stockDbContext.InventoryRequirementDetail
+                                              join s in sumInvs on ird.InventoryRequirementDetailId equals s.InventoryRequirementDetailId
                                               join ir in _stockDbContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
                                               join @as in _stockDbContext.Stock on ird.AssignStockId equals @as.StockId into @asAlias
                                               from @as in @asAlias.DefaultIfEmpty()
+                                              join r in remainings on ird.ProductId equals r.ProductId into rs
+                                              from r in rs.DefaultIfEmpty()
                                               where ir.InventoryTypeId == (int)inventoryType
                                               select new
                                               {
@@ -89,6 +107,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   ProductionStepId = ird.ProductionStepId,
                                                   CreatedByUserId = ir.CreatedByUserId,
                                                   ProductionOrderCode = ird.ProductionOrderCode,
+                                                  ird.OrderCode,
+                                                  ird.Pocode,
+
                                                   Shipper = ir.Shipper,
                                                   CustomerId = ir.CustomerId,
                                                   BillForm = ir.BillForm,
@@ -101,7 +122,15 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   CensorDatetimeUtc = ir.CensorDatetimeUtc,
                                                   CensorStatus = ir.CensorStatus,
                                                   StockName = @as != null ? @as.StockName : "",
-                                                  ProductId = ird.ProductId
+                                                  ProductId = ird.ProductId,
+                                                  InventoryRequirementDetailId = ird.InventoryRequirementDetailId,
+
+                                                  ird.PrimaryQuantity,
+                                                  ird.ProductUnitConversionQuantity,
+
+
+                                                  s.InventoryQuantity,
+                                                  r.PrimaryQuantityRemaining
                                               };
 
             var inventoryAsQuery = from id in _stockDbContext.InventoryDetail
@@ -123,29 +152,37 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                         where hasInventory.HasValue == false ? true : hasInventory.Value == false ? !inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId) : inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId)
                         select new
                         {
-                            InventoryRequirementCode = ir.InventoryRequirementCode,
-                            Content = ir.Content,
-                            Date = ir.Date,
+                            ir.InventoryRequirementCode,
+                            ir.Content,
+                            ir.Date,
                             DepartmentId = ir.DepartmentId,
                             ProductionStepId = ir.ProductionStepId,
                             CreatedByUserId = ir.CreatedByUserId,
                             ProductionOrderCode = ir.ProductionOrderCode,
-                            Shipper = ir.Shipper,
-                            CustomerId = ir.CustomerId,
-                            BillForm = ir.BillForm,
-                            BillCode = ir.BillCode,
-                            BillSerial = ir.BillSerial,
-                            BillDate = ir.BillDate,
-                            ModuleTypeId = ir.ModuleTypeId,
-                            InventoryRequirementId = ir.InventoryRequirementId,
-                            CensorByUserId = ir.CensorByUserId,
-                            CensorDatetimeUtc = ir.CensorDatetimeUtc,
-                            CensorStatus = ir.CensorStatus,
-                            ProductCode = p.ProductCode,
-                            ProductName = p.ProductName,
-                            StockName = ir.StockName,
+                            ir.OrderCode,
+                            ir.Pocode,
+                            ir.Shipper,
+                            ir.CustomerId,
+                            ir.BillForm,
+                            ir.BillCode,
+                            ir.BillSerial,
+                            ir.BillDate,
+                            ir.ModuleTypeId,
+                            ir.InventoryRequirementId,
+                            ir.CensorByUserId,
+                            ir.CensorDatetimeUtc,
+                            ir.CensorStatus,
+                            p.ProductCode,
+                            p.ProductName,
+                            ir.StockName,
                             ProductTitle = $"{p.ProductCode} / {p.ProductName}",
-                            ProductId = ir.ProductId
+                            ir.ProductId,
+                            ir.InventoryRequirementDetailId,
+
+                            ir.PrimaryQuantity,
+                            ir.ProductUnitConversionQuantity,
+                            ir.InventoryQuantity,
+                            ir.PrimaryQuantityRemaining
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -171,6 +208,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     ProductionStepId = x.ProductionStepId,
                     CreatedByUserId = x.CreatedByUserId,
                     ProductionOrderCode = x.ProductionOrderCode,
+                    OrderCode = x.OrderCode,
+                    PoCode = x.Pocode,
                     Shipper = x.Shipper,
                     CustomerId = x.CustomerId,
                     BillForm = x.BillForm,
@@ -187,7 +226,13 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     StockName = x.StockName,
                     ProductTitle = x.ProductTitle,
                     ProductId = x.ProductId,
+                    InventoryRequirementDetailId = x.InventoryRequirementDetailId,
                     InventoryInfo = new List<InventorySimpleInfo>(),
+                    PrimaryQuantityRemaining = x.PrimaryQuantityRemaining,
+                    InventoryQuantity = x.InventoryQuantity,
+                    PrimaryQuantity = x.PrimaryQuantity,
+                    ProductUnitConversionQuantity = x.ProductUnitConversionQuantity
+
                 }).ToList();
 
             var lsInventoryRequirementCode = lst.Select(x => x.InventoryRequirementCode).ToArray();
@@ -218,15 +263,22 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
         public async Task<InventoryRequirementOutputModel> GetInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId)
         {
-            var entity = _stockDbContext.InventoryRequirement
+            var entity = await GetRequirements(inventoryType, new[] { inventoryRequirementId });
+            if (entity.Count == 0) throw InvRequestNotFound.BadRequest();
+            return entity.First();
+        }
+
+        public async Task<IList<InventoryRequirementOutputModel>> GetRequirements(EnumInventoryType inventoryType, IList<long> inventoryRequirementIds)
+        {
+            var entity = await _stockDbContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementFile)
                 .Include(r => r.InventoryRequirementDetail)
                 .ThenInclude(d => d.ProductUnitConversion)
-                .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementId == inventoryRequirementId);
+                .Where(r => r.InventoryTypeId == (int)inventoryType && inventoryRequirementIds.Contains(r.InventoryRequirementId))
+                .ToListAsync();
 
-            if (entity == null) throw InvRequestNotFound.BadRequest();
 
-            var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
+            var lst = _mapper.Map<List<InventoryRequirementOutputModel>>(entity);
 
 
             // Lấy thông tin xuất/nhập kho theo yêu cầu, mã lệnh SX, tổ nhận, sản phẩm
@@ -234,7 +286,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             //var productionOrderCodes = entity.InventoryRequirementDetail.Select(ird => ird.ProductionOrderCode).Distinct().ToList();
             //var departmentIds = entity.InventoryRequirementDetail.Select(ird => ird.DepartmentId).Distinct().ToList();
             //var productIds = entity.InventoryRequirementDetail.Select(ird => ird.ProductId).Distinct().ToList();
-            var inventoryRequirementDetailIds = model.InventoryRequirementDetail.Select(ird => ird.InventoryRequirementDetailId).ToList();
+            var inventoryRequirementDetailIds = lst.SelectMany(r => r.InventoryRequirementDetail.Select(ird => ird.InventoryRequirementDetailId)).ToList();
 
             // Lấy thông tin xuất/nhập kho theo ID chi tiết yêu cầu
             var inventoryMaps = _stockDbContext.InventoryDetail
@@ -262,34 +314,41 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             // Map chi tiết xuất/nhập kho với chi tiết yêu cầu
             foreach (var data in inventoryMaps)
             {
-                var quantity = data.Value.PrimaryQuantity;
-                InventoryRequirementDetailOutputModel lastestDetail = null;
-                foreach (var detail in model.InventoryRequirementDetail)
+                foreach (var model in lst)
                 {
-                    if (detail.InventoryRequirementDetailId == data.Key)
+                    var quantity = data.Value.PrimaryQuantity;
+                    InventoryRequirementDetailOutputModel lastestDetail = null;
+                    foreach (var detail in model.InventoryRequirementDetail)
                     {
-                        detail.InventoryInfo = data.Value.InventorySimpleInfos;
-                        if (quantity <= 0) break;
-                        detail.InventoryQuantity = quantity <= detail.PrimaryQuantity ? quantity : detail.PrimaryQuantity;
-                        quantity = quantity - detail.InventoryQuantity;
-                        lastestDetail = detail;
+                        if (detail.InventoryRequirementDetailId == data.Key)
+                        {
+                            detail.InventoryInfo = data.Value.InventorySimpleInfos;
+                            if (quantity <= 0) break;
+                            detail.InventoryQuantity = quantity <= detail.PrimaryQuantity ? quantity : detail.PrimaryQuantity;
+                            quantity = quantity - detail.InventoryQuantity;
+                            lastestDetail = detail;
+                        }
                     }
+                    if (quantity > 0 && lastestDetail != null) lastestDetail.InventoryQuantity += quantity;
                 }
-                if (quantity > 0 && lastestDetail != null) lastestDetail.InventoryQuantity += quantity;
             }
 
-            var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
+            var fileIds = lst.SelectMany(r => r.InventoryRequirementFile.Select(q => q.FileId)).ToList();
 
             var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
             if (attachedFiles == null)
             {
                 attachedFiles = new List<FileToDownloadInfo>();
             }
-            foreach (var item in model.InventoryRequirementFile)
+
+            foreach (var model in lst)
             {
-                item.FileToDownloadInfo = attachedFiles.FirstOrDefault(f => f.FileId == item.FileId);
+                foreach (var item in model.InventoryRequirementFile)
+                {
+                    item.FileToDownloadInfo = attachedFiles.FirstOrDefault(f => f.FileId == item.FileId);
+                }
             }
-            return model;
+            return lst;
         }
 
         public async Task<long> AddInventoryRequirement(EnumInventoryType inventoryType, InventoryRequirementInputModel req)
