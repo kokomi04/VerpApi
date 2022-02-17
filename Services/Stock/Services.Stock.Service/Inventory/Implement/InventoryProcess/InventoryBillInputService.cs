@@ -91,7 +91,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var invInput = await AddInventoryInputDB(req);
+                    var invInput = await AddInventoryInputDB(req, true);
+
                     await trans.CommitAsync();
 
                     await ctx.ConfirmCode();
@@ -109,7 +110,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        public async Task<InventoryEntity> AddInventoryInputDB(InventoryInModel req)
+        public async Task<InventoryEntity> AddInventoryInputDB(InventoryInModel req, bool validatePackageInfo)
         {
             //if (req.InventoryActionId == EnumInventoryAction.Rotation)
             //{
@@ -138,7 +139,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
-                var validInventoryDetails = await ValidateInventoryIn(false, req);
+                var validInventoryDetails = await ValidateInventoryIn(false, req, validatePackageInfo);
 
                 if (!validInventoryDetails.Code.IsSuccess())
                 {
@@ -228,7 +229,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
 
-                var validate = await ValidateInventoryIn(false, req);
+                var validate = await ValidateInventoryIn(false, req, true);
 
                 await ValidateInventoryCode(inventoryId, req.InventoryCode);
 
@@ -604,6 +605,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     throw new BadRequestException(InventoryErrorCode.InventoryNotDraffYet);
                 }
 
+                var details = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
+
+                ValidatePackageInfos(details);
+
                 info.InventoryStatusId = (int)EnumInventoryStatus.WaitToCensor;
 
                 await _stockDbContext.SaveChangesAsync();
@@ -805,7 +810,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req)
+        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req, bool validatePackageInfo)
         {
             if (req.InProducts == null)
                 req.InProducts = new List<InventoryInProductModel>();
@@ -959,6 +964,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
                     InventoryRequirementCode = detail.InventoryRequirementCode
                 });
+
+
+            }
+
+            if (validatePackageInfo)
+            {
+                ValidatePackageInfos(inventoryDetailList);
             }
             return inventoryDetailList;
         }
@@ -1098,7 +1110,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
+        private void ValidatePackageInfos(IList<InventoryDetail> details)
+        {
+            foreach (var d in details)
+            {
+                if (!string.IsNullOrWhiteSpace(d.ToPackageInfo))
+                {
+                    var packageInfo = d.ToPackageInfo.JsonDeserialize<PackageInputModel>();
+                    var desc = "Thông tin kiện";
+                    Utils.ValidateCodeSpecialCharactors(packageInfo.PackageCode, desc);
+                    Utils.ValidateCodeSpecialCharactors(packageInfo.POCode, desc);
+                    Utils.ValidateCodeSpecialCharactors(packageInfo.ProductionOrderCode, desc);
+                    Utils.ValidateCodeSpecialCharactors(packageInfo.OrderCode, desc);
+                }
 
+            }
+        }
 
         //private async Task<ServiceResult> ValidateBalanceForOutput(int stockId, int productId, long currentInventoryId, int productUnitConversionId, DateTime endDate, decimal outPrimary, decimal outSecondary)
         //{

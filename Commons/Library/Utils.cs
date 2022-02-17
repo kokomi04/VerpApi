@@ -1413,7 +1413,7 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static void ValidateCodeSpecialCharactors(this string code)
+        public static void ValidateCodeSpecialCharactors(this string code, string desc = "")
         {
             if (string.IsNullOrEmpty(code))
                 return;
@@ -1421,7 +1421,7 @@ namespace VErp.Commons.Library
             var regEx = new Regex("^([0-9a-zA-Z])(([0-9a-zA-Z_\\.\\,\\/\\-#\\+&])*([0-9a-zA-Z]))*$", RegexOptions.Multiline);
             if (!regEx.IsMatch(code))
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\.,/-_#&+)");
+                throw new BadRequestException(GeneralCode.InvalidParams, $"Mã {code} {desc} không hợp lệ, mã phải bắt đầu và kết thúc bởi chữ hoặc số, không được chứa dấu cách trống và ký tự đặc biệt (ngoài A-Z, 0-9 và \\.,/-_#&+)");
             }
         }
 

@@ -748,7 +748,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
 
-                    var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData);
+                    var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData, true);
 
                     await trans.CommitAsync();
 
