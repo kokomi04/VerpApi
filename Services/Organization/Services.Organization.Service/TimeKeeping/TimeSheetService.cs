@@ -9,6 +9,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization.TimeKeeping;
 using VErp.Commons.Enums.StandardEnum;
@@ -289,6 +290,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             fields.AddRange(fieldsAbsenceTypeSymbols);
 
+            result.Fields.Add(new CategoryFieldNameModel
+            {
+                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
+                FieldTitle = "Cột kiểm tra",
+            });
+
             result.Fields = fields;
             return result;
         }
@@ -304,15 +311,55 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var absenceTypeSymbols = await _organizationDBContext.AbsenceTypeSymbol.ToListAsync();
             var absentSymbol = await _organizationDBContext.CountedSymbol.FirstOrDefaultAsync(x => x.CountedSymbolType == (int)EnumCountedSymbol.AbsentSymbol);
 
-            var data = (reader.ReadSheetEntity<TimeSheetImportFieldModel>(mapping, (entity, propertyName, value) =>
+            var _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var dataTimeSheetWithPrimaryKey = new List<RowDataImportTimeSheetModel>();
+            foreach (var row in _importData.Rows)
             {
-                return false;
-            })).GroupBy(x => x.EmployeeCode).ToDictionary(k => k.Key, v => v.ToList());
+                var fieldCheckImportEmpty = mapping.MappingFields.FirstOrDefault(x => x.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
+                if (fieldCheckImportEmpty != null)
+                {
+                    string value = null;
+                    if (row.ContainsKey(fieldCheckImportEmpty.Column))
+                        value = row[fieldCheckImportEmpty.Column]?.ToString();
+
+                    if(string.IsNullOrWhiteSpace(value)) continue;
+                }
+
+                var timeSheetImportModel = new TimeSheetImportFieldModel();
+                foreach (var prop in typeInfo.GetProperties())
+                {
+                    var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == prop.Name);
+                    if (mappingField == null)
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {prop.Name}");
+
+                    string value = null;
+                    if (row.ContainsKey(mappingField.Column))
+                        value = row[mappingField.Column]?.ToString();
+
+                    prop.SetValue(timeSheetImportModel, value.ConvertValueByType(prop.PropertyType));
+                }
+
+                dataTimeSheetWithPrimaryKey.Add(new RowDataImportTimeSheetModel()
+                {
+                    EmployeeCode = timeSheetImportModel.EmployeeCode,
+                    row = row,
+                    timeSheetImportModel = timeSheetImportModel
+                });
+            }
+
+
+            
+            
+            // var data = (reader.ReadSheetEntity<TimeSheetImportFieldModel>(mapping, (entity, propertyName, value) =>
+            // {
+            //     return false;
+            // })).GroupBy(x => x.EmployeeCode).ToDictionary(k => k.Key, v => v.ToList());
 
             var timeSheetDetails = new List<TimeSheetDetail>();
             var timeSheetAggregates = new List<TimeSheetAggregateModel>();
             var timeSheetDayOffs = new List<TimeSheetDayOffModel>();
-            foreach (var (key, rows) in data)
+            foreach (var (key, rows) in dataTimeSheetWithPrimaryKey.GroupBy(x => x.EmployeeCode).ToDictionary(k => k.Key, v => v.ToList()))
             {
                 var employeeCode = key.NormalizeAsInternalName();
 
@@ -330,12 +377,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     var timeKeepingDayProp = $"{timeKeepingDayPropPrefix}{day}";
 
-                    var timeInAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowIn) as string;
-                    var timeOutAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowOut) as string;
+                    var timeInAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowIn.timeSheetImportModel) as string;
+                    var timeOutAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowOut.timeSheetImportModel) as string;
 
                     if (timeInAsString == absentSymbol.SymbolCode) continue;
 
                     int? absenceTypeSymbolId = null;
+
+                    if (timeInAsString.Contains('-')) continue;
+
                     if (!timeInAsString.Contains(':'))
                     {
                         var absenceTypeSymbolCode = timeInAsString;
@@ -345,7 +395,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         absenceTypeSymbolId = absenceType.AbsenceTypeSymbolId;
                     }
 
-                    var date = new DateTime(day, month, year);
+                    var date = new DateTime(year, month, day);
 
                     var timeSheetDetail = absenceTypeSymbolId.HasValue ? new TimeSheetDetail()
                     {
@@ -366,33 +416,40 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                     var timeSheetAggregate = new TimeSheetAggregateModel
                     {
-                        CountedAbsence = rowIn.CountedAbsence,
-                        CountedEarly = rowIn.CountedEarly,
-                        CountedLate = rowIn.CountedLate,
-                        CountedWeekday = rowIn.CountedWeekday,
-                        CountedWeekdayHour = rowIn.CountedWeekdayHour,
-                        CountedWeekend = rowIn.CountedWeekend,
-                        CountedWeekendHour = rowIn.CountedWeekendHour,
+                        CountedAbsence = rowIn.timeSheetImportModel.CountedAbsence,
+                        CountedEarly = rowIn.timeSheetImportModel.CountedEarly,
+                        CountedLate = rowIn.timeSheetImportModel.CountedLate,
+                        CountedWeekday = rowIn.timeSheetImportModel.CountedWeekday,
+                        CountedWeekdayHour = rowIn.timeSheetImportModel.CountedWeekdayHour,
+                        CountedWeekend = rowIn.timeSheetImportModel.CountedWeekend,
+                        CountedWeekendHour = rowIn.timeSheetImportModel.CountedWeekendHour,
                         EmployeeId = employee.UserId,
-                        MinsEarly = rowIn.MinsEarly,
-                        MinsLate = rowIn.MinsLate,
-                        Overtime1 = rowIn.Overtime1,
-                        Overtime2 = rowIn.Overtime2,
-                        Overtime3 = rowIn.Overtime3,
+                        MinsEarly = rowIn.timeSheetImportModel.MinsEarly,
+                        MinsLate = rowIn.timeSheetImportModel.MinsLate,
+                        Overtime1 = rowIn.timeSheetImportModel.Overtime1,
+                        Overtime2 = rowIn.timeSheetImportModel.Overtime2,
+                        Overtime3 = rowIn.timeSheetImportModel.Overtime3,
                     };
 
-                    var timeSheetDayOffForPerson = absenceTypeSymbols.Select(x =>
+                    var timeSheetDayOffForPerson = absenceTypeSymbols.Select(absence =>
                     {
-                        var countedDayOffAsString = typeInfo.GetProperty(x.SymbolCode).GetValue(rowIn) as string;
+                        var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == absence.SymbolCode);
+                        if (mappingField == null)
+                            throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {absence.SymbolCode}");
+
+                        string countedDayOffAsString = null;
+                        if (rowIn.row.ContainsKey(mappingField.Column))
+                            countedDayOffAsString = rowIn.row[mappingField.Column]?.ToString();
+
                         var countedDayOff = int.Parse(string.IsNullOrWhiteSpace(countedDayOffAsString) ? "0" : countedDayOffAsString);
 
                         return new TimeSheetDayOffModel
                         {
-                            AbsenceTypeSymbolId = x.AbsenceTypeSymbolId,
+                            AbsenceTypeSymbolId = absence.AbsenceTypeSymbolId,
                             EmployeeId = employee.UserId,
                             CountedDayOff = countedDayOff
                         };
-                    }).Where(x => x.CountedDayOff > 0);
+                    }).Where(x => x.CountedDayOff > 0).ToList();
 
 
                     timeSheetAggregates.Add(timeSheetAggregate);
@@ -498,6 +555,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
 
             return true;
+        }
+
+        public class RowDataImportTimeSheetModel
+        {
+            public string EmployeeCode { get; set; }
+            public NonCamelCaseDictionary<string> row { get; set; }
+            public TimeSheetImportFieldModel timeSheetImportModel { get; set; }
         }
 
         public async Task<bool> ApproveTimeSheet(int year, int month)

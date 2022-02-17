@@ -776,6 +776,20 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<TimeSheetAggregate>(entity =>
             {
+                entity.Property(e => e.CountedWeekday).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.CountedWeekdayHour).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.CountedWeekend).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.CountedWeekendHour).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Overtime1).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Overtime2).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Overtime3).HasColumnType("decimal(18, 5)");
+
                 entity.HasOne(d => d.TimeSheet)
                     .WithMany(p => p.TimeSheetAggregate)
                     .HasForeignKey(d => d.TimeSheetId)
