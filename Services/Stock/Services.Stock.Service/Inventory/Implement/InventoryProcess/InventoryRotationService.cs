@@ -100,7 +100,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
                 genCodeContexts.Add(await GenerateInventoryCode(EnumInventoryType.Input, inputReq, baseValueChains));
 
-                var inInv = await _inventoryBillInputService.AddInventoryInputDB(inputReq);
+                var inInv = await _inventoryBillInputService.AddInventoryInputDB(inputReq, true);
 
 
                 inInv.RefInventoryId = outInv.InventoryId;
@@ -355,7 +355,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
                 trans.Commit();
 
                 await AcivitityLog(outputObj, inputObj, () => InventoryBillOutputActivityMessage.RotationDelete);
-                
+
                 await ctx.ConfirmCode();
 
                 return true;

@@ -15,6 +15,8 @@ using VErp.Services.Stock.Service.Products;
 using static VErp.Services.Stock.Model.Inventory.InvOutDetailRowValue;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
 using VErp.Services.Stock.Model.Package;
+using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
+
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -40,6 +42,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             var customProps = await stockDbContext.PackageCustomProperty.ToListAsync();
 
+            var locations = (await stockDbContext.Location.Where(l => l.StockId == stockId).ToListAsync())
+              .GroupBy(l => l.Name?.NormalizeAsInternalName())
+              .ToDictionary(l => l.Key, l => l.ToList());
+
             var rowDatas = reader.ReadSheetEntity<InventoryInputExcelParseModel>(mapping, (entity, propertyName, value, refObj, refProperty) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
@@ -58,9 +64,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                     case nameof(InventoryInputExcelParseModel.ToPackgeInfo):
 
+                        var packageInfo = (PackageInputModel)refObj;
+
                         if (refProperty?.StartsWith(nameof(PackageInputModel.CustomPropertyValue)) == true)
                         {
-                            var packageInfo = (PackageInputModel)refObj;
+                            
                             var customPropertyId = Convert.ToInt32(refProperty.Substring(nameof(PackageInputModel.CustomPropertyValue).Length));
 
                             var propertyInfo = customProps.FirstOrDefault(p => p.PackageCustomPropertyId == customPropertyId);
@@ -77,8 +85,50 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                                 var customValue = value.ConvertValueByType((EnumDataType)propertyInfo.DataTypeId);
 
                                 packageInfo.CustomPropertyValue.Add(customPropertyId, customValue);
-                                return true;
                             }
+
+                            return true;
+                        }
+
+                        if (refProperty?.Equals(nameof(PackageInputModel.LocationId)) == true)
+                        {
+                            if (!string.IsNullOrWhiteSpace(value))
+                            {
+                                LocationEntity locationInfo = null;
+
+                                var valueKey = value.NormalizeAsInternalName();
+                                if (locations.ContainsKey(valueKey))
+                                {
+
+                                    if (locations[valueKey].Count > 1)
+                                    {
+                                        locationInfo = locations[valueKey].FirstOrDefault(l => l.Name.ToLower() == value.ToLower());
+                                    }
+                                    else
+                                    {
+                                        locationInfo = locations[valueKey].FirstOrDefault();
+                                    }
+                                }
+
+                                if (locationInfo == null)
+                                {
+                                    locationInfo = new LocationEntity()
+                                    {
+                                        StockId =stockId,
+                                        Name = value,
+                                        Description = "",
+                                        Status = 1
+                                    };
+                                    stockDbContext.Location.Add(locationInfo);
+                                    stockDbContext.SaveChanges();
+                                }
+
+                                packageInfo.LocationId = locationInfo.LocationId;
+
+                            }
+
+                            return true;
+
                         }
 
                         break;
