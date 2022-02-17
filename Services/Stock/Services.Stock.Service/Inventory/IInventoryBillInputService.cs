@@ -23,7 +23,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<long> AddInventoryInput(InventoryInModel req);
 
-        Task<InventoryEntity> AddInventoryInputDB(InventoryInModel req);
+        Task<InventoryEntity> AddInventoryInputDB(InventoryInModel req, bool validatePackageInfo);
 
         Task<bool> UpdateInventoryInput(long inventoryId, InventoryInModel model);
 

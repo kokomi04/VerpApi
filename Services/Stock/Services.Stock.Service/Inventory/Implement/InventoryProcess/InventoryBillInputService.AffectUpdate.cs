@@ -129,7 +129,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var deletedDetails = details.Where(d => !req.InProducts.Select(u => u.InventoryDetailId).Contains(d.InventoryDetailId));
 
-            var updateDetail = await ValidateInventoryIn(true, req);
+            var updateDetail = await ValidateInventoryIn(true, req, true);
 
             if (!updateDetail.Code.IsSuccess())
             {
