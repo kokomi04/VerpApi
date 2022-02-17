@@ -88,28 +88,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials(int departmentId, long productionOrderId, long productionStepId)
+        public async Task<IDictionary<long, List<ProductionConsumMaterialModel>>> GetConsumMaterials(int departmentId, long productionOrderId, long[] productionStepIds)
         {
             var consumMaterials = await _manufacturingDBContext.ProductionConsumMaterial
                 .Include(c => c.ProductionConsumMaterialDetail)
-                .Where(a => a.DepartmentId == departmentId && a.ProductionStepId == productionStepId && a.ProductionOrderId == productionOrderId)
+                .Where(a => a.DepartmentId == departmentId && productionStepIds.Contains(a.ProductionStepId) && a.ProductionOrderId == productionOrderId)
                 .ToListAsync();
 
-            return consumMaterials.Select(c =>
-            {
-                var consumMaterial = _mapper.Map<ProductionConsumMaterialModel>(c);
-                var details = new Dictionary<int, Dictionary<long, ProductionConsumMaterialDetailModel>>();
-                foreach (var detail in c.ProductionConsumMaterialDetail)
-                {
-                    if (!details.ContainsKey(detail.ObjectTypeId))
+            return consumMaterials
+                .GroupBy(c => c.ProductionStepId)
+                .ToDictionary(g => g.Key, g => g.Select(c =>
                     {
-                        details.Add(detail.ObjectTypeId, new Dictionary<long, ProductionConsumMaterialDetailModel>());
-                    }
-                    details[detail.ObjectTypeId].Add(detail.ObjectId, _mapper.Map<ProductionConsumMaterialDetailModel>(detail));
-                }
-                consumMaterial.Details = details;
-                return consumMaterial;
-            }).ToList();
+                         var consumMaterial = _mapper.Map<ProductionConsumMaterialModel>(c);
+                         var details = new Dictionary<int, Dictionary<long, ProductionConsumMaterialDetailModel>>();
+                         foreach (var detail in c.ProductionConsumMaterialDetail)
+                         {
+                             if (!details.ContainsKey(detail.ObjectTypeId))
+                             {
+                                 details.Add(detail.ObjectTypeId, new Dictionary<long, ProductionConsumMaterialDetailModel>());
+                             }
+                             details[detail.ObjectTypeId].Add(detail.ObjectId, _mapper.Map<ProductionConsumMaterialDetailModel>(detail));
+                         }
+                         consumMaterial.Details = details;
+                         return consumMaterial;
+                    }).ToList()
+                );
         }
 
         public async Task<bool> UpdateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, long productionConsumMaterialId, ProductionConsumMaterialModel model)

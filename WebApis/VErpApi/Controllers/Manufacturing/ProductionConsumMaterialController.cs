@@ -28,11 +28,12 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
 
-        [HttpGet]
-        [Route("")]
-        public async Task<IList<ProductionConsumMaterialModel>> GetConsumMaterials([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromQuery] long productionStepId)
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("Info")]
+        public async Task<IDictionary<long, List<ProductionConsumMaterialModel>>> GetConsumMaterials([FromQuery] int departmentId, [FromQuery] long productionOrderId, [FromBody] long[] productionStepIds)
         {
-            return await _productionConsumMaterialService.GetConsumMaterials(departmentId, productionOrderId, productionStepId);
+            return await _productionConsumMaterialService.GetConsumMaterials(departmentId, productionOrderId, productionStepIds);
         }
 
         [HttpPost]
