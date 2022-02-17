@@ -1060,9 +1060,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             PackageInputModel packageInfo = null;
 
+            int? locationId = null;
+
             if (!string.IsNullOrWhiteSpace(detail.ToPackageInfo))
             {
                 packageInfo = detail.ToPackageInfo.JsonDeserialize<PackageInputModel>();
+
+                if (packageInfo?.LocationId > 0)
+                {
+                    if (await _stockDbContext.Location.AnyAsync(l => l.LocationId == packageInfo.LocationId))
+                    {
+                        locationId = packageInfo.LocationId;
+                    }
+                }
             }
 
             var packageCode = packageInfo?.PackageCode;
@@ -1072,11 +1082,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 packageCode = await genCodeConfig.TryValidateAndGenerateCode(_stockDbContext.Inventory, packageCode, null);
             }
 
+
             var newPackage = new PackageEntity()
             {
                 PackageTypeId = (int)EnumPackageType.Custom,
                 PackageCode = packageCode,
-                LocationId = packageInfo?.LocationId,
+                LocationId = locationId,
                 StockId = stockId,
                 ProductId = detail.ProductId,
                 //PrimaryQuantity = detail.PrimaryQuantity,

@@ -22,6 +22,7 @@ using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Service.Products;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFacadeMessage;
+using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -83,6 +84,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             var currentCatePrefixCode = string.Empty;
 
             var customProps = await _stockDbContext.PackageCustomProperty.ToListAsync();
+
+            var locations = (await _stockDbContext.Location.Where(l => l.StockId == model.StockId).ToListAsync())
+                .GroupBy(l => l.Name?.NormalizeAsInternalName())
+                .ToDictionary(l => l.Key, l => l.ToList());
+
             _excelModel = reader.ReadSheetEntity<ImportInvInputModel>(mapping, (entity, propertyName, value, refObj, refProperty) =>
             {
                 if (propertyName == nameof(ImportInvInputModel.CateName))
@@ -109,29 +115,76 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     return true;
                 }
 
-                if (propertyName == nameof(ImportInvInputModel.ToPackgeInfo) && refProperty?.StartsWith(nameof(PackageInputModel.CustomPropertyValue)) == true)
+                if (propertyName == nameof(ImportInvInputModel.ToPackgeInfo))
                 {
                     var packageInfo = (PackageInputModel)refObj;
-                    var customPropertyId = Convert.ToInt32(refProperty.Substring(nameof(PackageInputModel.CustomPropertyValue).Length));
 
-                    var propertyInfo = customProps.FirstOrDefault(p => p.PackageCustomPropertyId == customPropertyId);
-
-                    if (propertyInfo == null) throw GeneralCode.ItemNotFound.BadRequest("Property " + customPropertyId + " was not found!");
-
-                    if (packageInfo.CustomPropertyValue == null)
+                    if (refProperty?.StartsWith(nameof(PackageInputModel.CustomPropertyValue)) == true)
                     {
-                        packageInfo.CustomPropertyValue = new Dictionary<int, object>();
+                        var customPropertyId = Convert.ToInt32(refProperty.Substring(nameof(PackageInputModel.CustomPropertyValue).Length));
+
+                        var propertyInfo = customProps.FirstOrDefault(p => p.PackageCustomPropertyId == customPropertyId);
+
+                        if (propertyInfo == null) throw GeneralCode.ItemNotFound.BadRequest("Property " + customPropertyId + " was not found!");
+
+                        if (packageInfo.CustomPropertyValue == null)
+                        {
+                            packageInfo.CustomPropertyValue = new Dictionary<int, object>();
+                        }
+
+                        if (!packageInfo.CustomPropertyValue.ContainsKey(customPropertyId))
+                        {
+                            var customValue = value.ConvertValueByType((EnumDataType)propertyInfo.DataTypeId);
+
+                            packageInfo.CustomPropertyValue.Add(customPropertyId, customValue);                          
+                        }
+
+                        return true;
                     }
 
-                    if (!packageInfo.CustomPropertyValue.ContainsKey(customPropertyId))
+                    if (refProperty?.Equals(nameof(PackageInputModel.LocationId)) == true)
                     {
-                        var customValue = value.ConvertValueByType((EnumDataType)propertyInfo.DataTypeId);
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            LocationEntity locationInfo = null;
 
-                        packageInfo.CustomPropertyValue.Add(customPropertyId, customValue);
+                            var valueKey = value.NormalizeAsInternalName();
+                            if (locations.ContainsKey(valueKey))
+                            {
+
+                                if (locations[valueKey].Count > 1)
+                                {
+                                    locationInfo = locations[valueKey].FirstOrDefault(l => l.Name.ToLower() == value.ToLower());
+                                }
+                                else
+                                {
+                                    locationInfo = locations[valueKey].FirstOrDefault();
+                                }
+                            }
+
+                            if (locationInfo == null)
+                            {
+                                locationInfo = new LocationEntity()
+                                {
+                                    StockId = model.StockId,
+                                    Name = value,
+                                    Description = "",
+                                    Status = 1
+                                };
+                                _stockDbContext.Location.Add(locationInfo);
+                                _stockDbContext.SaveChanges();
+                            }
+
+                            packageInfo.LocationId = locationInfo.LocationId;
+
+                        }
+
                         return true;
+
                     }
                 }
 
+                
                 return false;
             });
 
