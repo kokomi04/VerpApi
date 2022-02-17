@@ -159,25 +159,25 @@ namespace Services.Organization.Model.TimeKeeping
 
         
         [Display(Name = "Ngày công thường", GroupName = "Ngày công")]
-        public int CountedWeekday { get; set; }
+        public decimal CountedWeekday { get; set; }
         
         [Display(Name = "Ngày công cuối tuần", GroupName = "Ngày công")]
-        public int CountedWeekend { get; set; }
+        public decimal CountedWeekend { get; set; }
         
         [Display(Name = "Tổng thời gian(giờ) ngày công thường", GroupName = "Giờ công")]
-        public long CountedWeekdayHour { get; set; }
+        public decimal CountedWeekdayHour { get; set; }
         
         [Display(Name = "Tổng thời gian(giờ) ngày công cuối tuần", GroupName = "Giờ công")]
-        public long CountedWeekendHour { get; set; }
+        public decimal CountedWeekendHour { get; set; }
         
         [Display(Name = "Tổng thời gian(giờ) làm tăng ca 1", GroupName = "Tăng ca(giờ)")]
-        public long Overtime1 { get; set; }
+        public decimal Overtime1 { get; set; }
         
         [Display(Name = "Tổng thời gian(giờ) làm tăng ca 2", GroupName = "Tăng ca(giờ)")]
-        public long Overtime2 { get; set; }
+        public decimal Overtime2 { get; set; }
         
         [Display(Name = "Tổng thời gian(giờ) làm tăng ca 3", GroupName = "Tăng ca(giờ)")]
-        public long Overtime3 { get; set; }
+        public decimal Overtime3 { get; set; }
         
         [Display(Name = "Tổng số buổi vắng không phép", GroupName = "Vắng KP")]
         public int CountedAbsence { get; set; }
