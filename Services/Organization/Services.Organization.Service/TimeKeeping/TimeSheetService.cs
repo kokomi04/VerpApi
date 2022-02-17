@@ -518,6 +518,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     }
                     else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                     {
+                        timeSheetAggregate.TimeSheetAggregateId = oldTimeSheetAggregate.TimeSheetAggregateId;
+                        timeSheetAggregate.TimeSheetId = oldTimeSheetAggregate.TimeSheetId;
                         _mapper.Map(timeSheetAggregate, oldTimeSheetAggregate);
                     }
 
@@ -539,6 +541,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     }
                     else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                     {
+                        timeSheetDayOff.TimeSheetDayOffId = oldTimeSheetDayOff.TimeSheetDayOffId;
+                        timeSheetDayOff.TimeSheetId = oldTimeSheetDayOff.TimeSheetId;
                         _mapper.Map(timeSheetDayOff, oldTimeSheetDayOff);
                     }
 
