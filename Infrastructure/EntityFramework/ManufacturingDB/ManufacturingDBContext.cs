@@ -68,6 +68,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepDetail> StepDetail { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
+        public virtual DbSet<TargetProductivity> TargetProductivity { get; set; }
+        public virtual DbSet<TargetProductivityDetail> TargetProductivityDetail { get; set; }
         public virtual DbSet<WeekPlan> WeekPlan { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -900,6 +902,28 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.StepGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<TargetProductivity>(entity =>
+            {
+                entity.Property(e => e.Note).HasMaxLength(1024);
+
+                entity.Property(e => e.TargetProductivityCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<TargetProductivityDetail>(entity =>
+            {
+                entity.Property(e => e.TargetProductivityDetailId).ValueGeneratedNever();
+
+                entity.Property(e => e.TargetProductivity).HasColumnType("decimal(32, 12)");
+
+                entity.HasOne(d => d.TargetProductivityNavigation)
+                    .WithMany(p => p.TargetProductivityDetail)
+                    .HasForeignKey(d => d.TargetProductivityId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TargetProductivityDetail_TargetProductivityDetail");
             });
 
             modelBuilder.Entity<WeekPlan>(entity =>
