@@ -27,14 +27,14 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpDelete]
-        [Route("{targeProductivityId}")]
+        [Route("{targetProductivityId}")]
         public async Task<bool> DeleteTargetProductivity([FromRoute] int targetProductivityId)
         {
             return await _targetProductivityService.DeleteTargetProductivity(targetProductivityId);
         }
 
         [HttpGet]
-        [Route("{targeProductivityId}")]
+        [Route("{targetProductivityId}")]
         public async Task<TargetProductivityModel> GetTargetProductivity([FromRoute] int targetProductivityId)
         {
             return await _targetProductivityService.GetTargetProductivity(targetProductivityId);
@@ -48,7 +48,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
-        [Route("{targeProductivityId}")]
+        [Route("{targetProductivityId}")]
         public async Task<bool> UpdateTargetProductivity([FromRoute] int targetProductivityId, [FromBody] TargetProductivityModel model)
         {
             return await _targetProductivityService.UpdateTargetProductivity(targetProductivityId, model);
