@@ -894,5 +894,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             return (lst, total);
         }
+
+
     }
 }

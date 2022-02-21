@@ -274,6 +274,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return lst;
         }
 
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(long startDate, long endDate)
+        {
+            var startDateTime = startDate.UnixToDateTime();
+            var endDateTime = endDate.UnixToDateTime();
+
+            var productionOrderIds = _manufacturingDBContext.ProductionOrder
+                .Where(po => po.PlanEndDate >= startDateTime && po.StartDate <= endDateTime)
+                .Select(po => po.ProductionOrderId)
+                .ToList();
+
+            return await GetWorkloadPlan(productionOrderIds);
+        }
+
         public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan(IList<long> productionOrderIds)
         {
             var result = new Dictionary<long, WorkloadPlanModel>();
@@ -461,15 +474,5 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
             return result;
         }
-
-        private class StepLinkDataInfo
-        {
-            public long ProductionStepLinkDataId { get; set; }
-            public long ProductionStepId { get; set; }
-            public string StepName { get; set; }
-            public long? OutsourceStepRequestId { get; set; }
-            public string OutsourceStepRequestCode { get; set; }
-        }
-
     }
 }

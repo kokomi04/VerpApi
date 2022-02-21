@@ -14,6 +14,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -35,7 +36,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _mapper = mapper;
         }
 
-   
+
         public async Task<ProductionHistoryModel> CreateProductionHistory(long productionOrderId, ProductionHistoryInputModel data)
         {
             try
@@ -59,7 +60,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHistory.ProductionOrderId = productionOrderId;
                 _manufacturingDBContext.ProductionHistory.Add(productionHistory);
                 _manufacturingDBContext.SaveChanges();
-            
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHistory, productionHistory.ProductionHistoryId, $"Tạo lịch sử sản xuất", data.JsonSerialize());
                 return _mapper.Map<ProductionHistoryModel>(productionHistory);
             }
@@ -151,6 +152,54 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ProjectTo<ProductionHistoryModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
+        }
+
+
+
+
+        public async Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkload(long fromDate, long toDate)
+        {
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+
+            var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= toDateTime && po.PlanEndDate >= fromDateTime).ToList();
+            var productionOrderIds = productionOrders.Select(po => po.ProductionOrderId).ToList();
+
+            productionOrderIds = productionOrderIds.Distinct().ToList();
+
+            var productionHistories = await (from ph in _manufacturingDBContext.ProductionHistory
+                                       join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
+                                       join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
+                                       where productionOrderIds.Contains(ph.ProductionOrderId) && ps.StepId.HasValue
+                                       select new
+                                       {
+                                           StepId = ps.StepId.Value,
+                                           ph.ObjectId,
+                                           ph.ObjectTypeId,
+                                           ph.ProductionQuantity,
+                                           Date = ph.Date.Value
+                                       }).ToListAsync();
+
+            var result = productionHistories
+                .GroupBy(ph => ph.Date.GetUnix())
+                .ToDictionary(g => g.Key, g =>
+                {
+                    var actualWorkload = new ActualWorkloadModel();
+                    actualWorkload.ActualWorkloadOutput = g
+                        .GroupBy(ph => ph.StepId)
+                        .ToDictionary(sg => sg.Key, sg => sg.Select(ph => new ActualWorkloadOutputModel
+                        {
+                            ObjectId = ph.ObjectId,
+                            ObjectTypeId = ph.ObjectTypeId,
+                            Quantity = ph.ProductionQuantity
+                        }).ToList());
+
+
+                    return actualWorkload;
+                });
+
+
+            return result;
         }
 
     }

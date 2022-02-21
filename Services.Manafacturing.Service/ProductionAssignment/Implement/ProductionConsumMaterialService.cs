@@ -34,7 +34,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             _mapper = mapper;
         }
 
-
         public async Task<long> CreateConsumMaterial(int departmentId, long productionOrderId, long productionStepId, ProductionConsumMaterialModel model)
         {
             var materials = model?.Details?.Where(d => d.Key > 0 && d.Value?.Values?.Count() > 0)?.ToList();

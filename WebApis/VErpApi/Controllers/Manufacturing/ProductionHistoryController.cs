@@ -48,11 +48,11 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHistoryService.CreateMultipleProductionHistory(productionOrderId, data);
         }
 
-        [HttpDelete]
-        [Route("{productionHistoryId}")]
-        public async Task<bool> DeleteProductionHistory([FromRoute] long productionHistoryId)
+        [HttpGet]
+        [Route("actualWorkload")]
+        public async Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkload([FromQuery] long startDate, [FromQuery] long endDate)
         {
-            return await _productionHistoryService.DeleteProductionHistory(productionHistoryId);
+            return await _productionHistoryService.GetActualWorkload(startDate, endDate);
         }
     }
 }
