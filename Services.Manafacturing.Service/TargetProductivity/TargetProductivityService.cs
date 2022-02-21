@@ -72,7 +72,7 @@ namespace VErp.Services.Manafacturing.Service
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
+                if (!_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
                 var entity = _manufacturingDBContext.TargetProductivity.FirstOrDefault(x => x.TargetProductivityId == targetProductivityId);
@@ -113,7 +113,7 @@ namespace VErp.Services.Manafacturing.Service
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
+                if (!_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
                 var entity = _manufacturingDBContext.TargetProductivity.FirstOrDefault(x => x.TargetProductivityId == targetProductivityId);
@@ -140,7 +140,7 @@ namespace VErp.Services.Manafacturing.Service
         {
             try
             {
-                if (_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
+                if (!_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
                 var entity = await _manufacturingDBContext.TargetProductivity.FirstOrDefaultAsync(x => x.TargetProductivityId == targetProductivityId);

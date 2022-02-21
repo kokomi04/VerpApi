@@ -915,8 +915,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<TargetProductivityDetail>(entity =>
             {
-                entity.Property(e => e.TargetProductivityDetailId).ValueGeneratedNever();
-
                 entity.Property(e => e.TargetProductivity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.TargetProductivityNavigation)
