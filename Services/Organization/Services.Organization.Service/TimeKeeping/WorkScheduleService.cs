@@ -78,6 +78,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     eArrangeShift.WorkScheduleId = workScheduleId;
 
                     await _organizationDBContext.ArrangeShift.AddAsync(eArrangeShift);
+                    await _organizationDBContext.SaveChangesAsync();
 
                     if (arrangeShift.Items.Count > 0)
                     {
