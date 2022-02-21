@@ -18,6 +18,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan
         Task<(Stream stream, string fileName, string contentType)> ProductionPlanExport(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null);
 
         Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan(IList<long> productionOrderIds);
-    
+        Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(long startDate, long endDate);
     }
 }
