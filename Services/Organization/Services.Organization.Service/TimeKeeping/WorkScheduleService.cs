@@ -76,22 +76,25 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     var eArrangeShift = _mapper.Map<ArrangeShift>(arrangeShift);
                     eArrangeShift.WorkScheduleId = workScheduleId;
+                    eArrangeShift.ArrangeShiftId = 0;
 
                     await _organizationDBContext.ArrangeShift.AddAsync(eArrangeShift);
-                    await _organizationDBContext.SaveChangesAsync();
 
                     if (arrangeShift.Items.Count > 0)
                     {
-                        await AddEntityWithInner<ArrangeShiftItemModel, ArrangeShiftItem>(arrangeShift.Items, new[] { eArrangeShift.ArrangeShiftId });
+                        await _organizationDBContext.SaveChangesAsync();
+
+                        var dataSet = _organizationDBContext.Set<ArrangeShiftItem>();
+                        await AddEntityWithInner<ArrangeShiftItemModel, ArrangeShiftItem>(dataSet, arrangeShift.Items, new[] { eArrangeShift.ArrangeShiftId });
                     }
                 }
+
+                await _organizationDBContext.SaveChangesAsync();
             }
         }
 
-        private async Task AddEntityWithInner<T, E>(IList<T> items, int[] refForeginKeyId, bool ignoreInner = false) where E : class where T : class, IRefForeginKey, IInnerBySelf<T>
+        private async Task AddEntityWithInner<T, E>(DbSet<E> dataSet,IList<T> items, int[] refForeginKeyId, bool ignoreInner = false) where E : class where T : class, IRefForeginKey, IInnerBySelf<T>
         {
-            var dataSet = _organizationDBContext.Set<E>();
-
             foreach (var item in items)
             {
                 item.SetRefForeginKey(refForeginKeyId);
@@ -99,17 +102,18 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var eItem = _mapper.Map<E>(item);
 
                 await dataSet.AddAsync(eItem);
-                await _organizationDBContext.SaveChangesAsync();
+                
+                if(item.HasInner())
+                    await _organizationDBContext.SaveChangesAsync();
 
                 if (!ignoreInner && item.HasInner())
                 {
                     var innerRefForeginKeyId = refForeginKeyId.ToList();
                     innerRefForeginKeyId.Add((_mapper.Map<T>(eItem).GetPrimaryKey()));
 
-                    await AddEntityWithInner<T, E>(item.GetInner(), innerRefForeginKeyId.ToArray(), ignoreInner = true);
+                    await AddEntityWithInner<T, E>(dataSet, item.GetInner(), innerRefForeginKeyId.ToArray(), ignoreInner = true);
                 }
 
-                await _organizationDBContext.SaveChangesAsync();
             }
 
             await Task.CompletedTask;
