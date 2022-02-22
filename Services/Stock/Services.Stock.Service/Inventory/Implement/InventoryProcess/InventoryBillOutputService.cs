@@ -993,7 +993,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     SortOrder = detail.SortOrder,
                     Description = detail.Description,
                     //AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
-                    InventoryRequirementCode = detail.InventoryRequirementCode,
+                    //InventoryRequirementCode = detail.InventoryRequirementCode,
                     InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
                 });
 

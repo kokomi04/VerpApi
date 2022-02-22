@@ -168,7 +168,7 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
 
-                entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
+                //entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
 
                 entity.Property(e => e.OrderCode)
                     .HasMaxLength(64)

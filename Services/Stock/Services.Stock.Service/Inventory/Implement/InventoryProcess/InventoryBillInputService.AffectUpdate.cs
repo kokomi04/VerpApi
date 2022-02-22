@@ -591,7 +591,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 detail.OrderCode = submitDetail?.OrderCode;
                 detail.Pocode = submitDetail?.POCode;
                 detail.ProductionOrderCode = submitDetail?.ProductionOrderCode;
-                detail.InventoryRequirementCode = submitDetail?.InventoryRequirementCode;
+                //detail.InventoryRequirementCode = submitDetail?.InventoryRequirementCode;
+                detail.InventoryRequirementDetailId = submitDetail?.InventoryRequirementDetailId;
                 detail.Description = submitDetail?.Description;
 
                 //detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;

@@ -962,7 +962,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Description = detail.Description,
                     //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                     InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
-                    InventoryRequirementCode = detail.InventoryRequirementCode
+                    //InventoryRequirementCode = detail.InventoryRequirementCode
                 });
 
 
