@@ -203,7 +203,32 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (workSchedule == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            return _mapper.Map<WorkScheduleModel>(workSchedule);
+            var arrangeShifts = await _organizationDBContext.ArrangeShift.Where(x=>x.WorkScheduleId == workScheduleId).ProjectTo<ArrangeShiftModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var arrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(x => arrangeShifts.Select(x => x.ArrangeShiftId).Contains(x.ArrangeShiftId)).ToListAsync();
+            
+            foreach (var shift in arrangeShifts)
+            {
+                var items = arrangeShiftItems.Where(x => x.ArrangeShiftId == shift.ArrangeShiftId && x.ParentArrangeShiftItemId.HasValue == false)
+                                             .AsQueryable()
+                                             .ProjectTo<ArrangeShiftItemModel>(_mapper.ConfigurationProvider)
+                                             .ToList();
+                // foreach (var item in items)
+                // {
+                //     if(arrangeShiftItems.Any(x=>x.ParentArrangeShiftItemId == item.ArrangeShiftItemId))
+                //     {
+                //         item.InnerItems = arrangeShiftItems.Where(x => x.ParentArrangeShiftItemId.HasValue == true && x.ParentArrangeShiftItemId.GetValueOrDefault() == item.ArrangeShiftItemId)
+                //                                            .AsQueryable()
+                //                                            .ProjectTo<ArrangeShiftItemModel>(_mapper.ConfigurationProvider)
+                //                                            .ToList();
+                //     }
+                // }
+                shift.Items = items;
+            }
+
+            var result = _mapper.Map<WorkScheduleModel>(workSchedule);
+            result.ArrangeShifts = arrangeShifts;
+
+            return result;
         }
 
         public async Task<IList<WorkScheduleModel>> GetListWorkSchedule()
