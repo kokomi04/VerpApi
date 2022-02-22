@@ -46,6 +46,8 @@ namespace VErp.Services.Manafacturing.Service
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (model.IsDefault)
+                    await RemoveDefaultTargetProductivity();
 
                 var entity = _mapper.Map<TargetProductivity>(model);
                 await _manufacturingDBContext.TargetProductivity.AddAsync(entity);
@@ -80,6 +82,9 @@ namespace VErp.Services.Manafacturing.Service
 
                 if (entity.TargetProductivityCode != model.TargetProductivityCode && _manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityCode == model.TargetProductivityCode))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Đã tồn tại mã năng suất mục tiêu trong hệ thống");
+
+                if(model.IsDefault)
+                    await RemoveDefaultTargetProductivity();
 
                 model.TargetProductivityId = targetProductivityId;
                 _mapper.Map(model, entity);
@@ -125,6 +130,10 @@ namespace VErp.Services.Manafacturing.Service
                 entity.IsDeleted = true;
 
                 await _manufacturingDBContext.SaveChangesAsync();
+                
+                if(entity.IsDefault)
+                    await SetDefaultTargetProductivity();
+
                 await trans.CommitAsync();
                 return true;
             }
@@ -168,6 +177,22 @@ namespace VErp.Services.Manafacturing.Service
             query = size > 0 ? query.Skip((page - 1) * size).Take(size) : query;
 
             return await query.ProjectTo<TargetProductivityModel>(_mapper.ConfigurationProvider).ToListAsync();
+        }
+
+        private async Task<bool> RemoveDefaultTargetProductivity()
+        {
+            var defaults = await _manufacturingDBContext.TargetProductivity.Where(x => x.IsDefault == true).ToListAsync();
+            defaults.ForEach(x => x.IsDefault = false);
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task<bool> SetDefaultTargetProductivity()
+        {
+            var target = await _manufacturingDBContext.TargetProductivity.FirstOrDefaultAsync(x => x.IsDefault == false);
+            target.IsDefault = false;
+            await _manufacturingDBContext.SaveChangesAsync();
+            return true;
         }
 
     }
