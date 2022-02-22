@@ -133,23 +133,24 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   r.PrimaryQuantityRemaining
                                               };
 
-            var inventoryAsQuery = from id in _stockDbContext.InventoryDetail
-                                   join i in _stockDbContext.Inventory on id.InventoryId equals i.InventoryId
-                                   select new
-                                   {
-                                       i.InventoryId,
-                                       i.InventoryCode,
-                                       id.InventoryDetailId,
-                                       id.InventoryRequirementCode,
-                                       id.ProductionOrderCode,
-                                       i.DepartmentId,
-                                       id.ProductId
-                                   };
 
+
+            if (hasInventory.HasValue)
+            {
+                var invRequirementDetailIds = _stockDbContext.InventoryDetail.Select(d => d.InventoryRequirementDetailId);
+                if (hasInventory.Value)
+                {
+                    inventoryRequirementAsQuery = inventoryRequirementAsQuery.Where(r => invRequirementDetailIds.Contains(r.InventoryRequirementDetailId));
+                }
+                else
+                {
+                    inventoryRequirementAsQuery = inventoryRequirementAsQuery.Where(r => !invRequirementDetailIds.Contains(r.InventoryRequirementDetailId));
+                }
+            }
             var query = from ir in inventoryRequirementAsQuery
                         join p in _stockDbContext.Product on ir.ProductId equals p.ProductId into @pAlias
                         from p in @pAlias.DefaultIfEmpty()
-                        where hasInventory.HasValue == false ? true : hasInventory.Value == false ? !inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId) : inventoryAsQuery.Any(x => x.InventoryRequirementCode == ir.InventoryRequirementCode && x.ProductId == ir.ProductId)
+
                         select new
                         {
                             ir.InventoryRequirementCode,
@@ -235,20 +236,33 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
                 }).ToList();
 
-            var lsInventoryRequirementCode = lst.Select(x => x.InventoryRequirementCode).ToArray();
-            var mapInventorySimpleInfo = (await inventoryAsQuery.Where(x => lsInventoryRequirementCode.Contains(x.InventoryRequirementCode)).ToListAsync())
-            .GroupBy(x => (new { x.InventoryRequirementCode, x.ProductId }).GetHashCode())
-            .ToDictionary(k => k.Key, v => v.Select(x => new InventorySimpleInfo
-            {
-                InventoryCode = x.InventoryCode,
-                InventoryId = x.InventoryId
-            }).Distinct());
+            var inventoryRequirementDetailIds = lst.Select(d => (long?)d.InventoryRequirementDetailId).ToList();
+
+            var inventoryInfos = (await (from id in _stockDbContext.InventoryDetail
+                                         join i in _stockDbContext.Inventory on id.InventoryId equals i.InventoryId
+                                         where inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId)
+                                         select new
+                                         {
+                                             i.InventoryId,
+                                             i.InventoryCode,
+                                             id.InventoryDetailId,
+                                             id.InventoryRequirementDetailId,
+                                             //id.InventoryRequirementCode,
+                                             id.ProductionOrderCode,
+                                             i.DepartmentId,
+                                             id.ProductId
+                                         }).ToListAsync()
+                                   ).GroupBy(d => d.InventoryRequirementDetailId)
+                                   .ToDictionary(
+                                        d => d.Key,
+                                        d => d.Select(iv => new InventorySimpleInfo { InventoryId = iv.InventoryId, InventoryCode = iv.InventoryCode }).ToList()
+                                        );
 
             foreach (var item in lst)
             {
-                var hashCode = (new { item.InventoryRequirementCode, item.ProductId }).GetHashCode();
-                if (mapInventorySimpleInfo.ContainsKey(hashCode))
-                    ((List<InventorySimpleInfo>)item.InventoryInfo).AddRange(mapInventorySimpleInfo[hashCode]);
+
+                if (inventoryInfos.ContainsKey(item.InventoryRequirementDetailId))
+                    ((List<InventorySimpleInfo>)item.InventoryInfo).AddRange(inventoryInfos[item.InventoryRequirementDetailId]);
             }
 
             return (lst, total);
