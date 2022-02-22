@@ -190,7 +190,7 @@ namespace VErp.Services.Manafacturing.Service
         private async Task<bool> SetDefaultTargetProductivity()
         {
             var target = await _manufacturingDBContext.TargetProductivity.FirstOrDefaultAsync(x => x.IsDefault == false);
-            target.IsDefault = false;
+            target.IsDefault = true;
             await _manufacturingDBContext.SaveChangesAsync();
             return true;
         }

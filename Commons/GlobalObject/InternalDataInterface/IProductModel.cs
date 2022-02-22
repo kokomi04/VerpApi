@@ -43,6 +43,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal Coefficient { get; set; }
         public string Color { get; set; }
 
+        public int? TargetProductivity { get; set; }
+
         public decimal? PackingQuantitative { get; set; }
         public decimal? PackingWidth { get; set; }
         public decimal? PackingLong { get; set; }
