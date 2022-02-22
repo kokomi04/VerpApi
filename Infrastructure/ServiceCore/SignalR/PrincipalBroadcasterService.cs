@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -14,7 +15,7 @@ namespace VErp.Infrastructure.ServiceCore.SignalR
 
     public class PrincipalBroadcasterService : IPrincipalBroadcasterService
     {
-        private readonly Dictionary<string, IList<string>> _ConnectedUsers = new Dictionary<string, IList<string>>();
+        private readonly ConcurrentDictionary<string, IList<string>> _ConnectedUsers = new ConcurrentDictionary<string, IList<string>>();
 
         public bool IsUserConnected()
         {
@@ -28,11 +29,11 @@ namespace VErp.Infrastructure.ServiceCore.SignalR
 
         public void AddUserConnected(string userId, string connectionId)
         {
-            if(string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(connectionId)) return;
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(connectionId)) return;
 
             if (!_ConnectedUsers.ContainsKey(userId))
             {
-                _ConnectedUsers.Add(userId, new List<string>());
+                _ConnectedUsers.TryAdd(userId, new List<string>());
             }
 
             if (!_ConnectedUsers[userId].Contains(connectionId))
@@ -54,7 +55,7 @@ namespace VErp.Infrastructure.ServiceCore.SignalR
             {
                 _ConnectedUsers[userId] = _ConnectedUsers[userId].Where(eConnectionId => eConnectionId != connectionId).ToList();
                 if (_ConnectedUsers[userId].Count == 0)
-                    _ConnectedUsers.Remove(userId);
+                    _ConnectedUsers.TryRemove(userId, out var _);
             }
         }
 
