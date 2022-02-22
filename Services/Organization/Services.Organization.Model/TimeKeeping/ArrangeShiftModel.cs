@@ -43,6 +43,7 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void SetRefForeginKey(int[] refForeginKey)
         {
+            ArrangeShiftId = 0 ;
             if(refForeginKey.Length > 0)
             {
                 this.WorkScheduleId = refForeginKey[0];
@@ -89,6 +90,8 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void SetRefForeginKey(int[] refForeginKey)
         {
+            ArrangeShiftItemId = 0;
+
             if (refForeginKey.Length > 0)
             {
                 this.ArrangeShiftId = refForeginKey[0];
