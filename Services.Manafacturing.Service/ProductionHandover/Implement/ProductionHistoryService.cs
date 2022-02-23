@@ -157,7 +157,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
 
 
-        public async Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkload(long fromDate, long toDate)
+        public async Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkloadByDate(long fromDate, long toDate)
         {
             var fromDateTime = fromDate.UnixToDateTime();
             var toDateTime = toDate.UnixToDateTime();
@@ -201,6 +201,52 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             return result;
         }
+
+        public async Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload(long fromDate, long toDate)
+        {
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+
+            var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= toDateTime && po.PlanEndDate >= fromDateTime).ToList();
+            var productionOrderIds = productionOrders.Select(po => po.ProductionOrderId).ToList();
+
+            productionOrderIds = productionOrderIds.Distinct().ToList();
+
+            var productionHistories = await (from ph in _manufacturingDBContext.ProductionHistory
+                                             join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
+                                             join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
+                                             where productionOrderIds.Contains(ph.ProductionOrderId) && ps.StepId.HasValue
+                                             select new
+                                             {
+                                                 ph.ProductionOrderId,
+                                                 StepId = ps.StepId.Value,
+                                                 ph.ObjectId,
+                                                 ph.ObjectTypeId,
+                                                 ph.ProductionQuantity
+                                             }).ToListAsync();
+
+            var result = productionHistories
+                .GroupBy(ph => ph.ProductionOrderId)
+                .ToDictionary(g => g.Key, g =>
+                {
+                    var actualWorkload = new ActualWorkloadModel();
+                    actualWorkload.ActualWorkloadOutput = g
+                        .GroupBy(ph => ph.StepId)
+                        .ToDictionary(sg => sg.Key, sg => sg.Select(ph => new ActualWorkloadOutputModel
+                        {
+                            ObjectId = ph.ObjectId,
+                            ObjectTypeId = ph.ObjectTypeId,
+                            Quantity = ph.ProductionQuantity
+                        }).ToList());
+
+
+                    return actualWorkload;
+                });
+
+
+            return result;
+        }
+
 
     }
 }
