@@ -379,7 +379,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     Date = DateTime.Now.Date.GetUnixUtc(_currentContextService.TimeZoneOffset),
                     Content = requirement.RequirementContent,
                     InventoryRequirementCode = requirement.RequirementCode,
-
+                    CensorStatus = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
                     InventoryRequirementDetail = requirement.MaterialsRequirementDetails.Select(x => new InventoryRequirementSimpleDetailModel
                     {
                         DepartmentId = x.DepartmentId,
