@@ -355,7 +355,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                 var productionGroup = groups.Where(g => g.ContainerId == productionOrderId).ToList();
 
-                foreach (var inOutGroup in groups)
+                foreach (var inOutGroup in productionGroup)
                 {
                     var parentStep = productionSteps.First(ps => ps.ProductionStepId == inOutGroup.ParentId);
 
