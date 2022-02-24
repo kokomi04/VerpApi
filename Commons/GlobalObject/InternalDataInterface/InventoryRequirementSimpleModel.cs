@@ -25,7 +25,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public EnumModuleType ModuleTypeId { get; set; }
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
-
+        public EnumInventoryRequirementStatus CensorStatus { get; set; }
         public ICollection<InventoryRequirementSimpleDetailModel> InventoryRequirementDetail { get; set; }
 
     }
