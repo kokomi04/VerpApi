@@ -99,7 +99,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 IsProductSemi = productInfo.IsProductSemi,
                 IsProduct = productInfo.IsProduct,
 
-                IsMaterials = productInfo.IsMaterials
+                IsMaterials = productInfo.IsMaterials,
+                TargetProductivityId = productInfo.TargetProductivityId
             };
         }
 
@@ -208,6 +209,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.IsProduct = model.IsProduct;
 
                 productInfo.IsMaterials = model.IsMaterials;
+                productInfo.TargetProductivityId = model.TargetProductivityId;
 
                 await _stockContext.SaveChangesAsync();
 
