@@ -76,21 +76,25 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     var eArrangeShift = _mapper.Map<ArrangeShift>(arrangeShift);
                     eArrangeShift.WorkScheduleId = workScheduleId;
+                    eArrangeShift.ArrangeShiftId = 0;
 
                     await _organizationDBContext.ArrangeShift.AddAsync(eArrangeShift);
 
                     if (arrangeShift.Items.Count > 0)
                     {
-                        await AddEntityWithInner<ArrangeShiftItemModel, ArrangeShiftItem>(arrangeShift.Items, new[] { eArrangeShift.ArrangeShiftId });
+                        await _organizationDBContext.SaveChangesAsync();
+
+                        var dataSet = _organizationDBContext.Set<ArrangeShiftItem>();
+                        await AddEntityWithInner<ArrangeShiftItemModel, ArrangeShiftItem>(dataSet, arrangeShift.Items, new[] { eArrangeShift.ArrangeShiftId });
                     }
                 }
+
+                await _organizationDBContext.SaveChangesAsync();
             }
         }
 
-        private async Task AddEntityWithInner<T, E>(IList<T> items, int[] refForeginKeyId, bool ignoreInner = false) where E : class where T : class, IRefForeginKey, IInnerBySelf<T>
+        private async Task AddEntityWithInner<T, E>(DbSet<E> dataSet,IList<T> items, int[] refForeginKeyId, bool ignoreInner = false) where E : class where T : class, IRefForeginKey, IInnerBySelf<T>
         {
-            var dataSet = _organizationDBContext.Set<E>();
-
             foreach (var item in items)
             {
                 item.SetRefForeginKey(refForeginKeyId);
@@ -98,17 +102,18 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var eItem = _mapper.Map<E>(item);
 
                 await dataSet.AddAsync(eItem);
-                await _organizationDBContext.SaveChangesAsync();
+                
+                if(item.HasInner())
+                    await _organizationDBContext.SaveChangesAsync();
 
                 if (!ignoreInner && item.HasInner())
                 {
                     var innerRefForeginKeyId = refForeginKeyId.ToList();
                     innerRefForeginKeyId.Add((_mapper.Map<T>(eItem).GetPrimaryKey()));
 
-                    await AddEntityWithInner<T, E>(item.GetInner(), innerRefForeginKeyId.ToArray(), ignoreInner = true);
+                    await AddEntityWithInner<T, E>(dataSet, item.GetInner(), innerRefForeginKeyId.ToArray(), ignoreInner = true);
                 }
 
-                await _organizationDBContext.SaveChangesAsync();
             }
 
             await Task.CompletedTask;
@@ -202,7 +207,32 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (workSchedule == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            return _mapper.Map<WorkScheduleModel>(workSchedule);
+            var arrangeShifts = await _organizationDBContext.ArrangeShift.Where(x=>x.WorkScheduleId == workScheduleId).ProjectTo<ArrangeShiftModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var arrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(x => arrangeShifts.Select(x => x.ArrangeShiftId).Contains(x.ArrangeShiftId)).ToListAsync();
+            
+            foreach (var shift in arrangeShifts)
+            {
+                var items = arrangeShiftItems.Where(x => x.ArrangeShiftId == shift.ArrangeShiftId && x.ParentArrangeShiftItemId.HasValue == false)
+                                             .AsQueryable()
+                                             .ProjectTo<ArrangeShiftItemModel>(_mapper.ConfigurationProvider)
+                                             .ToList();
+                // foreach (var item in items)
+                // {
+                //     if(arrangeShiftItems.Any(x=>x.ParentArrangeShiftItemId == item.ArrangeShiftItemId))
+                //     {
+                //         item.InnerItems = arrangeShiftItems.Where(x => x.ParentArrangeShiftItemId.HasValue == true && x.ParentArrangeShiftItemId.GetValueOrDefault() == item.ArrangeShiftItemId)
+                //                                            .AsQueryable()
+                //                                            .ProjectTo<ArrangeShiftItemModel>(_mapper.ConfigurationProvider)
+                //                                            .ToList();
+                //     }
+                // }
+                shift.Items = items;
+            }
+
+            var result = _mapper.Map<WorkScheduleModel>(workSchedule);
+            result.ArrangeShifts = arrangeShifts;
+
+            return result;
         }
 
         public async Task<IList<WorkScheduleModel>> GetListWorkSchedule()
