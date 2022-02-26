@@ -64,6 +64,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<TimeSheetAggregate> TimeSheetAggregate { get; set; }
         public virtual DbSet<TimeSheetDayOff> TimeSheetDayOff { get; set; }
         public virtual DbSet<TimeSheetDetail> TimeSheetDetail { get; set; }
+        public virtual DbSet<TimeSheetRaw> TimeSheetRaw { get; set; }
         public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
         public virtual DbSet<WorkSchedule> WorkSchedule { get; set; }
