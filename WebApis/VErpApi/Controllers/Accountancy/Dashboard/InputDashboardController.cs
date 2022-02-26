@@ -7,7 +7,7 @@ using VErp.Services.Accountancy.Service.InputDashboard;
 
 namespace VErpApi.Controllers.Accountancy.Dashboard
 {
-    [Route("api/accountancy/data/bills")]
+    [Route("api/accountancy/dashboard")]
     public class InputDashboardController: VErpBaseController
     {
         private readonly IInputDashboardService _inputDashboardService;
