@@ -36,9 +36,9 @@ namespace Services.Organization.Model.TimeKeeping
         public long EmployeeId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập ngày chấm công")]
         [Display(Name = "Ngày", GroupName = "TT chấm công")]
-        public long Date { get; set; }
+        public DateTime Date { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập giờ chấm công")]
         [Display(Name = "Giờ chấm công", GroupName = "TT chấm công")]
-        public double Time { get; set; }
+        public TimeSpan Time { get; set; }
     }
 }
