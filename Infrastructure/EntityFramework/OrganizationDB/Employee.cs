@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         {
             EmployeeDepartmentMapping = new HashSet<EmployeeDepartmentMapping>();
             EmployeeSubsidiary = new HashSet<EmployeeSubsidiary>();
+            WorkScheduleMark = new HashSet<WorkScheduleMark>();
         }
 
         public int UserId { get; set; }
@@ -31,5 +32,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual LeaveConfig LeaveConfig { get; set; }
         public virtual ICollection<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual ICollection<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
+        public virtual ICollection<WorkScheduleMark> WorkScheduleMark { get; set; }
     }
 }

@@ -68,6 +68,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
         public virtual DbSet<WorkSchedule> WorkSchedule { get; set; }
+        public virtual DbSet<WorkScheduleMark> WorkScheduleMark { get; set; }
         public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
         public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
 
@@ -852,6 +853,23 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.TimeSortConfigurationId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_WorkSchedule_TimeSortConfiguration");
+            });
+
+            modelBuilder.Entity<WorkScheduleMark>(entity =>
+            {
+                entity.Property(e => e.WorkScheduleMarkId).ValueGeneratedNever();
+
+                entity.HasOne(d => d.Employee)
+                    .WithMany(p => p.WorkScheduleMark)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkScheduleHistory_WorkScheduleHistory");
+
+                entity.HasOne(d => d.WorkSchedule)
+                    .WithMany(p => p.WorkScheduleMark)
+                    .HasForeignKey(d => d.WorkScheduleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkScheduleMark_WorkSchedule");
             });
 
             modelBuilder.Entity<WorkingHourInfo>(entity =>
