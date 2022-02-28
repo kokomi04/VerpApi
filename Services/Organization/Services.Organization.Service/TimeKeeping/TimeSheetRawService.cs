@@ -156,7 +156,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         MatchCollection match = rx.Matches(value);
                         if(match.Count != 1) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
                        
-                        if(!int.TryParse(match[0].Groups["hour"].Value, out int hour) || int.TryParse(match[0].Groups["min"].Value, out int min))
+                        if(!int.TryParse(match[0].Groups["hour"].Value, out int hour) || !int.TryParse(match[0].Groups["min"].Value, out int min))
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
 
                         if(hour >= 12 || hour < 0 || min >= 60 || min < 0) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
@@ -178,6 +178,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     EmployeeId = item.EmployeeId,
                     Date = item.Date,
                     Time = item.Time
+
                 };
                 _organizationDBContext.TimeSheetRaw.Add(ent);
             }
