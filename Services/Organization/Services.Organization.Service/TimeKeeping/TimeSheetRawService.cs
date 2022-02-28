@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -145,6 +146,28 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     }
                     return true;
                 }
+
+                if (propertyName == nameof(TimeSheetRawImportFieldModel.Time))
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        var pattern = @"(?<hour>\d+):(?<min>\d+)";
+                        Regex rx = new Regex(pattern);
+                        MatchCollection match = rx.Matches(value);
+                        if(match.Count != 1) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
+                       
+                        if(!int.TryParse(match[0].Groups["hour"].Value, out int hour) || int.TryParse(match[0].Groups["min"].Value, out int min))
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
+
+                        if(hour >= 12 || hour < 0 || min >= 60 || min < 0) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
+
+                        TimeSpan time = TimeSpan.FromSeconds(hour * 60 * 60 + min * 60);
+
+                        entity.SetPropertyValue(propertyName, time);
+                    }
+                    return true;
+                }
+
                 return false;
             });
 
@@ -153,8 +176,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var ent = new TimeSheetRaw
                 {
                     EmployeeId = item.EmployeeId,
-                    Date = item.Date.UnixToDateTime().Value,
-                    Time = TimeSpan.FromSeconds(item.Time)
+                    Date = item.Date,
+                    Time = item.Time
                 };
                 _organizationDBContext.TimeSheetRaw.Add(ent);
             }
