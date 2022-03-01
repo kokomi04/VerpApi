@@ -32,13 +32,13 @@ namespace Services.Organization.Model.TimeKeeping
     public class TimeSheetRawImportFieldModel
     {
         [Required(ErrorMessage = "Vui lòng nhập thông tin nhân viên")]
-        [Display(Name = "Nhân viên", GroupName = "TT nhân viên")]
+        [Display(Name = "Nhân viên (Mã nhân viên hoặc email nhân viên)", GroupName = "TT nhân viên")]
         public long EmployeeId { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập ngày chấm công")]
-        [Display(Name = "Ngày", GroupName = "TT chấm công")]
+        [Display(Name = "Ngày chấm công", GroupName = "TT chấm công")]
         public DateTime Date { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập giờ chấm công")]
-        [Display(Name = "Giờ chấm công", GroupName = "TT chấm công")]
+        [Display(Name = "Giờ chấm công (Định dạng hh:mm)", GroupName = "TT chấm công")]
         public TimeSpan Time { get; set; }
     }
 }
