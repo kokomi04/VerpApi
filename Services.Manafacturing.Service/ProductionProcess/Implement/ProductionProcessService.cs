@@ -1407,6 +1407,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var sql = new StringBuilder(@$"
                     SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
                     WHERE v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
+                        AND v.OutsourceRequestDetailId IS NULL
                 ");
                 var parammeters = new List<SqlParameter>()
                 {
