@@ -857,8 +857,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<WorkScheduleMark>(entity =>
             {
-                entity.Property(e => e.WorkScheduleMarkId).ValueGeneratedNever();
-
                 entity.HasOne(d => d.Employee)
                     .WithMany(p => p.WorkScheduleMark)
                     .HasForeignKey(d => d.EmployeeId)
