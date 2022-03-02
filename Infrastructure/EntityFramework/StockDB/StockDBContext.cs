@@ -51,6 +51,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Property> Property { get; set; }
         public virtual DbSet<RefCustomerBasic> RefCustomerBasic { get; set; }
         public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
+        public virtual DbSet<RefTargetProductivity> RefTargetProductivity { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
         public virtual DbSet<StockTake> StockTake { get; set; }
@@ -872,6 +873,21 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.SoCt)
                     .HasMaxLength(512)
                     .HasColumnName("so_ct");
+            });
+
+            modelBuilder.Entity<RefTargetProductivity>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefTargetProductivity");
+
+                entity.Property(e => e.Note).HasMaxLength(1024);
+
+                entity.Property(e => e.TargetProductivityCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TargetProductivityId).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Stock>(entity =>
