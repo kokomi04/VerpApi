@@ -111,7 +111,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     var innerRefForeginKeyId = refForeginKeyId.ToList();
                     innerRefForeginKeyId.Add((_mapper.Map<T>(eItem).GetPrimaryKey()));
 
-                    await AddEntityWithInner<T, E>(dataSet, item.GetInner(), innerRefForeginKeyId.ToArray(), ignoreInner = true);
+                    await AddEntityWithInner<T, E>(dataSet, item.GetInner(), innerRefForeginKeyId.ToArray(), ignoreInner: true);
                 }
 
             }
