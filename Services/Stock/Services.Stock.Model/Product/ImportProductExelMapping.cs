@@ -50,6 +50,8 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Mã năng suất mục tiêu", GroupName = "Thông tin chung")]
         public string TargetProductivityCode { get; set; }
+        [FieldDataIgnore]
+        public int? TargetProductivityId { get; set; }
 
 
 
