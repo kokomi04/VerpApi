@@ -48,6 +48,9 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Barcode", GroupName = "Thông tin chung")]
         public string Barcode { get; set; }
 
+        [Display(Name = "Mã năng suất mục tiêu", GroupName = "Thông tin chung")]
+        public string TargetProductivityCode { get; set; }
+
 
 
         [Display(Name = "Tên Đơn vị chính", GroupName = "Đơn vị chính")]
