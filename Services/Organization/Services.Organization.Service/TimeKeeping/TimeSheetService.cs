@@ -28,9 +28,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<TimeSheetModel> GetTimeSheet(int year, int month);
         Task<bool> UpdateTimeSheet(int year, int month, TimeSheetModel model);
 
-        CategoryNameModel GetFieldDataForMapping();
+        CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate);
 
-        Task<bool> ImportTimeSheetFromMapping(int year, int month, ImportExcelMapping mapping, Stream stream);
+        Task<bool> ImportTimeSheetFromMapping(int year, int month, long beginDate, long endDate, ImportExcelMapping mapping, Stream stream);
 
         Task<bool> ApproveTimeSheet(int year, int month);
     }
@@ -268,7 +268,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         }
 
 
-        public CategoryNameModel GetFieldDataForMapping()
+        public CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate)
         {
             var result = new CategoryNameModel()
             {
@@ -288,9 +288,19 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
             );
 
+            for (long unixTime = beginDate; unixTime <= endDate; unixTime +=86400)
+            {
+                var date = unixTime.UnixToDateTime().Value;
+                fields.Add(new CategoryFieldNameModel{
+                    FieldName = $"TimeKeepingDay{unixTime}",
+                    FieldTitle = $"Thời gian chấm công ngày {date.ToString("dd/MM/yyyy")}",
+                    GroupName = "Ngày nghỉ",
+                });
+            }
+
             fields.AddRange(fieldsAbsenceTypeSymbols);
 
-            result.Fields.Add(new CategoryFieldNameModel
+            fields.Add(new CategoryFieldNameModel
             {
                 FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
                 FieldTitle = "Cột kiểm tra",
@@ -300,9 +310,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return result;
         }
 
-        public async Task<bool> ImportTimeSheetFromMapping(int month, int year, ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportTimeSheetFromMapping(int month, int year, long beginDate, long endDate, ImportExcelMapping mapping, Stream stream)
         {
-            string timeKeepingDayPropPrefix = nameof(TimeSheetImportFieldModel.TimeKeepingDay1)[..^1];
+            string timeKeepingDayPropPrefix = "TimeKeepingDay";
             Type typeInfo = typeof(TimeSheetImportFieldModel);
 
             var reader = new ExcelReader(stream);
@@ -368,14 +378,14 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 if (employee == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Nhân viên {employeeCode} không tồn tại");
 
-                int maxDayNumberInMoth = 31;
+                // int maxDayNumberInMoth = 31;
 
                 var rowIn = rows.First();
                 var rowOut = rows.Last();
 
-                for (int day = 1; day <= maxDayNumberInMoth; day++)
+                for (long unixTime = beginDate; unixTime <= endDate; unixTime += 86400)
                 {
-                    var timeKeepingDayProp = $"{timeKeepingDayPropPrefix}{day}";
+                    var timeKeepingDayProp = $"{timeKeepingDayPropPrefix}{unixTime}";
 
                     var timeInAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowIn.timeSheetImportModel) as string;
                     var timeOutAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowOut.timeSheetImportModel) as string;
@@ -395,7 +405,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         absenceTypeSymbolId = absenceType.AbsenceTypeSymbolId;
                     }
 
-                    var date = new DateTime(year, month, day);
+                    var date = unixTime.UnixToDateTime().Value;
 
                     var timeSheetDetail = absenceTypeSymbolId.HasValue ? new TimeSheetDetail()
                     {

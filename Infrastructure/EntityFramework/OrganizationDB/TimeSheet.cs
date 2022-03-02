@@ -17,6 +17,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public long TimeSheetId { get; set; }
         public int Month { get; set; }
         public int Year { get; set; }
+        public DateTime? BeginDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public string Note { get; set; }
         public bool IsApprove { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
