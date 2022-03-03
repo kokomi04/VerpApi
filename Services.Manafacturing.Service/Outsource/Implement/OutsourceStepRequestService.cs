@@ -269,7 +269,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var hasProductSemi = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas.Where(x => x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi).Count() > 0;
+                var hasProductSemi = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas.Where(x => x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi).Count() > 0;
 
                 request.OutsourceStepRequestFinishDate = requestModel.OutsourceStepRequestFinishDate.UnixToDateTime(0);
                 request.IsInvalid = hasProductSemi;
@@ -463,7 +463,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     ProductionStepLinkDataTitle = ldInfo?.ObjectTitle,
                     ProductionStepTitle = stepInfo?.Title,
                     ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId),
-                    ProductionStepLinkDataObjectId = (int)ldInfo.ObjectId,
+                    ProductionStepLinkDataObjectId = (int)ldInfo.LinkDataObjectId,
                     OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0,
                     DecimalPlace = ldInfo.DecimalPlace
                 };
@@ -508,7 +508,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     ProductionStepLinkDataTitle = ldInfo?.ObjectTitle,
                     ProductionStepTitle = stepInfo?.Title,
                     ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId),
-                    ProductionStepLinkDataObjectId = (int)ldInfo.ObjectId,
+                    ProductionStepLinkDataObjectId = (int)ldInfo.LinkDataObjectId,
                     OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0,
                     OutsourceStepRequestCode = item.OutsourceStepRequest.OutsourceStepRequestCode,
                     OutsourceStepRequestFinishDate = item.OutsourceStepRequest.OutsourceStepRequestFinishDate.GetUnix(),
@@ -548,7 +548,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                 select new
                                 {
                                     d.ProductionStepLinkDataId,
-                                    ProductId = ld.ObjectId,
+                                    ProductId = ld.LinkDataObjectId,
                                     d.Quantity
                                 }).ToList();
 
@@ -658,7 +658,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     isFirst = false;
                 } while (_manufacturingDBContext.ProductionMaterialsRequirement.Any(o => o.RequirementCode == outsourceStepRequestCode));
 
-                var hasProductSemi = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas.Where(x => x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi).Count() > 0;
+                var hasProductSemi = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas.Where(x => x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi).Count() > 0;
 
                 var entityRequest = new OutsourceStepRequest
                 {

@@ -129,7 +129,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 where departmentIds.Contains(a.DepartmentId)
                     && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
                     && ps.ContainerId == productionOrderId
-                    && ld.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                    && ld.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
                 orderby a.CreatedDatetimeUtc ascending
                 select new
                 {
@@ -138,7 +138,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     a.AssignmentQuantity,
                     ldr.ProductionStepLinkDataRoleTypeId,
                     TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault(),
-                    ld.ObjectId,
+                    ld.LinkDataObjectId,
                     OutputQuantity = ld.Quantity - d.OutsourcePartQuantity.GetValueOrDefault(),
                     IsHandover = ildr == null
                 })
@@ -147,13 +147,13 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     a.DepartmentId,
                     a.ProductionStepId,
                     a.ProductionStepLinkDataRoleTypeId,
-                    a.ObjectId
+                    a.LinkDataObjectId
                 })
                 .Select(g => new
                 {
                     g.Key.DepartmentId,
                     g.Key.ProductionStepId,
-                    g.Key.ObjectId,
+                    g.Key.LinkDataObjectId,
                     g.Key.ProductionStepLinkDataRoleTypeId,
                     AssignmentQuantity = g.Max(a => a.AssignmentQuantity),
                     TotalQuantity = g.Max(a => a.TotalQuantity),
@@ -165,7 +165,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 {
                     DepartmentId = a.DepartmentId,
                     ProductionStepId = a.ProductionStepId,
-                    ObjectId = a.ObjectId,
+                    ObjectId = a.LinkDataObjectId,
                     ProductionStepLinkDataRoleTypeId = a.ProductionStepLinkDataRoleTypeId,
                     HandoverStockQuantity = a.HandoverStockQuantity * a.AssignmentQuantity / a.TotalQuantity
                 })
@@ -274,8 +274,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     if (inputLinkData.OutsourceQuantity > 0 && fromStep != null && fromStep.OutsourceStepRequestId != (outsourceStepRequest?.OutsourceStepRequestId ?? 0))
                     {
                         var ousourceInput = inputDatas
-                            .Where(d => d.ObjectId == inputLinkData.ObjectId
-                            && d.ObjectTypeId == inputLinkData.ObjectTypeId
+                            .Where(d => d.ObjectId == inputLinkData.LinkDataObjectId
+                            && d.ObjectTypeId == inputLinkData.LinkDataObjectTypeId
                             && d.FromStepId == fromStepId
                             && d.OutsourceStepRequestId == fromStep.OutsourceStepRequestId)
                             .FirstOrDefault();
@@ -289,8 +289,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         {
                             inputDatas.Add(new StepInOutData
                             {
-                                ObjectId = inputLinkData.ObjectId,
-                                ObjectTypeId = inputLinkData.ObjectTypeId,
+                                ObjectId = inputLinkData.LinkDataObjectId,
+                                ObjectTypeId = inputLinkData.LinkDataObjectTypeId,
                                 RequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 TotalQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 ReceivedQuantity = 0,
@@ -302,8 +302,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     }
 
                     var item = inputDatas
-                        .Where(d => d.ObjectId == inputLinkData.ObjectId
-                        && d.ObjectTypeId == inputLinkData.ObjectTypeId
+                        .Where(d => d.ObjectId == inputLinkData.LinkDataObjectId
+                        && d.ObjectTypeId == inputLinkData.LinkDataObjectTypeId
                         && d.FromStepId == fromStepId
                         && !d.OutsourceStepRequestId.HasValue)
                         .FirstOrDefault();
@@ -317,8 +317,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     {
                         inputDatas.Add(new StepInOutData
                         {
-                            ObjectId = inputLinkData.ObjectId,
-                            ObjectTypeId = inputLinkData.ObjectTypeId,
+                            ObjectId = inputLinkData.LinkDataObjectId,
+                            ObjectTypeId = inputLinkData.LinkDataObjectTypeId,
                             RequireQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             TotalQuantity = inputLinkData.QuantityOrigin - inputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             ReceivedQuantity = 0,
@@ -340,8 +340,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     if (outputLinkData.ExportOutsourceQuantity > 0 && toStep != null && toStep.OutsourceStepRequestId > 0 && toStep.OutsourceStepRequestId != (outsourceStepRequest?.OutsourceStepRequestId ?? 0))
                     {
                         var ousourceOutput = outputDatas
-                            .Where(d => d.ObjectId == outputLinkData.ObjectId
-                            && d.ObjectTypeId == outputLinkData.ObjectTypeId
+                            .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                            && d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                             && d.ToStepId == toStepId
                             && d.OutsourceStepRequestId == toStep.OutsourceStepRequestId)
                             .FirstOrDefault();
@@ -355,8 +355,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         {
                             outputDatas.Add(new StepInOutData
                             {
-                                ObjectId = outputLinkData.ObjectId,
-                                ObjectTypeId = outputLinkData.ObjectTypeId,
+                                ObjectId = outputLinkData.LinkDataObjectId,
+                                ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
                                 RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 ReceivedQuantity = 0,
@@ -368,8 +368,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     }
 
                     var item = outputDatas
-                        .Where(d => d.ObjectId == outputLinkData.ObjectId
-                        && d.ObjectTypeId == outputLinkData.ObjectTypeId
+                        .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                        && d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                         && d.ToStepId == toStepId
                         && !d.OutsourceStepRequestId.HasValue)
                         .FirstOrDefault();
@@ -383,8 +383,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     {
                         outputDatas.Add(new StepInOutData
                         {
-                            ObjectId = outputLinkData.ObjectId,
-                            ObjectTypeId = outputLinkData.ObjectTypeId,
+                            ObjectId = outputLinkData.LinkDataObjectId,
+                            ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
                             RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                             ReceivedQuantity = 0,
@@ -442,8 +442,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         if (inputLinkData.OutsourceQuantity > 0 && fromStep != null && fromStep.OutsourceStepRequestId != (outsourceStepRequest?.OutsourceStepRequestId ?? 0))
                         {
                             var ousourceInput = detail.InputDatas
-                                .Where(d => d.ObjectId == inputLinkData.ObjectId
-                                && d.ObjectTypeId == inputLinkData.ObjectTypeId
+                                .Where(d => d.ObjectId == inputLinkData.LinkDataObjectId
+                                && d.ObjectTypeId == inputLinkData.LinkDataObjectTypeId
                                 && d.FromStepId == fromStepId
                                 && d.OutsourceStepRequestId == fromStep.OutsourceStepRequestId)
                                 .FirstOrDefault();
@@ -452,13 +452,13 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                 .Where(i => i.DepartmentId == departmentId
                                 && i.ProductionStepId == inOutGroup.ProductionStepId
                                 && i.InventoryTypeId == EnumInventoryType.Output
-                                && i.ProductId == inputLinkData.ObjectId
+                                && i.ProductId == inputLinkData.LinkDataObjectId
                                 && i.OutsourceStepRequestId.HasValue
                                 && i.OutsourceStepRequestId.Value == fromStep.OutsourceStepRequestId)
                                 .ToList();
 
                             ousourceInput.MaterialsRequirementHistories = materialRequirements
-                                .Where(mr => mr.ProductId == inputLinkData.ObjectId
+                                .Where(mr => mr.ProductId == inputLinkData.LinkDataObjectId
                                 && mr.OutsourceStepRequestId.HasValue
                                 && mr.OutsourceStepRequestId.Value == fromStep.OutsourceStepRequestId)
                                 .ToList();
@@ -468,8 +468,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         }
 
                         var item = detail.InputDatas
-                            .Where(d => d.ObjectId == inputLinkData.ObjectId
-                            && d.ObjectTypeId == inputLinkData.ObjectTypeId
+                            .Where(d => d.ObjectId == inputLinkData.LinkDataObjectId
+                            && d.ObjectTypeId == inputLinkData.LinkDataObjectTypeId
                             && d.FromStepId == fromStepId
                             && !d.OutsourceStepRequestId.HasValue)
                             .FirstOrDefault();
@@ -478,8 +478,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         {
                             item.HandoverHistories = handovers.Where(h => h.ToDepartmentId == productionAssignment.DepartmentId
                                 && h.ToProductionStepId == inOutGroup.ProductionStepId
-                                && h.ObjectId == inputLinkData.ObjectId
-                                && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)inputLinkData.ObjectTypeId
+                                && h.ObjectId == inputLinkData.LinkDataObjectId
+                                && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)inputLinkData.LinkDataObjectTypeId
                                 && h.FromProductionStepId == fromStepId.Value)
                                 .ToList();
                             item.ReceivedQuantity = item.HandoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity);
@@ -490,12 +490,12 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                             item.InventoryRequirementHistories = inventoryRequirements.Where(h => h.DepartmentId == productionAssignment.DepartmentId
                                    && h.ProductionStepId == inOutGroup.ProductionStepId
                                    && h.InventoryTypeId == EnumInventoryType.Output
-                                   && h.ProductId == inputLinkData.ObjectId
+                                   && h.ProductId == inputLinkData.LinkDataObjectId
                                    && !h.OutsourceStepRequestId.HasValue)
                                    .ToList();
 
                             item.MaterialsRequirementHistories = materialRequirements
-                                .Where(mr => mr.ProductId == inputLinkData.ObjectId && !mr.OutsourceStepRequestId.HasValue)
+                                .Where(mr => mr.ProductId == inputLinkData.LinkDataObjectId && !mr.OutsourceStepRequestId.HasValue)
                                 .ToList();
 
                             item.ReceivedQuantity = item.HandoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
@@ -505,7 +505,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                             // Xử lý phiếu xuất kho phân bổ thủ công
                             var materialAllocations = allMaterialAllocations
                                 .Where(ma => ma.SourceProductId.HasValue
-                                && ma.SourceProductId.Value == inputLinkData.ObjectId
+                                && ma.SourceProductId.Value == inputLinkData.LinkDataObjectId
                                 && ma.ProductionStepId == inOutGroup.ProductionStepId
                                 && ma.DepartmentId == productionAssignment.DepartmentId)
                                 .ToList();
@@ -517,7 +517,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                 if (inv == null) continue;
                                 var history = JsonConvert.DeserializeObject<ProductionInventoryRequirementModel>(JsonConvert.SerializeObject(inv));
 
-                                if (!materialAllocation.SourceProductId.HasValue && inv.ProductId == inputLinkData.ObjectId)
+                                if (!materialAllocation.SourceProductId.HasValue && inv.ProductId == inputLinkData.LinkDataObjectId)
                                 {
                                     history.ActualQuantity = materialAllocation.AllocationQuantity;
                                 }
@@ -535,7 +535,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                             var unallocatedInventories = inventoryRequirements.Where(h => h.DepartmentId == productionAssignment.DepartmentId
                                  && (!h.ProductionStepId.HasValue || h.ProductionStepId == 0)
                                  && h.InventoryTypeId == EnumInventoryType.Output
-                                 && h.ProductId == inputLinkData.ObjectId
+                                 && h.ProductId == inputLinkData.LinkDataObjectId
                                  && !h.OutsourceStepRequestId.HasValue
                                  && h.ActualQuantity > 0)
                                  .ToList();
@@ -548,7 +548,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                 {
                                     if (totalInventoryQuantity <= 0) break;
 
-                                    if (assignment.ObjectId != inputLinkData.ObjectId
+                                    if (assignment.ObjectId != inputLinkData.LinkDataObjectId
                                          || assignment.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output) continue;
 
                                     var allocatedQuantity = inventoryRequirements
@@ -556,7 +556,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                             && ir.ProductionStepId.Value == assignment.ProductionStepId
                                             && ir.DepartmentId == productionAssignment.DepartmentId
                                             && ir.InventoryTypeId == EnumInventoryType.Output
-                                            && ir.ProductId == inputLinkData.ObjectId)
+                                            && ir.ProductId == inputLinkData.LinkDataObjectId)
                                         .Sum(ir => ir.ActualQuantity);
 
                                     if (assignment.HandoverStockQuantity <= allocatedQuantity) continue;
@@ -603,8 +603,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         if (outputLinkData.ExportOutsourceQuantity > 0 && toStep != null && toStep.OutsourceStepRequestId > 0 && toStep.OutsourceStepRequestId != (outsourceStepRequest?.OutsourceStepRequestId ?? 0))
                         {
                             var ousourceOutput = detail.OutputDatas
-                                .Where(d => d.ObjectId == outputLinkData.ObjectId
-                                && d.ObjectTypeId == outputLinkData.ObjectTypeId
+                                .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                                && d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                                 && d.ToStepId == toStepId
                                 && d.OutsourceStepRequestId == toStep.OutsourceStepRequestId)
                                 .FirstOrDefault();
@@ -614,7 +614,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                     .Where(i => i.DepartmentId == productionAssignment.DepartmentId
                                     && i.ProductionStepId == inOutGroup.ProductionStepId
                                     && i.InventoryTypeId == EnumInventoryType.Input
-                                    && i.ProductId == outputLinkData.ObjectId
+                                    && i.ProductId == outputLinkData.LinkDataObjectId
                                     && i.OutsourceStepRequestId.HasValue
                                     && i.OutsourceStepRequestId.Value == toStep.OutsourceStepRequestId)
                                     .ToList();
@@ -623,8 +623,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         }
 
                         var item = detail.OutputDatas
-                            .Where(d => d.ObjectId == outputLinkData.ObjectId
-                            && d.ObjectTypeId == outputLinkData.ObjectTypeId
+                            .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                            && d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                             && d.ToStepId == toStepId
                             && !d.OutsourceStepRequestId.HasValue)
                             .FirstOrDefault();
@@ -633,8 +633,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         {
                             item.HandoverHistories = handovers.Where(h => h.FromDepartmentId == productionAssignment.DepartmentId
                                     && h.FromProductionStepId == inOutGroup.ProductionStepId
-                                    && h.ObjectId == outputLinkData.ObjectId
-                                    && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)outputLinkData.ObjectTypeId
+                                    && h.ObjectId == outputLinkData.LinkDataObjectId
+                                    && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)outputLinkData.LinkDataObjectTypeId
                                     && h.ToProductionStepId == toStepId.Value)
                                     .ToList();
 
@@ -646,7 +646,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                     .Where(h => h.DepartmentId == productionAssignment.DepartmentId
                                     && h.ProductionStepId == inOutGroup.ProductionStepId
                                     && h.InventoryTypeId == EnumInventoryType.Input
-                                    && h.ProductId == outputLinkData.ObjectId
+                                    && h.ProductId == outputLinkData.LinkDataObjectId
                                     && !h.OutsourceStepRequestId.HasValue)
                                     .ToList();
 
@@ -657,7 +657,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                             var unallocatedInventories = inventoryRequirements.Where(h => h.DepartmentId == productionAssignment.DepartmentId
                                  && (!h.ProductionStepId.HasValue || h.ProductionStepId == 0)
                                  && h.InventoryTypeId == EnumInventoryType.Input
-                                 && h.ProductId == outputLinkData.ObjectId
+                                 && h.ProductId == outputLinkData.LinkDataObjectId
                                  && !h.OutsourceStepRequestId.HasValue
                                  && h.ActualQuantity > 0)
                                  .ToList();
@@ -675,12 +675,12 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                             && ir.ProductionStepId.Value == assignment.ProductionStepId
                                             && ir.DepartmentId == productionAssignment.DepartmentId
                                             && ir.InventoryTypeId == EnumInventoryType.Input
-                                            && ir.ProductId == outputLinkData.ObjectId)
+                                            && ir.ProductId == outputLinkData.LinkDataObjectId)
                                         .Sum(ir => ir.ActualQuantity);
 
                                     if (assignment.HandoverStockQuantity <= allocatedQuantity) continue;
 
-                                    if (assignment.ObjectId != outputLinkData.ObjectId
+                                    if (assignment.ObjectId != outputLinkData.LinkDataObjectId
                                          || assignment.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input) continue;
 
 

@@ -512,7 +512,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     var productionStepId = roles.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId)?.ProductionStepId;
 
                     var linkDataOrigin = roles.Where(x => x.ProductionStepId == productionStepId
-                                                        && x.ProductionStepLinkData.ObjectId == ld.ObjectId
+                                                        && x.ProductionStepLinkData.LinkDataObjectId == ld.LinkDataObjectId
                                                         && x.ProductionStepLinkData.ProductionStepLinkDataId != ld.ProductionStepLinkDataId)
                                              .Select(x => x.ProductionStepLinkDataId)
                                              .ToList();
@@ -565,11 +565,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                         var materials = roles.Where(x => f_3.Value.Contains(x.ProductionStepId) && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
                                         .Select(x => x.ProductionStepLinkData)
-                                        .Where(x => x.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                                        .Where(x => x.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                                         .Select(x => new MaterialsForProductOutsource
                                         {
                                             RootProductId = rootProductId,
-                                            ProductId = x.ObjectId,
+                                            ProductId = x.LinkDataObjectId,
                                             OutsourcePartRequestId = outsourcePartRequestId,
                                             Quantity = percent * x.QuantityOrigin /*số lượng định mức (chưa nhân với số lượng của chi tiết gia công tương ứng trên PO) */
                                         }).ToArray();

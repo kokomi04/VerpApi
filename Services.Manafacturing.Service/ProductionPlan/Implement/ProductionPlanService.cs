@@ -393,8 +393,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         if (outputLinkData.ExportOutsourceQuantity > 0 && toStep != null && toStep.OutsourceStepRequestId > 0 && toStep.OutsourceStepRequestId != (outsourceStepRequest?.OutsourceStepRequestId ?? 0))
                         {
                             var ousourceOutput = outputDatas
-                                .Where(d => d.ObjectId == outputLinkData.ObjectId
-                                && (int)d.ObjectTypeId == outputLinkData.ObjectTypeId
+                                .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                                && (int)d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                                 && d.ToStepId == toStepId
                                 && d.OutsourceStepRequestId == toStep.OutsourceStepRequestId)
                                 .FirstOrDefault();
@@ -408,8 +408,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                             {
                                 outputDatas.Add(new StepInOutData
                                 {
-                                    ObjectId = outputLinkData.ObjectId,
-                                    ObjectTypeId = outputLinkData.ObjectTypeId,
+                                    ObjectId = outputLinkData.LinkDataObjectId,
+                                    ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
                                     RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                     TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                     ReceivedQuantity = 0,
@@ -421,8 +421,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         }
 
                         var item = outputDatas
-                            .Where(d => d.ObjectId == outputLinkData.ObjectId
-                            && d.ObjectTypeId == outputLinkData.ObjectTypeId
+                            .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                            && d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                             && d.ToStepId == toStepId
                             && !d.OutsourceStepRequestId.HasValue)
                             .FirstOrDefault();
@@ -436,8 +436,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         {
                             outputDatas.Add(new StepInOutData
                             {
-                                ObjectId = outputLinkData.ObjectId,
-                                ObjectTypeId = outputLinkData.ObjectTypeId,
+                                ObjectId = outputLinkData.LinkDataObjectId,
+                                ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
                                 RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 ReceivedQuantity = 0,
