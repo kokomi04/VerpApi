@@ -68,7 +68,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     var totalQuantity = detail.Quantity + detail.ReserveQuantity;
 
-                    var ld = linkData.FirstOrDefault(x => x.ObjectId == detail.ProductId);
+                    var ld = linkData.FirstOrDefault(x => x.LinkDataObjectId == detail.ProductId);
                     if (ld == null)
                     {
                         lsWarning.Add($"Sản phẩm \"{detail.ProductCode}/ {detail.ProductName}\" chưa được thiết lập trong QTSX");
@@ -79,7 +79,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                 }
 
-                var ldNotProcess = linkData.Where(x => !productionOrderDetail.Select(p => (long)p.ProductId).Contains(x.ObjectId)).Select(x => x.ObjectId);
+                var ldNotProcess = linkData.Where(x => !productionOrderDetail.Select(p => (long)p.ProductId).Contains(x.LinkDataObjectId)).Select(x => x.LinkDataObjectId);
                 if (ldNotProcess.Count() > 0)
                     lsWarning.Add($"Số lượng sản phẩm đầu ra của QTSX lệch với LSX");
             }
