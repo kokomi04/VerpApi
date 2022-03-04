@@ -12,6 +12,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using System.Data;
 using VErp.Commons.Enums.MasterEnum;
 using System.Collections;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.Library
 {
@@ -116,25 +117,25 @@ namespace VErp.Commons.Library
                 {
                     int curCollumn = indx + startCollumn;
                     ICell cell = newRow.CreateCell(curCollumn);
-                    if (row[indx] == null || (row[indx] as ExcelCell).Value == DBNull.Value) continue;
-                    switch ((row[indx] as ExcelCell).Type)
+                    if (row[indx] == null || (row[indx]).Value == DBNull.Value) continue;
+                    switch (row[indx].Type)
                     {
                         case EnumExcelType.String:
-                            cell.SetCellValue((row[indx] as ExcelCell).Value.ToString());
+                            cell.SetCellValue(row[indx].Value.ToString());
                             break;
                         case EnumExcelType.Boolean:
-                            cell.SetCellValue((bool)(row[indx] as ExcelCell).Value);
+                            cell.SetCellValue((bool)(row[indx]).Value);
                             break;
                         case EnumExcelType.DateTime:
-                            cell.SetCellValue((DateTime)(row[indx] as ExcelCell).Value);
+                            cell.SetCellValue((DateTime)row[indx].Value);
                             cell.CellStyle = dateStyle;
                             break;
                         case EnumExcelType.Percentage:
                         case EnumExcelType.Number:
-                            cell.SetCellValue(Convert.ToDouble((row[indx] as ExcelCell).Value));
+                            cell.SetCellValue(Convert.ToDouble(row[indx].Value));
                             break;
                         case EnumExcelType.Formula:
-                            cell.SetCellFormula((row[indx] as ExcelCell).Value.ToString());
+                            cell.SetCellFormula(row[indx].Value.ToString());
                             break;
                         default:
                             break;
@@ -234,7 +235,16 @@ namespace VErp.Commons.Library
                     cell.CellStyle = data.CellStyle;
                     break;
                 case EnumExcelType.DateTime:
-                    cell.SetCellValue((DateTime)data.Value);
+                    if (data.Value.GetType().IsNumber())
+                    {
+                        var l = Convert.ToInt64(data.Value);
+
+                        cell.SetCellValue(l.UnixToDateTime().Value);
+                    }
+                    else
+                    {
+                        cell.SetCellValue((DateTime)data.Value);
+                    }
                     cell.CellStyle = data.CellStyle;
                     break;
                 case EnumExcelType.Number:

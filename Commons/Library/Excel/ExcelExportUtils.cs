@@ -314,6 +314,7 @@ namespace VErp.Commons.Library.Excel
 
                     //ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
 
+                   // ICellStyle cellStyle = numerst
                     if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx))
                     {
                         sumCalc.Add(columnIndx, field);
@@ -330,7 +331,7 @@ namespace VErp.Commons.Library.Excel
                         {
                             Value = value,
                             Type = dataType.GetExcelType(),
-                            //CellStyle = cellStyle
+                            CellStyle = GetCellStyle(sheet, field, false)
                         };
 
                     }
