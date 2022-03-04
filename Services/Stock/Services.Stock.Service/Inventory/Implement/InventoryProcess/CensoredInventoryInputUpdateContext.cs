@@ -10,7 +10,7 @@ using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public class CensoredInventoryInputUpdateContext
+    internal class CensoredInventoryInputUpdateContext
     {
         //private StockDBContext stockDbContext;
         private readonly IQueryable<Package> _packages;

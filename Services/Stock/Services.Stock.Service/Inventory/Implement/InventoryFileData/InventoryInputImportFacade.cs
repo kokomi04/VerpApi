@@ -26,7 +26,7 @@ using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
-    public class InventoryInputImportFacade
+    internal class InventoryInputImportFacade
     {
         const int DECIMAL_PLACE_DEFAULT = 11;
 

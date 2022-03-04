@@ -200,6 +200,15 @@ namespace VErpApi.Controllers.Stock.Stocks
             return await _stockProductService.StockProductPackageDetails(stockIds, productId, page, size);
         }
 
+        [HttpGet]
+        [VErpAction(EnumActionType.View)]
+        [Route("products/{productId}/PackagesExport")]
+        public async Task<FileStreamResult> ProductPackagesExport([FromRoute] int productId, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        {
+            var (stream, fileName, contentType) = await _stockProductService.StockProductPackageDetailsExport(stockIds, productId, page, size);
+
+            return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
+        }
 
         [HttpPost]
         [Route("RemainStock")]

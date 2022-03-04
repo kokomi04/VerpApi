@@ -158,6 +158,10 @@ namespace VErp.Commons.Library
                 {
                     int curCollumn = indx + startCollumn;
                     ICell cell = newRow.CreateCell(curCollumn);
+
+                    WriteCellValue(cell, row[indx]);
+
+                    /*
                     if (row[indx].Value.IsNullObject())
                     {
                         row[indx].Value = string.Empty;
@@ -200,7 +204,7 @@ namespace VErp.Commons.Library
                             cell.CellStyle = row[indx].CellStyle;
                             break;
                     }
-
+                    */
 
                 }
                 addedRow++;
@@ -208,6 +212,51 @@ namespace VErp.Commons.Library
             endRow = startRow + addedRow - 1;
         }
 
+        public void WriteCellValue(ICell cell, ExcelCell data)
+        {
+            if (data.Value.IsNullObject())
+            {
+                data.Value = string.Empty;
+                data.Type = EnumExcelType.String;
+                //row[indx].CellStyle = nullStyle;
+            }
+
+            switch (data.Type)
+            {
+                case EnumExcelType.String:
+                    cell.SetCellValue(data.Value.ToString());
+                    cell.SetCellType(CellType.String);
+                    cell.CellStyle = data.CellStyle;
+                    break;
+                case EnumExcelType.Boolean:
+                    cell.SetCellValue((bool)data.Value);
+                    cell.SetCellType(CellType.Boolean);
+                    cell.CellStyle = data.CellStyle;
+                    break;
+                case EnumExcelType.DateTime:
+                    cell.SetCellValue((DateTime)data.Value);
+                    cell.CellStyle = data.CellStyle;
+                    break;
+                case EnumExcelType.Number:
+                    cell.SetCellValue(Convert.ToDouble(data.Value));
+                    cell.SetCellType(CellType.Numeric);
+                    cell.CellStyle = data.CellStyle;
+                    break;
+                case EnumExcelType.Percentage:
+                    cell.SetCellValue(Convert.ToDouble(data.Value) / 100);
+                    cell.SetCellType(CellType.Numeric);
+                    cell.CellStyle = data.CellStyle;
+                    break;
+                case EnumExcelType.Formula:
+                    cell.SetCellFormula(data.Value.ToString());
+                    cell.SetCellType(CellType.Formula);
+                    cell.CellStyle = data.CellStyle;
+                    break;
+                default:
+                    cell.CellStyle = data.CellStyle;
+                    break;
+            }
+        }
         public ICreationHelper GetCreationHelper()
         {
             return hssfwb.GetCreationHelper();

@@ -24,7 +24,7 @@ using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFac
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
-    public class InventoryOutImportFacade
+    internal class InventoryOutImportFacade
     {
         private Dictionary<string, Product> _productsByCode = null;
         private Dictionary<string, List<Product>> _productsByName = null;

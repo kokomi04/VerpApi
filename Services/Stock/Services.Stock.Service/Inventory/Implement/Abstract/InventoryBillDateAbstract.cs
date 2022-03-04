@@ -15,7 +15,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
     public abstract class InventoryBillDateAbstract
     {
         protected readonly StockDBContext _stockDbContext;
-        public InventoryBillDateAbstract(StockDBContext stockDbContext)
+        internal InventoryBillDateAbstract(StockDBContext stockDbContext)
         {
             _stockDbContext = stockDbContext;
         }
