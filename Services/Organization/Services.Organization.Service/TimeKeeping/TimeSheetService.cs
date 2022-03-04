@@ -294,7 +294,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 fields.Add(new CategoryFieldNameModel{
                     FieldName = $"TimeKeepingDay{unixTime}",
                     FieldTitle = $"Thời gian chấm công ngày {date.ToString("dd/MM/yyyy")}",
-                    GroupName = "Ngày nghỉ",
+                    GroupName = "TT chấm công",
                 });
             }
 

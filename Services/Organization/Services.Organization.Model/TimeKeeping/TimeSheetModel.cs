@@ -151,7 +151,7 @@ namespace Services.Organization.Model.TimeKeeping
         // public string TimeKeepingDay30 { get; set; }
         
         // [Display(Name = "Thời gian chấm công ngày 31", GroupName = "TT chấm công")]
-        public string TimeKeepingDay31 { get; set; }
+        // public string TimeKeepingDay31 { get; set; }
         
         [Display(Name = "Tổng thời gian(phút) về muộn", GroupName = "Vào trễ")]
         public long MinsLate { get; set; }
