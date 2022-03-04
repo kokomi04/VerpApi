@@ -1,5 +1,8 @@
 USE ManufacturingDB;
 
+ALTER TABLE ProductionStepLinkData ALTER COLUMN ObjectId bigint NULL;
+ALTER TABLE ProductionStepLinkData ALTER COLUMN ObjectTypeId int NULL;
+
 ALTER TABLE ProductionStepLinkData ADD LinkDataObjectId bigint NULL;
 ALTER TABLE ProductionStepLinkData ADD LinkDataObjectTypeId int NULL;
 
