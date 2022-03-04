@@ -26,6 +26,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<bool> DeleteTimeSheet(int year, int month);
         Task<IList<TimeSheetModel>> GetListTimeSheet();
         Task<TimeSheetModel> GetTimeSheet(int year, int month);
+        Task<TimeSheetModel> GetTimeSheetByEmployee(int year, int month, int employeeId);
         Task<bool> UpdateTimeSheet(int year, int month, TimeSheetModel model);
 
         CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate);
@@ -244,6 +245,24 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDetailModel>(_mapper.ConfigurationProvider).ToListAsync();
             var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDayOffModel>(_mapper.ConfigurationProvider).ToListAsync();
             var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetAggregateModel>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var result = _mapper.Map<TimeSheetModel>(timeSheet);
+            result.TimeSheetAggregates = timeSheetAggregates;
+            result.TimeSheetDayOffs = timeSheetDayOffs;
+            result.TimeSheetDetails = timeSheetDetails;
+            return result;
+        }
+        
+        public async Task<TimeSheetModel> GetTimeSheetByEmployee(int year, int month, int employeeId)
+        {
+            var timeSheet = await _organizationDBContext.TimeSheet
+            .FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
+            if (timeSheet == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
+
+            var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId && x.EmployeeId == employeeId).ProjectTo<TimeSheetDetailModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId && x.EmployeeId == employeeId).ProjectTo<TimeSheetDayOffModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId && x.EmployeeId == employeeId).ProjectTo<TimeSheetAggregateModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             var result = _mapper.Map<TimeSheetModel>(timeSheet);
             result.TimeSheetAggregates = timeSheetAggregates;

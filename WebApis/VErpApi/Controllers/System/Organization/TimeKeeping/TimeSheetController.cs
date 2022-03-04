@@ -57,6 +57,13 @@ namespace VErpApi.Controllers.System.Organization
         {
             return await _timeSheetService.GetTimeSheet(year, month);
         }
+
+        [HttpGet]
+        [Route("{year}/{month}/employee/{employeeId}")]
+        public async Task<TimeSheetModel> GetTimeSheetByEmployee([FromRoute] int year, [FromRoute] int month, [FromRoute] int employeeId)
+        {
+            return await _timeSheetService.GetTimeSheetByEmployee(year, month, employeeId);
+        }
         
         [HttpPut]
         [Route("{year}/{month}")]
