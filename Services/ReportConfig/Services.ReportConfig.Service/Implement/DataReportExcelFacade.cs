@@ -26,7 +26,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
-    public class DataReportExcelFacade
+    internal class DataReportExcelFacade
     {
         private const int CONDITION_VALUE = 1;
         private ISheet sheet = null;

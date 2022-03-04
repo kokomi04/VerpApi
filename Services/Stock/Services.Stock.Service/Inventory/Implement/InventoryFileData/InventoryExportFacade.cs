@@ -17,7 +17,7 @@ using VErp.Services.Stock.Model.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
-    public class InventoryExportFacade
+    internal class InventoryExportFacade
     {
         private ICurrentContextService _currentContextService;
         private IInventoryService _inventoryService;

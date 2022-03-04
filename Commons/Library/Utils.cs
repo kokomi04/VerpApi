@@ -593,6 +593,20 @@ namespace VErp.Commons.Library
             return NumericTypes.Contains(objectType);
         }
 
+        public static EnumDataType GetDataType(this Type objectType)
+        {
+            if (objectType.IsNumber()) return EnumDataType.Decimal;
+
+            if (objectType == typeof(string)) return EnumDataType.Text;
+
+            if (objectType == typeof(bool)) return EnumDataType.Boolean;
+
+            if (objectType == typeof(DateTime)) return EnumDataType.Date;
+
+
+            return EnumDataType.Text;
+        }
+
         public static bool IsNullObject(this object obj)
         {
             if (obj == null || obj == DBNull.Value) return true;
@@ -1160,6 +1174,28 @@ namespace VErp.Commons.Library
             return result;
         }
 
+
+        public static IList<NonCamelCaseDictionary> ToNonCamelCaseDictionaryList<TSource>(this IList<TSource> values, Action<TSource, NonCamelCaseDictionary, IList<NonCamelCaseDictionary>> rowAction = null) where TSource : class
+        {
+            var result = new List<NonCamelCaseDictionary>();
+            var props = typeof(TSource).GetProperties();
+
+            foreach (var r in values)
+            {
+                var row = new NonCamelCaseDictionary();
+                foreach (var p in props)
+                {
+                    row.Add(p.Name, p.GetValue(r));
+                }
+
+                result.Add(row);
+
+                if (rowAction != null)
+                    rowAction(r, row, result);
+            }
+
+            return result;
+        }
 
 
         public static string NormalizeAsInternalName(this string s)

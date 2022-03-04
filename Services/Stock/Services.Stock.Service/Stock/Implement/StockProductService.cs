@@ -25,6 +25,10 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Constants;
 using Microsoft.Data.SqlClient;
+using VErp.Commons.Library.Excel;
+using System.IO;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Services.Stock.Service.Products;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -34,17 +38,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly StockDBContext _stockContext;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IProductService productService;
+        private readonly IProductUnitConversionService puService;
+        private readonly IPackageCustomPropertyService packageCustomPropertyService;
+
         public StockProductService(
             MasterDBContext masterDBContext,
             OrganizationDBContext organizationDBContext,
             StockDBContext stockContext,
-            ICurrentContextService currentContextService
-            )
+            ICurrentContextService currentContextService,
+            IProductService productService,
+            IPackageCustomPropertyService packageCustomPropertyService,
+            IProductUnitConversionService puService)
         {
             _organizationDBContext = organizationDBContext;
             _masterDBContext = masterDBContext;
             _stockContext = stockContext;
             _currentContextService = currentContextService;
+            this.productService = productService;
+            this.packageCustomPropertyService = packageCustomPropertyService;
+            this.puService = puService;
         }
 
         public async Task<PageData<StockOutput>> StockGetListByPermission(string keyword, int page, int size, Clause filters = null)
@@ -395,6 +408,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectCode = "",
+                    pk.CustomPropertyValue
                     //c.DecimalPlace
                 }
                 );
@@ -418,7 +432,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var productIds = lstData.Select(d => d.ProductId).ToList();
             var pus = await _stockContext.ProductUnitConversion.Where(pu => productIds.Contains(pu.ProductId)).ToListAsync();
 
-            var data = lstData.Select(pk => {
+            var data = lstData.Select(pk =>
+            {
                 var pu = pus.FirstOrDefault(u => u.ProductId == pk.ProductId && u.ProductUnitConversionId == pk.ProductUnitConversionId);
                 var puDefault = pus.FirstOrDefault(u => u.ProductId == pk.ProductId && u.IsDefault);
                 return new StockProductPackageDetail()
@@ -445,20 +460,130 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     DecimalPlace = pu.DecimalPlace,
 
                     ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
-                    
-                    PackageTypeId = (EnumPackageType)pk.PackageTypeId,
+
+                    PackageTypeId = pk.PackageTypeId,
                     RefObjectId = null,
                     RefObjectCode = "",
                     OrderCode = pk.OrderCode,
                     POCode = pk.Pocode,
                     ProductionOrderCode = pk.ProductionOrderCode,
-                  
+                    CustomPropertyValue = pk.CustomPropertyValue?.JsonDeserialize<Dictionary<int, object>>()
                 };
-                })
+            })
             .ToList();
 
             return (data, total);
         }
+
+
+        public async Task<(Stream stream, string fileName, string contentType)> StockProductPackageDetailsExport(IList<int> stockIds, int productId, int page, int size)
+        {
+            var data = await StockProductPackageDetails(stockIds, productId, 1, 0);
+
+
+            var columns = new List<ExelExportColumn>()
+            {
+                new ExelExportColumn
+                {
+                    Title="Kho",
+                    FieldName = nameof(StockProductPackageDetail.StockName)
+                },
+
+                new ExelExportColumn
+                {
+                    Title="Mã kiện",
+                    FieldName = nameof(StockProductPackageDetail.PackageCode)
+                },
+                new ExelExportColumn
+                {
+                    Title="Mô tả",
+                    FieldName = nameof(StockProductPackageDetail.Description)
+                },
+                 new ExelExportColumn
+                {
+                    Title="ĐVCĐ",
+                    FieldName = nameof(StockProductPackageDetail.ProductUnitConversionName)
+                },
+                  new ExelExportColumn
+                {
+                    Title="Số lượng ĐVC",
+                    FieldName = nameof(StockProductPackageDetail.PrimaryQuantity),
+                    DataTypeId = EnumDataType.Decimal,
+                    DecimalPlace = data.List.FirstOrDefault()?.DefaultDecimalPlace
+                }, new ExelExportColumn
+                {
+                    Title="Số lượng ĐVCĐ",
+                    FieldName = nameof(StockProductPackageDetail.ProductUnitConversionQualtity),
+                    DataTypeId = EnumDataType.Decimal,
+                    DecimalPlace = data.List.FirstOrDefault()?.DecimalPlace
+                },
+                  new ExelExportColumn
+                {
+                    Title="Ngày nhập",
+                    FieldName = nameof(StockProductPackageDetail.Date),
+                    DataTypeId = EnumDataType.Date,
+                },
+                  new ExelExportColumn
+                {
+                    Title="Hạn sử dụng",
+                    FieldName = nameof(StockProductPackageDetail.ExpriredDate),
+                    DataTypeId = EnumDataType.Date,
+                },
+                   new ExelExportColumn
+                {
+                    Title="Mã mua hàng",
+                    FieldName = nameof(StockProductPackageDetail.POCode),
+                },
+                   new ExelExportColumn
+                {
+                    Title="Mã lsx",
+                    FieldName = nameof(StockProductPackageDetail.ProductionOrderCode),
+                },
+                   new ExelExportColumn
+                {
+                    Title="Mã đơn hàng",
+                    FieldName = nameof(StockProductPackageDetail.OrderCode),
+                }
+            };
+
+            var packageProps = await packageCustomPropertyService.Get();
+
+            foreach (var p in packageProps)
+            {
+                columns.Add(new ExelExportColumn
+                {
+                    Title = p.Title,
+                    FieldName = nameof(StockProductPackageDetail.CustomPropertyValue) + p.PackageCustomPropertyId,
+                });
+            }
+
+            var productInfo = await productService.ProductInfo(productId);
+
+            var pus = await puService.GetListByProducts(new[] { productId });
+
+            var headerData = new NonCamelCaseDictionary
+            {
+                {"Mã mặt hàng", productInfo.ProductCode },
+                {"Tên mặt hàng", productInfo.ProductName },
+                {"Quy cách", productInfo.Extra?.Specification },
+                {"Đơn vị tính", pus?.List?.FirstOrDefault(u=>u.IsDefault)?.ProductUnitConversionName },
+            };
+
+            var excelData = data.List.ToNonCamelCaseDictionaryList((model, row, result) =>
+            {
+                foreach (var p in packageProps)
+                {
+                    var value = model.CustomPropertyValue?.ContainsKey(p.PackageCustomPropertyId.Value) == true ? model.CustomPropertyValue[p.PackageCustomPropertyId.Value] : null;
+
+                    row.Add(nameof(StockProductPackageDetail.CustomPropertyValue) + p.PackageCustomPropertyId, value);
+                }
+
+            });
+
+            var util = new ExcelExportUtils("Danh sách kiện của mặt hàng " + productInfo.ProductCode, _currentContextService, excelData, columns, headerData, 2);
+            return await util.WriteExcel();
+        }
+
 
         public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
         {
@@ -527,7 +652,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductUnitConversionName = pk.ProductUnitConversionName,
                 ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
                 RefObjectId = null,
-                PackageTypeId = (EnumPackageType)pk.PackageTypeId,
+                PackageTypeId = pk.PackageTypeId,
                 RefObjectCode = "",
                 DecimalPlace = pk.DecimalPlace
 
