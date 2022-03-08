@@ -488,6 +488,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     Title="Kho",
                     FieldName = nameof(StockProductPackageDetail.StockName)
                 },
+                 new ExelExportColumn
+                {
+                    Title="Vị trí",
+                    FieldName = nameof(StockProductPackageDetail.LocationName)
+                },
 
                 new ExelExportColumn
                 {
