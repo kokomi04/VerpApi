@@ -156,7 +156,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             newColumn.ColGroupName = firstRow[nameColumn]?.ToString();
                         }
 
-                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && !string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
                         {
                             newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
                         }
