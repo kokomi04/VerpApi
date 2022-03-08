@@ -11,7 +11,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int EmployeeId { get; set; }
         public int WorkScheduleId { get; set; }
         public DateTime BeginDate { get; set; }
-        public DateTime ExpiryDate { get; set; }
+        public DateTime? ExpiryDate { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }

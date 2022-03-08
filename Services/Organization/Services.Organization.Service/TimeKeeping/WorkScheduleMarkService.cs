@@ -1,15 +1,11 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
-using Verp.Resources.Organization.TimeKeeping;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -44,11 +40,18 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             try
             {
 
+                var lastMark = await _organizationDBContext.WorkScheduleMark.LastOrDefaultAsync(x=>x.EmployeeId == model.EmployeeId);
+
                 var entity = _mapper.Map<WorkScheduleMark>(model);
 
                 await _organizationDBContext.WorkScheduleMark.AddAsync(entity);
-                await _organizationDBContext.SaveChangesAsync();
 
+                if(lastMark != null)
+                {
+                    lastMark.ExpiryDate = entity.BeginDate.AddDays(-1);
+                }
+
+                await _organizationDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
                 // await _workScheduleActivityLog.LogBuilder(() => WorkScheduleMarkActivityLogMessage.UpdateWorkScheduleMark)
