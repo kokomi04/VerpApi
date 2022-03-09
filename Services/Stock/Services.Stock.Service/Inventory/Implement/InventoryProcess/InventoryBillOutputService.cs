@@ -170,12 +170,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 var data = await ProcessInventoryOut(inventoryObj, req);
 
-                var totalMoney = InputCalTotalMoney(data);
+                var totalMoney = InputCalTotalMoney(data.Select(x => x.Detail).ToList());
 
                 inventoryObj.TotalMoney = totalMoney;
 
-                await _stockDbContext.InventoryDetail.AddRangeAsync(data);
-                await _stockDbContext.SaveChangesAsync();
+                foreach (var item in data)
+                {
+                    var eDetail = item.Detail;
+                    await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
+                    await _stockDbContext.SaveChangesAsync();
+
+                    foreach (var sub in item.Subs)
+                    {
+                        sub.InventoryDetailSubCalculationId = 0;
+                        sub.InventoryDetailId = eDetail.InventoryDetailId;
+                    }
+
+                    await _stockDbContext.InventoryDetailSubCalculation.AddRangeAsync(item.Subs);
+                    await _stockDbContext.SaveChangesAsync();
+
+                }
 
 
                 //Move file from tmp folder
@@ -252,9 +266,39 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var data = await ProcessInventoryOut(inventoryObj, req);
 
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(data);
+                        var arrInventoryDetailId = inventoryDetails.Select(x => x.InventoryDetailId);
+                        var inventoryDetailSubCalculations = await _stockDbContext.InventoryDetailSubCalculation.Where(d => arrInventoryDetailId.Contains(d.InventoryDetailId)).ToListAsync();
 
-                        var totalMoney = InputCalTotalMoney(data);
+                        foreach (var d in inventoryDetails)
+                        {
+                            d.IsDeleted = true;
+                            d.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        }
+
+                        foreach (var s in inventoryDetailSubCalculations)
+                        {
+                            s.IsDeleted = true;
+                            s.UpdatedDatetimeUtc = DateTime.UtcNow;
+                        }
+
+                        foreach (var item in data)
+                        {
+                            var eDetail = item.Detail;
+                            await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
+                            await _stockDbContext.SaveChangesAsync();
+
+                            foreach (var sub in item.Subs)
+                            {
+                                sub.InventoryDetailSubCalculationId = 0;
+                                sub.InventoryDetailId = eDetail.InventoryDetailId;
+                            }
+
+                            await _stockDbContext.InventoryDetailSubCalculation.AddRangeAsync(item.Subs);
+                            await _stockDbContext.SaveChangesAsync();
+
+                        }
+
+                        var totalMoney = InputCalTotalMoney(data.Select(x => x.Detail).ToList());
 
                         inventoryObj.TotalMoney = totalMoney;
 
@@ -822,7 +866,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
         */
 
-        private async Task<IList<InventoryDetail>> ProcessInventoryOut(InventoryEntity inventory, InventoryOutModel req)
+        private async Task<IList<CoupleDataInventoryDetail>> ProcessInventoryOut(InventoryEntity inventory, InventoryOutModel req)
         {
             var productIds = req.OutProducts.Select(p => p.ProductId).Distinct().ToList();
 
@@ -833,7 +877,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var fromPackages = await _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToListAsync();
 
 
-            var inventoryDetailList = new List<InventoryDetail>();
+            var inventoryDetailList = new List<CoupleDataInventoryDetail>();
 
             var packageRemaining = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
 
@@ -970,7 +1014,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     detail.UnitPrice = detail.ProductUnitConversionQuantity * detail.ProductUnitConversionPrice / detail.PrimaryQuantity;
                 }
 
-                inventoryDetailList.Add(new InventoryDetail
+                var eDetail = new InventoryDetail
                 {
                     InventoryId = inventory.InventoryId,
                     ProductId = detail.ProductId,
@@ -995,6 +1039,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
                     //InventoryRequirementCode = detail.InventoryRequirementCode,
                     InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
+                };
+
+                var eSubs = detail.InProductSubs.Select(x => new InventoryDetailSubCalculation
+                {
+                    PrimaryQuantity = x.PrimaryQuantity,
+                    ProductBomId = x.ProductBomId,
+                    PrimaryUnitPrice = x.PrimaryUnitPrice,
+                    UnitConversionId = x.UnitConversionId
+                }).ToList();
+
+                inventoryDetailList.Add(new CoupleDataInventoryDetail
+                {
+                    Detail = eDetail,
+                    Subs = eSubs
                 });
 
                 fromPackageInfo.PrimaryQuantityWaiting = fromPackageInfo.PrimaryQuantityWaiting.AddDecimal(primaryQualtity)

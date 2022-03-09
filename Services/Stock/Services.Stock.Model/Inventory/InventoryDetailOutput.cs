@@ -62,6 +62,8 @@ namespace VErp.Services.Stock.Model.Inventory
         {
             //InventoryRequirementInfo = new List<InventoryRequirementSimpleInfo>();
         }
+
+        public IList<InventoryDetailSubCalculationModel> InventoryDetailSubCalculations { get; set; } = new List<InventoryDetailSubCalculationModel>(); 
     }
 
     public class InventoryRequirementSimpleInfo

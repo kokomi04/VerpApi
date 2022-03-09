@@ -164,7 +164,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     newPrimaryQuantity = 0;
                 }
 
-                var newDetail = updateDetail.Data.FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
+                var newDetail = updateDetail.Data.Select(x => x.Detail).ToList().FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
                 if (newDetail != null)
                 {
                     newProductUnitConversionQuantity = newDetail.ProductUnitConversionQuantity;
@@ -205,7 +205,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             }
 
-            return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data };
+            return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data.Select(x=>x.Detail).ToList() };
         }
 
         private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig)
