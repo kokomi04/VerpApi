@@ -146,7 +146,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     throw new BadRequestException(validInventoryDetails.Code);
                 }
 
-                var totalMoney = InputCalTotalMoney(validInventoryDetails.Data);
+                var totalMoney = InputCalTotalMoney(validInventoryDetails.Data.Select(x => x.Detail).ToList());
 
                 var inventoryObj = new InventoryEntity
                 {
@@ -186,11 +186,23 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 foreach (var item in validInventoryDetails.Data)
                 {
-                    item.InventoryId = inventoryObj.InventoryId;
+                    var eDetail = item.Detail;
+                    await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
+                    await _stockDbContext.SaveChangesAsync();
+
+                    foreach (var sub in item.Subs)
+                    {
+                        sub.InventoryDetailSubCalculationId = 0;
+                        sub.InventoryDetailId = eDetail.InventoryDetailId;
+                    }
+
+                    await _stockDbContext.InventoryDetailSubCalculation.AddRangeAsync(item.Subs);
+                    await _stockDbContext.SaveChangesAsync();
+
                 }
+
                 inventoryObj.TotalMoney = totalMoney;
 
-                await _stockDbContext.InventoryDetail.AddRangeAsync(validInventoryDetails.Data);
                 await _stockDbContext.SaveChangesAsync();
 
                 //Move file from tmp folder
@@ -281,11 +293,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         // Validate nếu thông tin nhập kho tạo từ phiếu yêu cầu => không cho phép thêm/sửa mặt hàng
                         if (inventoryDetails.Any(id => id.InventoryRequirementDetailId.HasValue && id.InventoryRequirementDetailId > 0))
                         {
-                            if (validate.Data.Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId)))
+                            if (validate.Data.Select(x => x.Detail).Any(d => !inventoryDetails.Any(id => id.ProductId == d.ProductId)))
                             {
                                 throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
                             }
                         }
+
+                        var arrInventoryDetailId = inventoryDetails.Select(x => x.InventoryDetailId);
+                        var inventoryDetailSubCalculations = await _stockDbContext.InventoryDetailSubCalculation.Where(d => arrInventoryDetailId.Contains(d.InventoryDetailId)).ToListAsync();
 
                         foreach (var d in inventoryDetails)
                         {
@@ -293,14 +308,32 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             d.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
 
-                        foreach (var item in validate.Data)
+                        foreach(var s in inventoryDetailSubCalculations)
                         {
-                            item.InventoryId = inventoryObj.InventoryId;
+                            s.IsDeleted = true;
+                            s.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
 
-                        InventoryInputUpdateData(inventoryObj, req, InputCalTotalMoney(validate.Data));
+                        foreach (var item in validate.Data)
+                        {
+                            var eDetail = item.Detail;
+                            await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
+                            await _stockDbContext.SaveChangesAsync();
 
-                        await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
+                            foreach (var sub in item.Subs)
+                            {
+                                sub.InventoryDetailSubCalculationId = 0;
+                                sub.InventoryDetailId = eDetail.InventoryDetailId;
+                            }
+
+                            await _stockDbContext.InventoryDetailSubCalculation.AddRangeAsync(item.Subs);
+                            await _stockDbContext.SaveChangesAsync();
+
+                        }
+
+                        InventoryInputUpdateData(inventoryObj, req, InputCalTotalMoney(validate.Data.Select(x => x.Detail).ToList()));
+
+                        // await _stockDbContext.InventoryDetail.AddRangeAsync(validate.Data);
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
 
@@ -465,6 +498,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             //inventoryObj.IsApproved = false;
 
             var inventoryDetails = await _stockDbContext.InventoryDetail.Where(iv => iv.InventoryId == inventoryObj.InventoryId).ToListAsync();
+            var arrInventoryDetailId = inventoryDetails.Select(x => x.InventoryDetailId);
+            var inventoryDetailSubCalculations = await _stockDbContext.InventoryDetailSubCalculation.Where(d => arrInventoryDetailId.Contains(d.InventoryDetailId)).ToListAsync();
+
+            foreach (var s in inventoryDetailSubCalculations)
+            {
+                s.IsDeleted = true;
+                s.UpdatedDatetimeUtc = DateTime.UtcNow;
+            }
+            
             foreach (var item in inventoryDetails)
             {
                 item.IsDeleted = true;
@@ -810,7 +852,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        private async Task<ServiceResult<IList<InventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req, bool validatePackageInfo)
+        private async Task<ServiceResult<IList<CoupleDataInventoryDetail>>> ValidateInventoryIn(bool isApproved, InventoryInModel req, bool validatePackageInfo)
         {
             if (req.InProducts == null)
                 req.InProducts = new List<InventoryInProductModel>();
@@ -824,7 +866,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var toPackageIds = req.InProducts.Select(p => p.ToPackageId).ToList();
             var toPackages = await _stockDbContext.Package.Where(p => toPackageIds.Contains(p.PackageId) && p.PackageTypeId == (int)EnumPackageType.Custom).ToListAsync();
 
-            var inventoryDetailList = new List<InventoryDetail>(req.InProducts.Count);
+            var inventoryDetailList = new List<CoupleDataInventoryDetail>(req.InProducts.Count);
             foreach (var detail in req.InProducts)
             {
                 if (EnumInventoryAction.InputOfMaterial == req.InventoryActionId && string.IsNullOrWhiteSpace(detail.POCode))
@@ -934,7 +976,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     detail.UnitPrice = detail.ProductUnitConversionQuantity * detail.ProductUnitConversionPrice / detail.PrimaryQuantity;
                 }
 
-                inventoryDetailList.Add(new InventoryDetail
+                var eDetail = new InventoryDetail
                 {
                     InventoryDetailId = isApproved ? detail.InventoryDetailId ?? 0 : 0,
                     ProductId = detail.ProductId,
@@ -963,6 +1005,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                     InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
                     //InventoryRequirementCode = detail.InventoryRequirementCode
+                };
+
+                var eSubs = detail.InProductSubs.Select(x => new InventoryDetailSubCalculation
+                {
+                    PrimaryQuantity = x.PrimaryQuantity,
+                    ProductBomId = x.ProductBomId,
+                    PrimaryUnitPrice = x.PrimaryUnitPrice,
+                    UnitConversionId = x.UnitConversionId
+                }).ToList();
+
+                inventoryDetailList.Add(new CoupleDataInventoryDetail{
+                    Detail = eDetail,
+                    Subs = eSubs
                 });
 
 
@@ -970,7 +1025,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             if (validatePackageInfo)
             {
-                ValidatePackageInfos(inventoryDetailList);
+                ValidatePackageInfos(inventoryDetailList.Select(x => x.Detail).ToList());
             }
             return inventoryDetailList;
         }
