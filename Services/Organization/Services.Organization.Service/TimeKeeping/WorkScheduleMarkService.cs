@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
@@ -16,7 +17,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         Task<int> AddWorkScheduleMark(WorkScheduleMarkModel model);
         Task<bool> DeleteWorkScheduleMark(int workScheduleId);
-        Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark();
+        Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark(int? employeeId);
         Task<WorkScheduleMarkModel> GetWorkScheduleMark(int workScheduleId);
         Task<bool> UpdateWorkScheduleMark(int workScheduleId, WorkScheduleMarkModel model);
     }
@@ -40,7 +41,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             try
             {
 
-                var lastMark = await _organizationDBContext.WorkScheduleMark.LastOrDefaultAsync(x=>x.EmployeeId == model.EmployeeId);
+                var lastMark = await _organizationDBContext.WorkScheduleMark.Where(x => x.EmployeeId == model.EmployeeId)
+                                                                            .OrderBy(x => x.WorkScheduleMarkId)
+                                                                            .LastOrDefaultAsync();
 
                 var entity = _mapper.Map<WorkScheduleMark>(model);
 
@@ -140,11 +143,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return result;
         }
 
-        public async Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark()
+        public async Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark(int? employeeId)
         {
-            var query = _organizationDBContext.WorkScheduleMark.AsNoTracking();
+            var query = _organizationDBContext.WorkScheduleMark.AsQueryable();
+
+            if (employeeId.HasValue)
+                query = query.Where(x => x.EmployeeId == employeeId);
 
             return await query
+            .AsNoTracking()
             .ProjectTo<WorkScheduleMarkModel>(_mapper.ConfigurationProvider)
             .ToListAsync();
         }

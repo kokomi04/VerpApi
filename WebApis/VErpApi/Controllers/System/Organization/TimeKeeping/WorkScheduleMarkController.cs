@@ -34,9 +34,9 @@ namespace VErpApi.Controllers.System.Organization
         
         [HttpGet]
         [Route("")]
-        public async Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark()
+        public async Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark([FromQuery]int? employeeId)
         {
-            return await _workScheduleMarkService.GetListWorkScheduleMark();
+            return await _workScheduleMarkService.GetListWorkScheduleMark(employeeId);
         }
         
         [HttpGet]
