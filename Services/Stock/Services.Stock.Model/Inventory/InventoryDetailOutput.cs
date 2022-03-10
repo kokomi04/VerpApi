@@ -63,6 +63,8 @@ namespace VErp.Services.Stock.Model.Inventory
             //InventoryRequirementInfo = new List<InventoryRequirementSimpleInfo>();
         }
 
+        public bool? IsSubCalculationId { get; set; }
+
         public IList<InventoryDetailSubCalculationModel> InventoryDetailSubCalculations { get; set; } = new List<InventoryDetailSubCalculationModel>(); 
     }
 
