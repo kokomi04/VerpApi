@@ -187,6 +187,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 foreach (var item in validInventoryDetails.Data)
                 {
                     var eDetail = item.Detail;
+
+                    eDetail.InventoryId = inventoryObj.InventoryId;
                     await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
                     await _stockDbContext.SaveChangesAsync();
 
@@ -317,6 +319,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         foreach (var item in validate.Data)
                         {
                             var eDetail = item.Detail;
+                            
+                            eDetail.InventoryId = inventoryObj.InventoryId;
+                            
                             await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
                             await _stockDbContext.SaveChangesAsync();
 
